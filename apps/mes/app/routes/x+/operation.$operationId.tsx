@@ -91,6 +91,15 @@ export const handle: Handle = {
       table: "pickingListLine",
       filter: ({ data }) =>
         data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      // Stock of the job's parts placed in, or taken from, a bin while the
+      // operation is open: the Source column shows where it is now.
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds: string[] = data?.materialItemIds ?? [];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ]
 };
@@ -197,7 +206,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companySettings,
     abilityWarning,
     isFirstOperation,
-    isFirstOpenOperation
+    isFirstOpenOperation,
+    materialItems
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -252,7 +262,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           operationId,
           jobMakeMethodId
         )
-      : false
+      : false,
+    // Only the ids: the realtime filter above needs them before the deferred
+    // materials read resolves.
+    serviceRole
+      .from("jobMaterial")
+      .select("itemId")
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
   ]);
 
   if (job.error) {
@@ -424,6 +441,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       { scrap: 0, production: 0, rework: 0 }
     ),
     job: job.data,
+    materialItemIds: [
+      ...new Set((materialItems.data ?? []).map((row) => row.itemId))
+    ],
     jobMakeMethod: jobMakeMethod?.data ?? null,
     kanban: kanban.data,
     files: getJobFiles(serviceRole, companyId, job.data, operation.data),

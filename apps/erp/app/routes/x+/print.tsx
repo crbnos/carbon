@@ -5,19 +5,26 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
-import { manualPrintValidator } from "@carbon/printing";
+import { getPrintPermissions, manualPrintValidator } from "@carbon/printing";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
 
   const json = await request.json();
   const validation = manualPrintValidator.safeParse(json);
 
   if (!validation.success) {
+    await requirePermissions(request, {});
     return { success: false, message: "Invalid print request" };
   }
+
+  // The task reads as the service role: check the document's own module.
+  const view = getPrintPermissions(validation.data.sourceDocument);
+  const { companyId, userId } = await requirePermissions(
+    request,
+    view.length > 0 ? { view } : {}
+  );
 
   const {
     sourceDocument,

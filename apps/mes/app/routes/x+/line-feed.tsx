@@ -4,32 +4,37 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { useRevalidator } from "@carbon/query";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  HStack,
-  toast,
-  VStack
-} from "@carbon/react";
+import { useAction, useRevalidator, useTopic } from "@carbon/query";
+import { Badge, Button, cn, toast } from "@carbon/react";
 import { formatQuantity } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useEffect } from "react";
-import { LuCheck, LuExternalLink } from "react-icons/lu";
+import type { ReactNode } from "react";
+import {
+  LuArrowRightLeft,
+  LuCheck,
+  LuChevronDown,
+  LuExternalLink
+} from "react-icons/lu";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { Link, useLoaderData, useSearchParams } from "react-router";
 import { DateTime } from "~/components";
+import ItemThumbnail from "~/components/ItemThumbnail";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { userContext } from "~/context";
+import { useRealtimeRevalidator, useUser } from "~/hooks";
 import { getLineFeed } from "~/services/inventory.service";
-import type { LineFeedRow } from "~/services/line-feed";
-import { useItems } from "~/stores";
+import type {
+  Lane,
+  LaneKit,
+  LaneSeverity,
+  LaneSummary,
+  LineFeedRow,
+  RawBin,
+  StationStockStatus,
+  StockSource
+} from "~/services/line-feed";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -42,30 +47,52 @@ export const handle: Handle = {
     "stockTransfer",
     "stockTransferLine",
     "jobOperation",
-    "itemLedger"
+    "itemLedger",
+    "job",
+    "jobMaterial",
+    "purchaseOrderLine"
   ]
 };
 
 export const meta: MetaFunction = () => pageMeta("Line feed");
 
-const emptyLineFeed = {
-  rows: [] as LineFeedRow[],
-  workCenterNames: {} as Record<string, string>,
-  storageUnitNames: {} as Record<string, string>,
-  jobReadableIds: {} as Record<string, string>,
-  stockTransferReadableIds: {} as Record<string, string>,
-  // A failed read is not an empty queue: the screen says so and offers a retry.
-  loadFailed: false
+type Names = {
+  itemReadableIds: Record<string, string>;
+  itemThumbnailPaths: Record<string, string>;
+  storageUnitNames: Record<string, string>;
+  jobReadableIds: Record<string, string>;
+  stockTransferReadableIds: Record<string, string>;
 };
 
+const emptyLineFeed = {
+  lanes: [] as Lane[],
+  summary: { out: 0, deliver: 0, finish: 0, build: 0, rawShort: 0 },
+  itemReadableIds: {},
+  itemThumbnailPaths: {},
+  storageUnitNames: {},
+  jobReadableIds: {},
+  stockTransferReadableIds: {},
+  canTransfer: false,
+  // A failed read is not an empty queue: the screen says so and offers a retry.
+  loadFailed: false,
+  noLocation: false
+} satisfies Names & Record<string, unknown>;
+
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, permissions } = await requirePermissions(request, {
     view: "inventory"
   });
   const locationId = context.get(userContext)?.locationId;
-  if (!locationId) return emptyLineFeed;
+  if (!locationId) return { ...emptyLineFeed, noLocation: true };
+  // A hint for the Move buttons; the transfer action checks it again.
+  const canTransfer =
+    permissions.inventory?.create?.includes(companyId) ?? false;
 
-  const lineFeed = await getLineFeed(client, { companyId, locationId });
+  const sort =
+    new URL(request.url).searchParams.get("sort") === "worst"
+      ? "worst"
+      : "line";
+  const lineFeed = await getLineFeed(client, { companyId, locationId, sort });
   if (lineFeed.error || !lineFeed.data) {
     logger.error("Failed to load the line feed", {
       companyId,
@@ -75,226 +102,876 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     return { ...emptyLineFeed, loadFailed: true };
   }
 
-  return { ...lineFeed.data, loadFailed: false };
+  return {
+    ...lineFeed.data,
+    canTransfer,
+    loadFailed: false,
+    noLocation: false
+  };
 }
 
+type SummaryKind = keyof LaneSummary;
+
+const summaryKinds: SummaryKind[] = [
+  "out",
+  "deliver",
+  "finish",
+  "build",
+  "rawShort"
+];
+
+const inSummary = (lane: Lane, kind: SummaryKind) =>
+  kind === "out" ? lane.severity === "red" : lane.work[kind] > 0;
+
 export default function LineFeedRoute() {
-  const {
-    rows,
-    workCenterNames,
-    storageUnitNames,
-    jobReadableIds,
-    stockTransferReadableIds,
-    loadFailed
-  } = useLoaderData<typeof loader>();
+  const { lanes, summary, canTransfer, loadFailed, noLocation, ...names } =
+    useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const { t } = useLingui();
+
+  // The sort and the highlighted summary count live in the URL, so the board
+  // holds no state of its own and a link to it opens the same view.
+  const [searchParams] = useSearchParams();
+  const worstFirst = searchParams.get("sort") === "worst";
+  const shown = summaryKinds.find((kind) => kind === searchParams.get("show"));
+  const withParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    return `?${next}`;
+  };
+
+  // Work centers and storage units broadcast on the shared reference topic,
+  // which `handle.realtime` cannot name: a new station, lineside storage unit
+  // or kit rack shows without waiting for a stock change.
+  const { company } = useUser();
+  const revalidate = useRealtimeRevalidator();
+  useTopic(`company:${company.id}:reference`, (change) => {
+    if (
+      !change ||
+      change.table === "workCenter" ||
+      change.table === "storageUnit"
+    ) {
+      revalidate();
+    }
+  });
+
+  const sortToggle = (
+    <Button asChild variant="secondary">
+      <Link to={withParam("sort", worstFirst ? null : "worst")} replace>
+        {worstFirst ? (
+          <Trans>Sort: worst first</Trans>
+        ) : (
+          <Trans>Sort: line order</Trans>
+        )}
+      </Link>
+    </Button>
+  );
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <MesAppBar title={<Trans>Line feed</Trans>} />
-      <MesQueueHeader title={<Trans>Line feed</Trans>} />
+      <MesAppBar title={<Trans>Line feed</Trans>} actions={sortToggle} />
+      <MesQueueHeader title={<Trans>Line feed</Trans>} actions={sortToggle} />
 
-      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-        {loadFailed ? (
-          <MesEmptyState
-            className="flex-1 w-full h-[calc(100%-var(--header-height))]"
-            title={<Trans>Could not load the line feed</Trans>}
-            action={
-              <Button
-                isLoading={revalidator.state !== "idle"}
-                isDisabled={revalidator.state !== "idle"}
-                onClick={() => revalidator.revalidate()}
-              >
-                <Trans>Try again</Trans>
-              </Button>
-            }
+      {loadFailed ? (
+        <MesEmptyState
+          className="flex-1 w-full"
+          title={<Trans>Could not load the line feed</Trans>}
+          action={
+            <Button
+              isLoading={revalidator.state !== "idle"}
+              isDisabled={revalidator.state !== "idle"}
+              onClick={() => revalidator.revalidate()}
+            >
+              <Trans>Try again</Trans>
+            </Button>
+          }
+        />
+      ) : lanes.length > 0 ? (
+        <>
+          <SummaryStrip
+            summary={summary}
+            shown={shown}
+            hrefFor={(kind) => withParam("show", kind === shown ? null : kind)}
           />
-        ) : rows.length > 0 ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
-            {rows.map((row) => (
-              <LineFeedCard
-                key={row.key}
-                row={row}
-                station={
-                  row.workCenterId
-                    ? (workCenterNames[row.workCenterId] ?? null)
-                    : null
-                }
-                storageUnit={
-                  row.storageUnitId
-                    ? (storageUnitNames[row.storageUnitId] ?? null)
-                    : null
-                }
-                reference={
-                  row.materialRequestId
-                    ? (jobReadableIds[row.materialRequestId] ?? null)
-                    : row.stockTransferId
-                      ? (stockTransferReadableIds[row.stockTransferId] ?? null)
-                      : null
-                }
+          <div className="flex flex-1 min-h-0 snap-x snap-mandatory items-start gap-4 overflow-auto p-4 scroll-px-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+            {lanes.map((lane) => (
+              <LaneColumn
+                key={lane.workCenterId ?? "none"}
+                lane={lane}
+                name={lane.name ?? t`No station`}
+                dimmed={shown !== undefined && !inSummary(lane, shown)}
+                canTransfer={canTransfer}
+                names={names}
               />
             ))}
           </div>
-        ) : (
-          <MesEmptyState
-            className="flex-1 w-full h-[calc(100%-var(--header-height))]"
-            title={<Trans>Nothing to feed</Trans>}
-          />
-        )}
-      </div>
+        </>
+      ) : (
+        <MesEmptyState
+          className="flex-1 w-full"
+          title={
+            noLocation ? (
+              <Trans>Select a location to see its stations</Trans>
+            ) : (
+              <Trans>No stations at this location</Trans>
+            )
+          }
+        />
+      )}
     </div>
   );
 }
 
-function LineFeedCard({
+/** The board's work by kind. A count links to the board with its lanes lit. */
+function SummaryStrip({
+  summary,
+  shown,
+  hrefFor
+}: {
+  summary: LaneSummary;
+  shown: SummaryKind | undefined;
+  hrefFor: (kind: SummaryKind) => string;
+}) {
+  const { t } = useLingui();
+  const labels: Record<SummaryKind, string> = {
+    out: t`stations out`,
+    deliver: t`kits to deliver`,
+    finish: t`kits to finish`,
+    build: t`kits to build`,
+    rawShort: t`raw bins short`
+  };
+  return (
+    <nav className="flex shrink-0 gap-2 overflow-x-auto border-b border-border bg-card px-4 py-2">
+      {summaryKinds.map((kind) => (
+        <Link
+          key={kind}
+          to={hrefFor(kind)}
+          replace
+          aria-current={shown === kind ? "true" : undefined}
+          className={cn(
+            "flex min-h-11 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm no-underline",
+            shown === kind && "border-primary bg-primary/10",
+            summary[kind] === 0 && "text-muted-foreground"
+          )}
+        >
+          <span className="text-base font-semibold tabular-nums">
+            {summary[kind]}
+          </span>
+          {labels[kind]}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+const laneTone: Record<LaneSeverity, { lane: string; dot: string }> = {
+  green: {
+    lane: "border-emerald-600/30 bg-emerald-500/10",
+    dot: "bg-emerald-500"
+  },
+  amber: {
+    lane: "border-yellow-600/40 bg-yellow-500/15",
+    dot: "bg-yellow-500"
+  },
+  red: { lane: "border-red-600/50 bg-red-500/15", dot: "bg-red-500" },
+  unknown: { lane: "border-border bg-muted/40", dot: "bg-muted-foreground/40" }
+};
+
+type Tone = "green" | "yellow" | "red" | "gray";
+
+/**
+ * One station's lane, top to bottom the way material flows: raw shelf, kit
+ * rack, station. The header names what holds the lane up and who acts on it.
+ */
+function LaneColumn({
+  lane,
+  name,
+  dimmed,
+  canTransfer,
+  names
+}: {
+  lane: Lane;
+  name: string;
+  dimmed: boolean;
+  /** The user may move stock: the rows offer it. */
+  canTransfer: boolean;
+  names: Names;
+}) {
+  const { t } = useLingui();
+  const tone = laneTone[lane.severity];
+  const shortParts = lane.shortItemIds
+    .map((id) => names.itemReadableIds[id] ?? t`Unknown part`)
+    .join(", ");
+  const verdict: Record<Lane["verdict"], { label: string; who?: string }> = {
+    deliver: { label: t`Deliver`, who: t`Water spider` },
+    finish: { label: t`Finish kit`, who: t`Kitter` },
+    build: { label: t`Build kit`, who: t`Kitter` },
+    rawShort: { label: t`Raw short: ${shortParts}`, who: t`Purchasing` },
+    ok: { label: t`OK` }
+  };
+  const stationLabel: Record<StationStockStatus, string> = {
+    wet: t`Wet`,
+    low: t`Running low`,
+    out: t`Out`,
+    unknown: t`No lineside storage`
+  };
+  const stationTone: Record<StationStockStatus, Tone> = {
+    wet: "green",
+    low: "yellow",
+    out: "red",
+    unknown: "gray"
+  };
+  const { station } = lane;
+
+  const worstBin = (["empty", "short", "low"] as const).find((status) =>
+    lane.raw.some((bin) => bin.status === status)
+  );
+  const binLabel = { empty: t`Empty`, short: t`Short`, low: t`Low` };
+  const rackLow = lane.kits.some((kit) => kit.rackGap > 0);
+
+  return (
+    <section
+      className={cn(
+        "flex w-[calc(100vw-2rem)] shrink-0 snap-start flex-col gap-2 rounded-lg border p-2 transition-opacity sm:w-[340px]",
+        tone.lane,
+        dimmed && "opacity-40"
+      )}
+    >
+      <header className="flex items-center gap-3 px-2 py-1">
+        <span
+          className={cn("size-4 shrink-0 rounded-full", tone.dot)}
+          aria-hidden
+        />
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-base font-semibold">{name}</h2>
+          <div className="text-sm font-medium">
+            {lane.verdict === "ok" && station.status !== "wet"
+              ? stationLabel[station.status]
+              : verdict[lane.verdict].label}
+            {verdict[lane.verdict].who && (
+              <span className="font-normal text-muted-foreground">
+                {" · "}
+                {verdict[lane.verdict].who}
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {lane.raw.length > 0 && (
+        <Tier
+          label={<Trans>Raw shelf</Trans>}
+          chip={worstBin ? binLabel[worstBin] : t`OK`}
+          tone={worstBin ? (worstBin === "low" ? "yellow" : "red") : "green"}
+        >
+          {lane.kits.map((kit) => (
+            <TierGroup
+              key={kit.itemId}
+              label={
+                <Trans>
+                  Parts of {names.itemReadableIds[kit.itemId] ?? t`the kit`}
+                </Trans>
+              }
+            >
+              {lane.raw
+                .filter((bin) => bin.kitItemIds.includes(kit.itemId))
+                .map((bin) => (
+                  <RawBinLine
+                    key={`${bin.itemId}:${bin.storageUnitId}`}
+                    bin={bin}
+                    names={names}
+                  />
+                ))}
+            </TierGroup>
+          ))}
+          <TierGroup label={<Trans>Loose parts</Trans>}>
+            {lane.raw
+              .filter((bin) => bin.kitItemIds.length === 0)
+              .map((bin) => (
+                <RawBinLine
+                  key={`${bin.itemId}:${bin.storageUnitId}`}
+                  bin={bin}
+                  names={names}
+                />
+              ))}
+          </TierGroup>
+        </Tier>
+      )}
+
+      <Tier
+        label={<Trans>Kit rack</Trans>}
+        chip={
+          lane.kits.length === 0 ? t`Fed directly` : rackLow ? t`Low` : t`OK`
+        }
+        tone={lane.kits.length === 0 ? "gray" : rackLow ? "yellow" : "green"}
+      >
+        {lane.kits.map((kit) => (
+          <KitRackLine key={kit.itemId} kit={kit} names={names} />
+        ))}
+      </Tier>
+
+      <Tier
+        label={<Trans>Station</Trans>}
+        chip={stationLabel[station.status]}
+        tone={stationTone[station.status]}
+      >
+        {lane.kits.map((kit) => (
+          <StationKitLine
+            key={kit.itemId}
+            kit={kit}
+            workCenterId={canTransfer ? lane.workCenterId : null}
+            names={names}
+          />
+        ))}
+        {lane.kits.length > 0 && lane.looseRows.length > 0 && (
+          <TierHeading>
+            <Trans>Loose parts</Trans>
+          </TierHeading>
+        )}
+        {lane.looseRows.map((row) => (
+          <StationLine
+            key={row.key}
+            row={row}
+            canTransfer={canTransfer}
+            part={
+              row.itemId ? (names.itemReadableIds[row.itemId] ?? null) : null
+            }
+            thumbnailPath={
+              row.itemId ? names.itemThumbnailPaths[row.itemId] : undefined
+            }
+            source={
+              row.source
+                ? (names.storageUnitNames[row.source.storageUnitId] ?? null)
+                : null
+            }
+            storageUnit={
+              row.storageUnitId
+                ? (names.storageUnitNames[row.storageUnitId] ?? null)
+                : null
+            }
+            reference={
+              row.materialRequestId
+                ? (names.jobReadableIds[row.materialRequestId] ?? null)
+                : row.stockTransferId
+                  ? (names.stockTransferReadableIds[row.stockTransferId] ??
+                    null)
+                  : null
+            }
+          />
+        ))}
+      </Tier>
+    </section>
+  );
+}
+
+const quantityOf = (units: { quantity: number }[]) =>
+  units.reduce((sum, unit) => sum + unit.quantity, 0);
+
+/** A heading inside a tier: what is part of a kit, and what is loose. */
+function TierHeading({ children }: { children: ReactNode }) {
+  return (
+    <li className="bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+      {children}
+    </li>
+  );
+}
+
+function TierGroup({
+  label,
+  children
+}: {
+  label: ReactNode;
+  children: ReactNode[];
+}) {
+  if (children.length === 0) return null;
+  return (
+    <>
+      <TierHeading>{label}</TierHeading>
+      {children}
+    </>
+  );
+}
+
+/**
+ * A tier of a lane. It opens when something in it needs attention and
+ * collapses to its chip when everything is ok; a tap opens or closes it.
+ */
+function Tier({
+  label,
+  chip,
+  tone,
+  children
+}: {
+  label: ReactNode;
+  chip: string;
+  tone: Tone;
+  children: ReactNode;
+}) {
+  const lines = Array.isArray(children) ? children.flat() : [children];
+  const hasLines = lines.some(Boolean);
+  const header = (
+    <>
+      <span className="flex-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <Badge variant={tone}>{chip}</Badge>
+    </>
+  );
+  if (!hasLines) {
+    return (
+      <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3">
+        {header}
+      </div>
+    );
+  }
+  return (
+    <details
+      open={tone !== "green"}
+      className="group rounded-lg border border-border bg-card"
+    >
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 [&::-webkit-details-marker]:hidden">
+        {header}
+        <LuChevronDown
+          className="size-4 text-muted-foreground group-open:rotate-180"
+          aria-hidden
+        />
+      </summary>
+      <ul className="divide-y divide-border border-t border-border">
+        {children}
+      </ul>
+    </details>
+  );
+}
+
+function RawBinLine({ bin, names }: { bin: RawBin; names: Names }) {
+  const { locale } = useLocale();
+  const onHand = formatQuantity(bin.onHand, locale);
+  const need = formatQuantity(bin.need, locale);
+  const badge = {
+    empty: { variant: "red", label: <Trans>Empty</Trans> },
+    short: { variant: "red", label: <Trans>Short</Trans> },
+    low: { variant: "yellow", label: <Trans>Low</Trans> },
+    ok: { variant: "green", label: <Trans>OK</Trans> }
+  } as const;
+  const { variant, label } = badge[bin.status];
+
+  const line = (
+    <>
+      <ItemThumbnail thumbnailPath={names.itemThumbnailPaths[bin.itemId]} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium">
+          {names.itemReadableIds[bin.itemId] ?? <Trans>Unknown part</Trans>}
+        </div>
+        <div className="truncate text-xs text-muted-foreground">
+          {bin.storageUnitId ? (
+            names.storageUnitNames[bin.storageUnitId]
+          ) : (
+            <Trans>No default bin</Trans>
+          )}
+          {bin.status !== "ok" &&
+            (bin.replenishing ? (
+              <Trans> · On order</Trans>
+            ) : (
+              <Trans> · Nothing ordered</Trans>
+            ))}
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <Badge variant={variant}>{label}</Badge>
+        <span className="text-sm tabular-nums">
+          {bin.need > 0 ? (
+            <Trans>
+              {onHand} of {need}
+            </Trans>
+          ) : (
+            onHand
+          )}
+        </span>
+      </div>
+    </>
+  );
+
+  // A bin with a kanban opens its card in the ERP.
+  return (
+    <li>
+      {bin.kanbanId ? (
+        <a
+          href={path.to.erpKanban(bin.kanbanId)}
+          target="_blank"
+          rel="noreferrer"
+          className="flex min-h-11 items-center gap-3 px-3 py-2 no-underline"
+        >
+          {line}
+          <LuExternalLink
+            className="size-3 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+        </a>
+      ) : (
+        <div className="flex min-h-11 items-center gap-3 px-3 py-2">{line}</div>
+      )}
+    </li>
+  );
+}
+
+/** A kit item's slot on the rack: complete kits by serial, then the open kit
+ *  jobs with what each is missing. A kit job opens in the MES to issue to. */
+function KitRackLine({ kit, names }: { kit: LaneKit; names: Names }) {
+  const { locale } = useLocale();
+  const complete = formatQuantity(quantityOf(kit.complete), locale);
+  const target =
+    kit.target === null ? null : formatQuantity(kit.target, locale);
+  const unitName = (id: string | null) =>
+    (id && names.storageUnitNames[id]) || null;
+  const count =
+    target === null ? (
+      <Trans>{complete} complete</Trans>
+    ) : (
+      <Trans>
+        {complete} complete · target {target}
+      </Trans>
+    );
+
+  return (
+    <li className="flex flex-col gap-2 px-3 py-2">
+      <div className="flex items-center gap-3">
+        <ItemThumbnail thumbnailPath={names.itemThumbnailPaths[kit.itemId]} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">
+            {names.itemReadableIds[kit.itemId] ?? <Trans>Unknown part</Trans>}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            {unitName(kit.storageUnitId)}
+            {kit.rackGap > 0 &&
+              (kit.replenishing ? (
+                <Trans> · Kit job open</Trans>
+              ) : (
+                <Trans> · No kit job open</Trans>
+              ))}
+          </div>
+        </div>
+        {target === null || !kit.kanbanId ? (
+          <span className="shrink-0 text-sm tabular-nums">{count}</span>
+        ) : (
+          // The rack's kanban card opens in the ERP.
+          <a
+            href={path.to.erpKanban(kit.kanbanId)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-11 shrink-0 items-center gap-1 text-sm tabular-nums no-underline"
+          >
+            {count}
+            <LuExternalLink
+              className="size-3 text-muted-foreground"
+              aria-hidden
+            />
+          </a>
+        )}
+      </div>
+      {kit.complete.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {kit.complete.map((unit) => (
+            <Badge
+              key={`${unit.trackedEntityId}:${unit.storageUnitId}`}
+              variant="green"
+            >
+              {unit.readableId ?? formatQuantity(unit.quantity, locale)}
+              {unit.storageUnitId !== kit.storageUnitId &&
+                unitName(unit.storageUnitId) &&
+                ` · ${unitName(unit.storageUnitId)}`}
+            </Badge>
+          ))}
+        </div>
+      )}
+      {kit.incomplete.map((job) => (
+        <Link
+          key={job.jobId}
+          to={path.to.jobDag(job.jobId)}
+          className="flex min-h-11 items-center gap-3 rounded-md border border-border px-3 py-2 no-underline"
+        >
+          <Badge variant={job.covered ? "yellow" : "red"} className="shrink-0">
+            <Trans>Incomplete</Trans>
+          </Badge>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">
+              {job.readableId}
+              {unitName(job.storageUnitId) && (
+                <span className="font-normal text-muted-foreground">
+                  {" · "}
+                  {unitName(job.storageUnitId)}
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <Trans>Missing</Trans>{" "}
+              {job.missing
+                .map(
+                  (part) =>
+                    `${formatQuantity(part.quantity, locale)}× ${names.itemReadableIds[part.itemId] ?? "?"}`
+                )
+                .join(", ")}
+            </div>
+          </div>
+        </Link>
+      ))}
+    </li>
+  );
+}
+
+/** A kit at the station: whether to bring one, the serials there, and how
+ *  many open units they cover. */
+function StationKitLine({
+  kit,
+  workCenterId,
+  names
+}: {
+  kit: LaneKit;
+  /** Null when the kit cannot be brought from here: no station, or the user
+   *  may not move stock. */
+  workCenterId: string | null;
+  names: Names;
+}) {
+  const { locale } = useLocale();
+  const onHand = formatQuantity(quantityOf(kit.atStation), locale);
+  const covers = formatQuantity(kit.covers, locale);
+  const demand = formatQuantity(kit.demand, locale);
+  const badge = {
+    bring: { variant: "red", label: <Trans>Bring kit</Trans> },
+    out: { variant: "red", label: <Trans>No kit</Trans> },
+    coming: { variant: "gray", label: <Trans>On its way</Trans> },
+    ok: { variant: "green", label: <Trans>Kit</Trans> }
+  } as const;
+  const { variant, label } = badge[kit.stationStatus];
+  return (
+    <li className="flex flex-col gap-2 px-3 py-2">
+      <div className="flex items-center gap-3">
+        <ItemThumbnail thumbnailPath={names.itemThumbnailPaths[kit.itemId]} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">
+            {names.itemReadableIds[kit.itemId] ?? <Trans>Unknown part</Trans>}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            <Trans>
+              {onHand} on hand · covers {covers} of {demand}
+            </Trans>
+          </div>
+        </div>
+        <Badge variant={variant} className="shrink-0">
+          {label}
+        </Badge>
+      </div>
+      {kit.source && workCenterId && (
+        <TransferButton
+          workCenterId={workCenterId}
+          itemId={kit.itemId}
+          source={kit.source}
+          from={names.storageUnitNames[kit.source.storageUnitId] ?? null}
+        />
+      )}
+    </li>
+  );
+}
+
+function StationLine({
   row,
-  station,
+  canTransfer,
+  part,
+  thumbnailPath,
+  source,
   storageUnit,
   reference
 }: {
   row: LineFeedRow;
-  station: string | null;
+  canTransfer: boolean;
+  part: string | null;
+  thumbnailPath?: string;
+  /** The name of the bin to grab a short part from. */
+  source: string | null;
+  /** Where a transfer is going: a station can have several storage units. */
   storageUnit: string | null;
   reference: string | null;
 }) {
-  const { t } = useLingui();
   const { locale } = useLocale();
-  const [items] = useItems();
-  const part = row.itemId
-    ? (items.find((item) => item.id === row.itemId)?.readableIdWithRevision ??
-      null)
-    : null;
+  const quantity =
+    row.quantity === null ? null : formatQuantity(row.quantity, locale);
 
-  const kindLabel = {
-    request: t`Request`,
-    shortage: t`Shortage`,
-    transfer: t`Transfer`
-  }[row.kind];
-  const kindVariant = {
-    request: "yellow",
-    shortage: "orange",
-    transfer: "gray"
-  } as const;
-
-  const card = (
-    <Card className={row.kind === "transfer" ? "cursor-pointer" : undefined}>
-      <CardHeader className="pb-2">
-        <HStack className="justify-between gap-2">
-          <CardTitle className="text-base min-w-0 truncate">
-            {station ?? <Trans>No station</Trans>}
-          </CardTitle>
-          <Badge variant={kindVariant[row.kind]} className="shrink-0">
-            {kindLabel}
-          </Badge>
-        </HStack>
-      </CardHeader>
-      <CardContent>
-        <VStack className="gap-1">
-          {storageUnit && (
-            <HStack className="justify-between text-sm w-full">
-              <span className="text-muted-foreground">
-                <Trans>Storage unit</Trans>
-              </span>
-              <span className="min-w-0 truncate">{storageUnit}</span>
-            </HStack>
-          )}
-          <HStack className="justify-between text-sm w-full">
-            <span className="text-muted-foreground">
-              <Trans>Part</Trans>
-            </span>
-            <span className="min-w-0 truncate whitespace-nowrap">
-              {part ?? <Trans>Any part</Trans>}
-            </span>
-          </HStack>
-          <HStack className="justify-between text-sm w-full">
-            <span className="text-muted-foreground">
-              <Trans>Quantity</Trans>
-            </span>
-            <span className="tabular-nums">
-              {row.quantity === null
-                ? "—"
-                : formatQuantity(row.quantity, locale)}
-            </span>
-          </HStack>
-          <HStack className="justify-between text-sm w-full">
-            <span className="text-muted-foreground">
-              <Trans>Age</Trans>
-            </span>
-            <span>
-              {row.createdAt ? (
-                <DateTime value={row.createdAt} variant="relative" />
-              ) : (
-                "—"
-              )}
-            </span>
-          </HStack>
-          {reference && (
-            <HStack className="justify-between text-sm w-full">
-              <span className="text-muted-foreground">
-                {row.kind === "transfer" ? (
-                  <Trans>Stock transfer</Trans>
-                ) : (
-                  <Trans>Job</Trans>
-                )}
-              </span>
-              <span className="flex items-center gap-1 whitespace-nowrap">
-                {reference}
-                {row.kind === "transfer" && (
-                  <LuExternalLink
-                    className="size-3 text-muted-foreground"
-                    aria-hidden
-                  />
-                )}
-              </span>
-            </HStack>
-          )}
-          {row.note && (
-            <p className="text-sm text-muted-foreground line-clamp-2 pt-1">
-              {row.note}
-            </p>
-          )}
-          {row.kind === "request" && row.materialRequestId && (
-            <ResolveButton materialRequestId={row.materialRequestId} />
-          )}
-        </VStack>
-      </CardContent>
-    </Card>
-  );
-
-  // A transfer opens its stock transfer in the ERP; the MES has no transfer
-  // screen.
-  if (row.kind === "transfer" && row.stockTransferId) {
+  if (row.kind === "shortage") {
+    const onHand = row.source
+      ? formatQuantity(row.source.onHand, locale)
+      : null;
     return (
-      <a
-        href={path.to.erpStockTransfer(row.stockTransferId)}
-        target="_blank"
-        rel="noreferrer"
-        className="no-underline"
-      >
-        {card}
-      </a>
+      <li className="flex flex-col gap-2 px-3 py-2">
+        <div className="flex items-center gap-3">
+          <ItemThumbnail thumbnailPath={thumbnailPath} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">
+              {part ?? <Trans>Unknown part</Trans>}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {row.source ? (
+                <Trans>
+                  Grab from {source} · {onHand} there
+                </Trans>
+              ) : (
+                <Trans>None on the shelf</Trans>
+              )}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant={row.stockStatus === "out" ? "red" : "yellow"}>
+              {row.stockStatus === "out" ? (
+                <Trans>Out</Trans>
+              ) : (
+                <Trans>Low</Trans>
+              )}
+            </Badge>
+            <span className="text-sm tabular-nums">
+              <Trans>Bring {quantity}</Trans>
+            </span>
+          </div>
+        </div>
+        {canTransfer && row.source && row.workCenterId && row.itemId && (
+          <TransferButton
+            workCenterId={row.workCenterId}
+            itemId={row.itemId}
+            source={row.source}
+            from={source}
+          />
+        )}
+      </li>
     );
   }
 
-  return card;
+  if (row.kind === "transfer" && row.stockTransferId) {
+    // A transfer opens its stock transfer in the ERP; the MES has no transfer
+    // screen.
+    return (
+      <li>
+        <a
+          href={path.to.erpStockTransfer(row.stockTransferId)}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 px-3 py-2 no-underline"
+        >
+          <Badge variant="gray" className="shrink-0">
+            <Trans>On its way</Trans>
+          </Badge>
+          <span className="min-w-0 flex-1 truncate text-sm">
+            {part ?? <Trans>Unknown part</Trans>}{" "}
+            {quantity && <span className="tabular-nums">× {quantity}</span>}
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+            {storageUnit && <span>{storageUnit} ·</span>}
+            {reference}
+            <LuExternalLink className="size-3" aria-hidden />
+          </span>
+        </a>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex flex-col gap-2 px-3 py-2">
+      <div className="flex items-center gap-3">
+        <Badge variant="yellow" className="shrink-0">
+          <Trans>Asked</Trans>
+        </Badge>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+          {part ?? <Trans>Any part</Trans>}
+        </span>
+        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+          {reference}
+          {row.createdAt && (
+            <DateTime value={row.createdAt} variant="relative" />
+          )}
+        </span>
+      </div>
+      {row.note && (
+        <p className="text-sm text-muted-foreground line-clamp-2">{row.note}</p>
+      )}
+      {row.materialRequestId && (
+        <ResolveButton materialRequestId={row.materialRequestId} />
+      )}
+    </li>
+  );
+}
+
+/**
+ * Grab it, tap, carry it over: one tap moves the stock from the source bin to
+ * the station's bin. The server decides the destination and caps the
+ * quantity at what the station is still short of. The action flashes what
+ * happened: a move that lands removes this button before it could say so.
+ */
+function TransferButton({
+  workCenterId,
+  itemId,
+  source,
+  from
+}: {
+  workCenterId: string;
+  itemId: string;
+  source: StockSource;
+  from: string | null;
+}) {
+  const { locale } = useLocale();
+  const fetcher = useAction<{ success: boolean }>();
+  const quantity = formatQuantity(source.quantity, locale);
+
+  return (
+    <fetcher.Form
+      method="post"
+      action={path.to.lineFeedTransfer}
+      className="w-full"
+    >
+      <input type="hidden" name="workCenterId" value={workCenterId} />
+      <input type="hidden" name="itemId" value={itemId} />
+      <input
+        type="hidden"
+        name="fromStorageUnitId"
+        value={source.storageUnitId}
+      />
+      <input type="hidden" name="quantity" value={source.quantity} />
+      {source.trackedEntityId && (
+        <input
+          type="hidden"
+          name="trackedEntityId"
+          value={source.trackedEntityId}
+        />
+      )}
+      <Button
+        type="submit"
+        variant="secondary"
+        size="lg"
+        leftIcon={<LuArrowRightLeft />}
+        isLoading={fetcher.isPending}
+        isDisabled={fetcher.isPending}
+        className="w-full"
+      >
+        {from ? (
+          <Trans>
+            Move {quantity} from {from}
+          </Trans>
+        ) : (
+          <Trans>Move {quantity}</Trans>
+        )}
+      </Button>
+    </fetcher.Form>
+  );
 }
 
 function ResolveButton({ materialRequestId }: { materialRequestId: string }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean; message?: string }>();
-  const isSubmitting = fetcher.state !== "idle";
-
-  useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message ?? t`Failed to resolve request`);
-    }
-  }, [fetcher.data, t]);
+  const fetcher = useAction<{ success: boolean; message?: string }>({
+    onError: (data) => toast.error(data.message ?? t`Failed to resolve request`)
+  });
+  const isSubmitting = fetcher.isPending;
 
   return (
     <fetcher.Form
       method="post"
       action={path.to.lineFeedResolve(materialRequestId)}
-      className="w-full pt-2"
+      className="w-full"
     >
       <Button
         type="submit"

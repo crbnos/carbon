@@ -196,6 +196,64 @@ describe.skipIf(!hasLocalDatabase)("consumption bins", () => {
   );
 
   databaseTest(
+    "an issue that refuses over-issue stops at what the job requires",
+    async () => {
+      const item = await newItem("capped");
+      await receive(item, binA, 20);
+      const job = await jobFixture(f, "capped");
+      await setMaterial(job.materialId, {
+        itemId: item,
+        storageUnitId: binA,
+        estimatedQuantity: 3
+      });
+      const scanIssue = (quantity: number) =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "partToOperation",
+            id: job.operationId,
+            itemId: item,
+            materialId: job.materialId,
+            quantity,
+            adjustmentType: "Negative Adjmt.",
+            refuseOverIssue: true
+          },
+          issue
+        );
+      const refusal = async (quantity: number) => {
+        const { error } = await scanIssue(quantity);
+        return { status: error?.status, message: error?.message };
+      };
+      const issued = () =>
+        f.db
+          .selectFrom("jobMaterial")
+          .select("quantityIssued")
+          .where("id", "=", job.materialId)
+          .executeTakeFirstOrThrow();
+
+      expect((await scanIssue(2)).error).toBeNull();
+      // A refusal the operator can act on: the MES shows only errors below 500.
+      expect(await refusal(2)).toEqual({
+        status: 400,
+        message: expect.stringMatching(/^This job needs only 1 more /)
+      });
+      expect(await issued()).toEqual({ quantityIssued: 2 });
+
+      expect((await scanIssue(1)).error).toBeNull();
+      expect(await refusal(1)).toEqual({
+        status: 400,
+        message: expect.stringMatching(/^This job already has all its /)
+      });
+      expect(await issued()).toEqual({ quantityIssued: 3 });
+
+      // The Issue dialog does not ask for the refusal: it may issue above.
+      await manualIssue(job, item, 1);
+      expect(await issued()).toEqual({ quantityIssued: 4 });
+    }
+  );
+
+  databaseTest(
     "a completion splits a short named bin across the bins that hold stock",
     async () => {
       const item = await newItem("split");

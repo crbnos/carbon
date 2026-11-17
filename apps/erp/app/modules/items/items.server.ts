@@ -20,6 +20,7 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { loadBuildable } from "@carbon/planning";
 import {
   chunkArray,
   datetime,
@@ -7151,5 +7152,69 @@ export const updateItemThumbnail = defineServiceFn({
         updatedBy: ctx.auditUserId
       })
     );
+  }
+});
+
+/**
+ * Get how many of an item can be made now and what limits it
+ *
+ * @remarks
+ * Answers "how many can we make?" and "what is short?" for one item at one
+ * location, through every level of its active make methods. Subassemblies in
+ * stock are used before they are built; a component shared by several
+ * subassemblies is counted once; required quantities include each item's
+ * scrap allowance, as a job's do. Available stock is on hand less what open
+ * jobs, sales orders and project materials have committed.
+ * `quantityBuildable` is the answer; `quantityBuildableFromOnHand` is what
+ * using committed stock too would allow. `components` lists every item
+ * below, the most limiting first: `quantityBuildableAlone` is how many that
+ * component alone allows, and `quantityShort` what is missing at
+ * `targetQuantity`. A Make to Order line's subassembly is built, not drawn
+ * from stock, as a job builds it. When `unitMismatches` (a BOM line's unit
+ * differs from its item's stock unit) or `cycleItems` (the BOM contains
+ * itself) is not empty, the quantities are null and the BOM must be corrected
+ * first. Writes nothing.
+ *
+ * @param itemId - The item to make.
+ * @param locationId - The location whose stock is counted.
+ * @param targetQuantity - Explode the BOM at this quantity to list what is short. Default: one more than can be made.
+ *
+ * @mcp read
+ */
+export const getBuildableQuantity = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1),
+    targetQuantity: z.number().int().positive().optional()
+  }),
+  permission: { view: "parts" },
+
+  async run(ctx, { itemId, locationId, targetQuantity }) {
+    try {
+      // The calculation reads by company, so another company's location (or
+      // a mistyped one) would answer with no stock rather than refuse. Checked
+      // first: the lookup is one primary-key read, the calculation is not.
+      const location = await ctx.asSystem.pg
+        .selectFrom("location")
+        .select("id")
+        .where("id", "=", locationId)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst();
+      if (!location) return ctx.error("notFound", "Location not found");
+
+      const result = await loadBuildable(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        itemId,
+        locationId,
+        targetQuantity
+      });
+      return result ?? ctx.error("notFound", "Item not found");
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to calculate buildable quantity",
+        error
+      );
+    }
   }
 });

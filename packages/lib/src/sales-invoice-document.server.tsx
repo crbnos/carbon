@@ -5,17 +5,20 @@
 import type { Database } from "@carbon/database";
 import type { SalesInvoiceEmail } from "@carbon/documents/email";
 import { ensureFont, SalesInvoicePDF } from "@carbon/documents/pdf";
-import type { DocumentEdit, ResolvedSection } from "@carbon/documents/template";
+import type { DocumentEdit } from "@carbon/documents/template";
 import {
   collectSectionIds,
-  getBuiltInSection,
   resolveTemplate,
   templateShowsThumbnails
 } from "@carbon/documents/template";
-import { getContentType, getFileExtension, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getBase64Image,
+  getCompanyWithPublicLogos,
+  renderPdfToBuffer,
+  resolveSections
+} from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
 
 const logger = getLogger("lib", "sales-invoice-document");
@@ -37,92 +40,6 @@ export type SalesInvoiceDocument = {
 };
 
 type Client = SupabaseClient<Database>;
-
-const LOGO_FIELDS = [
-  "logoLight",
-  "logoDark",
-  "logoLightIcon",
-  "logoDarkIcon",
-  "logoWatermark"
-] as const;
-
-async function getCompanyWithPublicLogos(
-  client: Client,
-  companyId: string,
-  storageUrl: string
-) {
-  const company = await client
-    .from("company")
-    .select("*")
-    .eq("id", companyId)
-    .single();
-  if (company.error) return company;
-
-  const prefix = `${storageUrl}/storage/v1/object/public/public/`;
-  const data = { ...company.data };
-  for (const field of LOGO_FIELDS) {
-    data[field] = company.data[field]
-      ? `${prefix}${company.data[field]}`
-      : null;
-  }
-  return { data, error: null };
-}
-
-async function resolveSections(
-  client: Client,
-  companyId: string,
-  ids: string[]
-): Promise<Record<string, ResolvedSection>> {
-  if (ids.length === 0) return {};
-  const map: Record<string, ResolvedSection> = {};
-
-  // System sections live in code, not the DB. Seed them first so a stored row
-  // with the same id (a customized/forked default) overrides below.
-  for (const id of ids) {
-    const builtIn = getBuiltInSection(id);
-    if (builtIn) map[id] = builtIn;
-  }
-
-  const dbIds = ids.filter((id) => !map[id] || map[id]?.builtIn);
-  const { data } = await client
-    .from("documentSection")
-    .select("*")
-    .eq("companyId", companyId)
-    .in("id", dbIds);
-  for (const row of (data ?? []) as ResolvedSection[]) {
-    map[row.id] = {
-      id: row.id,
-      name: row.name,
-      placement: row.placement,
-      content: row.content,
-      config: row.config
-    };
-  }
-  return map;
-}
-
-async function getBase64Image(client: Client, path: string) {
-  // Legacy stored HEIC can't be decoded by the PDF renderer — serve the
-  // imgproxy JPEG rendition instead. Everything else passes through raw.
-  const extension = getFileExtension(path);
-  const heic = extension === "heic" || extension === "heif";
-
-  // Private object paths are prefixed with the owning company's id.
-  const companyId = path.split("/")[0];
-  if (!companyId) return null;
-
-  const { data } = await storage(client)
-    .company(companyId)
-    .download(path, heic ? { transform: { quality: 90 } } : undefined);
-  if (!data) return null;
-
-  const base64String = Buffer.from(await data.arrayBuffer()).toString("base64");
-
-  const contentType = heic ? "image/jpeg" : getContentType(extension);
-  const mimeType = contentType.startsWith("image/") ? contentType : "image/png";
-
-  return `data:${mimeType};base64,${base64String}`;
-}
 
 /**
  * Read a sales invoice and everything its PDF and email render. A pure
@@ -408,16 +325,5 @@ export async function renderSalesInvoicePdf(
 
   // Called as a function (it uses no hooks), as the post route calls
   // SalesInvoiceEmail, so this package needs no React/JSX toolchain of its own.
-  const stream = await renderToStream(SalesInvoicePDF(props));
-
-  return new Promise((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on("data", (data) => {
-      buffers.push(data);
-    });
-    stream.on("end", () => {
-      resolve(Buffer.concat(buffers));
-    });
-    stream.on("error", reject);
-  });
+  return renderPdfToBuffer(SalesInvoicePDF(props));
 }

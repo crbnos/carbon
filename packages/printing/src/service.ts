@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { searchFilter } from "@carbon/utils";
+import { datetime, searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { LabelTemplateType } from "./registry";
 import type {
   PrinterRoute,
   PrintingSettings,
@@ -203,9 +204,7 @@ export async function getPrinterRoute(
 ) {
   return client
     .from("printerRoute")
-    .select(
-      "id, locationId, name, format, mediaSizeId, printerUrl, apiKey, templateId"
-    )
+    .select("id, locationId, name, format, mediaSizeId, printerUrl, hasApiKey")
     .eq("id", routeId)
     .eq("companyId", companyId)
     .single();
@@ -221,8 +220,6 @@ export async function upsertPrinterRoute(
     format: string;
     mediaSizeId?: string | null;
     printerUrl: string;
-    apiKey?: string | null;
-    templateId?: string | null;
   }
 ) {
   if (route.id) {
@@ -234,23 +231,54 @@ export async function upsertPrinterRoute(
         format: route.format,
         mediaSizeId: route.mediaSizeId ?? null,
         printerUrl: route.printerUrl,
-        apiKey: route.apiKey ?? null,
-        templateId: route.templateId ?? null,
         updatedAt: new Date().toISOString()
       })
       .eq("id", route.id)
-      .eq("companyId", route.companyId);
+      .eq("companyId", route.companyId)
+      .select("id")
+      .single();
   }
 
-  return client.from("printerRoute").insert({
-    companyId: route.companyId,
-    locationId: route.locationId ?? null,
-    name: route.name,
-    format: route.format,
-    mediaSizeId: route.mediaSizeId ?? null,
-    printerUrl: route.printerUrl,
-    apiKey: route.apiKey ?? null,
-    templateId: route.templateId ?? null
+  return client
+    .from("printerRoute")
+    .insert({
+      companyId: route.companyId,
+      locationId: route.locationId ?? null,
+      name: route.name,
+      format: route.format,
+      mediaSizeId: route.mediaSizeId ?? null,
+      printerUrl: route.printerUrl
+    })
+    .select("id")
+    .single();
+}
+
+/**
+ * Sets, replaces or (with null) removes a printer's API key, kept in Supabase
+ * Vault and flagged by `printerRoute.hasApiKey`. Needs the service role client.
+ */
+export async function setPrinterApiKey(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  printerRouteId: string,
+  apiKey: string | null
+) {
+  return client.rpc("set_printer_api_key", {
+    p_company_id: companyId,
+    p_printer_route_id: printerRouteId,
+    p_api_key: apiKey ?? ""
+  });
+}
+
+/** A printer's API key from Supabase Vault. Needs the service role client. */
+export async function getPrinterApiKey(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  printerRouteId: string
+) {
+  return client.rpc("get_printer_api_key", {
+    p_company_id: companyId,
+    p_printer_route_id: printerRouteId
   });
 }
 
@@ -263,6 +291,81 @@ export async function deletePrinterRoute(
     .from("printerRoute")
     .delete()
     .eq("id", routeId)
+    .eq("companyId", companyId)
+    .select("id");
+}
+
+// -- Label Templates --
+
+export async function getLabelTemplates(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  // "labelType" is text in the DB, constrained to the label types by a CHECK.
+  return client
+    .from("labelTemplate")
+    .select("id, labelType, mediaSizeId, templateId")
+    .eq("companyId", companyId)
+    .order("labelType")
+    .order("mediaSizeId")
+    .overrideTypes<{ labelType: LabelTemplateType }[]>();
+}
+
+/** The company's BinderyPress template per label type for one media size. */
+export async function getLabelTemplatesForMediaSize(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  mediaSizeId: string
+): Promise<Map<LabelTemplateType, string>> {
+  const { data, error } = await client
+    .from("labelTemplate")
+    .select("labelType, templateId")
+    .eq("companyId", companyId)
+    .eq("mediaSizeId", mediaSizeId);
+  if (error)
+    throw new Error(`Failed to load label templates: ${error.message}`);
+  return new Map(
+    data.map((row) => [row.labelType as LabelTemplateType, row.templateId])
+  );
+}
+
+export async function upsertLabelTemplate(
+  client: SupabaseClient<Database>,
+  template: {
+    id?: string;
+    companyId: string;
+    userId: string;
+    labelType: LabelTemplateType;
+    mediaSizeId: string;
+    templateId: string;
+  }
+) {
+  const { id, companyId, userId, ...fields } = template;
+  if (id) {
+    return client
+      .from("labelTemplate")
+      .update({
+        ...fields,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId);
+  }
+  return client
+    .from("labelTemplate")
+    .insert({ ...fields, companyId, createdBy: userId });
+}
+
+export async function deleteLabelTemplate(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("labelTemplate")
+    .delete()
+    .eq("id", id)
     .eq("companyId", companyId);
 }
 

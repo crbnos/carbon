@@ -36,6 +36,10 @@ const receiptsByInspectionStatus = (
     `inspectionStatus:in:${statuses.join(",")}`
   )}`;
 
+const receiptsRejectedAtInspection = `${path.to.receipts}?filter=${encodeURIComponent(
+  "rejectedAtInspection:eq:true"
+)}`;
+
 export default function useInventorySubmodules() {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -105,7 +109,9 @@ export default function useInventorySubmodules() {
         },
         {
           name: t`Inspection failed`,
-          to: receiptsByInspectionStatus(["Inspection Failed"]),
+          // Not a status filter: a receipt with a Partial lot reads Put Away
+          // once its passed stock is put away, and must stay listed here.
+          to: receiptsRejectedAtInspection,
           icon: <LuClipboardX />
         },
         {

@@ -87,18 +87,40 @@ export const handle: Handle = {
       table: "pickingListLine",
       column: "pickingListId",
       param: "pickingListId"
+    },
+    {
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.pickingList?.lines ?? [])
+              .map((line: { itemId?: string | null }) => line.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ]
 };
+
+const itemIdOrder = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base"
+});
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.pickingList?.pickingListId, "Picking List");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
   const pickingListId = params.pickingListId!;
 
-  const result = await getPickingListForExecution(client, pickingListId);
+  const result = await getPickingListForExecution(
+    client,
+    pickingListId,
+    companyId
+  );
 
   if (result.error || !result.data) {
     throw new Response("Picking list not found", { status: 404 });
@@ -157,6 +179,15 @@ export default function PickingExecutionRoute() {
         });
       }
       groups.get(key)!.lines.push(line);
+    }
+    for (const kit of groups.values()) {
+      kit.lines.sort((a, b) => {
+        const aId =
+          (a.item as { readableId?: string } | null)?.readableId ?? "";
+        const bId =
+          (b.item as { readableId?: string } | null)?.readableId ?? "";
+        return itemIdOrder.compare(aId, bId) || a.id.localeCompare(b.id);
+      });
     }
     return Array.from(groups.values()).sort((a, b) => {
       const job = (a.jobReadableId ?? "").localeCompare(b.jobReadableId ?? "");
@@ -655,11 +686,10 @@ function PickLineItem({
     const n = Number(line.quantityToPick ?? 0) / (perAssembly * factor);
     return Number.isInteger(n) ? n : null;
   })();
-  const source = (line.storageUnit as { name?: string } | null)?.name;
-  const availableQuantity = Number(
-    (line as { availableQuantity?: number }).availableQuantity ?? 0
+  const liveStorageUnits = line.liveStorageUnits.filter(
+    (unit) => unit.quantity > 0
   );
-  const isShortStock = availableQuantity <= 0;
+  const isShortStock = liveStorageUnits.length === 0;
   const quantityToPick = Number(line.quantityToPick ?? 0);
   const quantityPicked = Number(line.quantityPicked ?? 0);
   const isTracked =
@@ -676,6 +706,12 @@ function PickLineItem({
   ).filter((t) => Number(t.quantityPicked ?? 0) > 0);
 
   const isFullyPicked = quantityToPick > 0 && quantityPicked >= quantityToPick;
+  // Once picked, the stock is at lineside and its warehouse bin may be empty:
+  // the line then names the bin it was picked from.
+  const pickedFrom =
+    quantityPicked > 0
+      ? (line.storageUnit as { name?: string } | null)?.name
+      : undefined;
   const isShort = line.status === "Short";
   const isCancelled = line.status === "Cancelled";
   const isResolved = isFullyPicked || isShort || isCancelled;
@@ -797,7 +833,7 @@ function PickLineItem({
           <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
             <ItemThumbnail
               size="xl"
-              thumbnailPath={null}
+              thumbnailPath={item?.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
           </div>
@@ -840,11 +876,19 @@ function PickLineItem({
         ref={controlsRef}
         className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0"
       >
-        {source ? (
-          <div className="text-base font-medium whitespace-nowrap">
-            {source}
-          </div>
-        ) : isShortStock && !isFullyPicked ? (
+        <div className="flex flex-wrap justify-end gap-x-2 text-base font-medium">
+          {isFullyPicked && pickedFrom
+            ? pickedFrom
+            : liveStorageUnits.length > 0
+              ? liveStorageUnits.map((unit, index) => (
+                  <span key={unit.id ?? `unassigned-${index}`}>
+                    {unit.name ?? t`Location not known`}
+                    {liveStorageUnits.length > 1 ? ` (${unit.quantity})` : ""}
+                  </span>
+                ))
+              : (pickedFrom ?? <Trans>Location not known</Trans>)}
+        </div>
+        {isShortStock && !isFullyPicked ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
@@ -963,6 +1007,19 @@ function PickLineItem({
           </Button>
         ) : (
           <HStack spacing={1} className="flex-1 justify-end sm:flex-none">
+            {quantityPicked > 0 && (
+              <Button
+                size="lg"
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                onClick={() => pick(0)}
+                isDisabled={isSubmitting}
+                className="flex-1 sm:flex-none max-md:h-12"
+                aria-label={t`Unpick ${itemName}`}
+              >
+                <Trans>Unpick</Trans>
+              </Button>
+            )}
             <Button
               size="lg"
               variant="secondary"

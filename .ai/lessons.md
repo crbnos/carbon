@@ -6,6 +6,95 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Aging report previews need seeded open documents
+
+**Context:** Sharing a local AR/AP aging UI preview.
+
+**Problem:** The dev server rendered the reports, but the default test company had no sales or purchase invoices, so both reports appeared empty. The dataset seed then failed on `inspectionDocument.drawingNumber`: the local database carried a newer schema from `main` than the branch's own code.
+
+**Rule:** Check the report RPCs for open rows before handing off a preview. Seed an isolated company when the current test company contains unrelated records, and verify both report counts after seeding. When a seed fails on a column, compare the branch's generated types with the local database before editing the dataset: merge `main` (or migrate a clean database) rather than changing the tier.
+
+**Applies to:** Local aging report previews and `packages/database/src/datasets/`.
+
+## Aging summary tables keep document headers inside the expansion
+
+**Context:** Showing AR/AP aging totals by customer or supplier with document details beneath each party.
+
+**Problem:** Putting transaction date, type, and original amount in the shared table header leaves blank cells across every party row and makes the report look unfinished.
+
+**Rule:** On aging report pages, show only party-level fields in the outer table. Render open documents and unapplied payments in an expanded table with its own column headers. Keep the receivables/payables workbench layout unchanged unless that page is explicitly in scope.
+
+**Applies to:** `ARAPWorkbench` on the AR/AP aging report routes.
+
+## Aging CSV exports must follow open documents
+
+**Context:** Exporting AR/AP aging from a summary RPC and a separate open-document RPC.
+
+**Problem:** A counterparty with offsetting open documents can have a zero net balance and disappear from the summary RPC while its documents remain open. Looking up names and building CSV rows only from summary parties silently drops those documents.
+
+**Rule:** Union counterparty IDs from the summary, open-document, and unapplied-payment RPCs. Export one row per open document or payment with the counterparty repeated, including parties whose net summary is zero. Resolve CSV headings from the request locale. Include any RPC migration in the tracked change before relying on regenerated types.
+
+**Applies to:** AR/AP aging CSV routes and report helpers.
+
+## File downloads can link directly to a resource route
+
+**Context:** The AR/AP aging table needs a complete server-generated CSV rather than its currently expanded browser rows.
+
+**Problem:** Adding a separate Export button required turning off the Table's own CSV control with `withCsvExport={false}`, leaving two download mechanisms to coordinate.
+
+**Rule:** For one format, give the Table the download URL and render its Download control as a plain anchor. For multiple formats on a report, use one Export menu whose links each make one browser GET to a server resource route; hide the Table's single-format control there. Keep the client-side Table export for lists without a download URL.
+
+**Applies to:** Table downloads backed by resource routes and AR/AP aging exports.
+
+## Vite plugin wrappers preserve the caller's type
+
+**Context:** Adding an ERP dependency refreshed pnpm peer resolutions, and CI then typechecked the MES Vitest config.
+
+**Problem:** The helper declared its input and output as `Plugin[]` from its own `vite` import. On a clean Linux install, Lingui supplied `Plugin[]` from a different Vite peer instance. Vite's private type members made the two declarations incompatible even though the hooks work the same way.
+
+**Rule:** A wrapper that only changes a plugin hook should infer and return the caller's plugin type. Cast locally only to inspect the hook shape; do not force another Vite instance's `Plugin[]` at the function boundary.
+
+**Applies to:** Vitest and Vite plugin wrappers such as `apps/mes/vitest.config.ts`.
+## Issue-bin displays preserve stock stripes and picked ownership
+
+**Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
+
+**Problem:** Summing project and common ledger rows before testing for positive stock hid a positive project bin behind a negative common balance. Excluding every lineside bin hid stock already picked for the job.
+
+**Rule:** Test positive on-hand per eligible `(item, bin, projectId)` stripe, then combine display quantities. Show lineside stock only when the job has an outstanding picked claim at that bin, net of its consumption.
+
+**Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
+
+## Reverse inventory from the original ledger sources
+
+**Context:** Picking a material in stages and unissuing project-job inventory.
+
+**Problem:** A saved bin can empty between picks, and a project job can consume both project and common stock. Reusing the saved bin or default project stripe for a reversal changes physical or ownership balances.
+
+**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe. Find the rows to reverse by document and item, not by a tag only some writers set: the job-completion backflush writes `Job Consumption` rows with no `documentLineId`. A refusal the person can act on is an `InvalidInputError`; a plain `Error` reads as a 500 and its text is withheld.
+
+**Applies to:** Picking transfers, unpick, job consumption, and unissue.
+
+## Typed quantities do not need Number wrappers
+
+**Context:** Showing issued quantities and current bin stock in MES and ERP.
+
+**Problem:** New code wrapped `number` and nullable `number` values in `Number(...)`, adding noise around ordinary comparisons and arithmetic.
+
+**Rule:** Use a typed quantity directly, with `?? 0` when it is nullable. Convert only at a boundary where the value can actually be a string.
+
+**Applies to:** MES quantity displays, inventory RPC results, and ERP posting code using parsed numeric inputs.
+
+## Review the deployable diff, including new files
+
+**Context:** Adding MES bin loaders backed by new database RPCs.
+
+**Problem:** The service and UI changes were visible in the diff, but the new route and migration were untracked, so deploying the reviewed patch would leave the requests returning 404 and the RPCs missing. A follow-up picker change also called the single-item stock RPC once for every material revision.
+
+**Rule:** Before requesting review, check `git status --short` and `git diff --cached --stat` for every new route and migration that a changed call site needs. For stock shared across item revisions, collect the revision IDs and use one set-based, company-scoped read.
+
+**Applies to:** MES routes and inventory services, ERP inventory RPC callers, and `packages/database/supabase/migrations/`.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
@@ -468,6 +557,20 @@ nothing. After merging main, list main's migrations newer than your branch's old
 them for every function and view your migrations define; for any hit, write a NEW migration
 dated after both that carries both changes (here, since folded into
 `20261006221601_complete-job-to-asset.sql`).
+
+**Context:** Adding aging detail columns to `get_ap_open_by_supplier` kept the
+supplier reference behavior, but changed the line breaks around fields added by
+its previous migration.
+
+**Problem:** `function-redefinition-keeps-changes` compares added SQL lines
+literally, so the harmless layout change failed both CI conformance and tests.
+
+**Rule:** When extending an RPC return shape, retain the exact lines introduced
+by its newest definition where possible, and run the conformance test before
+committing. Put new select expressions on separate lines.
+
+**Applies to:** `packages/database/supabase/migrations/` function redefinitions
+that add return columns.
 
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
@@ -4723,6 +4826,38 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
 
+## Localized CSV exports must translate row values as well as headings
+
+**Context:** The AR/AP aging CSV translated its column headings, while the document
+type column still contained raw `Invoice`, `Credit Memo`, and `Debit Memo` values.
+
+**Problem:** In a non-English locale, the downloaded report mixed translated
+headings with English document types even though the on-screen workbench and
+catalogs already translated those values.
+
+**Rule:** Resolve fixed display values through the same per-request catalog used
+for CSV headings, while retaining raw values for data logic and falling back to
+the raw value for an unknown type. Assert the exported row values with labels
+that differ from the source strings.
+
+**Applies to:** Server-generated localized CSV reports, including AR/AP aging.
+
+## Export permission must cover enrichment reads
+
+**Context:** AR/AP aging CSV downloads admit accounting or invoicing viewers, then
+look up customer or supplier names to label the rows.
+
+**Problem:** Customer RLS requires sales view and supplier RLS requires purchasing
+view. An otherwise authorized export received empty name results and silently
+fell back to party IDs.
+
+**Rule:** Trace every enrichment lookup against the route's permission contract.
+After authorizing the export, use a company-scoped privileged read when the
+related table has a narrower RLS gate than the export itself.
+
+**Applies to:** AR/AP aging CSV routes and other server exports that enrich
+authorized rows from tables protected by different module permissions.
+
 ## The desktop rail can be transparent, and a sortable row can be tall
 
 **Context:** Customize added a tree under each module row in `NavRail`. The rail scrolled as a whole, so the footer with Save and Cancel needed to stay in view.
@@ -4986,6 +5121,53 @@ changed-file check before claiming a typecheck improvement. Report those cases
 separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** ERP typecheck performance work and other cached validation tasks.
+
+## A copy of an engine's rule reads the engine first
+
+**Context:** The sales order delivery date check walks the bill of materials with its own SQL to add up the cumulative lead time.
+
+**Problem:** MRP's explosion (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`, and the `methodCorrectionId IS NULL` filter in `mrp.ts`) leaves out quantity-0 lines and correction materials. The copy did not. A configured item's other configurations, which sit at quantity 0, added their lead time: one test item went from 67 days to 407.
+
+**Rule:** Before you write a calculation that another engine already does (BOM explosion, stock netting, supply and due dates), read that engine and apply the same filters. Name the engine in a comment beside the copy, so the two stay in step.
+
+**Applies to:** Order promising, quote lead time, and any read outside MRP that walks a BOM or nets stock.
+
+## A condition added to one branch is tested on its mirror
+
+**Context:** The delivery date check decides two things from the same free stock: whether a date passes, and the earliest date it suggests.
+
+**Problem:** The rule "goods are usable from the day they arrive" went into the earliest date only. A date in the week of a delivery, but before it, still passed. In the same change, the whole-order check left every line it checked out of the order's demand. An undated line is never checked, so its demand disappeared and a dated line could be promised its stock.
+
+**Rule:** For each condition you add, list every other place that decides the same thing (the verdict and the suggestion; the rows you exclude because "they are handled elsewhere" and the rows that really are handled there). Test the case that falls between them.
+
+**Applies to:** Decision engines that return both a verdict and a suggested value, and any exclusion justified by another step.
+
+## A background job that reads, works, then writes compares before it writes
+
+**Context:** A sales order line saved at the Capacity level is checked by an Inngest job that reads the line, runs the shop schedule simulation, then writes the result.
+
+**Problem:** Reading the line at the start protects against an old event, not against a save that lands during the simulation. The job wrote a result for the old quantity over the newer one, and credited a newer kept date to the user whose save started the job.
+
+**Rule:** Walk the timeline read → slow work → write with a second save in the middle. Make the write conditional on the inputs that were read (`WHERE col IS NOT DISTINCT FROM v.col … RETURNING id`), and raise side effects only for the rows written. Put in the event what the triggering save wrote, so the job can tell when a later save has replaced it.
+
+**Applies to:** Every deferred check or recalculation that writes a result computed from a row a user can still edit.
+
+## Regenerated DB types carry whatever the local database holds
+
+**Context:** A worktree's local database is shared by every branch checked out in it. `pnpm db:migrate` regenerates `packages/database/src/types.ts` from that database, not from the branch's migrations.
+
+**Problem:** The regenerated types picked up another branch's table and columns on two SQL functions that no migration defines. CI's "Database types" job regenerates from migrations alone, so the committed types failed it. Applying the wanted hunks with `git apply --unidiff-zero` then put new function types inside an unrelated type, because zero-context hunks do not anchor in a 100k-line file.
+
+**Rule:** After regenerating, diff `types.ts` against the base branch and keep only the lines your migration explains; restore the rest. Move them by matching text (the table's `Row` / `Insert` / `Update` blocks, the function's alphabetical neighbour), never by zero-context patches. The typecheck and CI's "Database types" job are the proof.
+
+**Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.
+
+## A server export mapping cannot add a column the browser omitted
+
+**Context:** Verifying sales-invoice customer names in the CSV (TCK-60).
+**Problem:** The registry resolved both names, but the table's Customer columns had only `id` and `cell`. `buildColumnMaps` excluded them, so the export request never asked for either name.
+**Rule:** A display column needs `meta.exportValue` to participate in CSV export. Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports.
+**Applies to:** ERP Table display columns, `buildColumnMaps`, and list-registry `exportValues`.
 
 ## A posted document's void and anything that adds lines to its journal take one lock
 

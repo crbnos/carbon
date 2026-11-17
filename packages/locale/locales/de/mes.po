@@ -12,6 +12,18 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr ""
+
+msgid " · No kit job open"
+msgstr ""
+
+msgid " · Nothing ordered"
+msgstr ""
+
+msgid " · On order"
+msgstr ""
+
 msgid ", not running"
 msgstr ", läuft nicht"
 
@@ -63,10 +75,15 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} hat keine Chargennummer. Stellen Sie sie für das Los oder den Fertigungsauftrag in Carbon ein und schließen Sie ab."
 
+#. placeholder {0}: serial.readableId
+#. placeholder {1}: serial.kitReadableId
+msgid "{0} in kit {1}"
+msgstr ""
+
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
-msgstr ""
+msgstr "{0} ist {1}"
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
@@ -147,6 +164,12 @@ msgstr "{columns} entspricht keinem vorhandenen Datensatz."
 msgid "{companyName} logo"
 msgstr "{companyName}-Logo"
 
+msgid "{complete} complete"
+msgstr ""
+
+msgid "{complete} complete · target {target}"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} von {quantity}"
 
@@ -175,10 +198,16 @@ msgid "{hours} h"
 msgstr "{hours} h"
 
 msgid "{issued} of {required}"
+msgstr "{issued} von {required}"
+
+msgid "{label} to scrap"
 msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, überfällig"
+
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} gescannte Einheiten wurden nicht entnommen. Bitte erneut scannen."
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB Grenze"
@@ -192,6 +221,18 @@ msgstr "{name}: {value}"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} von {denominator}"
+
+msgid "{onHand} of {need}"
+msgstr ""
+
+msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{quantity} in this operation"
+msgstr ""
+
+msgid "{quantity} used in this operation"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -285,9 +326,6 @@ msgstr "Aktionsmenü"
 msgid "Active"
 msgstr "Aktiv"
 
-msgid "Actual"
-msgstr "Ist"
-
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -354,9 +392,6 @@ msgstr "Hinzugefügt"
 msgid "Adjustment Type"
 msgstr "Korrekturtyp"
 
-msgid "Age"
-msgstr ""
-
 msgid "All"
 msgstr "Alle"
 
@@ -382,6 +417,9 @@ msgstr "Alles Ausschuss"
 msgid "All steps"
 msgstr "Alle Schritte"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Fehlerhafte Einheiten zuordnen"
 
@@ -389,7 +427,7 @@ msgid "Allocate units"
 msgstr "Einheiten zuordnen"
 
 msgid "Any part"
-msgstr ""
+msgstr "Beliebiges Teil"
 
 msgid "Appearance"
 msgstr "Darstellung"
@@ -426,6 +464,12 @@ msgstr "Möchten Sie diesen Arbeitsgang wirklich als erledigt markieren? Dies be
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Bitten Sie einen Vorgesetzten, die {processName} Qualifikation zu Ihrem Profil hinzuzufügen."
+
+msgid "Ask the water spider"
+msgstr ""
+
+msgid "Asked"
+msgstr "Angefragt"
 
 msgid "Assembly steps"
 msgstr "Montageschritte"
@@ -494,6 +538,12 @@ msgstr "Charge"
 msgid "Batch {0}"
 msgstr "Los {0}"
 
+msgid "Batch {readableId} · {used} used"
+msgstr ""
+
+msgid "Batch {readableId} · {used} used · in kit {kitReadableId}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "Los-Details"
 
@@ -548,6 +598,15 @@ msgstr "Boardansicht"
 
 msgid "Bold"
 msgstr "Fett"
+
+msgid "Bring {quantity}"
+msgstr "{quantity} bringen"
+
+msgid "Bring kit"
+msgstr ""
+
+msgid "Build kit"
+msgstr ""
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Aber machen Sie sich keine Sorgen. Sie können den Passwort-Zurücksetzen-Ablauf verwenden, um einen neuen Magic Link anzufordern."
@@ -638,11 +697,11 @@ msgstr "Avatar auswählen"
 msgid "Choose how Carbon reaches you."
 msgstr "Wählen Sie, wie Carbon Sie erreicht."
 
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr ""
-
 msgid "Choose the operation to open for this unit"
+msgstr "Wählen Sie den Arbeitsgang, der für diese Einheit geöffnet werden soll"
+
+#. placeholder {0}: unit.readableId
+msgid "Choose where {0} goes"
 msgstr ""
 
 msgid "Clear"
@@ -813,10 +872,16 @@ msgstr "Korrektur: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten der ungeplanten Instandhaltung der letzten {0} Tage"
 
-msgid "Could not load the line feed"
+msgid "Could not issue this unit"
 msgstr ""
 
+msgid "Could not load the line feed"
+msgstr "Die Linienversorgung konnte nicht geladen werden"
+
 msgid "Could not look up this label. Try again."
+msgstr "Dieses Etikett konnte nicht abgerufen werden. Bitte versuchen Sie es erneut."
+
+msgid "Count what is ruined. Replacements come from the shelf."
 msgstr ""
 
 msgid "Country code"
@@ -874,9 +939,6 @@ msgstr "{fieldLabel} verringern"
 msgid "Default"
 msgstr "Standard"
 
-msgid "Default Storage Unit"
-msgstr "Standardlagereinheit"
-
 msgid "Delete"
 msgstr "Löschen"
 
@@ -894,6 +956,9 @@ msgstr "Schritt löschen"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Zeitkarte löschen (<0/>)"
+
+msgid "Deliver"
+msgstr ""
 
 msgid "Density"
 msgstr "Dichte"
@@ -1042,6 +1107,9 @@ msgstr "Emoji: {emoji}"
 msgid "Employee"
 msgstr "Mitarbeiter"
 
+msgid "Empty"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Leere Arbeitsplätze"
 
@@ -1063,9 +1131,6 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um fortz
 
 msgid "Error"
 msgstr "Fehler"
-
-msgid "Estimated"
-msgstr "Soll"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Jeder Fertigungsauftrag im Los folgt diesen Schritten. Zeichnen Sie einen Schritt für alle auf einmal auf."
@@ -1139,7 +1204,7 @@ msgid "Failed to register passkey"
 msgstr "Fehler beim Registrieren des Passkey"
 
 msgid "Failed to resolve request"
-msgstr ""
+msgstr "Anfrage konnte nicht verarbeitet werden"
 
 msgid "Failed to save measurement"
 msgstr "Messung konnte nicht gespeichert werden"
@@ -1171,6 +1236,9 @@ msgstr "Fehler beim Hochladen der Signatur"
 msgid "Failure Mode"
 msgstr "Fehlermodus"
 
+msgid "Fed directly"
+msgstr ""
+
 msgid "File"
 msgstr "Datei"
 
@@ -1189,6 +1257,9 @@ msgstr "Filter"
 msgid "Filter by location"
 msgstr "Nach Standort filtern"
 
+msgid "Filter by work center"
+msgstr ""
+
 msgid "Filter steps"
 msgstr "Schritte filtern"
 
@@ -1197,6 +1268,9 @@ msgstr "Befunde"
 
 msgid "Finish"
 msgstr "Fertig"
+
+msgid "Finish kit"
+msgstr ""
 
 msgid "Finish setting up your account"
 msgstr "Beenden Sie die Einrichtung Ihres Kontos"
@@ -1254,6 +1328,9 @@ msgstr "Zu Schritt {0} gehen: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "Zu Schritt {0} gehen: {1} (erledigt)"
 
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
+
 msgid "Gradient"
 msgstr "Verlauf"
 
@@ -1293,6 +1370,9 @@ msgstr "Ich bestätige diese Erklärung"
 msgid "I understand and want to complete without issuing"
 msgstr "Ich verstehe und möchte ohne Ausgabe abschließen"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Ich arbeite noch"
 
@@ -1324,6 +1404,9 @@ msgstr "In einem offenen Menü"
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr "Im Bestand: {available}. Noch benötigt: {needed}."
+
 msgid "In warranty"
 msgstr "Unter Garantie"
 
@@ -1335,6 +1418,9 @@ msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche T
 
 msgid "Inactive"
 msgstr "Inaktiv"
+
+msgid "Incomplete"
+msgstr ""
 
 msgid "Increase {fieldLabel}"
 msgstr "{fieldLabel} erhöhen"
@@ -1356,6 +1442,9 @@ msgstr "Unzureichende Menge"
 
 msgid "Inventory"
 msgstr "Bestände"
+
+msgid "Inventory action"
+msgstr "Bestandsaktion"
 
 msgid "Inventory adjustment completed"
 msgstr "Bestandskorrektur abgeschlossen"
@@ -1387,10 +1476,6 @@ msgstr "Weiteres Material entnehmen"
 msgid "Issue Material"
 msgstr "Material ausgeben"
 
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr ""
-
 msgid "Issue Type"
 msgstr "Problemtyp"
 
@@ -1402,6 +1487,18 @@ msgstr "Freigegeben {issuedQuantity} von {lotLabel}"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Freigegeben {issuedQuantity} von {lotLabel} — {remainingQuantity} verbleibt"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "{quantity} {name} entnommen ({issued} von {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "{quantity} {name} aus {batches} entnommen ({issued} von {required})"
+
+msgid "Issuing"
+msgstr "Entnahme läuft"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Entnahme läuft. {waiting} weitere gescannt."
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Es wird noch von einem „{table}\"-Datensatz verwendet; entfernen Sie ihn zuerst."
@@ -1447,6 +1544,21 @@ msgstr "Tastaturkürzel"
 
 msgid "Kit"
 msgstr "Set"
+
+msgid "Kit rack"
+msgstr ""
+
+msgid "kits to build"
+msgstr ""
+
+msgid "kits to deliver"
+msgstr ""
+
+msgid "kits to finish"
+msgstr ""
+
+msgid "Kitter"
+msgstr ""
 
 msgid "Labor"
 msgstr "Personal"
@@ -1509,7 +1621,7 @@ msgid "Line"
 msgstr "Position"
 
 msgid "Line feed"
-msgstr ""
+msgstr "Linienversorgung"
 
 msgid "lines"
 msgstr "Zeilen"
@@ -1529,6 +1641,9 @@ msgstr "Beladen: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
 
+msgid "Loading parts..."
+msgstr ""
+
 msgid "Loading. There's no need to scan again."
 msgstr "Wird geladen. Sie müssen nicht erneut scannen."
 
@@ -1540,6 +1655,9 @@ msgstr "Lokal"
 
 msgid "Location"
 msgstr "Standort"
+
+msgid "Location not known"
+msgstr "Lagerplatz unbekannt"
 
 msgid "Locations"
 msgstr "Standorte"
@@ -1571,6 +1689,9 @@ msgstr "Ausschuss erfassen für {0}"
 msgid "Login"
 msgstr "Anmelden"
 
+msgid "Loose parts"
+msgstr ""
+
 msgid "Lot"
 msgstr "Charge"
 
@@ -1579,6 +1700,9 @@ msgstr "Chargennummern fehlen"
 
 msgid "Lot tracked"
 msgstr "Chargenverfolgt"
+
+msgid "Low"
+msgstr "Niedrig"
 
 msgid "Machine"
 msgstr "Maschine"
@@ -1639,7 +1763,7 @@ msgid "matches"
 msgstr "entspricht"
 
 msgid "Material requested"
-msgstr ""
+msgstr "Material angefordert"
 
 msgid "Materials"
 msgstr "Materialien"
@@ -1655,6 +1779,9 @@ msgstr "Nachricht"
 
 msgid "Metric"
 msgstr "Metrisch"
+
+msgid "Missing"
+msgstr ""
 
 msgid "Mode"
 msgstr "Modus"
@@ -1684,6 +1811,12 @@ msgstr "Weitere Optionen für {0}"
 msgid "More than one unit has this serial. Choose one."
 msgstr "Mehr als eine Einheit hat diese Seriennummer. Wählen Sie eine aus."
 
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Spalte verschieben: {0}"
@@ -1710,7 +1843,7 @@ msgid "Navigation"
 msgstr "Navigation"
 
 msgid "Need material"
-msgstr ""
+msgstr "Material benötigt"
 
 msgid "New"
 msgstr "Neu"
@@ -1732,6 +1865,9 @@ msgstr "Weiter"
 
 msgid "Next step"
 msgstr "Nächster Schritt"
+
+msgid "Next up at your station"
+msgstr ""
 
 msgid "Next week"
 msgstr "Nächste Woche"
@@ -1782,6 +1918,9 @@ msgstr "Kein Land gefunden."
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Keine Kundenanlage mit der Seriennummer {0}. Wählen Sie den Kunden."
 
+msgid "No default bin"
+msgstr ""
+
 msgid "No dispatches assigned to you"
 msgstr "Keine Instandhaltungsaufträge an Sie zugewiesen"
 
@@ -1806,8 +1945,14 @@ msgstr "Keine Prüfungen für Sie zugeordnet"
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
 
+msgid "No kit"
+msgstr ""
+
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Es ist noch kein Urlaub eingerichtet. Bitten Sie Ihren Manager, einen in der ERP einzurichten."
+
+msgid "No lineside storage"
+msgstr "Kein Linienlager vorhanden"
 
 msgid "No maintenance scheduled for today"
 msgstr "Keine Instandhaltung für heute geplant"
@@ -1861,7 +2006,7 @@ msgid "No photos yet"
 msgstr "Noch keine Fotos"
 
 msgid "No picking lists"
-msgstr ""
+msgstr "Keine Kommissionierlisten"
 
 msgid "No printer configured"
 msgstr "Kein Drucker konfiguriert"
@@ -1912,7 +2057,10 @@ msgid "No spare parts added yet"
 msgstr "Noch keine Ersatzteile hinzugefügt"
 
 msgid "No station"
-msgstr ""
+msgstr "Keine Station"
+
+msgid "No stations at this location"
+msgstr "An diesem Standort gibt es keine Stationen"
 
 msgid "No stock"
 msgstr "Kein Bestand"
@@ -1944,6 +2092,9 @@ msgstr "Nicht disponierbar"
 msgid "None"
 msgstr "Keine"
 
+msgid "None on the shelf"
+msgstr ""
+
 msgid "Normal"
 msgstr "Normal"
 
@@ -1960,7 +2111,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "Kein verwendbarer Bestand. MRP und Planung zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus."
 
 msgid "Note"
-msgstr ""
+msgstr "Notiz"
 
 msgid "Notes"
 msgstr "Notizen"
@@ -1972,6 +2123,9 @@ msgstr "Noch nichts ist fehlgeschlagen, daher begründen Sie, warum die Einheite
 msgid "Nothing matches your search."
 msgstr "Nichts stimmt Ihrer Suche überein."
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "Nichts auf dieser Seite verwendet diesen Barcode"
 
@@ -1980,9 +2134,6 @@ msgstr "Nichts läuft"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Nichts an diesem Arbeitsplatz geplant"
-
-msgid "Nothing to feed"
-msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Nichts zum Ausschuss"
@@ -2003,14 +2154,26 @@ msgstr "von {0}"
 msgid "Offline"
 msgstr "Offline"
 
+msgid "OK"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "Älteste zuerst"
 
 msgid "On Hold"
 msgstr "Angehalten"
 
+msgid "On its way"
+msgstr "Unterwegs"
+
 msgid "one combined lot · planned"
 msgstr "eine kombinierte Charge · geplant"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "eine pro Fertigungsauftrag · geplant"
@@ -2057,6 +2220,9 @@ msgstr "Offene Fertigungsaufträge"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Untergruppe {0} öffnen: {1}"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operation due"
 msgstr "Arbeitsgang fällig"
 
@@ -2092,8 +2258,18 @@ msgstr "oder"
 msgid "Or enter this secret manually:"
 msgstr "Oder geben Sie dieses Geheimnis manuell ein:"
 
+#. placeholder {0}: unit.readableId
+msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Out"
+msgstr "Leer"
+
 msgid "Out of calibration"
 msgstr "Außerhalb der Kalibrierung"
+
+msgid "Out of stock"
+msgstr "Kein Bestand"
 
 msgid "Output lot"
 msgstr "Ausgabe-Charge"
@@ -2118,6 +2294,10 @@ msgstr "Teilweise Verwendungsentscheid"
 
 msgid "Parts"
 msgstr "Teile"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Bestanden"
@@ -2295,7 +2475,7 @@ msgid "Print batch list"
 msgstr "Los-Liste drucken"
 
 msgid "Print travelers"
-msgstr ""
+msgstr "Laufkarten drucken"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Wird auf den Bestellungen gedruckt, die Sie genehmigen."
@@ -2375,6 +2555,15 @@ msgstr "Angebote"
 
 msgid "Raise quality issue"
 msgstr "Qualitätsvorfall anlegen"
+
+msgid "raw bins short"
+msgstr ""
+
+msgid "Raw shelf"
+msgstr ""
+
+msgid "Raw short: {shortParts}"
+msgstr ""
 
 msgid "Re"
 msgstr "Rück."
@@ -2500,11 +2689,11 @@ msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
 msgid "Repairable"
 msgstr "Reparierbar"
 
-msgid "Request"
+msgid "Replacement"
 msgstr ""
 
 msgid "Request material"
-msgstr ""
+msgstr "Material anfordern"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Einen 6-stelligen Code aus einer Authentifizierungs-App bei der Anmeldung erforderlich."
@@ -2522,7 +2711,7 @@ msgid "Resolution"
 msgstr "Lösung"
 
 msgid "Resolve"
-msgstr ""
+msgstr "Klären"
 
 msgid "Result"
 msgstr "Ergebnis"
@@ -2553,6 +2742,9 @@ msgstr "Rich-Text"
 
 msgid "Running"
 msgstr "Läuft"
+
+msgid "Running low"
+msgstr "Wird knapp"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2600,7 +2792,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scannen Sie eine Verfolgte Einheit, um die erste Probenspalte hinzuzufügen."
 
 msgid "Scan in these parts first"
-msgstr ""
+msgstr "Scannen Sie zuerst diese Teile ein"
 
 msgid "Scan or enter a serial"
 msgstr "Scannen oder Seriennummer eingeben"
@@ -2626,8 +2818,14 @@ msgstr "Scannen oder wählen Sie die Einheit aus und scannen Sie dann die Kanban
 msgid "Scan received"
 msgstr "Scan empfangen"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scannen Sie diesen QR-Code mit Ihrer Authentifizierungs-App (z. B. Google Authenticator oder 1Password), und geben Sie dann den 6-stelligen Code ein, den sie anzeigt."
+
+msgid "Scanned"
+msgstr ""
 
 msgid "Schedule"
 msgstr "Zeitplan"
@@ -2641,8 +2839,20 @@ msgstr "Ausschuss"
 msgid "Scrap {readableId}"
 msgstr "Ausschuss {readableId}"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "Ausschusspaterial"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Ausschussmenge"
@@ -2655,6 +2865,12 @@ msgstr "Einheit als Ausschuss buchen"
 
 msgid "Scrapped"
 msgstr "Ausschuss"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Seriennummer {trackedEntityReadableId} wird verschrottet"
@@ -2704,6 +2920,9 @@ msgstr "Werker suchen..."
 msgid "Search projects and tasks"
 msgstr "Projekte und Aufgaben durchsuchen"
 
+msgid "Search reasons"
+msgstr ""
+
 msgid "Search recent operations"
 msgstr "Letzte Arbeitsgänge suchen"
 
@@ -2724,6 +2943,9 @@ msgstr "Fertigstellungsmenge auswählen"
 
 msgid "Select a customer"
 msgstr "Kunde auswählen"
+
+msgid "Select a location to see its stations"
+msgstr "Wählen Sie einen Standort, um dessen Stationen anzuzeigen"
 
 msgid "Select a rework quantity"
 msgstr "Nacharbeitsmenge auswählen"
@@ -2852,8 +3074,8 @@ msgstr "Fehlbestand"
 msgid "Short pick {itemName}"
 msgstr "Kurzkommissionierung {itemName}"
 
-msgid "Shortage"
-msgstr ""
+msgid "Short: {available} of {needed}"
+msgstr "Fehlbestand: {available} von {needed}"
 
 msgid "Show description"
 msgstr "Beschreibung anzeigen"
@@ -2936,6 +3158,12 @@ msgstr "Weiche Frist"
 msgid "Solid"
 msgstr "Einfarbig"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Quelle"
 
@@ -2948,6 +3176,7 @@ msgstr "Verwendete Ersatzteile"
 msgid "Start"
 msgstr "Start"
 
+#. placeholder {0}: selected.parentReadableId
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "{0} starten"
@@ -2983,11 +3212,17 @@ msgstr "Arbeitsgang starten oder unterbrechen"
 msgid "Start work"
 msgstr "Arbeit beginnen"
 
+msgid "Station"
+msgstr ""
+
 msgid "Station User"
 msgstr "Stationsbenutzer"
 
 msgid "Station: {stationName}"
 msgstr "Station: {stationName}"
+
+msgid "stations out"
+msgstr ""
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3011,11 +3246,8 @@ msgstr "Schritte"
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
 
-msgid "Stock transfer"
-msgstr ""
-
-msgid "Storage unit"
-msgstr ""
+msgid "Stock at:"
+msgstr "Bestand in:"
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"
@@ -3043,6 +3275,9 @@ msgstr "Untergruppe {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Untergruppe {0} · {1} — isoliert angezeigt"
+
+msgid "Subassembly"
+msgstr "Baugruppe"
 
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
@@ -3127,6 +3362,9 @@ msgstr "Die Fertigungsaufträge und Teile, die diesen Durchlauf ausmachen."
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "Die Fertigungsaufträge stellen verschiedene Artikel her – halten Sie die Teile jedes Fertigungsauftrags getrennt."
 
+msgid "the kit"
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Das Los wird als Bestanden markiert und {remaining} verbleibende Einheit(en) werden bei diesem Arbeitsgang abgeschlossen."
 
@@ -3136,9 +3374,6 @@ msgstr "Das Los wird weiterhin dispositioniert, aber ein NCR kann nicht erstellt
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Der Timer und die Fertigstellung werden von allen {0} Fertigungsaufträgen geteilt. Die Schritte, Materialien und Dateien hier gehören diesem Fertigungsauftrag."
-
-msgid "The unit changed. Scan again."
-msgstr ""
 
 msgid "The values break a rule on this record."
 msgstr "Die Werte verstoßen gegen eine Regel für diesen Datensatz."
@@ -3173,9 +3408,6 @@ msgstr "Es gibt serien- oder chargenverfolgte Materialien in der Stückliste, di
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Diese Artikel haben noch Material zum Picken. Ein Abschluss jetzt markiert die Liste als Teilweise."
 
-msgid "This barcode matches more than one unit"
-msgstr ""
-
 msgid "This batch has no work instructions."
 msgstr "Dieses Los hat keine Arbeitsanweisung."
 
@@ -3191,11 +3423,14 @@ msgstr "Dieser Prüfplan hat keine Arbeitsanweisungen."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
 
+msgid "This job does not use that part"
+msgstr "Dieser Fertigungsauftrag verwendet dieses Teil nicht"
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."
 
 msgid "This label does not belong to a unit in this company"
-msgstr ""
+msgstr "Dieses Etikett gehört zu keiner Einheit in diesem Unternehmen"
 
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
@@ -3330,14 +3565,11 @@ msgstr "Sendungsnummer"
 msgid "Training"
 msgstr "Schulung"
 
-msgid "Transfer"
-msgstr ""
-
 msgid "Traveler"
-msgstr ""
+msgstr "Laufkarte"
 
 msgid "Try again"
-msgstr ""
+msgstr "Erneut versuchen"
 
 msgid "Two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung"
@@ -3369,6 +3601,9 @@ msgstr "Unterstrichen"
 msgid "Undo"
 msgstr "Rückgängig machen"
 
+msgid "Unissue"
+msgstr "Ausgabe rückgängig machen"
+
 msgid "Unissued serial/batch materials"
 msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"
 
@@ -3380,6 +3615,9 @@ msgstr "Unbekannt"
 
 msgid "Unknown gauge"
 msgstr "Unbekanntes Prüfmittel"
+
+msgid "Unknown part"
+msgstr "Unbekanntes Teil"
 
 msgid "Unlock"
 msgstr "Entsperren"
@@ -3490,16 +3728,22 @@ msgid "View or open"
 msgstr "Anzeigen oder Öffnen"
 
 msgid "View Traceability"
-msgstr ""
+msgstr "Rückverfolgbarkeit anzeigen"
 
 msgid "Warranty"
 msgstr "Garantie"
 
+msgid "Water spider"
+msgstr ""
+
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Wir haben Ihnen einen Anmeldungslink und einen 6-stelligen Code per E-Mail gesendet. Folgen Sie dem Link, oder geben Sie den Code hier ein."
 
+msgid "Wet"
+msgstr "Nass"
+
 msgid "What do you need?"
-msgstr ""
+msgstr "Was benötigen Sie?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} ist was?"
@@ -3509,6 +3753,9 @@ msgstr "Wann"
 
 msgid "Whole batch"
 msgstr "Ganzes Los"
+
+msgid "Winding"
+msgstr "Schlangenförmig"
 
 msgid "WIP"
 msgstr "WIP"
