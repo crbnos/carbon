@@ -20447,14 +20447,9 @@ export async function postShipment(
 
                 acc[trackedEntity.id] = {
                   status: "Consumed",
-                  // Keep the ?? fallback exactly as it was and just round it:
-                  // a null shippedQuantity must still fall through to the
-                  // entity's own quantity, which `!== undefined` would not do.
-                  quantity: round(
-                    Number(
-                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
-                    )
-                  )
+                  // The whole lot leaves, so it keeps its own quantity: a line
+                  // ships several serials or lots, never one at the line's total.
+                  quantity: entityQuantity
                 };
 
                 return acc;
@@ -21010,14 +21005,9 @@ export async function postShipment(
                 }
 
                 acc[trackedEntity.id] = {
-                  // Keep the ?? fallback exactly as it was and just round it:
-                  // a null shippedQuantity must still fall through to the
-                  // entity's own quantity, which `!== undefined` would not do.
-                  quantity: round(
-                    Number(
-                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
-                    )
-                  )
+                  // The whole lot leaves, so it keeps its own quantity: a line
+                  // ships several serials or lots, never one at the line's total.
+                  quantity: entityQuantity
                 };
 
                 return acc;
@@ -32111,7 +32101,8 @@ export async function issueMaterial(
         quantity,
         materialId,
         jobOperationStepId,
-        adjustmentType
+        adjustmentType,
+        refuseOverIssue
       } = validatedPayload;
 
       // Written into jobMaterialStep for an unplanned part (no companyId there).
@@ -32407,6 +32398,29 @@ export async function issueMaterial(
             throw new InvalidInputError(
               "Cannot unissue more than the material's issued quantity"
             );
+          }
+          // An item scan counts pieces against the requirement it read
+          // before this lock. Another device, or the completion backflush,
+          // may have filled the material since: refuse rather than over-issue.
+          if (refuseOverIssue && adjustmentType === "Negative Adjmt.") {
+            const stillNeeded = round(
+              (material.estimatedQuantity ?? material.quantity ?? 0) -
+                previouslyIssued
+            );
+            const name =
+              item?.readableIdWithRevision ??
+              material.description ??
+              "material";
+            if (stillNeeded <= EPSILON) {
+              throw new InvalidInputError(
+                `This job already has all its ${name}`
+              );
+            }
+            if (round(quantity) - stillNeeded > EPSILON) {
+              throw new InvalidInputError(
+                `This job needs only ${stillNeeded} more ${name}`
+              );
+            }
           }
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."

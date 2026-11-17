@@ -467,6 +467,8 @@ export const inspectionSampleValidator = z.object({
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId: zfd.text(z.string().optional()),
+  // Grid position of a new anonymous sample, so it reloads in the same place.
+  position: zfd.numeric(z.number().int().min(0).optional()),
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: z.enum(["Pending", "Passed", "Failed"], {
@@ -518,6 +520,8 @@ export const inspectionMeasurementValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
   // Absent = create an anonymous sample (non-serial grid columns).
   sampleId: zfd.text(z.string().optional()),
+  // Grid position of the anonymous sample this save creates.
+  position: zfd.numeric(z.number().int().min(0).optional()),
   inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
   // Numeric string for Measurement features; empty clears the reading.
   value: zfd.text(z.string().optional()),

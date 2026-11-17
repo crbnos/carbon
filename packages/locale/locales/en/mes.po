@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr " · {elsewhere} in {otherBin}"
+
+msgid " · {elsewhere} in no bin"
+msgstr " · {elsewhere} in no bin"
+
 msgid " · Kit job open"
 msgstr " · Kit job open"
 
@@ -200,11 +206,17 @@ msgstr "{hours} h"
 msgid "{issued} of {required}"
 msgstr "{issued} of {required}"
 
+msgid "{kitsReady} ready"
+msgstr "{kitsReady} ready"
+
 msgid "{label} to scrap"
 msgstr "{label} to scrap"
 
 msgid "{label}, overdue"
 msgstr "{label}, overdue"
+
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} scanned pieces were not issued. Scan them again."
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
@@ -215,6 +227,9 @@ msgstr "{name}, {0}, {percent}% complete"
 
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
+
+msgid "{namedParts} and {moreParts} more"
+msgstr "{namedParts} and {moreParts} more"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} of {denominator}"
@@ -234,6 +249,9 @@ msgstr "{quantity} used in this operation"
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} jobs"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr "{unbinned} in stock, in no bin"
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel} timer started"
@@ -595,6 +613,13 @@ msgstr "Board view"
 
 msgid "Bold"
 msgstr "Bold"
+
+msgid "Bring"
+msgstr "Bring"
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr "Bring {0}"
 
 msgid "Bring {quantity}"
 msgstr "Bring {quantity}"
@@ -1325,6 +1350,12 @@ msgstr "Go to step {0}: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "Go to step {0}: {1} (done)"
 
+msgid "goes to {feeds}"
+msgstr "goes to {feeds}"
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr "Grab from {source} · {free} of {onHand} left for this station"
+
 msgid "Grab from {source} · {onHand} there"
 msgstr "Grab from {source} · {onHand} there"
 
@@ -1485,6 +1516,18 @@ msgstr "Issued {issuedQuantity} of {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "Issued {quantity} {name} ({issued} of {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "Issued {quantity} {name} from {batches} ({issued} of {required})"
+
+msgid "Issuing"
+msgstr "Issuing"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Issuing. {waiting} more scanned."
+
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "It is still used by a \"{table}\" record; remove that first."
 
@@ -1544,6 +1587,9 @@ msgstr "kits to finish"
 
 msgid "Kitter"
 msgstr "Kitter"
+
+msgid "Kitting and preparation"
+msgstr "Kitting and preparation"
 
 msgid "Labor"
 msgstr "Labor"
@@ -1689,6 +1735,9 @@ msgstr "Lot tracked"
 msgid "Low"
 msgstr "Low"
 
+msgid "Low · {kitsReady} ready"
+msgstr "Low · {kitsReady} ready"
+
 msgid "Machine"
 msgstr "Machine"
 
@@ -1697,6 +1746,9 @@ msgstr "Machine down for maintenance now?"
 
 msgid "Machine, timer running"
 msgstr "Machine, timer running"
+
+msgid "Made here"
+msgstr "Made here"
 
 msgid "Main"
 msgstr "Main"
@@ -1827,6 +1879,9 @@ msgstr "Name"
 msgid "Navigation"
 msgstr "Navigation"
 
+msgid "Need {quantity}"
+msgstr "Need {quantity}"
+
 msgid "Need material"
 msgstr "Need material"
 
@@ -1936,9 +1991,6 @@ msgstr "No kit"
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "No leave is set up yet. Ask your manager to set one up in the ERP."
 
-msgid "No lineside storage"
-msgstr "No lineside storage"
-
 msgid "No maintenance scheduled for today"
 msgstr "No maintenance scheduled for today"
 
@@ -1971,6 +2023,9 @@ msgstr "No open service jobs at this location"
 
 msgid "No open units to allocate"
 msgstr "No open units to allocate"
+
+msgid "No open work"
+msgstr "No open work"
 
 msgid "No operators"
 msgstr "No operators"
@@ -2047,6 +2102,9 @@ msgstr "No station"
 msgid "No stations at this location"
 msgstr "No stations at this location"
 
+msgid "No stations match"
+msgstr "No stations match"
+
 msgid "No stock"
 msgstr "No stock"
 
@@ -2076,6 +2134,12 @@ msgstr "Non-nettable"
 
 msgid "None"
 msgstr "None"
+
+msgid "None in stock · Nothing ordered"
+msgstr "None in stock · Nothing ordered"
+
+msgid "None in stock · On order"
+msgstr "None in stock · On order"
 
 msgid "None on the shelf"
 msgstr "None on the shelf"
@@ -2246,6 +2310,9 @@ msgstr "Or enter this secret manually:"
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
 msgstr "Other operations that need {0}"
+
+msgid "Other stations"
+msgstr "Other stations"
 
 msgid "Out"
 msgstr "Out"
@@ -2529,6 +2596,9 @@ msgstr "Quantity {0}"
 msgid "Quantity must be greater than 0"
 msgstr "Quantity must be greater than 0"
 
+msgid "Quantity to move"
+msgstr "Quantity to move"
+
 msgid "Quantity:"
 msgstr "Quantity:"
 
@@ -2552,6 +2622,9 @@ msgstr "Raw short: {shortParts}"
 
 msgid "Re"
 msgstr "Re"
+
+msgid "Ready"
+msgstr "Ready"
 
 msgid "Reason"
 msgstr "Reason"
@@ -2727,9 +2800,6 @@ msgstr "Rich text"
 
 msgid "Running"
 msgstr "Running"
-
-msgid "Running low"
-msgstr "Running low"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2911,6 +2981,9 @@ msgstr "Search reasons"
 msgid "Search recent operations"
 msgstr "Search recent operations"
 
+msgid "Search stations"
+msgstr "Search stations"
+
 msgid "Search..."
 msgstr "Search..."
 
@@ -3056,6 +3129,9 @@ msgstr "short"
 msgid "Short"
 msgstr "Short"
 
+msgid "Short {short}"
+msgstr "Short {short}"
+
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
@@ -3143,12 +3219,6 @@ msgstr "Soft deadline"
 msgid "Solid"
 msgstr "Solid"
 
-msgid "Sort: line order"
-msgstr "Sort: line order"
-
-msgid "Sort: worst first"
-msgstr "Sort: worst first"
-
 msgid "Source"
 msgstr "Source"
 
@@ -3206,8 +3276,8 @@ msgstr "Station User"
 msgid "Station: {stationName}"
 msgstr "Station: {stationName}"
 
-msgid "stations out"
-msgstr "stations out"
+msgid "stations short"
+msgstr "stations short"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3481,6 +3551,9 @@ msgstr "Time type"
 msgid "Time Worked"
 msgstr "Time Worked"
 
+msgid "to bring lineside"
+msgstr "to bring lineside"
+
 msgid "To pick"
 msgstr "To pick"
 
@@ -3715,6 +3788,9 @@ msgstr "View or open"
 msgid "View Traceability"
 msgstr "View Traceability"
 
+msgid "Waiting"
+msgstr "Waiting"
+
 msgid "Warranty"
 msgstr "Warranty"
 
@@ -3723,9 +3799,6 @@ msgstr "Water spider"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
-
-msgid "Wet"
-msgstr "Wet"
 
 msgid "What do you need?"
 msgstr "What do you need?"

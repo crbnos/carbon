@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,11 +206,17 @@ msgstr "{hours} h"
 msgid "{issued} of {required}"
 msgstr "{issued} di {required}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, in ritardo"
+
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} pezzi scansionati non sono stati scaricati. Scansionali di nuovo."
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
@@ -215,6 +227,9 @@ msgstr "{name}, {0}, {percent}% completato"
 
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
+
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} di {denominator}"
@@ -234,6 +249,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "Registrato/{0} ordini di produzione"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "Timer {workTypeLabel} avviato"
@@ -595,6 +613,13 @@ msgstr "Vista bacheca"
 
 msgid "Bold"
 msgstr "Grassetto"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "Porta {quantity}"
@@ -1325,6 +1350,12 @@ msgstr "Vai al passo {0}: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "Vai al passo {0}: {1} (fatto)"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1485,6 +1516,18 @@ msgstr "Emesso {issuedQuantity} di {lotLabel}"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Emesso {issuedQuantity} di {lotLabel} — restano {remainingQuantity}"
 
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "Scaricati {quantity} {name} ({issued} di {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "Scaricati {quantity} {name} da {batches} ({issued} di {required})"
+
+msgid "Issuing"
+msgstr "Scaricamento in corso"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Scaricamento in corso. Altri {waiting} scansionati."
+
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "È ancora utilizzato da un record \"{table}\"; rimuovi prima quello."
 
@@ -1543,6 +1586,9 @@ msgid "kits to finish"
 msgstr ""
 
 msgid "Kitter"
+msgstr ""
+
+msgid "Kitting and preparation"
 msgstr ""
 
 msgid "Labor"
@@ -1689,6 +1735,9 @@ msgstr "Lotto tracciato"
 msgid "Low"
 msgstr "Basso"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "Macchina"
 
@@ -1697,6 +1746,9 @@ msgstr "Macchina in manutenzione adesso?"
 
 msgid "Machine, timer running"
 msgstr "Macchina, timer in corso"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "Principale"
@@ -1827,6 +1879,9 @@ msgstr "Nome"
 msgid "Navigation"
 msgstr "Navigazione"
 
+msgid "Need {quantity}"
+msgstr ""
+
 msgid "Need material"
 msgstr "Serve materiale"
 
@@ -1936,9 +1991,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Nessun permesso è ancora stato configurato. Chiedi al tuo responsabile di configurarne uno nell'ERP."
 
-msgid "No lineside storage"
-msgstr "Nessun deposito a bordo linea"
-
 msgid "No maintenance scheduled for today"
 msgstr "Nessuna manutenzione programmata per oggi"
 
@@ -1971,6 +2023,9 @@ msgstr "Nessun ordine di servizio aperto in questa ubicazione"
 
 msgid "No open units to allocate"
 msgstr "Nessuna unità aperta da allocare"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "Nessun operatore"
@@ -2047,6 +2102,9 @@ msgstr "Nessuna stazione"
 msgid "No stations at this location"
 msgstr "Nessuna stazione in questa ubicazione"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "Nessun stock"
 
@@ -2076,6 +2134,12 @@ msgstr "Non nettabile"
 
 msgid "None"
 msgstr "Nessuno"
+
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
 
 msgid "None on the shelf"
 msgstr ""
@@ -2245,6 +2309,9 @@ msgstr "O inserisci questo segreto manualmente:"
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2529,6 +2596,9 @@ msgstr "Quantità {0}"
 msgid "Quantity must be greater than 0"
 msgstr "La quantità deve essere maggiore di 0"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "Quantità:"
 
@@ -2552,6 +2622,9 @@ msgstr ""
 
 msgid "Re"
 msgstr "Rf"
+
+msgid "Ready"
+msgstr ""
 
 msgid "Reason"
 msgstr "Motivo"
@@ -2727,9 +2800,6 @@ msgstr "Testo formattato"
 
 msgid "Running"
 msgstr "In esecuzione"
-
-msgid "Running low"
-msgstr "In esaurimento"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2911,6 +2981,9 @@ msgstr ""
 msgid "Search recent operations"
 msgstr "Cerca operazioni recenti"
 
+msgid "Search stations"
+msgstr ""
+
 msgid "Search..."
 msgstr "Cerca..."
 
@@ -3056,6 +3129,9 @@ msgstr "breve"
 msgid "Short"
 msgstr "Carente"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "Prelievo breve {itemName}"
 
@@ -3143,12 +3219,6 @@ msgstr "Scadenza flessibile"
 msgid "Solid"
 msgstr "Tinta unita"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
-msgstr ""
-
 msgid "Source"
 msgstr "Origine"
 
@@ -3206,7 +3276,7 @@ msgstr "Utente Stazione"
 msgid "Station: {stationName}"
 msgstr "Stazione: {stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3481,6 +3551,9 @@ msgstr "Tipo di tempo"
 msgid "Time Worked"
 msgstr "Tempo lavorato"
 
+msgid "to bring lineside"
+msgstr ""
+
 msgid "To pick"
 msgstr "Da prelevare"
 
@@ -3715,6 +3788,9 @@ msgstr "Visualizza o apri"
 msgid "View Traceability"
 msgstr "Visualizza tracciabilità"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "Garanzia"
 
@@ -3723,9 +3799,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Ti abbiamo inviato un link di accesso e un codice di 6 cifre. Segui il link o inserisci il codice qui."
-
-msgid "Wet"
-msgstr "Umido"
 
 msgid "What do you need?"
 msgstr "Di cosa hai bisogno?"

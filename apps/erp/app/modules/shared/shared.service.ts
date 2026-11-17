@@ -218,6 +218,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import { importJournalEntries } from "./journal-entry-import";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
@@ -5750,7 +5751,8 @@ export const importCsvInput = z.object({
     "inventoryQuantity",
     "batchQuantity",
     "serialQuantity",
-    "payrollPeriodTotal"
+    "payrollPeriodTotal",
+    "journalEntry"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -9104,6 +9106,10 @@ export async function importCsvTable(
       });
       break;
     }
+    case "journalEntry": {
+      await importJournalEntries(ctx, { mappedRecords, summary });
+      break;
+    }
     default: {
       throw new Error(`Invalid table: ${table}`);
     }
@@ -12381,8 +12387,16 @@ export async function createDocument(
       if (purchaseOrderLines.error)
         throw new Error(purchaseOrderLines.error.message);
 
-      let locationId = purchaseOrder.data.locationId;
+      // A Draft whose location the user changed keeps the location they chose.
+      const locationChosen =
+        !!userLocationId &&
+        !!receipt.data &&
+        userLocationId !== receipt.data.locationId;
+      let locationId = locationChosen
+        ? userLocationId
+        : purchaseOrder.data.locationId;
       if (
+        !locationChosen &&
         purchaseOrderLines.data.some(
           (d) => d.locationId !== locationId && d.locationId === userLocationId
         )
@@ -12459,24 +12473,43 @@ export async function createDocument(
           ].filter((id): id is string => !!id)
         )
       ];
-      const [inspectionAssignments, receiptLocations] = await Promise.all([
-        many(
-          db,
-          "itemInspectionDocumentAssignment",
-          { companyId, usage: "Receipt", itemId: receiptItemIds },
-          { columns: ["itemId"] }
-        ),
-        many(
-          db,
-          "location",
-          { companyId, id: lineLocationIds },
-          { columns: ["id", "inspectionStorageUnitId"] }
+      const pinnedStorageUnitIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.storageUnitId)
+            .filter((id): id is string => !!id)
         )
-      ]);
+      ];
+      const [inspectionAssignments, receiptLocations, pinnedStorageUnits] =
+        await Promise.all([
+          many(
+            db,
+            "itemInspectionDocumentAssignment",
+            { companyId, usage: "Receipt", itemId: receiptItemIds },
+            { columns: ["itemId"] }
+          ),
+          many(
+            db,
+            "location",
+            { companyId, id: lineLocationIds },
+            { columns: ["id", "inspectionStorageUnitId"] }
+          ),
+          many(
+            db,
+            "storageUnit",
+            { companyId, id: pinnedStorageUnitIds },
+            { columns: ["id", "locationId"] }
+          )
+        ]);
       if (inspectionAssignments.error)
         throw new Error(inspectionAssignments.error.message);
       if (receiptLocations.error)
         throw new Error(receiptLocations.error.message);
+      if (pinnedStorageUnits.error)
+        throw new Error(pinnedStorageUnits.error.message);
+      const storageUnitLocation = new Map(
+        (pinnedStorageUnits.data ?? []).map((row) => [row.id, row.locationId])
+      );
       const inspectedItemIds = new Set(
         isOutsideOperation
           ? []
@@ -12528,6 +12561,14 @@ export async function createDocument(
         const unitPrice = d.unitPrice ?? 0;
         const outstandingQuantity =
           d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
+        // Every line is received at the receipt's location (the insert below
+        // sets it), so its bin must be one of that location's.
+        const lineLocationId = locationId ?? d.locationId ?? null;
+        const pinnedStorageUnitId =
+          d.storageUnitId &&
+          storageUnitLocation.get(d.storageUnitId) === lineLocationId
+            ? d.storageUnitId
+            : null;
 
         const shippingAndTaxUnitCost =
           ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
@@ -12550,15 +12591,15 @@ export async function createDocument(
           unitPrice:
             unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
-          locationId: d.locationId ?? null,
+          locationId: lineLocationId,
           requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
             (inspectedItemIds.has(d.itemId)
-              ? inspectionUnitByLocation.get(d.locationId ?? locationId ?? "")
+              ? inspectionUnitByLocation.get(lineLocationId ?? "")
               : null) ??
-            d.storageUnitId ??
+            pinnedStorageUnitId ??
             defaultStorageUnitByItemLocation.get(
-              pickMethodKey(d.itemId!, d.locationId ?? null)
+              pickMethodKey(d.itemId!, lineLocationId)
             ) ??
             null,
           createdBy: userId ?? ""

@@ -4,7 +4,7 @@
 
 import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { assertPostingStatusUnchanged } from "@carbon/database/journal-posting-status";
 import { isCompanyAdmin } from "@carbon/ee/approvals.server";
 import {
@@ -4372,5 +4372,99 @@ export const cancelDocumentForceDelete = defineServiceFn({
       diff: { status: { old: "Pending", new: "Cancelled" } }
     });
     return { requestId, status: "Cancelled" as const };
+  }
+});
+
+/**
+ * Change the GL account of a posted sales invoice line.
+ *
+ * @remarks
+ * Posts one journal, dated on the invoice's posting date in its accounting
+ * period, that moves the line's posted revenue from the account it is on to
+ * `accountId` (an active Revenue account that is not a group), with the
+ * line's dimensions, and records the new account on the line. Only a line
+ * whose revenue posted to the Sales account can change: deferred, contract,
+ * rental, service job and fixed asset lines cannot. Refused while the period
+ * is Locked or Closed (the refusal names it), for an invoice dated before the
+ * accounting cutover, and for a voided invoice. A void of the invoice
+ * reverses the change with the posting. Needs invoicing and accounting
+ * update.
+ *
+ * @param accountId - The Revenue account the line's revenue moves to.
+ *
+ * @mcp
+ */
+export const changeSalesInvoiceLineAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1),
+    accountId: z.string().min(1)
+  }),
+  permission: { update: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "change-invoice-line-account", () =>
+      service.changeInvoiceLineAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/**
+ * Change the GL account of a posted purchase invoice line.
+ *
+ * @remarks
+ * Posts one journal, dated on the invoice's posting date in its accounting
+ * period, that moves the line's posted cost from the account it is on to
+ * `accountId` (an active Expense account that is not a group), with the
+ * line's dimensions, and records the new account on the line. Only a G/L
+ * Account line can change, and not one charged to a project. Refused while
+ * the period is Locked or Closed (the refusal names it), for an invoice dated
+ * before the accounting cutover, and for a voided invoice. A void of the
+ * invoice reverses the change with the posting. Needs invoicing and
+ * accounting update.
+ *
+ * @param accountId - The Expense account the line's cost moves to.
+ *
+ * @mcp
+ */
+export const changePurchaseInvoiceLineAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1),
+    accountId: z.string().min(1)
+  }),
+  permission: { update: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "change-invoice-line-account", () =>
+      service.changeInvoiceLineAccount(ctx, { side: "purchase", ...input })
+    );
+  }
+});
+
+/** Get the account a posted sales invoice line's revenue is on now (not the
+ *  line's own account, which sales posting does not read). */
+export const getSalesInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/** Get the account a posted purchase invoice line's cost is on now. */
+export const getPurchaseInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "purchase", ...input })
+    );
   }
 });

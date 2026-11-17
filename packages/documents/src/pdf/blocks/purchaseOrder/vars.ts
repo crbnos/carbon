@@ -6,6 +6,7 @@ import { formatDate } from "@carbon/utils";
 import type { LineMergeToken, MergeToken } from "../../../template";
 import {
   getLineDescriptionDetails,
+  getLinePartId,
   getLineSupplierPartId,
   getLineTotal,
   getPurchaseOrderDisplayId,
@@ -152,17 +153,13 @@ export function buildPurchaseOrderLineVars(
   const indirect = INDIRECT_TYPES.has(line.purchaseOrderLineType ?? "");
   const shipping = line.supplierShippingCost ?? 0;
   const common = {
-    "line.description": str(indirect ? line.description : line.itemReadableId),
+    "line.description": str(indirect ? line.description : getLinePartId(line)),
     "line.details": indirect ? "" : str(getLineDescriptionDetails(line)),
-    // A Service line prints its description, so the number repeats only that.
+    // An item line's title is already the supplier's number when it has one.
+    // A Service line prints its description, so the number goes beneath it.
     "line.supplierPartId":
-      !indirect || line.purchaseOrderLineType === "Service"
-        ? str(
-            getLineSupplierPartId(
-              line,
-              indirect ? line.description : line.itemReadableId
-            )
-          )
+      line.purchaseOrderLineType === "Service"
+        ? str(getLineSupplierPartId(line, line.description))
         : "",
     "line.operation":
       data.purchaseOrder.purchaseOrderType === "Outside Processing"

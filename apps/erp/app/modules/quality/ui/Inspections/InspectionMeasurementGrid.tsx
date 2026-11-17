@@ -313,6 +313,14 @@ const InspectionMeasurementGrid = ({
     () => new Map(samples.map((sample) => [sample.id, sample])),
     [samples]
   );
+  // The position each anonymous sample was first saved at, so every page agrees.
+  const storedPositions = useMemo(() => {
+    const stored = new Map<string, number>();
+    for (const sample of samples) {
+      if (sample.position != null) stored.set(sample.id, sample.position);
+    }
+    return stored;
+  }, [samples]);
 
   // Grid position (column by characteristic, row by part) -> sample id. A
   // sample keeps its position across reloads (`placeSamples`); a position no
@@ -326,7 +334,7 @@ const InspectionMeasurementGrid = ({
     const placed = placeSamples(
       sampleIdRef.current,
       samples.map((sample) => sample.id),
-      { dropMissing: isSerial }
+      { dropMissing: isSerial, stored: storedPositions }
     );
     sampleIdRef.current = placed;
     return placed;
@@ -336,12 +344,15 @@ const InspectionMeasurementGrid = ({
       const next = placeSamples(
         prev,
         samples.map((sample) => sample.id),
-        { dropMissing: isSerial }
+        {
+          dropMissing: isSerial,
+          stored: storedPositions
+        }
       );
       sampleIdRef.current = next;
       return next;
     });
-  }, [samples, sampleIdRef, isSerial]);
+  }, [samples, storedPositions, sampleIdRef, isSerial]);
   const sampleAt = useCallback(
     (sampleIndex: number) => {
       const id = sampleIdByColumn[sampleIndex];
@@ -509,6 +520,7 @@ const InspectionMeasurementGrid = ({
       formData.set("inspectionId", inspectionId);
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
+      else formData.set("position", String(sampleIndex));
       formData.set("inspectionFeatureId", characteristic.featureId);
       if (payload.value !== undefined) formData.set("value", payload.value);
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
@@ -570,6 +582,7 @@ const InspectionMeasurementGrid = ({
       formData.set("quiet", "true");
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
+      else formData.set("position", String(sampleIndex));
       const trackedEntityId = sampleId
         ? sampleById.get(sampleId)?.trackedEntityId
         : undefined;

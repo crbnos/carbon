@@ -5162,9 +5162,36 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.
 
+## Two `crbn up` in one worktree take each other down
+
+**Context:** `crbn up` records its pid in `~/.carbon/stacks/<slug>/up`, and its teardown first stops whichever `crbn up` that file names.
+
+**Problem:** An agent started `crbn up` in the background, then the user started another in the same worktree. The second overwrote the marker and reused the first's dev servers. Stopping the agent's run then SIGINT'd the user's run through the marker, and every app went down.
+
+**Rule:** Run one `crbn up` per worktree. Check `ps` for a running one (or ask) before starting it, and never stop it while someone else may be using it.
+
+**Applies to:** Agents and humans booting a stack in a shared worktree.
+
 ## A server export mapping cannot add a column the browser omitted
 
 **Context:** Verifying sales-invoice customer names in the CSV (TCK-60).
 **Problem:** The registry resolved both names, but the table's Customer columns had only `id` and `cell`. `buildColumnMaps` excluded them, so the export request never asked for either name.
 **Rule:** A display column needs `meta.exportValue` to participate in CSV export. Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports.
 **Applies to:** ERP Table display columns, `buildColumnMaps`, and list-registry `exportValues`.
+
+## `openProductionOrders` is MRP supply, not "the open jobs for an item"
+
+**Context:** The Buildable Quantity card lists an item's open jobs and whether stock covers what each still has to issue.
+
+**Problem:** The jobs were read from `openProductionOrders`. That view leaves out every job made for a sales order (`salesOrderId IS NULL`) and every `consumeToProject` job, and its `quantityToReceive` is `productionQuantity` (quantity + scrap) less received. An item made to order showed no jobs in production, and a job with a scrap allowance showed more units than it will make.
+
+**Rule:** To list an item's open jobs, read `job` with the four open statuses. The good units left are `quantity − quantityReceivedToInventory − quantityShipped`, as `openSalesOrderLines` nets a job. Use `openProductionOrders` only where the question is "what supply does MRP count".
+
+**Applies to:** Any report, card or check that shows jobs in production or work in process for an item.
+
+## A posted document's void and anything that adds lines to its journal take one lock
+
+- **Context:** Change GL Account adds two journal lines to a posted sales or purchase invoice; the invoice void reverses every journal line of the document.
+- **Problem:** The change locked the invoice `FOR UPDATE`, but both voids read the lines they reverse before their transaction and never locked the invoice. A change that committed between the void's read and its write survived on a Voided invoice: its amount stayed on the new account with nothing left to reverse it.
+- **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
+- **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).

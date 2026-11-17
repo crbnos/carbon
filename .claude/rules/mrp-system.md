@@ -506,7 +506,7 @@ to child demand. Note current `methodType` enum is
 
 ## Source views (open demand/supply)
 
-Newest defs: `openPurchaseOrderLines` in `20260811123616_widen-purchasing-scale.sql`,
+Newest defs: `openPurchaseOrderLines` in `20261117123417_open-po-lines-exclude-outside-processing.sql`,
 `openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
 `openSalesOrderLines` in `20261006130001_demand-forecast-consumption.sql`.
@@ -528,7 +528,8 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
   (make-to-stock jobs only); `quantityToReceive = productionQuantity − received`.
-- `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, status IN
+- `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, `purchaseOrderType <>
+  'Outside Processing'` (the job it serves is the supply; receiving it stocks nothing), status IN
   `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = the line's
   `requiredDate`, `promisedDate` = the line's promised date, else the order
   delivery's `receiptPromisedDate`.

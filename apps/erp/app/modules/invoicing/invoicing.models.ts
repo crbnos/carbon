@@ -857,3 +857,7 @@ export function paymentJournalDifference<
     .filter((entry) => entry.amount !== 0)
     .map((entry) => ({ ...entry.line, amount: entry.amount }));
 }
+
+export const invoiceLineAccountValidator = z.object({
+  accountId: z.string().min(1, { message: "Account is required" })
+});

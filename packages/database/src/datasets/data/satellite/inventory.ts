@@ -16,7 +16,7 @@ import type {
 // Opening inventory — realistic quantities for a smallsat shop.
 // Parts that are bought (Buy replenishment) get stock; Make parts do not.
 export const OPENING_STOCK: OpeningStockSpec[] = [
-  { item: "BAT-LIION-48V", qty: 3, shelf: "A1-L2" },
+  { item: "BAT-LIION-48V", qty: 4, shelf: "A1-L2" },
   { item: "PCB-BARE-REV3", qty: 20, shelf: "A1-L1" },
   { item: "RW-010", qty: 4, shelf: "A2-L2" },
   { item: "ST-050", qty: 2, shelf: "A2-L3" },
@@ -27,7 +27,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "FST-M4-TI", qty: 500, shelf: "A1-L1" },
   { item: "FST-M6-A286", qty: 200, shelf: "A1-L1" },
   { item: "BRG-6201", qty: 24, shelf: "A1-L3" },
-  { item: "MAT-AL7075-PLT", qty: 64, shelf: "A2-L1" },
+  { item: "MAT-AL7075-PLT", qty: 66, shelf: "A2-L1" },
   { item: "MAT-CF-LAM", qty: 10, shelf: "CleanRoom" },
   { item: "MAT-GAAS-CELL", qty: 256, shelf: "CleanRoom" },
   { item: "MAT-KAPTON", qty: 50, shelf: "A1-L3" },
@@ -41,6 +41,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "BAT-LIION-48V",
+    shelf: "A1-L2",
     entities: [
       { readableId: "LOT-BAT-2607", quantity: 2 },
       { readableId: "LOT-BAT-2608", quantity: 1, expiresOffset: 30 },
@@ -49,6 +50,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "RW-010",
+    shelf: "A2-L2",
     entities: [
       { readableId: "RW010-SN-0051", quantity: 1 },
       { readableId: "RW010-SN-0052", quantity: 1 },
@@ -58,6 +60,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "MAT-AL7075-PLT",
+    shelf: "A2-L1",
     entities: [
       { readableId: "LOT-AL7075-2608", quantity: 40 },
       { readableId: "LOT-AL7075-2609", quantity: 20 },
