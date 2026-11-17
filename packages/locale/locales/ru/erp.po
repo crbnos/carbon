@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Отставание от плана на # д
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# биллинговый элемент ожидает рассмотрения} other {# биллинговых элементов ожидают рассмотрения}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} дней"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} дней"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ дней"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}: наценка для количества {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1 неопубликованный документ"
 
 msgid "1 year"
 msgstr "1 год"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} дней"
 
 msgid "12 monthly periods"
 msgstr "12 ежемесячных периодов"
@@ -4410,7 +4422,7 @@ msgid "Approved On"
 msgstr "Утверждено"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "Утверждение также сторнирует его поступления {receipts}: запас, который они принесли, будет списан, а их проводки сторнированы. Действие отклоняется, если этот запас был использован после этого."
+msgstr "Утверждение также сторнирует его поступления {receipts}: поступивший по ним запас будет списан, а их проводки сторнированы. Операция отклоняется, если этот запас был использован после поступления."
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "Утверждение немедленно удалит {readableId}. Это нельзя отменить."
@@ -9810,6 +9822,9 @@ msgstr "Дни от заказа детали до ее доступности; 
 msgid "Days Off"
 msgstr "Выходные дни"
 
+msgid "Days Past Due"
+msgstr "Дни просрочки"
+
 msgid "Days Remaining"
 msgstr "Дней осталось"
 
@@ -10919,6 +10934,9 @@ msgstr "Отключить"
 msgid "Disabled"
 msgstr "Отключено"
 
+msgid "Disbursement"
+msgstr "Выплата"
+
 msgid "Discard"
 msgstr "Отклонить"
 
@@ -11169,6 +11187,9 @@ msgstr "Скачать {0} строку(и) для исправления"
 
 msgid "Download CSV"
 msgstr "Скачать CSV"
+
+msgid "Download Excel"
+msgstr "Скачать Excel"
 
 msgid "Download Labels"
 msgstr "Скачать этикетки"
@@ -14004,7 +14025,7 @@ msgid "For Form 6765 Section E"
 msgstr "Для формы 6765 раздел E"
 
 msgid "Force delete"
-msgstr "Принудительно удалить"
+msgstr "Принудительное удаление"
 
 msgid "Force Delete"
 msgstr "Принудительно удалить"
@@ -14498,6 +14519,9 @@ msgstr "Счет учета для скидок за досрочную опла
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Счет GL, на котором фиксируются скидки на досрочную оплату, полученные от поставщиков."
+
+msgid "GL Codes"
+msgstr "Коды счетов ГЛ"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Контрактивный счет учета основных средств, который кредитуется по мере начисления амортизации в каждом периоде и полностью дебетуется при продаже или списании основного средства."
@@ -16252,7 +16276,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Оно все еще используется записью «{table}»; сначала уберите эту запись."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "Это никогда не затрагивает учёт поставщика. Сначала аннулируйте отгрузки и предоплаты заказа и удалите его строки из полученных счетов-фактур. Запрос будет отклонён, пока вы этого не сделаете."
+msgstr "Он никогда не затрагивает сторону поставщика в учёте. Сначала аннулируйте отгрузки и предоплаты заказа и уберите его строки из счетов-фактур полученных. Запрос отклоняется, пока вы этого не сделаете."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "Удаляет {readableId} навсегда, независимо от статуса. Это нельзя отменить."
@@ -21350,6 +21374,9 @@ msgstr "Открыть распределение счетов"
 msgid "Open Actions"
 msgstr "Открытые действия"
 
+msgid "Open Amount"
+msgstr "Непогашенная сумма"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения о браке"
 
@@ -21803,6 +21830,9 @@ msgstr "Источник"
 
 msgid "Original"
 msgstr "Оригинал"
+
+msgid "Original Amount"
+msgstr "Первоначальная сумма"
 
 msgid "Original Count"
 msgstr "Исходный подсчет"
@@ -22375,7 +22405,7 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "Платежи и авансы, применённые к этому счету. Применённые суммы и обменные курсы указаны в базовой валюте организации. Нажмите строку, чтобы открыть документ-основание."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "Сначала с него снимаются применённые к нему платежи и кредит-ноты: каждый платёж остаётся проведённым в виде неприменённой суммы, которую можно применить к другому документу или принудительно удалить. Выручка, уже признанная по нему, сторнируется."
+msgstr "Платежи и кредит-ноты, отнесённые к нему, сначала снимаются: каждый платёж остаётся проведённым как неразнесённая сумма, которую можно отнести в другое место или принудительно удалить. Признанная по нему выручка сторнируется."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "Сначала с него снимаются применённые к нему платежи и кредит-ноты: каждый платёж остаётся проведённым в виде неприменённой суммы, которую можно применить к другому документу или принудительно удалить. Стоимость, которую он добавил к капитализированному основному средству, будет изъята; уже проведённая амортизация остаётся."
@@ -23296,7 +23326,7 @@ msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr "Печатать этикетку серийного номера этой номенклатуры, когда завершается последняя операция её производственного заказа."
+msgstr "Печать серийной этикетки изделия при завершении последней операции его производственного заказа."
 
 msgid "Print travelers at the pick"
 msgstr "Печатать маршрутные листы при отборе"
@@ -25628,7 +25658,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "Требуется в контролируемой среде — ведение журнала аудита невозможно отключить."
 
 msgid "Required tracked parts disabled"
-msgstr "Требование прослеживаемых деталей отключено"
+msgstr "Требование отслеживаемых деталей отключено"
 
 msgid "Required tracked parts enabled"
 msgstr "Требование прослеживаемых деталей включено"
@@ -32876,7 +32906,7 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "Отслеживаемый материал предварительно выбирается в порядке отбора (FEFO), даже без листа отбора"
 
 msgid "Tracked parts are not required"
-msgstr "Прослеживаемые детали не требуются"
+msgstr "Отслеживаемые детали не требуются"
 
 msgid "Tracked parts must be scanned in"
 msgstr "Прослеживаемые детали нужно отсканировать при входе"
@@ -33141,7 +33171,7 @@ msgid "Type {0} to confirm"
 msgstr "Введите {0} для подтверждения"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr "Введите {purchaseOrderReadableId}, чтобы подтвердить"
+msgstr "Введите {purchaseOrderReadableId} для подтверждения"
 
 msgid "Type {readableId} to confirm"
 msgstr "Введите {readableId}, чтобы подтвердить"

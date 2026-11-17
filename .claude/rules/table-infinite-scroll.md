@@ -263,6 +263,9 @@ background job does not.
 - A background job reads as the requesting user (`getUserScopedClient`) and
   checks the list's permission on the user's claims
   (`utils/table-jobs.server.ts`).
+- Sales and Purchase Invoices use direct CSV and Excel download routes. Those
+  routes read the same registry query and row enrichment as the list, page by
+  page, with the signed-in user's client.
 
 ## Single-load lists
 

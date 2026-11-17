@@ -215,6 +215,9 @@ msgstr "{label} to scrap"
 msgid "{label}, overdue"
 msgstr "{label}, overdue"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} scanned pieces were not issued. Scan them again."
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -1512,6 +1515,18 @@ msgstr "Issued {issuedQuantity} of {lotLabel}"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "Issued {quantity} {name} ({issued} of {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "Issued {quantity} {name} from {batches} ({issued} of {required})"
+
+msgid "Issuing"
+msgstr "Issuing"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Issuing. {waiting} more scanned."
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "It is still used by a \"{table}\" record; remove that first."

@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Zi
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# abrechenbarer Artikel wartet auf Überprüfung} other {# abrechenbare Artikel warten auf Überprüfung}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} Tage"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} Tage"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ Tage"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}-Aufschlag für Menge {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1 unveröffentlichtes Dokument"
 
 msgid "1 year"
 msgstr "1 Jahr"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} Tage"
 
 msgid "12 monthly periods"
 msgstr "12 monatliche Perioden"
@@ -4416,7 +4428,7 @@ msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "Beim Genehmigen wird {readableId} jetzt gelöscht. Dies kann nicht rückgängig gemacht werden."
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr "Beim Genehmigen wird die Bestellung samt allen Positionen jetzt gelöscht. Dies kann nicht rückgängig gemacht werden."
+msgstr "Beim Genehmigen wird die Bestellung mit allen Positionen jetzt gelöscht. Dies kann nicht rückgängig gemacht werden."
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
 msgstr "Beim Genehmigen werden {receipts} storniert und danach die Bestellung samt allen Positionen gelöscht. Dies kann nicht rückgängig gemacht werden."
@@ -9810,6 +9822,9 @@ msgstr "Tage vom Bestellen eines Teils bis zu seiner Verfügbarkeit; der Planung
 msgid "Days Off"
 msgstr "Tage frei"
 
+msgid "Days Past Due"
+msgstr "Tage überfällig"
+
 msgid "Days Remaining"
 msgstr "Verbleibende Tage"
 
@@ -10919,6 +10934,9 @@ msgstr "Deaktivieren"
 msgid "Disabled"
 msgstr "Deaktiviert"
 
+msgid "Disbursement"
+msgstr "Auszahlung"
+
 msgid "Discard"
 msgstr "Verwerfen"
 
@@ -11169,6 +11187,9 @@ msgstr "Herunterladen {0} Zeile(n) zum Beheben"
 
 msgid "Download CSV"
 msgstr "CSV herunterladen"
+
+msgid "Download Excel"
+msgstr "Excel herunterladen"
 
 msgid "Download Labels"
 msgstr "Etiketten herunterladen"
@@ -14004,7 +14025,7 @@ msgid "For Form 6765 Section E"
 msgstr "Für Formular 6765 Abschnitt E"
 
 msgid "Force delete"
-msgstr "Zwangslöschen"
+msgstr "Löschen erzwingen"
 
 msgid "Force Delete"
 msgstr "Zwangslöschen"
@@ -14498,6 +14519,9 @@ msgstr "GL-Konto, auf dem den Kunden gewährte Frühzahlungsrabatte erfasst werd
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL-Konto, auf dem von Lieferanten in Anspruch genommene Frühzahlungsrabatte erfasst werden."
+
+msgid "GL Codes"
+msgstr "Sachkontonummern"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Gegenpositions-Sachkonto zur Bilanzaktiva, das gutgeschrieben wird, wenn Abschreibung in jeder Periode gebucht wird, und vollständig belastet wird, wenn das Anlagegut verkauft oder abgegangen ist."
@@ -16252,7 +16276,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Es wird noch von einem „{table}\"-Datensatz verwendet; entfernen Sie diesen zuerst."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "Die Lieferantenseite der Buchhaltung bleibt unberührt. Stornieren Sie zuerst die Lieferungen und Anzahlungen der Bestellung und entfernen Sie deren Positionen aus den Eingangsrechnungen. Die Anfrage wird so lange abgelehnt, bis Sie das getan haben."
+msgstr "Die Buchungen auf Lieferantenseite bleiben unberührt. Stornieren Sie zuerst die Lieferungen und Anzahlungen der Bestellung und entfernen Sie ihre Positionen aus den Eingangsrechnungen. Die Anfrage wird so lange abgelehnt, bis Sie das getan haben."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "Dies löscht {readableId} dauerhaft, unabhängig vom Status. Dies kann nicht rückgängig gemacht werden."
@@ -20814,7 +20838,7 @@ msgid "Nothing in the archive"
 msgstr "Nichts im Archiv"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "Noch nichts gelöscht. Die Anfrage geht an die Genehmigung durch die anderen Administratoren und wird gelöscht, sobald einer von ihnen sie genehmigt."
+msgstr "Noch wird nichts gelöscht. Die Anfrage geht an die Genehmigungen der anderen Admins und wird gelöscht, sobald einer von ihnen dies genehmigt."
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Noch nichts gelöscht. Die Anfrage geht an die Genehmigung durch die anderen Administratoren, und die Bestellung wird gelöscht, sobald einer von ihnen sie genehmigt."
@@ -21350,6 +21374,9 @@ msgstr "Kontenzuordnung öffnen"
 msgid "Open Actions"
 msgstr "Offene Maßnahmen"
 
+msgid "Open Amount"
+msgstr "Offener Betrag"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie ein NCR für MRB-Verwendungsentscheid"
 
@@ -21803,6 +21830,9 @@ msgstr "Ursprung"
 
 msgid "Original"
 msgstr "Original"
+
+msgid "Original Amount"
+msgstr "Ursprünglicher Betrag"
 
 msgid "Original Count"
 msgstr "Ursprüngliche Anzahl"
@@ -22375,7 +22405,7 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "Mit dieser Rechnung verrechnete Zahlungen und Guthaben. Verrechnete Beträge und Kursdifferenzen werden in der Basiswährung des Unternehmens angegeben. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "Zahlungen und Gutschriften, die damit verrechnet wurden, werden zuerst gelöst: Jede Zahlung bleibt gebucht, als nicht verrechnetes Guthaben, das Sie anderswo verrechnen oder zwangsweise löschen können. Bereits daraus erfasste Umsatzerlöse werden storniert."
+msgstr "Zugeordnete Zahlungen und Gutschriften werden zuvor aufgehoben: Jede Zahlung bleibt gebucht, als nicht zugeordnetes Guthaben, das Sie anderswo zuordnen oder per Löschen erzwingen können. Bereits daraus erfasste Umsatzerlöse werden storniert."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "Zahlungen und Gutschriften, die damit verrechnet wurden, werden zuerst gelöst: Jede Zahlung bleibt gebucht, als nicht verrechnetes Guthaben, das Sie anderswo verrechnen oder zwangsweise löschen können. Der Wert, den sie einem aktivierten Anlagegut hinzugefügt haben, wird wieder herausgerechnet; bereits gebuchte Abschreibungen bleiben bestehen."
@@ -25628,7 +25658,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "Erforderlich in einer kontrollierten Umgebung – Audit-Logging kann nicht deaktiviert werden."
 
 msgid "Required tracked parts disabled"
-msgstr "Pflicht zu rückverfolgbaren Teilen deaktiviert"
+msgstr "Pflicht zur Teilerückverfolgung deaktiviert"
 
 msgid "Required tracked parts enabled"
 msgstr "Pflicht zu rückverfolgbaren Teilen aktiviert"
@@ -32876,7 +32906,7 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "Verfolgte Materialien werden nach Kommissionierauftrag vorabausgewählt (FEFO), auch ohne Kommissionierliste."
 
 msgid "Tracked parts are not required"
-msgstr "Rückverfolgbare Teile sind nicht erforderlich"
+msgstr "Teile mit Rückverfolgung sind nicht erforderlich"
 
 msgid "Tracked parts must be scanned in"
 msgstr "Rückverfolgbare Teile müssen eingescannt werden"
@@ -33005,7 +33035,7 @@ msgid "Travel"
 msgstr "Reisen"
 
 msgid "Traveler labels disabled"
-msgstr "Laufkarten-Etiketten deaktiviert"
+msgstr "Laufkartenetiketten deaktiviert"
 
 msgid "Traveler labels enabled"
 msgstr "Laufkarten-Etiketten aktiviert"
@@ -34744,7 +34774,7 @@ msgid "What to set up"
 msgstr "Was einzurichten ist"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "Was falsch erfasst wurde und warum es stattdessen nicht korrigiert oder storniert werden kann"
+msgstr "Was falsch eingegeben wurde und warum es stattdessen nicht korrigiert oder storniert werden kann"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "Was falsch erfasst wurde und warum der Auftrag stattdessen nicht korrigiert oder abgeschlossen werden kann"

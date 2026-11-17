@@ -215,6 +215,9 @@ msgstr ""
 msgid "{label}, overdue"
 msgstr "{label}, en retard"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} pièces scannées n'ont pas été sorties. Scannez-les à nouveau."
+
 msgid "{maxSizeMB}MB limit"
 msgstr "Limite de {maxSizeMB}MB"
 
@@ -1512,6 +1515,18 @@ msgstr "Émis {issuedQuantity} sur {lotLabel}"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Émis {issuedQuantity} sur {lotLabel} — {remainingQuantity} reste"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "Sortie de {quantity} {name} ({issued} sur {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "Sortie de {quantity} {name} depuis {batches} ({issued} sur {required})"
+
+msgid "Issuing"
+msgstr "Sortie en cours"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Sortie en cours. {waiting} autre(s) scannée(s)."
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Il est toujours utilisé par un enregistrement « {table} » ; retirez-le d'abord."

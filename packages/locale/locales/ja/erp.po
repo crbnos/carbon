@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {目標より # 日遅れ} other {目標より 
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 個の請求対象項目がレビュー待ちです} other {# 個の請求対象項目がレビュー待ちです}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}～{b2}日"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}～{b3}日"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}日以上"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}のマークアップ（数量 {quantity}）"
 
@@ -1525,6 +1534,9 @@ msgstr "1 件の未転記文書"
 
 msgid "1 year"
 msgstr "1 年"
+
+msgid "1-{b1} Days"
+msgstr "1～{b1}日"
 
 msgid "12 monthly periods"
 msgstr "12ヶ月間の期間"
@@ -9810,6 +9822,9 @@ msgstr "部品を注文してから利用可能になるまでの日数。計画
 msgid "Days Off"
 msgstr "休日"
 
+msgid "Days Past Due"
+msgstr "延滞日数"
+
 msgid "Days Remaining"
 msgstr "残り日数"
 
@@ -10919,6 +10934,9 @@ msgstr "無効にする"
 msgid "Disabled"
 msgstr "無効"
 
+msgid "Disbursement"
+msgstr "出金"
+
 msgid "Discard"
 msgstr "破棄"
 
@@ -11169,6 +11187,9 @@ msgstr "{0}行をダウンロードして修正"
 
 msgid "Download CSV"
 msgstr "CSVをダウンロード"
+
+msgid "Download Excel"
+msgstr "Excelをダウンロード"
 
 msgid "Download Labels"
 msgstr "ラベルをダウンロード"
@@ -14499,6 +14520,9 @@ msgstr "得意先に付与された早期支払割引が記録される勘定科
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "仕入先から受け取った早期支払割引が記録される勘定科目。"
 
+msgid "GL Codes"
+msgstr "GLコード"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "毎期減価償却が転記されるときにクレジットされ、固定資産が売却または除却されるときに全額がデビットされる対資産勘定科目。"
 
@@ -16252,7 +16276,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」レコードで引き続き使用されています。先にそれを除去。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "仕入先側の帳簿には一切影響しません。先に、発注の出荷と前払金を取消し、仕入先請求書からその明細を除去してください。それまでは、リクエストは拒否されます。"
+msgstr "仕入先側の帳簿には一切影響しません。先に、この注文の出荷と前払金を取消し、仕入先請求書からその明細を除去してください。それまで依頼は拒否されます。"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "ステータスにかかわらず、{readableId} を完全に削除します。元に戻すことはできません。"
@@ -20814,7 +20838,7 @@ msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "まだ削除されていません。リクエストは他の管理者の承認に回され、そのうちの1人が承認すると削除されます。"
+msgstr "まだ何も削除されません。依頼は他の管理者の承認に回され、いずれかの管理者が承認した時点で削除されます。"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "まだ削除されていません。リクエストは他の管理者の承認に回され、そのうちの1人が承認すると注文が削除されます。"
@@ -21350,6 +21374,9 @@ msgstr "アカウントマッピングを開く"
 msgid "Open Actions"
 msgstr "オープンアクション"
 
+msgid "Open Amount"
+msgstr "未決済額"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを作成する"
 
@@ -21803,6 +21830,9 @@ msgstr "オリジン"
 
 msgid "Original"
 msgstr "元"
+
+msgid "Original Amount"
+msgstr "当初金額"
 
 msgid "Original Count"
 msgstr "元のカウント"
@@ -22375,7 +22405,7 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "これに消込されている支払およびメモは、先に消込が解除されます。各支払は転記済のまま、未消込残高として他で消込するか、強制削除できます。すでに計上された売上高は反対仕訳されます。"
+msgstr "それに充当されている支払とクレジットメモは、先に充当が解除されます。各支払は転記済のまま、他で充当するか強制削除できる未充当残高として残ります。そこから計上済の売上高は取り消されます。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "これに消込されている支払およびメモは、先に消込が解除されます。各支払は転記済のまま、未消込残高として他で消込するか、強制削除できます。資産計上された固定資産に加算された金額は戻し入れられます。計上済の減価償却はそのまま残ります。"
@@ -22693,7 +22723,7 @@ msgid "Picking Lists"
 msgstr "ピッキングリスト"
 
 msgid "Picking lists are created by hand"
-msgstr "ピッキングリストは手動で作成されます"
+msgstr "ピッキングリストは手動で作成します"
 
 msgid "Picking lists on release disabled"
 msgstr "リリース時のピッキングリスト：無効"
@@ -25628,7 +25658,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "管理された環境では必須です。監査ログはオフにできません。"
 
 msgid "Required tracked parts disabled"
-msgstr "必須の追跡対象部品：無効"
+msgstr "必須の追跡対象部品: 無効"
 
 msgid "Required tracked parts enabled"
 msgstr "必須の追跡対象部品：有効"
@@ -32876,7 +32906,7 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
 
 msgid "Tracked parts are not required"
-msgstr "追跡対象部品は不要"
+msgstr "追跡対象部品は必須ではありません"
 
 msgid "Tracked parts must be scanned in"
 msgstr "追跡対象部品はスキャンして登録が必要"
@@ -33005,7 +33035,7 @@ msgid "Travel"
 msgstr "旅行"
 
 msgid "Traveler labels disabled"
-msgstr "現品票ラベル：無効"
+msgstr "現品票ラベル: 無効"
 
 msgid "Traveler labels enabled"
 msgstr "現品票ラベル：有効"
@@ -33141,7 +33171,7 @@ msgid "Type {0} to confirm"
 msgstr "{0}を入力して確認してください。"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr "確認のため {purchaseOrderReadableId} と入力"
+msgstr "確認のため {purchaseOrderReadableId} と入力してください"
 
 msgid "Type {readableId} to confirm"
 msgstr "確認のため {readableId} と入力"
@@ -34744,7 +34774,7 @@ msgid "What to set up"
 msgstr "セットアップする内容"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "誤って入力された内容と、代わりに修正または取消ができない理由"
+msgstr "誤って入力された内容と、訂正も取消もできない理由"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "誤って入力された内容と、代わりに受注を修正またはクローズできない理由"

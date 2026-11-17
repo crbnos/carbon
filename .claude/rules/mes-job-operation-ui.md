@@ -272,15 +272,37 @@ of a paused URL, which is itself a valid link.
   `parseItemCode`, `~/utils/itemScan`) scanned on the operation page is issued
   to the job, and the operator stays on the page (`useItemScan` →
   `x+/issue-scan.tsx` → `issueScannedItem`, `services/issue.server.ts`). The
-  server decides (`planItemScanIssue`, tested): an untracked material is set to
-  the quantity the job requires (`Set Quantity`), a batch material takes the
-  lots `getSuggestedAllocationForMaterial` suggests at the job's location for
-  what is still short. Both are safe to repeat: a second scan issues nothing. A
+  server decides (`planItemScanIssue`, tested). A part or tool is counted: ONE
+  scan is ONE piece (the rest, when less than one is short), so the operator
+  scans once for each piece taken off the shelf. A material or consumable
+  (`jobMaterial.itemType`) is issued by measure: one scan issues all the job
+  still needs. An untracked material takes it as a `Negative Adjmt.` with
+  `refuseOverIssue`: the ERP `partToOperation` posting refuses, under the
+  material's lock, an issue above the requirement ("This job already has all
+  its X", "This job needs only N more X"), so a second device or the
+  completion backflush cannot push it over. The Issue dialog does not send the
+  flag. A batch part takes the lots `getSuggestedAllocationForMaterial`
+  suggests at the job's location. The action returns numbers (`quantity`,
+  `issued`, `required` over every line of the item a scan can fill,
+  `itemScanTotals`), and the hook words the toast with `formatQuantity`.
+- **The scan queue** (`useItemScan`, `~/utils/itemScanQueue`, tested). No scan
+  may be lost, so a scan made while an issue is in flight waits; scans of one
+  item are sent together as `pieces`. A loading toast shows how many wait.
+  The wedge callback returns no promise and sets `whilePending`
+  (`useKeyboardWedge`): a pending scan otherwise makes the wedge drop every
+  other scan. A refusal drops the waiting scans of that item only; one the
+  Issue dialog must settle (`materialId`) empties the queue. Only a scan made
+  with the dialog open closes it. Leaving the screen with scans waiting shows
+  how many pieces were not issued. A
   serial part, a part the job makes, a short lot or a work-center rule opens
   the Issue dialog on the material. The scan also issues while the Issue
   dialog is open, and the dialog then closes. On the assembly page an item
   scan opens the Issue dialog on the part (each unit takes its own scan). The
   layout never opens an item link on either page.
+- The layout sends a raw-id scan to the scan endpoint with a POST
+  (`postTravelerScan`), not a fetcher load. A fetcher load is loaded again
+  after EVERY action on the page, and acting on each reload reopened the last
+  scanned unit's traveler page after each issue.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the

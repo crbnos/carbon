@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 项计费物料等待评审} other {# 项计费物料等待评审}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2}天"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3}天"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}天以上"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel} 加价，数量 {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1个未过账的文件"
 
 msgid "1 year"
 msgstr "1 年"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1}天"
 
 msgid "12 monthly periods"
 msgstr "12个月度期间"
@@ -4410,7 +4422,7 @@ msgid "Approved On"
 msgstr "批准日期"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "审批时还会冲销其收货{receipts}：这些收货带入的库存将被移除，相关过账也会被冲销。若该库存此后已被使用，则会拒绝操作。"
+msgstr "审批时还将冲销其收货 {receipts}：移除其带入的库存，并冲销相应过账。如果该库存此后已被使用，则无法执行。"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "审批将立即删除{readableId}。此操作无法撤销。"
@@ -4419,7 +4431,7 @@ msgid "Approving deletes the purchase order and all of its lines now. This canno
 msgstr "审批将立即删除该采购订单及其所有行。此操作无法撤销。"
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr "审批将先冲销{receipts}，然后删除该采购订单及其所有行。此操作无法撤销。"
+msgstr "审批将先冲销 {receipts}，然后删除该采购订单及其所有行。此操作无法撤销。"
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr "审批将作废{readableId}（同时冲销其过账），然后将其删除。此操作无法撤销。"
@@ -9810,6 +9822,9 @@ msgstr "从订购零件到库存可用的天数；计划偏移按此向后推移
 msgid "Days Off"
 msgstr "休息日"
 
+msgid "Days Past Due"
+msgstr "逾期天数"
+
 msgid "Days Remaining"
 msgstr "剩余天数"
 
@@ -10919,6 +10934,9 @@ msgstr "禁用"
 msgid "Disabled"
 msgstr "已禁用"
 
+msgid "Disbursement"
+msgstr "支付"
+
 msgid "Discard"
 msgstr "丢弃"
 
@@ -11169,6 +11187,9 @@ msgstr "下载{0}行进行修复"
 
 msgid "Download CSV"
 msgstr "下载 CSV"
+
+msgid "Download Excel"
+msgstr "下载 Excel"
 
 msgid "Download Labels"
 msgstr "下载标签"
@@ -14013,7 +14034,7 @@ msgid "Force Delete (Admin)"
 msgstr "强制删除（管理员）"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr "强制删除{purchaseOrderReadableId}"
+msgstr "强制删除 {purchaseOrderReadableId}"
 
 msgid "Force delete {readableId}"
 msgstr "强制删除{readableId}"
@@ -14498,6 +14519,9 @@ msgstr "记录给予客户的提前付款折扣的GL账户。"
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "记录从供应商那里获取的提前付款折扣的GL账户。"
+
+msgid "GL Codes"
+msgstr "总账科目代码"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "资产对冲类总账科目，在每期折旧过账时贷方记录，当资产出售或报废时整额借方记录。"
@@ -16252,7 +16276,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "它仍然被「{table}」记录使用；请先删除它。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "此操作绝不会改动供应商一方的账目。请先作废该订单的发货和预付款，并从采购发票中移除其行。在完成这些操作之前，请求将被拒绝。"
+msgstr "此操作绝不会改动供应商一方的账目。请先作废该订单的收货和预付款，并从采购发票中移除其行。在完成这些操作之前，请求将被拒绝。"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "无论状态如何，都将永久删除{readableId}。此操作无法撤销。"
@@ -20814,7 +20838,7 @@ msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "尚未删除。该请求将提交给其他管理员审批，待其中一位审批通过后即会删除。"
+msgstr "目前尚未删除任何内容。该请求将提交至其他管理员审批，经其中一位审批通过后将被删除。"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "尚未删除。该请求将提交给其他管理员审批，待其中一位审批通过后即会删除该订单。"
@@ -21350,6 +21374,9 @@ msgstr "打开账户映射"
 msgid "Open Actions"
 msgstr "未结操作"
 
+msgid "Open Amount"
+msgstr "未结清金额"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "打开 NCR 进行 MRB 处置"
 
@@ -21803,6 +21830,9 @@ msgstr "来源"
 
 msgid "Original"
 msgstr "原始"
+
+msgid "Original Amount"
+msgstr "原始金额"
 
 msgid "Original Count"
 msgstr "原始盘点"
@@ -22375,7 +22405,7 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "其已核销的付款和贷项通知单须先取消核销：每笔付款保持已过账状态，并作为未核销余额保留，您可将其核销至其他单据或强制删除。其已确认的收入将被冲销。"
+msgstr "先取消其已核销的付款和贷项通知单：每笔付款仍保持已过账，作为未核销款项留存，您可将其核销到其他地方或强制删除。已从中确认的收入将被冲销。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "其已核销的付款和贷项通知单须先取消核销：每笔付款保持已过账状态，并作为未核销余额保留，您可将其核销至其他单据或强制删除。其计入已资本化固定资产的价值将被撤回；已过账的折旧保留。"
@@ -22693,7 +22723,7 @@ msgid "Picking Lists"
 msgstr "拣货单"
 
 msgid "Picking lists are created by hand"
-msgstr "拣货单需手动创建"
+msgstr "拣货单手动创建"
 
 msgid "Picking lists on release disabled"
 msgstr "下达时生成拣货单：已禁用"
@@ -23296,7 +23326,7 @@ msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr "工单的最后一道工序完成时，打印该物料的序列号标签。"
+msgstr "工单的最后一道工序完成时，打印此物料的序列号标签。"
 
 msgid "Print travelers at the pick"
 msgstr "拣货时打印流转卡"
@@ -25628,7 +25658,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "在受控环境中需要 — 审计日志无法关闭。"
 
 msgid "Required tracked parts disabled"
-msgstr "必需追踪零件：已禁用"
+msgstr "已禁用必需的追踪零件"
 
 msgid "Required tracked parts enabled"
 msgstr "必需追踪零件：已启用"
@@ -32876,7 +32906,7 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "追踪原材料按拣货顺序（先到期先出）预选，即使没有拣货单。"
 
 msgid "Tracked parts are not required"
-msgstr "无需追踪零件"
+msgstr "不要求追踪零件"
 
 msgid "Tracked parts must be scanned in"
 msgstr "追踪零件必须扫码录入"
@@ -33005,7 +33035,7 @@ msgid "Travel"
 msgstr "出差"
 
 msgid "Traveler labels disabled"
-msgstr "流转卡标签：已禁用"
+msgstr "流转卡标签已禁用"
 
 msgid "Traveler labels enabled"
 msgstr "流转卡标签：已启用"
@@ -34744,7 +34774,7 @@ msgid "What to set up"
 msgstr "要设置什么"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "录入错误的内容，以及为何无法改为更正或作废"
+msgstr "录入错误的内容，以及为何无法更正或作废"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "录入错误的内容，以及为何无法改为更正或关闭订单"

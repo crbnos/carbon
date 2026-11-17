@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {लक्ष्य से # दिन पी�
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करता है} other {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करते हैं}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}–{b2} दिन"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}–{b3} दिन"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ दिन"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "मात्रा {quantity} के लिए {categoryLabel} मार्कअप"
 
@@ -1525,6 +1534,9 @@ msgstr "1 अपोस्ट किया गया दस्तावेज़"
 
 msgid "1 year"
 msgstr "1 वर्ष"
+
+msgid "1-{b1} Days"
+msgstr "1–{b1} दिन"
 
 msgid "12 monthly periods"
 msgstr "12 मासिक अवधियाँ"
@@ -4410,7 +4422,7 @@ msgid "Approved On"
 msgstr "पर अनुमोदित"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "अनुमोदन से इसकी प्राप्तियाँ {receipts} भी प्रतिवर्तित होंगी: उनके द्वारा लाया गया स्टॉक हटा दिया जाएगा और उनकी पोस्टिंग प्रतिवर्तित होगी। यदि उस स्टॉक का तब से उपयोग हो चुका है, तो यह अस्वीकार कर दिया जाएगा।"
+msgstr "अनुमोदन करने पर इसकी प्राप्तियाँ {receipts} भी प्रतिवर्तित हो जाती हैं: उनके द्वारा लाया गया स्टॉक हटा दिया जाता है और उनकी पोस्टिंग प्रतिवर्तित कर दी जाती है। यदि उस स्टॉक का तब से उपयोग हो चुका है, तो यह अस्वीकार कर दिया जाता है।"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "अनुमोदन करते ही {readableId} हट जाएगा। इसे वापस नहीं लाया जा सकता।"
@@ -9810,6 +9822,9 @@ msgstr "किसी हिस्से को ऑर्डर करने स�
 msgid "Days Off"
 msgstr "दिन बंद"
 
+msgid "Days Past Due"
+msgstr "देय तिथि से बीते दिन"
+
 msgid "Days Remaining"
 msgstr "शेष दिन"
 
@@ -10919,6 +10934,9 @@ msgstr "अक्षम करें"
 msgid "Disabled"
 msgstr "अक्षम"
 
+msgid "Disbursement"
+msgstr "संवितरण"
+
 msgid "Discard"
 msgstr "त्यागें"
 
@@ -11169,6 +11187,9 @@ msgstr "ठीक करने के लिए {0} पंक्ति(यों
 
 msgid "Download CSV"
 msgstr "CSV डाउनलोड करें"
+
+msgid "Download Excel"
+msgstr "Excel डाउनलोड करें"
 
 msgid "Download Labels"
 msgstr "लेबल डाउनलोड करें"
@@ -14010,7 +14031,7 @@ msgid "Force Delete"
 msgstr "ज़बरदस्ती हटाएँ"
 
 msgid "Force Delete (Admin)"
-msgstr "ज़बरदस्ती हटाएँ (व्यवस्थापक)"
+msgstr "ज़बरदस्ती हटाएँ (एडमिन)"
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr "{purchaseOrderReadableId} को ज़बरदस्ती हटाएँ"
@@ -14498,6 +14519,9 @@ msgstr "GL खाता जहां ग्राहकों को दी ग�
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL खाता जहां आपूर्तिकर्ताओं से ली गई जल्दी भुगतान छूट दर्ज की जाती है।"
+
+msgid "GL Codes"
+msgstr "जीएल कोड"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "लेजर विरोधी-संपत्ति खाता जमा किया जाता है जब प्रत्येक अवधि में मूल्यह्रास पोस्ट होता है और पूरी तरह से डेबिट किया जाता है जब संपत्ति को बेचा या स्क्रैप किया जाता है।"
@@ -16252,7 +16276,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "इसका उपयोग अभी भी एक \"{table}\" रिकॉर्ड द्वारा किया जा रहा है; पहले उसे निकालें।"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "यह आपूर्तिकर्ता की ओर के खातों को कभी नहीं छूता। पहले आदेश की शिपमेंट और अग्रिम भुगतान अमान्य करें, और उसकी पंक्तियाँ क्रय चालान से निकालें। जब तक आप ऐसा नहीं करते, अनुरोध अस्वीकार रहेगा।"
+msgstr "इससे आपूर्तिकर्ता की ओर के खाते कभी प्रभावित नहीं होते। पहले आदेश के शिपमेंट और अग्रिम भुगतान अमान्य करें, और क्रय चालानों से उसकी पंक्तियाँ हटाएँ। जब तक ऐसा नहीं किया जाता, अनुरोध अस्वीकार रहेगा।"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "इसकी स्थिति चाहे जो हो, यह {readableId} को स्थायी रूप से हटा देता है। इसे वापस नहीं लाया जा सकता।"
@@ -20814,7 +20838,7 @@ msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "अभी कुछ भी हटाया नहीं गया है। अनुरोध अन्य एडमिन के अनुमोदन के लिए जाता है, और जब उनमें से कोई एक इसे अनुमोदित करता है, तब यह हटाया जाता है।"
+msgstr "अभी कुछ भी नहीं हटाया गया है। अनुरोध अन्य एडमिन के अनुमोदनों के पास जाता है, और उनमें से किसी एक के अनुमोदन करने पर इसे हटाया जाएगा।"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "अभी कुछ भी हटाया नहीं गया है। अनुरोध अन्य एडमिन के अनुमोदन के लिए जाता है, और जब उनमें से कोई एक इसे अनुमोदित करता है, तब ऑर्डर हटाया जाता है।"
@@ -21350,6 +21374,9 @@ msgstr "खाता मैपिंग खोलें"
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
 
+msgid "Open Amount"
+msgstr "बकाया राशि"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
 
@@ -21803,6 +21830,9 @@ msgstr "मूल"
 
 msgid "Original"
 msgstr "मूल"
+
+msgid "Original Amount"
+msgstr "मूल राशि"
 
 msgid "Original Count"
 msgstr "मूल गणना"
@@ -22375,7 +22405,7 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "इस पर लागू भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट किया गया रहता है, अप्रयुक्त जमा के रूप में, जिसे आप कहीं और लागू कर सकते हैं या ज़बरन हटा सकते हैं। इससे पहले पहचाया गया राजस्व प्रतिवर्तित हो जाता है।"
+msgstr "इस पर लागू भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट रहता है, जो अनलागू जमा के रूप में रहता है जिसे आप अन्यत्र लागू कर सकते हैं या ज़बरदस्ती हटा सकते हैं। इससे पहले मान्य किया गया राजस्व प्रतिवर्तित हो जाता है।"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "इस पर लागू भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट किया गया रहता है, अप्रयुक्त जमा के रूप में, जिसे आप कहीं और लागू कर सकते हैं या ज़बरन हटा सकते हैं। इससे किसी पूंजीकृत अचल संपत्ति में जोड़ा गया मूल्य वापस निकाल लिया जाता है; पहले से पोस्ट किया गया मूल्यह्रास बना रहता है।"
@@ -25628,7 +25658,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "नियंत्रित वातावरण में आवश्यक — ऑडिट लॉगिंग को बंद नहीं किया जा सकता।"
 
 msgid "Required tracked parts disabled"
-msgstr "ट्रैक किए गए पार्ट्स की आवश्यकता बंद"
+msgstr "आवश्यक ट्रैक किए गए पार्ट्स बंद"
 
 msgid "Required tracked parts enabled"
 msgstr "ट्रैक किए गए पार्ट्स की आवश्यकता चालू"
@@ -34744,7 +34774,7 @@ msgid "What to set up"
 msgstr "सेटअप करने के लिए क्या"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "क्या गलत दर्ज हुआ, और क्यों इसे सुधारा या अमान्य नहीं किया जा सकता"
+msgstr "क्या गलत दर्ज हुआ, और उसे सुधारा या अमान्य क्यों नहीं किया जा सकता"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "क्या गलत दर्ज हुआ, और क्यों ऑर्डर को इसके बजाय सुधारा या बंद नहीं किया जा सकता"

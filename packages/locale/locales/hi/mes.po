@@ -215,6 +215,9 @@ msgstr ""
 msgid "{label}, overdue"
 msgstr "{label}, अतिदेय"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} स्कैन की गई इकाइयाँ निर्गम नहीं हुईं। उन्हें फिर से स्कैन करें।"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
@@ -1512,6 +1515,18 @@ msgstr "{issuedQuantity} का {lotLabel} जारी किया"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{issuedQuantity} का {lotLabel} जारी किया — {remainingQuantity} बाकी है"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "{quantity} {name} निर्गम किया गया ({required} में से {issued})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "{batches} से {quantity} {name} निर्गम किया गया ({required} में से {issued})"
+
+msgid "Issuing"
+msgstr "निर्गम हो रहा है"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "निर्गम हो रहा है। {waiting} और स्कैन किए गए।"
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "यह अभी भी एक «{table}» रिकॉर्ड द्वारा उपयोग किया जा रहा है; पहले वह निकालें।"
