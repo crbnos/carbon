@@ -5195,3 +5195,10 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 - **Problem:** The change locked the invoice `FOR UPDATE`, but both voids read the lines they reverse before their transaction and never locked the invoice. A change that committed between the void's read and its write survived on a Voided invoice: its amount stayed on the new account with nothing left to reverse it.
 - **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
 - **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
+
+## A job's WIP is not only the lines documented against the job
+
+- **Context:** Finished goods from a job with an outside processing operation came out without the supplier's cost.
+- **Problem:** The receipt of an outside processing purchase order debits WIP with `documentId` = the receipt and the purchase order line in `documentLineReference`. The job completion, `closeJob` and `attachJob` each summed WIP `WHERE documentId = <job>`, so the supplier's cost was never moved to finished goods and never written off. And when the receipt finished the job's last operation, `postReceipt` set the operation Done before it wrote its journal, so the completion that update triggers ran before the debit existed.
+- **Rule:** Read a job's WIP with SQL `job_wip_balance`, never with a `documentId` filter of your own. A posting that can trigger a job completion (any write that sets a `jobOperation` Done) writes its own journal first.
+- **Applies to:** `complete_job_to_inventory`, `closeJob`, `attachJob`, `postReceipt`, and any new reader of a job's cost or writer of a job operation's status.

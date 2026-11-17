@@ -120,7 +120,8 @@ exists, but no code reads it.
   `@carbon/database/accounting-posting`: `GL_JOURNAL_STATUSES` (Posted, Reversed) for
   balances, reports and tie-outs; `DOCUMENT_JOURNAL_STATUSES` (Provisional, Posted,
   Reversed) for a reader that follows one document's chain (void builders, GR/IR, WIP
-  sums, intercompany lookups); `OPEN_ITEM_JOURNAL_STATUSES` (Provisional, Posted) for
+  sums, intercompany lookups). A job's WIP sum is SQL `job_wip_balance` (production
+  AGENTS → Job completion), which also counts its outside processing receipts; `OPEN_ITEM_JOURNAL_STATUSES` (Provisional, Posted) for
   the payment control lookups and the memo, charge and reimbursement void checks.
   `PRE_CUTOVER_JOURNAL_STATUSES` (Provisional, Superseded) is not a reader's list: the
   enable wizard dates the start of the cost record from it. The

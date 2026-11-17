@@ -17377,16 +17377,6 @@ export async function postReceipt(
             }))
           );
 
-          await updateRowsById(
-            trx,
-            "jobOperation",
-            companyId,
-            Object.entries(jobOperationUpdates).map(([id, data]) => ({
-              id,
-              data
-            }))
-          );
-
           const purchaseOrderLines = await trx
             .selectFrom("purchaseOrderLine")
             .select([
@@ -17510,6 +17500,19 @@ export async function postReceipt(
                 .execute();
             }
           }
+
+          // After the receipt's journal: an outside operation set Done here
+          // can complete its job (sync_finish_job_operation), and the
+          // completion costs the job from the WIP lines already written.
+          await updateRowsById(
+            trx,
+            "jobOperation",
+            companyId,
+            Object.entries(jobOperationUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           if (projectLedgerDrafts.length > 0) {
             await insertProjectLedgerRows(trx, {

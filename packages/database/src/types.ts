@@ -110462,6 +110462,14 @@ export type Database = {
           similarity: number
         }[]
       }
+      job_wip_balance: {
+        Args: {
+          p_company_id: string
+          p_exclude_project_lines?: boolean
+          p_job_id: string
+        }
+        Returns: number
+      }
       journal_posting_status: {
         Args: { p_company_id: string }
         Returns: Database["public"]["Enums"]["journalEntryStatus"]

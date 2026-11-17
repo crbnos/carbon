@@ -522,7 +522,8 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   status Draft / Under Construction; the job must not be in
   `CLOSED_JOB_STATUSES` (Completed / Cancelled / Closed), must have no
   `salesOrderLineId` and no asset target. Sets `job.fixedAssetId` (guarded on
-  the job still having no target) and sweeps the job's current WIP balance:
+  the job still having no target) and sweeps the job's current WIP balance
+  (SQL `job_wip_balance`: the job's own WIP lines and its outside processing receipts):
   Dr CIP asset / Cr WIP (`'Asset Transfer'`, both lines `documentId = jobId`,
   the transfer in `documentLineReference`), one `fixedAssetCipCost` row
   (`'Job'`) and one transfer (`sourceType 'Job'`), asset → `Under Construction`

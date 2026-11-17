@@ -74,6 +74,7 @@ import {
   neq,
   newIds,
   notNull,
+  rpcValue,
   selectRow,
   selectRows,
   single,
@@ -14427,7 +14428,9 @@ export const closeJobInput = z.object({
  * Closing a job writes off whatever is left in WIP for it as production
  * variance, so the job's WIP nets to zero. Nothing to do when the residual is
  * under a cent. The journal is Provisional before the company's accounting
- * cutover and Posted after it.
+ * cutover and Posted after it. What is in WIP for a job is SQL
+ * `job_wip_balance`: it also counts the receipts of the job's outside
+ * processing purchase order lines, such as one posted after the completion.
  *
  * A line that charged a project in place of WIP (a consume-to-project job's
  * material, labor, overhead and scrap: every one has a projectLedger row
@@ -14482,34 +14485,13 @@ export async function closeJob(
       .executeTakeFirstOrThrow();
     const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
 
-    const wipBalance = await trx
-      .selectFrom("journalLine")
-      .innerJoin("journal", "journal.id", "journalLine.journalId")
-      .select((eb) => eb.fn.sum("journalLine.amount").as("balance"))
-      .where(
-        "journalLine.accountId",
-        "=",
-        accountDefaults.data!.workInProgressAccount
-      )
-      .where("journalLine.documentId", "=", jobId)
-      .where("journal.companyId", "=", companyId)
-      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .$if(!keepsWip, (qb) =>
-        qb.where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("projectLedger")
-                .select("projectLedger.id")
-                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
-                .where("projectLedger.companyId", "=", companyId)
-            )
-          )
-        )
-      )
-      .executeTakeFirst();
+    const wipBalance = await rpcValue(trx, "job_wip_balance", {
+      p_job_id: jobId,
+      p_company_id: companyId,
+      p_exclude_project_lines: !keepsWip
+    });
 
-    const remainingWip = Number(wipBalance?.balance ?? 0);
+    const remainingWip = Number(wipBalance.data ?? 0);
 
     if (Math.abs(remainingWip) < 0.01) return;
 

@@ -59,10 +59,7 @@ import {
   getCutoverInventory,
   getMigrationClearing
 } from "@carbon/database/accounting-cutover-reads";
-import {
-  DOCUMENT_JOURNAL_STATUSES,
-  OPEN_ITEM_JOURNAL_STATUSES
-} from "@carbon/database/accounting-posting";
+import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
   KyselyDatabase as DB,
   Kysely,
@@ -120,7 +117,7 @@ import {
   shipmentCostRows
 } from "@carbon/database/legacy-documents";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
-import { inOrder, updateRowsById } from "@carbon/database/rows";
+import { inOrder, rpcValue, updateRowsById } from "@carbon/database/rows";
 import {
   buildDeferredTaxJournals,
   buildDepreciationJournals,
@@ -14475,28 +14472,12 @@ async function attachJob(
     );
     // The job's WIP balance so far: cost leaves WIP at attachment (SAP AuC).
     // Before the cutover it sits in Provisional journals and is swept by one.
-    const wip = await trx
-      .selectFrom("journalLine as jl")
-      .innerJoin("journal as j", (join) =>
-        join
-          .onRef("j.id", "=", "jl.journalId")
-          .onRef("j.companyId", "=", "jl.companyId")
-      )
-      .select((eb) =>
-        eb.fn
-          .coalesce(eb.fn.sum<number>("jl.amount"), sql<number>`0`)
-          .as("balance")
-      )
-      .where(
-        "jl.accountId",
-        "=",
-        accounting.accountDefaults.workInProgressAccount
-      )
-      .where("jl.documentId", "=", jobId)
-      .where("jl.companyId", "=", companyId)
-      .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .executeTakeFirst();
-    const balance = round(Number(wip?.balance ?? 0));
+    // It includes the receipts of the job's outside processing order lines.
+    const wip = await rpcValue(trx, "job_wip_balance", {
+      p_job_id: jobId,
+      p_company_id: companyId
+    });
+    const balance = round(Number(wip.data ?? 0));
 
     let result: Pick<AssetTransferResult, "id" | "transferId"> = {
       id: null,
