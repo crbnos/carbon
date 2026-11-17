@@ -91,7 +91,7 @@ const CLEARS: [string, Record<string, unknown>][] = [
   ],
   [
     "purchasing_updateSupplierContact",
-    { contactId: "con_1", contact: CONTACT, supplierLocationId: null }
+    { contactId: "con_1", contact: CONTACT }
   ],
   [
     "purchasing_updateSupplierPayment",
@@ -142,7 +142,7 @@ const CLEARS: [string, Record<string, unknown>][] = [
   ],
   [
     "sales_updateCustomerContact",
-    { contactId: "con_1", contact: CONTACT, customerLocationId: null }
+    { contactId: "con_1", contact: CONTACT }
   ],
   [
     "sales_updateCustomerPayment",
@@ -187,6 +187,22 @@ describe("published input schemas", () => {
     expect(jsonSchemaInput(schema)["~standard"].validate(input)).toEqual({
       value: input
     });
+  });
+
+  // The app's contact form keeps the location when it is blanked, so the API
+  // does not offer to clear it either.
+  it.each([
+    ["purchasing_updateSupplierContact", "supplierLocationId"],
+    ["sales_updateCustomerContact", "customerLocationId"]
+  ])("%s refuses null for the contact's location", (name, field) => {
+    const schema = tools.get(name);
+    if (!schema) throw new Error(`${name} is not published`);
+    const result = jsonSchemaInput(schema)["~standard"].validate({
+      contactId: "con_1",
+      contact: {},
+      [field]: null
+    });
+    expect(result).toHaveProperty("issues");
   });
 
   // A schema that fails to compile lets every input through, which would pass

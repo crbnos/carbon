@@ -3608,7 +3608,7 @@ export async function updateCustomerContact(
     contactId: string;
     companyId: string;
     contact: z.infer<typeof customerContactValidator>;
-    customerLocationId?: string | null;
+    customerLocationId?: string;
     customFields?: Json;
   }
 ) {
@@ -3658,8 +3658,8 @@ export async function updateCustomerContact(
     }
   }
 
-  // The location is written whenever it is sent, custom fields or not: an API
-  // caller clears it with null. Left out (or blank in the form), it is kept.
+  // The location is written whenever it is sent, custom fields or not. Left
+  // out, or blank in the form, it is kept: the app cannot clear it either.
   const contactRow = {
     ...(customerContact.customFields
       ? { customFields: customerContact.customFields }

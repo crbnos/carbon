@@ -7842,7 +7842,7 @@ export const updateCustomerContact = defineServiceFn({
       notes: z.string().nullable().optional(),
       customerLocationId: z.string().optional()
     }),
-    customerLocationId: z.string().nullable().optional(),
+    customerLocationId: z.string().optional(),
     customFields: z.unknown().optional()
   }),
   permission: { update: "sales" },

@@ -6260,7 +6260,7 @@ export const updateSupplierContact = defineServiceFn({
       notes: z.string().nullable().optional(),
       supplierLocationId: z.string().optional()
     }),
-    supplierLocationId: z.string().nullable().optional(),
+    supplierLocationId: z.string().optional(),
     customFields: z.unknown().optional()
   }),
   permission: { update: "purchasing" },
