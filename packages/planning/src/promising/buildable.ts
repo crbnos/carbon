@@ -7,6 +7,7 @@ import { computeLowLevelCodes } from "@carbon/database/mrp-engine";
 import { scrapAllowance } from "@carbon/database/precision";
 import { type Kysely, sql } from "kysely";
 import { loadActiveBomLines } from "./active-bom.ts";
+import { coverJobs, type JobCoverage, type OpenJob } from "./buildable-jobs.ts";
 
 // Float slack: 0.1 × 30 must not read as short of 3.
 const EPSILON = 1e-9;
@@ -190,6 +191,28 @@ export type BuildableItemInfo = {
   scrapPercentage: number;
   quantityOnHand: number;
   quantityCommitted: number;
+  /** `quantityCommitted` less what the open jobs of the item being made (`jobs`) hold of it */
+  quantityCommittedElsewhere: number;
+  quantityOnOrder: number;
+  replenishmentSystem: string | null;
+};
+
+/** An item the open jobs without their parts are short of. */
+export type BuildableJobShortage = {
+  itemId: string;
+  readableId: string;
+  name: string;
+  unitOfMeasureCode: string | null;
+  /** replenishment is Make, so the shortage needs a job; otherwise it is bought, as MRP plans a Buy and Make item */
+  isMade: boolean;
+  /** what those jobs still lack, after stock */
+  quantityShort: number;
+  /** the jobs short of it */
+  jobs: number;
+  quantityOnHand: number;
+  /** every open demand on the item at the location, these jobs included */
+  quantityCommitted: number;
+  /** open purchase order lines and jobs at the location */
   quantityOnOrder: number;
 };
 
@@ -242,7 +265,17 @@ export type Buildable = {
   quantityOnHand: number;
   quantityCommitted: number;
   quantityAvailable: number;
-  /** from available stock: committed stock stays with its jobs and orders. Null while the BOM cannot be calculated */
+  /** the good units the item's open jobs at the location have not yet received or shipped */
+  quantityInProduction: number;
+  /** of `quantityInProduction`, on jobs whose remaining materials are all in stock */
+  quantityReadyToFinish: number;
+  /** of `quantityInProduction`, on jobs short of at least one material. A job with no verdict (`hasAllParts` null) is in neither */
+  quantityWaitingOnParts: number;
+  /** the item's open jobs, the most urgent first (those with no verdict last), and whether stock covers what each still has to issue */
+  jobs: JobCoverage[];
+  /** what the jobs without their parts lack, the item most jobs wait on first */
+  jobShortages: BuildableJobShortage[];
+  /** how many more can be started from available stock: committed stock stays with its jobs and orders. Null while the BOM cannot be calculated */
   quantityBuildable: number | null;
   /** if committed stock could be used too */
   quantityBuildableFromOnHand: number | null;
@@ -263,6 +296,8 @@ export function computeBuildable(args: {
   locationId: string;
   bom: BuildableBom;
   items: Map<string, BuildableItemInfo>;
+  /** the item's open jobs at the location */
+  jobs?: OpenJob[];
   targetQuantity?: number;
 }): Buildable {
   const { itemId: rootItemId, bom, items } = args;
@@ -273,12 +308,75 @@ export function computeBuildable(args: {
     return s ? Math.max(s.quantityOnHand - s.quantityCommitted, 0) : 0;
   };
   const root = info(rootItemId);
+
+  // A material in another unit than its item's stock cannot be compared with
+  // it (no conversion between units), so its job gets no verdict.
+  const [openJobs, unitJobs] = (args.jobs ?? []).reduce<[OpenJob[], OpenJob[]]>(
+    (split, job) => {
+      const comparable = job.materials.every(
+        (line) =>
+          line.quantityToIssue <= 0 ||
+          line.unitOfMeasureCode ===
+            (info(line.itemId)?.unitOfMeasureCode ?? null)
+      );
+      split[comparable ? 0 : 1].push(job);
+      return split;
+    },
+    [[], []]
+  );
+
+  // The jobs draw on hand stock, less what other demand has committed: their
+  // own commitments are theirs to use. Both figures come from the one stock
+  // read, so a job edited between the reads cannot make them disagree.
+  const coverage = coverJobs({
+    jobs: openJobs,
+    stock: (itemId) => {
+      const s = info(itemId);
+      return s ? s.quantityOnHand - s.quantityCommittedElsewhere : 0;
+    }
+  });
+  const jobs: JobCoverage[] = [
+    ...coverage.jobs,
+    ...unitJobs.map((job) => ({
+      id: job.id,
+      readableId: job.readableId,
+      status: job.status,
+      dueDate: job.dueDate,
+      quantityRemaining: job.quantityRemaining,
+      hasAllParts: null,
+      shortItems: 0
+    }))
+  ];
+  const quantityOn = (list: JobCoverage[]) =>
+    list.reduce((sum, job) => sum + job.quantityRemaining, 0);
+
   const base = {
     itemId: rootItemId,
     locationId: args.locationId,
     quantityOnHand: root?.quantityOnHand ?? 0,
     quantityCommitted: root?.quantityCommitted ?? 0,
     quantityAvailable: freeOf(rootItemId),
+    quantityInProduction: quantityOn(jobs),
+    quantityReadyToFinish: quantityOn(
+      jobs.filter((job) => job.hasAllParts === true)
+    ),
+    quantityWaitingOnParts: quantityOn(
+      jobs.filter((job) => job.hasAllParts === false)
+    ),
+    jobs,
+    jobShortages: coverage.shortages.map((shortage) => {
+      const item = info(shortage.itemId);
+      return {
+        ...shortage,
+        readableId: readableId(shortage.itemId),
+        name: item?.name ?? "",
+        unitOfMeasureCode: item?.unitOfMeasureCode ?? null,
+        isMade: item?.replenishmentSystem === "Make",
+        quantityOnHand: item?.quantityOnHand ?? 0,
+        quantityCommitted: item?.quantityCommitted ?? 0,
+        quantityOnOrder: item?.quantityOnOrder ?? 0
+      };
+    }),
     hasMakeMethod: isMade(bom, rootItemId)
   };
 
@@ -408,6 +506,10 @@ export function computeBuildable(args: {
  * item (`loadActiveBomLines`), then each tree item's stock, scrap rate,
  * commitments and open supply at the location (one query). Writes nothing.
  *
+ * The quantities are what more can be started. Beside them are the item's
+ * open jobs at the location (`loadOpenJobs`) and whether stock covers what
+ * each still has to issue (`coverJobs`).
+ *
  * Stock is common stock (not a project's or planning group's segment, as MRP
  * nets it), less non-nettable storage, in the item's unit; purchase order
  * lines are already converted to it (`openPurchaseOrderLines`). Committed is
@@ -425,7 +527,10 @@ export async function loadBuildable(
 ): Promise<Buildable | null> {
   const { companyId, locationId, itemId } = args;
 
-  const lines = await loadActiveBomLines(db, companyId, [itemId]);
+  const [lines, jobs] = await Promise.all([
+    loadActiveBomLines(db, companyId, [itemId]),
+    loadOpenJobs(db, args)
+  ]);
   const bom: BuildableBom = new Map();
   const itemIds = new Set([itemId]);
   for (const line of lines) {
@@ -441,15 +546,22 @@ export async function loadBuildable(
     bom.set(line.parentItemId, children);
   }
 
+  for (const job of jobs) {
+    for (const line of job.materials) itemIds.add(line.itemId);
+  }
+
   const ids = Array.from(itemIds);
+  const jobIds = jobs.map((job) => job.id);
   const rows = await sql<{
     id: string;
     readableId: string | null;
     name: string | null;
     unitOfMeasureCode: string | null;
+    replenishmentSystem: string | null;
     scrapPercentage: string | number | null;
     quantityOnHand: string | number | null;
     quantityCommitted: string | number | null;
+    quantityCommittedElsewhere: string | number | null;
     quantityOnOrder: string | number | null;
   }>`
     WITH
@@ -462,17 +574,20 @@ export async function loadBuildable(
       GROUP BY isq."itemId"
     ),
     "committed" AS (
-      SELECT d."itemId", SUM(d."quantity") AS "quantity"
+      SELECT d."itemId", SUM(d."quantity") AS "quantity",
+        SUM(d."quantity") FILTER (
+          WHERE d."jobId" IS NULL OR d."jobId" <> ALL(${jobIds}::text[])
+        ) AS "elsewhere"
       FROM (
-        SELECT "itemId", "quantityToIssue" AS "quantity" FROM "openJobMaterialLines"
+        SELECT "itemId", "quantityToIssue" AS "quantity", "jobId" FROM "openJobMaterialLines"
         WHERE "companyId" = ${companyId} AND "locationId" = ${locationId}
           AND "itemId" = ANY(${ids}::text[]) AND COALESCE("planningSegmentId", '') = ''
         UNION ALL
-        SELECT "itemId", "quantityToSend" FROM "openSalesOrderLines"
+        SELECT "itemId", "quantityToSend", NULL FROM "openSalesOrderLines"
         WHERE "companyId" = ${companyId} AND "locationId" = ${locationId}
           AND "itemId" = ANY(${ids}::text[]) AND COALESCE("planningSegmentId", '') = ''
         UNION ALL
-        SELECT "itemId", GREATEST("quantity", 0) FROM "openProjectMaterialLines"
+        SELECT "itemId", GREATEST("quantity", 0), NULL FROM "openProjectMaterialLines"
         WHERE "companyId" = ${companyId} AND "locationId" = ${locationId}
           AND "itemId" = ANY(${ids}::text[]) AND COALESCE("planningSegmentId", '') = ''
       ) d
@@ -496,9 +611,11 @@ export async function loadBuildable(
       i."readableIdWithRevision" AS "readableId",
       i."name",
       i."unitOfMeasureCode",
+      i."replenishmentSystem",
       ir."scrapPercentage",
       "stock"."quantity" AS "quantityOnHand",
       "committed"."quantity" AS "quantityCommitted",
+      "committed"."elsewhere" AS "quantityCommittedElsewhere",
       "onOrder"."quantity" AS "quantityOnOrder"
     FROM "item" i
     LEFT JOIN "itemReplenishment" ir
@@ -518,7 +635,12 @@ export async function loadBuildable(
       scrapPercentage: Math.max(Number(row.scrapPercentage ?? 0), 0),
       quantityOnHand: Number(row.quantityOnHand ?? 0),
       quantityCommitted: Math.max(Number(row.quantityCommitted ?? 0), 0),
-      quantityOnOrder: Math.max(Number(row.quantityOnOrder ?? 0), 0)
+      quantityCommittedElsewhere: Math.max(
+        Number(row.quantityCommittedElsewhere ?? 0),
+        0
+      ),
+      quantityOnOrder: Math.max(Number(row.quantityOnOrder ?? 0), 0),
+      replenishmentSystem: row.replenishmentSystem
     });
   }
   if (!items.has(itemId)) return null;
@@ -528,6 +650,80 @@ export async function loadBuildable(
     locationId,
     bom,
     items,
+    jobs,
     targetQuantity: args.targetQuantity
   });
+}
+
+/**
+ * The item's open jobs at the location that still have good units to finish,
+ * each with what its materials still have to be issued. Two reads.
+ *
+ * Read from "job", not "openProductionOrders": that view is MRP's supply, so
+ * it leaves out a job made for a sales order and counts the scrap allowance.
+ * The statuses are the view's. What remains is as "openSalesOrderLines" nets
+ * a job: quantity less received to inventory less shipped.
+ *
+ * Only jobs whose materials are common-segment demand, as the stock they are
+ * compared with is: a job of a planning group or of a project that keeps its
+ * own stock draws that stock, which this calculation does not count.
+ */
+async function loadOpenJobs(
+  db: Kysely<DB>,
+  args: { companyId: string; locationId: string; itemId: string }
+): Promise<OpenJob[]> {
+  const { companyId, locationId, itemId } = args;
+  const jobs = await sql<{
+    id: string;
+    readableId: string;
+    status: OpenJob["status"];
+    dueDate: string | null;
+    priority: string | number | null;
+    quantityRemaining: string | number;
+  }>`
+    SELECT j."id", j."jobId" AS "readableId", j."status", j."dueDate",
+      j."priority",
+      j."quantity" - j."quantityReceivedToInventory" - j."quantityShipped" AS "quantityRemaining"
+    FROM "job" j
+    WHERE j."companyId" = ${companyId} AND j."locationId" = ${locationId}
+      AND j."itemId" = ${itemId}
+      AND j."status" IN ('Planned', 'Ready', 'In Progress', 'Paused')
+      AND j."quantity" - j."quantityReceivedToInventory" - j."quantityShipped" > 0
+      AND COALESCE(j."planningGroupId", project_planning_segment(j."projectId"), '') = ''
+  `.execute(db);
+  if (jobs.rows.length === 0) return [];
+
+  const jobIds = jobs.rows.map((job) => job.id);
+  const lines = await sql<{
+    jobId: string;
+    itemId: string;
+    unitOfMeasureCode: string | null;
+    quantityToIssue: string | number;
+  }>`
+    SELECT "jobId", "itemId", "unitOfMeasureCode",
+      SUM(GREATEST("quantityToIssue", 0)) AS "quantityToIssue"
+    FROM "openJobMaterialLines"
+    WHERE "companyId" = ${companyId} AND "jobId" = ANY(${jobIds}::text[])
+    GROUP BY "jobId", "itemId", "unitOfMeasureCode"
+  `.execute(db);
+  const materials = new Map<string, OpenJob["materials"]>();
+  for (const line of lines.rows) {
+    const list = materials.get(line.jobId) ?? [];
+    list.push({
+      itemId: line.itemId,
+      quantityToIssue: Number(line.quantityToIssue),
+      unitOfMeasureCode: line.unitOfMeasureCode
+    });
+    materials.set(line.jobId, list);
+  }
+
+  return jobs.rows.map((job) => ({
+    id: job.id,
+    readableId: job.readableId,
+    status: job.status,
+    dueDate: job.dueDate,
+    priority: job.priority === null ? null : Number(job.priority),
+    quantityRemaining: Number(job.quantityRemaining),
+    materials: materials.get(job.id) ?? []
+  }));
 }

@@ -186,6 +186,10 @@ msgstr "{0, plural, one {# 기한 초과} other {# 기한 초과}}"
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# 매개변수} other {# 매개변수}}"
 
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {부품 #개 부족} other {부품 #개 부족}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 기록에 주의가 필요합니다} other {# 기록에 주의가 필요합니다}}"
@@ -352,6 +356,11 @@ msgstr "{0} 가용"
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
 msgstr "{0}이 {owner}에서 가용 중입니다"
+
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "가용 {0}, 할당 {1}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -1262,6 +1271,9 @@ msgstr "배치 없는 {quantity}"
 msgid "{quantity} without a serial number"
 msgstr "시리얼 번호가 없는 {quantity}"
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {부품이 모두 갖춰진 미결 작업 지시가 없음} one {재고에 부품이 모두 있는 작업 지시 #건 생산 중} other {재고에 부품이 모두 있는 작업 지시 #건 생산 중}}"
+
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
@@ -1381,6 +1393,9 @@ msgstr "{value, plural, one {# 일} other {# 일}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 라인이 예상 수량과 다릅니다} other {# 라인이 예상 수량과 다릅니다}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {부품이 부족한 미결 작업 지시가 없음} one {부품 부족 작업 지시 #건 생산 중} other {부품 부족 작업 지시 #건 생산 중}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings}개가 후속 조치 필요"
@@ -3674,6 +3689,9 @@ msgstr "모든 문서"
 
 msgid "All gauges"
 msgstr "모든 계측기"
+
+msgid "All in stock"
+msgstr "재고 모두 확보"
 
 msgid "All item types"
 msgstr "모든 품목 유형"
@@ -6377,8 +6395,8 @@ msgstr "Carbon에서는 이를 방법(method)이라고 부릅니다 — 품목�
 msgid "Camera"
 msgstr "카메라"
 
-msgid "Can Make Now"
-msgstr ""
+msgid "Can Start More"
+msgstr "추가 착수 가능"
 
 msgid "Can't be restored"
 msgstr "복원할 수 없습니다"
@@ -13826,9 +13844,6 @@ msgstr "완제품"
 msgid "Finished Goods (default)"
 msgstr "완제품 (기본)"
 
-msgid "Finished Goods Available"
-msgstr ""
-
 msgid "finishes"
 msgstr "마감"
 
@@ -14159,9 +14174,6 @@ msgstr "출발과 도착이 같은 보관 단위입니다"
 msgid "From and To can't be the same storage unit"
 msgstr "출발지와 도착지는 같은 보관 단위일 수 없습니다"
 
-msgid "From available component stock"
-msgstr ""
-
 msgid "From customer"
 msgstr "고객으로부터"
 
@@ -14179,6 +14191,13 @@ msgstr "기간에서"
 
 msgid "From previous week"
 msgstr "이전 주에서"
+
+msgid "From stock no job or order has claimed"
+msgstr "어떤 작업 지시나 주문에도 할당되지 않은 재고"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "어떤 작업 지시나 주문에도 할당되지 않은 재고 기준. 할당된 재고를 사용하면 {0}"
 
 msgid "From Storage Unit"
 msgstr "보관 단위에서"
@@ -15251,9 +15270,6 @@ msgstr "주문할 경우, 향후 48주간 재고 부족이 예상되지 않습�
 
 msgid "If something is off track"
 msgstr "일정에서 벗어난 경우"
-
-msgid "If stock committed to open orders were used"
-msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "부품 번호를 변경하려면 취소를 클릭하고 변환 전에 각 라인의 부품을 수동으로 할당하세요."
@@ -16516,11 +16532,17 @@ msgstr "{orderId}의 작업 지시"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "{orderId}의 작업 지시: {jobCount}, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "생산 중인 작업 지시"
+
 msgid "Jobs Required"
 msgstr "필요한 작업 지시"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "자재 명세서에 이 품목이 있는 작업 지시"
+
+msgid "Jobs Waiting"
+msgstr "대기 중인 작업 지시"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -21058,11 +21080,6 @@ msgstr "보유수량"
 msgid "On Hand"
 msgstr "보유수량"
 
-#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
-#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
-msgid "On hand {0}, committed {1}"
-msgstr ""
-
 msgid "On hand {before} to {after}"
 msgstr "보유수량: {before}에서 {after}(으)로"
 
@@ -24465,6 +24482,9 @@ msgstr "적치 준비 완료"
 
 msgid "Ready for Quote"
 msgstr "견적 준비 완료"
+
+msgid "Ready to Finish"
+msgstr "마감 준비 완료"
 
 msgid "ready to keep or revert"
 msgstr "유지하거나 되돌릴 준비됨"
@@ -28293,6 +28313,9 @@ msgstr "{0} 부족"
 
 msgid "Short Description"
 msgstr "간단 설명"
+
+msgid "Short for Jobs in Production"
+msgstr "생산 중인 작업 지시 부족분"
 
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
@@ -32417,9 +32440,6 @@ msgstr "3자 대사"
 msgid "Through {0}"
 msgstr "{0}까지"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
-
 msgid "Thumbnail"
 msgstr "썸네일"
 
@@ -32612,6 +32632,9 @@ msgstr "출하 대기"
 
 msgid "To Ship and Receive"
 msgstr "출하 대기 및 입고 대기"
+
+msgid "To Start More"
+msgstr "추가 착수 대상"
 
 msgid "To Storage Unit"
 msgstr "보관 단위로"
@@ -33966,9 +33989,6 @@ msgstr "이 작업 지시에서 사용"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "부분 조립품 {0} · {1} 사용"
 
-msgid "Using All On Hand"
-msgstr ""
-
 msgid "VAC"
 msgstr "VAC"
 
@@ -34444,6 +34464,9 @@ msgstr "대기 중"
 msgid "Waiting for the first sync"
 msgstr "첫 동기화를 기다리는 중"
 
+msgid "Waiting on Parts"
+msgstr "부품 대기"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "담당자와 함께 각 영역을 살펴보고 범위에서 벗어난 항목은 토글로 제외하세요. 코드는 모듈.영역.번호 형식입니다(ACC.GL.01 = 회계, 총계정원장, 1번 항목)."
 
@@ -34698,6 +34721,9 @@ msgstr "{translatedTerm}란 무엇인가요?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "예를 들어 포크리프트 FL-12와 같이 리스되는 것"
 
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "이 사업장의 현재 보유 재고, 부품이 모두 갖춰져 마무리할 수 있는 미결 작업 지시, 그리고 나머지 작업 지시의 부족 부품을 보여줍니다. 추가 착수 여부는 자재 명세서의 모든 단계를 품목별 스크랩을 반영해 확인합니다."
+
 msgid "What is the primary contact?"
 msgstr "주 담당자는 누구인가요?"
 
@@ -34718,6 +34744,9 @@ msgstr "이 구매주문의 종류입니다 — 표준 재화, 서비스, 외주
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "이 견적의 종류입니다 — 표준 공급업체 견적, 포괄계약 가격 견적, 또는 위탁제조 견적 중 하나이며, 구매주문으로 전환될 때 라인 레이아웃을 결정합니다."
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "어떤 작업 지시나 주문에도 할당되지 않은 재고 기준으로, 새 작업 지시를 제한하는 요인입니다."
 
 msgid "What posting this run will write, by account."
 msgstr "이 실행이 계정별로 전기할 내용"
@@ -34742,6 +34771,9 @@ msgstr "고객이 지불하는 금액, 라인의 청구 이벤트에 따라 청�
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "납기일 카운트다운이 시작되는 지점 (송장 일자, 월말 등)."
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "재고를 차감하고도 부품 대기 중인 작업 지시에 아직 필요한 수량입니다. 이를 마무리하려면 구매 또는 사내 생산하세요."
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "리스가 지불하는 금액과 시기입니다. 활성화하면 이 행에서 리스 부채가 가치평가됩니다. 셀을 클릭하여 변경하세요."

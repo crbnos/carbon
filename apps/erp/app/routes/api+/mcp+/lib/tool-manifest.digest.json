@@ -450,7 +450,7 @@
     {"name":"items_duplicateMethodOperationStep","classification":"WRITE","schema":"7f8214d1083f","response":"3797626bd17e","permission":"parts:create","paginates":false},
     {"name":"items_getBomHasShelfLifeManagedInput","classification":"READ","schema":"30ab89ff5be9","response":"4a5fff977a84","permission":"parts:view","paginates":false},
     {"name":"items_getBomItemAttributes","classification":"READ","schema":"fb8f0e541b3e","response":"a2c799262a3c","permission":"parts:view","paginates":false},
-    {"name":"items_getBuildableQuantity","classification":"READ","schema":"718429f8f0bb","response":"af215b904537","permission":"parts:view","paginates":false},
+    {"name":"items_getBuildableQuantity","classification":"READ","schema":"718429f8f0bb","response":"faf2727bf709","permission":"parts:view","paginates":false},
     {"name":"items_getChangeNotice","classification":"READ","schema":"ceb3bf7aba37","response":"1a1262d4cc54","permission":"parts:view","paginates":false},
     {"name":"items_getChangeNoticeActions","classification":"READ","schema":"ceb3bf7aba37","response":"b7e9332382ae","permission":"parts:view","paginates":false},
     {"name":"items_getChangeNoticeAffectedItems","classification":"READ","schema":"ceb3bf7aba37","response":"5483e69d7515","permission":"parts:view","paginates":false},
