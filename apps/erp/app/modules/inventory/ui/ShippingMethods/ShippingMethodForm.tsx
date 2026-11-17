@@ -192,7 +192,7 @@ function TransitStatsLine({
     <div className="flex w-full flex-col gap-2 rounded-md border border-border p-3 text-xs text-muted-foreground">
       <p>
         <Trans>
-          Last 90 days: {count} shipments, average {average} business days.
+          Last 90 days: {count} shipments, average {average} business days.{" "}
           {byEstimate} by the estimate, {byPromise} by the promised date.
         </Trans>
       </p>

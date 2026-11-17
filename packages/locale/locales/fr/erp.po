@@ -16808,8 +16808,8 @@ msgstr "Plus grand enfant"
 msgid "Last 6 Months"
 msgstr "6 derniers mois"
 
-msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr "90 derniers jours : {count} expéditions, moyenne de {average} jours ouvrés.{byEstimate} selon l'estimation, {byPromise} selon la date promise."
+msgid "Last 90 days: {count} shipments, average {average} business days. {byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
 
 msgid "Last Activity"
 msgstr "Dernière activité"

@@ -16808,8 +16808,8 @@ msgstr "En büyük alt öğe"
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
 
-msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr "Son 90 gün: {count} sevkiyat, ortalama {average} iş günü. Tahmine göre {byEstimate}, taahhüt tarihine göre {byPromise}."
+msgid "Last 90 days: {count} shipments, average {average} business days. {byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
 
 msgid "Last Activity"
 msgstr "Son etkinlik"

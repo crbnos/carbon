@@ -16808,8 +16808,8 @@ msgstr "最大子项"
 msgid "Last 6 Months"
 msgstr "最近6个月"
 
-msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr "近 90 天：{count} 次发货，平均 {average} 个工作日。按预估 {byEstimate}，按承诺日期 {byPromise}。"
+msgid "Last 90 days: {count} shipments, average {average} business days. {byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
 
 msgid "Last Activity"
 msgstr "最近活动"

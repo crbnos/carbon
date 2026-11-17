@@ -16808,8 +16808,8 @@ msgstr "सबसे बड़ा चाइल्ड"
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
 
-msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr "पिछले 90 दिन: {count} शिपमेंट, औसत {average} कार्य दिवस.{byEstimate} अनुमान से, {byPromise} वादा की गई तिथि से."
+msgid "Last 90 days: {count} shipments, average {average} business days. {byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
 
 msgid "Last Activity"
 msgstr "अंतिम गतिविधि"

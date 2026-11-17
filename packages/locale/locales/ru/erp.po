@@ -16808,8 +16808,8 @@ msgstr "Наибольший дочерний элемент"
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
 
-msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr "За последние 90 дней: отгрузок {count}, в среднем {average} рабочих дней.{byEstimate} по расчетной дате, {byPromise} по подтвержденной дате."
+msgid "Last 90 days: {count} shipments, average {average} business days. {byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
 
 msgid "Last Activity"
 msgstr "Последняя активность"

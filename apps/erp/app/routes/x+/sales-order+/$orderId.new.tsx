@@ -46,6 +46,7 @@ export default function NewSalesOrderLineRoute() {
   const salesOrderData = useRouteData<{
     salesOrder: SalesOrder;
     customer: Customer;
+    shipByPlan: { defaultShipBy: string | null } | null;
   }>(path.to.salesOrder(orderId));
 
   const initialValues = {
@@ -62,7 +63,10 @@ export default function NewSalesOrderLineRoute() {
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
     taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    // promisedDate is the day the line ships: the order's promised arrival
+    // minus the transit days. With no transit days known, the arrival date.
     promisedDate:
+      salesOrderData?.shipByPlan?.defaultShipBy ??
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",

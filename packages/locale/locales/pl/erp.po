@@ -16808,8 +16808,8 @@ msgstr "Największy element podrzędny"
 msgid "Last 6 Months"
 msgstr "Ostatnie 6 miesięcy"
 
-msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr "Ostatnie 90 dni: {count} wysyłek, średnio {average} dni roboczych.{byEstimate} według szacunku, {byPromise} według daty potwierdzonej."
+msgid "Last 90 days: {count} shipments, average {average} business days. {byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
 
 msgid "Last Activity"
 msgstr "Ostatnia aktywność"
