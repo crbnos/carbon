@@ -24749,15 +24749,20 @@ export async function postInventoryAdjustment(
   // A tracked entity's movements stay in the stripe that holds it: the
   // stripe of its row with the most on-hand. Untracked stock, and a new
   // entity, are adjusted in the requested stripe (common by default).
-  const entityHolding = trackedEntityId
-    ? trackingRows
-        .filter((q) => q.trackedEntityId == trackedEntityId)
-        .reduce<TrackingQuantityRow | null>(
-          (best, q) =>
-            !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
-          null
-        )
-    : null;
+  const fullest = (rows: TrackingQuantityRow[]) =>
+    rows.reduce<TrackingQuantityRow | null>(
+      (best, q) =>
+        !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
+      null
+    );
+  const onHandOf = (rows: TrackingQuantityRow[]) =>
+    rows.reduce((sum, q) => sum + (q.quantity ?? 0), 0);
+  // Non-empty when the payload names a lot that already has stock movements
+  // here. That lot is then the target: a batch number is not unique per lot.
+  const lotRows = trackedEntityId
+    ? trackingRows.filter((q) => q.trackedEntityId == trackedEntityId)
+    : [];
+  const entityHolding = fullest(lotRows);
   const entityStripe = entityHolding
     ? (entityHolding.projectId ?? null)
     : requestedStripe;
@@ -25351,8 +25356,17 @@ export async function postInventoryAdjustment(
       adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType;
     let adjustmentQuantity = quantity;
 
-    if (adjustmentType === "Set Quantity" && currentQuantity) {
-      const quantityDifference = quantity - currentQuantityOnHand;
+    // What the adjustment is measured against and booked on: the named lot's
+    // row in the payload's bin (one row per lot, bin and stripe), else the
+    // loose lookup. A lot elsewhere at the location has nothing in this bin.
+    const namesLot = lotRows.length > 0;
+    const adjustedRow = namesLot
+      ? fullest(lotRows.filter((q) => q.storageUnitId == storageUnitId))
+      : currentQuantity;
+    const adjustedOnHand = adjustedRow?.quantity ?? 0;
+
+    if (adjustmentType === "Set Quantity" && (namesLot || currentQuantity)) {
+      const quantityDifference = quantity - adjustedOnHand;
       if (quantityDifference > 0) {
         entryType = "Positive Adjmt.";
         adjustmentQuantity = quantityDifference;
@@ -25381,18 +25395,34 @@ export async function postInventoryAdjustment(
       }
     }
 
-    // Resolve the stock target for a negative adjustment when a serial
-    // number is provided or nothing matched the loose lookup.
-    if (entryType === "Negative Adjmt." && (readableId || !currentQuantity)) {
+    // Resolve the stock target for a negative adjustment that names no
+    // existing lot, when a serial or batch number is provided or nothing
+    // matched the loose lookup.
+    if (
+      entryType === "Negative Adjmt." &&
+      !namesLot &&
+      (readableId || !currentQuantity)
+    ) {
       if (readableId) {
-        const resolvedQtyRow = trackingRows.find(
+        const matches = trackingRows.filter(
           (q) =>
             q.readableId === readableId &&
             q.trackedEntityId != null &&
+            q.storageUnitId == storageUnitId &&
             (q.quantity ?? 0) > 0
         );
+        const resolvedQtyRow = matches[0];
         if (!resolvedQtyRow) {
           throw new InvalidInputError("Serial number not found");
+        }
+        if (
+          matches.some(
+            (q) => q.trackedEntityId !== resolvedQtyRow.trackedEntityId
+          )
+        ) {
+          throw new InvalidInputError(
+            "Multiple tracked entities in this storage unit — select a specific row to adjust"
+          );
         }
         const resolvedId = resolvedQtyRow.trackedEntityId as string;
         const resolvedQty = round(resolvedQtyRow.quantity ?? 0);
@@ -25409,7 +25439,10 @@ export async function postInventoryAdjustment(
           .updateTable("trackedEntity")
           .set({
             ...settleQuantity({
-              quantity: resolvedQty - adjustmentQuantity,
+              quantity:
+                onHandOf(
+                  trackingRows.filter((q) => q.trackedEntityId === resolvedId)
+                ) - adjustmentQuantity,
               status: await currentEntityStatus(trx, resolvedId, companyId)
             }),
             readableId
@@ -25517,7 +25550,7 @@ export async function postInventoryAdjustment(
 
     let signedQuantity = adjustmentQuantity;
     if (entryType === "Negative Adjmt.") {
-      if (adjustmentQuantity > currentQuantityOnHand) {
+      if (adjustmentQuantity > adjustedOnHand) {
         throw new InvalidInputError(
           "Insufficient quantity for negative adjustment"
         );
@@ -25526,13 +25559,14 @@ export async function postInventoryAdjustment(
     }
 
     if (trackedEntityId) {
-      if (currentQuantity) {
+      if (namesLot) {
         // Draining a lot to zero Consumes it (a Set Quantity to 0 or a full
         // negative adjustment); above zero its status is untouched. This path
         // takes an arbitrary trackedEntityId from the payload, so it is the
         // one that can land on a Scrapped lot — settleQuantity preserves it.
+        // Settled on the lot's total, so stock in another bin keeps it open.
         const entityUpdate: Record<string, unknown> = settleQuantity({
-          quantity: signedQuantity + currentQuantityOnHand,
+          quantity: signedQuantity + onHandOf(lotRows),
           status: await currentEntityStatus(trx, trackedEntityId, companyId)
         });
         if (readableId !== undefined && readableId !== null) {
@@ -25603,6 +25637,9 @@ export async function postInventoryAdjustment(
     const booked = await bookAdjustment(trx, {
       ledger: {
         ...ledgerBase,
+        ...(namesLot && adjustedRow
+          ? { projectId: adjustedRow.projectId ?? null }
+          : {}),
         entryType,
         quantity: signedQuantity
       },
