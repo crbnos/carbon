@@ -417,6 +417,10 @@ msgstr "{0} días"
 msgid "{0} deleted successfully"
 msgstr "{0} eliminado correctamente"
 
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} asientos de diario en borrador"
@@ -636,10 +640,6 @@ msgstr "{0} op. · {1} pzas."
 msgid "{0} orders"
 msgstr "{0} pedidos"
 
-#. placeholder {0}: selected.label
-msgid "{0} over time"
-msgstr ""
-
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} vínculos de pieza sin línea BOM coincidente en la operación"
@@ -684,6 +684,10 @@ msgstr "{0} reporta que el libro mayor está en poder de"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} filas"
+
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
 
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
@@ -1588,9 +1592,6 @@ msgid "2 years"
 msgstr "2 años"
 
 msgid "25th"
-msgstr ""
-
-msgid "25th – 75th"
 msgstr ""
 
 msgid "28 Days"
@@ -11608,6 +11609,9 @@ msgstr "Cada período es un mes, para la tarifa mensual."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidad física obtiene su propia entidad rastreada y número único — una entidad, una unidad."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "Cada orden de trabajo liberada recibe una lista de picking. Sus piezas van a la unidad de almacenamiento de pie de línea de cada centro de trabajo que las usa."
 
@@ -16855,20 +16859,8 @@ msgstr "Más grande"
 msgid "Largest child"
 msgstr "Hijo más grande"
 
-msgid "Last 12 months"
-msgstr ""
-
-msgid "Last 2 years"
-msgstr ""
-
-msgid "Last 6 months"
-msgstr ""
-
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
-
-msgid "Last 90 days"
-msgstr ""
 
 msgid "Last Activity"
 msgstr "Última actividad"
@@ -18642,9 +18634,6 @@ msgstr "Mensual (calendario)"
 
 msgid "Monthly Depreciation"
 msgstr "Depreciación Mensual"
-
-msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
-msgstr ""
 
 msgid "Monthly Rent"
 msgstr "Renta mensual"
@@ -21052,6 +21041,11 @@ msgstr "Número de tareas abiertas"
 
 msgid "Number of operations"
 msgstr "Número de operaciones"
+
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
 
 msgid "Number weeks by calendar week"
 msgstr "Numerar las semanas por semana natural"
@@ -32685,6 +32679,9 @@ msgstr "Título del evento"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "El título se transfiere al cliente cuando termina el plazo."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "Para"

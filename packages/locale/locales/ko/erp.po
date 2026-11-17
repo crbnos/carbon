@@ -417,6 +417,10 @@ msgstr "{0}일"
 msgid "{0} deleted successfully"
 msgstr "{0}이(가) 삭제되었습니다"
 
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 전표"
@@ -636,10 +640,6 @@ msgstr "{0} 작업 · {1} 개"
 msgid "{0} orders"
 msgstr "주문 {0}건"
 
-#. placeholder {0}: selected.label
-msgid "{0} over time"
-msgstr ""
-
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0}개 부품 링크가 공정의 BOM 라인과 일치하지 않음"
@@ -684,6 +684,10 @@ msgstr "{0}은(는) 원장이 다음에 의해 보유되고 있다고 보고합�
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 행"
+
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
 
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
@@ -1588,9 +1592,6 @@ msgid "2 years"
 msgstr "2년"
 
 msgid "25th"
-msgstr ""
-
-msgid "25th – 75th"
 msgstr ""
 
 msgid "28 Days"
@@ -11608,6 +11609,9 @@ msgstr "각 기간은 1개월이며, 월별 요금으로 청구됩니다."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "릴리스된 작업 지시마다 피킹 리스트가 하나씩 생성됩니다. 해당 부품은 사용하는 각 작업장의 라인사이드 보관 단위로 보내집니다."
 
@@ -16855,20 +16859,8 @@ msgstr "더 크게"
 msgid "Largest child"
 msgstr "가장 큰 자식"
 
-msgid "Last 12 months"
-msgstr ""
-
-msgid "Last 2 years"
-msgstr ""
-
-msgid "Last 6 months"
-msgstr ""
-
 msgid "Last 6 Months"
 msgstr "지난 6개월"
-
-msgid "Last 90 days"
-msgstr ""
 
 msgid "Last Activity"
 msgstr "최근 활동"
@@ -18642,9 +18634,6 @@ msgstr "매월 (달력)"
 
 msgid "Monthly Depreciation"
 msgstr "매월 감가상각"
-
-msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
-msgstr ""
 
 msgid "Monthly Rent"
 msgstr "매월 렌트"
@@ -21052,6 +21041,11 @@ msgstr "열린 작업 수"
 
 msgid "Number of operations"
 msgstr "공정의 수"
+
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
 
 msgid "Number weeks by calendar week"
 msgstr "달력 주 기준으로 주 번호 매기기"
@@ -32685,6 +32679,9 @@ msgstr "이벤트의 제목"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "약관이 종료되면 소유권이 고객에게 이전됩니다."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "까지"

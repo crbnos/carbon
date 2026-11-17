@@ -67,7 +67,8 @@ databaseTest(
         itemId: f.assemblyId,
         type: "Labor" as const,
         groupBy: "operation" as const,
-        since: new Date(start - 86_400_000).toISOString()
+        from: new Date(start - 86_400_000).toISOString(),
+        to: new Date().toISOString()
       };
       const [weld, ...others] = await getOperationTimeDistributions(f.db, args);
       expect(others).toEqual([]);
@@ -99,6 +100,11 @@ databaseTest(
         operation: weld!.key
       });
       expect(operator).toMatchObject({ key: USER, count: 5, excluded: 1 });
+
+      // A range that ends before the runs finished holds none of them.
+      expect(
+        await getOperationTimeDistributions(f.db, { ...args, to: args.from })
+      ).toEqual([]);
 
       // Setup is per run, and none was clocked.
       expect(

@@ -6,12 +6,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { sql } from "kysely";
 
 export const timeTypes = ["Setup", "Labor", "Machine"] as const;
-export const timeGroupings = [
-  "operation",
-  "operator",
-  "version",
-  "month"
-] as const;
+export const timeGroupings = ["operation", "operator", "version"] as const;
 
 export type TimeType = (typeof timeTypes)[number];
 export type TimeGrouping = (typeof timeGroupings)[number];
@@ -40,6 +35,27 @@ export type TimeDistribution = {
   outliers: TimeOutlier[];
 };
 
+/** One finished run of an operation, for plotting runs individually. */
+export type TimeRun = {
+  jobId: string;
+  jobReadableId: string;
+  seconds: number;
+  endedAt: string;
+  version: number;
+  outlier: boolean;
+};
+
+type RunFilter = {
+  companyId: string;
+  itemId: string;
+  type: TimeType;
+  /** Runs that finished between these two instants. */
+  from: string;
+  to: string;
+  operation?: string;
+  includeOutliers?: boolean;
+};
+
 // Fences need enough runs for the quartiles to mean something.
 const MIN_RUNS_FOR_FENCES = 5;
 
@@ -54,57 +70,13 @@ function parseOperationKey(key: string) {
 }
 
 /**
- * How long finished runs of an item's operations took, as one distribution per
- * group. A run is one job operation: its clocked time of the given type, per
- * unit completed unless it is setup. Runs outside the 1.5 × IQR fences of their
- * operation are reported as `outliers` and left out of the statistics unless
- * `includeOutliers`. Grouping by operator keeps only runs one operator worked
- * alone, since a shared run's time cannot be split between them.
+ * The `scored` CTE: one row per finished run, flagged `outlier` when it falls
+ * outside the 1.5 × IQR fences of its operation.
  */
-export async function getOperationTimeDistributions(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    itemId: string;
-    type: TimeType;
-    groupBy: TimeGrouping;
-    since: string;
-    operation?: string;
-    includeOutliers?: boolean;
-  }
-): Promise<TimeDistribution[]> {
+function scoredRuns(args: RunFilter, soloOnly = false) {
   const perUnit = args.type !== "Setup";
   const operation = args.operation ? parseOperationKey(args.operation) : null;
-  const keep = args.includeOutliers ? sql`true` : sql`NOT s.outlier`;
-
-  const group = {
-    operation: {
-      key: sql`s."processId" || ':' || s.description`,
-      label: sql`coalesce(nullif(s.description, ''), p.name)`,
-      join: sql`JOIN "process" p ON p.id = s."processId"`,
-      order: sql`min(s."order")`
-    },
-    operator: {
-      key: sql`s."employeeId"`,
-      label: sql`coalesce(u."fullName", s."employeeId")`,
-      join: sql`LEFT JOIN "user" u ON u.id = s."employeeId"`,
-      order: sql`2`
-    },
-    version: {
-      key: sql`s.version::text`,
-      label: sql`'V' || s.version::float8`,
-      join: sql``,
-      order: sql`min(s.version)`
-    },
-    month: {
-      key: sql`to_char(s."endedAt", 'YYYY-MM')`,
-      label: sql`to_char(s."endedAt", 'Mon YYYY')`,
-      join: sql``,
-      order: sql`1`
-    }
-  }[args.groupBy];
-
-  const { rows } = await sql<TimeDistribution>`
+  return sql`
     WITH run AS (
       SELECT
         jo."jobId",
@@ -135,7 +107,7 @@ export async function getOperationTimeDistributions(
             : sql``
         }
       GROUP BY jo.id, j."jobId", jmm.version
-      HAVING max(pe."endTime") >= ${args.since}::timestamptz
+      HAVING max(pe."endTime") BETWEEN ${args.from}::timestamptz AND ${args.to}::timestamptz
     ),
     fence AS (
       SELECT
@@ -156,8 +128,48 @@ export async function getOperationTimeDistributions(
         ) AS outlier
       FROM run
       LEFT JOIN fence f USING ("processId", description)
-      ${args.groupBy === "operator" ? sql`WHERE run.operators = 1` : sql``}
+      ${soloOnly ? sql`WHERE run.operators = 1` : sql``}
     )
+  `;
+}
+
+/**
+ * How long finished runs of an item's operations took, as one distribution per
+ * group. A run is one job operation: its clocked time of the given type, per
+ * unit completed unless it is setup. Runs outside the 1.5 × IQR fences of their
+ * operation are reported as `outliers` and left out of the statistics unless
+ * `includeOutliers`. Grouping by operator keeps only runs one operator worked
+ * alone, since a shared run's time cannot be split between them.
+ */
+export async function getOperationTimeDistributions(
+  db: Kysely<KyselyDatabase>,
+  args: RunFilter & { groupBy: TimeGrouping }
+): Promise<TimeDistribution[]> {
+  const keep = args.includeOutliers ? sql`true` : sql`NOT s.outlier`;
+
+  const group = {
+    operation: {
+      key: sql`s."processId" || ':' || s.description`,
+      label: sql`coalesce(nullif(s.description, ''), p.name)`,
+      join: sql`JOIN "process" p ON p.id = s."processId"`,
+      order: sql`min(s."order")`
+    },
+    operator: {
+      key: sql`s."employeeId"`,
+      label: sql`coalesce(u."fullName", s."employeeId")`,
+      join: sql`LEFT JOIN "user" u ON u.id = s."employeeId"`,
+      order: sql`2`
+    },
+    version: {
+      key: sql`s.version::text`,
+      label: sql`'V' || s.version::float8`,
+      join: sql``,
+      order: sql`min(s.version)`
+    }
+  }[args.groupBy];
+
+  const { rows } = await sql<TimeDistribution>`
+    ${scoredRuns(args, args.groupBy === "operator")}
     SELECT
       ${group.key} AS key,
       ${group.label} AS label,
@@ -189,5 +201,21 @@ export async function getOperationTimeDistributions(
     ORDER BY ${group.order}
   `.execute(db);
 
+  return rows;
+}
+
+/** The runs of one operation, oldest first, without the outliers unless asked for. */
+export async function getOperationRuns(
+  db: Kysely<KyselyDatabase>,
+  args: RunFilter & { operation: string }
+): Promise<TimeRun[]> {
+  const { rows } = await sql<TimeRun>`
+    ${scoredRuns(args)}
+    SELECT "jobId", "jobReadableId", seconds, "endedAt", version::float8 AS version, outlier
+    FROM scored
+    ${args.includeOutliers ? sql`` : sql`WHERE NOT outlier`}
+    ORDER BY "endedAt"
+    LIMIT 2000
+  `.execute(db);
   return rows;
 }

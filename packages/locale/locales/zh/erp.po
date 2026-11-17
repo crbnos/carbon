@@ -417,6 +417,10 @@ msgstr "{0} 天"
 msgid "{0} deleted successfully"
 msgstr "{0} 已成功删除"
 
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
@@ -636,10 +640,6 @@ msgstr "{0} 道工序 · {1} 件"
 msgid "{0} orders"
 msgstr "{0} 个订单"
 
-#. placeholder {0}: selected.label
-msgid "{0} over time"
-msgstr ""
-
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} 个零件链接在工序上没有匹配的 BOM 行"
@@ -684,6 +684,10 @@ msgstr "{0}报告账本由以下机构持有"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
+
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
 
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
@@ -1588,9 +1592,6 @@ msgid "2 years"
 msgstr "2 年"
 
 msgid "25th"
-msgstr ""
-
-msgid "25th – 75th"
 msgstr ""
 
 msgid "28 Days"
@@ -11608,6 +11609,9 @@ msgstr "每个周期为一个月,按月费率计算。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "每个已下达的工单生成一张拣货单。其零件会配送到使用它们的每个工作中心的线边存储单元。"
 
@@ -16855,20 +16859,8 @@ msgstr "更大"
 msgid "Largest child"
 msgstr "最大子项"
 
-msgid "Last 12 months"
-msgstr ""
-
-msgid "Last 2 years"
-msgstr ""
-
-msgid "Last 6 months"
-msgstr ""
-
 msgid "Last 6 Months"
 msgstr "最近6个月"
-
-msgid "Last 90 days"
-msgstr ""
 
 msgid "Last Activity"
 msgstr "最近活动"
@@ -18642,9 +18634,6 @@ msgstr "每月(日历)"
 
 msgid "Monthly Depreciation"
 msgstr "每月折旧"
-
-msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
-msgstr ""
 
 msgid "Monthly Rent"
 msgstr "每月租赁"
@@ -21052,6 +21041,11 @@ msgstr "未结任务数"
 
 msgid "Number of operations"
 msgstr "工序数量"
+
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
 
 msgid "Number weeks by calendar week"
 msgstr "按日历周为周编号"
@@ -32685,6 +32679,9 @@ msgstr "事件标题"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "期限结束时，所有权转移给客户。"
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "至"

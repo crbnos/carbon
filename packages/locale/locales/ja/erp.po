@@ -417,6 +417,10 @@ msgstr "{0}日"
 msgid "{0} deleted successfully"
 msgstr "{0}が正常に削除されました"
 
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
@@ -636,10 +640,6 @@ msgstr "{0} 作業 · {1} 個"
 msgid "{0} orders"
 msgstr "{0}件の注文"
 
-#. placeholder {0}: selected.label
-msgid "{0} over time"
-msgstr ""
-
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} 部品リンクは工程上の一致するBOM明細がありません"
@@ -684,6 +684,10 @@ msgstr "{0}は台帳が以下に保持されていると報告しています"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
+
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
 
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
@@ -1588,9 +1592,6 @@ msgid "2 years"
 msgstr "2 年"
 
 msgid "25th"
-msgstr ""
-
-msgid "25th – 75th"
 msgstr ""
 
 msgid "28 Days"
@@ -11608,6 +11609,9 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "リリース済の製造指図ごとに1つのピッキングリストが作成されます。部品は、それを使用する各作業区のラインサイド保管ユニットへ配送されます。"
 
@@ -16855,20 +16859,8 @@ msgstr "より大きい"
 msgid "Largest child"
 msgstr "最大子"
 
-msgid "Last 12 months"
-msgstr ""
-
-msgid "Last 2 years"
-msgstr ""
-
-msgid "Last 6 months"
-msgstr ""
-
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
-
-msgid "Last 90 days"
-msgstr ""
 
 msgid "Last Activity"
 msgstr "最終更新"
@@ -18642,9 +18634,6 @@ msgstr "毎月（暦月）"
 
 msgid "Monthly Depreciation"
 msgstr "毎月減価償却"
-
-msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
-msgstr ""
 
 msgid "Monthly Rent"
 msgstr "毎月のレンタル料"
@@ -21052,6 +21041,11 @@ msgstr "未実行タスクの数"
 
 msgid "Number of operations"
 msgstr "工程の数"
+
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
 
 msgid "Number weeks by calendar week"
 msgstr "週を暦週で番号付けする"
@@ -32685,6 +32679,9 @@ msgstr "イベントのタイトル"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "契約期間が終了すると、所有権が得意先に移転します。"
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "へ"

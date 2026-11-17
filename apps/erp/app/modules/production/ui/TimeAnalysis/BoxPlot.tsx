@@ -14,7 +14,10 @@ export function formatSeconds(seconds: number) {
   return `${+(seconds / 3600).toFixed(1)}h`;
 }
 
-type Row = TimeDistribution & { whiskers: [number, number] };
+type Row = TimeDistribution & { whiskers: [number, number]; color: string };
+
+export const seriesColor = (index: number) =>
+  `hsl(var(--chart-${(index % 6) + 1}))`;
 
 // recharts has no box plot. The bar spans the whiskers and this shape places
 // every other mark inside it by interpolation.
@@ -38,7 +41,7 @@ function Box(props: {
 
   return (
     <g
-      className={cn("text-foreground", dimmed && "opacity-40")}
+      className={cn("text-foreground", dimmed && "opacity-50")}
       stroke="currentColor"
       strokeWidth={1.5}
     >
@@ -59,8 +62,9 @@ function Box(props: {
         width={half * 2}
         height={Math.max(at(payload.q1) - at(payload.q3), 1)}
         rx={2}
-        fill="hsl(var(--chart-1))"
-        fillOpacity={0.25}
+        fill={payload.color}
+        fillOpacity={0.35}
+        stroke={payload.color}
       />
       <line
         x1={center - half}
@@ -127,15 +131,19 @@ export function BoxPlot({
   data,
   selected,
   onSelect,
+  color,
   className
 }: {
+  /** One colour for every box; without it each box gets its own. */
+  color?: string;
   data: TimeDistribution[];
   selected?: string;
   onSelect?: (key: string) => void;
   className?: string;
 }) {
-  const rows: Row[] = data.map((row) => ({
+  const rows: Row[] = data.map((row, i) => ({
     ...row,
+    color: color ?? seriesColor(i),
     whiskers: [row.min, row.max]
   }));
 

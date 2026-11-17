@@ -9,7 +9,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ClientOnly,
   Combobox,
+  DateTimePicker,
   HStack,
   Select,
   SelectContent,
@@ -25,32 +27,36 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
+import type { DateValue } from "@internationalized/date";
+import {
+  parseAbsolute,
+  toCalendarDateTime,
+  toZoned
+} from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ReferenceLine,
-  XAxis,
-  YAxis
-} from "recharts";
 import { z } from "zod";
 import { DateTime } from "~/components";
 import Empty from "~/components/Empty";
 import { useUrlParams } from "~/hooks";
+import { useCompanyTimeZone } from "~/hooks/useCompanyTimeZone";
+import type { TimeGrouping } from "~/modules/production/operation-time-analysis";
 import {
+  getOperationRuns,
   getOperationTimeDistributions,
   timeTypes
 } from "~/modules/production/operation-time-analysis";
 import {
   BoxPlot,
-  formatSeconds
+  formatSeconds,
+  seriesColor
 } from "~/modules/production/ui/TimeAnalysis/BoxPlot";
+import {
+  RunHistogram,
+  RunScatter
+} from "~/modules/production/ui/TimeAnalysis/RunCharts";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
@@ -61,13 +67,12 @@ export const handle: Handle = {
   to: path.to.timeAnalysis
 };
 
-const ranges = ["90", "180", "365", "730"] as const;
-
 const paramsValidator = z.object({
   itemId: z.string().optional(),
   operation: z.string().optional(),
   type: z.enum(timeTypes).catch("Labor"),
-  days: z.enum(ranges).catch("365"),
+  from: z.string().datetime().optional().catch(undefined),
+  to: z.string().datetime().optional().catch(undefined),
   outliers: z.literal("1").optional().catch(undefined)
 });
 
@@ -78,44 +83,44 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const params = paramsValidator.parse(
     Object.fromEntries(new URL(request.url).searchParams)
   );
+  // Without a range: the twelve months up to now.
+  const to = params.to ?? new Date().toISOString();
+  const from =
+    params.from ?? new Date(Date.parse(to) - 365 * 86_400_000).toISOString();
   if (!params.itemId) {
     return {
       ...params,
       operations: [],
+      from,
+      to,
       versions: [],
-      months: [],
+      runs: [],
       operators: []
     };
   }
 
   const db = getDatabaseClient();
-  const distributions = (
-    groupBy: "operation" | "version" | "month" | "operator"
-  ) =>
-    getOperationTimeDistributions(db, {
-      companyId,
-      itemId: params.itemId!,
-      type: params.type,
-      since: new Date(
-        Date.now() - Number(params.days) * 86_400_000
-      ).toISOString(),
-      includeOutliers: params.outliers === "1",
-      groupBy,
-      operation: groupBy === "operation" ? undefined : params.operation
-    });
+  const filter = {
+    companyId,
+    itemId: params.itemId,
+    type: params.type,
+    from,
+    to,
+    includeOutliers: params.outliers === "1"
+  };
+  const { operation } = params;
 
-  const [operations, versions, months, operators] = await Promise.all([
-    distributions("operation"),
-    ...(params.operation
-      ? [
-          distributions("version"),
-          distributions("month"),
-          distributions("operator")
-        ]
-      : [[], [], []])
+  const distributions = (groupBy: TimeGrouping) =>
+    getOperationTimeDistributions(db, { ...filter, operation, groupBy });
+
+  const [operations, versions, operators, runs] = await Promise.all([
+    getOperationTimeDistributions(db, { ...filter, groupBy: "operation" }),
+    operation ? distributions("version") : [],
+    operation ? distributions("operator") : [],
+    operation ? getOperationRuns(db, { ...filter, operation }) : []
   ]);
 
-  return { ...params, operations, versions, months, operators };
+  return { ...params, from, to, operations, versions, operators, runs };
 }
 
 export default function TimeAnalysisRoute() {
@@ -123,7 +128,11 @@ export default function TimeAnalysisRoute() {
   const data = useLoaderData<typeof loader>();
   const [, setParams] = useUrlParams();
   const [items] = useItems();
-  const selected = data.operations.find((o) => o.key === data.operation);
+  const selectedIndex = data.operations.findIndex(
+    (o) => o.key === data.operation
+  );
+  const selected = data.operations[selectedIndex];
+  const color = seriesColor(selectedIndex);
   const outliers = data.operations.flatMap((operation) =>
     operation.outliers.map((outlier) => ({ ...outlier, operation }))
   );
@@ -133,12 +142,16 @@ export default function TimeAnalysisRoute() {
     Labor: t`Labor time per unit`,
     Machine: t`Machine time per unit`
   };
-  const rangeLabels = {
-    "90": t`Last 90 days`,
-    "180": t`Last 6 months`,
-    "365": t`Last 12 months`,
-    "730": t`Last 2 years`
-  };
+  const timeZone = useCompanyTimeZone();
+  const instant = (name: "from" | "to") => ({
+    size: "sm" as const,
+    value: toCalendarDateTime(parseAbsolute(data[name], timeZone)),
+    onChange: (value: DateValue | null) =>
+      value &&
+      setParams({
+        [name]: toZoned(toCalendarDateTime(value), timeZone).toAbsoluteString()
+      })
+  });
 
   return (
     <VStack spacing={4} className="h-full w-full overflow-y-auto p-4">
@@ -170,18 +183,22 @@ export default function TimeAnalysisRoute() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={data.days} onValueChange={(days) => setParams({ days })}>
-          <SelectTrigger size="sm" className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ranges.map((range) => (
-              <SelectItem key={range} value={range}>
-                {rangeLabels[range]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* The picker's markup differs between server and browser. */}
+        <ClientOnly fallback={<div className="h-8 w-[31rem]" />}>
+          {() => (
+            <HStack>
+              <div className="w-60">
+                <DateTimePicker {...instant("from")} aria-label={t`From`} />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                <Trans>to</Trans>
+              </span>
+              <div className="w-60">
+                <DateTimePicker {...instant("to")} aria-label={t`To`} />
+              </div>
+            </HStack>
+          )}
+        </ClientOnly>
         <label className="flex items-center gap-2 text-sm">
           <Switch
             checked={data.outliers === "1"}
@@ -233,6 +250,49 @@ export default function TimeAnalysisRoute() {
 
           {selected && (
             <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
+              <Card className="xl:col-span-2">
+                <CardHeader>
+                  <CardTitle>
+                    <Trans>{selected.label} runs over time</Trans>
+                  </CardTitle>
+                  <CardDescription>
+                    <Trans>
+                      Each point is one run. The dotted lines are the average of
+                      each method version across the runs made with it.
+                    </Trans>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RunScatter
+                    runs={data.runs}
+                    versions={data.versions}
+                    from={data.from}
+                    to={data.to}
+                    color={color}
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <Trans>{selected.label} distribution</Trans>
+                  </CardTitle>
+                  <CardDescription>
+                    <Trans>
+                      Number of runs by time taken. Average{" "}
+                      {formatSeconds(selected.mean)}, median{" "}
+                      {formatSeconds(selected.median)}.
+                    </Trans>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RunHistogram
+                    runs={data.runs}
+                    mean={selected.mean}
+                    color={color}
+                  />
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle>
@@ -240,86 +300,7 @@ export default function TimeAnalysisRoute() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <BoxPlot data={data.versions} />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <Trans>{selected.label} over time</Trans>
-                  </CardTitle>
-                  <CardDescription>
-                    <Trans>
-                      Monthly median, with the middle half of runs shaded and
-                      each new method version marked
-                    </Trans>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{}}
-                    className="aspect-auto h-72 w-full"
-                  >
-                    <ComposedChart
-                      data={data.months.map((month) => ({
-                        ...month,
-                        middle: [month.q1, month.q3]
-                      }))}
-                      margin={{ top: 8, right: 8 }}
-                    >
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="label"
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        width={64}
-                        tickFormatter={formatSeconds}
-                      />
-                      <ChartTooltip
-                        formatter={(value) =>
-                          [value]
-                            .flat()
-                            .map(Number)
-                            .map(formatSeconds)
-                            .join(" – ")
-                        }
-                      />
-                      {data.months.map(
-                        (month, i) =>
-                          i > 0 &&
-                          month.version > data.months[i - 1]!.version && (
-                            <ReferenceLine
-                              key={month.key}
-                              x={month.label}
-                              strokeDasharray="4 3"
-                              label={{
-                                value: `V${month.version}`,
-                                position: "insideTopLeft"
-                              }}
-                            />
-                          )
-                      )}
-                      <Area
-                        dataKey="middle"
-                        name={t`25th – 75th`}
-                        stroke="none"
-                        fill="hsl(var(--chart-1))"
-                        fillOpacity={0.2}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        dataKey="median"
-                        name={t`Median`}
-                        stroke="hsl(var(--chart-1))"
-                        strokeWidth={2}
-                        isAnimationActive={false}
-                      />
-                    </ComposedChart>
-                  </ChartContainer>
+                  <BoxPlot data={data.versions} color={color} />
                 </CardContent>
               </Card>
               <Card className="xl:col-span-2">
@@ -332,7 +313,7 @@ export default function TimeAnalysisRoute() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <BoxPlot data={data.operators} />
+                  <BoxPlot data={data.operators} color={color} />
                 </CardContent>
               </Card>
             </div>

@@ -417,6 +417,10 @@ msgstr "{0} gün"
 msgid "{0} deleted successfully"
 msgstr "{0} başarıyla silindi"
 
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe fişi"
@@ -636,10 +640,6 @@ msgstr "{0} işlem · {1} adet"
 msgid "{0} orders"
 msgstr "{0} sipariş"
 
-#. placeholder {0}: selected.label
-msgid "{0} over time"
-msgstr ""
-
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} parça bağlantısı operasyonda eşleşen BOM satırına sahip değildir"
@@ -684,6 +684,10 @@ msgstr "{0} muhasebe defterinin şu kişi tarafından tutulduğunu bildiriyor"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} satır"
+
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
 
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
@@ -1588,9 +1592,6 @@ msgid "2 years"
 msgstr "2 yıl"
 
 msgid "25th"
-msgstr ""
-
-msgid "25th – 75th"
 msgstr ""
 
 msgid "28 Days"
@@ -11608,6 +11609,9 @@ msgstr "Her dönem bir aydır, aylık oran için."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "Serbest bırakılan her iş emri için bir toplama listesi oluşturulur. Parçaları, bunları kullanan her iş merkezinin hat yanı depolama birimine gönderilir."
 
@@ -16855,20 +16859,8 @@ msgstr "Daha büyük"
 msgid "Largest child"
 msgstr "En büyük alt öğe"
 
-msgid "Last 12 months"
-msgstr ""
-
-msgid "Last 2 years"
-msgstr ""
-
-msgid "Last 6 months"
-msgstr ""
-
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
-
-msgid "Last 90 days"
-msgstr ""
 
 msgid "Last Activity"
 msgstr "Son etkinlik"
@@ -18642,9 +18634,6 @@ msgstr "Aylık (takvim)"
 
 msgid "Monthly Depreciation"
 msgstr "Aylık Amortisman"
-
-msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
-msgstr ""
 
 msgid "Monthly Rent"
 msgstr "Aylık Kira"
@@ -21052,6 +21041,11 @@ msgstr "Açık görev sayısı"
 
 msgid "Number of operations"
 msgstr "Operasyon sayısı"
+
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
 
 msgid "Number weeks by calendar week"
 msgstr "Haftaları takvim haftasına göre numaralandır"
@@ -32685,6 +32679,9 @@ msgstr "Olayın başlığı"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Mülkiyet, dönem sona erdiğinde müşteri'ye geçer."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "Kime"
