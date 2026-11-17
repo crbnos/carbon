@@ -4,12 +4,17 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  addBusinessDays,
+  businessDaysBetween,
   formatDateTimeInZone,
   formatPreciseDuration,
   formatRelativeCalendarDays,
   formatTimeOfDay,
+  getShipCountdown,
   getTimeZoneOffsetLabel,
-  parseTypedTime
+  isBusinessDay,
+  parseTypedTime,
+  subtractBusinessDays
 } from "./date";
 
 describe("formatRelativeCalendarDays", () => {
@@ -244,5 +249,84 @@ describe("parseTypedTime", () => {
     // One minute digit is ambiguous (3:05 or 3:30?), so it is not guessed.
     expect(parseTypedTime("3.5")).toBeNull();
     expect(parseTypedTime("3:5")).toBeNull();
+  });
+});
+
+describe("business days", () => {
+  // 2026-11-20 is a Friday.
+  it("adds business days across a weekend", () => {
+    expect(addBusinessDays("2026-11-20", 3)).toBe("2026-11-25");
+    expect(addBusinessDays("2026-11-20", 5)).toBe("2026-11-27");
+  });
+
+  it("skips a holiday while it counts", () => {
+    expect(addBusinessDays("2026-11-20", 3, new Set(["2026-11-23"]))).toBe(
+      "2026-11-26"
+    );
+  });
+
+  it("starts the count on the next business day from a weekend", () => {
+    expect(addBusinessDays("2026-11-21", 1)).toBe("2026-11-23");
+  });
+
+  it("returns the date unchanged for 0 days", () => {
+    expect(addBusinessDays("2026-11-21", 0)).toBe("2026-11-21");
+    expect(subtractBusinessDays("2026-11-21", 0)).toBe("2026-11-21");
+  });
+
+  it("subtracts business days across a weekend", () => {
+    expect(subtractBusinessDays("2026-11-23", 1)).toBe("2026-11-20");
+    expect(subtractBusinessDays("2026-11-27", 5)).toBe("2026-11-20");
+  });
+
+  it("subtracts past a holiday", () => {
+    expect(subtractBusinessDays("2026-11-24", 1, new Set(["2026-11-23"]))).toBe(
+      "2026-11-20"
+    );
+  });
+
+  it("counts the business days between two dates", () => {
+    expect(businessDaysBetween("2026-11-20", "2026-11-25")).toBe(3);
+    expect(businessDaysBetween("2026-11-20", "2026-11-20")).toBe(0);
+    expect(businessDaysBetween("2026-11-25", "2026-11-20")).toBe(0);
+    expect(
+      businessDaysBetween("2026-11-20", "2026-11-25", new Set(["2026-11-24"]))
+    ).toBe(2);
+  });
+
+  it("knows weekends and holidays are not business days", () => {
+    expect(isBusinessDay("2026-11-21")).toBe(false);
+    expect(isBusinessDay("2026-11-22")).toBe(false);
+    expect(isBusinessDay("2026-11-23")).toBe(true);
+    expect(isBusinessDay("2026-11-23", new Set(["2026-11-23"]))).toBe(false);
+  });
+});
+
+describe("getShipCountdown", () => {
+  it("returns null without a ship-by date", () => {
+    expect(getShipCountdown(null, "2026-11-20")).toBeNull();
+  });
+
+  it("counts calendar days, with a tone for each band", () => {
+    expect(getShipCountdown("2026-11-23", "2026-11-20")).toEqual({
+      days: 3,
+      tone: "neutral"
+    });
+    expect(getShipCountdown("2026-11-21", "2026-11-20")).toEqual({
+      days: 1,
+      tone: "warning"
+    });
+    expect(getShipCountdown("2026-11-20", "2026-11-20")).toEqual({
+      days: 0,
+      tone: "warning"
+    });
+    expect(getShipCountdown("2026-11-18", "2026-11-20")).toEqual({
+      days: -2,
+      tone: "late"
+    });
+  });
+
+  it("reads a timestamp-shaped date by its day", () => {
+    expect(getShipCountdown("2026-11-22T00:00:00", "2026-11-20")?.days).toBe(2);
   });
 });

@@ -4,6 +4,7 @@
 
 import type { CalendarDateTime } from "@internationalized/date";
 import {
+  getDayOfWeek,
   getLocalTimeZone,
   parseAbsolute,
   parseDate,
@@ -347,4 +348,92 @@ export function parseTypedTime(input: string): Time | null {
 
   if (hour > 23) return null;
   return new Time(hour, minute);
+}
+
+// ── Business days ────────────────────────────────────────────────────────
+// Carrier transit time counts business days: Monday to Friday, minus the
+// company's holidays ("YYYY-MM-DD"). The count skips a non-working day while
+// it steps, so 3 business days from a Friday land on a Wednesday.
+
+/** Whether a `YYYY-MM-DD` day is Monday to Friday and not a holiday. */
+export function isBusinessDay(
+  date: string,
+  holidays: ReadonlySet<string> = new Set()
+): boolean {
+  // en-US weeks start on Sunday: 0 is Sunday, 6 is Saturday.
+  const weekday = getDayOfWeek(parseDate(date), "en-US");
+  if (weekday === 0 || weekday === 6) return false;
+  return !holidays.has(date);
+}
+
+function stepBusinessDays(
+  date: string,
+  days: number,
+  direction: 1 | -1,
+  holidays: ReadonlySet<string>
+): string {
+  let current = parseDate(date);
+  let counted = 0;
+  while (counted < days) {
+    current = current.add({ days: direction });
+    if (isBusinessDay(current.toString(), holidays)) counted += 1;
+  }
+  return current.toString();
+}
+
+/** The day `days` business days after `date`. 0 days returns `date`. */
+export function addBusinessDays(
+  date: string,
+  days: number,
+  holidays: ReadonlySet<string> = new Set()
+): string {
+  return stepBusinessDays(date, Math.max(0, Math.trunc(days)), 1, holidays);
+}
+
+/** The day `days` business days before `date`. 0 days returns `date`. */
+export function subtractBusinessDays(
+  date: string,
+  days: number,
+  holidays: ReadonlySet<string> = new Set()
+): string {
+  return stepBusinessDays(date, Math.max(0, Math.trunc(days)), -1, holidays);
+}
+
+/**
+ * The business days after `start`, up to and including `end`: the transit
+ * days a shipment posted on `start` and delivered on `end` took. 0 when `end`
+ * is not after `start`.
+ */
+export function businessDaysBetween(
+  start: string,
+  end: string,
+  holidays: ReadonlySet<string> = new Set()
+): number {
+  const last = parseDate(end);
+  let current = parseDate(start);
+  let count = 0;
+  while (current.compare(last) < 0) {
+    current = current.add({ days: 1 });
+    if (isBusinessDay(current.toString(), holidays)) count += 1;
+  }
+  return count;
+}
+
+export type ShipCountdownTone = "neutral" | "warning" | "late";
+
+/**
+ * The calendar days from the plant's `today` to a ship-by date, and the tone
+ * a screen shows them in: late below 0, a warning today and tomorrow. Null
+ * when there is no ship-by date.
+ */
+export function getShipCountdown(
+  shipByDate: string | null | undefined,
+  today: string
+): { days: number; tone: ShipCountdownTone } | null {
+  if (!shipByDate) return null;
+  // `compare` on two calendar dates is the day difference between them.
+  const days = parseDate(shipByDate.slice(0, 10)).compare(parseDate(today));
+  const tone: ShipCountdownTone =
+    days < 0 ? "late" : days <= 1 ? "warning" : "neutral";
+  return { days, tone };
 }
