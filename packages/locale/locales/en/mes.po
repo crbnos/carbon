@@ -128,10 +128,6 @@ msgstr "{0} of {1} complete"
 msgid "{0} of {1} completed"
 msgstr "{0} of {1} completed"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr "{0} open"
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} queued"
@@ -243,6 +239,9 @@ msgstr "{onHand} of {need}"
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr "{onHand} on hand · covers {covers} of {demand}"
+
+msgid "{open} open"
+msgstr "{open} open"
 
 msgid "{quantity} in this operation"
 msgstr "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "Select a completion quantity"
 msgid "Select a customer"
 msgstr "Select a customer"
 
+msgid "Select a location to see its material requests"
+msgstr "Select a location to see its material requests"
+
 msgid "Select a location to see its stations"
 msgstr "Select a location to see its stations"
 
@@ -3509,6 +3511,9 @@ msgstr "This inspection plan has no work instructions."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "This is a pass / fail check. Press P or F."
 
+msgid "This job"
+msgstr "This job"
+
 msgid "This job does not use that part"
 msgstr "This job does not use that part"
 
@@ -3523,9 +3528,6 @@ msgstr "This lot is expired and can't be picked."
 
 msgid "This marks the dispatch as completed."
 msgstr "This marks the dispatch as completed."
-
-msgid "This operation"
-msgstr "This operation"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "This part was made to order. Scrapping it can reopen its routing to make a replacement."

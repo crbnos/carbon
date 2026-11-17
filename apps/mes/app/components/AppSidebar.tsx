@@ -22,6 +22,7 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
+  type ShortcutInput,
   useMode,
   useShortcutKeyMap,
   useSidebar
@@ -370,8 +371,11 @@ function BackToErpLink() {
   );
 }
 
-/** Every digit has its queue, so material requests has no shortcut. */
 export type QueueKey = keyof typeof MES_NAV_SHORTCUTS | "materialRequests";
+
+/** Every digit has its queue, so a later queue has no shortcut. */
+const QUEUE_SHORTCUTS: Partial<Record<QueueKey, ShortcutInput>> =
+  MES_NAV_SHORTCUTS;
 
 /** The task queues, in rail order; each one's ⌥-digit comes from its key. */
 export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
@@ -433,16 +437,12 @@ function QueueLinks({ counts }: { counts: Partial<Record<QueueKey, number>> }) {
   useShortcutKeyMap(
     useMemo(
       () =>
-        QUEUES.flatMap((queue) =>
-          queue.key === "materialRequests"
-            ? []
-            : [
-                {
-                  shortcut: MES_NAV_SHORTCUTS[queue.key],
-                  action: () => navigate(queue.to)
-                }
-              ]
-        ),
+        QUEUES.flatMap((queue) => {
+          const shortcut = QUEUE_SHORTCUTS[queue.key];
+          return shortcut
+            ? [{ shortcut, action: () => navigate(queue.to) }]
+            : [];
+        }),
       [navigate]
     )
   );

@@ -447,7 +447,7 @@ export const materialRequestValidator = z
   .object({
     jobOperationId: z.string().min(1),
     itemId: zfd.text(z.string().optional()),
-    note: zfd.text(z.string().optional())
+    note: zfd.text(z.string().trim().optional())
   })
   // A UI hint: createMaterialRequest enforces it.
   .refine((request) => request.itemId || request.note, {

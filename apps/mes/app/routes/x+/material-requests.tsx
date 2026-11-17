@@ -28,12 +28,20 @@ export const handle: Handle = {
 
 export const meta: MetaFunction = () => pageMeta("Material requests");
 
+// Neither a failed read nor a missing location is an empty list: the screen
+// says which.
+const noRequests = {
+  requests: [] as OpenMaterialRequest[],
+  loadFailed: false,
+  noLocation: false
+};
+
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
   const locationId = context.get(userContext)?.locationId;
-  if (!locationId) return { requests: [], loadFailed: false };
+  if (!locationId) return { ...noRequests, noLocation: true };
 
   const requests = await getOpenMaterialRequests(client, {
     companyId,
@@ -45,15 +53,15 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       locationId,
       error: requests.error
     });
-    // A failed read is not an empty list: the screen says so.
-    return { requests: [], loadFailed: true };
+    return { ...noRequests, loadFailed: true };
   }
-  return { requests: requests.data, loadFailed: false };
+  return { ...noRequests, requests: requests.data };
 }
 
 export default function MaterialRequestsRoute() {
-  const { requests, loadFailed } = useLoaderData<typeof loader>();
+  const { requests, loadFailed, noLocation } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const open = requests.length;
   const title = <Trans>Material requests</Trans>;
 
   return (
@@ -62,15 +70,15 @@ export default function MaterialRequestsRoute() {
       <MesQueueHeader
         title={title}
         actions={
-          requests.length > 0 && (
+          open > 0 && (
             <Badge variant="yellow" className="tabular-nums">
-              <Trans>{requests.length} open</Trans>
+              <Trans>{open} open</Trans>
             </Badge>
           )
         }
       />
       <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-        {requests.length > 0 ? (
+        {open > 0 ? (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,360px),1fr))] gap-4 p-4">
             {requests.map((request) => (
               <RequestCard key={request.id} request={request} />
@@ -82,6 +90,8 @@ export default function MaterialRequestsRoute() {
             title={
               loadFailed ? (
                 <Trans>Failed to load material requests</Trans>
+              ) : noLocation ? (
+                <Trans>Select a location to see its material requests</Trans>
               ) : (
                 <Trans>No open material requests</Trans>
               )

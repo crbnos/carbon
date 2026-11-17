@@ -128,10 +128,6 @@ msgstr "{0} adet / {1} adet tamamlandı"
 msgid "{0} of {1} completed"
 msgstr "{0} adet tamamlandı"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr ""
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} kuyrukta"
@@ -242,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "Bir tamamlama miktarı seçin"
 msgid "Select a customer"
 msgstr "Müşteri seçin"
 
+msgid "Select a location to see its material requests"
+msgstr ""
+
 msgid "Select a location to see its stations"
 msgstr "İstasyonları görmek için bir lokasyon seçin"
 
@@ -3509,6 +3511,9 @@ msgstr "Bu kontrol planında iş talimatı yok."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
 
+msgid "This job"
+msgstr ""
+
 msgid "This job does not use that part"
 msgstr "Bu iş emri o parçayı kullanmıyor"
 
@@ -3523,9 +3528,6 @@ msgstr "Bu lot'un süresi doldu ve toplanamaz."
 
 msgid "This marks the dispatch as completed."
 msgstr "Bu bakım emrini Tamamlandı olarak işaretler."
-
-msgid "This operation"
-msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapmak için rotasını yeniden açabilir."

@@ -128,10 +128,6 @@ msgstr "{0} di {1} completati"
 msgid "{0} of {1} completed"
 msgstr "{0} di {1} completati"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr ""
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} in coda"
@@ -242,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "Seleziona una quantità completata"
 msgid "Select a customer"
 msgstr "Seleziona un cliente"
 
+msgid "Select a location to see its material requests"
+msgstr ""
+
 msgid "Select a location to see its stations"
 msgstr "Seleziona un'ubicazione per vedere le sue stazioni"
 
@@ -3509,6 +3511,9 @@ msgstr "Questo piano di controllo non ha istruzioni di lavoro."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Questo è un controllo passa / non passa. Premi P o F."
 
+msgid "This job"
+msgstr ""
+
 msgid "This job does not use that part"
 msgstr "Questo ordine di produzione non usa quel componente"
 
@@ -3523,9 +3528,6 @@ msgstr "Questo lotto è scaduto e non può essere prelevato."
 
 msgid "This marks the dispatch as completed."
 msgstr "Questo contrassegna l'intervento di manutenzione come Completato."
-
-msgid "This operation"
-msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Questo componente è stato realizzato su ordinazione. Il suo scarto può riaprire il ciclo di lavorazione per produrre un componente di sostituzione."

@@ -128,10 +128,6 @@ msgstr "{1} 중 {0} 완료"
 msgid "{0} of {1} completed"
 msgstr "{1} 중 {0} 완료됨"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr ""
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 대기열"
@@ -242,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "완료 수량을 선택하세요"
 msgid "Select a customer"
 msgstr "고객 선택"
 
+msgid "Select a location to see its material requests"
+msgstr ""
+
 msgid "Select a location to see its stations"
 msgstr "사업장을 선택하면 스테이션을 볼 수 있습니다"
 
@@ -3509,6 +3511,9 @@ msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
 
+msgid "This job"
+msgstr ""
+
 msgid "This job does not use that part"
 msgstr "이 작업 지시에서는 해당 부품을 사용하지 않습니다"
 
@@ -3523,9 +3528,6 @@ msgstr "로트가 만료되었으며 피킹할 수 없습니다."
 
 msgid "This marks the dispatch as completed."
 msgstr "이것은 유지보수 지시를 완료로 표시합니다."
-
-msgid "This operation"
-msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."

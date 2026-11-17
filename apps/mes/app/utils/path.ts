@@ -38,8 +38,10 @@ export const path = {
           `${api}/issue-inventory-bins?itemId=${itemId}&operationId=${operationId}`
         ),
       loginVerifyCode: `${api}/login/verify-code`,
-      materialRequestOptions: (jobOperationId: string, search: string) =>
-        `${api}/material-request-options?${new URLSearchParams({ jobOperationId, search })}`,
+      materialRequestCatalog: (search: string) =>
+        `${api}/material-request/catalog?${new URLSearchParams({ search })}`,
+      materialRequestJobItems: (jobOperationId: string) =>
+        `${api}/material-request/job-items?${new URLSearchParams({ jobOperationId })}`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelDownload: (modelUploadId: string) =>

@@ -4002,8 +4002,9 @@ export const setPickingListStatus = defineServiceFn({
  *
  * @remarks
  * Opens a material request at the operation's work center, at that work
- * center's location. The item and note are optional. The MES "Need material"
- * button writes through the same building block for any operator.
+ * center's location. Name the item, describe what is needed in the note, or
+ * both: a request with neither is refused. The MES "Need material" button
+ * writes through the same building block for any operator.
  *
  * @param jobOperationId - The job operation that needs the material.
  * @param itemId - The item it needs, when known.

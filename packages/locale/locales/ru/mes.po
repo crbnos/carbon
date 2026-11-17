@@ -128,10 +128,6 @@ msgstr "{0} из {1} завершено"
 msgid "{0} of {1} completed"
 msgstr "{0} из {1} завершено"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr ""
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} в очереди"
@@ -242,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "Выберите количество готовой продукции"
 msgid "Select a customer"
 msgstr "Выберите покупателя"
 
+msgid "Select a location to see its material requests"
+msgstr ""
+
 msgid "Select a location to see its stations"
 msgstr "Выберите площадку, чтобы увидеть её станции"
 
@@ -3509,6 +3511,9 @@ msgstr "В этом плане контроля нет рабочих инстр
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Это проверка «годен / не годен». Нажмите P или F."
 
+msgid "This job"
+msgstr ""
+
 msgid "This job does not use that part"
 msgstr "Этот производственный заказ не использует эту деталь"
 
@@ -3523,9 +3528,6 @@ msgstr "Срок этой партии истек, и она не может б�
 
 msgid "This marks the dispatch as completed."
 msgstr "Это отмечает заявку на техобслуживание как завершённую."
-
-msgid "This operation"
-msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."

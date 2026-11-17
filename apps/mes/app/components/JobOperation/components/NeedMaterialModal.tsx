@@ -35,8 +35,9 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { LuCheck, LuMessageSquarePlus, LuSearch } from "react-icons/lu";
 import ItemThumbnail from "~/components/ItemThumbnail";
-import type { loader as optionsLoader } from "~/routes/api+/material-request-options";
-import type { MaterialRequestOption } from "~/services/material-request.service";
+import type { loader as catalogLoader } from "~/routes/api+/material-request.catalog";
+import type { loader as jobItemsLoader } from "~/routes/api+/material-request.job-items";
+import type { RequestableItem } from "~/services/material-request.service";
 import { materialRequestValidator } from "~/services/models";
 import { path } from "~/utils/path";
 
@@ -116,14 +117,30 @@ function RequestFields({ operationId }: { operationId: string }) {
   const { clearError } = useField("note");
   const [search, setSearch] = useState("");
   const onSearch = useDebounce(setSearch, 300);
-  const query = useLoaderQuery<typeof optionsLoader>(
-    path.to.api.materialRequestOptions(operationId, search),
+  // The job's own items load once; only the catalog follows the search.
+  const jobQuery = useLoaderQuery<typeof jobItemsLoader>(
+    path.to.api.materialRequestJobItems(operationId)
+  );
+  const catalogQuery = useLoaderQuery<typeof catalogLoader>(
+    path.to.api.materialRequestCatalog(search),
     { keepPreviousData: true }
   );
   // No item is a request for something off the list, told in the note.
-  const [selected, setSelected] = useState<MaterialRequestOption | null>(null);
+  const [selected, setSelected] = useState<RequestableItem | null>(null);
 
-  const found = query.data?.options ?? [];
+  const jobItems = jobQuery.data?.items ?? [];
+  const jobItemIds = new Set(jobItems.map((item) => item.id));
+  const term = search.trim().toLowerCase();
+  const found = [
+    ...jobItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(term) ||
+        (item.readableIdWithRevision ?? "").toLowerCase().includes(term)
+    ),
+    ...(catalogQuery.data?.items ?? []).filter(
+      (item) => !jobItemIds.has(item.id)
+    )
+  ];
   // The choice stays in sight when the search moves on from it.
   const options =
     selected && !found.some((option) => option.id === selected.id)
@@ -137,7 +154,7 @@ function RequestFields({ operationId }: { operationId: string }) {
       <VStack spacing={4}>
         <InputGroup size="lg">
           <InputLeftElement>
-            {query.isFetching ? (
+            {jobQuery.isFetching || catalogQuery.isFetching ? (
               <Spinner className="size-4" />
             ) : (
               <LuSearch className="size-4 text-muted-foreground" />
@@ -148,6 +165,10 @@ function RequestFields({ operationId }: { operationId: string }) {
             placeholder={t`Search parts, consumables and tools`}
             aria-label={t`Search parts, consumables and tools`}
             onChange={(event) => onSearch(event.target.value)}
+            // Enter (a scanner sends one) searches: it must not send the request.
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.preventDefault();
+            }}
           />
         </InputGroup>
         <div
@@ -185,15 +206,15 @@ function RequestFields({ operationId }: { operationId: string }) {
               title={option.readableIdWithRevision ?? option.name}
               description={option.name}
               badge={
-                option.onOperation && (
+                jobItemIds.has(option.id) && (
                   <Badge variant="secondary">
-                    <Trans>This operation</Trans>
+                    <Trans>This job</Trans>
                   </Badge>
                 )
               }
             />
           ))}
-          {query.data?.error && (
+          {(jobQuery.isError || catalogQuery.isError) && (
             <p className="px-1 text-sm text-muted-foreground">
               <Trans>
                 The list failed to load. You can still describe what you need.
@@ -210,6 +231,8 @@ function RequestFields({ operationId }: { operationId: string }) {
               : t`Describe it: what, how many, where`
           }
           size="lg"
+          // A hint: without an item, the note is the request.
+          isOptional={selected !== null}
         />
       </VStack>
     </>

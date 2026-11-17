@@ -128,10 +128,6 @@ msgstr "{0} sur {1} terminé(s)"
 msgid "{0} of {1} completed"
 msgstr "{0} sur {1} terminé(s)"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr ""
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} en file d'attente"
@@ -242,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "Sélectionner une quantité de production"
 msgid "Select a customer"
 msgstr "Sélectionner un client"
 
+msgid "Select a location to see its material requests"
+msgstr ""
+
 msgid "Select a location to see its stations"
 msgstr "Sélectionnez un site pour voir ses postes"
 
@@ -3509,6 +3511,9 @@ msgstr "Ce plan de contrôle ne comporte aucun mode opératoire."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
 
+msgid "This job"
+msgstr ""
+
 msgid "This job does not use that part"
 msgstr "Cet ordre de fabrication n'utilise pas cette pièce"
 
@@ -3523,9 +3528,6 @@ msgstr "Ce lot est expiré et ne peut pas être prélevé."
 
 msgid "This marks the dispatch as completed."
 msgstr "Ceci marque l'intervention de maintenance comme terminée."
-
-msgid "This operation"
-msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Cette pièce a été fabriquée sur commande. La mettre au rebut peut rouvrir sa gamme pour en fabriquer un remplacement."

@@ -128,10 +128,6 @@ msgstr "{0} von {1} abgeschlossen"
 msgid "{0} of {1} completed"
 msgstr "{0} von {1} abgeschlossen"
 
-#. placeholder {0}: requests.length
-msgid "{0} open"
-msgstr ""
-
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} in Warteschlange"
@@ -242,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -3027,6 +3026,9 @@ msgstr "Fertigstellungsmenge auswählen"
 msgid "Select a customer"
 msgstr "Kunde auswählen"
 
+msgid "Select a location to see its material requests"
+msgstr ""
+
 msgid "Select a location to see its stations"
 msgstr "Wählen Sie einen Standort, um dessen Stationen anzuzeigen"
 
@@ -3509,6 +3511,9 @@ msgstr "Dieser Prüfplan hat keine Arbeitsanweisungen."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
 
+msgid "This job"
+msgstr ""
+
 msgid "This job does not use that part"
 msgstr "Dieser Fertigungsauftrag verwendet dieses Teil nicht"
 
@@ -3523,9 +3528,6 @@ msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
 
 msgid "This marks the dispatch as completed."
 msgstr "Dies markiert den Instandhaltungsauftrag als fertiggestellt."
-
-msgid "This operation"
-msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Dieses Teil wurde auf Bestellung gefertigt. Es als Ausschuss zu kennzeichnen kann seinen Arbeitsplan wieder öffnen, um einen Ersatz herzustellen."
