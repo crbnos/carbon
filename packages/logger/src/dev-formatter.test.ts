@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RouterContextProvider } from "react-router";
 import { describe, expect, it } from "vitest";
+import { addLogContext, runInRequestContext } from "./context.server";
 import { devFormatter } from "./dev-formatter";
 
 function record(rawMessage: string, properties: Record<string, unknown>) {
@@ -52,11 +54,22 @@ describe("devFormatter", () => {
     expect(line).toContain("code: 'x1'");
   });
 
-  it("skips the ambient requestId and ends with one newline", () => {
-    const line = devFormatter(record("Hello", { requestId: "r1" }));
+  it("skips the ids the request added and ends with one newline", () => {
+    const line = runInRequestContext(new RouterContextProvider(), () => {
+      addLogContext({ requestId: "r1", companyId: "c1" });
+      return devFormatter(
+        record("Hello", { requestId: "r1", companyId: "c2" })
+      );
+    });
     expect(plain(line)).not.toContain("r1");
+    expect(plain(line)).toContain("c2");
     expect(line.endsWith("\n")).toBe(true);
     expect(line.endsWith("\n\n")).toBe(false);
+  });
+
+  it("shows a job's companyId, which no request added", () => {
+    const line = devFormatter(record("Synced", { companyId: "c1" }));
+    expect(plain(line)).toContain("c1");
   });
 });
 

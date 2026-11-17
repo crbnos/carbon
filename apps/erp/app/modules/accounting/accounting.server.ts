@@ -958,7 +958,7 @@ export const lockPeriod = defineServiceFn({
         });
       }
     } catch (e) {
-      periodCloseLogger.warn("Failed to send the indirect rate run", {
+      periodCloseLogger.warning("Failed to send the indirect rate run", {
         companyId,
         periodId,
         error: e
@@ -1104,6 +1104,35 @@ export const unlockPeriod = defineServiceFn({
 });
 
 /**
+ * Reopen a closed accounting period.
+ *
+ * @remarks
+ * Only a Closed period can be reopened, and only when no later period is
+ * still Closed: periods reopen from the most recent close backwards. It
+ * returns to Open, its close stamps are cleared, and the balance snapshots
+ * of it and of every later period are deleted. Postings dated in it are
+ * accepted again until it is locked and closed again. Needs accounting
+ * update and delete.
+ *
+ * @mcp
+ */
+export const reopenPeriod = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { update: "accounting", delete: "accounting" },
+  async run(ctx, { periodId }) {
+    const result = await service.reopenAccountingPeriod(ctx.asSystem.pg, {
+      periodId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (result.error) {
+      return service.refusal(ctx, result.error, "Failed to reopen period");
+    }
+    return { periodId, closeStatus: "Open" as const };
+  }
+});
+
+/**
  * Close an accounting period.
  *
  * @remarks
@@ -1206,7 +1235,8 @@ export const createRunForPeriod = defineServiceFn({
  *
  * @remarks
  * For Action and Manual tasks: an automatic task is evaluated by the system
- * and cannot be completed by hand. `notes` are kept on the task.
+ * and cannot be completed by hand. `notes` are kept on the task. Refused
+ * while the task's period is Closed.
  *
  * @mcp
  */
@@ -1232,7 +1262,7 @@ export const closeTaskComplete = defineServiceFn({
  *
  * @remarks
  * A Blocker task can never be skipped: resolve what it checks instead. The
- * reason is required.
+ * reason is required. Refused while the task's period is Closed.
  *
  * @mcp
  */

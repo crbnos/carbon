@@ -13,6 +13,7 @@ import {
 import {
   Badge,
   Button,
+  CardAction,
   cn,
   FormControl,
   FormLabel,
@@ -90,6 +91,7 @@ import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ChangeInvoiceLineAccount } from "../InvoiceLineAccount/ChangeInvoiceLineAccount";
 
 type PurchaseInvoiceLineFormProps = {
   initialValues: z.infer<typeof purchaseInvoiceLineValidator> & {
@@ -127,6 +129,13 @@ const PurchaseInvoiceLineForm = ({
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
   );
+  const canChangeAccount =
+    !!routeData?.purchaseInvoice?.postingDate &&
+    !["Draft", "Pending", "Voided"].includes(
+      routeData?.purchaseInvoice?.status ?? ""
+    ) &&
+    permissions.can("update", "invoicing") &&
+    permissions.can("update", "accounting");
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
   // The loader's currency row is the primary source — it is correct on first
@@ -653,6 +662,22 @@ const PurchaseInvoiceLineForm = ({
                     </TabsList>
                   )}
                 </div>
+                {isEditing && isGLAccount && canChangeAccount && (
+                  // pr-12 keeps it clear of the card's collapse chevron.
+                  <CardAction className="pr-12">
+                    <ChangeInvoiceLineAccount
+                      action={path.to.purchaseInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      currentAccountPath={path.to.api.purchaseInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      accountClass="Expense"
+                    />
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />

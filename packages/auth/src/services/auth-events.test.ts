@@ -6,14 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Capture logger output without pulling in @logtape. `logAuthEvent` binds the
 // logger at module load, so the mock must be hoisted and return a stable object.
-const { info, warn, error } = vi.hoisted(() => ({
+const { info, warning, error } = vi.hoisted(() => ({
   info: vi.fn(),
-  warn: vi.fn(),
+  warning: vi.fn(),
   error: vi.fn()
 }));
 
 vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info, warn, error })
+  getLogger: () => ({ info, warning, error })
 }));
 
 import {
@@ -27,7 +27,7 @@ const OTHER = "cmp_2";
 
 beforeEach(() => {
   info.mockClear();
-  warn.mockClear();
+  warning.mockClear();
   error.mockClear();
 });
 
@@ -62,9 +62,7 @@ describe("logPermissionChange", () => {
     });
 
     expect(info).toHaveBeenCalledTimes(1);
-    const [message, payload] = info.mock.calls[0]!;
-    expect(message).toContain("auth.permission_changed");
-    expect(message).toContain("actor=usr_admin");
+    const [, payload] = info.mock.calls[0]!;
     expect(payload).toMatchObject({
       authEvent: "permission_changed",
       outcome: "success",
@@ -120,9 +118,7 @@ describe("logRoleChange", () => {
     });
 
     expect(info).toHaveBeenCalledTimes(1);
-    const [message, payload] = info.mock.calls[0]!;
-    expect(message).toContain("auth.role_changed");
-    expect(message).toContain("ip=203.0.113.7");
+    const [, payload] = info.mock.calls[0]!;
     expect(payload).toMatchObject({
       authEvent: "role_changed",
       outcome: "success",

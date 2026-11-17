@@ -22,7 +22,7 @@ import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "accounting/activation");
+const logger = getLogger("erp", "accounting", "activation");
 
 export const handle: Handle = {
   breadcrumb: msg`Setup`,

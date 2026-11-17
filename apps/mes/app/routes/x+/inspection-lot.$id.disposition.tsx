@@ -22,6 +22,7 @@ import {
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkRequiredScans,
   checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
@@ -218,6 +219,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       null,
       `Allocation (${postedTotal}) exceeds the operation's remaining quantity (${state.opRemaining})`
     );
+  }
+
+  // Required scans: the units this decision completes must hold their
+  // tracked parts. Refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const scanCheck = await checkRequiredScans(serviceRole, {
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity,
+    requiresSerialTracking: state.requiresSerialTracking,
+    trackedEntityIds: completionCandidates.map((c) => c.trackedEntityId),
+    companyId
+  });
+  if (scanCheck.message) {
+    return fail(scanCheck.error, scanCheck.message);
   }
 
   // Strict backflush: refuse before the lot closes; a closed lot cannot be

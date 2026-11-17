@@ -2,11 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { useEffect } from "react";
 import { useNavigate, useRouteError } from "react-router";
 import { Button } from "../Button";
 import { routeErrorCopy } from "./routeErrorCopy";
 import { useNetworkRetry } from "./useNetworkRetry";
+
+const logger = getLogger("react", "error-boundary");
 
 /**
  * The boundary for a route that renders inside the app shell:
@@ -24,8 +27,7 @@ export function RouteErrorBoundary() {
 
   // React Router hands a route error to the boundary without logging it.
   useEffect(() => {
-    // biome-ignore lint/suspicious/noConsole: surfacing the swallowed error is the point
-    console.error("[RouteErrorBoundary]", error);
+    logger.error("Route error boundary caught an error", { error });
   }, [error]);
 
   const { status, title, message, canRetry } = routeErrorCopy(error);

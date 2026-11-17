@@ -26,7 +26,7 @@ import type {
   ProductionEvent,
   TrackedEntity
 } from "~/services/types";
-import { path } from "~/utils/path";
+import { path, TRAVELER_PARAM } from "~/utils/path";
 
 export function useOperation({
   operation,
@@ -64,6 +64,8 @@ export function useOperation({
 }) {
   const [params] = useUrlParams();
   const trackedEntityParam = params.get("trackedEntityId");
+  // A traveler scan names the unit in the operator's hands: no prompt for it.
+  const fromTraveler = params.get(TRAVELER_PARAM) !== null;
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
@@ -333,6 +335,7 @@ export function useOperation({
     if (!arrivalPromptedRef.current) {
       arrivalPromptedRef.current = true;
       heldEntityRef.current = selectedIsIncomplete ? trackedEntityParam : null;
+      if (fromTraveler && selectedIsIncomplete) return;
       serialModal.onOpen();
       return;
     }
@@ -355,7 +358,8 @@ export function useOperation({
     trackedEntityParam,
     operationId,
     isFirstOperation,
-    requiresSerialTracking
+    requiresSerialTracking,
+    fromTraveler
   ]);
 
   return {

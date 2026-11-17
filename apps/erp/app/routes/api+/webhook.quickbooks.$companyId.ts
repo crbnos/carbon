@@ -21,7 +21,7 @@ import { z } from "zod";
 // Needs node:crypto for HMAC signature verification + a QBO API refetch
 export const config = { runtime: "nodejs" };
 
-const logger = getLogger("erp", "webhook-quickbooks");
+const logger = getLogger("erp", "webhook", "quickbooks");
 
 /**
  * Intuit webhook payload. NOTIFICATION-ONLY: each entity carries just

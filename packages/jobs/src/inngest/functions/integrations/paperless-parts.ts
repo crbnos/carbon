@@ -122,7 +122,8 @@ export const paperlessPartsFunction = inngest.createFunction(
     const payload = paperlessPartsSchema.parse(event.data);
     let result: { success: boolean; message: string };
 
-    logger.info(`Paperless Parts webhook received: ${payload.payload.type}`, {
+    logger.info("Paperless Parts webhook received", {
+      type: payload.payload.type,
       payload
     });
 
@@ -217,10 +218,9 @@ export const paperlessPartsFunction = inngest.createFunction(
           .maybeSingle();
 
         if (existingQuoteMapping?.data?.entityId) {
-          logger.info(
-            "Quote already exists",
-            existingQuoteMapping.data.entityId
-          );
+          logger.info("Quote already exists", {
+            quoteId: existingQuoteMapping.data.entityId
+          });
           result = {
             success: true,
             message: "Quote already exists"
@@ -434,7 +434,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           });
           logger.info("Quote lines successfully created");
         } catch (error) {
-          logger.error("Failed to insert quote lines:", error);
+          logger.error("Failed to insert quote lines", { error });
           await deleteQuote(carbon, quoteId);
           result = {
             success: false,
@@ -480,10 +480,9 @@ export const paperlessPartsFunction = inngest.createFunction(
           .maybeSingle();
 
         if (existingOrderMapping?.data?.entityId) {
-          logger.info(
-            "Order already exists",
-            existingOrderMapping.data.entityId
-          );
+          logger.info("Order already exists", {
+            salesOrderId: existingOrderMapping.data.entityId
+          });
 
           const status = getCarbonOrderStatus(orderData.status);
 
@@ -493,7 +492,9 @@ export const paperlessPartsFunction = inngest.createFunction(
             .eq("id", existingOrderMapping.data.entityId);
 
           if (update.error) {
-            logger.info("Failed to update sales order", update.error);
+            logger.error("Failed to update sales order", {
+              error: update.error
+            });
             result = {
               success: false,
               message: "Failed to update sales order"
@@ -636,7 +637,9 @@ export const paperlessPartsFunction = inngest.createFunction(
           .select("id, salesOrderId");
 
         if (salesOrderInsert.error) {
-          logger.info("Failed to create sales order", salesOrderInsert.error);
+          logger.error("Failed to create sales order", {
+            error: salesOrderInsert.error
+          });
           result = {
             success: false,
             message: "Failed to create sales order"
@@ -645,7 +648,7 @@ export const paperlessPartsFunction = inngest.createFunction(
         }
         const salesOrderId = salesOrderInsert.data?.[0]?.id;
         if (!salesOrderId) {
-          logger.info("Failed to get sales order ID");
+          logger.error("Failed to get sales order ID");
           result = {
             success: false,
             message: "Failed to get sales order ID"
@@ -694,7 +697,9 @@ export const paperlessPartsFunction = inngest.createFunction(
         ]);
 
         if (orderShipment.error) {
-          logger.info("Failed to create shipment", orderShipment.error);
+          logger.error("Failed to create shipment", {
+            error: orderShipment.error
+          });
           await deleteSalesOrder(carbon, salesOrderId);
           result = {
             success: false,
@@ -703,7 +708,9 @@ export const paperlessPartsFunction = inngest.createFunction(
           break;
         }
         if (orderPayment.error) {
-          logger.info("Failed to create payment", orderPayment.error);
+          logger.error("Failed to create payment", {
+            error: orderPayment.error
+          });
           await deleteSalesOrder(carbon, salesOrderId);
           result = {
             success: false,
@@ -727,7 +734,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           });
           logger.info("Order lines successfully created");
         } catch (error) {
-          logger.error("Failed to insert order lines:", error);
+          logger.error("Failed to insert order lines", { error });
           await deleteSalesOrder(carbon, salesOrderId);
           result = {
             success: false,
@@ -776,7 +783,9 @@ export const paperlessPartsFunction = inngest.createFunction(
     }
 
     if (result.success) {
-      logger.info(`Successfully processed ${payload.payload.type} event`);
+      logger.info("Processed the {payloadType} event", {
+        payloadType: payload.payload.type
+      });
     } else {
       logger.error("Failed to process {payloadType} event: {resultMessage}", {
         payloadType: payload.payload.type,

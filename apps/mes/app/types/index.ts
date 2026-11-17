@@ -11,6 +11,7 @@ export type PinnedInUser = {
   userId: string;
   name: string;
   avatarUrl: string | null;
+  pinnedAt: number;
 };
 
 export type UserContext = {

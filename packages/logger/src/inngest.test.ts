@@ -25,31 +25,45 @@ afterEach(async () => {
 });
 
 describe("createInngestLogger", () => {
-  it("logs under the carbon.jobs category", () => {
-    createInngestLogger().info("hello");
-    expect(recorder.records[0]?.category.join(".")).toBe("carbon.jobs");
+  it("logs under the carbon.jobs category, warn as warning", () => {
+    createInngestLogger().warn("careful");
+    const record = recorder.records[0];
+    expect(record?.category.join(".")).toBe("carbon.jobs");
+    expect(record?.level).toBe("warning");
   });
 
-  it("maps warn → warning level", () => {
-    createInngestLogger().warn("careful");
-    expect(recorder.records[0]?.level).toBe("warning");
-    expect(recorder.records.map((r) => r.message.join(""))).toContain(
-      "careful"
+  it("fills a template from its properties, as getLogger does", () => {
+    createInngestLogger().error("Run {runId} failed", { runId: "r1" });
+    const record = recorder.records[0];
+    expect(record?.rawMessage).toBe("Run {runId} failed");
+    expect(record?.message.join("")).toBe("Run r1 failed");
+    expect(record?.properties).toEqual({ runId: "r1" });
+  });
+
+  it("keeps an Error passed after the message under error", () => {
+    const boom = new Error("boom");
+    createInngestLogger().error("Send failed", boom);
+    expect(recorder.records[0]?.properties).toEqual({ error: boom });
+  });
+
+  it("keeps a lone Error under error, under one fixed message", () => {
+    const boom = new Error("boom");
+    createInngestLogger().error(boom);
+    expect(recorder.records[0]?.rawMessage).toBe("Job error");
+    expect(recorder.records[0]?.properties).toEqual({ error: boom });
+  });
+
+  it("logs a lone string holding a brace as a value", () => {
+    createInngestLogger().info("payload {not a template}");
+    expect(recorder.records[0]?.message.join("")).toBe(
+      "payload {not a template}"
     );
   });
 
-  it("renders a string first arg as the message, rest as args", () => {
-    createInngestLogger().info("did {thing}", { extra: 1 });
+  it("logs any other call as a value with its arguments", () => {
+    createInngestLogger().info("step", 1, "two");
     const record = recorder.records[0];
-    // The raw `{thing}` is a value, not interpreted as a placeholder.
-    expect(record?.message.join("")).toBe("did {thing}");
-    expect(record?.properties.args).toEqual([{ extra: 1 }]);
-  });
-
-  it("attaches a non-string first arg as structured args", () => {
-    createInngestLogger().error({ code: "E_BOOM", detail: "x" });
-    const record = recorder.records[0];
-    expect(record?.level).toBe("error");
-    expect(record?.properties.args).toEqual([{ code: "E_BOOM", detail: "x" }]);
+    expect(record?.message.join("")).toBe("step");
+    expect(record?.properties.args).toEqual([1, "two"]);
   });
 });

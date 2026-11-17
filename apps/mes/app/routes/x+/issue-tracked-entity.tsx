@@ -29,17 +29,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const {
-    materialId,
     jobOperationId,
-    itemId,
     batchId,
     parentTrackedEntityId,
-    children,
     jobOperationStepId,
     unitNumber,
     overrideExpired,
-    overrideReason
+    overrideReason,
+    allowOverIssue
   } = validation.data;
+  const { materialId, itemId, children } = validation.data;
 
   if (batchId ? !itemId : !parentTrackedEntityId) {
     return data(
@@ -84,14 +83,17 @@ export async function action({ request }: ActionFunctionArgs) {
           jobOperationStepId,
           unitNumber,
           overrideExpired,
-          overrideReason
+          overrideReason,
+          allowOverIssue
         }
   );
 
   if (issued.error) {
     log.error("Failed to issue material", { error: issued.error });
     const message = issued.error.message || "Failed to issue material";
-    return data({ success: false, message }, { status: 400 });
+    // The requirement is already filled: the dialog asks before issuing more.
+    const overIssue = issued.error.body.overIssue === true;
+    return data({ success: false, message, overIssue }, { status: 400 });
   }
 
   const splitEntities = issued.data?.splitEntities || [];

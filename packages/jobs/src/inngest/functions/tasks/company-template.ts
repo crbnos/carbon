@@ -385,7 +385,7 @@ export const companyTemplateFunction = inngest.createFunction(
         logger.error("Failed to record planning error", {
           companyId,
           templateRunId,
-          error: (err as Error).message
+          error: err
         });
       }
       return planning;

@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
+import type { StockShortage } from "~/utils/materialStock";
 import type {
   getJob,
   getJobMakeMethod,
@@ -47,11 +48,21 @@ export type Location = NonNullable<
 
 export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
 
+/** A bin that holds stock a line or material can draw now. `id` and `name`
+ *  are null for stock in no storage unit. */
+export type LiveStorageUnit = {
+  id: string | null;
+  name: string | null;
+  quantity: number;
+};
+
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
 >["materials"][number] & {
   isKitComponent?: boolean;
   kitParentId?: string;
+  /** Set when the stock the job can draw does not cover what it still needs. */
+  stockShortage?: StockShortage | null;
 };
 
 export type Kanban = Awaited<ReturnType<typeof getKanbanByJobId>>["data"];

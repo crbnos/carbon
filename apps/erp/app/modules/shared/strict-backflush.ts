@@ -114,7 +114,7 @@ const SHORTFALLS_SHOWN = 3;
 
 export function strictBackflushRefusal(problems: string[]): ServerFnError {
   if (problems.length > SHORTFALLS_SHOWN) {
-    logger.warn("Strict backflush refused", { problems });
+    logger.warning("Strict backflush refused", { problems });
   }
   return new ServerFnError(summarizeList(problems, SHORTFALLS_SHOWN), 409);
 }

@@ -53,13 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(
-          result.error,
-          result.error.message ?? "Failed to start correction"
-        )
-      )
+      await flash(request, error(result.error, "Failed to start correction"))
     );
   }
 

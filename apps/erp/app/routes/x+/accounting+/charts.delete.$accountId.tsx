@@ -6,7 +6,6 @@ import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { isAccountInUse } from "@carbon/database/account-import-reads";
-import { getLogger } from "@carbon/logger";
 import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -20,17 +19,14 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "accounting/charts.delete");
-
 /** Shown when anything refers to the account; the database refuses it too. */
 const IN_USE_MESSAGE =
   "This account is used by documents, journals or default accounts, so it cannot be deleted.";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { view: "accounting" }
-  );
+  const { client, companyGroupId } = await requirePermissions(request, {
+    view: "accounting"
+  });
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
@@ -51,14 +47,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountId
     );
   } catch (err) {
-    logger.error("Failed to check whether an account is in use", {
-      companyId,
-      accountId,
-      error: err
-    });
     throw redirect(
       path.to.chartOfAccounts,
-      await flash(request, error(err, "Failed to get account"))
+      await flash(request, error(err, "Failed to get account", { accountId }))
     );
   }
 

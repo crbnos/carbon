@@ -10,6 +10,8 @@ import {
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
+import * as materialRequests from "@carbon/database/material-request";
+import { syncReceiptBatchQuantities } from "@carbon/database/receipt-batch-numbers";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -804,7 +806,8 @@ export const updateReceiptLines = defineServiceFn({
                 "id",
                 "receiptId",
                 "receivedQuantity",
-                "requiresSerialTracking"
+                "requiresSerialTracking",
+                "requiresBatchTracking"
               ])
               .execute();
             if (updated.length === 0) return true;
@@ -817,11 +820,21 @@ export const updateReceiptLines = defineServiceFn({
               .where("status", "=", "Draft")
               .execute();
             for (const receipt of receipts) {
+              const lines = updated.filter((l) => l.receiptId === receipt.id);
               await service.reconcileReceiptSerialsInTransaction(trx, {
                 receiptId: receipt.id,
                 companyId: ctx.company.id,
                 isSalesReturn: receipt.sourceDocument === "Sales Return Order",
-                lines: updated.filter((l) => l.receiptId === receipt.id)
+                lines
+              });
+              await syncReceiptBatchQuantities(trx, {
+                receiptId: receipt.id,
+                companyId: ctx.company.id,
+                lines: lines.flatMap((l) =>
+                  l.requiresBatchTracking
+                    ? [{ id: l.id, receivedQuantity: l.receivedQuantity }]
+                    : []
+                )
               });
             }
             return true;
@@ -1986,12 +1999,20 @@ export const postShipment = defineServiceFn({
     }
 
     if (!failure) {
-      await service.autoPrint(ctx, {
-        sourceDocument: "Shipment",
-        sourceDocumentId: shipmentId,
-        locationId: shipment.data.locationId,
-        context: "shipping"
-      });
+      await Promise.all([
+        service.autoPrint(ctx, {
+          sourceDocument: "Shipment",
+          sourceDocumentId: shipmentId,
+          locationId: shipment.data.locationId,
+          context: "shipping"
+        }),
+        service.autoPrint(ctx, {
+          sourceDocument: "PackingSlip",
+          sourceDocumentId: shipmentId,
+          locationId: shipment.data.locationId,
+          context: "documents"
+        })
+      ]);
       // The RETAINED shelf lots of a batch split are reprinted: their
       // quantity changed. The shipped child left Consumed and gets no label.
       await service.printEntityLabels(ctx, splitEntityIds);
@@ -3091,8 +3112,9 @@ export const pickStockTransferLine = defineServiceFn({
  *
  * @remarks
  * Moves the line's picked stock back to its source storage unit. A serial-
- * or batch-tracked line needs its `trackedEntityId`. A Completed transfer is
- * refused.
+ * or batch-tracked line needs its `trackedEntityId`. Unpicking a line of a
+ * Completed transfer reopens the transfer (In Progress, or Released when no
+ * other line is picked).
  *
  * @mcp
  */
@@ -3967,7 +3989,96 @@ export const setPickingListStatus = defineServiceFn({
         { discriminator: finalStatus }
       );
     }
+
+    // After the status write, so a print failure never blocks the change.
+    await service.printTravelersOnStart(ctx, pickingListId);
+
     return { pickingListId, status: finalStatus };
+  }
+});
+
+/**
+ * Ask for material at a job operation.
+ *
+ * @remarks
+ * Opens a material request at the operation's work center, at that work
+ * center's location. The item and note are optional. The MES "Need material"
+ * button writes through the same building block for any operator.
+ *
+ * @param jobOperationId - The job operation that needs the material.
+ * @param itemId - The item it needs, when known.
+ * @param note - What is needed, in the requester's words.
+ *
+ * @returns The new request's `materialRequestId`.
+ *
+ * @mcp
+ */
+export const createMaterialRequest = defineServiceFn({
+  input: z.object({
+    jobOperationId: z.string().min(1),
+    itemId: z.string().optional(),
+    note: z.string().optional()
+  }),
+  permission: { create: "inventory" },
+  async run(ctx, { jobOperationId, itemId, note }) {
+    const created = await materialRequests.createMaterialRequest(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        jobOperationId,
+        itemId: itemId ?? null,
+        note: note ?? null
+      }
+    );
+    if (created.error || !created.data) {
+      return ctx.error(
+        "rule",
+        created.error ?? "The material request could not be created"
+      );
+    }
+    return { materialRequestId: created.data.id };
+  }
+});
+
+/**
+ * Resolve an open material request.
+ *
+ * @remarks
+ * Marks the request Resolved. A request that is already resolved is refused.
+ * The MES line feeder screen resolves through the same building block.
+ *
+ * @param materialRequestId - The request to resolve.
+ *
+ * @mcp
+ */
+export const resolveMaterialRequest = defineServiceFn({
+  input: z.object({ materialRequestId: z.string().min(1) }),
+  permission: { update: "inventory" },
+  async run(ctx, { materialRequestId }) {
+    const resolved = await materialRequests.resolveMaterialRequest(
+      ctx.asCaller.supabase,
+      {
+        id: materialRequestId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        at: datetime.timestamp()
+      }
+    );
+    if (resolved.error?.code === "CARBON_NOT_APPLIED") {
+      return ctx.error(
+        "forbidden",
+        "Only the requester or an inventory editor can resolve this request"
+      );
+    }
+    if (resolved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to resolve the material request",
+        resolved.error
+      );
+    }
+    return { materialRequestId };
   }
 });
 
@@ -4065,6 +4176,11 @@ export const pickPickingListLineChecked = defineServiceFn({
       }
     );
     if (result.error) return service.pickRefusal(ctx, result.error);
+
+    // The pick can move the list out of Draft (the status trigger), which
+    // starts it. After the pick, so a print failure never blocks it.
+    await service.printTravelersOnStart(ctx, pickingListId);
+
     return result.data;
   }
 });
@@ -4120,6 +4236,11 @@ export const pickPickingListLineEntity = defineServiceFn({
       }
     );
     if (result.error) return service.pickRefusal(ctx, result.error);
+
+    // The pick can move the list out of Draft (the status trigger), which
+    // starts it. After the pick, so a print failure never blocks it.
+    await service.printTravelersOnStart(ctx, pickingListId);
+
     return result.data;
   }
 });
@@ -4260,7 +4381,7 @@ export const scanKanban = defineServiceFn({
         });
       }
       for (const warning of result.data?.warnings ?? []) {
-        logger.warn("A kanban job was released with a warning", {
+        logger.warning("A kanban job was released with a warning", {
           companyId,
           jobId,
           warning: warning.message
@@ -6972,10 +7093,18 @@ export const createStorageUnit = defineServiceFn({
         "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
       )
       .optional(),
+    kitRack: z
+      .boolean()
+      .describe(
+        "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+      )
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
+    const refused = await service.refuseLinesideKitRack(ctx, input);
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertStorageUnit(
@@ -7009,17 +7138,34 @@ export const updateStorageUnit = defineServiceFn({
           "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
         )
         .optional(),
+      kitRack: z
+        .boolean()
+        .describe(
+          "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+        )
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage unit to update.").optional()
     })
     .required({ id: true }),
   permission: { update: "inventory" },
   async run(ctx, input) {
-    // The update matches by id alone: it must be this company's unit.
-    const owned = await refuseUnlessOwned(ctx, "storageUnit", {
-      id: input.id
+    // The update matches by id alone: it must be this company's unit. The
+    // same read gives the fields the update may leave as they are.
+    const current = await ctx.asCaller.supabase
+      .from("storageUnit")
+      .select("kitRack, workCenterId, parentId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (!current.data) return ctx.error("notFound", NOT_FOUND, current.error);
+    // A key sent without a value clears the column; a key left out keeps it.
+    const refused = await service.refuseLinesideKitRack(ctx, {
+      ...current.data,
+      ...input,
+      kitRack: input.kitRack ?? current.data.kitRack
     });
-    if (owned) return owned;
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertStorageUnit(
@@ -7729,6 +7875,7 @@ export const generatePickingList = defineServiceFn({
       ctx,
       await service.generatePickingList(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );

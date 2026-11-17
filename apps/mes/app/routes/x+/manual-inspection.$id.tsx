@@ -71,7 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
   if (scoped.error || !scoped.data) {
-    logger.warn("Inspection not found for company", {
+    logger.warning("Inspection not found for company", {
       companyId,
       inspectionId: id,
       error: scoped.error

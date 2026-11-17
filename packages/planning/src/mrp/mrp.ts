@@ -487,7 +487,7 @@ export async function runMrp(
     });
 
     if (cycleItemIds.length > 0) {
-      logger.warn(
+      logger.warning(
         "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
         { companyId, itemIds: cycleItemIds }
       );
@@ -684,11 +684,11 @@ export async function runMrp(
 
       return { success: true };
     } catch (err) {
-      logger.error("write phase failed", { companyId, error: String(err) });
+      logger.error("write phase failed", { companyId, error: err });
       throw err;
     }
   } catch (err) {
-    logger.error("run failed", { companyId, error: String(err) });
+    logger.error("run failed", { companyId, error: err });
     throw err;
   }
 }
@@ -712,9 +712,9 @@ async function companyHasPlanningGroups(
   try {
     return await deps.companyHasPlanningGroups(client, companyId);
   } catch (err) {
-    logger.warn("could not read the planning groups feature", {
+    logger.warning("could not read the planning groups feature", {
       companyId,
-      error: String(err)
+      error: err
     });
     return false;
   }

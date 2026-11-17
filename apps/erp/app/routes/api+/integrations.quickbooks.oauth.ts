@@ -152,7 +152,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
   } catch (err) {
-    console.error("QuickBooks OAuth Error:", err);
+    logger.error("QuickBooks OAuth code exchange failed", { error: err });
     return data(
       { error: "Failed to exchange code for token" },
       { status: 500 }

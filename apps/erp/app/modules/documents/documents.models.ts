@@ -177,10 +177,10 @@ export function parseExtractedData(
       : purchaseInvoiceExtractionSchema;
   const result = schema.safeParse(filteredData);
   if (!result.success) {
-    logger.warning(
-      `Unexpected ${documentType} extraction payload`,
-      result.error.flatten()
-    );
+    logger.warning("Unexpected {documentType} extraction payload", {
+      documentType,
+      issues: result.error.flatten()
+    });
     return null;
   }
   return result.data;

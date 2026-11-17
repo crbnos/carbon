@@ -23,6 +23,7 @@ import {
   pushProjects
 } from "@carbon/ee/ramp.server";
 import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -44,6 +45,8 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 import { reconcileEntities } from "./reconcile-executor";
 import { resolveSyncProvider } from "./sync-provider";
 import { loadIntegrationTopology } from "./topology";
+
+const logger = getLogger("jobs", "ramp-sync");
 
 export const rampSyncFunction = inngest.createFunction(
   {
@@ -117,10 +120,10 @@ export const rampSyncFunction = inngest.createFunction(
         );
         return { created, updated, failed: 0 };
       } catch (err) {
-        console.error(
-          `[RAMP SYNC] ${companyId}: chart-of-accounts push failed`,
-          err
-        );
+        logger.error("Ramp chart-of-accounts push failed", {
+          companyId,
+          error: err
+        });
         return {
           created: 0,
           updated: 0,
@@ -138,7 +141,7 @@ export const rampSyncFunction = inngest.createFunction(
         );
         return { created, renamed, hidden, shown, failed: 0 };
       } catch (err) {
-        console.error(`[RAMP SYNC] ${companyId}: cost-center push failed`, err);
+        logger.error("Ramp cost-center push failed", { companyId, error: err });
         return {
           created: 0,
           renamed: 0,
@@ -158,7 +161,7 @@ export const rampSyncFunction = inngest.createFunction(
         );
         return { created, renamed, hidden, shown, failed: 0 };
       } catch (err) {
-        console.error(`[RAMP SYNC] ${companyId}: project push failed`, err);
+        logger.error("Ramp project push failed", { companyId, error: err });
         return {
           created: 0,
           renamed: 0,
@@ -249,10 +252,10 @@ export const rampSyncFunction = inngest.createFunction(
             skippedReasons
           };
         } catch (err) {
-          console.error(
-            `[RAMP SYNC] ${companyId}: outbound reconcile failed`,
-            err
-          );
+          logger.error("Ramp outbound reconcile failed", {
+            companyId,
+            error: err
+          });
           return {
             purchaseOrders: 0,
             invoices: 0,
@@ -323,10 +326,10 @@ export const rampSyncFunction = inngest.createFunction(
             recipient: { type: "user", userId: recipientId }
           });
         } catch (notifyError) {
-          console.error(
-            `[RAMP SYNC] ${companyId}: failed to send sync-failure notification`,
-            notifyError
-          );
+          logger.error("Failed to send the Ramp sync-failure notification", {
+            companyId,
+            error: notifyError
+          });
           return { notified: false };
         }
         return { notified: true };

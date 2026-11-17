@@ -42,6 +42,7 @@ import {
   LuMapPin,
   LuMonitorPlay,
   LuPackageCheck,
+  LuTruck,
   LuWrench
 } from "react-icons/lu";
 import { Await, Link, useLocation, useNavigate } from "react-router";
@@ -378,7 +379,8 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "maintenance", icon: LuWrench, to: path.to.maintenance },
     { key: "picking", icon: LuPackageCheck, to: path.to.picking },
     { key: "service", icon: LuHeadphones, to: path.to.service },
-    { key: "inspections", icon: LuClipboardCheck, to: path.to.inspections }
+    { key: "inspections", icon: LuClipboardCheck, to: path.to.inspections },
+    { key: "lineFeed", icon: LuTruck, to: path.to.lineFeed }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
@@ -397,7 +399,8 @@ export function useQueueTitles(): Record<QueueKey, string> {
       maintenance: t`Maintenance`,
       picking: t`Picking`,
       service: t`Service`,
-      inspections: t`Inspections`
+      inspections: t`Inspections`,
+      lineFeed: t`Line feed`
     }),
     [t]
   );

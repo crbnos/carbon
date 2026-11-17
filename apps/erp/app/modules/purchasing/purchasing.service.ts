@@ -286,7 +286,7 @@ const SUPPLIERS_LIST_COLUMNS =
 const PURCHASE_ORDERS_LIST_COLUMNS =
   "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,shippedDate,expectedReceiptDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
-const logger = getLogger("erp", "purchasing-service");
+const logger = getLogger("erp", "purchasing");
 
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
@@ -800,7 +800,7 @@ async function getSignatureDataUrl(
     .from(SIGNATURES_BUCKET)
     .download(path);
   if (!data) {
-    logger.warn("Failed to read an approval signature", { path, error });
+    logger.warning("Failed to read an approval signature", { path, error });
     return null;
   }
   // The owner can write any bytes under a PNG or JPEG name, and an image
@@ -808,7 +808,7 @@ async function getSignatureDataUrl(
   const bytes = Buffer.from(await data.arrayBuffer());
   const type = imageTypeOf(bytes);
   if (!type) {
-    logger.warn("An approval signature is not a PNG or JPEG", { path });
+    logger.warning("An approval signature is not a PNG or JPEG", { path });
     return null;
   }
   return `data:${type};base64,${bytes.toString("base64")}`;
@@ -2331,7 +2331,7 @@ export async function rejectPurchaseOrderApproval(
         approvalRequestId
       );
       if (!version) {
-        logger.warn("A rejected approval kept no version rows", {
+        logger.warning("A rejected approval kept no version rows", {
           companyId,
           purchaseOrderId,
           approvalRequestId
@@ -2364,16 +2364,19 @@ export async function rejectPurchaseOrderApproval(
         await sql`ROLLBACK TO SAVEPOINT restore_purchase_order_version`.execute(
           trx
         );
-        logger.warn("A rejected edit's version was refused by the live row", {
-          companyId,
-          purchaseOrderId,
-          approvalRequestId,
-          error
-        });
+        logger.warning(
+          "A rejected edit's version was refused by the live row",
+          {
+            companyId,
+            purchaseOrderId,
+            approvalRequestId,
+            error
+          }
+        );
         restored = false;
       }
       if (!restored) {
-        logger.warn(
+        logger.warning(
           "A rejected edit could not be undone; the order stays Rejected",
           {
             companyId,
@@ -8533,7 +8536,7 @@ export async function writeClassificationOverride(
       }
     ]);
   } catch (err) {
-    logger.warn("audit write skipped for a lease classification override", {
+    logger.warning("audit write skipped for a lease classification override", {
       error: err
     });
   }
@@ -9547,7 +9550,7 @@ export async function auditForceDelete(
       }
     ]);
   } catch (err) {
-    logger.warn("audit write skipped for a purchase order force delete", {
+    logger.warning("audit write skipped for a purchase order force delete", {
       error: err
     });
   }
@@ -9788,7 +9791,7 @@ export async function releaseApprovedPurchaseOrder(
           companyId: ctx.company.id
         });
       } else {
-        logger.warn(
+        logger.warning(
           "Purchase order not emailed after approval: the supplier contact has no email",
           { purchaseOrderId, supplierContactId: supplierContact }
         );
@@ -10281,7 +10284,8 @@ export async function finalizePurchasingRfq(
   return { quotes };
 }
 const updatePurchasedPricesLogger = getLogger(
-  "server-functions",
+  "erp",
+  "purchasing",
   "update-purchased-prices"
 );
 

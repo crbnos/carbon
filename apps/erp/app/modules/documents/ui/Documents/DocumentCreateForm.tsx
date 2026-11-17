@@ -56,7 +56,9 @@ const DocumentCreateForm = () => {
         });
 
       if (fileUpload.error) {
-        logger.error(fileUpload.error);
+        logger.error("Failed to upload the document file", {
+          error: fileUpload.error
+        });
         toastError(t`Failed to upload file`, fileUpload.error);
       }
 
@@ -108,7 +110,7 @@ const DocumentCreateForm = () => {
   }
 
   return (
-    <File leftIcon={<LuUpload />} onChange={uploadFile}>
+    <File variant="primary" leftIcon={<LuUpload />} onChange={uploadFile}>
       <Trans>Upload</Trans>
     </File>
   );

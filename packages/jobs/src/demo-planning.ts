@@ -3,8 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { type MrpDeps, runLocationSchedule, runMrp } from "@carbon/planning";
 import { getJobDatabaseClient } from "./db";
+
+const logger = getLogger("jobs", "demo-planning");
 
 export type DemoPlanningResult = {
   mrp: "ok" | string;
@@ -31,7 +34,7 @@ async function loadMrpDeps(): Promise<MrpDeps | undefined> {
   try {
     return (await import("@carbon/ee/pegging.server")).planningGroupMrpDeps;
   } catch (err) {
-    console.warn(`Planning groups are off for this run: ${message(err)}`);
+    logger.warning("Planning groups are off for this run", { error: err });
     return undefined;
   }
 }

@@ -13,6 +13,7 @@ import {
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
+  getOnshapePanelIntegration,
   loadPartCustomFieldDefinitions,
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
@@ -174,7 +175,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         detected: { item: detected.item, quantity: detected.quantity }
       };
     } catch (error) {
-      logger.warn("Failed to read the BOM columns for the Fields page", {
+      logger.warning("Failed to read the BOM columns for the Fields page", {
         companyId,
         documentId,
         elementId,
@@ -184,12 +185,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const reads = await Promise.all([
-    client
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("companyId", companyId)
-      .maybeSingle(),
+    getOnshapePanelIntegration(client, companyId),
     loadPartCustomFieldDefinitions(client, companyId),
     loadPlanOptions(client, companyId),
     // Changing where part numbers come from re-matches these on the next push.
@@ -208,7 +204,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const [integration, definitions, options, links] = reads;
   if (links.error) {
-    logger.warn("Failed to count the panel's item links", {
+    logger.warning("Failed to count the panel's item links", {
       companyId,
       error: links.error
     });

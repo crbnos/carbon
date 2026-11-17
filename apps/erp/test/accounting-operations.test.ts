@@ -4,7 +4,10 @@
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
-import { saveJournalEntry } from "../app/modules/accounting/accounting.server";
+import {
+  reopenPeriod,
+  saveJournalEntry
+} from "../app/modules/accounting/accounting.server";
 import { accountMoveRefusal } from "../app/modules/accounting/accounting.utils";
 
 // A handle with no methods: a refusal that reached the database fails the test.
@@ -92,5 +95,31 @@ describe("moving an account", () => {
 
   it("allows a move under another group", () => {
     expect(accountMoveRefusal(chart, "cash", "assets")).toBeNull();
+  });
+});
+
+describe("reopenPeriod", () => {
+  it("needs accounting delete, which lock and unlock do not", async () => {
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        userId: "user-1",
+        permissions: {
+          accounting: {
+            view: ["company-1"],
+            create: ["company-1"],
+            update: ["company-1"],
+            delete: []
+          }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: {} as never,
+      system: unreachable,
+      pg: unreachable,
+      kv: unreachable
+    });
+    const result = await reopenPeriod(ctx, { periodId: "period-1" });
+    expect(result.error).toMatchObject({ category: "forbidden" });
   });
 });

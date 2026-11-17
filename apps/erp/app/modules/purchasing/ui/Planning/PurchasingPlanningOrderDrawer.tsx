@@ -37,7 +37,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
@@ -48,6 +48,7 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
+import type { RefusedPlanningOrder } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   type PlanningActionHandlers,
@@ -68,7 +69,9 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -129,6 +132,8 @@ type PurchasingPlanningOrderDrawerProps = {
   onClose: () => void;
   onSupplierChange: (itemId: string, supplierId: string) => void;
   setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
+  /** Drop the item's draft list so the drawer re-seeds from the suggestions. */
+  onSuggestionsStale: (item: PurchasingPlanningItem) => void;
   setSelectedItem: (item: PurchasingPlanningItem) => void;
 };
 
@@ -145,6 +150,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     actionHandlers,
     ordersVersion = 0,
     setOrders,
+    onSuggestionsStale,
     locationId,
     periods,
     selectedSupplier,
@@ -159,6 +165,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
     const fetcher = useFetcher<typeof bulkUpdateAction>();
+    const pastStartToast = usePastStartToast();
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
@@ -177,6 +184,11 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     // Re-read when the item's actions change: applying one rewrites its line.
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
+    // ...and after an order that left the drawer open placed new lines.
+    const [openLinesVersion, setOpenLinesVersion] = useState(0);
+    // Bumped when the rows are re-read, to close any cell editor left open.
+    const [suggestionsVersion, setSuggestionsVersion] = useState(0);
+    const submittedOrders = useRef<PlannedOrder[]>([]);
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -277,7 +289,8 @@ export const PurchasingPlanningOrderDrawer = memo(
       selectedItem.id,
       locationId,
       actionsKey,
-      ordersVersion
+      ordersVersion,
+      openLinesVersion
     ]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
@@ -466,9 +479,17 @@ export const PurchasingPlanningOrderDrawer = memo(
       [beyondFenceOrders]
     );
 
+    // A new fence re-seeds the rows too.
+    const onFenceChange = useCallback(
+      (date: Parameters<typeof onTimeFenceChange>[0]) => {
+        onTimeFenceChange(date);
+        setSuggestionsVersion((version) => version + 1);
+      },
+      [onTimeFenceChange]
+    );
     const onIncludeBeyondFence = useCallback(() => {
-      if (lastBeyondFenceDate) onTimeFenceChange(lastBeyondFenceDate);
-    }, [lastBeyondFenceDate, onTimeFenceChange]);
+      if (lastBeyondFenceDate) onFenceChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onFenceChange]);
 
     const onSuggestedOrdersChange = useCallback(
       (next: PlannedOrder[]) => setOrders(selectedItem, next),
@@ -529,6 +550,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           };
         });
 
+        submittedOrders.current = ordersWithPeriods;
         const payload = {
           locationId,
           items: [
@@ -568,15 +590,44 @@ export const PurchasingPlanningOrderDrawer = memo(
       }
 
       if (fetcher.data?.success === true) {
-        const purchaseOrders =
-          (
-            fetcher.data as {
-              purchaseOrders?: { id: string; readableId: string }[];
-            }
-          )?.purchaseOrders ?? [];
+        const {
+          purchaseOrders = [],
+          refusedOrders,
+          processedItems = 0,
+          warnings = [],
+          errors = []
+        } = fetcher.data as {
+          purchaseOrders?: { id: string; readableId: string }[];
+          refusedOrders?: RefusedPlanningOrder[];
+          processedItems?: number;
+          warnings?: string[];
+          errors?: string[];
+        };
+        const refused = refusedOrdersOfRow(
+          {
+            ...selectedItem,
+            id: selectedItem.id!,
+            orders: submittedOrders.current
+          },
+          refusedOrders
+        );
+        const problems = [...warnings, ...errors];
+        if (problems.length > 0) toast.error(problems.join(" · "));
+        setSuggestionsVersion((version) => version + 1);
+        // The orders refused for starting in the past stay in the drawer as
+        // they were sent. With none it re-seeds from the suggestions, which
+        // keep what was not ordered.
+        if (refused.length > 0) {
+          setOrders(selectedItem, refused);
+          toast.error(pastStartToast(processedItems, refused.length));
+        } else {
+          onSuggestionsStale(selectedItem);
+        }
 
         if (purchaseOrders.length === 0) {
-          toast.success(t`Orders submitted`);
+          if (refused.length === 0 && errors.length === 0) {
+            toast.success(t`Orders submitted`);
+          }
         } else {
           toast.success(
             <div className="flex gap-1">
@@ -597,7 +648,10 @@ export const PurchasingPlanningOrderDrawer = memo(
           );
         }
 
-        setOrders(selectedItem, []);
+        if (refused.length > 0 || errors.length > 0) {
+          setOpenLinesVersion((version) => version + 1);
+          return;
+        }
         onClose();
       }
     }, [fetcher.state, fetcher.data]);
@@ -605,7 +659,13 @@ export const PurchasingPlanningOrderDrawer = memo(
     const supplierDisclosure = useDisclosure();
 
     return (
-      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Drawer
+        open={isOpen}
+        onOpenChange={(open) => {
+          // closing mid-order would lose the result that clears the draft
+          if (!open && fetcher.state === "idle") onClose();
+        }}
+      >
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <DrawerContent size="lg">
             <DrawerHeader className="relative">
@@ -793,7 +853,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                     item={selectedItem}
                     fenceDate={timeFenceDate}
                     isFenceOverridden={isTimeFenceOverridden}
-                    onFenceChange={onTimeFenceChange}
+                    onFenceChange={onFenceChange}
                   >
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
@@ -856,6 +916,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       todayIso={locationToday}
                       quantityHeader={t`Purchase Qty`}
                       orderByHeader={t`Order By`}
+                      resetKey={suggestionsVersion}
                       onChange={onSuggestedOrdersChange}
                       onAdd={onAddOrder}
                     />
@@ -890,7 +951,11 @@ export const PurchasingPlanningOrderDrawer = memo(
               </div>
             </DrawerBody>
             <DrawerFooter>
-              <Button variant="secondary" onClick={onClose}>
+              <Button
+                variant="secondary"
+                onClick={onClose}
+                isDisabled={fetcher.state !== "idle"}
+              >
                 <Trans>Close</Trans>
               </Button>
               <Button

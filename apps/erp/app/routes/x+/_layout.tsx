@@ -168,11 +168,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   request.headers.get("x-vercel-id")
   // );
 
-  // console.log({
-  //   computeRegion,
-  //   proxyRegion,
-  // });
-
   const client = getCarbonForRequest(accessToken, request);
 
   // The user's and the company's rows, in one round trip. Started here so the
@@ -217,11 +212,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return { checkStates: [], signals: null };
     });
   const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
-    () => false
+    (error) => {
+      log.warning("Failed to read whether the audit log is enabled", {
+        companyId,
+        error
+      });
+      return false;
+    }
   );
   // Streamed, not awaited; each catches for the same early-exit reason.
   // Whether this user dismissed it is a user flag, read client-side.
-  const changelog = getCachedChangelogPanelEntry().catch(() => null);
+  const changelog = getCachedChangelogPanelEntry().catch((error) => {
+    log.warning("Failed to load the changelog entry", { error });
+    return null;
+  });
 
   // Started with the other reads; it shares the cached licence resolution.
   // Who may see it is known only once the claims arrive.
@@ -274,11 +278,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // people to the login page mid-call; an error page they can retry keeps
   // them signed in.
   if (user.error || groups.error) {
-    log.warn("App shell read failed", {
+    log.warning("App shell read failed", {
       userId,
       companyId,
-      userError: user.error?.message ?? null,
-      groupsError: groups.error?.message ?? null
+      error: user.error ?? groups.error
     });
     throw data("Carbon could not load your account. Try again in a moment.", {
       status: 503
@@ -293,7 +296,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // (get_claims returned nothing); no user row means the account is gone.
     const reason = !claims ? "no-claims" : "no-user-row";
 
-    log.warn("Destroying auth session in x+/_layout loader", {
+    log.warning("Destroying auth session in x+/_layout loader", {
       userId,
       companyId,
       reason,

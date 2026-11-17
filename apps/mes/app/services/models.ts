@@ -240,7 +240,9 @@ export const issueTrackedEntityValidator = z.object({
   unitNumber: z.number().int().positive().optional(),
   // Set when policy is BlockWithOverride and operator typed a reason.
   overrideExpired: z.boolean().optional(),
-  overrideReason: z.string().optional()
+  overrideReason: z.string().optional(),
+  // Set after the operator confirms an issue past the requirement.
+  allowOverIssue: z.boolean().optional()
 });
 
 export const baseQuantityValidator = finishValidator.extend({
@@ -415,6 +417,38 @@ export const qualityIssueValidator = z.object({
   trackedEntityId: zfd.text(z.string().optional())
 });
 
+export const scrapPartsValidator = z.object({
+  jobOperationId: z.string().min(1),
+  lines: zfd.json(
+    z
+      .array(
+        z.union([
+          z.object({
+            materialId: z.string().min(1),
+            trackedEntityId: z.string().min(1),
+            quantity: z.number().positive()
+          }),
+          z.object({
+            materialId: z.string().min(1),
+            itemId: z.string().min(1),
+            quantity: z.number().positive()
+          })
+        ])
+      )
+      .min(1, { message: "Pick a part" })
+  ),
+  scrapReasonId: z.string().min(1, { message: "Pick a reason" }),
+  replacement: z.enum(["Shelf", "Water Spider"]),
+  notes: zfd.text(z.string().optional()),
+  idempotencyKey: z.string().min(1)
+});
+
+export const materialRequestValidator = z.object({
+  jobOperationId: z.string().min(1),
+  itemId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
 export const maintenanceDispatchIssueValidator = z.object({
   maintenanceDispatchItemId: z.string().min(1, {
     message: "Maintenance Dispatch Item is required"
@@ -444,6 +478,8 @@ export const inspectionSampleValidator = z.object({
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId: zfd.text(z.string().optional()),
+  // Grid position of a new anonymous sample, so it reloads in the same place.
+  position: zfd.numeric(z.number().int().min(0).optional()),
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: z.enum(["Pending", "Passed", "Failed"], {
@@ -545,6 +581,8 @@ export const inspectionMeasurementValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
   // Absent = create an anonymous sample (non-serial grid columns).
   sampleId: zfd.text(z.string().optional()),
+  // Grid position of the anonymous sample this save creates.
+  position: zfd.numeric(z.number().int().min(0).optional()),
   inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
   // Numeric string for Measurement features; empty clears the reading.
   value: zfd.text(z.string().optional()),

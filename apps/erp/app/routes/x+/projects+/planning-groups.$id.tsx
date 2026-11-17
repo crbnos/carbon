@@ -39,16 +39,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (group.error) {
-    logger.error("Failed to load a planning group", {
-      companyId,
-      id,
-      error: group.error
-    });
     throw redirect(
       path.to.planningGroups,
       await flash(
         request,
-        error(group.error, "Failed to load the planning group")
+        error(group.error, "Failed to load the planning group", { id })
       )
     );
   }

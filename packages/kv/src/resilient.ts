@@ -18,7 +18,7 @@ export function logUnavailable(err: unknown): void {
   if (!unavailable || now - lastLoggedAt >= LOG_THROTTLE_MS) {
     log.error("Redis is unavailable, running in degraded mode", {
       event: "redis.degraded",
-      cause: err instanceof Error ? err.message : String(err)
+      error: err
     });
     lastLoggedAt = now;
   }

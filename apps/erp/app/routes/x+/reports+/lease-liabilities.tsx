@@ -48,7 +48,7 @@ import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "reports/lease-liabilities");
+const logger = getLogger("erp", "reports", "lease-liabilities");
 
 export const handle: Handle = {
   breadcrumb: msg`Lease Liabilities`,

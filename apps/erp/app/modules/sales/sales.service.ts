@@ -100,6 +100,11 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type {
+  DeliveryDateLine,
+  DeliveryDateResult,
+  ExtraDemand
+} from "@carbon/planning";
+import type {
   ContractBillingBasis,
   PickPartial,
   Violation
@@ -186,7 +191,8 @@ import {
   getCurrentAccountingPeriod,
   isContactEmailRequired,
   refuseUnlessOwned,
-  resolveInventoryAccount
+  resolveInventoryAccount,
+  sendSalesOrderEmail
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import {
@@ -202,6 +208,7 @@ import {
   getCurrencyByCode,
   getExchangeRate
 } from "../accounting/accounting.service";
+import { ACTIVE_JOB_STATUSES } from "../production/production.models";
 import * as productionPostings from "../production/production.service";
 import type {
   operationParameterValidator,
@@ -291,13 +298,17 @@ import {
   type CustomerPortalRefusal,
   configuredQuoteBasePrice,
   customerPortalRefusal,
+  DELIVERY_CHECKED_LINE_TYPES,
+  type DeliveryDateColumns,
   decideRecalcPricing,
   getDefaultRentalRates,
   getEffectiveDefaultMarkups,
+  nextDeliveryDateRecord,
   priceListOverrideScopes,
   priceOverrideScopeError,
   QUOTE_BASE_PRICE_SOURCES,
   resolvePreservedQuoteLinePriceFields,
+  saveIsCurrent,
   toMatchedRule,
   withBasePriceSource
 } from "./sales.utils";
@@ -1411,7 +1422,7 @@ export async function getActiveCustomerPortal(
     return { refusal: "error" };
   }
   if (!portal.data?.customerId) {
-    logger.warn("Customer portal refused: notFound", { id });
+    logger.warning("Customer portal refused: notFound", { id });
     return { refusal: "notFound" };
   }
 
@@ -1419,7 +1430,7 @@ export async function getActiveCustomerPortal(
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {
-    logger.warn("Customer portal refused: plan", {
+    logger.warning("Customer portal refused: plan", {
       id,
       companyId: portal.data.companyId
     });
@@ -1431,7 +1442,8 @@ export async function getActiveCustomerPortal(
     datetime.timestamp()
   );
   if (refusal) {
-    logger.warn(`Customer portal refused: ${refusal}`, {
+    logger.warning("Customer portal refused: {refusal}", {
+      refusal,
       id,
       companyId: portal.data.companyId
     });
@@ -2531,13 +2543,17 @@ export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
   userId: string,
-  companyId: string
+  companyId: string,
+  options: { emailOrderOnAcceptance?: boolean } = {}
 ) {
   const quoteUpdate = await requireAffected(
     client
       .from("quote")
       .update({
         status: "Sent",
+        ...(options.emailOrderOnAcceptance !== undefined && {
+          emailOrderOnAcceptance: options.emailOrderOnAcceptance
+        }),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -6528,16 +6544,18 @@ export async function upsertSalesOrderShipment(
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> &
+        DeliveryDateColumns & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> &
+        DeliveryDateColumns & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
 ) {
   // Only a Service line has a service period — every other item type is a
   // physical good, earned when it ships. A cleared DatePicker posts "", which
@@ -14721,6 +14739,56 @@ export async function notifyDigitalQuoteResponse(
   }
 }
 
+/**
+ * Emails the order to whoever accepted the quote online, with the sales person
+ * on the email. Best-effort: a failure is logged and never undoes the order.
+ */
+export async function emailDigitalQuoteOrder(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    acceptedBy: string;
+    acceptedByEmail: string;
+    documentFilePath: string;
+    fileName: string;
+  }
+): Promise<void> {
+  const companyId = ctx.company.id;
+  const email = args.acceptedByEmail.trim();
+  if (!z.string().email().safeParse(email).success) {
+    logger.warning(
+      "Skipped the order email: the acceptor's email is not valid",
+      {
+        companyId,
+        salesOrderId: args.salesOrderId
+      }
+    );
+    return;
+  }
+  try {
+    const order = await getSalesOrder(ctx.asSystem.supabase, args.salesOrderId);
+    if (order.error) throw order.error;
+    const sent = await sendSalesOrderEmail({
+      salesOrderId: args.salesOrderId,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId: order.data.salesPersonId ?? ctx.auditUserId,
+      recipient: { email, name: args.acceptedBy },
+      documentFilePath: args.documentFilePath,
+      fileName: args.fileName,
+      serviceRole: ctx.asSystem.supabase,
+      locales: ["en-US"]
+    });
+    if (!sent.success) throw new Error(sent.message);
+  } catch (error) {
+    logger.error("Failed to email the order after digital quote acceptance", {
+      companyId,
+      salesOrderId: args.salesOrderId,
+      error
+    });
+  }
+}
+
 export async function advancingStatusRefusal(
   ctx: ServiceContext,
   documentType: "quote" | "salesOrder",
@@ -14815,6 +14883,599 @@ export async function salesOrderLineGate(
     customerLocationId: shipTo.customerLocationId,
     acknowledged: args.acknowledged
   });
+}
+
+/** Orders whose open lines MRP counts as demand (`openSalesOrderLines`). */
+const DEMAND_ORDER_STATUSES: ReadonlySet<SalesOrderStatus> =
+  new Set<SalesOrderStatus>(["To Ship", "To Ship and Invoice"]);
+
+/** A line with no promised date is due now, as MRP counts it. */
+const DUE_NOW = "0001-01-01";
+
+type DeliveryDateControl = Database["public"]["Enums"]["deliveryDateControl"];
+type SalesOrderLineType = Database["public"]["Enums"]["salesOrderLineType"];
+type LineMethodType = Database["public"]["Enums"]["methodType"];
+
+/**
+ * The delivery date check level of each item at each location: the item's
+ * `itemPlanning` override, else the company's level.
+ */
+export async function resolveDeliveryDateControls(
+  ctx: ServiceContext,
+  keys: { itemId: string; locationId: string }[]
+): Promise<Map<string, DeliveryDateControl>> {
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const itemIds = Array.from(new Set(keys.map((k) => k.itemId)));
+  const [settings, overrides] = await Promise.all([
+    db
+      .selectFrom("companySettings")
+      .select("deliveryDateControl")
+      .where("id", "=", companyId)
+      .executeTakeFirst(),
+    itemIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .selectFrom("itemPlanning")
+          .select(["itemId", "locationId", "deliveryDateControl"])
+          .where("itemId", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .where("deliveryDateControl", "is not", null)
+          .execute()
+  ]);
+  const companyLevel = settings?.deliveryDateControl ?? "None";
+  const byKey = new Map<string, DeliveryDateControl>();
+  for (const row of overrides) {
+    if (row.deliveryDateControl) {
+      byKey.set(`${row.itemId}:${row.locationId}`, row.deliveryDateControl);
+    }
+  }
+  const result = new Map<string, DeliveryDateControl>();
+  for (const key of keys) {
+    const id = `${key.itemId}:${key.locationId}`;
+    result.set(id, byKey.get(id) ?? companyLevel);
+  }
+  return result;
+}
+
+type DeliveryCheckCandidate = {
+  key: string;
+  salesOrderLineId: string | null;
+  salesOrderLineType: SalesOrderLineType;
+  itemId: string | null;
+  locationId: string | null;
+  methodType: LineMethodType | null;
+  quantity: number;
+  promisedDate: string | null;
+  hasOpenJob: boolean;
+};
+
+/**
+ * Run the delivery date check for candidate lines (spec sections 3 and 6).
+ * A line that ships no item, has no date or location, a level of None, or a
+ * Make to Order job already holding its date gets no result. With
+ * `capacity: "defer"`, a line that needs the capacity simulation comes back
+ * `Pending`.
+ */
+export async function runDeliveryDateCheck(
+  ctx: ServiceContext,
+  candidates: DeliveryCheckCandidate[],
+  options: { capacity: "run" | "defer" | "skip"; extraDemand?: ExtraDemand[] }
+): Promise<{
+  results: Map<string, DeliveryDateResult>;
+  controls: Map<string, DeliveryDateControl>;
+}> {
+  const keyed = candidates.filter(
+    (c): c is DeliveryCheckCandidate & { itemId: string; locationId: string } =>
+      Boolean(c.itemId && c.locationId)
+  );
+  const controls = await resolveDeliveryDateControls(
+    ctx,
+    keyed.map((c) => ({ itemId: c.itemId, locationId: c.locationId }))
+  );
+  const lines: DeliveryDateLine[] = [];
+  for (const c of keyed) {
+    const control = controls.get(`${c.itemId}:${c.locationId}`) ?? "None";
+    if (control === "None") continue;
+    if (!DELIVERY_CHECKED_LINE_TYPES.has(c.salesOrderLineType)) continue;
+    if (!c.promisedDate || c.quantity <= 0 || !c.methodType) continue;
+    if (c.methodType === "Make to Order" && c.hasOpenJob) continue;
+    lines.push({
+      key: c.key,
+      salesOrderLineId: c.salesOrderLineId,
+      itemId: c.itemId,
+      locationId: c.locationId,
+      quantity: c.quantity,
+      promisedDate: c.promisedDate.slice(0, 10),
+      methodType: c.methodType,
+      control
+    });
+  }
+
+  const results = new Map<string, DeliveryDateResult>();
+  if (lines.length > 0) {
+    const { checkDeliveryDates } = await import("@carbon/planning");
+    const checked = await checkDeliveryDates({
+      db: ctx.asSystem.pg,
+      client: ctx.asSystem.supabase,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      lines,
+      extraDemand: options.extraDemand,
+      capacity: options.capacity
+    });
+    for (const result of checked) results.set(result.key, result);
+  }
+  return { results, controls };
+}
+
+export async function salesOrderLinesWithOpenJobs(
+  ctx: ServiceContext,
+  lineIds: string[]
+): Promise<Set<string>> {
+  if (lineIds.length === 0) return new Set();
+  const rows = await ctx.asSystem.pg
+    .selectFrom("job")
+    .select("salesOrderLineId")
+    .where("salesOrderLineId", "in", lineIds)
+    .where("companyId", "=", ctx.company.id)
+    // A job whose schedule holds its line's date; a Draft job has none yet.
+    .where("status", "in", ACTIVE_JOB_STATUSES)
+    .execute();
+  return new Set(
+    rows.map((r) => r.salesOrderLineId).filter((id): id is string => !!id)
+  );
+}
+
+/**
+ * The stock the other lines of an order already claim, when the order is not
+ * To Ship yet. MRP's open-order view leaves such an order out, so without
+ * this two lines of one draft order could both be promised the same stock.
+ * Only Pull from Inventory lines ship from stock; a Make to Order line gets
+ * its own job.
+ */
+export async function salesOrderSiblingDemand(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    orderStatus: SalesOrderStatus | null;
+    orderLocationId: string | null;
+    excludeLineIds: string[];
+  }
+): Promise<ExtraDemand[]> {
+  if (args.orderStatus && DEMAND_ORDER_STATUSES.has(args.orderStatus)) {
+    return [];
+  }
+  let query = ctx.asSystem.pg
+    .selectFrom("salesOrderLine")
+    .select([
+      "id",
+      "itemId",
+      "locationId",
+      "salesOrderLineType",
+      "methodType",
+      "saleQuantity",
+      "quantitySent",
+      "promisedDate"
+    ])
+    .where("salesOrderId", "=", args.salesOrderId)
+    .where("companyId", "=", ctx.company.id)
+    .where("methodType", "=", "Pull from Inventory");
+  if (args.excludeLineIds.length > 0) {
+    query = query.where("id", "not in", args.excludeLineIds);
+  }
+  const rows = await query.execute();
+  const demand: ExtraDemand[] = [];
+  for (const row of rows) {
+    const locationId = row.locationId ?? args.orderLocationId;
+    if (!row.itemId || !locationId) continue;
+    if (!DELIVERY_CHECKED_LINE_TYPES.has(row.salesOrderLineType)) continue;
+    // Kysely hands NUMERIC back as a string.
+    const quantity =
+      Number(row.saleQuantity ?? 0) - Number(row.quantitySent ?? 0);
+    if (quantity <= 0) continue;
+    demand.push({
+      itemId: row.itemId,
+      locationId,
+      date: row.promisedDate ? String(row.promisedDate).slice(0, 10) : DUE_NOW,
+      quantity
+    });
+  }
+  return demand;
+}
+
+export type DeliveryDateSave = {
+  columns: DeliveryDateColumns;
+  keptNow: boolean;
+  pending: boolean;
+  changed: boolean;
+  saved: { promisedDate: string | null; saleQuantity: number };
+};
+
+/**
+ * The delivery date columns a line save writes in the same row write, with
+ * the fast levels decided now and the capacity simulation left `Pending` for
+ * the background job (spec section 6). `lineId` is null for a new line.
+ */
+export async function deliveryDateColumnsForSave(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    lineId: string | null;
+    line: {
+      salesOrderLineType: SalesOrderLineType;
+      itemId?: string;
+      locationId?: string;
+      methodType?: LineMethodType;
+      saleQuantity?: number;
+      promisedDate?: string;
+    };
+  }
+): Promise<DeliveryDateSave> {
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const [order, stored, withJobs] = await Promise.all([
+    db
+      .selectFrom("salesOrder")
+      .select(["status", "locationId"])
+      .where("id", "=", args.salesOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    args.lineId
+      ? db
+          .selectFrom("salesOrderLine")
+          .select([
+            "promisedDate",
+            "saleQuantity",
+            "quantitySent",
+            "deliveryDateStatus",
+            "deliveryDateOverriddenBy"
+          ])
+          .where("id", "=", args.lineId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : Promise.resolve(undefined),
+    salesOrderLinesWithOpenJobs(ctx, args.lineId ? [args.lineId] : [])
+  ]);
+
+  const promisedDate = args.line.promisedDate?.slice(0, 10) || null;
+  const quantity = args.line.saleQuantity ?? 0;
+  const changed =
+    !stored ||
+    (stored.promisedDate ? String(stored.promisedDate).slice(0, 10) : null) !==
+      promisedDate ||
+    Number(stored.saleQuantity ?? 0) !== quantity;
+  const key = args.lineId ?? "new";
+
+  const extraDemand = await salesOrderSiblingDemand(ctx, {
+    salesOrderId: args.salesOrderId,
+    orderStatus: order?.status ?? null,
+    orderLocationId: order?.locationId ?? null,
+    excludeLineIds: args.lineId ? [args.lineId] : []
+  });
+  const { results } = await runDeliveryDateCheck(
+    ctx,
+    [
+      {
+        key,
+        salesOrderLineId: args.lineId,
+        salesOrderLineType: args.line.salesOrderLineType,
+        itemId: args.line.itemId ?? null,
+        locationId: args.line.locationId || order?.locationId || null,
+        methodType: args.line.methodType ?? null,
+        quantity: quantity - Number(stored?.quantitySent ?? 0),
+        promisedDate,
+        hasOpenJob: args.lineId ? withJobs.has(args.lineId) : false
+      }
+    ],
+    { capacity: "defer", extraDemand }
+  );
+  const result = results.get(key) ?? null;
+  const record = nextDeliveryDateRecord({
+    stored: stored ?? null,
+    result,
+    save: { userId: ctx.auditUserId, changed },
+    now: datetime.timestamp()
+  });
+  return {
+    ...record,
+    pending: result?.status === "Pending",
+    changed,
+    saved: { promisedDate, saleQuantity: quantity }
+  };
+}
+
+/**
+ * `deliveryDateColumnsForSave` for a line save, or null when the check
+ * failed: the failure is logged and the line saves without a result.
+ */
+export async function deliveryDateForSave(
+  ctx: ServiceContext,
+  args: Parameters<typeof deliveryDateColumnsForSave>[1]
+): Promise<DeliveryDateSave | null> {
+  try {
+    return await deliveryDateColumnsForSave(ctx, args);
+  } catch (error) {
+    logger.error("Failed to check a sales order line's delivery date", {
+      companyId: ctx.company.id,
+      salesOrderLineId: args.lineId,
+      error
+    });
+    return null;
+  }
+}
+
+/**
+ * After a line save: raise `sales.deliveryDateOverridden` for a newly kept
+ * date, and hand a `Pending` line to the background capacity check. Never
+ * fails the save.
+ */
+export async function afterDeliveryDateSave(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    lineId: string;
+    save: DeliveryDateSave;
+  }
+) {
+  try {
+    if (args.save.keptNow) {
+      // The workflow catalog has no sales order line entity, so the moment
+      // names the order.
+      await raiseMoment("sales.deliveryDateOverridden", {
+        outputs: {
+          salesOrder: { id: args.salesOrderId },
+          overriddenBy: { id: ctx.auditUserId }
+        },
+        companyId: ctx.company.id,
+        actorId: ctx.auditUserId
+      });
+    }
+    if (args.save.pending) {
+      await trigger("sales-order.delivery-date-check", {
+        companyId: ctx.company.id,
+        salesOrderId: args.salesOrderId,
+        lineIds: [args.lineId],
+        userId: ctx.auditUserId,
+        save: {
+          changedLineIds: args.save.changed ? [args.lineId] : [],
+          ...args.save.saved
+        }
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to finish a sales order line's delivery date check", {
+      companyId: ctx.company.id,
+      salesOrderLineId: args.lineId,
+      error
+    });
+  }
+}
+
+export const checkSalesOrderDeliveryDatesInput = z.object({
+  salesOrderId: z.string().min(1),
+  /** the lines to check; all of the order's lines when absent */
+  lineIds: z.array(z.string().min(1)).optional(),
+  /** `skip`: answer a line that needs the simulation by its lead time */
+  capacity: z.enum(["run", "defer", "skip"]),
+  /** set when a user's save started the check */
+  save: z
+    .object({
+      changedLineIds: z.array(z.string()),
+      promisedDate: z.string().nullable().optional(),
+      saleQuantity: z.number().optional()
+    })
+    .optional()
+});
+
+export const checkSalesOrderDeliveryDatesPermission = "system" as const;
+
+/**
+ * Check the delivery dates of a sales order's lines and write every result in
+ * one row update per line set (spec sections 6 and 7). The background job
+ * runs it with `capacity: "run"` after a save or a conversion; a conversion
+ * runs it first with `capacity: "defer"`. Raises
+ * `sales.deliveryDateOverridden` for each newly kept date. Returns the lines
+ * still `Pending`.
+ */
+export async function checkSalesOrderDeliveryDates(
+  ctx: ServiceContext,
+  raw: z.input<typeof checkSalesOrderDeliveryDatesInput>
+): Promise<{ pendingLineIds: string[]; keptLineIds: string[] }> {
+  const input = checkSalesOrderDeliveryDatesInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+
+  let query = db
+    .selectFrom("salesOrderLine")
+    .innerJoin("salesOrder", (join) =>
+      join
+        .onRef("salesOrder.id", "=", "salesOrderLine.salesOrderId")
+        .onRef("salesOrder.companyId", "=", "salesOrderLine.companyId")
+    )
+    .select([
+      "salesOrderLine.id as id",
+      "salesOrderLine.salesOrderLineType as salesOrderLineType",
+      "salesOrderLine.itemId as itemId",
+      "salesOrderLine.locationId as lineLocationId",
+      "salesOrder.locationId as orderLocationId",
+      "salesOrder.status as orderStatus",
+      "salesOrderLine.methodType as methodType",
+      "salesOrderLine.saleQuantity as saleQuantity",
+      "salesOrderLine.quantitySent as quantitySent",
+      "salesOrderLine.promisedDate as promisedDate",
+      "salesOrderLine.deliveryDateStatus as deliveryDateStatus",
+      "salesOrderLine.deliveryDateConstraint as deliveryDateConstraint",
+      "salesOrderLine.earliestDeliveryDate as earliestDeliveryDate",
+      // As text: Kysely returns a timestamp as a JS Date, and the write below
+      // sends the kept value back to Postgres as a string.
+      sql<string | null>`"salesOrderLine"."deliveryDateCheckedAt"::text`.as(
+        "deliveryDateCheckedAt"
+      ),
+      "salesOrderLine.deliveryDateOverriddenBy as deliveryDateOverriddenBy",
+      sql<string | null>`"salesOrderLine"."deliveryDateOverriddenAt"::text`.as(
+        "deliveryDateOverriddenAt"
+      )
+    ])
+    .where("salesOrderLine.salesOrderId", "=", input.salesOrderId)
+    .where("salesOrderLine.companyId", "=", companyId);
+  if (input.lineIds) {
+    if (input.lineIds.length === 0)
+      return { pendingLineIds: [], keptLineIds: [] };
+    query = query.where("salesOrderLine.id", "in", input.lineIds);
+  }
+  const rows = await query.execute();
+  if (rows.length === 0) return { pendingLineIds: [], keptLineIds: [] };
+
+  const lineIds = rows.map((r) => r.id);
+  const [withJobs, extraDemand] = await Promise.all([
+    salesOrderLinesWithOpenJobs(ctx, lineIds),
+    salesOrderSiblingDemand(ctx, {
+      salesOrderId: input.salesOrderId,
+      orderStatus: rows[0]!.orderStatus,
+      orderLocationId: rows[0]!.orderLocationId,
+      // A dated line claims its stock as a checked line. An undated one is not
+      // checked, so it stays sibling demand, due now.
+      excludeLineIds: rows.filter((r) => r.promisedDate).map((r) => r.id)
+    })
+  ]);
+  const { results } = await runDeliveryDateCheck(
+    ctx,
+    rows.map((r) => ({
+      key: r.id,
+      salesOrderLineId: r.id,
+      salesOrderLineType: r.salesOrderLineType,
+      itemId: r.itemId,
+      locationId: r.lineLocationId ?? r.orderLocationId,
+      methodType: r.methodType,
+      // Kysely hands NUMERIC back as a string.
+      quantity: Number(r.saleQuantity ?? 0) - Number(r.quantitySent ?? 0),
+      promisedDate: r.promisedDate ? String(r.promisedDate) : null,
+      hasOpenJob: withJobs.has(r.id)
+    })),
+    { capacity: input.capacity, extraDemand }
+  );
+
+  const now = datetime.timestamp();
+  const pendingLineIds: string[] = [];
+  const keptLineIds: string[] = [];
+  const values = [];
+  for (const row of rows) {
+    const result = results.get(row.id) ?? null;
+    if (result?.status === "Pending") pendingLineIds.push(row.id);
+    // A save the line no longer holds does not record the keep: the later
+    // save's own check does.
+    const save =
+      input.save && saveIsCurrent(row, input.save) ? input.save : null;
+    const { columns, keptNow } = nextDeliveryDateRecord({
+      stored: row,
+      result,
+      save: save
+        ? {
+            userId: ctx.auditUserId,
+            changed: save.changedLineIds.includes(row.id)
+          }
+        : null,
+      now
+    });
+    if (Object.keys(columns).length === 0) continue;
+    if (keptNow) keptLineIds.push(row.id);
+    const next = { ...row, ...columns };
+    values.push(sql`(
+      ${row.id}::text,
+      ${row.itemId ?? null}::text,
+      ${row.lineLocationId ?? null}::text,
+      ${row.methodType ?? null}::"methodType",
+      ${row.saleQuantity ?? null}::numeric,
+      ${row.quantitySent ?? null}::numeric,
+      ${row.promisedDate ? String(row.promisedDate).slice(0, 10) : null}::date,
+      ${next.deliveryDateStatus ?? null}::"deliveryDateStatus",
+      ${next.deliveryDateConstraint ?? null}::"deliveryDateConstraint",
+      ${next.earliestDeliveryDate ? String(next.earliestDeliveryDate).slice(0, 10) : null}::date,
+      ${next.deliveryDateCheckedAt ? String(next.deliveryDateCheckedAt) : null}::timestamptz,
+      ${next.deliveryDateOverriddenBy ?? null}::text,
+      ${next.deliveryDateOverriddenAt ? String(next.deliveryDateOverriddenAt) : null}::timestamptz
+    )`);
+  }
+
+  // Only a line that still holds what was checked takes the result: a save
+  // during the simulation has its own check.
+  const written = new Set<string>();
+  if (values.length > 0) {
+    const updated = await sql<{ id: string }>`
+      UPDATE "salesOrderLine" AS sol SET
+        "deliveryDateStatus" = v."status",
+        "deliveryDateConstraint" = v."checkConstraint",
+        "earliestDeliveryDate" = v."earliestDate",
+        "deliveryDateCheckedAt" = v."checkedAt",
+        "deliveryDateOverriddenBy" = v."overriddenBy",
+        "deliveryDateOverriddenAt" = v."overriddenAt"
+      FROM (VALUES ${sql.join(values)}) AS v(
+        "id", "itemId", "locationId", "methodType", "saleQuantity",
+        "quantitySent", "promisedDate", "status", "checkConstraint",
+        "earliestDate", "checkedAt", "overriddenBy", "overriddenAt"
+      )
+      WHERE sol."id" = v."id" AND sol."companyId" = ${companyId}
+        AND sol."itemId" IS NOT DISTINCT FROM v."itemId"
+        AND sol."locationId" IS NOT DISTINCT FROM v."locationId"
+        AND sol."methodType" IS NOT DISTINCT FROM v."methodType"
+        AND sol."saleQuantity" IS NOT DISTINCT FROM v."saleQuantity"
+        AND sol."quantitySent" IS NOT DISTINCT FROM v."quantitySent"
+        AND sol."promisedDate" IS NOT DISTINCT FROM v."promisedDate"
+      RETURNING sol."id"
+    `.execute(db);
+    for (const { id } of updated.rows) written.add(id);
+  }
+  const keptAndWritten = keptLineIds.filter((id) => written.has(id));
+
+  for (const _lineId of keptAndWritten) {
+    // The workflow catalog has no sales order line entity, so the moment
+    // names the order; one moment per newly kept line.
+    await raiseMoment("sales.deliveryDateOverridden", {
+      outputs: {
+        salesOrder: { id: input.salesOrderId },
+        overriddenBy: { id: ctx.auditUserId }
+      },
+      companyId,
+      actorId: ctx.auditUserId
+    });
+  }
+  return {
+    pendingLineIds: pendingLineIds.filter((id) => written.has(id)),
+    keptLineIds: keptAndWritten
+  };
+}
+
+/**
+ * After a quote conversion: decide the fast levels for every new line now,
+ * mark the lines that need the capacity simulation `Pending`, and hand those
+ * to the background job, so the customer never waits for it. A failing line
+ * is flagged, never stopped; a failed check never fails the conversion.
+ */
+export async function checkConvertedSalesOrderDeliveryDates(
+  ctx: ServiceContext,
+  salesOrderId: string
+) {
+  try {
+    const { pendingLineIds } = await checkSalesOrderDeliveryDates(ctx, {
+      salesOrderId,
+      capacity: "defer"
+    });
+    if (pendingLineIds.length > 0) {
+      await trigger("sales-order.delivery-date-check", {
+        companyId: ctx.company.id,
+        salesOrderId,
+        lineIds: pendingLineIds,
+        userId: ctx.auditUserId
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to check a converted sales order's delivery dates", {
+      companyId: ctx.company.id,
+      salesOrderId,
+      error
+    });
+  }
 }
 
 /**

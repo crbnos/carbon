@@ -17,6 +17,7 @@ import { REDIS_DB_MAX } from "../topology.js";
 import {
   buildDownArgs,
   buildUpArgs,
+  isTransientPullError,
   missingSharedServices,
   planSharedFiles,
   redisDatabasesNeeded,
@@ -343,5 +344,26 @@ describe("redisDatabasesNeeded", () => {
     expect(redisDatabasesNeeded([])).toBe(REDIS_DB_MAX);
     expect(redisDatabasesNeeded([{ redisDb: 3 }])).toBe(REDIS_DB_MAX);
     expect(redisDatabasesNeeded([{ redisDb: 3 }, { redisDb: 40 }])).toBe(41);
+  });
+});
+
+describe("isTransientPullError", () => {
+  const pullFailure = (output: string) =>
+    Object.assign(new Error("docker compose pull failed (exit 1)"), { output });
+
+  it.each([
+    "toomanyrequests: You have reached your unauthenticated pull rate limit",
+    "Error response from daemon: received unexpected HTTP status: 503 Service Unavailable",
+    "net/http: TLS handshake timeout",
+    "read: connection reset by peer"
+  ])("retries a throttled or dropped pull: %s", (output) => {
+    expect(isTransientPullError(pullFailure(output))).toBe(true);
+  });
+
+  it.each([
+    "manifest for supabase/gotrue:v0.0.0 not found: manifest unknown",
+    "pull access denied for carbon/private, repository does not exist"
+  ])("fails a pull no wait will fix at once: %s", (output) => {
+    expect(isTransientPullError(pullFailure(output))).toBe(false);
   });
 });

@@ -53,6 +53,7 @@ import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
+import type { ServerExportLinks } from "../types";
 import Columns from "./Columns";
 import Download, { type InfiniteExport } from "./Download";
 import { ActiveFilters, Filter } from "./Filter";
@@ -77,6 +78,7 @@ type HeaderProps<T> = {
   data: object[];
   // Infinite lists: the export loads the rest first, or hands it to a job.
   infiniteExport?: InfiniteExport;
+  serverExport?: ServerExportLinks;
   editMode: boolean;
   filters: ColumnFilter[];
   // True when the table has no rows and no active filter/sort/search — hides the
@@ -114,6 +116,7 @@ type HeaderProps<T> = {
   // CSV download; both default on so ordinary tables are unchanged.
   withColumnOrdering?: boolean;
   withCsvExport?: boolean;
+  csvExportHref?: string;
   sort?: ReactNode;
 };
 
@@ -131,6 +134,7 @@ const TableHeader = <T extends object>({
   countIsExact,
   data,
   infiniteExport,
+  serverExport,
   editMode,
   filters,
   isEmpty,
@@ -156,6 +160,7 @@ const TableHeader = <T extends object>({
   withSelectableRows,
   withColumnOrdering = true,
   withCsvExport = true,
+  csvExportHref,
   sort
 }: HeaderProps<T>) => {
   const { t } = useLingui();
@@ -298,6 +303,27 @@ const TableHeader = <T extends object>({
             </HStack>
 
             <HStack>
+              {serverExport && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" leftIcon={<LuDownload />}>
+                      <Trans>Export</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <a href={serverExport.csv}>
+                        <Trans>Download CSV</Trans>
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href={serverExport.xlsx}>
+                        <Trans>Download Excel</Trans>
+                      </a>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {/* <Button variant="secondary" leftIcon={<LuDownload />}>
             Export
             </Button> */}
@@ -428,6 +454,7 @@ const TableHeader = <T extends object>({
 
             {withCsvExport && (
               <Download
+                href={csvExportHref}
                 data={data}
                 infinite={infiniteExport}
                 columnAccessors={columnAccessors}

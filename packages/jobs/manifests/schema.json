@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110211543",
+  "schemaVersion": "20261117183412",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T21:23:53.403Z",
+  "exportedAt": "2026-11-17T16:57:07.378Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -514,8 +514,13 @@
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
+        "includeSupplierPartFiles",
         "requirePromisedDateToFinalizePurchaseOrder",
-        "includeSupplierPartFiles"
+        "travelerLabels",
+        "requireTrackedMaterialsIssued",
+        "autoPickingListOnRelease",
+        "deliveryDateControl",
+        "receiptBatchNumbersFromPurchaseOrder"
       ]
     },
     {
@@ -632,7 +637,8 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "tags"
+        "tags",
+        "color"
       ]
     },
     {
@@ -991,6 +997,29 @@
         "customFields",
         "gainOnDisposalAccountId",
         "isConstructionInProgress"
+      ]
+    },
+    {
+      "name": "forceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "documentReadableId",
+        "documentStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -1356,6 +1385,21 @@
         "valueId",
         "companyId",
         "createdAt"
+      ]
+    },
+    {
+      "name": "labelTemplate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "labelType",
+        "mediaSizeId",
+        "templateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2199,7 +2243,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "color"
       ]
     },
     {
@@ -3027,7 +3072,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "serialNumberTiming"
+        "serialNumberTiming",
+        "printLabelOnCompletion"
       ]
     },
     {
@@ -3126,6 +3172,24 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "methodCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "makeMethodId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3774,7 +3838,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "position"
       ]
     },
     {
@@ -3888,7 +3953,8 @@
         "minimumReserveQuantity",
         "responsibleEmployee",
         "planningHorizonDays",
-        "allowCommonSupplyForProjects"
+        "allowCommonSupplyForProjects",
+        "deliveryDateControl"
       ]
     },
     {
@@ -3933,6 +3999,26 @@
       "name": "jobFavorite",
       "rows": 0,
       "columns": ["jobId", "userId"]
+    },
+    {
+      "name": "jobMaterialScrap",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobMaterialId",
+        "jobOperationId",
+        "itemId",
+        "trackedEntityId",
+        "quantity",
+        "scrapReasonId",
+        "replacement",
+        "materialRequestId",
+        "notes",
+        "idempotencyKey",
+        "createdBy",
+        "createdAt"
+      ]
     },
     {
       "name": "jobOperationNote",
@@ -4020,6 +4106,18 @@
       "name": "jobOperationToolStep",
       "rows": 0,
       "columns": ["jobOperationToolId", "jobOperationStepId"]
+    },
+    {
+      "name": "jobOperationTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "jobOperationId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy"
+      ]
     },
     {
       "name": "location",
@@ -4196,7 +4294,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "travelersPrintedAt"
       ]
     },
     {
@@ -4210,10 +4309,9 @@
         "format",
         "mediaSizeId",
         "printerUrl",
-        "apiKey",
         "createdAt",
         "updatedAt",
-        "templateId"
+        "hasApiKey"
       ]
     },
     {
@@ -4304,7 +4402,8 @@
         "digitalQuoteRejectedByEmail",
         "opportunityId",
         "completedDate",
-        "customerEngineeringContactId"
+        "customerEngineeringContactId",
+        "emailOrderOnAcceptance"
       ]
     },
     {
@@ -5144,7 +5243,8 @@
         "workCenterId",
         "isWorkCenterDefault",
         "nettable",
-        "effectiveNettable"
+        "effectiveNettable",
+        "kitRack"
       ]
     },
     {
@@ -5763,6 +5863,42 @@
       ]
     },
     {
+      "name": "materialRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "locationId",
+        "workCenterId",
+        "jobOperationId",
+        "itemId",
+        "note",
+        "status",
+        "resolvedBy",
+        "resolvedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "methodCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "methodOperationStepId",
+        "methodCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5786,7 +5922,8 @@
         "tags",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5826,7 +5963,8 @@
         "operationLeadTime",
         "operationUnitCost",
         "assemblyInstructionId",
-        "inspectionDocumentId"
+        "inspectionDocumentId",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5967,6 +6105,22 @@
         "nonConformanceActionId",
         "nonConformanceInvestigationId",
         "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "jobCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobOperationStepId",
+        "jobCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6760,6 +6914,27 @@
       ]
     },
     {
+      "name": "jobCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMakeMethodId",
+        "methodCorrectionId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "definition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "jobMakeMethod",
       "rows": 0,
       "columns": [
@@ -6938,7 +7113,8 @@
         "completedAt",
         "companyId",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "jobCorrectionId"
       ]
     },
     {
@@ -7311,6 +7487,28 @@
       "name": "purchaseOrderFavorite",
       "rows": 0,
       "columns": ["purchaseOrderId", "userId"]
+    },
+    {
+      "name": "purchaseOrderForceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderId",
+        "purchaseOrderReadableId",
+        "purchaseOrderStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
     },
     {
       "name": "purchaseOrderLine",
@@ -7950,7 +8148,14 @@
         "configuration",
         "serviceStartDate",
         "serviceEndDate",
-        "salesReturnOrderLineId"
+        "salesReturnOrderLineId",
+        "requestedDate",
+        "deliveryDateStatus",
+        "deliveryDateConstraint",
+        "earliestDeliveryDate",
+        "deliveryDateCheckedAt",
+        "deliveryDateOverriddenBy",
+        "deliveryDateOverriddenAt"
       ]
     },
     {
@@ -8391,7 +8596,8 @@
         "internalNotes",
         "supplierInteractionId",
         "postedBy",
-        "inspectionStatus"
+        "inspectionStatus",
+        "rejectedAtInspection"
       ]
     },
     {

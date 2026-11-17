@@ -17,9 +17,12 @@ import {
   type OeeProvider,
   planMachineTime
 } from "@carbon/ee/oee";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import { sql } from "kysely";
+
+const logger = getLogger("jobs", "oee-sync-device");
 
 const INSERT_CHUNK = 500;
 
@@ -126,8 +129,9 @@ export async function syncOeeDevice({
       (changedAt) => compareInstants(changedAt, previouslyApplied) <= 0
     ).length;
     if (late > 0) {
-      console.warn(
-        `OEE device ${device.id}: ${late} late state change(s) at or before appliedThrough ${previouslyApplied}, not replanned`
+      logger.warning(
+        "Late OEE state changes at or before the applied cursor were not replanned",
+        { deviceId: device.id, count: late, appliedThrough: previouslyApplied }
       );
     }
   }

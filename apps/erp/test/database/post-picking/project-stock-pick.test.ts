@@ -37,6 +37,200 @@ const postStockTransfer = (
 const postPicking = (ctx: Ctx, input: Parameters<typeof postPickingBody>[1]) =>
   invokePosting(handlesOf(ctx), "post-picking", input, postPickingBody);
 
+databaseTest("a partial pick rechecks stock and unpicks to each source bin", async () => {
+  const f = await projectPostingFixture({ costTreatment: "Expense" });
+  try {
+    await f.enableProjectStock();
+    const { itemId, locationId } = await f.addStockedItem("moving-pick", {
+      quantity: 1,
+      unitCost: 10
+    });
+    const firstBinId = `${f.prefix}-first-bin`;
+    const secondBinId = `${f.prefix}-second-bin`;
+    const linesideId = `${f.prefix}-pick-lineside`;
+    const pickingListId = `${f.prefix}-moving-pl`;
+    const pickingListLineId = `${f.prefix}-moving-pll`;
+    const job = await f.addConsumeToProjectJob("moving-pick", {
+      locationId,
+      materialItemId: itemId,
+      quantityPerParent: 6,
+      jobQuantity: 1,
+      consumeToProject: false
+    });
+    await f.db
+      .updateTable("job")
+      .set({ projectId: f.projectId, projectElementId: f.elementId })
+      .where("id", "=", job.jobId)
+      .execute();
+    await f.db.transaction().execute(async (trx) => {
+      await trx
+        .insertInto("storageUnit")
+        .values([
+          {
+            id: firstBinId,
+            name: "First shelf",
+            locationId,
+            companyId: f.companyId,
+            createdBy: "system"
+          },
+          {
+            id: secondBinId,
+            name: "Second shelf",
+            locationId,
+            companyId: f.companyId,
+            createdBy: "system"
+          },
+          {
+            id: linesideId,
+            name: "Lineside",
+            locationId,
+            workCenterId: job.workCenterId,
+            companyId: f.companyId,
+            createdBy: "system"
+          }
+        ])
+        .execute();
+      await trx
+        .insertInto("pickingList")
+        .values({
+          id: pickingListId,
+          pickingListId: `${f.prefix}-PL-2`,
+          status: "In Progress",
+          locationId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      await trx
+        .insertInto("pickingListLine")
+        .values({
+          id: pickingListLineId,
+          pickingListId,
+          jobId: job.jobId,
+          jobMaterialId: job.materialId,
+          jobOperationId: job.operationId,
+          itemId,
+          quantityToPick: 6,
+          storageUnitId: firstBinId,
+          toStorageUnitId: linesideId,
+          projectId: f.projectId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+    });
+    await f.addStripeStock({
+      itemId,
+      locationId,
+      projectId: f.projectId,
+      quantity: 2,
+      unitCost: 10,
+      storageUnitId: firstBinId
+    });
+    await f.addStripeStock({
+      itemId,
+      locationId,
+      projectId: f.projectId,
+      quantity: 4,
+      unitCost: 10,
+      storageUnitId: secondBinId
+    });
+
+    for (const quantity of [2, 4]) {
+      expect(
+        (await postPicking(f.ctx, {
+          type: "inventory",
+          pickingListId,
+          pickingListLineId,
+          quantity,
+          locationId
+        })).error
+      ).toBeNull();
+    }
+    const pickedSources = await f.db
+      .selectFrom("itemLedger")
+      .select(["storageUnitId", "quantity"])
+      .where("companyId", "=", f.companyId)
+      .where("documentLineId", "=", pickingListLineId)
+      .where("quantity", "<", 0)
+      .orderBy("quantity")
+      .execute();
+    expect(
+      pickedSources.map((row) => [row.storageUnitId, Number(row.quantity)])
+    ).toEqual([
+      [secondBinId, -4],
+      [firstBinId, -2]
+    ]);
+
+    for (const quantity of [3, 3]) {
+      expect(
+        (await postPicking(f.ctx, {
+          type: "unpickInventory",
+          pickingListId,
+          pickingListLineId,
+          quantity,
+          locationId
+        })).error
+      ).toBeNull();
+    }
+    const netTransfers = await f.db
+      .selectFrom("itemLedger")
+      .select([
+        "storageUnitId",
+        (eb) => eb.fn.sum<number>("quantity").as("quantity")
+      ])
+      .where("companyId", "=", f.companyId)
+      .where("documentLineId", "=", pickingListLineId)
+      .groupBy("storageUnitId")
+      .execute();
+    expect(
+      netTransfers.map((row) => [row.storageUnitId, Number(row.quantity)])
+    ).toEqual(
+      expect.arrayContaining([
+        [firstBinId, 0],
+        [secondBinId, 0],
+        [linesideId, 0]
+      ])
+    );
+
+    // The saved first bin has two units, but the next four-unit pick must
+    // draw entirely from the second bin that can cover it.
+    expect(
+      (await postPicking(f.ctx, {
+        type: "inventory",
+        pickingListId,
+        pickingListLineId,
+        quantity: 4,
+        locationId
+      })).error
+    ).toBeNull();
+    const afterShortSavedBin = await f.db
+      .selectFrom("itemLedger")
+      .select([
+        "storageUnitId",
+        (eb) => eb.fn.sum<number>("quantity").as("quantity")
+      ])
+      .where("companyId", "=", f.companyId)
+      .where("documentLineId", "=", pickingListLineId)
+      .groupBy("storageUnitId")
+      .execute();
+    expect(
+      afterShortSavedBin.map((row) => [
+        row.storageUnitId,
+        Number(row.quantity)
+      ])
+    ).toEqual(
+      expect.arrayContaining([
+        [firstBinId, 0],
+        [secondBinId, -4],
+        [linesideId, 4]
+      ])
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
 databaseTest(
   "a pick of project stock moves the project's stripe, and the backflush consumes it",
   async () => {
@@ -48,12 +242,36 @@ databaseTest(
         quantity: 10,
         unitCost: 10
       });
+      const sourceBinId = `${f.prefix}-new-source`;
+      const oldDefaultBinId = `${f.prefix}-old-default`;
+      await f.db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("storageUnit")
+          .values([
+            {
+              id: sourceBinId,
+              name: "New shelf",
+              locationId,
+              companyId: f.companyId,
+              createdBy: "system"
+            },
+            {
+              id: oldDefaultBinId,
+              name: "Default location",
+              locationId,
+              companyId: f.companyId,
+              createdBy: "system"
+            }
+          ])
+          .execute();
+      });
       await f.addStripeStock({
         itemId,
         locationId,
         projectId: f.projectId,
         quantity: 4,
-        unitCost: 12
+        unitCost: 12,
+        storageUnitId: sourceBinId
       });
       const job = await f.addConsumeToProjectJob("pick", {
         locationId,
@@ -68,11 +286,39 @@ databaseTest(
         .where("id", "=", job.jobId)
         .execute();
 
+      // A negative common balance in the same bin cannot hide the project's
+      // positive stock. The issue picker reads each eligible stripe first.
+      await f.db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate: "2026-01-01",
+            entryType: "Negative Adjmt.",
+            itemId,
+            locationId,
+            storageUnitId: sourceBinId,
+            quantity: -5,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+      });
+
+      const issueBins = async () =>
+        (
+          await sql<{
+            storageUnitId: string | null;
+            quantity: string;
+          }>`SELECT "storageUnitId", quantity FROM get_job_issue_bins(${f.companyId}, ${job.jobId}, ARRAY[${itemId}]::TEXT[])`.execute(
+            f.db
+          )
+        ).rows.map((row) => [row.storageUnitId, Number(row.quantity)]);
+      expect(await issueBins()).toContainEqual([sourceBinId, 4]);
+
       const linesideId = `${f.prefix}-lineside`;
       const pickingListId = `${f.prefix}-pl`;
       const pickingListLineId = `${f.prefix}-pll`;
       await f.db.transaction().execute(async (trx) => {
-        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .insertInto("storageUnit")
           .values({
@@ -105,7 +351,7 @@ databaseTest(
             jobOperationId: job.operationId,
             itemId,
             quantityToPick: 4,
-            storageUnitId: null,
+            storageUnitId: oldDefaultBinId,
             toStorageUnitId: linesideId,
             projectId: f.projectId,
             companyId: f.companyId,
@@ -122,6 +368,7 @@ databaseTest(
         locationId
       });
       expect(picked.error).toBeNull();
+      expect(await issueBins()).toContainEqual([linesideId, 4]);
 
       // Both legs of the Transfer pair carry the project.
       const transfer = await f.db
@@ -139,9 +386,52 @@ databaseTest(
           row.projectId
         ])
       ).toEqual([
-        [-4, null, f.projectId],
+        [-4, sourceBinId, f.projectId],
         [4, linesideId, f.projectId]
       ]);
+
+      const pickedLine = await f.db
+        .selectFrom("pickingListLine")
+        .select("storageUnitId")
+        .where("id", "=", pickingListLineId)
+        .executeTakeFirstOrThrow();
+      expect(pickedLine.storageUnitId).toBe(sourceBinId);
+
+      const firstUnpick = await postPicking(f.ctx, {
+        type: "unpickInventory",
+        pickingListId,
+        pickingListLineId,
+        quantity: 4,
+        locationId
+      });
+      const repeatedUnpick = await postPicking(f.ctx, {
+        type: "unpickInventory",
+        pickingListId,
+        pickingListLineId,
+        quantity: 4,
+        locationId
+      });
+      expect(firstUnpick.error).toBeNull();
+      expect(repeatedUnpick.error).toBeNull();
+      const ledgerAfterUnpick = await f.db
+        .selectFrom("itemLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Direct Transfer")
+        .where("documentId", "=", pickingListId)
+        .execute();
+      expect(ledgerAfterUnpick).toHaveLength(4);
+      expect(
+        (
+          await postPicking(f.ctx, {
+            type: "inventory",
+            pickingListId,
+            pickingListLineId,
+            quantity: 4,
+            locationId
+          })
+        ).error
+      ).toBeNull();
 
       // The material's budget is the picked stripe.
       const material = await f.db
@@ -166,6 +456,9 @@ databaseTest(
         quantity: 1
       });
       expect(backflush.error).toBeNull();
+      expect((await issueBins()).filter(([bin]) => bin === linesideId)).toEqual(
+        []
+      );
 
       const consumed = await f.db
         .selectFrom("itemLedger")
@@ -216,7 +509,6 @@ databaseTest(
       const stockTransferId = `${f.prefix}-st`;
       const stockTransferLineId = `${f.prefix}-stl`;
       await f.db.transaction().execute(async (trx) => {
-        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .insertInto("item")
           .values({

@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import type { Column } from "@tanstack/react-table";
+
+const logger = getLogger("erp", "compact-list");
 
 /** Columns the Table adds itself; they never fill a compact row slot. */
 const STRUCTURAL_COLUMN_IDS = new Set(["Select", "Actions", "Expand"]);
@@ -51,9 +54,9 @@ export function resolveSlots<T>(
   if (!p1) {
     p1 = data[0];
     if (process.env.NODE_ENV !== "production") {
-      // biome-ignore lint/suspicious/noConsole: dev-only authoring warning
-      console.warn(
-        `[CompactList] no P1 column in ${tableName}; using "${p1.id}". Add meta.mobile to its columns.`
+      logger.warning(
+        "Compact list has no P1 column; using the first one. Add meta.mobile to its columns",
+        { table: tableName, column: p1.id }
       );
     }
   }

@@ -43,7 +43,7 @@ export const userMiddleware: MiddlewareFunction = async (
     : false;
 
   if (consoleMode && consoleEnabled === null) {
-    log.warn("Console mode state unknown; keeping the console session", {
+    log.warning("Console mode state unknown; keeping the console session", {
       companyId
     });
   }
@@ -83,7 +83,12 @@ export const userMiddleware: MiddlewareFunction = async (
     consoleEnabled: consoleMode ? consoleEnabled : null,
     effectiveUserId: pinIn?.userId ?? sessionUserId,
     pinnedInUser: pinIn
-      ? { userId: pinIn.userId, name: pinIn.name, avatarUrl: pinIn.avatarUrl }
+      ? {
+          userId: pinIn.userId,
+          name: pinIn.name,
+          avatarUrl: pinIn.avatarUrl,
+          pinnedAt: pinIn.pinnedAt
+        }
       : null
   });
 

@@ -91,7 +91,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
       return listErrorPage("stockTransfers");
     }
-    logger.error(stockTransfers.error);
     throw redirect(
       path.to.authenticatedRoot,
       await flash(

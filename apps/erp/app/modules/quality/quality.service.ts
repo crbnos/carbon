@@ -5053,6 +5053,7 @@ export async function closeIssue(
     projectId?: string | null;
     quantity: number;
     comment: string;
+    documentLineId?: string;
   }[] = [];
   // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
   const remainingCoverageByItem = new Map(shippedCoverageByItem);
@@ -5153,7 +5154,8 @@ export async function closeIssue(
           trackedEntityId: null,
           projectId: source.projectId,
           quantity: take,
-          comment
+          comment,
+          documentLineId: row.id
         });
       }
       if (remaining > EPSILON && !restoreCappedAtWriteOff) {
@@ -5162,7 +5164,8 @@ export async function closeIssue(
           locationId,
           trackedEntityId: null,
           quantity: remaining,
-          comment
+          comment,
+          documentLineId: row.id
         });
       }
     }
@@ -5177,6 +5180,30 @@ export async function closeIssue(
       });
       if (status === "Closed")
         return { id: nonConformanceId, closedNow: false };
+      // Closing refreshes the receipts of its lots (their Put Away counts the
+      // Use As Is part). Lock them now, before the lots: a lot decision takes
+      // its receipt, then the lot, and the other order deadlocks with it.
+      const linkedReceipts = await trx
+        .selectFrom("receipt")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("id", "in", (eb) =>
+          eb
+            .selectFrom("nonConformanceInspection as nci")
+            .innerJoin("inspection as i", (join) =>
+              join
+                .onRef("i.id", "=", "nci.inspectionId")
+                .onRef("i.companyId", "=", "nci.companyId")
+            )
+            .select("i.sourceDocumentId")
+            .where("nci.nonConformanceId", "=", nonConformanceId)
+            .where("nci.companyId", "=", companyId)
+            .where("i.sourceDocument", "=", "Receipt")
+            .where("i.sourceDocumentId", "is not", null)
+        )
+        .orderBy("id")
+        .forNoKeyUpdate()
+        .execute();
 
       const nowIso = datetime.timestamp();
       const today = nowIso.slice(0, 10);
@@ -5477,6 +5504,15 @@ export async function closeIssue(
             post.error.message || "Failed to post disposition to the ledger"
           );
         }
+        // The status flip refreshed the receipts before these restores were
+        // written; a rejected lot's Use As Is part is read from them.
+        if (linkedReceipts.length > 0) {
+          await sql`
+            SELECT public.refresh_receipt_inspection_status(r.id)
+            FROM unnest(${linkedReceipts.map((receipt) => receipt.id)}::text[]) AS r(id)
+            ORDER BY r.id
+          `.execute(trx);
+        }
       }
 
       for (const row of freshPlan) {
@@ -5586,7 +5622,11 @@ export async function closeIssue(
     }
     return { data: { ...closed, warning }, error: null };
   } catch (err) {
-    logger.error("closeIssue failed", { companyId, nonConformanceId, err });
+    logger.error("Failed to close the issue", {
+      companyId,
+      nonConformanceId,
+      error: err
+    });
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }
@@ -6838,7 +6878,9 @@ export const postNonConformanceInput = z.object({
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
         quantity: z.number(),
-        comment: z.string().optional().nullable()
+        comment: z.string().optional().nullable(),
+        // The NCR disposition row a restore is for (Use As Is / Rework).
+        documentLineId: z.string().optional().nullable()
       })
     )
     .min(1)
@@ -7103,6 +7145,7 @@ export async function postNonconformance(
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
           documentType,
           documentId,
+          documentLineId: movement.documentLineId ?? null,
           comment: movement.comment ?? null,
           companyId,
           createdBy: userId

@@ -16,12 +16,11 @@ import {
   addFinancingRate,
   completePbpEvent,
   createFinancingRequest,
-  FinancingError,
+  financingRefusal,
   getContractFinancing,
   upsertContractFinancing,
   upsertPbpEvent
 } from "@carbon/ee/contract-financing.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -101,17 +100,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const db = getDatabaseClient();
 
   const refuse = async (err: unknown, message: string) => {
-    if (
-      !(err instanceof FinancingError) &&
-      !(err instanceof EntitlementError)
-    ) {
-      logger.error(message, { companyId, customerContractId: id, error: err });
-    }
+    const refusal = financingRefusal(err);
     return data(
       { success: false },
       await flash(
         request,
-        error(err, err instanceof FinancingError ? err.message : message)
+        refusal === null
+          ? error(err, message, { customerContractId: id })
+          : error(null, refusal)
       )
     );
   };

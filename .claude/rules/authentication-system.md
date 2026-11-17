@@ -40,7 +40,7 @@ Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carb
 `auth.server.ts`) picks ONE provider per process from `BOT_PROTECTION`: `"botid"` (only
 ON Vercel — `IS_VERCEL`, from Vercel's own `VERCEL=1`, which SST/Docker/the BYOC chart
 never set) or `"turnstile"` (needs both `CLOUDFLARE_TURNSTILE_SITE_KEY` and
-`_SECRET_KEY`). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
+`_SECRET_KEY`), or `"none"` (no check, even with keys set). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
 else `null` (no check). It is explicit because the Turnstile keys can be present for
 something else (GoTrue, another form) while login uses BotID. An explicit value that
 cannot work (botid off Vercel, turnstile without keys, anything else) throws at boot.
@@ -420,7 +420,7 @@ the gate used in every loader/action. Two paths:
      `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
      (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
    - `getUserClaims` is additionally memoized **per read request** via
-     `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
+     `oncePerRead` (`@carbon/logger/context.server`), so the several loaders a
      page matches share one Redis GET. Read-gated on purpose: an action and its
      loader revalidation run in the same request, and memoizing there could let a
      gate pass on claims the action just revoked. The Supabase clients

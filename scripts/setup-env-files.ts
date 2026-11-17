@@ -8,8 +8,13 @@ import { join } from "path";
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
 const ROOT_ENV_LOCAL_PATH = join(process.cwd(), ".env.local");
 
-if (!existsSync(ROOT_ENV_PATH)) {
-  throw new Error("No .env file found in root directory");
+// `crbn up` writes the stack's own values to `.env.local`; the one secret it
+// cannot make is SESSION_SECRET, which `.env` or the environment (a cloud
+// container's secret settings) has to give.
+if (!existsSync(ROOT_ENV_PATH) && !process.env.SESSION_SECRET) {
+  throw new Error(
+    "No .env file found in root directory, and SESSION_SECRET is not set: copy .env.example to .env, or set SESSION_SECRET in the environment"
+  );
 }
 
 const APPS_DIR = join(process.cwd(), "apps");
@@ -26,7 +31,9 @@ function createSymlink(targetPath: string, sourcePath: string) {
 }
 
 function linkBoth(targetDir: string) {
-  createSymlink(join(targetDir, ".env"), ROOT_ENV_PATH);
+  if (existsSync(ROOT_ENV_PATH)) {
+    createSymlink(join(targetDir, ".env"), ROOT_ENV_PATH);
+  }
   if (existsSync(ROOT_ENV_LOCAL_PATH)) {
     createSymlink(join(targetDir, ".env.local"), ROOT_ENV_LOCAL_PATH);
   }

@@ -24,7 +24,7 @@ import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile/useAppBarOverride";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
-import type { InfiniteRows } from "../../types";
+import type { InfiniteRows, ServerExportLinks } from "../../types";
 import { findScrollParent, useInfiniteScroll } from "../../useInfiniteScroll";
 import { useVirtualRows } from "../../useVirtualRows";
 import type { DownloadProps } from "../Download";
@@ -93,6 +93,7 @@ export type CompactListProps<T> = {
   hasRememberedChanges: boolean;
   onResetRememberedState: () => void;
   csvExport?: DownloadProps;
+  serverExport?: ServerExportLinks;
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderActions?: (selectedRows: T[]) => ReactNode;
@@ -146,6 +147,7 @@ export function CompactList<T>({
   hasRememberedChanges,
   onResetRememberedState,
   csvExport,
+  serverExport,
   importCSV,
   renderContextMenu,
   renderActions,
@@ -304,6 +306,7 @@ export function CompactList<T>({
       withSort={withSort}
       headerActions={headerActions}
       csvExport={csvExport}
+      serverExport={serverExport}
       importCSV={importCSV}
       menuItems={mobileMenuItems}
       onSelect={

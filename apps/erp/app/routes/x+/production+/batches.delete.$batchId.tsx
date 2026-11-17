@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
@@ -64,13 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) {
     throw redirect(
       path.to.operationBatches,
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to dissolve batch")
-        )
-      )
+      await flash(request, error(result.error, "Failed to dissolve batch"))
     );
   }
 

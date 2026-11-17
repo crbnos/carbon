@@ -7,7 +7,6 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIndirectPool } from "@carbon/ee/indirect-rates.server";
-import { getLogger } from "@carbon/logger";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -15,8 +14,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "indirect-pool-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -28,14 +25,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const pool = await getIndirectPool(client, poolId, companyId);
   if (pool.error || !pool.data) {
-    logger.error("Failed to load an indirect pool", {
-      companyId,
-      poolId,
-      error: pool.error
-    });
     throw redirect(
       path.to.indirectPools,
-      await flash(request, error(pool.error, "Failed to load the pool"))
+      await flash(
+        request,
+        error(pool.error, "Failed to load the pool", { poolId })
+      )
     );
   }
 

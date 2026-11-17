@@ -5,7 +5,7 @@
 import { createHash } from "node:crypto";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRequest } from "@carbon/logger/middleware.server";
+import { oncePerRequest } from "@carbon/logger/context.server";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 
 const log = getLogger("auth");

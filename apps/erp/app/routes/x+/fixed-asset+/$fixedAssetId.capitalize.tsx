@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetCapitalizeCipValidator } from "~/modules/accounting/accounting.models";
@@ -116,10 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.fixedAsset(fixedAssetId),
       await flash(
         request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to capitalize the asset")
-        )
+        error(result.error, "Failed to capitalize the asset")
       )
     );
   }

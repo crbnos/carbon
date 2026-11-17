@@ -106,8 +106,8 @@ describe("renderEnv", () => {
       "PORT_DB=54322",
       "PORT_POOLER=54329",
       "PORT_INBUCKET=54324",
-      "SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54322/wt_s",
-      "SUPABASE_DB_POOLER_URL=postgresql://postgres:postgres@localhost:54329/wt_s",
+      "SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/wt_s",
+      "SUPABASE_DB_POOLER_URL=postgresql://postgres:postgres@127.0.0.1:54329/wt_s",
       "DB_HOST=carbon-postgres",
       "DB_NAME=wt_s",
       "STORAGE_HOST=carbon-storage",
@@ -124,7 +124,7 @@ describe("renderEnv", () => {
     const out = base({ mode: "isolated" });
     for (const line of [
       "PORT_DB=54000",
-      "SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54000/postgres",
+      "SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54000/postgres",
       "DB_HOST=local-postgres",
       "DB_NAME=postgres",
       "SLOT_NAME_SUFFIX=",
@@ -146,7 +146,7 @@ describe("renderEnv", () => {
 
   it("points the apps' pool at the pooler, and skips it for a slot without one", () => {
     expect(base()).toContain(
-      "SUPABASE_DB_POOLER_URL=postgresql://postgres:postgres@localhost:54009/postgres"
+      "SUPABASE_DB_POOLER_URL=postgresql://postgres:postgres@127.0.0.1:54009/postgres"
     );
     const { PORT_POOLER: _, ...older } = ports;
     expect(base({ ports: older as PortMap }).split("\n")).toContain(

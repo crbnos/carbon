@@ -81,6 +81,10 @@ import {
 } from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import {
+  assignReceiptBatchNumbers,
+  receiptBatchNumberBase
+} from "@carbon/database/receipt-batch-numbers";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
@@ -214,6 +218,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import { importJournalEntries } from "./journal-entry-import";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
@@ -1183,17 +1188,16 @@ export async function getCachedTimezoneNames(client: SupabaseClient<Database>) {
 }
 
 /**
- * Sends a sales order confirmation email with the PDF attached.
- *
- * This mirrors the email-sending logic originally in the confirm action
- * and can be reused by the quote-to-order conversion flow.
+ * Sends a sales order confirmation email with the PDF attached, to the
+ * recipient and the sender (`userId`).
  */
 export async function sendSalesOrderEmail(args: {
   salesOrderId: string;
   companyId: string;
   companyGroupId: string;
   userId: string;
-  customerContactId: string;
+  /** A customer contact, or someone who is not one (an online quote acceptor). */
+  recipient: { customerContactId: string } | { email: string; name: string };
   cc?: string[];
   documentFilePath: string;
   fileName: string;
@@ -1205,7 +1209,7 @@ export async function sendSalesOrderEmail(args: {
     companyId,
     companyGroupId,
     userId,
-    customerContactId,
+    recipient: recipientArg,
     cc: ccSelections,
     documentFilePath,
     fileName,
@@ -1225,7 +1229,13 @@ export async function sendSalesOrderEmail(args: {
     getCompany(serviceRole, companyId),
     // customerContactId comes from the form and the service role bypasses
     // RLS — scope it so another company's contact is never read or emailed.
-    getCustomerContact(serviceRole, customerContactId, companyId),
+    "customerContactId" in recipientArg
+      ? getCustomerContact(
+          serviceRole,
+          recipientArg.customerContactId,
+          companyId
+        )
+      : null,
     getSalesOrder(serviceRole, salesOrderId),
     getSalesOrderLines(serviceRole, salesOrderId),
     getSalesOrderCustomerDetails(serviceRole, salesOrderId),
@@ -1233,13 +1243,29 @@ export async function sendSalesOrderEmail(args: {
     getPaymentTermsList(serviceRole, companyId)
   ]);
 
-  if (!customer?.data?.contact) {
-    return { success: false, message: "Failed to get customer contact" };
-  }
-  if (!isEmailableContact(customer.data.contact)) {
-    return {
-      success: false,
-      message: "The customer contact has no email address"
+  let recipient: { email: string; firstName?: string; lastName?: string };
+  if ("customerContactId" in recipientArg) {
+    const contact = customer?.data?.contact;
+    if (!contact) {
+      return { success: false, message: "Failed to get customer contact" };
+    }
+    if (!isEmailableContact(contact)) {
+      return {
+        success: false,
+        message: "The customer contact has no email address"
+      };
+    }
+    recipient = {
+      email: contact.email!,
+      firstName: contact.firstName ?? undefined,
+      lastName: contact.lastName ?? undefined
+    };
+  } else {
+    const [firstName, ...rest] = recipientArg.name.trim().split(/\s+/);
+    recipient = {
+      email: recipientArg.email,
+      firstName: firstName || undefined,
+      lastName: rest.join(" ") || undefined
     };
   }
   if (!company.data) {
@@ -1275,11 +1301,7 @@ export async function sendSalesOrderEmail(args: {
     salesOrder: salesOrder.data,
     salesOrderLines: salesOrderLines.data ?? [],
     salesOrderLocations: salesOrderLocations.data,
-    recipient: {
-      email: customer.data.contact.email!,
-      firstName: customer.data.contact.firstName ?? undefined,
-      lastName: customer.data.contact.lastName ?? undefined
-    },
+    recipient,
     sender: {
       email: seller.data.email,
       firstName: seller.data.firstName,
@@ -1296,7 +1318,7 @@ export async function sendSalesOrderEmail(args: {
 
   await trigger("send-email", {
     document: true,
-    to: [seller.data.email, customer.data.contact.email!],
+    to: [seller.data.email, recipient.email],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
@@ -1598,7 +1620,7 @@ export async function getAppShell(
   };
 }
 
-const signalsLogger = getLogger("erp", "implementation-signals");
+const signalsLogger = getLogger("erp", "shared", "implementation-signals");
 
 // A day, not forever: wiping a company's data (a demo template revert, a
 // restore) can make a signal false again, and this bounds how long the hub
@@ -1626,7 +1648,7 @@ export async function getImplementationSignals(
     if (cached) known = JSON.parse(cached) as Partial<Signals>;
   } catch (error) {
     // Redis is an optimisation here; without it, probe everything.
-    signalsLogger.warn("Could not read cached implementation signals", {
+    signalsLogger.warning("Could not read cached implementation signals", {
       companyId,
       error
     });
@@ -1646,7 +1668,7 @@ export async function getImplementationSignals(
         IMPLEMENTATION_SIGNALS_TTL_SECONDS
       );
     } catch (error) {
-      signalsLogger.warn("Could not cache implementation signals", {
+      signalsLogger.warning("Could not cache implementation signals", {
         companyId,
         error
       });
@@ -2661,7 +2683,7 @@ export function classifyStockRow(params: {
     }
   };
 }
-const importCsvTableLogger = getLogger("server-functions", "import-csv");
+const importCsvTableLogger = getLogger("erp", "shared", "import-csv");
 
 type Rec = Record<string, string>;
 
@@ -5380,8 +5402,7 @@ export async function importStockQuantities(
     planned.push(decision.row);
   }
 
-  importCsvTableLogger.info({
-    function: "import-stock-quantities",
+  importCsvTableLogger.info("Planned the stock quantity import", {
     table,
     trackingType: STOCK_IMPORT_TRACKING_TYPE[table],
     totalRecords: mappedRecords.length,
@@ -5730,7 +5751,8 @@ export const importCsvInput = z.object({
     "inventoryQuantity",
     "batchQuantity",
     "serialQuantity",
-    "payrollPeriodTotal"
+    "payrollPeriodTotal",
+    "journalEntry"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -6901,7 +6923,7 @@ export async function importCsvTable(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  importCsvTableLogger.info({
+  importCsvTableLogger.info("Importing a CSV file", {
     table,
     filePath,
     columnMappings,
@@ -7108,11 +7130,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          customerInserts: customerInserts.length,
-          customerUpdates: customerUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            customerInserts: customerInserts.length,
+            customerUpdates: customerUpdates.length
+          }
+        );
         summary.inserted += customerInserts.length;
         summary.updated += customerUpdates.length;
 
@@ -7310,11 +7336,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          supplierInserts: supplierInserts.length,
-          supplierUpdates: supplierUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            supplierInserts: supplierInserts.length,
+            supplierUpdates: supplierUpdates.length
+          }
+        );
         summary.inserted += supplierInserts.length;
         summary.updated += supplierUpdates.length;
 
@@ -8006,13 +8036,17 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          itemInserts: itemInserts.length,
-          itemUpdates: itemUpdates.length,
-          materialInserts: Object.keys(materialPartialInserts).length,
-          materialUpdates: materialUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            itemInserts: itemInserts.length,
+            itemUpdates: itemUpdates.length,
+            materialInserts: Object.keys(materialPartialInserts).length,
+            materialUpdates: materialUpdates.length
+          }
+        );
 
         if (itemUpdates.length > 0) {
           const currentItems = await trx
@@ -8211,12 +8245,16 @@ export async function importCsvTable(
         summary.inserted += contactInserts.length;
         summary.updated += contactUpdates.length;
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          contactInserts: contactInserts.length,
-          contactUpdates: contactUpdates.length,
-          customerContactInserts: customerContactInserts.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            customerContactInserts: customerContactInserts.length
+          }
+        );
 
         if (contactInserts.length > 0) {
           const inserted = await inChunks(contactInserts, (rows) =>
@@ -8378,12 +8416,16 @@ export async function importCsvTable(
         summary.inserted += contactInserts.length;
         summary.updated += contactUpdates.length;
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          contactInserts: contactInserts.length,
-          contactUpdates: contactUpdates.length,
-          supplierContactInserts: supplierContactInserts.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            supplierContactInserts: supplierContactInserts.length
+          }
+        );
 
         if (contactInserts.length > 0) {
           const inserted = await inChunks(contactInserts, (rows) =>
@@ -8484,11 +8526,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          workCenterInserts: workCenterInserts.length,
-          workCenterUpdates: workCenterUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            workCenterInserts: workCenterInserts.length,
+            workCenterUpdates: workCenterUpdates.length
+          }
+        );
 
         if (workCenterInserts.length > 0) {
           const inserted = await inChunks(workCenterInserts, (rows) =>
@@ -8590,11 +8636,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          processInserts: processInserts.length,
-          processUpdates: processUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            processInserts: processInserts.length,
+            processUpdates: processUpdates.length
+          }
+        );
 
         if (processInserts.length > 0) {
           const inserted = await inChunks(processInserts, (rows) =>
@@ -8904,11 +8954,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          storageUnitInserts: inserts.length,
-          storageUnitUpdates: updates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            storageUnitInserts: inserts.length,
+            storageUnitUpdates: updates.length
+          }
+        );
         summary.inserted += inserts.length;
         summary.updated += updates.length;
 
@@ -9052,6 +9106,10 @@ export async function importCsvTable(
       });
       break;
     }
+    case "journalEntry": {
+      await importJournalEntries(ctx, { mappedRecords, summary });
+      break;
+    }
     default: {
       throw new Error(`Invalid table: ${table}`);
     }
@@ -9078,7 +9136,7 @@ export async function importCsvTable(
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
-const convertDocumentLogger = getLogger("server-functions", "convert");
+const convertDocumentLogger = getLogger("erp", "shared", "convert");
 
 export const convertInput = z.discriminatedUnion("type", [
   z.object({
@@ -11468,7 +11526,7 @@ export function fromServerFn(
 ): CarbonError {
   return serverFnRefusal(ctx, error, fallback);
 }
-const createDocumentLogger = getLogger("server-functions", "create");
+const createDocumentLogger = getLogger("erp", "shared", "create");
 
 // Resolves a fallback location when a caller omits locationId, so creating a
 // blank shipment degrades gracefully instead of failing payload validation.
@@ -11497,16 +11555,64 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
-async function receiptQuantitiesStartAtZero(
+async function receiptSettings(
   db: Kysely<KyselyDatabase>,
   companyId: string
-): Promise<boolean> {
+): Promise<{ startAtZero: boolean; batchNumbersFromPurchaseOrder: boolean }> {
   const row = await db
     .selectFrom("companySettings")
-    .select("receiptQuantitiesStartAtZero")
+    .select([
+      "receiptQuantitiesStartAtZero",
+      "receiptBatchNumbersFromPurchaseOrder"
+    ])
     .where("id", "=", companyId)
     .executeTakeFirst();
-  return row?.receiptQuantitiesStartAtZero === true;
+  return {
+    startAtZero: row?.receiptQuantitiesStartAtZero === true,
+    batchNumbersFromPurchaseOrder:
+      row?.receiptBatchNumbersFromPurchaseOrder === true
+  };
+}
+
+/**
+ * Deletes a Draft receipt's lines so they can be rebuilt from a new source,
+ * releasing the batches and serials tagged with them (deleted with no stock
+ * history, else unlinked) rather than leaving them on dead line ids. The
+ * receipt is locked and re-read here: a post that won the race refuses.
+ */
+async function deleteDraftReceiptLines(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const draft = await trx
+    .selectFrom("receipt")
+    .select("id")
+    .where("id", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Draft")
+    .forUpdate()
+    .executeTakeFirst();
+  if (!draft) throw new Error("Only a Draft receipt can be rebuilt");
+
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where(
+      sql<boolean>`attributes @> ${JSON.stringify({ Receipt: receiptId })}::jsonb`
+    )
+    .execute();
+  await releaseReceiptSerialEntities(
+    trx,
+    companyId,
+    entities.map((entity) => entity.id)
+  );
+  await trx
+    .deleteFrom("receiptLine")
+    .where("receiptId", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .execute();
 }
 
 export const createDocumentPermission = {
@@ -11562,7 +11668,7 @@ export async function createDocument(
     case "nonConformanceTasks": {
       const { id } = payload;
 
-      createDocumentLogger.info({ type, id });
+      createDocumentLogger.info("Creating a {type} document", { type, id });
 
       const [nonConformance, actionTasks, approvalTasks, existingReviewers] =
         await inOrder([
@@ -11728,7 +11834,7 @@ export async function createDocument(
             });
           }
 
-          createDocumentLogger.debug({
+          createDocumentLogger.debug("Built the issue investigation content", {
             description: nonConformance.data?.description,
             insertedContent
           });
@@ -11797,7 +11903,12 @@ export async function createDocument(
       // releasing several jobs can put them on one PO per supplier.
       const purchaseOrderIdsBySupplierId: Record<string, string> = {};
 
-      createDocumentLogger.info({ type, jobId, companyId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        jobId,
+        companyId,
+        userId
+      });
       const [job, jobOperations] = await inOrder([
         () => maybeSingle(db, "job", { id: jobId, companyId }),
         () =>
@@ -12189,7 +12300,12 @@ export async function createDocument(
     case "receiptDefault": {
       const { locationId } = payload;
       let createdDocumentId;
-      createDocumentLogger.info({ type, locationId, companyId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        locationId,
+        companyId,
+        userId
+      });
       const id = await db.transaction().execute(async (trx) => {
         createdDocumentId = await getNextSequence(trx, "receipt", companyId);
         const newReceipt = await trx
@@ -12217,7 +12333,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         purchaseOrderId,
@@ -12271,8 +12387,16 @@ export async function createDocument(
       if (purchaseOrderLines.error)
         throw new Error(purchaseOrderLines.error.message);
 
-      let locationId = purchaseOrder.data.locationId;
+      // A Draft whose location the user changed keeps the location they chose.
+      const locationChosen =
+        !!userLocationId &&
+        !!receipt.data &&
+        userLocationId !== receipt.data.locationId;
+      let locationId = locationChosen
+        ? userLocationId
+        : purchaseOrder.data.locationId;
       if (
+        !locationChosen &&
         purchaseOrderLines.data.some(
           (d) => d.locationId !== locationId && d.locationId === userLocationId
         )
@@ -12280,15 +12404,20 @@ export async function createDocument(
         locationId = userLocationId ?? null;
       }
 
+      // Every line becomes a receipt line, whatever location it names, so
+      // every line's item is read: posting writes a batch or serial line's
+      // stock only when its tracking flag is set.
+      const receiptItemIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.itemId)
+            .filter((id): id is string => !!id)
+        )
+      ];
       const items = await many(
         db,
         "item",
-        {
-          companyId,
-          id: purchaseOrderLines.data
-            .filter((d) => d.locationId === locationId)
-            .map((d) => d.itemId) as string[]
-        },
+        { companyId, id: receiptItemIds },
         { columns: ["id", "itemTrackingType"] }
       );
       const serializedItems = new Set(
@@ -12308,9 +12437,6 @@ export async function createDocument(
       // one explicitly. Scoped by locationId because a single item can
       // be stocked across multiple locations with different defaults
       // per location (that's why pickMethod exists).
-      const receiptItemIds = purchaseOrderLines.data
-        .filter((d): d is typeof d & { itemId: string } => !!d.itemId)
-        .map((d) => d.itemId);
       const pickMethods = await many(
         db,
         "pickMethod",
@@ -12347,24 +12473,43 @@ export async function createDocument(
           ].filter((id): id is string => !!id)
         )
       ];
-      const [inspectionAssignments, receiptLocations] = await Promise.all([
-        many(
-          db,
-          "itemInspectionDocumentAssignment",
-          { companyId, usage: "Receipt", itemId: receiptItemIds },
-          { columns: ["itemId"] }
-        ),
-        many(
-          db,
-          "location",
-          { companyId, id: lineLocationIds },
-          { columns: ["id", "inspectionStorageUnitId"] }
+      const pinnedStorageUnitIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.storageUnitId)
+            .filter((id): id is string => !!id)
         )
-      ]);
+      ];
+      const [inspectionAssignments, receiptLocations, pinnedStorageUnits] =
+        await Promise.all([
+          many(
+            db,
+            "itemInspectionDocumentAssignment",
+            { companyId, usage: "Receipt", itemId: receiptItemIds },
+            { columns: ["itemId"] }
+          ),
+          many(
+            db,
+            "location",
+            { companyId, id: lineLocationIds },
+            { columns: ["id", "inspectionStorageUnitId"] }
+          ),
+          many(
+            db,
+            "storageUnit",
+            { companyId, id: pinnedStorageUnitIds },
+            { columns: ["id", "locationId"] }
+          )
+        ]);
       if (inspectionAssignments.error)
         throw new Error(inspectionAssignments.error.message);
       if (receiptLocations.error)
         throw new Error(receiptLocations.error.message);
+      if (pinnedStorageUnits.error)
+        throw new Error(pinnedStorageUnits.error.message);
+      const storageUnitLocation = new Map(
+        (pinnedStorageUnits.data ?? []).map((row) => [row.id, row.locationId])
+      );
       const inspectedItemIds = new Set(
         isOutsideOperation
           ? []
@@ -12384,7 +12529,21 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero, batchNumbersFromPurchaseOrder } =
+        await receiptSettings(db, companyId);
+      const batchNumberBase =
+        batchNumbersFromPurchaseOrder && purchaseOrder.data.purchaseOrderId
+          ? receiptBatchNumberBase(
+              purchaseOrder.data.purchaseOrderId,
+              datetime
+                .today(
+                  locationId
+                    ? await getLocationTimeZone(db, locationId, companyId)
+                    : await getCompanyTimeZone(db, companyId)
+                )
+                .toString()
+            )
+          : null;
 
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12402,6 +12561,14 @@ export async function createDocument(
         const unitPrice = d.unitPrice ?? 0;
         const outstandingQuantity =
           d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
+        // Every line is received at the receipt's location (the insert below
+        // sets it), so its bin must be one of that location's.
+        const lineLocationId = locationId ?? d.locationId ?? null;
+        const pinnedStorageUnitId =
+          d.storageUnitId &&
+          storageUnitLocation.get(d.storageUnitId) === lineLocationId
+            ? d.storageUnitId
+            : null;
 
         const shippingAndTaxUnitCost =
           ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
@@ -12424,15 +12591,15 @@ export async function createDocument(
           unitPrice:
             unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
-          locationId: d.locationId ?? null,
+          locationId: lineLocationId,
           requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
             (inspectedItemIds.has(d.itemId)
-              ? inspectionUnitByLocation.get(d.locationId ?? locationId ?? "")
+              ? inspectionUnitByLocation.get(lineLocationId ?? "")
               : null) ??
-            d.storageUnitId ??
+            pinnedStorageUnitId ??
             defaultStorageUnitByItemLocation.get(
-              pickMethodKey(d.itemId!, d.locationId ?? null)
+              pickMethodKey(d.itemId!, lineLocationId)
             ) ??
             null,
           createdBy: userId ?? ""
@@ -12460,6 +12627,11 @@ export async function createDocument(
               sourceDocument: "Purchase Order",
               sourceDocumentId: purchaseOrder.data.id,
               sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              // The draft may be switching to a PO from a different supplier.
+              // Generated batches take their Supplier attribute from the
+              // receipt, so it has to follow the new PO.
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
               locationId: locationId,
               updatedBy: userId
             })
@@ -12467,12 +12639,7 @@ export async function createDocument(
             .returning(["id", "receiptId"])
             .where("companyId", "=", companyId)
             .execute();
-          // delete existing receipt lines
-          await trx
-            .deleteFrom("receiptLine")
-            .where("receiptId", "=", receiptId)
-            .where("companyId", "=", companyId)
-            .execute();
+          await deleteDraftReceiptLines(trx, companyId, receiptId);
         } else {
           receiptIdReadable = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
@@ -12496,7 +12663,7 @@ export async function createDocument(
         }
 
         if (receiptLineItems.length > 0) {
-          await trx
+          const lines = await trx
             .insertInto("receiptLine")
             .values(
               receiptLineItems.map((line) => ({
@@ -12505,7 +12672,33 @@ export async function createDocument(
                 locationId
               }))
             )
+            .returning([
+              "id",
+              "itemId",
+              "receivedQuantity",
+              "requiresBatchTracking"
+            ])
             .execute();
+
+          if (batchNumberBase) {
+            await assignReceiptBatchNumbers(trx, {
+              companyId,
+              receiptId,
+              purchaseOrderId: purchaseOrder.data.id!,
+              base: batchNumberBase,
+              lines: lines.flatMap((line) =>
+                line.requiresBatchTracking && line.itemId
+                  ? [
+                      {
+                        id: line.id,
+                        itemId: line.itemId,
+                        receivedQuantity: Number(line.receivedQuantity ?? 0)
+                      }
+                    ]
+                  : []
+              )
+            });
+          }
         }
 
         const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
@@ -12537,7 +12730,7 @@ export async function createDocument(
     case "receiptFromInboundTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -12603,7 +12796,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
@@ -12682,11 +12875,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -12710,8 +12899,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         salesReturnOrderId,
@@ -12806,7 +12994,7 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12887,11 +13075,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -12911,7 +13095,7 @@ export async function createDocument(
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -12977,7 +13161,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
@@ -13086,7 +13270,7 @@ export async function createDocument(
     case "receiptLineSplit": {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         locationId,
         receiptId,
@@ -13104,7 +13288,9 @@ export async function createDocument(
           })
       ]);
 
-      createDocumentLogger.debug({ trackedEntities });
+      createDocumentLogger.debug("Loaded the receipt line tracked entities", {
+        trackedEntities
+      });
 
       if (!receiptLine.data) throw new NotFoundError("Receipt line not found");
 
@@ -13212,7 +13398,12 @@ export async function createDocument(
     case "shipmentDefault": {
       let createdDocumentId;
       const { locationId } = payload;
-      createDocumentLogger.info({ type, companyId, locationId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        companyId,
+        locationId,
+        userId
+      });
       const effectiveLocationId =
         locationId ?? (await getFallbackLocationId(db, companyId, userId));
 
@@ -13240,7 +13431,7 @@ export async function createDocument(
     case "shipmentFromWarehouseTransfer": {
       const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -13416,8 +13607,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         salesReturnOrderId,
@@ -13662,8 +13852,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         purchaseReturnOrderId,
@@ -13953,7 +14142,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14145,7 +14334,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14547,7 +14736,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14830,7 +15019,7 @@ export async function createDocument(
     case "shipmentLineSplit": {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         locationId,
         shipmentId,
@@ -14881,8 +15070,7 @@ export async function createDocument(
       // Pending units. A per-unit shortcut adds (or ticks) its unit on it.
       const { rentalAgreementId, rentalAgreementLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         rentalAgreementId,
@@ -15037,8 +15225,7 @@ export async function createDocument(
       // it to the project. A per-CLIN shortcut adds its line to the Draft.
       const { customerContractId, customerContractLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         customerContractId,
@@ -15253,8 +15440,7 @@ export async function createDocument(
       // per-unit shortcut adds (or ticks) its unit on it.
       const { rentalAgreementId, rentalAgreementLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         rentalAgreementId,
@@ -16729,6 +16915,8 @@ export function buildItemLedgerRow(args: {
   entryType: Database["public"]["Enums"]["itemLedgerType"];
   documentType?: ItemLedgerDocumentType | null;
   documentId?: string | null;
+  // The document line the movement belongs to, when the reader needs it.
+  documentLineId?: string | null;
   correctionOfItemLedgerId?: string | null;
   itemId: string;
   locationId: string | null;
@@ -16747,6 +16935,7 @@ export function buildItemLedgerRow(args: {
     entryType: args.entryType,
     documentType: args.documentType ?? null,
     documentId: args.documentId ?? null,
+    documentLineId: args.documentLineId ?? null,
     correctionOfItemLedgerId: args.correctionOfItemLedgerId ?? null,
     itemId: args.itemId,
     locationId: args.locationId,
@@ -17221,6 +17410,9 @@ export interface BookAdjustmentArgs {
     // the fix.
     documentType?: Database["public"]["Enums"]["itemLedgerDocumentType"] | null;
     documentId?: string | null;
+    // The document line: an NCR's restore names the disposition row it
+    // restores for, so Put Away can tell Use As Is stock from Rework stock.
+    documentLineId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
     // Reason for scrap/unscrap movements (documentType 'Scrap'); NULL for
@@ -17440,6 +17632,7 @@ export async function bookAdjustment(
         entryType: ledger.entryType,
         documentType: ledger.documentType,
         documentId: ledger.documentId,
+        documentLineId: ledger.documentLineId,
         correctionOfItemLedgerId: ledger.correctionOfItemLedgerId,
         itemId: ledger.itemId,
         locationId: ledger.locationId,

@@ -72,10 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (insert.error) {
     throw redirect(
       path.to.contractDetails(id),
-      await flash(
-        request,
-        error(insert.error, insert.error.message || "Failed to add line")
-      )
+      await flash(request, error(insert.error, "Failed to add line"))
     );
   }
 

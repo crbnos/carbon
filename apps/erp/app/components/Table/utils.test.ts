@@ -11,8 +11,29 @@ import {
   getColumnLabel,
   hasUniqueRowIds,
   isServerSortable,
-  selectExportColumns
+  selectExportColumns,
+  serverExportLinks
 } from "./utils";
+
+describe("serverExportLinks", () => {
+  it("keeps list filters and view columns but starts the download at the first page", () => {
+    const links = serverExportLinks({
+      search: "?filter=status:eq:Posted&sort=dateDue:asc&after=old&count=exact",
+      urls: { csv: "/x/invoicing/sales.csv", xlsx: "/x/invoicing/sales.xlsx" },
+      columns: [{ key: "invoiceId", label: "Invoice Number" }]
+    });
+    for (const href of [links.csv, links.xlsx]) {
+      const params = new URL(href, "http://localhost").searchParams;
+      expect(params.get("filter")).toBe("status:eq:Posted");
+      expect(params.get("sort")).toBe("dateDue:asc");
+      expect(params.has("after")).toBe(false);
+      expect(params.has("count")).toBe(false);
+      expect(JSON.parse(params.get("columns") ?? "null")).toEqual([
+        { key: "invoiceId", label: "Invoice Number" }
+      ]);
+    }
+  });
+});
 
 type Row = {
   id: string;

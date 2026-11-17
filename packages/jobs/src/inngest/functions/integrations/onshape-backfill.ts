@@ -5,6 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getOnshapeClient, getOnshapeIntegration } from "@carbon/ee/onshape";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { inngest } from "../../client";
@@ -22,6 +23,8 @@ import type {
   SyncOnshapeDrawingInput,
   SyncOnshapeElementInput
 } from "./onshape-sync-element";
+
+const logger = getLogger("jobs", "onshape-backfill");
 
 // Backfill / reconcile: pull released Onshape assets onto existing Carbon items.
 // Onshape-DRIVEN and LINK-ONLY, and call-light: enumerate the company's released
@@ -403,7 +406,7 @@ export const onshapeBackfillFunction = inngest.createFunction(
     // Gate check runs on every execution (not inside a step) so flipping the
     // toggle off also kills an in-flight retry.
     if (!(await isOnshapeAssetSyncEnabled(carbon, payload.companyId))) {
-      console.log("onshape-backfill: skipped (disabled or inactive)", {
+      logger.info("Onshape backfill skipped: sync disabled or inactive", {
         companyId: payload.companyId
       });
       return { skipped: true as const };
@@ -483,10 +486,11 @@ export const onshapeBackfillFunction = inngest.createFunction(
           // Every attached model is a RAW export. Its new row starts the
           // optimise that builds the viewer GLB and the thumbnail.
         } catch (syncError) {
-          console.error(
-            `onshape-backfill: ${workItem.label} failed`,
-            syncError
-          );
+          logger.error("Onshape backfill item failed", {
+            companyId: payload.companyId,
+            label: workItem.label,
+            error: syncError
+          });
           totals.failed++;
           consecutiveFailures++;
           if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {

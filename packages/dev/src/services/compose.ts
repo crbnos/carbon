@@ -2,13 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  closeSync,
   copyFileSync,
   cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
   renameSync,
@@ -16,18 +19,16 @@ import {
   statSync,
   writeFileSync
 } from "node:fs";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { basename, join } from "pathe";
-import { readLines } from "../helpers.js";
+import { isCloudDev } from "../../stack-state.js";
+import { readLines, waitUntil } from "../helpers.js";
 import { paths } from "../paths.js";
+import { withExponentialBackoff } from "../retry.js";
 import type { Stack } from "../stack.js";
-import { type JwtCreds, listSlugs, sameWorktreePath } from "../worktree.js";
-
-/** What a compose command needs to know about a worktree's stack. */
-export type StackRef = Pick<Stack, "root" | "slug" | "mode">;
-
 import {
   COMPOSE_DEV_FILE,
   COMPOSE_ISOLATED_FILE,
@@ -42,6 +43,10 @@ import {
   SHARED_REDIS_IMAGE,
   SHARED_REDIS_VOLUME
 } from "../topology.js";
+import { type JwtCreds, listSlugs, sameWorktreePath } from "../worktree.js";
+
+/** What a compose command needs to know about a worktree's stack. */
+export type StackRef = Pick<Stack, "root" | "slug" | "mode">;
 
 // The `-f` flags for a worktree's project. Shared mode runs the dev file
 // alone; isolated mode adds the private services. `all` adds them whatever
@@ -89,12 +94,106 @@ export async function ensureSlugAvailable(slug: string, worktreeRoot: string) {
 // Fail fast with an actionable message when the Docker daemon is unreachable,
 // instead of a cryptic `Cannot connect to the Docker daemon` deep in the boot.
 export async function ensureDockerRunning() {
+  if (await dockerResponds()) return;
+  if (await startDockerDaemon()) return;
+  throw new Error(
+    isCloudDev()
+      ? `Docker isn't running and dockerd did not start — see ${DOCKERD_LOG}.`
+      : "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
+  );
+}
+
+const DOCKERD_LOG = join(homedir(), ".carbon", "dockerd.log");
+
+async function dockerResponds(): Promise<boolean> {
   const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
-  if (r.exitCode !== 0) {
-    throw new Error(
-      "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
-    );
+  return r.exitCode === 0;
+}
+
+// A cloud container has no Docker Desktop and nobody to start one, so crbn
+// starts dockerd itself.
+async function startDockerDaemon(): Promise<boolean> {
+  if (!isCloudDev()) return false;
+  if (process.platform !== "linux" || process.getuid?.() !== 0) return false;
+  const host = process.env.DOCKER_HOST;
+  if (host && !host.startsWith("unix://")) {
+    log.warn(`DOCKER_HOST is ${host}; not starting a local dockerd`);
+    return false;
   }
+  const dockerd = await execa("dockerd", ["--version"], {
+    reject: false,
+    stdio: "ignore"
+  });
+  if (dockerd.exitCode !== 0) return false;
+
+  // A container image restored from a snapshot can carry pid files of daemons
+  // that are not running. dockerd refuses to start while they name a live pid,
+  // and after a container restart that pid belongs to some other process.
+  clearStalePidFile("/var/run/docker.pid", ["dockerd"]);
+  clearStalePidFile("/var/run/docker/containerd/containerd.pid", [
+    "containerd"
+  ]);
+
+  mkdirSync(join(homedir(), ".carbon"), { recursive: true });
+  const fd = openSync(DOCKERD_LOG, "a");
+  let exited = false;
+  try {
+    // Docker Hub allows 100 anonymous pulls an hour per IP, and a cloud
+    // container shares its IP with other sessions. Google's mirror of Docker
+    // Hub serves the same digests; dockerd falls back to Docker Hub on a miss.
+    // dockerd refuses the flag when daemon.json already sets mirrors.
+    const daemonJson = "/etc/docker/daemon.json";
+    const mirrorSet =
+      existsSync(daemonJson) &&
+      readFileSync(daemonJson, "utf8").includes("registry-mirrors");
+    const args = mirrorSet ? [] : ["--registry-mirror=https://mirror.gcr.io"];
+    const child = spawn("dockerd", args, {
+      detached: true,
+      stdio: ["ignore", fd, fd]
+    });
+    child.on("error", (err) => {
+      exited = true;
+      log.warn(`dockerd did not start: ${err.message}`);
+    });
+    child.on("exit", () => {
+      exited = true;
+    });
+    child.unref();
+  } finally {
+    closeSync(fd);
+  }
+  log.info(`docker daemon not running — started dockerd (log: ${DOCKERD_LOG})`);
+  const up = await waitUntil(dockerResponds, {
+    timeoutMs: 30_000,
+    intervalMs: 1000,
+    stopped: () => exited
+  });
+  if (!up) log.warn(`dockerd is not answering — see ${DOCKERD_LOG}`);
+  return up;
+}
+
+// Remove a pid file unless its pid is a live process whose command is one of
+// `owners` (then a daemon is starting and the file is its own).
+function clearStalePidFile(file: string, owners: string[]) {
+  let pid: number;
+  try {
+    pid = Number(readFileSync(file, "utf8").trim());
+  } catch {
+    return;
+  }
+  if (Number.isInteger(pid) && pid > 0) {
+    let cmdline = "";
+    try {
+      cmdline = readFileSync(`/proc/${pid}/cmdline`, "utf8");
+    } catch {
+      // not a live process
+    }
+    // The process's own name. A reused pid running `tail -f dockerd.log`
+    // names the daemon in an argument and is not the daemon.
+    const [argv0 = ""] = cmdline.split("\0");
+    if (owners.includes(argv0.split("/").pop() ?? "")) return;
+  }
+  rmSync(file, { force: true });
 }
 
 type Publisher = { PublishedPort: number; TargetPort: number };
@@ -288,9 +387,26 @@ export async function pullStack(
 
   const r = await proc;
   if (r.exitCode !== 0) {
-    process.stderr.write(r.all?.toString() ?? "");
-    throw new Error(`docker compose pull failed (exit ${r.exitCode})`);
+    const output = r.all?.toString() ?? "";
+    process.stderr.write(output);
+    throw Object.assign(
+      new Error(`docker compose pull failed (exit ${r.exitCode})`),
+      { output }
+    );
   }
+}
+
+// What a registry answers when it throttles anonymous pulls or the network
+// drops: worth waiting for. A missing tag or a refused login is not.
+const TRANSIENT_PULL =
+  /toomanyrequests|too many requests|\b429\b|\b50[234]\b|timeout|timed out|connection reset|unexpected EOF|TLS handshake/i;
+
+export function isTransientPullError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const { output, stderr } = error as { output?: string; stderr?: string };
+  return TRANSIENT_PULL.test(
+    `${error.message}\n${output ?? ""}${stderr ?? ""}`
+  );
 }
 
 /** Resolved image refs for the dev compose file (tags as pinned in compose). */
@@ -314,7 +430,11 @@ export async function devComposeImageRefs(
 export async function allImagesPresentLocally(
   refs: string[]
 ): Promise<boolean> {
-  const results = await Promise.all(
+  return (await missingImages(refs)).length === 0;
+}
+
+async function missingImages(refs: string[]): Promise<string[]> {
+  const present = await Promise.all(
     refs.map((ref) =>
       execa("docker", ["image", "inspect", ref], {
         stdio: "ignore",
@@ -322,7 +442,76 @@ export async function allImagesPresentLocally(
       }).then((x) => x.exitCode === 0)
     )
   );
-  return results.every(Boolean);
+  return refs.filter((_, i) => !present[i]);
+}
+
+// The images a compose file names, with the arguments and environment its
+// `up` gets.
+async function composeImages(
+  args: string[],
+  opts: { cwd: string; env: NodeJS.ProcessEnv; extendEnv?: boolean }
+): Promise<string[]> {
+  const r = await execa("docker", [...args, "config", "--images"], {
+    reject: false,
+    ...opts
+  });
+  if (r.exitCode !== 0) {
+    throw new Error(`cannot list the images: ${r.stderr.trim()}`);
+  }
+  return r.stdout
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// `docker compose up` pulls a missing image once and fails on a throttled
+// registry; this retries each one.
+async function pullMissingImages(refs: string[]): Promise<void> {
+  const missing = await missingImages([...new Set(refs)]);
+  if (missing.length === 0) return;
+  log.info(`pulling ${missing.length} images`);
+  const failed = (
+    await Promise.allSettled(
+      missing.map((ref) =>
+        withExponentialBackoff(() => execa("docker", ["pull", "-q", ref]), {
+          retryIf: isTransientPullError
+        })
+      )
+    )
+  ).filter((r) => r.status === "rejected");
+  if (failed.length > 0) {
+    throw new Error(
+      `${failed.length} of ${missing.length} images did not pull`
+    );
+  }
+}
+
+/**
+ * Pulls the images a default `crbn up` boots (the dev file with its default
+ * profiles, and crbn-shared) that are not present yet. For an environment's
+ * setup step (`cloud-dev.sh --prepare`), before this checkout has a stack.
+ */
+export async function pullDefaultImages(root: string): Promise<void> {
+  await pullMissingImages([
+    ...(await composeImages(
+      ["compose", "-f", join(root, COMPOSE_DEV_FILE), ...profileArgs()],
+      // Only `extra_hosts` reads these two, and compose wants them non-empty.
+      { cwd: root, env: { DOMAIN: "localhost", INNGEST_TLS_HOST: "localhost" } }
+    )),
+    ...(await composeImages(
+      ["compose", "-f", join(SHARED_SOURCE, "docker-compose.shared.yml")],
+      { cwd: root, ...sharedExec() }
+    ))
+  ]);
+}
+
+async function pullSharedImages(services: string[] = []): Promise<void> {
+  await pullMissingImages(
+    await composeImages([...sharedComposeArgs(), ...services], {
+      cwd: sharedDir(),
+      ...sharedExec()
+    })
+  );
 }
 
 // Compose first, then by label: compose can't stop a project whose files it
@@ -701,6 +890,7 @@ export async function bootSharedServices(
     SHARED_POSTGRES_VOLUME,
     `Drop it, and with it every worktree database, with \`docker compose -p ${SHARED_PROJECT} down -v\`, then \`crbn up\` again.`
   );
+  await pullSharedImages();
   await execStrict(
     "docker",
     [...sharedComposeArgs(), "up", "-d", "--wait", "--remove-orphans"],
@@ -737,6 +927,7 @@ export async function bootSharedForIsolated(
   jwt: JwtCreds
 ): Promise<string | null> {
   const { warning, dirs } = await prepareShared(jwt);
+  await pullSharedImages(ISOLATED_SHARED_SERVICES);
   await execStrict(
     "docker",
     [
