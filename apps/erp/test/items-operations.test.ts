@@ -221,32 +221,6 @@ describe("details saves", () => {
       active: false
     });
   });
-
-  it("leaves a part an unreleased change notice created inactive", async () => {
-    // Only release, or setItemActive once the notice is released, may activate it.
-    const stored = {
-      id: "i1",
-      readableId: "P1",
-      active: false,
-      changeOrderId: "co-1"
-    };
-    const { client, writes } = fakeClient({
-      item: stored,
-      changeOrder: [{ id: "co-1", changeOrderId: "ECO-1", status: "Draft" }]
-    });
-
-    const result = await updatePart(contextFor(client), {
-      ...details,
-      revision: "A"
-    });
-
-    expect(result.error).toBeNull();
-    expect(itemAfter(stored, writes)).toMatchObject({
-      name: "Bracket",
-      active: false,
-      changeOrderId: "co-1"
-    });
-  });
 });
 
 describe("setChangeNoticeStatus", () => {

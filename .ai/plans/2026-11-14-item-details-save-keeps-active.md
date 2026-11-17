@@ -25,11 +25,18 @@ unreleased change notice created, which `setItemActive` refuses.
   - Invoice, RFQ and quote line part creation use the create branch.
   - The CSV import writes `item.active` from its own Active column (default
     true), not through these updates. Unchanged; noted as a follow-up.
+  - Document conversion (`convertDocument`, quote to sales order and supplier
+    quote to purchase order, `shared.service.ts`) sets every line item active
+    without checking unreleased change notices. Pre-existing; a follow-up.
+  - A change notice holding an item writes `active: false`
+    (`settings.service.ts`, the Onshape release push's staging).
   - None relied on a save to activate an item.
 - [x] Tests in `apps/erp/test/items-operations.test.ts`: an inactive item stays
-  inactive after `updatePart`, `updateTool` and `updateConsumable`; a part an
-  unreleased change notice created stays inactive after `updatePart`. They fail
-  without the fix.
+  inactive after `updatePart`, `updateTool` and `updateConsumable`. They fail
+  without the fix. `updateService` renames through a Kysely transaction that
+  the test fake does not model, so the `Omit<…, "active">` type on
+  `updateTypedItem` guards it instead. The self-test on a local stack covered
+  the service and the change-notice part.
 - [x] Sync: operation remarks (published tool descriptions), items `AGENTS.md`,
   `docs/content/docs/reference/items.mdx` (Active field).
 - [x] Verify: erp typecheck, the test file, Biome, `pnpm check:manifest`.
