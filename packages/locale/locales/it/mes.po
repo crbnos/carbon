@@ -75,6 +75,11 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} non ha alcun numero di Lotto. Impostalo sul Lotto di produzione o sull'Ordine di produzione in Carbon, quindi completa."
 
+#. placeholder {0}: serial.readableId
+#. placeholder {1}: serial.kitReadableId
+msgid "{0} in kit {1}"
+msgstr ""
+
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
@@ -116,11 +121,6 @@ msgstr "{0} di {1} completati"
 #. placeholder {1}: attributes.length
 msgid "{0} of {1} completed"
 msgstr "{0} di {1} completati"
-
-#. placeholder {0}: part.perKit
-#. placeholder {1}: part.name
-msgid "{0} per kit · {1}"
-msgstr ""
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
@@ -223,6 +223,12 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{quantity} in this operation"
+msgstr ""
+
+msgid "{quantity} used in this operation"
 msgstr ""
 
 #. placeholder {0}: step.perMember.length
@@ -529,9 +535,10 @@ msgstr "Lotto"
 msgid "Batch {0}"
 msgstr "Lotto di produzione {0}"
 
-#. placeholder {0}: entity.readableId
-#. placeholder {1}: entity.quantity
-msgid "Batch {0} · {1} used · {where}"
+msgid "Batch {readableId} · {used} used"
+msgstr ""
+
+msgid "Batch {readableId} · {used} used · in kit {kitReadableId}"
 msgstr ""
 
 msgid "Batch Details"
@@ -1390,10 +1397,6 @@ msgstr "tra {0}"
 
 msgid "In an open menu"
 msgstr "In un menu aperto"
-
-#. placeholder {0}: entity.kitReadableId
-msgid "in kit {0}"
-msgstr ""
 
 msgid "In Progress"
 msgstr "In Corso"
@@ -2901,6 +2904,9 @@ msgstr "Cerca operatori..."
 
 msgid "Search projects and tasks"
 msgstr "Cerca progetti e attività"
+
+msgid "Search reasons"
+msgstr ""
 
 msgid "Search recent operations"
 msgstr "Cerca operazioni recenti"

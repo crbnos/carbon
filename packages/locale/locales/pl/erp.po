@@ -24935,6 +24935,9 @@ msgstr "Odrzuć czas"
 msgid "Rejected"
 msgstr "Odrzucone"
 
+msgid "Rejected at Inspection"
+msgstr "Odrzucone przy kontroli"
+
 msgid "Rejected By"
 msgstr "Odrzucono przez"
 
@@ -27240,6 +27243,9 @@ msgstr "Wybierz nową grupę nadrzędną dla tego konta."
 
 msgid "Select a plan"
 msgstr "Wybierz plan"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "Wybierz plan, aby rozpocząć. Możesz zmienić lub anulować w dowolnym momencie."
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."

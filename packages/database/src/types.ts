@@ -66528,6 +66528,7 @@ export type Database = {
           postedBy: string | null
           postingDate: string | null
           receiptId: string
+          rejectedAtInspection: boolean
           sourceDocument:
             | Database["public"]["Enums"]["receiptSourceDocument"]
             | null
@@ -66555,6 +66556,7 @@ export type Database = {
           postedBy?: string | null
           postingDate?: string | null
           receiptId: string
+          rejectedAtInspection?: boolean
           sourceDocument?:
             | Database["public"]["Enums"]["receiptSourceDocument"]
             | null
@@ -66582,6 +66584,7 @@ export type Database = {
           postedBy?: string | null
           postingDate?: string | null
           receiptId?: string
+          rejectedAtInspection?: boolean
           sourceDocument?:
             | Database["public"]["Enums"]["receiptSourceDocument"]
             | null

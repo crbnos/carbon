@@ -24935,6 +24935,9 @@ msgstr "समय को अस्वीकार करें"
 msgid "Rejected"
 msgstr "अस्वीकृत"
 
+msgid "Rejected at Inspection"
+msgstr "निरीक्षण में अस्वीकृत"
+
 msgid "Rejected By"
 msgstr "द्वारा अस्वीकृत"
 
@@ -27240,6 +27243,9 @@ msgstr "इस खाते के लिए एक नया पैरेंट
 
 msgid "Select a plan"
 msgstr "एक योजना चुनें"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "एक योजना चुनें शुरुआत करने के लिए। किसी भी समय स्विच या रद्द करें।"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."

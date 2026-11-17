@@ -24935,6 +24935,9 @@ msgstr "Tempo di rifiuto"
 msgid "Rejected"
 msgstr "Rifiutato"
 
+msgid "Rejected at Inspection"
+msgstr "Rifiutato al controllo"
+
 msgid "Rejected By"
 msgstr "Rifiutato da"
 
@@ -27240,6 +27243,9 @@ msgstr "Seleziona un nuovo gruppo principale per questo account."
 
 msgid "Select a plan"
 msgstr "Seleziona un piano"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "Seleziona un piano per iniziare. Cambia o annulla in qualsiasi momento."
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."

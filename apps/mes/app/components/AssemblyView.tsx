@@ -3544,86 +3544,108 @@ function MaterialRow({
   const interactive = !!onIssue && (isTracked || !fullyIssued);
   const Wrapper = interactive ? "button" : "div";
 
-  const card = (
-    <Wrapper
-      {...(interactive
-        ? {
-            type: "button" as const,
-            onClick: onIssue,
-            "aria-label": isTracked ? t`Scan ${partName}` : t`Issue ${partName}`
-          }
-        : {})}
+  // One card, two targets: the body opens the scan/issue flow and a trailing
+  // segment scraps. They are siblings because a button can't nest in a button.
+  const compactBadge = "min-h-5 px-2 text-xs";
+  const segmentFocus =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
+  return (
+    <div
       className={cn(
-        "flex w-full items-start gap-2.5 rounded-lg border border-border bg-accent/30 px-3 py-2.5 text-left transition-colors",
-        interactive && "cursor-pointer hover:bg-accent/60 active:scale-[0.99]",
+        "flex w-full items-stretch overflow-hidden rounded-lg border border-border bg-accent/30",
         usedHere && "ring-1 ring-inset ring-foreground/20"
       )}
     >
-      <StatusIcon
-        aria-label={issueStatus.label}
-        className={cn("mt-0.5 size-3.5 shrink-0", issueStatus.className)}
-      />
-      {/* Name + id stacked; each stays on a single line and truncates if long. */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium leading-snug text-foreground">
-          {material.description}
-        </span>
-        <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
-          {material.itemReadableId}
-        </span>
-        {/* Where to pull it from, or that it is made on this job. */}
-        <MaterialSource material={material} />
-        <ShortStockBadge material={material} />
-      </div>
-      {/* Count hard-right, with the tracking badges tucked beneath it. */}
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        {fullyIssued || extraIssued ? (
-          <span className="flex items-center gap-1 text-[0.6875rem] font-medium tabular-nums text-emerald-500">
-            {issued}/{required}
-            <LuCheck className="size-3" />
-          </span>
-        ) : partiallyIssued ? (
-          <span className="text-[0.6875rem] tabular-nums text-amber-500">
-            {issued}/{required}
-          </span>
-        ) : (
-          <span className="text-xs tabular-nums text-muted-foreground">
-            ×{required}
-          </span>
+      <Wrapper
+        {...(interactive
+          ? {
+              type: "button" as const,
+              onClick: onIssue,
+              "aria-label": isTracked
+                ? t`Scan ${partName}`
+                : t`Issue ${partName}`
+            }
+          : {})}
+        className={cn(
+          "flex min-w-0 flex-1 items-start gap-2.5 px-3 py-2.5 text-left transition-colors",
+          interactive &&
+            cn(
+              "cursor-pointer hover:bg-accent/60 active:bg-accent",
+              segmentFocus
+            )
         )}
-        {/* Distinguish an unplanned part (issued from the floor, not on the BOM). */}
-        {isExtra && <Badge variant="outline">Added</Badge>}
-        {isTracked && (
-          <div className="flex flex-wrap items-center justify-end gap-1">
+      >
+        <StatusIcon
+          aria-label={issueStatus.label}
+          className={cn("mt-0.5 size-3.5 shrink-0", issueStatus.className)}
+        />
+        {/* Name + id stacked; each stays on a single line and truncates if long. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-sm font-medium leading-snug text-foreground">
+            {material.description}
+          </span>
+          <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
+            {material.itemReadableId}
+          </span>
+          {/* Everything else stacks under the name and wraps, so a narrow
+              card never squeezes "Requires Scan" beside the count. */}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <MaterialSource material={material} compact />
+            <ShortStockBadge material={material} className={compactBadge} />
+            {/* An unplanned part (issued from the floor, not on the BOM). */}
+            {isExtra && (
+              <Badge variant="outline" className={compactBadge}>
+                Added
+              </Badge>
+            )}
             {material.requiresSerialTracking && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className={compactBadge}>
                 <TrackingTypeIcon type="Serial" className="shrink-0" />
               </Badge>
             )}
             {material.requiresBatchTracking && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className={compactBadge}>
                 <TrackingTypeIcon type="Batch" className="shrink-0" />
               </Badge>
             )}
-            {!fullyIssued && <Badge variant="orange">Requires Scan</Badge>}
+            {isTracked && !fullyIssued && (
+              <Badge variant="orange" className={compactBadge}>
+                Requires Scan
+              </Badge>
+            )}
           </div>
-        )}
-      </div>
-    </Wrapper>
-  );
-  if (!onScrap) return card;
-  // The card is a button itself, so the scrap action sits beside it.
-  return (
-    <div className="flex items-stretch gap-1">
-      <div className="min-w-0 flex-1">{card}</div>
-      <IconButton
-        aria-label={t`Scrap parts of ${partName}`}
-        variant="ghost"
-        size="lg"
-        className="h-auto"
-        icon={<LuTrash />}
-        onClick={onScrap}
-      />
+        </div>
+        <div className="flex h-5 shrink-0 items-center">
+          {fullyIssued || extraIssued ? (
+            <span className="flex items-center gap-1 text-[0.6875rem] font-medium tabular-nums text-emerald-500">
+              {issued}/{required}
+              <LuCheck className="size-3" />
+            </span>
+          ) : partiallyIssued ? (
+            <span className="text-[0.6875rem] tabular-nums text-amber-500">
+              {issued}/{required}
+            </span>
+          ) : (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              ×{required}
+            </span>
+          )}
+        </div>
+      </Wrapper>
+      {onScrap && (
+        <button
+          type="button"
+          aria-label={t`Scrap parts of ${partName}`}
+          title={t`Scrap parts`}
+          onClick={onScrap}
+          className={cn(
+            "flex w-11 shrink-0 items-center justify-center border-l border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20",
+            segmentFocus
+          )}
+        >
+          <LuPackageX className="size-4" />
+        </button>
+      )}
     </div>
   );
 }

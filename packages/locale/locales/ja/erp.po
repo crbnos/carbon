@@ -24935,6 +24935,9 @@ msgstr "却下時間"
 msgid "Rejected"
 msgstr "却下"
 
+msgid "Rejected at Inspection"
+msgstr "検査で不合格"
+
 msgid "Rejected By"
 msgstr "却下者"
 
@@ -27240,6 +27243,9 @@ msgstr "このアカウントの新しい親グループを選択してくださ
 
 msgid "Select a plan"
 msgstr "プランを選択"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "プランを選択して開始します。いつでも切り替えまたはキャンセルできます。"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."

@@ -24935,6 +24935,9 @@ msgstr "Reject Time"
 msgid "Rejected"
 msgstr "Rejected"
 
+msgid "Rejected at Inspection"
+msgstr "Rejected at Inspection"
+
 msgid "Rejected By"
 msgstr "Rejected By"
 
@@ -27240,6 +27243,9 @@ msgstr "Select a new parent group for this account."
 
 msgid "Select a plan"
 msgstr "Select a plan"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "Select a plan to get started. Switch or cancel anytime."
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
