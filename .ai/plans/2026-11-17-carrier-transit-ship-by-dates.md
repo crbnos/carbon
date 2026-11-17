@@ -25,8 +25,8 @@
 - [x] Task 16: Add the glossary terms and the translations
 - [x] Task 17: Update the module AGENTS.md files
 - [x] Task 18: Run the full gates
-- [ ] Task 19: Browser-verify the flows
-- [ ] Task 20: Self-review the branch
+- [x] Task 19: Browser-verify the flows
+- [x] Task 20: Self-review the branch
 
 ## Dependencies
 

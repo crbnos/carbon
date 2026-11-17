@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="explain-source" content=".ai/specs/2026-11-17-carrier-transit-ship-by-dates.md" />
+<meta name="explain-source-hash" content="ff07048b2999dd5bd0061978e9e2f641d65de568" />
+<title>Carrier transit time and ship-by dates</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --panel: #ffffff; --ink: #262323; --faint: #6b6764;
+    --hairline: #e3e2de; --accent: #1e84b0; --accent-soft: #dff5ff;
+    --warn: #a3520f; --warn-soft: #fff1e0; --ok: #2c7a14; --ok-soft: #e4f8da;
+    --code-bg: #efefeb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --panel: #1c1c1f; --ink: #ececea; --faint: #a3a19c;
+      --hairline: #2e2e33; --accent: #5cc2ee; --accent-soft: #10303f;
+      --warn: #f0a35e; --warn-soft: #3a2614; --ok: #8fd672; --ok-soft: #1b3112;
+      --code-bg: #26262a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 48px 16px 96px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 8px 0 12px; }
+  h2 { font-size: 20px; margin: 56px 0 12px; padding-top: 24px; border-top: 1px solid var(--hairline); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p, li { max-width: 72ch; }
+  a { color: var(--accent); }
+  code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+         background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  .kicker { color: var(--faint); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+  .tldr { font-size: 18px; border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 0; }
+  .callout { border-radius: 10px; padding: 12px 16px; margin: 16px 0; border: 1px solid var(--hairline); }
+  .callout.example { background: var(--accent-soft); }
+  .callout.warn { background: var(--warn-soft); }
+  .callout .label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 8px 0 8px 44px; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 8px; width: 28px; height: 28px;
+                        border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+                        font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+  figure { margin: 20px 0; background: var(--panel); border: 1px solid var(--hairline);
+           border-radius: 12px; padding: 16px; overflow-x: auto; }
+  figcaption { color: var(--faint); font-size: 14px; margin-top: 8px; }
+  /* SVG diagram primitives — use these classes, never inline colors */
+  svg.diagram { display: block; width: 100%; height: auto; min-width: 560px; }
+  svg .box { fill: var(--panel); stroke: var(--hairline); stroke-width: 1.5; }
+  svg .box.hot { stroke: var(--accent); stroke-width: 2.5; fill: var(--accent-soft); }
+  svg .box.new { stroke: var(--ok); stroke-width: 2; fill: var(--ok-soft); }
+  svg .box.risk { stroke: var(--warn); stroke-width: 2; fill: var(--warn-soft); }
+  svg .lane { fill: none; stroke: var(--hairline); stroke-dasharray: 4 4; }
+  svg .edge { fill: none; stroke: var(--faint); stroke-width: 1.5; }
+  svg .edge.hot { stroke: var(--accent); stroke-width: 2.5; }
+  svg text { fill: var(--ink); font: 14px ui-sans-serif, system-ui, sans-serif; }
+  svg text.small { fill: var(--faint); font-size: 12px; }
+  svg text.mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  svg marker path { fill: var(--faint); }
+  svg marker.hot path { fill: var(--accent); }
+  /* Tabs (before / after) */
+  .tabs { border: 1px solid var(--hairline); border-radius: 12px; background: var(--panel); margin: 16px 0; }
+  .tabs [role=tablist] { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--hairline); }
+  .tabs button { font: inherit; font-size: 14px; border: 0; background: none; color: var(--faint);
+                 padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  .tabs button[aria-selected=true] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .tabs [role=tabpanel] { padding: 12px 16px; }
+  .tabs [role=tabpanel][hidden] { display: none; }
+  /* Decisions */
+  details { border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel); margin: 8px 0; }
+  details > summary { cursor: pointer; padding: 10px 14px; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; color: var(--faint); margin-right: 8px; display: inline-block; transition: transform .15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > div { padding: 0 14px 12px 34px; }
+  .choice { font-weight: 600; }
+  .rejected { color: var(--faint); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+         border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
+  .tag.human { background: var(--ok-soft); color: var(--ok); }
+  .tag.assumed { background: var(--warn-soft); color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; border-bottom: 1px solid var(--hairline); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--faint); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  ul.checks { list-style: none; padding-left: 0; }
+  ul.checks li { padding: 6px 0 6px 28px; position: relative; }
+  ul.checks li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+  dl.terms dt { font-weight: 600; margin-top: 12px; }
+  dl.terms dd { margin: 2px 0 0 0; color: var(--faint); max-width: 72ch; }
+  footer { margin-top: 64px; color: var(--faint); font-size: 13px; border-top: 1px solid var(--hairline); padding-top: 16px; }
+  /* Worked example calculator */
+  .calc-fields { display: flex; flex-wrap: wrap; gap: 16px; margin: 8px 0 12px; }
+  .calc-fields label { display: flex; flex-direction: column; font-size: 14px; color: var(--faint); gap: 4px; }
+  .calc-fields input { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--hairline);
+                       border-radius: 8px; padding: 6px 10px; }
+  .calc-fields input[type=number] { width: 8em; }
+  .calc-out td:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <p class="kicker">Spec · in-progress · 2026-11-17 · <code>.ai/specs/2026-11-17-carrier-transit-ship-by-dates.md</code></p>
+    <h1>Carrier transit time and ship-by dates</h1>
+    <p class="tldr">Carbon has no transit time, so an order's arrive-by date equals its latest ship-by date, and MES shows no ship-by date. This spec adds transit days to each shipping method, date math between the two dates, a stored <code>job.shipByDate</code>, and delivery dates on sales shipments. The order gets a correct arrive-by date, operators see the days left to ship, and users can check the transit days against real deliveries.</p>
+  </header>
+
+  <section>
+    <h2>The picture</h2>
+    <figure>
+      <svg class="diagram" viewBox="0 0 800 300" role="img" aria-label="Eight boxes show how the line ship-by date and the new transit days lookup flow to the arrive-by date, the job, MES and the shipment.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker>
+        </defs>
+        <rect class="lane" x="10" y="10" width="780" height="280" rx="10" />
+        <text class="small" x="24" y="30">After</text>
+
+        <!-- row 0: job.shipByDate -> MES ship countdown -->
+        <rect class="box new" x="240" y="40" width="160" height="56" rx="8" />
+        <text class="mono" x="320" y="73" text-anchor="middle">job.shipByDate</text>
+        <rect class="box new" x="440" y="40" width="160" height="56" rx="8" />
+        <text x="520" y="73" text-anchor="middle">MES ship countdown</text>
+        <path class="edge" d="M400,68 L438,68" marker-end="url(#arrow)" />
+
+        <!-- row 1: line promisedDate -> arrive-by date (changed) -->
+        <rect class="box" x="40" y="130" width="160" height="56" rx="8" />
+        <text x="120" y="153" text-anchor="middle">Line promisedDate</text>
+        <text class="small" x="120" y="172" text-anchor="middle">= the ship-by date</text>
+        <rect class="box hot" x="240" y="130" width="160" height="56" rx="8" />
+        <text x="320" y="153" text-anchor="middle">Arrive-by date</text>
+        <text class="small" x="320" y="172" text-anchor="middle">ship-by + transit</text>
+        <path class="edge" d="M200,150 L238,150" marker-end="url(#arrow)" />
+        <path class="edge" d="M120,130 L120,68 L238,68" marker-end="url(#arrow)" />
+
+        <!-- row 2: transit days lookup -> shipment estimate -> Mark Delivered -> statistics -->
+        <rect class="box new" x="40" y="220" width="160" height="56" rx="8" />
+        <text x="120" y="243" text-anchor="middle">Transit days</text>
+        <text class="small" x="120" y="262" text-anchor="middle">lookup</text>
+        <rect class="box new" x="240" y="220" width="160" height="56" rx="8" />
+        <text x="320" y="253" text-anchor="middle">Shipment estimate</text>
+        <rect class="box new" x="440" y="220" width="160" height="56" rx="8" />
+        <text x="520" y="253" text-anchor="middle">Mark Delivered</text>
+        <rect class="box new" x="640" y="220" width="160" height="56" rx="8" />
+        <text x="720" y="243" text-anchor="middle">Measured transit</text>
+        <text class="small" x="720" y="262" text-anchor="middle">statistics</text>
+        <path class="edge" d="M200,232 L220,232 L220,170 L238,170" marker-end="url(#arrow)" />
+        <path class="edge" d="M200,256 L238,256" marker-end="url(#arrow)" />
+        <path class="edge" d="M400,248 L438,248" marker-end="url(#arrow)" />
+        <path class="edge" d="M600,248 L638,248" marker-end="url(#arrow)" />
+      </svg>
+      <figcaption>Start at the 2 boxes on the left. The blue box is the arrive-by date, which changes. The green boxes are new.</figcaption>
+    </figure>
+    <details>
+      <summary>The Before group of the spec diagram</summary>
+      <div>
+        <p>The spec diagram has 12 boxes. The figure above shows its After group, with 8 boxes. These are the 3 edges of the Before group:</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>From</th><th>To</th></tr>
+            <tr><td>Quote lead time</td><td>Line <code>promisedDate</code></td></tr>
+            <tr><td>Line <code>promisedDate</code></td><td>Arrive = latest ship date</td></tr>
+            <tr><td>Line <code>promisedDate</code></td><td><code>job.dueDate</code></td></tr>
+          </table>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Scope</h2>
+    <div class="table-wrap">
+      <table>
+        <tr><th>In scope</th><th>Out of scope</th></tr>
+        <tr>
+          <td>
+            <ul>
+              <li>Transit days, in business days, on each shipping method</li>
+              <li>A transit override for one ship-to address and shipping method pair</li>
+              <li>Date math between the arrive-by date and the line ship-by dates</li>
+              <li>A stored <code>job.shipByDate</code> and a ship countdown on 3 MES screens</li>
+              <li>An estimated delivery date on each posted sales shipment</li>
+              <li>A <strong>Mark Delivered</strong> action and measured transit statistics</li>
+              <li>2 seams for a later carrier integration</li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li>A carrier API integration (EasyPost, UPS) and tracking webhooks — a later phase</li>
+              <li>Handling time per location</li>
+              <li>A shipping method per line</li>
+              <li>The scheduler, the priority order and the overdue flags on <code>shipByDate</code></li>
+              <li>The countdown on picking lists and ERP screens</li>
+              <li>Statistics per transit override</li>
+              <li>LTL freight lanes</li>
+              <li>A carrier service code on the shipping method</li>
+              <li>A carrier calendar or a customer calendar</li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>The problem</h2>
+    <p>A customer asks for goods in 10 days. Production needs 3 days, and the carrier needs 5 days. So the goods must ship by day 5.</p>
+    <p>No shipping method holds a transit time today. So the quote to order conversion sets the arrive-by date to the latest line ship-by date. Operators on MES see only the "Due" text from <code>job.dueDate</code>, which does not follow the line after Carbon creates the job. When a sales shipment posts, Carbon records only <code>shipment.postingDate</code>, so nobody can check the transit days.</p>
+    <p>The glossary already says that the arrive-by date and the transit days drive a ship date back-calculation. No code does this calculation yet.</p>
+    <div class="callout example">
+      <span class="label">Example</span>
+      <p>Jane Doe converts a quote for PART-001 on Tuesday 2026-11-17. The quoted lead time is 3 days. The shipping method "Ground" has 5 transit days. The line ship-by date is Friday 2026-11-20. Today Carbon sets the arrive-by date to Friday 2026-11-20 too. With 5 transit days, the goods arrive on Friday 2026-11-27, so the arrive-by date is 5 business days early.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+
+    <h3>1. The business-day calendar</h3>
+    <ol class="steps">
+      <li>A business day is Monday to Friday, minus each <code>holiday</code> row of the company.</li>
+      <li><code>addBusinessDays(date, days, holidays)</code> steps forward one business day at a time, <code>days</code> times.</li>
+      <li><code>subtractBusinessDays(date, days, holidays)</code> steps back one business day at a time, <code>days</code> times.</li>
+      <li>If <code>days</code> is 0, both functions return the date unchanged.</li>
+      <li><code>businessDaysBetween(start, end, holidays)</code> counts the business days after <code>start</code>, up to and including <code>end</code>.</li>
+    </ol>
+    <p>The 3 pure functions go into <code>packages/utils/src/date.ts</code>. They use <code>@internationalized/date</code> and never JavaScript <code>Date</code>. Plant shifts do not change the calendar, because a plant that works on Saturday does not make the carrier deliver on Saturday.</p>
+
+    <div class="callout example" id="calc">
+      <span class="label">Try the date math</span>
+      <p>Enter a date and the transit days. The calculator uses the date as the posting date for the estimate, and as the arrive-by date for the ship-by date. It skips Saturday and Sunday. It has no holidays, like the spec's examples. Carbon also skips the company's <code>holiday</code> rows.</p>
+      <div class="calc-fields">
+        <label>Date (YYYY-MM-DD)
+          <input type="date" id="calc-date" value="2026-11-20" />
+        </label>
+        <label>Transit days (business days)
+          <input type="number" id="calc-days" value="5" min="0" step="1" />
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table class="calc-out">
+          <tr><th>Formula</th><th>Result</th></tr>
+          <tr><td>The entered date is a</td><td id="calc-weekday">Friday</td></tr>
+          <tr><td>Estimated delivery date = posting date + transit days (<code>addBusinessDays</code>)</td><td id="calc-add">Friday 2026-11-27</td></tr>
+          <tr><td>Last business day on or before the arrive-by date</td><td id="calc-last">Friday 2026-11-20</td></tr>
+          <tr><td>Ship-by date = that business day − transit days (<code>latestShipByDate</code>)</td><td id="calc-sub">Friday 2026-11-13</td></tr>
+        </table>
+      </div>
+      <p id="calc-note">Each step skips Saturday and Sunday.</p>
+    </div>
+
+    <h3>2. The transit days lookup</h3>
+    <p>One building block, <code>resolveTransitDays(db, lane)</code> in <code>sales.service.ts</code>, finds the transit days. The lane holds the company, the shipping method, the ship-to address, the plant and the ship date.</p>
+    <ol class="steps">
+      <li>If the shipping method is null, the function returns null.</li>
+      <li>If a <code>customerLocationTransitTime</code> row matches the ship-to address and the shipping method, the function returns its <code>transitDays</code>. The source is "Ship-to override".</li>
+      <li>If <code>shippingMethod.transitDays</code> is not null, the function returns it. The source is "Shipping method".</li>
+      <li>Otherwise the function returns null.</li>
+    </ol>
+    <p>Null means "unknown". If the transit days are unknown, Carbon calculates no date and shows no warning.</p>
+    <details>
+      <summary>The ship-to address, the holidays and the unused lane fields</summary>
+      <div>
+        <p>The ship-to address of an order comes from <code>resolveSalesOrderShipTo</code> in <code>packages/ee/src/rules/sales/server.ts</code>. For a drop shipment, it is the drop-ship location.</p>
+        <p>The holidays come from <code>getHolidayDateSet</code> in <code>sales.service.ts</code>. It is the Kysely sibling of <code>getHolidayDates</code> in <code>production.service.ts</code>. Quote to order and shipment posting read the holidays inside a Kysely transaction.</p>
+        <p>In v1 the function ignores the plant and the ship date. Each caller passes them now, because a carrier API needs the origin ZIP code and the ship date.</p>
+      </div>
+    </details>
+
+    <h3>3. Date math on the sales order</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Event</th><th>What Carbon does</th></tr>
+        <tr><td>Quote to order</td><td>Arrive-by date = the latest line ship-by date + transit days. If the transit days are unknown, the arrive-by date is the latest line ship-by date, as today.</td></tr>
+        <tr><td>A user adds a line with no <code>promisedDate</code></td><td>If the order has an arrive-by date and known transit days, Carbon sets <code>promisedDate</code> = arrive-by date − transit days (<code>latestShipByDate</code>).</td></tr>
+        <tr><td>A user changes the arrive-by date, the shipping method or the ship-to address</td><td>Carbon calculates a new ship-by date for each line. If 1 or more lines differ, Carbon asks "Recalculate the ship date on N lines?". Carbon changes no line without a yes.</td></tr>
+        <tr><td>A line's ship-by date + transit days falls after the arrive-by date</td><td>The line shows a "Late to arrive" warning with the estimated arrival date.</td></tr>
+      </table>
+    </div>
+    <p>Carriers deliver on business days. So <code>latestShipByDate</code> in <code>sales.utils.ts</code> counts the transit days back from the last business day on or before the arrive-by date. An order due on a Saturday ships in time for Friday. With 0 transit days, the line ships on the arrive-by date.</p>
+    <div class="callout example">
+      <span class="label">Example</span>
+      <p>The arrive-by date is Saturday 2026-11-21, and the transit days are 1. The last business day on or before it is Friday 2026-11-20. So the ship-by date is Thursday 2026-11-19.</p>
+    </div>
+    <p>The recalculation changes only a line whose <code>salesOrderLineType</code> is in <code>DELIVERY_CHECKED_LINE_TYPES</code> and whose <code>sentComplete</code> is false.</p>
+    <p>The prompt uses one resource route, <code>x+/sales-order+/$orderId.ship-by-dates.tsx</code>:</p>
+    <ol class="steps">
+      <li>The client saves the header field, as today.</li>
+      <li>When the save succeeds, the client loads the route.</li>
+      <li>The loader returns the lines whose new ship-by date differs.</li>
+      <li>If 1 or more lines differ, the client opens the confirm modal.</li>
+      <li>"Yes" posts to the route action.</li>
+      <li>The action calls <code>recalculateSalesOrderShipByDates</code>.</li>
+    </ol>
+    <details>
+      <summary>Quote to order: which lane it uses</summary>
+      <div>
+        <p>The lane uses <code>quoteShipment.shippingMethodId</code> and the new order's <code>customerLocationId</code>, because <code>quoteShipment</code> has no ship-to address. <code>receiptRequestedDate</code> keeps its current fallback.</p>
+      </div>
+    </details>
+    <details>
+      <summary>How "Late to arrive" joins the delivery date check</summary>
+      <div>
+        <p>The delivery date check asks "can the line be ready by its ship-by date?". The "Late to arrive" warning asks "does the ship-by date leave enough transit time?". The two checks stay separate, and each one keeps its own icon. 3 rules join them:</p>
+        <ol>
+          <li><code>createSalesOrderLine</code> sets the default <code>promisedDate</code> before it calls <code>deliveryDateForSave</code>. So the check runs on the default date.</li>
+          <li><code>recalculateSalesOrderShipByDates</code> runs the check on each line it changes, with <code>capacity: "defer"</code>.</li>
+          <li>The "Late to arrive" icon sits next to <code>DeliveryDateFlag</code> in <code>SalesOrderExplorer.tsx</code>.</li>
+        </ol>
+      </div>
+    </details>
+
+    <h3>4. <code>job.shipByDate</code></h3>
+    <ol class="steps">
+      <li>When Carbon inserts a job, the trigger <code>job_set_ship_by_date</code> copies the line's <code>promisedDate</code> into <code>shipByDate</code>.</li>
+      <li>The same trigger runs on an update of <code>salesOrderLineId</code> or <code>shipByDate</code>. So it replaces a direct write of <code>shipByDate</code> with the line's date.</li>
+      <li>If <code>salesOrderLineId</code> is null, the same trigger sets <code>shipByDate</code> to null.</li>
+      <li>When a line's <code>promisedDate</code> changes, the trigger <code>sales_order_line_sync_job_ship_by_date</code> updates <code>shipByDate</code> on each job of that line and company, where the value differs.</li>
+      <li>If a user deletes the line, the foreign key <code>job_salesOrderLineId_fkey</code> sets <code>salesOrderLineId</code> to null.</li>
+      <li>Then <code>job_set_ship_by_date</code> clears <code>shipByDate</code>.</li>
+    </ol>
+    <p>No application code writes <code>job.shipByDate</code>. <code>job.dueDate</code> does not change. The scheduler, the priority order and the overdue flags keep using <code>dueDate</code>.</p>
+    <details>
+      <summary>Why plain triggers, not event-system interceptors</summary>
+      <div>
+        <p>The 2 triggers are plain triggers in the migration. An interceptor in <code>packages/database/src/event-system/handlers</code> cannot change <code>NEW</code>, and the job trigger must change it. Both triggers run as their owner. So a sales user who moves a line also moves the job's copy.</p>
+      </div>
+    </details>
+
+    <h3>5. The ship countdown on MES</h3>
+    <ol class="steps">
+      <li>The screen reads <code>job.shipByDate</code> and the plant's today, from the location's time zone.</li>
+      <li><code>getShipCountdown(shipByDate, today)</code> returns the calendar days left and a tone.</li>
+      <li>The screen formats the label with Lingui.</li>
+      <li>The label sits next to the existing "Due" text and does not replace it.</li>
+    </ol>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Days left</th><th>Label</th><th>Tone</th></tr>
+        <tr><td>More than 1</td><td>"Ships in N days"</td><td>neutral</td></tr>
+        <tr><td>1</td><td>"Ships tomorrow"</td><td>amber</td></tr>
+        <tr><td>0</td><td>"Ships today"</td><td>amber</td></tr>
+        <tr><td>Less than 0</td><td>"N days late"</td><td>red</td></tr>
+        <tr><td><code>shipByDate</code> is null</td><td>no label</td><td>—</td></tr>
+      </table>
+    </div>
+    <p>If the job is Completed or Cancelled, the screen shows no label. Sort orders do not change.</p>
+    <details>
+      <summary>The 4 screens and their data</summary>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Screen</th><th>Route</th><th>Data source</th></tr>
+            <tr><td>Operation cards</td><td><code>apps/mes/app/routes/x+/operations.tsx</code></td><td>RPC <code>get_active_job_operations_by_location</code></td></tr>
+            <tr><td>Jobs list</td><td><code>apps/mes/app/routes/x+/jobs.tsx</code></td><td><code>getOpenJobs</code></td></tr>
+            <tr><td>Assigned view</td><td><code>apps/mes/app/routes/x+/assigned.tsx</code></td><td>RPC <code>get_assigned_job_operations</code></td></tr>
+            <tr><td>Assigned list view</td><td><code>apps/mes/app/components/OperationsList.tsx</code></td><td>The rows of the assigned view</td></tr>
+          </table>
+        </div>
+        <p>The 2 RPCs return a new column, <code>jobShipByDate</code>. <code>getOpenJobs</code> reads the <code>jobs</code> view, which selects <code>j.*</code>. Postgres expands <code>*</code> when it creates a view. So the migration drops the <code>jobs</code> view and creates it again from its latest definition.</p>
+        <p>The assigned view has no plant's today now. <code>ItemCard</code> uses the device time zone, and <code>OperationsList</code> uses JavaScript <code>Date</code>. So the <code>assigned.tsx</code> loader returns the plant's today, as <code>operations.tsx</code> does. <code>OperationsList</code> gets that today as a prop.</p>
+      </div>
+    </details>
+
+    <h3>6. Estimated and actual delivery</h3>
+    <ol class="steps">
+      <li>When <code>postShipment</code> posts a shipment whose <code>sourceDocument</code> is <code>'Sales Order'</code>, it calls <code>resolveTransitDays</code>.</li>
+      <li>If the transit days are known, <code>postShipment</code> sets <code>estimatedDeliveryDate</code> = <code>addBusinessDays(postingDate, transitDays, holidays)</code>.</li>
+      <li>A Posted sales shipment shows a <strong>Mark Delivered</strong> button.</li>
+      <li>The button opens a modal with one date field, <strong>Delivered on</strong>. The default is the company's today.</li>
+      <li>The service function refuses a date in the future and a date before <code>postingDate</code>.</li>
+      <li>The service function saves <code>deliveredDate</code> and sets <code>deliveredSource</code> to <code>'Manual'</code>.</li>
+      <li>Later, a user can change the date or clear it. A clear sets both columns to null.</li>
+    </ol>
+    <p>If a user voids the shipment, <code>estimatedDeliveryDate</code> and <code>deliveredDate</code> stay on the voided row. The statistics skip that row.</p>
+    <p>The shipment header shows "Arrives {date} (estimated)" before delivery and "Delivered {date}" after it. The shipments list gets 2 columns, <strong>Estimated Delivery</strong> and <strong>Delivered</strong>. <code>getShipments</code> selects <code>*</code> from <code>shipment</code>, so its query does not change.</p>
+
+    <h3>7. Measured transit statistics</h3>
+    <p>The shipping method drawer shows one line for the last 90 days. The spec gives this example:</p>
+    <div class="callout example">
+      <span class="label">Drawer line</span>
+      <p>Last 90 days: 42 shipments, average 3.4 business days. 88% by the estimate, 93% by the promised date. <strong>Use 4 days</strong></p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Number</th><th>How Carbon gets it</th></tr>
+        <tr><td>Shipments</td><td>Posted, not voided shipments from a sales order, with this <code>shippingMethodId</code>, a <code>deliveredDate</code>, and a <code>postingDate</code> in the last 90 days</td></tr>
+        <tr><td>Average</td><td>The mean of <code>businessDaysBetween(postingDate, deliveredDate)</code>, to one decimal</td></tr>
+        <tr><td>By the estimate</td><td>The share of rows with <code>deliveredDate</code> ≤ <code>estimatedDeliveryDate</code>. It measures the carrier and the transit days. It skips rows with no estimate.</td></tr>
+        <tr><td>By the promised date</td><td>The share of rows with <code>deliveredDate</code> ≤ the order's <code>receiptPromisedDate</code>. This is the on-time delivery (OTD) to the customer. It skips orders with no arrive-by date.</td></tr>
+      </table>
+    </div>
+    <p>An early delivery counts as on time in both rates. <strong>Use N days</strong> rounds the average up and saves it as <code>shippingMethod.transitDays</code>. Carbon never changes <code>transitDays</code> without this click. If fewer than 5 shipments match, the drawer shows "Not enough deliveries yet" and no button. Transit overrides show no statistics in v1.</p>
+
+    <h3>8. The seams for a carrier integration</h3>
+    <p>A later integration (EasyPost first, then UPS) plugs into 2 functions. Every caller already goes through them, so the integration changes no call site.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Seam</th><th>In v1</th><th>What the integration adds</th></tr>
+        <tr><td><code>resolveTransitDays(db, lane)</code> in <code>sales.service.ts</code></td><td>The override, then the shipping method</td><td>A step between the two: ask the provider for the lane. A new value in the <code>source</code> union.</td></tr>
+        <tr><td><code>recordShipmentDelivery(db, { companyId, shipmentId, deliveredDate, source, userId })</code> in <code>inventory.service.ts</code></td><td><strong>Mark Delivered</strong> calls it with <code>source: 'Manual'</code></td><td>A tracking webhook calls it with <code>source: 'Carrier'</code>. The integration first converts the UTC event time to the company's local date.</td></tr>
+      </table>
+    </div>
+    <p><code>recordShipmentDelivery</code> is the only writer of <code>deliveredDate</code> and <code>deliveredSource</code>. It refuses 4 cases:</p>
+    <ul>
+      <li>a shipment that is not Posted</li>
+      <li>a shipment that is not from a sales order</li>
+      <li>a date in the future or before <code>postingDate</code></li>
+      <li>a <code>'Carrier'</code> write over a <code>'Manual'</code> row</li>
+    </ul>
+    <p>The integration also needs a carrier service code on the shipping method, for example <code>GROUND</code>. The integration spec adds that column, not this spec.</p>
+
+    <details>
+      <summary>Every new or changed operation and route</summary>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Item</th><th>File</th><th>Change</th></tr>
+            <tr><td><code>addBusinessDays</code>, <code>subtractBusinessDays</code>, <code>businessDaysBetween</code>, <code>getShipCountdown</code></td><td><code>packages/utils/src/date.ts</code></td><td>new pure functions, with tests</td></tr>
+            <tr><td><code>resolveTransitDays</code></td><td><code>sales.service.ts</code></td><td>new building block</td></tr>
+            <tr><td><code>getHolidayDateSet(db, companyId, { from, to })</code>, <code>transitHolidayRange</code></td><td><code>sales.service.ts</code></td><td>new building blocks: the holidays that a business-day count can reach</td></tr>
+            <tr><td>Quote to order arrive-by date</td><td><code>shared.service.ts</code></td><td>change</td></tr>
+            <tr><td><code>getSalesOrderShipByDates</code></td><td><code>sales.server.ts</code></td><td>new operation: the new ship-by date per line, for the prompt</td></tr>
+            <tr><td><code>recalculateSalesOrderShipByDates</code></td><td><code>sales.server.ts</code></td><td>new operation: the "Yes" of the prompt, in one Kysely transaction</td></tr>
+            <tr><td><code>x+/sales-order+/$orderId.ship-by-dates.tsx</code></td><td><code>apps/erp/app/routes/</code></td><td>new resource route</td></tr>
+            <tr><td><code>createSalesOrderLine</code></td><td><code>sales.server.ts</code></td><td>change: the default <code>promisedDate</code></td></tr>
+            <tr><td><code>upsertCustomerLocationTransitTime</code>, <code>deleteCustomerLocationTransitTime</code>, <code>getCustomerLocationTransitTimes</code></td><td><code>sales.server.ts</code></td><td>new operations</td></tr>
+            <tr><td><code>shippingMethodValidator</code></td><td><code>inventory.models.ts</code></td><td>change: adds <code>transitDays</code></td></tr>
+            <tr><td><code>getShippingMethodTransitStats</code></td><td><code>inventory.server.ts</code></td><td>new operation</td></tr>
+            <tr><td><code>postShipment</code></td><td><code>inventory.service.ts</code></td><td>change: sets <code>estimatedDeliveryDate</code></td></tr>
+            <tr><td><code>recordShipmentDelivery</code></td><td><code>inventory.service.ts</code></td><td>new building block, the only writer of <code>deliveredDate</code></td></tr>
+            <tr><td><code>markShipmentDelivered</code></td><td><code>inventory.server.ts</code></td><td>new operation: calls <code>recordShipmentDelivery</code> with <code>'Manual'</code></td></tr>
+            <tr><td><code>x+/shipment+/$shipmentId.delivered.tsx</code></td><td><code>apps/erp/app/routes/</code></td><td>new action route for the <strong>Mark Delivered</strong> modal</td></tr>
+            <tr><td><code>jobShipByDate</code></td><td>RPCs <code>get_active_job_operations_by_location</code>, <code>get_assigned_job_operations</code></td><td>migration: copy each RPC from its latest definition</td></tr>
+            <tr><td><code>getOpenJobs</code></td><td><code>apps/mes/app/services/operations.service.ts</code></td><td>change: selects <code>shipByDate</code></td></tr>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Every screen that changes</summary>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Screen</th><th>Change</th></tr>
+            <tr><td>Shipping method drawer (ERP)</td><td>A <strong>Transit Days</strong> number field. Below it, the measured statistics line and the <strong>Use N days</strong> button.</td></tr>
+            <tr><td>Customer, Shipping tab (ERP)</td><td>A <strong>Transit Times</strong> card: a table of ship-to address, shipping method and transit days. New, Edit and Delete open a drawer.</td></tr>
+            <tr><td>Sales order, Shipping card and Properties (ERP)</td><td>After a change to the arrive-by date, the shipping method or the ship-to address: the confirm modal "Recalculate the ship date on N lines?"</td></tr>
+            <tr><td>Sales order lines (ERP)</td><td>The "Late to arrive" warning, with the estimated arrival date in a tooltip. The line form shows it for the saved date only, because the business-day math needs the company holidays. A new line in the explorer starts from <code>defaultShipBy</code>.</td></tr>
+            <tr><td>Posted sales shipment (ERP)</td><td>A <strong>Mark Delivered</strong> button and modal in <code>ShipmentHeader</code>. The header <code>meta</code> shows "Arrives {date} (estimated)" or "Delivered {date}".</td></tr>
+            <tr><td>Shipments list (ERP)</td><td>The <strong>Estimated Delivery</strong> and <strong>Delivered</strong> columns in <code>ShipmentsTable</code></td></tr>
+            <tr><td>MES operation cards, jobs list, assigned view (board and list)</td><td>The ship countdown label (part 5)</td></tr>
+          </table>
+        </div>
+        <p>The spec also adds glossary terms for the 5 new date and transit columns. Lingui wraps every new string, and <code>/translate</code> fills the catalogs.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>The build history in the spec changelog</summary>
+      <div>
+        <p>The build differs from the plan in 7 points:</p>
+        <ol>
+          <li>Holidays come from a Kysely <code>getHolidayDateSet</code>.</li>
+          <li>The <code>job</code> triggers are plain triggers, not interceptors.</li>
+          <li><code>job_set_ship_by_date</code> also resets a direct write of <code>shipByDate</code>.</li>
+          <li>The override upsert checks <code>create: sales</code> inside the function.</li>
+          <li>The line form shows "Late to arrive" for the saved date only.</li>
+          <li>A new line in the explorer starts from <code>defaultShipBy</code>.</li>
+          <li>The demo shipping methods get transit days from their names.</li>
+        </ol>
+        <p>The self-review and the browser test then fixed 5 points:</p>
+        <ol>
+          <li><code>latestShipByDate</code> handles an arrive-by date on a weekend or a holiday.</li>
+          <li>The backfill sets <code>app.sync_in_progress</code>.</li>
+          <li><strong>Mark Delivered</strong> validates the date and reports a missing shipment as not found.</li>
+          <li><strong>Use N days</strong> remounts the shipping method form.</li>
+          <li>The new line route starts from <code>defaultShipBy</code>.</li>
+        </ol>
+        <p>The browser test passed for every flow. The playbook is <code>.ai/playbooks/carrier-transit-ship-by-dates.md</code>.</p>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Before and after</h2>
+    <p>The same order: Jane Doe converts a quote for PART-001 on Tuesday 2026-11-17. The lead time is 3 days, and "Ground" has 5 transit days. The company has no holidays.</p>
+    <div class="tabs" data-tabs>
+      <div role="tablist">
+        <button role="tab" aria-selected="true">Before</button>
+        <button role="tab" aria-selected="false">After</button>
+      </div>
+      <div role="tabpanel">
+        <ol>
+          <li>The line ship-by date is Friday 2026-11-20, today + 3 days.</li>
+          <li>Carbon sets the arrive-by date to Friday 2026-11-20, the latest line ship-by date. It ignores the carrier's 5 days.</li>
+          <li>If a user later moves the line date, <code>job.dueDate</code> does not follow it.</li>
+          <li>The MES card shows only "Due {relative time}" from <code>job.dueDate</code>. It shows no ship countdown.</li>
+          <li>The shipment posts on 2026-11-20. Carbon records only <code>postingDate</code>. Nobody records when the goods arrive.</li>
+        </ol>
+      </div>
+      <div role="tabpanel" hidden>
+        <ol>
+          <li>The line ship-by date is Friday 2026-11-20, today + 3 days.</li>
+          <li><code>resolveTransitDays</code> returns 5, with the source "Shipping method".</li>
+          <li>Carbon sets the arrive-by date to Friday 2026-11-27, 5 business days after 2026-11-20.</li>
+          <li>The job from the line gets <code>shipByDate</code> = 2026-11-20. If the line date moves, <code>shipByDate</code> moves too.</li>
+          <li>On 2026-11-17, the MES card shows "Ships in 3 days" next to the "Due" text.</li>
+          <li>The shipment posts on 2026-11-20. <code>estimatedDeliveryDate</code> is Friday 2026-11-27.</li>
+          <li>A user clicks <strong>Mark Delivered</strong> and enters Wednesday 2026-11-25. The delivery took 3 business days.</li>
+          <li>The delivery counts as on time by the estimate and by the promised date.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decisions</h2>
+
+    <h3>Dates and their meaning</h3>
+    <details>
+      <summary>What does <code>salesOrderLine.promisedDate</code> mean? <span class="choice">The ship-by date.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the user decided it. It matches the glossary: "When this specific line is promised to ship".</p>
+      </div>
+    </details>
+    <details>
+      <summary>Which column is the arrive-by date? <span class="choice"><code>salesOrderShipment.receiptPromisedDate</code>.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the column exists, and the glossary gives it this meaning (Q1). Quote to order sets it to the latest line ship-by date + transit days.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Who sets the line ship-by date? <span class="choice">A default on new lines, a confirm prompt on header changes, and a "Late to arrive" warning.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: Carbon never overwrites a date that a user typed without a yes (Q2).</p>
+      </div>
+    </details>
+    <details>
+      <summary>Does <code>job.dueDate</code> become the ship-by date? <span class="choice">No. A separate <code>job.shipByDate</code> holds it.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the user decided it. Planners keep editing <code>dueDate</code>. A later change can switch the scheduler to <code>shipByDate</code>.</p>
+        <p class="rejected">Rejected: <code>job.dueDate</code> as the ship-by date.</p>
+      </div>
+    </details>
+    <details>
+      <summary>How does Carbon keep <code>job.shipByDate</code>? <span class="choice">A stored, read-only column. 2 triggers are its only writers.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the MES RPCs can sort and filter on a stored column with no extra join (Q3).</p>
+      </div>
+    </details>
+
+    <h3>Transit days</h3>
+    <details>
+      <summary>Where do transit days live? <span class="choice"><code>shippingMethod.transitDays</code>, plus <code>customerLocationTransitTime</code> per ship-to address and shipping method.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: transit depends on the destination. SAP routes and Epicor Ship To do the same (Q4).</p>
+      </div>
+    </details>
+    <details>
+      <summary>How many shipping methods per order? <span class="choice">One, on <code>salesOrderShipment</code>.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the user decided it. It matches the current schema.</p>
+        <p class="rejected">Rejected: a shipping method per line.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Business days or calendar days for transit? <span class="choice">Business days: Monday to Friday, minus <code>holiday</code> rows.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the user decided it. Carriers quote ground service in business days. Business Central, SAP and Epicor count working days.</p>
+        <p class="rejected">Rejected: calendar days.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Which calendar counts transit days? <span class="choice">One company calendar.</span></summary>
+      <div>
+        <p>Why: it is the smallest useful model. Business Central's carrier and customer calendars can follow if users ask for them.</p>
+        <p class="rejected">Rejected: one calendar per carrier or per customer.</p>
+      </div>
+    </details>
+    <details>
+      <summary>What do unknown transit days hold? <span class="choice">Null, not 0.</span></summary>
+      <div>
+        <p>Why: 0 means same-day (will-call). Null means "not set", so Carbon calculates nothing.</p>
+        <p class="rejected">Rejected: 0 — it means same-day.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Where do the holidays come from? <span class="choice"><code>getHolidayDateSet</code> (Kysely) in <code>sales.service.ts</code>.</span></summary>
+      <div>
+        <p>Why: <code>getHolidayDates</code> in <code>production.service.ts</code> takes a Supabase client. The callers run inside a Kysely transaction.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Handling time per location? <span class="choice">Out of scope.</span></summary>
+      <div>
+        <p>Why: the coworker's example needs only make time + transit.</p>
+      </div>
+    </details>
+
+    <h3>The ship countdown</h3>
+    <details>
+      <summary>Which screens show the ship countdown? <span class="choice">MES operation cards, MES jobs list and MES assigned view.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the user chose these 3 screens (Q5). Picking lists and ERP screens are out of scope for v1.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Does the countdown also go on the assigned list view and picking lists? <span class="choice">The assigned list view yes. Picking lists no.</span><span class="tag assumed">assumed</span></summary>
+      <div>
+        <p>Why: the assigned list view shows the same rows as the assigned board (Q5). Q5 excludes picking lists.</p>
+      </div>
+    </details>
+    <details>
+      <summary>What unit does the countdown use? <span class="choice">Calendar days to the plant's today.</span></summary>
+      <div>
+        <p>Why: operators read "3 days" as calendar days. It matches the existing "Due" text.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Where does the assigned view get the plant's today? <span class="choice">The loader returns it.</span></summary>
+      <div>
+        <p>Why: the countdown must change at the plant's midnight, not at the device's midnight.</p>
+      </div>
+    </details>
+
+    <h3>Delivery and statistics</h3>
+    <details>
+      <summary>How does Carbon learn the actual delivery? <span class="choice">An estimate at posting, a manual <strong>Mark Delivered</strong> date, and statistics per shipping method. No auto-tuning.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: it builds the history that the carrier integration extends (Q6). The user also chose statistics per shipping method only, not per override (Q6b).</p>
+        <p class="rejected">Rejected: statistics per transit override.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Which source does the delivered date record? <span class="choice"><code>deliveredSource</code>: <code>'Manual'</code> or <code>'Carrier'</code>.</span><span class="tag assumed">assumed</span></summary>
+      <div>
+        <p>Why: SAP fills the proof of delivery date from VLPOD or an IDoc. A carrier date must not overwrite a date that a user typed.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Which on-time rates show on the shipping method? <span class="choice">2 rates: by the estimate and by the promised date. Early counts as on time.</span><span class="tag assumed">assumed</span></summary>
+      <div>
+        <p>Why: on-time shipping and OTD measure different things. A low OTD with a high estimate rate points at the transit days.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Do the shipment header and the shipments list show the delivery dates? <span class="choice">Yes.</span><span class="tag assumed">assumed</span></summary>
+      <div>
+        <p>Why: without them, a user cannot see the estimate that the statistics use.</p>
+      </div>
+    </details>
+    <details>
+      <summary>How does the delivery date check relate to "Late to arrive"? <span class="choice">They stay separate. <code>createSalesOrderLine</code> sets the default ship-by date before the check runs.</span></summary>
+      <div>
+        <p>Why: the check answers "ready by the ship-by date". The new warning answers "the transit fits".</p>
+      </div>
+    </details>
+    <details>
+      <summary>How does a carrier integration plug in? <span class="choice"><code>resolveTransitDays</code> takes the whole lane. <code>recordShipmentDelivery</code> is the only writer of the delivered date.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: the user asked for one PR with no carrier integration, but with an easy path to add one. The lane holds every input a carrier API needs.</p>
+      </div>
+    </details>
+
+    <h3>Conventions</h3>
+    <details>
+      <summary>Multi-tenancy? <span class="choice"><code>customerLocationTransitTime</code> has <code>companyId</code>, PK <code>("id", "companyId")</code> and <code>id('ctt')</code>.</span></summary>
+      <div>
+        <p>Why: Heuristic 1 of the spec.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Service shape? <span class="choice">Building blocks take <code>db</code>. New operations are <code>defineServiceFn</code> operations in <code>sales.server.ts</code> and <code>inventory.server.ts</code>.</span></summary>
+      <div>
+        <p>Why: Heuristic 2 and <code>.claude/rules/module-files.md</code>.</p>
+      </div>
+    </details>
+    <details>
+      <summary>RLS? <span class="choice"><code>customerLocationTransitTime: company("sales", { read: "sales_view" })</code> in the authz manifest.</span></summary>
+      <div>
+        <p>Why: Heuristic 3. It copies the rule of <code>customerItemRentalRate</code>.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Permissions? <span class="choice">Transit days on the shipping method and Mark Delivered: <code>update: inventory</code>. Transit overrides: <code>update: sales</code>, plus <code>create: sales</code> for a new row, and <code>delete: sales</code>.</span></summary>
+      <div>
+        <p>Why: Heuristic 4. The manifest rule <code>shippingMethod: company("inventory")</code>, the customer Shipping tab (<code>update: sales</code>) and shipment posting use these scopes today.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Forms? <span class="choice"><code>ValidatedForm</code> + <code>validator(zodSchema)</code> + a route action.</span></summary>
+      <div>
+        <p>Why: Heuristic 5.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Module layout? <span class="choice">The existing <code>sales</code> and <code>inventory</code> module files. No new module.</span></summary>
+      <div>
+        <p>Why: Heuristic 6.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Backward compatibility? <span class="choice">Every new column is nullable. The API gains fields and loses none. Existing orders keep their dates.</span></summary>
+      <div>
+        <p>Why: Heuristic 7.</p>
+      </div>
+    </details>
+
+    <h3>Risks</h3>
+    <details>
+      <summary>The 11 risks that the spec names, 2 of them High</summary>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Risk</th><th>Severity</th><th>Mitigation</th></tr>
+            <tr><td>A copied RPC drops a branch that a later migration added</td><td>High</td><td>Copy each RPC from its latest migration. Compare the old and new bodies before the commit.</td></tr>
+            <tr><td>The new <code>jobs</code> view drops a column that a later migration added</td><td>High</td><td>Copy the view from <code>20261006220401_fleet-bridge.sql</code>. Compare the column lists before and after.</td></tr>
+            <tr><td><code>job.shipByDate</code> and <code>job.dueDate</code> confuse planners</td><td>Med</td><td>The ERP job screens do not show <code>shipByDate</code> in v1. The MES label says "Ships", and the existing text says "Due".</td></tr>
+            <tr><td>The <code>job</code> trigger slows bulk job creation</td><td>Low</td><td>The trigger reads one row by primary key. <code>convertSalesOrderLinesToJobs</code> inserts in one statement.</td></tr>
+            <tr><td>The <code>ON DELETE SET NULL</code> action does not fire the <code>UPDATE OF "salesOrderLineId"</code> trigger</td><td>Low</td><td>A test on 2026-11-17, in a rolled-back transaction, showed that a line delete clears <code>job.shipByDate</code>.</td></tr>
+            <tr><td>The recalculation prompt annoys users who type every date</td><td>Low</td><td>The prompt shows only when 1 or more lines would change. "No" changes nothing.</td></tr>
+            <tr><td>Company holidays differ from carrier holidays</td><td>Low</td><td>Most carriers close on the major national holidays. A company that needs exact carrier calendars waits for the carrier integration.</td></tr>
+            <tr><td>The statistics query reads many shipments</td><td>Low</td><td>It reads 90 days for one shipping method, and 3 date columns only.</td></tr>
+            <tr><td>A user confirms an order between the lock check and the recalculation write</td><td>Low</td><td>The lock check runs before the transaction. The window is one request long.</td></tr>
+            <tr><td>A recalculation proposes a ship-by date before today</td><td>Low</td><td>The delivery date check runs on every moved line. It flags a date that the line cannot meet.</td></tr>
+            <tr><td>The demo datasets have no transit overrides and no delivered shipments</td><td>Low</td><td>On a new demo company, the statistics read "Not enough deliveries yet". Seed delivered shipments when a demo needs the statistics.</td></tr>
+          </table>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Data model</h2>
+    <figure>
+      <svg class="diagram" viewBox="0 0 800 530" role="img" aria-label="Seven tables: the new customerLocationTransitTime, the 3 tables that gain columns, and the foreign keys between them.">
+        <defs>
+          <marker id="arrow-dm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker>
+        </defs>
+        <!-- row 0 -->
+        <rect class="box" x="20" y="20" width="220" height="130" rx="8" />
+        <text class="mono" x="36" y="46">customerLocation</text>
+        <text class="small mono" x="36" y="72">id (PK)</text>
+
+        <rect class="box new" x="280" y="20" width="250" height="130" rx="8" />
+        <text class="mono" x="296" y="46">customerLocationTransitTime</text>
+        <text class="small mono" x="296" y="72">id, companyId (PK)</text>
+        <text class="small mono" x="296" y="94">customerLocationId (FK)</text>
+        <text class="small mono" x="296" y="116">shippingMethodId (FK)</text>
+        <text class="small mono" x="296" y="138">transitDays &gt;= 0</text>
+
+        <rect class="box hot" x="570" y="20" width="210" height="130" rx="8" />
+        <text class="mono" x="586" y="46">shippingMethod</text>
+        <text class="small mono" x="586" y="72">name, carrier</text>
+        <text class="small mono" x="586" y="94">+ transitDays</text>
+
+        <path class="edge" d="M280,70 L242,70" marker-end="url(#arrow-dm)" />
+        <path class="edge" d="M530,70 L568,70" marker-end="url(#arrow-dm)" />
+
+        <!-- row 1 -->
+        <rect class="box hot" x="280" y="190" width="250" height="150" rx="8" />
+        <text class="mono" x="296" y="216">shipment</text>
+        <text class="small mono" x="296" y="242">shippingMethodId (FK)</text>
+        <text class="small mono" x="296" y="264">postingDate</text>
+        <text class="small mono" x="296" y="286">+ estimatedDeliveryDate</text>
+        <text class="small mono" x="296" y="308">+ deliveredDate</text>
+        <text class="small mono" x="296" y="330">+ deliveredSource</text>
+
+        <rect class="box" x="570" y="190" width="210" height="150" rx="8" />
+        <text class="mono" x="586" y="216">salesOrderShipment</text>
+        <text class="small mono" x="586" y="242">shippingMethodId (FK)</text>
+        <text class="small mono" x="586" y="264">receiptPromisedDate</text>
+
+        <path class="edge" d="M530,232 L550,232 L550,120 L568,120" marker-end="url(#arrow-dm)" />
+        <path class="edge" d="M675,190 L675,152" marker-end="url(#arrow-dm)" />
+
+        <!-- row 2 -->
+        <rect class="box" x="20" y="380" width="220" height="130" rx="8" />
+        <text class="mono" x="36" y="406">salesOrderLine</text>
+        <text class="small mono" x="36" y="432">promisedDate</text>
+        <text class="small mono" x="36" y="454">sentComplete</text>
+
+        <rect class="box hot" x="280" y="380" width="250" height="130" rx="8" />
+        <text class="mono" x="296" y="406">job</text>
+        <text class="small mono" x="296" y="432">salesOrderLineId (FK)</text>
+        <text class="small mono" x="296" y="454">dueDate (no change)</text>
+        <text class="small mono" x="296" y="476">+ shipByDate</text>
+
+        <path class="edge" d="M280,440 L242,440" marker-end="url(#arrow-dm)" />
+      </svg>
+      <figcaption>Each arrow goes from a foreign key to the table it references. The green table is new. The blue tables gain the columns marked +. Triggers copy <code>salesOrderLine.promisedDate</code> into <code>job.shipByDate</code>.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Table</th><th>Change</th><th>Rules</th></tr>
+        <tr><td><code>shippingMethod</code></td><td>adds <code>transitDays INTEGER</code></td><td>Null or 0 and more</td></tr>
+        <tr><td><code>customerLocationTransitTime</code></td><td>new table: one override per ship-to address and shipping method</td><td><code>transitDays</code> is required, 0 and more. One row per <code>customerLocationId</code>, <code>shippingMethodId</code> and <code>companyId</code>. A delete of the company, the ship-to address or the shipping method deletes the row. RLS is on.</td></tr>
+        <tr><td><code>job</code></td><td>adds <code>shipByDate DATE</code> and the index <code>job_shipByDate_idx</code> on <code>("companyId", "shipByDate")</code></td><td>2 triggers write it (How it works, part 4)</td></tr>
+        <tr><td><code>shipment</code></td><td>adds <code>estimatedDeliveryDate DATE</code>, <code>deliveredDate DATE</code> and <code>deliveredSource</code></td><td><code>deliveredSource</code> uses the new enum <code>shipmentDeliveredSource</code> (<code>'Manual'</code>, <code>'Carrier'</code>). <code>deliveredDate</code> and <code>deliveredSource</code> are both null or both set. <code>deliveredDate</code> is not before <code>postingDate</code>.</td></tr>
+      </table>
+    </div>
+    <details>
+      <summary>Migration steps after the schema change</summary>
+      <div>
+        <ol>
+          <li>Drop the <code>jobs</code> view. Create it again from <code>20261006220401_fleet-bridge.sql</code>, so <code>j.*</code> includes <code>shipByDate</code>.</li>
+          <li>Backfill <code>job.shipByDate</code> from the <code>promisedDate</code> of each job's sales order line. The backfill sets <code>app.sync_in_progress</code>, so <code>dispatch_event_batch</code> queues no UPDATE event for each job.</li>
+          <li>Run <code>pnpm run generate:types</code>.</li>
+          <li>Add the manifest rule.</li>
+          <li>Run <code>pnpm --filter @carbon/database authz migration customer-location-transit-time</code>.</li>
+          <li>Check each view that selects <code>shippingMethod.*</code>, <code>job.*</code> or <code>shipment.*</code>.</li>
+        </ol>
+        <p>A view that lists its columns does not show the new columns until a migration creates it again.</p>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Done when</h2>
+    <ul class="checks">
+      <li><code>addBusinessDays("2026-11-20", 3, ∅)</code> returns <code>"2026-11-25"</code>. With <code>"2026-11-23"</code> in the holiday set, it returns <code>"2026-11-26"</code>.</li>
+      <li><code>subtractBusinessDays("2026-11-23", 1, ∅)</code> returns <code>"2026-11-20"</code>.</li>
+      <li>A user sets <strong>Transit Days</strong> = 5 on a shipping method and sees 5 after a reload. The form refuses -1.</li>
+      <li>A ship-to address has an override of 2 days for that shipping method. An order to that address uses 2. An order to another address uses 5.</li>
+      <li>A quote has one line with a lead time of 3 and a 5-day shipping method. After the conversion, the line ship-by date is today + 3 calendar days. The arrive-by date is that date + 5 business days.</li>
+      <li>A quote with a shipping method with no transit days converts as today: arrive-by date = the latest line ship-by date.</li>
+      <li>A user adds a line with no promised date to an order with an arrive-by date. The line's promised date is the arrive-by date − 5 business days.</li>
+      <li>A user moves the arrive-by date 2 days later on an order with 3 open lines. Carbon asks "Recalculate the ship date on 3 lines?".</li>
+      <li>"No" leaves the 3 lines unchanged. "Yes" moves each line.</li>
+      <li>A fully shipped line keeps its date after a "Yes".</li>
+      <li>A line whose ship-by date + transit days falls after the arrive-by date shows "Late to arrive".</li>
+      <li>A job from a line gets <code>shipByDate</code> = the line's <code>promisedDate</code>. A change to the line's date changes <code>job.shipByDate</code>. <code>job.dueDate</code> stays the same.</li>
+      <li>A user deletes the line. The job's <code>shipByDate</code> becomes null.</li>
+      <li>A job with no sales order line has <code>shipByDate</code> null and shows no ship countdown.</li>
+      <li>A job has <code>shipByDate</code> = the plant's today + 3. Its card on the MES operations board shows "Ships in 3 days".</li>
+      <li>A card with yesterday's date shows "1 day late" in red. A Completed job shows no label.</li>
+      <li>The MES jobs list and the assigned view (board and list) show the same labels for the same jobs.</li>
+      <li>A user adds a line with no promised date. The delivery date check runs on the default date.</li>
+      <li>A company has no holidays. A user posts a sales shipment with a 5-day shipping method on Friday 2026-11-20. <code>estimatedDeliveryDate</code> is Friday 2026-11-27.</li>
+      <li><strong>Mark Delivered</strong> refuses tomorrow's date and a date before the posting date. It saves today's date with <code>deliveredSource</code> = <code>'Manual'</code>.</li>
+      <li><code>recordShipmentDelivery</code> with <code>'Carrier'</code> on a row whose <code>deliveredSource</code> is <code>'Manual'</code> returns an error and changes nothing.</li>
+      <li>A posted shipment shows "Arrives {date} (estimated)" in its header. After <strong>Mark Delivered</strong>, it shows "Delivered {date}".</li>
+      <li>The shipments list shows the <strong>Estimated Delivery</strong> and <strong>Delivered</strong> columns.</li>
+      <li>A shipping method has 5 or more delivered shipments in 90 days. Its drawer shows the count, the average and the 2 on-time rates.</li>
+      <li><strong>Use N days</strong> saves the rounded-up average.</li>
+      <li>A shipment delivered 1 day before its estimate counts as on time.</li>
+      <li>With 4 delivered shipments, the drawer shows "Not enough deliveries yet".</li>
+      <li>A user of company A cannot read or write a <code>customerLocationTransitTime</code> row of company B.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Terms</h2>
+    <dl class="terms">
+      <dt>Ship-by date</dt><dd>The date a line must leave the plant, stored in <code>salesOrderLine.promisedDate</code>. The glossary calls it the Promised Date of the line.</dd>
+      <dt>Arrive-by date</dt><dd>The date the order must reach the customer, stored in <code>salesOrderShipment.receiptPromisedDate</code>. The glossary calls it the Receipt Promised Date.</dd>
+      <dt>Shipping method</dt><dd>The carrier and the service that a shipment goes out on.</dd>
+      <dt>Transit days</dt><dd>The business days from the ship-by date to the arrive-by date, from <code>shippingMethod.transitDays</code> or a transit override.</dd>
+      <dt>Transit override</dt><dd>The transit days for one ship-to address and shipping method pair, stored in <code>customerLocationTransitTime.transitDays</code>.</dd>
+      <dt>Business day</dt><dd>A day from Monday to Friday that is not a <code>holiday</code> row of the company.</dd>
+      <dt>Lane</dt><dd>The input of <code>resolveTransitDays</code>: the company, the shipping method, the ship-to address, the plant and the ship date.</dd>
+      <dt>Estimated delivery date</dt><dd><code>shipment.postingDate</code> + transit days, stored in <code>shipment.estimatedDeliveryDate</code>.</dd>
+      <dt>Delivered date</dt><dd>The date the customer received the goods, stored in <code>shipment.deliveredDate</code>.</dd>
+      <dt>Ship countdown</dt><dd>The calendar days from the plant's today to <code>job.shipByDate</code>, shown as a label on 3 MES screens.</dd>
+      <dt>Plant's today</dt><dd>Today's date in the time zone of the location.</dd>
+      <dt>OTD (on-time delivery)</dt><dd>The share of deliveries that reach the customer on or before the arrive-by date.</dd>
+      <dt>Seam</dt><dd>One of the 2 functions that a later carrier integration plugs into: <code>resolveTransitDays</code> and <code>recordShipmentDelivery</code>.</dd>
+    </dl>
+  </section>
+
+  <footer>
+    Generated by <code>/explain</code> from <code>.ai/specs/2026-11-17-carrier-transit-ship-by-dates.md</code>.
+    If this page and the source disagree, the source is correct.
+  </footer>
+
+</main>
+<script>
+  // Tabs: no dependencies. Works for every [data-tabs] block on the page.
+  document.querySelectorAll("[data-tabs]").forEach(function (root) {
+    var tabs = root.querySelectorAll("[role=tab]");
+    var panels = root.querySelectorAll("[role=tabpanel]");
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener("click", function () {
+        tabs.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); });
+        panels.forEach(function (p, j) { p.hidden = i !== j; });
+      });
+    });
+  });
+
+  // Worked example: business-day math that skips Saturday and Sunday.
+  // Pure day-number arithmetic (days since 1970-01-01), no Date object.
+  (function () {
+    var WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    function toDayNumber(s) {
+      var y = +s.slice(0, 4), m = +s.slice(5, 7), d = +s.slice(8, 10);
+      y -= m <= 2 ? 1 : 0;
+      var era = Math.floor(y / 400), yoe = y - era * 400;
+      var doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1;
+      var doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+      return era * 146097 + doe - 719468;
+    }
+    function fromDayNumber(z) {
+      z += 719468;
+      var era = Math.floor(z / 146097), doe = z - era * 146097;
+      var yoe = Math.floor((doe - Math.floor(doe / 1460) + Math.floor(doe / 36524) - Math.floor(doe / 146096)) / 365);
+      var y = yoe + era * 400;
+      var doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
+      var mp = Math.floor((5 * doy + 2) / 153);
+      var d = doy - Math.floor((153 * mp + 2) / 5) + 1;
+      var m = mp + (mp < 10 ? 3 : -9);
+      if (m <= 2) y += 1;
+      return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+    }
+    function weekday(z) { return (((z + 4) % 7) + 7) % 7; } // 1970-01-01 is a Thursday
+    function isWeekend(z) { var w = weekday(z); return w === 0 || w === 6; }
+    function stepBusinessDays(z, days, direction) {
+      for (var i = 0; i < days; i++) {
+        do { z += direction; } while (isWeekend(z));
+      }
+      return z;
+    }
+    function label(z) { return WEEKDAYS[weekday(z)] + " " + fromDayNumber(z); }
+
+    var dateInput = document.getElementById("calc-date");
+    var daysInput = document.getElementById("calc-days");
+    var outWeekday = document.getElementById("calc-weekday");
+    var outAdd = document.getElementById("calc-add");
+    var outLast = document.getElementById("calc-last");
+    var outSub = document.getElementById("calc-sub");
+    var note = document.getElementById("calc-note");
+
+    // latestShipByDate: with 0 transit days, the line ships on the arrive-by date.
+    // Else count back from the last business day on or before the arrive-by date.
+    function lastBusinessDayOnOrBefore(z) {
+      while (isWeekend(z)) { z -= 1; }
+      return z;
+    }
+
+    function recompute() {
+      var date = dateInput.value;
+      var days = Number(daysInput.value);
+      outWeekday.textContent = outAdd.textContent = outLast.textContent = outSub.textContent = "—";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { note.textContent = "Enter a date."; return; }
+      var z = toDayNumber(date);
+      outWeekday.textContent = WEEKDAYS[weekday(z)];
+      if (daysInput.value === "" || !Number.isInteger(days) || days < 0) {
+        note.textContent = "Transit days must be a whole number, 0 or more. The form refuses -1.";
+        return;
+      }
+      outAdd.textContent = label(stepBusinessDays(z, days, 1));
+      if (days === 0) {
+        outLast.textContent = "not used";
+        outSub.textContent = label(z);
+        note.textContent = "With 0 transit days, the estimate is the posting date, and the line ships on the arrive-by date.";
+        return;
+      }
+      var last = lastBusinessDayOnOrBefore(z);
+      outLast.textContent = label(last);
+      outSub.textContent = label(stepBusinessDays(last, days, -1));
+      note.textContent = isWeekend(z)
+        ? "The date is a weekend day. The first step of the estimate lands on the Monday after. The ship-by count starts from the Friday before."
+        : "Each step skips Saturday and Sunday.";
+    }
+    dateInput.addEventListener("input", recompute);
+    daysInput.addEventListener("input", recompute);
+    recompute();
+  })();
+</script>
+</body>
+</html>

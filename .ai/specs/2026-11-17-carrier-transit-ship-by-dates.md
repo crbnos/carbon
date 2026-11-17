@@ -132,9 +132,11 @@ Holidays come from `getHolidayDateSet` (`sales.service.ts`). It is the Kysely si
 | Event | Behavior |
 |-------|----------|
 | Quote → order | Arrive-by = the latest line ship-by date + transit days (business days). The lane uses `quoteShipment.shippingMethodId` and the new order's `customerLocationId`, because `quoteShipment` has no ship-to. If the transit days are unknown, arrive-by = the latest line ship-by date (today's behavior). `receiptRequestedDate` keeps its current fallback. |
-| A user adds a line with no `promisedDate` | If the order has an arrive-by date and known transit days, Carbon sets `promisedDate` = arrive-by − transit days. |
+| A user adds a line with no `promisedDate` | If the order has an arrive-by date and known transit days, Carbon sets `promisedDate` = arrive-by − transit days (`latestShipByDate`). |
 | A user changes the arrive-by date, the shipping method or the ship-to address | Carbon calculates the new ship-by date for each line. If 1 or more lines have a different `promisedDate`, Carbon asks "Recalculate the ship date on N lines?". Carbon never changes a line without a yes. |
 | A line's ship-by date + transit days falls after the arrive-by date | The line shows a "Late to arrive" warning with the estimated arrival date. |
+
+Carriers deliver on business days. So `latestShipByDate` (`sales.utils.ts`) counts the transit days back from the last business day on or before the arrive-by date. An order due on a Saturday ships in time for Friday. With 0 transit days, the line ships on the arrive-by date.
 
 The recalculation changes only lines whose `salesOrderLineType` is in `DELIVERY_CHECKED_LINE_TYPES` (`sales.utils.ts`) and whose `sentComplete` is false.
 
@@ -420,6 +422,9 @@ Add glossary terms for `shippingMethod.transitDays`, `customerLocationTransitTim
 | Company holidays differ from carrier holidays | Low | Most carriers close on the major national holidays. A company that needs exact carrier calendars waits for the carrier integration. |
 | The statistics query reads many shipments | Low | It reads 90 days for one shipping method, and 3 date columns only. |
 | The new `jobs` view drops a column that a later migration added | High | Copy the view from its latest migration (`20261006220401_fleet-bridge.sql`). Compare the column lists before and after. |
+| An order is confirmed between the lock check and the recalculation write | Low | The lock check runs before the transaction. The window is one request long. |
+| A recalculation proposes a ship-by date before today | Low | The delivery date check runs on every moved line and flags a date that cannot be met. |
+| The demo datasets have no transit overrides and no delivered shipments | Low | The shipping method statistics read "Not enough deliveries yet" on a new demo company. Seed delivered shipments when a demo needs the statistics. |
 | `job.shipByDate` and `job.dueDate` confuse planners | Med | The ERP job screens do not show `shipByDate` in v1. The MES label says "Ships", and the existing text says "Due". |
 
 ## Out of Scope
@@ -462,3 +467,4 @@ Add glossary terms for `shippingMethod.transitDays`, `customerLocationTransitTim
 - 2026-11-17: Created. Phases 1 and 3 of the carrier transit design. Phase 2, the carrier integration, comes later.
 - 2026-11-17: Added the competitor and delivery research and the 2 integration seams (section 8). Added `deliveredSource`, the 2 on-time rates, and the delivery dates on the shipment header and list. Joined the delivery date check, and gave the assigned view the plant's today. Open Questions records 4 autonomous decisions.
 - 2026-11-17: Built. Deviations from the plan: holidays through a Kysely `getHolidayDateSet`; plain triggers, not interceptors; `job_set_ship_by_date` also resets a direct write of `shipByDate`; the override upsert checks `create: sales` inside the function; the line form shows "Late to arrive" for the saved date only; a new line in the explorer starts from `defaultShipBy`; the demo shipping methods get transit days from their names.
+- 2026-11-17: Self-review and browser test fixes: `latestShipByDate` for a weekend or holiday arrive-by; the backfill sets `app.sync_in_progress`; Mark Delivered validates the date and reports a missing shipment as not found; Use N days remounts the shipping method form; the new line route starts from `defaultShipBy`. Browser verification passed for every flow (playbook `.ai/playbooks/carrier-transit-ship-by-dates.md`).
