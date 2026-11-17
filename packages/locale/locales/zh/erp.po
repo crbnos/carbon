@@ -27241,6 +27241,9 @@ msgstr "为此账户选择新的父分组。"
 msgid "Select a plan"
 msgstr "选择计划"
 
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "选择一个计划开始使用。随时可以切换或取消。"
+
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "选择一个计划开始使用。前 {0} 天不会收费。随时可以切换或取消。"

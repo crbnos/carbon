@@ -27241,6 +27241,9 @@ msgstr "このアカウントの新しい親グループを選択してくださ
 msgid "Select a plan"
 msgstr "プランを選択"
 
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "プランを選択して開始します。いつでも切り替えまたはキャンセルできます。"
+
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "プランを選択して開始します。最初の{0}日間は料金がかかりません。いつでも切り替えまたはキャンセルできます。"

@@ -27241,6 +27241,9 @@ msgstr "이 계정의 새 상위 그룹을 선택하세요."
 msgid "Select a plan"
 msgstr "플랜 선택"
 
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "시작하려면 플랜을 선택하세요. 언제든지 변경하거나 취소할 수 있습니다."
+
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "시작하려면 플랜을 선택하세요. 처음 {0}일 동안은 요금이 청구되지 않습니다. 언제든지 변경하거나 취소할 수 있습니다."

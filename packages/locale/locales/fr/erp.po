@@ -27241,6 +27241,9 @@ msgstr "Sélectionnez un nouveau groupe parent pour ce compte."
 msgid "Select a plan"
 msgstr "Sélectionner un plan"
 
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "Sélectionnez un plan pour commencer. Changez ou annulez à tout moment."
+
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Sélectionnez un plan pour commencer. Vous ne serez pas facturé pendant les {0} premiers jours. Changez ou annulez à tout moment."
