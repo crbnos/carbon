@@ -174,9 +174,12 @@ function toError(err: unknown, defaultStatus: number): ServerFnError {
     return new ServerFnError("", status, {}, { cause: err });
   }
   const text = typeof err === "string" ? err : message;
+  const shown = typeof text === "string" && !isDataLayerError(err);
   return new ServerFnError(
-    typeof text === "string" && !isDataLayerError(err) ? text : "",
-    isHttpErrorStatus(status) ? status : defaultStatus
+    shown ? text : "",
+    isHttpErrorStatus(status) ? status : defaultStatus,
+    {},
+    shown ? undefined : { cause: err }
   );
 }
 

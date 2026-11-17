@@ -186,6 +186,10 @@ msgstr "{0, plural, one {# überfällig} other {# überfällig}}"
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# Parameter} other {# Parameter}}"
 
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {# Teil fehlt} other {# Teile fehlen}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# Datensatz benötigt Aufmerksamkeit} other {# Datensätze benötigen Aufmerksamkeit}}"
@@ -352,6 +356,11 @@ msgstr "{0} verfügbar"
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
 msgstr "{0} verfügbar in {owner} hier"
+
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "{0} verfügbar, {1} reserviert"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -1262,6 +1271,9 @@ msgstr "{quantity} ohne Los"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} ohne Seriennummer"
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {Kein offener Fertigungsauftrag hat alle Teile} one {In Produktion bei # Fertigungsauftrag mit allen Teilen auf Lager} other {In Produktion bei # Fertigungsaufträgen mit allen Teilen auf Lager}}"
+
 msgid "{received} of {ordered}"
 msgstr "{received} von {ordered}"
 
@@ -1381,6 +1393,9 @@ msgstr "{value, plural, one {# Tag} other {# Tage}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# Position unterscheidet sich von der erwarteten Menge} other {# Positionen unterscheiden sich von der erwarteten Menge}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {Bei keinem offenen Fertigungsauftrag fehlen Teile} one {In Produktion bei # Fertigungsauftrag, dem Teile fehlen} other {In Produktion bei # Fertigungsaufträgen, denen Teile fehlen}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings} benötigen eine Nachverfolgung"
@@ -3674,6 +3689,9 @@ msgstr "Alle Dokumente"
 
 msgid "All gauges"
 msgstr "Alle Prüfmittel"
+
+msgid "All in stock"
+msgstr "Alles auf Lager"
 
 msgid "All item types"
 msgstr "Alle Artikeltypen"
@@ -6377,8 +6395,8 @@ msgstr "Eine Methode in Carbon genannt — die Komponenten plus Arbeitsgänge, d
 msgid "Camera"
 msgstr "Kamera"
 
-msgid "Can Make Now"
-msgstr ""
+msgid "Can Start More"
+msgstr "Weitere startbar"
 
 msgid "Can't be restored"
 msgstr "Kann nicht wiederhergestellt werden"
@@ -13826,9 +13844,6 @@ msgstr "Fertigwaren"
 msgid "Finished Goods (default)"
 msgstr "Fertigwaren (Standard)"
 
-msgid "Finished Goods Available"
-msgstr ""
-
 msgid "finishes"
 msgstr "Zusätzlicher Abzug im ersten Jahr, bevor der reguläre MACRS-Plan beginnt."
 
@@ -14159,9 +14174,6 @@ msgstr "Von und Nach sind dieselbe Lagereinheit"
 msgid "From and To can't be the same storage unit"
 msgstr "Von und Nach dürfen nicht dieselbe Lagereinheit sein"
 
-msgid "From available component stock"
-msgstr ""
-
 msgid "From customer"
 msgstr "Vom Kunden"
 
@@ -14179,6 +14191,13 @@ msgstr "Aus Zeitraum"
 
 msgid "From previous week"
 msgstr "Aus der vorherigen Woche"
+
+msgid "From stock no job or order has claimed"
+msgstr "Aus Bestand, den kein Fertigungsauftrag oder Auftrag beansprucht"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "Aus Bestand, den kein Fertigungsauftrag oder Auftrag beansprucht. {0}, wenn reservierter Bestand verwendet würde"
 
 msgid "From Storage Unit"
 msgstr "Von Lagereinheit"
@@ -15251,9 +15270,6 @@ msgstr "Falls bestellt, ist kein Fehlbestand in den nächsten 48 Wochen geplant"
 
 msgid "If something is off track"
 msgstr "Wenn etwas aus dem Ruder läuft"
-
-msgid "If stock committed to open orders were used"
-msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Wenn Sie die Teilenummern ändern möchten, klicken Sie bitte auf Abbrechen und weisen Sie manuell die Teile für jede Position vor dem Umwandeln zu."
@@ -16516,11 +16532,17 @@ msgstr "Fertigungsaufträge für {orderId}"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "Fertigungsaufträge für {orderId}: {jobCount}, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "Fertigungsaufträge in Produktion"
+
 msgid "Jobs Required"
 msgstr "Erforderliche Fertigungsaufträge"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "Fertigungsaufträge, die diesen Artikel auf ihrer Stückliste haben"
+
+msgid "Jobs Waiting"
+msgstr "Wartende Fertigungsaufträge"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -21058,11 +21080,6 @@ msgstr "Verfügbar"
 msgid "On Hand"
 msgstr "Verfügbar"
 
-#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
-#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
-msgid "On hand {0}, committed {1}"
-msgstr ""
-
 msgid "On hand {before} to {after}"
 msgstr "Verfügbar: {before} auf {after}"
 
@@ -24465,6 +24482,9 @@ msgstr "Bereit zur Einlagerung"
 
 msgid "Ready for Quote"
 msgstr "Angebotsbereit"
+
+msgid "Ready to Finish"
+msgstr "Bereit zum Abschließen"
 
 msgid "ready to keep or revert"
 msgstr "bereit zum Behalten oder Zurücksetzen"
@@ -28293,6 +28313,9 @@ msgstr "Fehlmenge {0}"
 
 msgid "Short Description"
 msgstr "Kurzbeschreibung"
+
+msgid "Short for Jobs in Production"
+msgstr "Fehlmenge bei Fertigungsaufträgen in Produktion"
 
 msgid "Short pick {itemName}"
 msgstr "Kurzbestand {itemName}"
@@ -32417,9 +32440,6 @@ msgstr "Dreiwege-Abgleich"
 msgid "Through {0}"
 msgstr "Bis {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
-
 msgid "Thumbnail"
 msgstr "Vorschaubild"
 
@@ -32612,6 +32632,9 @@ msgstr "Zu versenden"
 
 msgid "To Ship and Receive"
 msgstr "Zu versenden und zu empfangen"
+
+msgid "To Start More"
+msgstr "Noch zu starten"
 
 msgid "To Storage Unit"
 msgstr "Zu Lagereinheit"
@@ -33966,9 +33989,6 @@ msgstr "Verwendungen in diesem Fertigungsauftrag"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Verwendet Baugruppe {0} · {1}"
 
-msgid "Using All On Hand"
-msgstr ""
-
 msgid "VAC"
 msgstr "VAC"
 
@@ -34444,6 +34464,9 @@ msgstr "Wartet"
 msgid "Waiting for the first sync"
 msgstr "Warten auf die erste Synchronisierung"
 
+msgid "Waiting on Parts"
+msgstr "Warten auf Teile"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Gehen Sie mit Ihrem Champion jeden Bereich durch und deaktivieren Sie alles, das außerhalb des Umfangs liegt. Codes werden gelesen als Modul.Bereich.Nummer (ACC.GL.01 = Buchhaltung, Hauptbuch, Position 1)."
 
@@ -34698,6 +34721,9 @@ msgstr "{translatedTerm} ist was?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Was geleased wird, zum Beispiel Gabelstapler FL-12"
 
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "Was an diesem Standort vorrätig ist, welche offenen Fertigungsaufträge die Teile zum Abschließen haben und woran es den übrigen fehlt. Das Starten weiterer Fertigungsaufträge wird über jede Ebene der Stückliste geprüft, mit dem Ausschuss jedes Artikels."
+
 msgid "What is the primary contact?"
 msgstr "Wer ist der Hauptkontakt?"
 
@@ -34718,6 +34744,9 @@ msgstr "Welche Art von Bestellung dies ist — Standard-Waren, Services, Fremdbe
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Welche Art von Angebot dies ist — Standardlieferantengebot, Pauschalvereinbarungspreisgebot oder Auftragsfertigung; bestimmt das PO-Zeilenlayout bei der Umwandlung."
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "Was neue Fertigungsaufträge begrenzt, aus Bestand, den kein Fertigungsauftrag oder Auftrag beansprucht."
 
 msgid "What posting this run will write, by account."
 msgstr "Was diese Ausführung nach Konto buchen wird."
@@ -34742,6 +34771,9 @@ msgstr "Was der Kunde bezahlt, abgerechnet zu den Abrechnungsereignissen der Pos
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Wovon der Countdown der Fälligkeitsfrist beginnt (Rechnungsdatum, Monatsende usw.)."
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "Was die auf Teile wartenden Fertigungsaufträge nach Abzug des Bestands noch benötigen. Diese Teile fremd beschaffen oder in Eigenfertigung herstellen, um sie abzuschließen."
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "Was beim Leasing gezahlt wird und wann. Die Aktivierung bewertet die Leasingverbindlichkeit anhand dieser Zeilen. Klicken Sie auf eine Zelle, um sie zu ändern."

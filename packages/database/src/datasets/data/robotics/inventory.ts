@@ -21,14 +21,14 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "MOT-AC-200W", qty: 9, shelf: "A2-L2" },
   { item: "GBX-HD-80", qty: 5, shelf: "A2-L1" },
   { item: "GBX-HD-50", qty: 8, shelf: "A2-L1" },
-  { item: "ENC-ABS-19", qty: 12, shelf: "ESD-Cage" },
+  { item: "ENC-ABS-19", qty: 14, shelf: "ESD-Cage" },
   { item: "DRV-SRV-400", qty: 18, shelf: "ESD-Cage" },
   { item: "PCB-BARE-4L", qty: 40, shelf: "ESD-Cage" },
   { item: "SNS-FT-6AX", qty: 3, shelf: "ESD-Cage" },
   { item: "BRG-CRB-100", qty: 16, shelf: "A2-L3" },
   { item: "FST-M8-SS", qty: 600, shelf: "A1-L1" },
   { item: "FST-M5-SS", qty: 400, shelf: "A1-L1" },
-  { item: "MAT-AL6061-BIL", qty: 485, shelf: "A3-L1" },
+  { item: "MAT-AL6061-BIL", qty: 488, shelf: "A3-L1" },
   { item: "MAT-STEEL-SHT", qty: 220, shelf: "A3-L1" },
   { item: "MAT-CBL-16AWG", qty: 800, shelf: "A3-L2" },
   { item: "MAT-CONN-M23", qty: 60, shelf: "A1-L2" },
@@ -42,6 +42,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "ENC-ABS-19",
+    shelf: "ESD-Cage",
     entities: [
       { readableId: "LOT-ENC-2607", quantity: 8 },
       { readableId: "LOT-ENC-2608", quantity: 4, expiresOffset: 30 },
@@ -50,6 +51,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "MOT-AC-750W",
+    shelf: "ESD-Cage",
     entities: [
       { readableId: "MOT750-SN-0051", quantity: 1 },
       { readableId: "MOT750-SN-0052", quantity: 1 },
@@ -59,6 +61,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "MAT-AL6061-BIL",
+    shelf: "A3-L1",
     entities: [
       { readableId: "LOT-AL6061-2608", quantity: 300 },
       { readableId: "LOT-AL6061-2609", quantity: 180 },

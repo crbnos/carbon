@@ -9,8 +9,8 @@
 
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { type FailureReason, redirect } from "@carbon/utils";
+import { flash, flashData } from "@carbon/auth/session.server";
+import { type FailureReason, type FormError, redirect } from "@carbon/utils";
 import type { z } from "zod";
 import {
   type RouteResult,
@@ -18,6 +18,7 @@ import {
   type ServiceFn,
   toResult
 } from "./service-fn.server";
+import { staysOnForm } from "./stay-on-form";
 
 /**
  * The app's router type. The app adds it once:
@@ -106,8 +107,11 @@ export function carbonFor(auth: CallerAuth): Api<RegisteredRouter> {
 /**
  * The response to a form that NAVIGATES (no fetcher, so no `useAction` to
  * toast the result): `respond(request, result).redirect(to, { message })`
- * redirects with the result's error, or with `message`, as the flash; a
- * refused call goes to `onError` when given. A form submitted through a
+ * redirects with `message` as the flash. A refused POST from the page that
+ * owns the action stays on its form, with the error as the flash and as
+ * `{ formError }` (shown by `ValidatedForm`), so what was typed is kept. It
+ * goes to `onError` instead when given; a loader, or a post from another page
+ * to an action-only route, still redirects (`staysOnForm`). A form submitted through a
  * fetcher returns the result instead.
  */
 export function respond(
@@ -122,13 +126,19 @@ export function respond(
       { message, onError }: { message?: string; onError?: string } = {}
     ): Promise<never> {
       if (result.error) {
-        throw redirect(
-          onError ?? to,
-          await flash(request, {
-            ...error(null, result.error.title ?? result.error.message),
-            ...(result.error.reason && { reason: result.error.reason })
-          })
-        );
+        const failure = {
+          ...error(null, result.error.title ?? result.error.message),
+          ...(result.error.reason && { reason: result.error.reason })
+        };
+        if (onError || !staysOnForm(request)) {
+          throw redirect(onError ?? to, await flash(request, failure));
+        }
+        const formError: FormError = {
+          message: failure.message ?? result.error.message,
+          reason: result.error.reason ?? null
+        };
+        // Typed `never` like the redirects: only the form reads `formError`, never the route.
+        return flashData(request, failure, { formError }) as unknown as never;
       }
       if (message) throw redirect(to, await flash(request, success(message)));
       throw redirect(to);

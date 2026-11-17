@@ -186,6 +186,10 @@ msgstr "{0, plural, one {# 期限超過} other {# 期限超過}}"
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# パラメータ} other {# パラメータ}}"
 
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {部品 # 点が不足} other {部品 # 点が不足}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 件のレコードが対応を要しています} other {# 件のレコードが対応を要しています}}"
@@ -352,6 +356,11 @@ msgstr "{0} 利用可能"
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
 msgstr "{0}は{owner}でここで利用可能です"
+
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "利用可能 {0}、引当済 {1}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -1262,6 +1271,9 @@ msgstr "{quantity}（バッチなし）"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} シリアル番号なし"
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {全部品が揃っているオープンの製造指図はありません} one {全部品が在庫にある製造指図 # 件が生産中} other {全部品が在庫にある製造指図 # 件が生産中}}"
+
 msgid "{received} of {ordered}"
 msgstr "{ordered} 中 {received}"
 
@@ -1381,6 +1393,9 @@ msgstr "{value, plural, one {# 日} other {# 日}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {部品が不足しているオープンの製造指図はありません} one {部品不足の製造指図 # 件が生産中} other {部品不足の製造指図 # 件が生産中}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings} 件のフォローアップが必要です"
@@ -3674,6 +3689,9 @@ msgstr "すべてのドキュメント"
 
 msgid "All gauges"
 msgstr "すべての測定器"
+
+msgid "All in stock"
+msgstr "すべて在庫あり"
 
 msgid "All item types"
 msgstr "すべての品目タイプ"
@@ -6377,8 +6395,8 @@ msgstr "Carbonで「製法」と呼ばれるもの — 部品を製造するた�
 msgid "Camera"
 msgstr "カメラ"
 
-msgid "Can Make Now"
-msgstr ""
+msgid "Can Start More"
+msgstr "追加で着手可能"
 
 msgid "Can't be restored"
 msgstr "復元できません"
@@ -13826,9 +13844,6 @@ msgstr "完成品"
 msgid "Finished Goods (default)"
 msgstr "完成品（デフォルト）"
 
-msgid "Finished Goods Available"
-msgstr ""
-
 msgid "finishes"
 msgstr "通常のMACRSスケジュールが始まる前に取られた初年度の追加控除。"
 
@@ -14159,9 +14174,6 @@ msgstr "移動元と移動先は同じ保管ユニットです"
 msgid "From and To can't be the same storage unit"
 msgstr "移動元と移動先に同じ保管ユニットは指定できません"
 
-msgid "From available component stock"
-msgstr ""
-
 msgid "From customer"
 msgstr "得意先から"
 
@@ -14179,6 +14191,13 @@ msgstr "開始期間"
 
 msgid "From previous week"
 msgstr "前の週から"
+
+msgid "From stock no job or order has claimed"
+msgstr "どの製造指図・受注にも引き当てられていない在庫から"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "どの製造指図・受注にも引き当てられていない在庫から。引当済在庫も使用できる場合は{0}"
 
 msgid "From Storage Unit"
 msgstr "保管ユニットから"
@@ -15251,9 +15270,6 @@ msgstr "発注済の場合、今後48週間での欠品は見込まれていま�
 
 msgid "If something is off track"
 msgstr "何か問題が生じた場合"
-
-msgid "If stock committed to open orders were used"
-msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "部品番号を変更したい場合は、[キャンセル]をクリックして、変換する前に各行アイテムの部品を手動で割り当ててください。"
@@ -16516,11 +16532,17 @@ msgstr "{orderId}の製造指図"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "{orderId}の製造指図: {jobCount}件, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "生産中の製造指図"
+
 msgid "Jobs Required"
 msgstr "必要な製造指図"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "この品目が部品表に含まれる製造指図"
+
+msgid "Jobs Waiting"
+msgstr "待機中の製造指図"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -21058,11 +21080,6 @@ msgstr "手持在庫"
 msgid "On Hand"
 msgstr "手持在庫"
 
-#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
-#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
-msgid "On hand {0}, committed {1}"
-msgstr ""
-
 msgid "On hand {before} to {after}"
 msgstr "手持在庫: {before} から {after}"
 
@@ -24465,6 +24482,9 @@ msgstr "格納可能"
 
 msgid "Ready for Quote"
 msgstr "見積準備完了"
+
+msgid "Ready to Finish"
+msgstr "完成準備完了"
 
 msgid "ready to keep or revert"
 msgstr "保持または復元の準備完了"
@@ -28293,6 +28313,9 @@ msgstr "不足 {0}"
 
 msgid "Short Description"
 msgstr "短い説明"
+
+msgid "Short for Jobs in Production"
+msgstr "生産中の製造指図の不足"
 
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
@@ -32417,9 +32440,6 @@ msgstr "三点照合"
 msgid "Through {0}"
 msgstr "{0}まで"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
-
 msgid "Thumbnail"
 msgstr "サムネイル"
 
@@ -32612,6 +32632,9 @@ msgstr "出荷待ち"
 
 msgid "To Ship and Receive"
 msgstr "出荷待ちおよび入荷待ち"
+
+msgid "To Start More"
+msgstr "追加で着手するための必要数"
 
 msgid "To Storage Unit"
 msgstr "保管ユニットへ"
@@ -33966,9 +33989,6 @@ msgstr "この製造指図での使用"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "サブアセンブリ {0} · {1} を使用"
 
-msgid "Using All On Hand"
-msgstr ""
-
 msgid "VAC"
 msgstr "VAC"
 
@@ -34444,6 +34464,9 @@ msgstr "待機中"
 msgid "Waiting for the first sync"
 msgstr "最初の同期を待っています"
 
+msgid "Waiting on Parts"
+msgstr "部品待ち"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "チャンピオンと一緒に各エリアを確認し、範囲外のものをトグルしてください。コードはModule.Area.Numberを読みます（ACC.GL.01 = 会計、総勘定元帳、品目1）。"
 
@@ -34698,6 +34721,9 @@ msgstr "{translatedTerm}とは何ですか?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "リースされている内容（例：Forklift FL-12など）"
 
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "この拠点の手持ち在庫、完成に必要な部品がそろっているオープンの製造指図、およびそれ以外の製造指図の不足部品を表示します。追加着手は部品表のすべての階層を、各品目のスクラップを含めて確認します。"
+
 msgid "What is the primary contact?"
 msgstr "主担当者はどなたですか？"
 
@@ -34718,6 +34744,9 @@ msgstr "このPOの種類（標準商品、外注サービス、外注加工、�
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "この見積の種類 — 標準仕入先見積、ブランケット契約価格見積、または契約製造見積。変換時にPOラインレイアウトを決定します。"
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "新規の製造指図の上限を決めているもの（どの製造指図・受注にも引き当てられていない在庫から）。"
 
 msgid "What posting this run will write, by account."
 msgstr "このランが勘定別に転記する内容。"
@@ -34742,6 +34771,9 @@ msgstr "得意先が支払う額で、明細の請求イベント時に請求さ
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "在庫を充当した後も部品待ちの製造指図になお必要な数量です。完成させるには、これらを購入または内製してください。"
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "リースが支払う金額とその時期。有効化により、リース債務がこれらの行から評価されます。セルをクリックして変更してください。"

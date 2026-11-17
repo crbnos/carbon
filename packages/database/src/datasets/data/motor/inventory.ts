@@ -17,7 +17,7 @@ import type {
 // Parts that are bought (Buy replenishment) get stock; Make parts do not.
 // Every `shelf` must match a ShelfSpec name in foundation.ts or the row is lost.
 export const OPENING_STOCK: OpeningStockSpec[] = [
-  { item: "MAG-NDFB-45", qty: 480, shelf: "Magnet-Vault" },
+  { item: "MAG-NDFB-45", qty: 483, shelf: "Magnet-Vault" },
   { item: "MAG-NDFB-38", qty: 360, shelf: "Magnet-Vault" },
   { item: "BRG-6206-C3", qty: 60, shelf: "A2-L1" },
   { item: "BRG-6308-C3", qty: 44, shelf: "A2-L1" },
@@ -28,7 +28,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "FST-M6-SS", qty: 900, shelf: "A1-L1" },
   { item: "FST-M10-SS", qty: 500, shelf: "A1-L1" },
   { item: "NPL-SS-STD", qty: 150, shelf: "A1-L3" },
-  { item: "MAT-LAM-M19", qty: 2440, shelf: "A3-L1" },
+  { item: "MAT-LAM-M19", qty: 2443, shelf: "A3-L1" },
   { item: "MAT-CU-18AWG", qty: 640, shelf: "Winding-Crib" },
   { item: "MAT-INS-NOMEX", qty: 85, shelf: "Winding-Crib" },
   { item: "MAT-VARNISH", qty: 22, shelf: "A3-L3" },
@@ -42,6 +42,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "MAG-NDFB-45",
+    shelf: "Magnet-Vault",
     entities: [
       { readableId: "LOT-MAG45-2607", quantity: 300 },
       { readableId: "LOT-MAG45-2608", quantity: 180 },
@@ -50,6 +51,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "MAG-NDFB-38",
+    shelf: "Magnet-Vault",
     entities: [
       { readableId: "LOT-MAG38-2606", quantity: 200 },
       { readableId: "LOT-MAG38-2607", quantity: 160 }
@@ -57,6 +59,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "ENC-INC-2048",
+    shelf: "A1-L3",
     entities: [
       { readableId: "ENC2048-SN-0031", quantity: 1 },
       { readableId: "ENC2048-SN-0032", quantity: 1 },
@@ -68,6 +71,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "MAT-LAM-M19",
+    shelf: "A3-L1",
     entities: [
       { readableId: "LOT-M19-2606", quantity: 1400 },
       { readableId: "LOT-M19-2607", quantity: 1000 },
@@ -88,6 +92,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   },
   {
     item: "MAT-CU-18AWG",
+    shelf: "Winding-Crib",
     entities: [
       { readableId: "LOT-CU18-2608", quantity: 400 },
       { readableId: "LOT-CU18-2609", quantity: 240, expiresOffset: 30 }
