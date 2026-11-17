@@ -47,7 +47,12 @@ export default function ItemBuildable({
   const [draft, setDraft] = useState<number>(Number.NaN);
   const [target, setTarget] = useState<number | undefined>(undefined);
 
-  const { data, isFetching, error } = useLoaderQuery<Buildable>(
+  // The read in flight: the card dims and Check Quantity waits for it.
+  const {
+    data,
+    isFetching: isLoading,
+    error
+  } = useLoaderQuery<Buildable>(
     path.to.api.itemBuildable(itemId, locationId, target),
     { keepPreviousData: true }
   );
@@ -91,7 +96,7 @@ export default function ItemBuildable({
         </CardDescription>
       </CardHeader>
       <CardContent
-        className={cn("flex flex-col gap-6", isFetching && "opacity-60")}
+        className={cn("flex flex-col gap-6", isLoading && "opacity-60")}
       >
         <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
           {tiles.map((tile) => (
@@ -187,7 +192,12 @@ export default function ItemBuildable({
                 <NumberInput size="sm" placeholder={t`Quantity`} />
               </NumberField>
             </div>
-            <Button type="submit" variant="secondary" isLoading={isFetching}>
+            <Button
+              type="submit"
+              variant="secondary"
+              isDisabled={isLoading}
+              isLoading={isLoading}
+            >
               <Trans>Check Quantity</Trans>
             </Button>
             {data && (
