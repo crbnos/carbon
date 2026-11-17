@@ -26,9 +26,11 @@ import {
   Tr
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { useQuantityFormatter } from "~/hooks";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { type ReactNode, useState } from "react";
+import { Hyperlink } from "~/components";
+import { useDateFormatter, useQuantityFormatter } from "~/hooks";
+import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { path } from "~/utils/path";
 
 /**
@@ -62,21 +64,46 @@ export default function ItemBuildable({
     !!data && (data.unitMismatches.length > 0 || data.cycleItems.length > 0);
 
   const short = data?.components.filter((c) => c.quantityShort > 0) ?? [];
-  const tiles = [
+  const jobs = data?.jobs ?? [];
+  const readyJobs = jobs.filter((job) => job.hasAllParts === true).length;
+  const waitingJobs = jobs.filter((job) => job.hasAllParts === false).length;
+  const tiles: { label: string; value?: number | null; hint: ReactNode }[] = [
     {
-      label: t`Can Make Now`,
+      label: t`On Hand`,
+      value: data?.quantityOnHand,
+      hint: t`${formatQuantity(data?.quantityAvailable ?? 0)} available, ${formatQuantity(data?.quantityCommitted ?? 0)} committed`
+    },
+    {
+      label: t`Ready to Finish`,
+      value: data?.quantityReadyToFinish,
+      hint: (
+        <Plural
+          value={readyJobs}
+          _0="No open job has every part"
+          one="In production on # job with every part in stock"
+          other="In production on # jobs with every part in stock"
+        />
+      )
+    },
+    {
+      label: t`Waiting on Parts`,
+      value: data?.quantityWaitingOnParts,
+      hint: (
+        <Plural
+          value={waitingJobs}
+          _0="No open job is short of parts"
+          one="In production on # job short of parts"
+          other="In production on # jobs short of parts"
+        />
+      )
+    },
+    {
+      label: t`Can Start More`,
       value: data?.quantityBuildable,
-      hint: t`From available component stock`
-    },
-    {
-      label: t`Using All On Hand`,
-      value: data?.quantityBuildableFromOnHand,
-      hint: t`If stock committed to open orders were used`
-    },
-    {
-      label: t`Finished Goods Available`,
-      value: data?.quantityAvailable,
-      hint: t`On hand ${formatQuantity(data?.quantityOnHand ?? 0)}, committed ${formatQuantity(data?.quantityCommitted ?? 0)}`
+      hint:
+        typeof data?.quantityBuildableFromOnHand === "number"
+          ? t`From stock no job or order has claimed. ${formatQuantity(data.quantityBuildableFromOnHand)} if committed stock were used`
+          : t`From stock no job or order has claimed`
     }
   ];
 
@@ -88,9 +115,9 @@ export default function ItemBuildable({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Through every level of the bill of materials at this location.
-            Subassemblies in stock are used before they are built, except on
-            Make to Order lines, and required quantities include each item's
+            What is on hand at this location, which open jobs have the parts to
+            finish, and what the others are short of. Starting more is checked
+            through every level of the bill of materials, with each item's
             scrap.
           </Trans>
         </CardDescription>
@@ -98,7 +125,7 @@ export default function ItemBuildable({
       <CardContent
         className={cn("flex flex-col gap-6", isLoading && "opacity-60")}
       >
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           {tiles.map((tile) => (
             <div key={tile.label} className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">
@@ -174,6 +201,25 @@ export default function ItemBuildable({
               </ul>
             </AlertDescription>
           </Alert>
+        )}
+
+        {data && data.jobShortages.length > 0 && (
+          <JobShortages shortages={data.jobShortages} />
+        )}
+
+        {jobs.length > 0 && <JobsInProduction jobs={jobs} />}
+
+        {data && !blocked && (
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-medium">
+              <Trans>To Start More</Trans>
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                What limits new jobs, from stock no job or order has claimed.
+              </Trans>
+            </p>
+          </div>
         )}
 
         {data && !blocked && (
@@ -314,5 +360,158 @@ export default function ItemBuildable({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** What the jobs waiting on parts lack, the item most jobs wait on first. */
+function JobShortages({ shortages }: { shortages: Buildable["jobShortages"] }) {
+  const formatQuantity = useQuantityFormatter();
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-medium">
+          <Trans>Short for Jobs in Production</Trans>
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            What the jobs waiting on parts still need after stock. Buy or make
+            these to finish them.
+          </Trans>
+        </p>
+      </div>
+      <div className="w-full overflow-x-auto">
+        <Table className="whitespace-nowrap">
+          <Thead>
+            <Tr>
+              <Th>
+                <Trans>Component</Trans>
+              </Th>
+              <Th className="text-right">
+                <Trans>Short</Trans>
+              </Th>
+              <Th className="text-right">
+                <Trans>Jobs Waiting</Trans>
+              </Th>
+              <Th className="text-right">
+                <Trans>On Hand</Trans>
+              </Th>
+              <Th className="text-right">
+                <Trans>Committed</Trans>
+              </Th>
+              <Th className="text-right">
+                <Trans>On Order</Trans>
+              </Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {shortages.map((c) => (
+              <Tr key={c.itemId}>
+                <Td>
+                  <div className="flex flex-col">
+                    <span className="flex items-center gap-2 font-medium">
+                      {c.readableId}
+                      <Badge variant="secondary">
+                        {c.isMade ? <Trans>Make</Trans> : <Trans>Buy</Trans>}
+                      </Badge>
+                    </span>
+                    <span className="max-w-64 truncate text-xs text-muted-foreground">
+                      {c.name}
+                    </span>
+                  </div>
+                </Td>
+                <Td className="text-right tabular-nums text-red-500 font-medium">
+                  {formatQuantity(c.quantityShort)} {c.unitOfMeasureCode}
+                </Td>
+                <Td className="text-right tabular-nums">
+                  {formatQuantity(c.jobs)}
+                </Td>
+                <Td className="text-right tabular-nums">
+                  {formatQuantity(c.quantityOnHand)}
+                </Td>
+                <Td className="text-right tabular-nums">
+                  {formatQuantity(c.quantityCommitted)}
+                </Td>
+                <Td className="text-right tabular-nums">
+                  {formatQuantity(c.quantityOnOrder)}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+/** The item's open jobs and whether stock covers what each still has to issue. */
+function JobsInProduction({ jobs }: { jobs: Buildable["jobs"] }) {
+  const formatQuantity = useQuantityFormatter();
+  const { formatDate } = useDateFormatter();
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium">
+        <Trans>Jobs in Production</Trans>
+      </h3>
+      <div className="w-full overflow-x-auto">
+        <Table className="whitespace-nowrap">
+          <Thead>
+            <Tr>
+              <Th>
+                <Trans>Job</Trans>
+              </Th>
+              <Th>
+                <Trans>Status</Trans>
+              </Th>
+              <Th>
+                <Trans>Due</Trans>
+              </Th>
+              <Th className="text-right">
+                <Trans>Quantity</Trans>
+              </Th>
+              <Th>
+                <Trans>Parts</Trans>
+              </Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {jobs.map((job) => (
+              <Tr key={job.id}>
+                <Td>
+                  <Hyperlink to={path.to.job(job.id)}>
+                    {job.readableId}
+                  </Hyperlink>
+                </Td>
+                <Td>
+                  <JobStatus status={job.status} />
+                </Td>
+                <Td>{job.dueDate ? formatDate(job.dueDate) : "–"}</Td>
+                <Td className="text-right tabular-nums">
+                  {formatQuantity(job.quantityRemaining)}
+                </Td>
+                <Td>
+                  {job.hasAllParts === null ? (
+                    <Badge variant="yellow">
+                      <Trans>Units don't match</Trans>
+                    </Badge>
+                  ) : job.hasAllParts ? (
+                    <Badge variant="green">
+                      <Trans>All in stock</Trans>
+                    </Badge>
+                  ) : (
+                    <Badge variant="red">
+                      <Plural
+                        value={job.shortItems}
+                        one="# part short"
+                        other="# parts short"
+                      />
+                    </Badge>
+                  )}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </div>
+    </div>
   );
 }

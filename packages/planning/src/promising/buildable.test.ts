@@ -53,7 +53,8 @@ const itemsOf = (
           scrapPercentage: scrap[id] ?? 0,
           quantityOnHand: onHand,
           quantityCommitted: committed,
-          quantityOnOrder: 0
+          quantityOnOrder: 0,
+          replenishmentSystem: "Buy"
         }
       ];
     })
@@ -299,6 +300,66 @@ describe("computeBuildable", () => {
     // 5% on FG: 20 need ceil(1) = 21 built, so 21 A.
     const result = run([["FG", "A", 1]], { A: 20 }, undefined, { FG: 0.05 });
     expect(result.quantityBuildable).toBe(19);
+  });
+
+  it("judges open jobs on the stock other demand left, and gives no verdict on a material in another unit", () => {
+    const lines: Line[] = [["FG", "A", 1]];
+    const items = itemsOf(lines, { A: [10, 11], B: 5 }, {});
+    // MRP buys a Buy and Make item, so a shortage of it is not "made".
+    items.set("A", { ...items.get("A")!, replenishmentSystem: "Buy and Make" });
+    const openJob = (
+      readableId: string,
+      day: number,
+      quantityRemaining: number,
+      material: [itemId: string, quantityToIssue: number, unit: string]
+    ) => ({
+      id: readableId,
+      readableId,
+      status: "In Progress" as const,
+      dueDate: `2026-01-0${day}`,
+      priority: null,
+      quantityRemaining,
+      materials: [
+        {
+          itemId: material[0],
+          quantityToIssue: material[1],
+          unitOfMeasureCode: material[2]
+        }
+      ]
+    });
+    const result = computeBuildable({
+      itemId: "FG",
+      locationId: "L",
+      bom: bomOf(lines),
+      items,
+      jobs: [
+        openJob("J1", 1, 2, ["A", 6, "EA"]),
+        openJob("J2", 2, 3, ["A", 2, "EA"]),
+        openJob("J3", 3, 4, ["B", 1, "LB"])
+      ]
+    });
+    // 11 A committed: 8 by J1 and J2, 3 elsewhere, so 10 − 3 = 7 for the
+    // jobs. J1 takes 6 and leaves 1 of the 2 that J2 needs.
+    expect(result.jobs.map((j) => [j.readableId, j.hasAllParts])).toEqual([
+      ["J1", true],
+      ["J2", false],
+      ["J3", null]
+    ]);
+    expect(result).toMatchObject({
+      quantityInProduction: 9,
+      quantityReadyToFinish: 2,
+      quantityWaitingOnParts: 3,
+      jobShortages: [
+        {
+          itemId: "A",
+          isMade: false,
+          quantityShort: 1,
+          jobs: 1,
+          quantityOnHand: 10,
+          quantityCommitted: 11
+        }
+      ]
+    });
   });
 
   it("refuses a line whose unit is not its item's stock unit", () => {

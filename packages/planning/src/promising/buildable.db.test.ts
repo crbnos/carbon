@@ -256,6 +256,120 @@ describe.skipIf(!url)("loadBuildable against a migrated database", () => {
     expect(result?.cycleItems).toEqual([]);
   });
 
+  // A job for FG and what its materials still have to be issued.
+  async function job(
+    name: string,
+    row: Record<string, unknown>,
+    materials: [itemName: string, estimated: number, issued: number][]
+  ) {
+    await insert("job", {
+      id: id(name),
+      jobId: name,
+      itemId: id("FG"),
+      unitOfMeasureCode: "EA",
+      locationId,
+      companyId,
+      createdBy: "system",
+      ...row
+    });
+    await insert("jobMakeMethod", {
+      id: id(`${name}-method`),
+      jobId: id(name),
+      itemId: id("FG"),
+      companyId,
+      createdBy: "system"
+    });
+    for (const [itemName, estimatedQuantity, quantityIssued] of materials) {
+      await insert("jobMaterial", {
+        jobId: id(name),
+        jobMakeMethodId: id(`${name}-method`),
+        itemId: id(itemName),
+        description: itemName,
+        methodType: "Pull from Inventory",
+        unitOfMeasureCode: "EA",
+        estimatedQuantity,
+        quantityIssued,
+        companyId,
+        createdBy: "system"
+      });
+    }
+  }
+
+  it("tells the open jobs stock can finish from the ones short of parts", async () => {
+    await begin();
+    await client.query("SET LOCAL session_replication_role = replica");
+    // Made for the sales order, 4 good units and 1 scrap allowance, 1
+    // received and 1 shipped: 2 remain. 6 RAW still to issue.
+    await job(
+      "WO-READY",
+      {
+        status: "In Progress",
+        dueDate: "2026-01-01",
+        salesOrderId: id("so"),
+        quantity: 4,
+        scrapQuantity: 1,
+        quantityReceivedToInventory: 1,
+        quantityShipped: 1
+      },
+      [["RAW", 10, 4]]
+    );
+    await job(
+      "WO-SHORT",
+      { status: "Ready", dueDate: "2026-01-02", quantity: 1 },
+      [
+        ["RAW", 12, 0],
+        ["OTHER", 2, 0]
+      ]
+    );
+    await job("WO-CANCELLED", { status: "Cancelled", quantity: 5 }, [
+      ["RAW", 50, 0]
+    ]);
+    await client.query("SET LOCAL session_replication_role = origin");
+
+    const result = await loadBuildable(db, {
+      companyId,
+      locationId,
+      itemId: id("FG")
+    });
+    // 18 RAW on hand, 3 committed to the sales order: 15 for the jobs.
+    // WO-READY takes 6 and leaves 9 of the 12 WO-SHORT needs. No OTHER.
+    expect(result).toMatchObject({
+      quantityInProduction: 3,
+      quantityReadyToFinish: 2,
+      quantityWaitingOnParts: 1,
+      // The jobs' own 18 RAW leave nothing to start more with.
+      quantityBuildable: 0,
+      jobs: [
+        {
+          readableId: "WO-READY",
+          status: "In Progress",
+          quantityRemaining: 2,
+          hasAllParts: true,
+          shortItems: 0
+        },
+        {
+          readableId: "WO-SHORT",
+          status: "Ready",
+          quantityRemaining: 1,
+          hasAllParts: false,
+          shortItems: 2
+        }
+      ],
+      jobShortages: [
+        {
+          readableId: "RAW",
+          isMade: false,
+          quantityShort: 3,
+          jobs: 1,
+          quantityOnHand: 18,
+          quantityCommitted: 21,
+          quantityOnOrder: 7
+        },
+        { readableId: "OTHER", isMade: false, quantityShort: 2, jobs: 1 }
+      ]
+    });
+  });
+
   it("returns null for an item that is not the company's", async () => {
     await begin();
     expect(

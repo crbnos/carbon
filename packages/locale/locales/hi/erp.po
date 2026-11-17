@@ -186,6 +186,10 @@ msgstr "{0, plural, one {# अतिदेय} other {# अतिदेय}}"
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# पैरामीटर} other {# पैरामीटर}}"
 
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {# पार्ट कम} other {# पार्ट्स कम}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# रिकॉर्ड को ध्यान की आवश्यकता है} other {# रिकॉर्ड को ध्यान की आवश्यकता है}}"
@@ -352,6 +356,11 @@ msgstr "{0} उपलब्ध"
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
 msgstr "{0} {owner} में यहाँ उपलब्ध है"
+
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "{0} उपलब्ध, {1} आरक्षित"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -1262,6 +1271,9 @@ msgstr "बैच के बिना {quantity}"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} बिना सीरियल नंबर के"
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {कोई भी खुला जॉब सभी पार्ट्स के साथ नहीं है} one {# जॉब पर उत्पादन जारी है, जिसके सभी पार्ट्स स्टॉक में हैं} other {# जॉब्स पर उत्पादन जारी है, जिनके सभी पार्ट्स स्टॉक में हैं}}"
+
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
@@ -1381,6 +1393,9 @@ msgstr "{value, plural, one {# दिन} other {# दिन}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# पंक्ति अपेक्षित मात्रा से भिन्न है} other {# पंक्तियां अपेक्षित मात्रा से भिन्न हैं}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {कोई भी खुला जॉब पार्ट्स की कमी में नहीं है} one {# जॉब पर उत्पादन जारी है, जिसमें पार्ट्स कम हैं} other {# जॉब्स पर उत्पादन जारी है, जिनमें पार्ट्स कम हैं}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings} को अनुवर्ती की आवश्यकता है"
@@ -3674,6 +3689,9 @@ msgstr "सभी दस्तावेज़"
 
 msgid "All gauges"
 msgstr "सभी गेज"
+
+msgid "All in stock"
+msgstr "सभी स्टॉक में"
 
 msgid "All item types"
 msgstr "सभी आइटम प्रकार"
@@ -6377,8 +6395,8 @@ msgstr "Carbon में एक विधि कहा जाता है — �
 msgid "Camera"
 msgstr "कैमरा"
 
-msgid "Can Make Now"
-msgstr ""
+msgid "Can Start More"
+msgstr "और शुरू हो सकते हैं"
 
 msgid "Can't be restored"
 msgstr "पुनः स्थापित नहीं किया जा सकता"
@@ -13826,9 +13844,6 @@ msgstr "तैयार माल"
 msgid "Finished Goods (default)"
 msgstr "तैयार माल (डिफ़ॉल्ट)"
 
-msgid "Finished Goods Available"
-msgstr ""
-
 msgid "finishes"
 msgstr "नियमित MACRS अनुसूची शुरू होने से पहले लिया गया पहले वर्ष का अतिरिक्त कटौती।"
 
@@ -14159,9 +14174,6 @@ msgstr "\"से\" और \"तक\" एक ही भंडारण इका�
 msgid "From and To can't be the same storage unit"
 msgstr "‘से’ और ‘तक’ एक ही भंडारण इकाई नहीं हो सकते"
 
-msgid "From available component stock"
-msgstr ""
-
 msgid "From customer"
 msgstr "ग्राहक से"
 
@@ -14179,6 +14191,13 @@ msgstr "अवधि से"
 
 msgid "From previous week"
 msgstr "पिछले सप्ताह से"
+
+msgid "From stock no job or order has claimed"
+msgstr "वह स्टॉक जिसे किसी जॉब या ऑर्डर ने आरक्षित नहीं किया है"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "वह स्टॉक जिसे किसी जॉब या ऑर्डर ने आरक्षित नहीं किया है। आरक्षित स्टॉक इस्तेमाल होता तो {0}"
 
 msgid "From Storage Unit"
 msgstr "भंडारण इकाई से"
@@ -15251,9 +15270,6 @@ msgstr "यदि ऑर्डर किया जाता है, तो अ�
 
 msgid "If something is off track"
 msgstr "अगर कुछ गलत रास्ते पर है"
-
-msgid "If stock committed to open orders were used"
-msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "यदि आप पार्ट नंबर बदलना चाहते हैं, तो कृपया रद्द करें पर क्लिक करें और परिवर्तित करने से पहले प्रत्येक पंक्ति आइटम के लिए पार्ट्स को मैन्युअल रूप से असाइन करें।"
@@ -16516,11 +16532,17 @@ msgstr "{orderId} के लिए जॉब"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "{orderId} के लिए जॉब: {jobCount}, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "उत्पादन में जॉब्स"
+
 msgid "Jobs Required"
 msgstr "आवश्यक जॉब"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "जॉब जिनकी सामग्री सूची में यह आइटम है"
+
+msgid "Jobs Waiting"
+msgstr "प्रतीक्षारत जॉब्स"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -21058,11 +21080,6 @@ msgstr "हाथ में"
 msgid "On Hand"
 msgstr "हाथ में"
 
-#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
-#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
-msgid "On hand {0}, committed {1}"
-msgstr ""
-
 msgid "On hand {before} to {after}"
 msgstr "हाथ में: {before} से {after}"
 
@@ -24465,6 +24482,9 @@ msgstr "पुटअवे के लिए तैयार"
 
 msgid "Ready for Quote"
 msgstr "कोटेशन के लिए तैयार"
+
+msgid "Ready to Finish"
+msgstr "पूरा करने के लिए तैयार"
 
 msgid "ready to keep or revert"
 msgstr "रखने या पूर्ववत् करने के लिए तैयार"
@@ -28293,6 +28313,9 @@ msgstr "{0} कम"
 
 msgid "Short Description"
 msgstr "संक्षिप्त विवरण"
+
+msgid "Short for Jobs in Production"
+msgstr "उत्पादन में जॉब्स के लिए कमी"
 
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
@@ -32417,9 +32440,6 @@ msgstr "थ्री-वे मिलान"
 msgid "Through {0}"
 msgstr "{0} तक"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
-
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
@@ -32612,6 +32632,9 @@ msgstr "भेजने के लिए"
 
 msgid "To Ship and Receive"
 msgstr "भेजने और प्राप्त करने के लिए"
+
+msgid "To Start More"
+msgstr "और शुरू करने के लिए"
 
 msgid "To Storage Unit"
 msgstr "भंडारण इकाई के लिए"
@@ -33966,9 +33989,6 @@ msgstr "इस जॉब पर उपयोग"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "उप-विधानसभा {0} · {1} का उपयोग करता है"
 
-msgid "Using All On Hand"
-msgstr ""
-
 msgid "VAC"
 msgstr "VAC"
 
@@ -34444,6 +34464,9 @@ msgstr "प्रतीक्षा में"
 msgid "Waiting for the first sync"
 msgstr "पहले सिंक की प्रतीक्षा है"
 
+msgid "Waiting on Parts"
+msgstr "पार्ट्स की प्रतीक्षा"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "अपने चैंपियन के साथ प्रत्येक क्षेत्र पर चलें और स्कोप से बाहर कुछ भी टॉगल करें। कोड मॉड्यूल.क्षेत्र.संख्या पढ़ता है (ACC.GL.01 = लेखांकन, सामान्य खाता बही, आइटम 1)।"
 
@@ -34698,6 +34721,9 @@ msgstr "{translatedTerm} क्या है?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "पट्टे पर क्या है, उदाहरण के लिए Forklift FL-12"
 
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "इस स्थान पर स्टॉक में क्या है, कौन से खुले जॉब्स को पूरा करने के लिए पार्ट्स मौजूद हैं, और बाकी में किसकी कमी है। और जॉब शुरू करने की जाँच सामग्री सूची के हर स्तर से होती है, हर आइटम के स्क्रैप सहित।"
+
 msgid "What is the primary contact?"
 msgstr "प्राथमिक संपर्क कौन है?"
 
@@ -34718,6 +34744,9 @@ msgstr "यह किस प्रकार का PO है — मानक �
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "यह किस प्रकार का कोटेशन है — मानक आपूर्तिकर्ता कोटेशन, व्यापक समझौता मूल्य वाला कोटेशन, या अनुबंध विनिर्माण कोटेशन; रूपांतरण के समय PO पंक्ति लेआउट को संचालित करता है।"
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "नए जॉब्स की सीमा तय करने वाला स्टॉक, यानी वह जिसे किसी जॉब या ऑर्डर ने आरक्षित नहीं किया है।"
 
 msgid "What posting this run will write, by account."
 msgstr "यह रन प्रत्येक खाते के लिए क्या पोस्ट करेगा।"
@@ -34742,6 +34771,9 @@ msgstr "ग्राहक क्या देता है, पंक्ति 
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "नियत तारीख की गिनती किससे शुरू होती है (चालान की तारीख, महीने का अंत, आदि)।"
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "स्टॉक के बाद भी पार्ट्स की प्रतीक्षा कर रहे जॉब्स को अभी क्या चाहिए। इन्हें पूरा करने के लिए खरीदें या बनाएँ।"
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "पट्टा क्या भुगतान करता है और कब। सक्रियण इन पंक्तियों से पट्टा दायित्व को मूल्य देता है। इसे बदलने के लिए एक सेल पर क्लिक करें।"
