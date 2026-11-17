@@ -191,6 +191,8 @@ export type BuildableItemInfo = {
   scrapPercentage: number;
   quantityOnHand: number;
   quantityCommitted: number;
+  /** `quantityCommitted` less what the open jobs of the item being made (`jobs`) hold of it */
+  quantityCommittedElsewhere: number;
   quantityOnOrder: number;
   replenishmentSystem: string | null;
 };
@@ -324,27 +326,13 @@ export function computeBuildable(args: {
   );
 
   // The jobs draw on hand stock, less what other demand has committed: their
-  // own commitments are theirs to use.
-  const committedToJobs = new Map<string, number>();
-  for (const job of openJobs) {
-    for (const line of job.materials) {
-      committedToJobs.set(
-        line.itemId,
-        (committedToJobs.get(line.itemId) ?? 0) +
-          Math.max(line.quantityToIssue, 0)
-      );
-    }
-  }
+  // own commitments are theirs to use. Both figures come from the one stock
+  // read, so a job edited between the reads cannot make them disagree.
   const coverage = coverJobs({
     jobs: openJobs,
     stock: (itemId) => {
       const s = info(itemId);
-      if (!s) return 0;
-      const committedElsewhere = Math.max(
-        s.quantityCommitted - (committedToJobs.get(itemId) ?? 0),
-        0
-      );
-      return s.quantityOnHand - committedElsewhere;
+      return s ? s.quantityOnHand - s.quantityCommittedElsewhere : 0;
     }
   });
   const jobs: JobCoverage[] = [
@@ -563,6 +551,7 @@ export async function loadBuildable(
   }
 
   const ids = Array.from(itemIds);
+  const jobIds = jobs.map((job) => job.id);
   const rows = await sql<{
     id: string;
     readableId: string | null;
@@ -572,6 +561,7 @@ export async function loadBuildable(
     scrapPercentage: string | number | null;
     quantityOnHand: string | number | null;
     quantityCommitted: string | number | null;
+    quantityCommittedElsewhere: string | number | null;
     quantityOnOrder: string | number | null;
   }>`
     WITH
@@ -584,17 +574,20 @@ export async function loadBuildable(
       GROUP BY isq."itemId"
     ),
     "committed" AS (
-      SELECT d."itemId", SUM(d."quantity") AS "quantity"
+      SELECT d."itemId", SUM(d."quantity") AS "quantity",
+        SUM(d."quantity") FILTER (
+          WHERE d."jobId" IS NULL OR d."jobId" <> ALL(${jobIds}::text[])
+        ) AS "elsewhere"
       FROM (
-        SELECT "itemId", "quantityToIssue" AS "quantity" FROM "openJobMaterialLines"
+        SELECT "itemId", "quantityToIssue" AS "quantity", "jobId" FROM "openJobMaterialLines"
         WHERE "companyId" = ${companyId} AND "locationId" = ${locationId}
           AND "itemId" = ANY(${ids}::text[]) AND COALESCE("planningSegmentId", '') = ''
         UNION ALL
-        SELECT "itemId", "quantityToSend" FROM "openSalesOrderLines"
+        SELECT "itemId", "quantityToSend", NULL FROM "openSalesOrderLines"
         WHERE "companyId" = ${companyId} AND "locationId" = ${locationId}
           AND "itemId" = ANY(${ids}::text[]) AND COALESCE("planningSegmentId", '') = ''
         UNION ALL
-        SELECT "itemId", GREATEST("quantity", 0) FROM "openProjectMaterialLines"
+        SELECT "itemId", GREATEST("quantity", 0), NULL FROM "openProjectMaterialLines"
         WHERE "companyId" = ${companyId} AND "locationId" = ${locationId}
           AND "itemId" = ANY(${ids}::text[]) AND COALESCE("planningSegmentId", '') = ''
       ) d
@@ -622,6 +615,7 @@ export async function loadBuildable(
       ir."scrapPercentage",
       "stock"."quantity" AS "quantityOnHand",
       "committed"."quantity" AS "quantityCommitted",
+      "committed"."elsewhere" AS "quantityCommittedElsewhere",
       "onOrder"."quantity" AS "quantityOnOrder"
     FROM "item" i
     LEFT JOIN "itemReplenishment" ir
@@ -641,6 +635,10 @@ export async function loadBuildable(
       scrapPercentage: Math.max(Number(row.scrapPercentage ?? 0), 0),
       quantityOnHand: Number(row.quantityOnHand ?? 0),
       quantityCommitted: Math.max(Number(row.quantityCommitted ?? 0), 0),
+      quantityCommittedElsewhere: Math.max(
+        Number(row.quantityCommittedElsewhere ?? 0),
+        0
+      ),
       quantityOnOrder: Math.max(Number(row.quantityOnOrder ?? 0), 0),
       replenishmentSystem: row.replenishmentSystem
     });

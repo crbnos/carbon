@@ -53,6 +53,7 @@ const itemsOf = (
           scrapPercentage: scrap[id] ?? 0,
           quantityOnHand: onHand,
           quantityCommitted: committed,
+          quantityCommittedElsewhere: committed,
           quantityOnOrder: 0,
           replenishmentSystem: "Buy"
         }
@@ -306,7 +307,11 @@ describe("computeBuildable", () => {
     const lines: Line[] = [["FG", "A", 1]];
     const items = itemsOf(lines, { A: [10, 11], B: 5 }, {});
     // MRP buys a Buy and Make item, so a shortage of it is not "made".
-    items.set("A", { ...items.get("A")!, replenishmentSystem: "Buy and Make" });
+    items.set("A", {
+      ...items.get("A")!,
+      quantityCommittedElsewhere: 3,
+      replenishmentSystem: "Buy and Make"
+    });
     const openJob = (
       readableId: string,
       day: number,
