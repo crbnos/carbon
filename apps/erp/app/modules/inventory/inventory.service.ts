@@ -16312,10 +16312,20 @@ export async function postReceipt(
                     (purchaseOrderLine.quantityToReceive ??
                       purchaseOrderLine.purchaseQuantity);
 
+                // The receipt is the only record of what the supplier
+                // finished, so the operation completes what the line has
+                // received across all its receipts, in the job's units.
+                const quantityComplete = round(
+                  ((purchaseOrderLine.quantityReceived ?? 0) +
+                    recivedQuantityInPurchaseUnit) *
+                    (receiptLines[0]!.conversionFactor ?? 1)
+                );
+
                 return {
                   ...acc,
                   [purchaseOrderLine.jobOperationId]: {
-                    status: receivedComplete ? "Done" : "In Progress"
+                    status: receivedComplete ? "Done" : "In Progress",
+                    quantityComplete
                   }
                 };
               }
