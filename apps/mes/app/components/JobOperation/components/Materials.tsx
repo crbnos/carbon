@@ -24,8 +24,8 @@ import { Fragment } from "react";
 import {
   LuGitBranchPlus,
   LuPackageCheck,
+  LuPackageX,
   LuQrCode,
-  LuTrash2,
   LuTriangleAlert
 } from "react-icons/lu";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
@@ -200,7 +200,7 @@ function ScrapPartsButton({
       aria-label={t`Scrap parts of ${label}`}
       variant="ghost"
       size={size}
-      icon={<LuTrash2 />}
+      icon={<LuPackageX />}
       className={size ? undefined : "h-8 w-8"}
       isDisabled={disabled}
       onClick={() => onScrap(material)}
@@ -356,8 +356,16 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
 }
 
 /** Where a part comes from: the bins that hold it now, or that it is made here. */
-export function MaterialSource({ material }: { material: JobMaterial }) {
+export function MaterialSource({
+  material,
+  compact
+}: {
+  material: JobMaterial;
+  /** Smaller badges, for a dense card where they sit under the part's name. */
+  compact?: boolean;
+}) {
   const { t } = useLingui();
+  const badgeClass = compact ? "min-h-5 px-2 text-xs" : undefined;
   const madeHere = material.methodType === "Make to Order";
   const liveStorageUnits = (
     material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
@@ -373,7 +381,7 @@ export function MaterialSource({ material }: { material: JobMaterial }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
       {material.methodType !== "Pull from Inventory" && (
-        <Badge variant="secondary">
+        <Badge variant="secondary" className={badgeClass}>
           <MethodIcon
             type={material.methodType ?? ""}
             isKit={material.kit ?? false}
@@ -387,7 +395,11 @@ export function MaterialSource({ material }: { material: JobMaterial }) {
         </Badge>
       )}
       {locations.map((location, index) => (
-        <Badge key={`${location}-${index}`} variant="secondary">
+        <Badge
+          key={`${location}-${index}`}
+          variant="secondary"
+          className={badgeClass}
+        >
           {location}
         </Badge>
       ))}
