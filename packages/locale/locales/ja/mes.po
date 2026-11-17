@@ -206,6 +206,9 @@ msgstr ""
 msgid "{label}, overdue"
 msgstr "{label}、期限超過"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "スキャンした {lost} 個は出庫されていません。もう一度スキャンしてください。"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
 
@@ -1484,6 +1487,18 @@ msgstr "{lotLabel} から {issuedQuantity} を発行しました"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{lotLabel} から {issuedQuantity} を発行しました — {remainingQuantity} が残っています"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "{name} を {quantity} 出庫済み（{issued} / {required}）"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "{batches} から {name} を {quantity} 出庫済み（{issued} / {required}）"
+
+msgid "Issuing"
+msgstr "出庫中"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "出庫中。さらに {waiting} 件スキャン済み。"
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "まだ「{table}」レコードで使用されています。最初にそれを除去してください。"
@@ -3725,7 +3740,7 @@ msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or 
 msgstr "サインインリンクと6桁コードをメールで送信しました。リンクをクリックするか、ここにコードを入力してください。"
 
 msgid "Wet"
-msgstr "ウェット"
+msgstr "湿式"
 
 msgid "What do you need?"
 msgstr "何をお探しですか？"

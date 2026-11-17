@@ -5,8 +5,8 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
-import { EPSILON } from "@carbon/utils";
-import { planItemScanIssue } from "~/utils/itemScan";
+import { EPSILON, round } from "@carbon/utils";
+import { itemScanTotals, planItemScanIssue } from "~/utils/itemScan";
 import { erpPosting } from "./erp";
 import {
   getJobOperationIssueScope,
@@ -87,6 +87,8 @@ export async function issueMaterialToOperation(
     quantity: number;
     adjustmentType: "Set Quantity" | "Positive Adjmt." | "Negative Adjmt.";
     acknowledged?: boolean;
+    /** Refuse an issue above what the job requires (an item scan). */
+    refuseOverIssue?: boolean;
   }
 ) {
   const { jobOperationId, itemId, quantity, adjustmentType } = input;
@@ -146,7 +148,8 @@ export async function issueMaterialToOperation(
       materialId: input.materialId,
       jobOperationStepId: input.jobOperationStepId,
       quantity,
-      adjustmentType
+      adjustmentType,
+      refuseOverIssue: input.refuseOverIssue
     }
   );
   if (issued.error) {
@@ -163,24 +166,38 @@ export async function issueMaterialToOperation(
 }
 
 /**
- * A scanned item sticker on an operation screen: issues everything the job
- * still needs of that item. A batch part takes the lots the picking order
- * suggests at the job's location. Safe to repeat: the untracked issue sets
- * the issued quantity to what is required, and the posting refuses a batch
- * issue above the requirement, so a second scan issues nothing.
+ * Scanned item stickers on an operation screen. Each scan of a part is one
+ * piece, so the operator scans once for each piece taken off the shelf;
+ * `pieces` is how many scans of the item this call carries. A material or
+ * consumable is issued by measure: all the job still needs. A batch part
+ * takes the lots the picking order suggests at the job's location. The ERP
+ * refuses an untracked issue above the requirement under the material's lock,
+ * so a scan that lost a race issues nothing.
  *
- * A refusal with `materialId` is one the Issue dialog can settle (the
- * operator chooses the unit, the lot, or acknowledges a rule).
+ * The result holds numbers, not a sentence: the screen words the toast in the
+ * operator's language. A refusal with `materialId` is one the Issue dialog
+ * can settle (the operator chooses the unit, the lot, or acknowledges a rule).
  */
 export async function issueScannedItem(
   caller: Caller,
   input: {
     jobOperationId: string;
     itemId: string;
+    pieces?: number;
     parentTrackedEntityId?: string;
   }
 ): Promise<
-  { success: true; message: string } | (Refusal & { materialId?: string })
+  | {
+      success: true;
+      name: string;
+      /** What this call issued. */
+      quantity: number;
+      /** What the operation has, and requires, of the item after it. */
+      issued: number;
+      required: number;
+      batches: string[];
+    }
+  | (Refusal & { materialId?: string })
 > {
   const { companyId } = caller;
   const { jobOperationId, itemId } = input;
@@ -198,7 +215,7 @@ export async function issueScannedItem(
   const materials = await serviceRole
     .from("jobMaterial")
     .select(
-      "id, jobOperationId, quantity, estimatedQuantity, quantityIssued, methodType, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision)"
+      "id, jobOperationId, quantity, estimatedQuantity, quantityIssued, itemType, methodType, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision)"
     )
     .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
     .eq("itemId", itemId)
@@ -213,7 +230,11 @@ export async function issueScannedItem(
     return refuse("Could not check this job's materials. Try again.");
   }
 
-  const plan = planItemScanIssue(materials.data, jobOperationId);
+  const plan = planItemScanIssue(
+    materials.data,
+    jobOperationId,
+    input.pieces ?? 1
+  );
   if (plan.kind === "notUsed") return refuse("This job does not use that part");
 
   const name =
@@ -222,6 +243,15 @@ export async function issueScannedItem(
     return refuse(`This job already has all its ${name}`);
 
   const materialId = plan.material.id;
+  const totals = itemScanTotals(materials.data, jobOperationId);
+  const issuedResult = (quantity: number, batches: string[] = []) => ({
+    success: true as const,
+    name,
+    quantity,
+    issued: round(totals.issued + quantity),
+    required: totals.required,
+    batches
+  });
   if (plan.kind === "dialog") {
     return { ...refuse(`Choose the ${name} to issue`), materialId };
   }
@@ -231,8 +261,9 @@ export async function issueScannedItem(
       jobOperationId,
       itemId,
       materialId,
-      quantity: plan.required,
-      adjustmentType: "Set Quantity"
+      quantity: plan.quantity,
+      adjustmentType: "Negative Adjmt.",
+      refuseOverIssue: true
     });
     if ("violations" in issued) {
       return {
@@ -240,9 +271,7 @@ export async function issueScannedItem(
         materialId
       };
     }
-    return issued.success
-      ? { success: true, message: `Issued ${name}` }
-      : issued;
+    return issued.success ? issuedResult(plan.quantity) : issued;
   }
 
   const refusal = await abilityBlockRefusal(serviceRole, {
@@ -311,12 +340,8 @@ export async function issueScannedItem(
     return refuse("Failed to issue material");
   }
 
-  const batches = lots
-    .map((lot) => lot.readableId)
-    .filter(Boolean)
-    .join(", ");
-  return {
-    success: true,
-    message: batches ? `Issued ${name} from ${batches}` : `Issued ${name}`
-  };
+  return issuedResult(
+    plan.quantity,
+    lots.map((lot) => lot.readableId).filter((id): id is string => !!id)
+  );
 }

@@ -206,6 +206,9 @@ msgstr ""
 msgid "{label}, overdue"
 msgstr "{label}, gecikmiş"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} taranmış adet çıkış yapılmadı. Yeniden tarayın."
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -1484,6 +1487,18 @@ msgstr "Çıkış Yapılan {issuedQuantity} / {lotLabel}"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Çıkış Yapılan {issuedQuantity} / {lotLabel} — {remainingQuantity} Kaldı"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "{quantity} {name} çıkışı yapıldı ({issued} / {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "{batches} partisinden {quantity} {name} çıkışı yapıldı ({issued} / {required})"
+
+msgid "Issuing"
+msgstr "Çıkış yapılıyor"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Çıkış yapılıyor. {waiting} adet daha tarandı."
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Hala bir \"{table}\" kaydı tarafından kullanılıyor; önce bunu kaldırın."
