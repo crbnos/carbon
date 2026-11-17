@@ -128,6 +128,10 @@ msgstr "{0} में से {1} पूर्ण"
 msgid "{0} of {1} completed"
 msgstr "{0} में से {1} पूर्ण"
 
+#. placeholder {0}: requests.length
+msgid "{0} open"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} कतार में"
@@ -988,6 +992,9 @@ msgstr "घनत्व"
 msgid "Depot"
 msgstr "डिपो"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "समस्या का वर्णन करें..."
 
@@ -1216,6 +1223,9 @@ msgstr "storageUnits को प्राप्त करने में वि�
 msgid "Failed to get options"
 msgstr "विकल्प प्राप्त करने में विफल"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "छवि को संसाधित करने में विफल"
 
@@ -1388,6 +1398,9 @@ msgstr "इस ब्राउज़र में Carbon कैसा दिख�
 
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "कितने?"
@@ -1802,6 +1815,9 @@ msgstr "मेल खाता है"
 msgid "Material requested"
 msgstr "सामग्री का अनुरोध किया गया"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "सामग्री"
 
@@ -2018,6 +2034,9 @@ msgstr "कोई खुला निरीक्षण नहीं"
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "इस स्थान पर कोई खुला सेवा जॉब नहीं"
 
@@ -2149,6 +2168,9 @@ msgstr "सामान्य"
 
 msgid "Not in this operation"
 msgstr "इस ऑपरेशन में नहीं"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "निर्धारित नहीं"
@@ -2972,6 +2994,9 @@ msgstr "ऑपरेटर खोजें"
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "परियोजनाओं और कार्यों को खोजें"
 
@@ -3219,6 +3244,9 @@ msgstr "नरम समय-सीमा"
 msgid "Solid"
 msgstr "ठोस"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "स्रोत"
 
@@ -3420,6 +3448,9 @@ msgstr "जॉब्स विभिन्न आइटम बनाते ह�
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "लॉट को उत्तीर्ण के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूर्ण किया जाएगा।"
 
@@ -3492,6 +3523,9 @@ msgstr "यह लॉट समाप्त हो गया है और इ�
 
 msgid "This marks the dispatch as completed."
 msgstr "यह रखरखाव कार्य को पूर्ण के रूप में चिह्नित करता है।"
+
+msgid "This operation"
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "यह पार्ट ऑर्डर के अनुसार बनाया गया था। इसे स्क्रैप करने से इसकी रूटिंग को फिर से खोला जा सकता है ताकि एक रिप्लेसमेंट बनाया जा सके।"

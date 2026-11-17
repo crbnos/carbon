@@ -128,6 +128,10 @@ msgstr "{0} / {1} 完了"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 完了済み"
 
+#. placeholder {0}: requests.length
+msgid "{0} open"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0}件がキュー待ちです"
@@ -988,6 +992,9 @@ msgstr "密度"
 msgid "Depot"
 msgstr "倉庫"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "問題を説明してください..."
 
@@ -1216,6 +1223,9 @@ msgstr "storageUnitsの取得に失敗しました"
 msgid "Failed to get options"
 msgstr "オプションの取得に失敗しました"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "画像の処理に失敗"
 
@@ -1388,6 +1398,9 @@ msgstr "このブラウザでのCarbonの表示方法。"
 
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "いくつ?"
@@ -1802,6 +1815,9 @@ msgstr "が一致"
 msgid "Material requested"
 msgstr "資材を依頼済み"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "材料"
 
@@ -2018,6 +2034,9 @@ msgstr "オープン中の検査はありません"
 msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "この拠点にオープンな外注サービスがありません"
 
@@ -2149,6 +2168,9 @@ msgstr "通常検査"
 
 msgid "Not in this operation"
 msgstr "この工程にはありません"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "スケジュール未設定"
@@ -2972,6 +2994,9 @@ msgstr "作業者を検索"
 msgid "Search operators..."
 msgstr "作業者を検索..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "プロジェクトとタスクを検索"
 
@@ -3219,6 +3244,9 @@ msgstr "目安納期"
 msgid "Solid"
 msgstr "単色"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "ソース"
 
@@ -3420,6 +3448,9 @@ msgstr "製造指図は異なる品目を製造します — 各製造指図の�
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
 
@@ -3492,6 +3523,9 @@ msgstr "このロットは期限切れであり、ピックできません。"
 
 msgid "This marks the dispatch as completed."
 msgstr "この操作により保全指示が完了とマークされます。"
+
+msgid "This operation"
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "この部品は受注生産で製造されました。スクラップすると、その工順を再オープンして交換部品を製造できます。"

@@ -128,6 +128,10 @@ msgstr "{0} di {1} completati"
 msgid "{0} of {1} completed"
 msgstr "{0} di {1} completati"
 
+#. placeholder {0}: requests.length
+msgid "{0} open"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} in coda"
@@ -988,6 +992,9 @@ msgstr "Densità"
 msgid "Depot"
 msgstr "Deposito"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "Descrivi il problema..."
 
@@ -1216,6 +1223,9 @@ msgstr "Impossibile recuperare le unità di archiviazione"
 msgid "Failed to get options"
 msgstr "Impossibile ottenere le opzioni"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "Elaborazione dell'immagine non riuscita"
 
@@ -1388,6 +1398,9 @@ msgstr "Come appare Carbon in questo browser."
 
 msgid "How many were actually picked?"
 msgstr "Quanti sono stati effettivamente prelevati?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "Quanti?"
@@ -1802,6 +1815,9 @@ msgstr "corrisponde a"
 msgid "Material requested"
 msgstr "Materiale richiesto"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "Materiali"
 
@@ -2018,6 +2034,9 @@ msgstr "Nessun controllo Aperto"
 msgid "No open jobs"
 msgstr "Nessun ordine di produzione aperto"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "Nessun ordine di servizio aperto in questa ubicazione"
 
@@ -2149,6 +2168,9 @@ msgstr "Normale"
 
 msgid "Not in this operation"
 msgstr "Non in questa operazione"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "Non programmato"
@@ -2972,6 +2994,9 @@ msgstr "Cerca operatori"
 msgid "Search operators..."
 msgstr "Cerca operatori..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "Cerca progetti e attività"
 
@@ -3219,6 +3244,9 @@ msgstr "Scadenza flessibile"
 msgid "Solid"
 msgstr "Tinta unita"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "Origine"
 
@@ -3420,6 +3448,9 @@ msgstr "Gli ordini di produzione realizzano articoli diversi — tieni i compone
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Il lotto sarà contrassegnato come Superato e {remaining} unità/unità rimanente/i saranno completate in questa operazione."
 
@@ -3492,6 +3523,9 @@ msgstr "Questo lotto è scaduto e non può essere prelevato."
 
 msgid "This marks the dispatch as completed."
 msgstr "Questo contrassegna l'intervento di manutenzione come Completato."
+
+msgid "This operation"
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Questo componente è stato realizzato su ordinazione. Il suo scarto può riaprire il ciclo di lavorazione per produrre un componente di sostituzione."

@@ -128,6 +128,10 @@ msgstr "{0} из {1} завершено"
 msgid "{0} of {1} completed"
 msgstr "{0} из {1} завершено"
 
+#. placeholder {0}: requests.length
+msgid "{0} open"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} в очереди"
@@ -988,6 +992,9 @@ msgstr "Плотность"
 msgid "Depot"
 msgstr "Депо"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "Опишите проблему..."
 
@@ -1216,6 +1223,9 @@ msgstr "Не удалось получить единицы хранения"
 msgid "Failed to get options"
 msgstr "Не удалось получить параметры"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "Не удалось обработать изображение"
 
@@ -1388,6 +1398,9 @@ msgstr "Внешний вид Carbon в этом браузере."
 
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "Сколько?"
@@ -1802,6 +1815,9 @@ msgstr "соответствует"
 msgid "Material requested"
 msgstr "Материал запрошен"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "Материалы"
 
@@ -2018,6 +2034,9 @@ msgstr "Нет открытых контролей"
 msgid "No open jobs"
 msgstr "Нет открытых производственных заказов"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "Нет открытых заявок на обслуживание на этой площадке"
 
@@ -2149,6 +2168,9 @@ msgstr "Нормальный"
 
 msgid "Not in this operation"
 msgstr "Нет в этой операции"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "Не запланировано"
@@ -2972,6 +2994,9 @@ msgstr "Поиск операторов"
 msgid "Search operators..."
 msgstr "Поиск операторов..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "Поиск проектов и задач"
 
@@ -3219,6 +3244,9 @@ msgstr "Гибкий срок"
 msgid "Solid"
 msgstr "Сплошной"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "Источник"
 
@@ -3420,6 +3448,9 @@ msgstr "Производственные заказы производят ра�
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Партия будет отмечена как Пройдена, и {remaining} оставшихся единиц будут завершены в этой операции."
 
@@ -3492,6 +3523,9 @@ msgstr "Срок этой партии истек, и она не может б�
 
 msgid "This marks the dispatch as completed."
 msgstr "Это отмечает заявку на техобслуживание как завершённую."
+
+msgid "This operation"
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."

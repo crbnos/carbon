@@ -2919,16 +2919,6 @@ export function AssemblyView({
       {scrapParts.modal}
       <NeedMaterialModal
         operationId={operationId}
-        materials={allMaterials.flatMap((material) =>
-          material.itemId
-            ? [
-                {
-                  itemId: material.itemId as string,
-                  label: (material.itemReadableId ?? material.itemId) as string
-                }
-              ]
-            : []
-        )}
         isOpen={needMaterialModal.isOpen}
         onClose={needMaterialModal.onClose}
       />

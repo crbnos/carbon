@@ -3,32 +3,49 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Result } from "@carbon/auth";
-import { Hidden, Select, Submit, TextArea, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
 import {
+  Hidden,
+  Submit,
+  TextArea,
+  useField,
+  ValidatedForm
+} from "@carbon/form";
+import { useAction, useLoaderQuery } from "@carbon/query";
+import {
+  Badge,
   Button,
+  cn,
   HStack,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Spinner,
   toast,
+  useDebounce,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
+import { useState } from "react";
+import { LuCheck, LuMessageSquarePlus, LuSearch } from "react-icons/lu";
+import ItemThumbnail from "~/components/ItemThumbnail";
+import type { loader as optionsLoader } from "~/routes/api+/material-request-options";
+import type { MaterialRequestOption } from "~/services/material-request.service";
 import { materialRequestValidator } from "~/services/models";
 import { path } from "~/utils/path";
 
 export function NeedMaterialModal({
   operationId,
-  materials,
   isOpen,
   onClose
 }: {
   operationId: string;
-  materials: { itemId: string; label: string }[];
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -40,11 +57,7 @@ export function NeedMaterialModal({
       }}
     >
       <ModalContent>
-        <NeedMaterialBody
-          operationId={operationId}
-          materials={materials}
-          onClose={onClose}
-        />
+        <NeedMaterialBody operationId={operationId} onClose={onClose} />
       </ModalContent>
     </Modal>
   );
@@ -52,11 +65,9 @@ export function NeedMaterialModal({
 
 function NeedMaterialBody({
   operationId,
-  materials,
   onClose
 }: {
   operationId: string;
-  materials: { itemId: string; label: string }[];
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -69,22 +80,12 @@ function NeedMaterialBody({
     }
   });
 
-  // One option per part: an operation can list the same part on more than
-  // one material line.
-  const options = Array.from(
-    new Map(materials.map((m) => [m.itemId, m.label])).entries()
-  ).map(([value, label]) => ({ value, label }));
-
   return (
     <ValidatedForm
       method="post"
       action={path.to.materialRequestNew}
       validator={materialRequestValidator}
-      defaultValues={{
-        jobOperationId: operationId,
-        itemId: "",
-        note: ""
-      }}
+      defaultValues={{ jobOperationId: operationId, itemId: "", note: "" }}
       fetcher={fetcher}
     >
       <ModalHeader>
@@ -93,25 +94,7 @@ function NeedMaterialBody({
         </ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <Hidden name="jobOperationId" value={operationId} />
-        <VStack spacing={4}>
-          {options.length > 0 && (
-            <Select
-              name="itemId"
-              label={t`Part`}
-              placeholder={t`Any part`}
-              size="lg"
-              isClearable
-              options={options}
-            />
-          )}
-          <TextArea
-            name="note"
-            label={t`Note`}
-            placeholder={t`What do you need?`}
-            size="lg"
-          />
-        </VStack>
+        <RequestFields operationId={operationId} />
       </ModalBody>
       <ModalFooter>
         <HStack>
@@ -124,5 +107,153 @@ function NeedMaterialBody({
         </HStack>
       </ModalFooter>
     </ValidatedForm>
+  );
+}
+
+/** Inside the form: what is asked for, and the note that goes with it. */
+function RequestFields({ operationId }: { operationId: string }) {
+  const { t } = useLingui();
+  const { clearError } = useField("note");
+  const [search, setSearch] = useState("");
+  const onSearch = useDebounce(setSearch, 300);
+  const query = useLoaderQuery<typeof optionsLoader>(
+    path.to.api.materialRequestOptions(operationId, search),
+    { keepPreviousData: true }
+  );
+  // No item is a request for something off the list, told in the note.
+  const [selected, setSelected] = useState<MaterialRequestOption | null>(null);
+
+  const found = query.data?.options ?? [];
+  // The choice stays in sight when the search moves on from it.
+  const options =
+    selected && !found.some((option) => option.id === selected.id)
+      ? [selected, ...found]
+      : found;
+
+  return (
+    <>
+      <Hidden name="jobOperationId" value={operationId} />
+      <Hidden name="itemId" value={selected?.id ?? ""} />
+      <VStack spacing={4}>
+        <InputGroup size="lg">
+          <InputLeftElement>
+            {query.isFetching ? (
+              <Spinner className="size-4" />
+            ) : (
+              <LuSearch className="size-4 text-muted-foreground" />
+            )}
+          </InputLeftElement>
+          <Input
+            type="search"
+            placeholder={t`Search parts, consumables and tools`}
+            aria-label={t`Search parts, consumables and tools`}
+            onChange={(event) => onSearch(event.target.value)}
+          />
+        </InputGroup>
+        <div
+          role="radiogroup"
+          aria-label={t`What do you need?`}
+          className="flex max-h-[40vh] w-full flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
+        >
+          <Option
+            isSelected={selected === null}
+            onSelect={() => setSelected(null)}
+            media={
+              <div className="flex size-11 items-center justify-center rounded-lg bg-muted">
+                <LuMessageSquarePlus className="size-6 text-muted-foreground" />
+              </div>
+            }
+            title={<Trans>Something else</Trans>}
+            description={<Trans>Not on the list: describe it below</Trans>}
+          />
+          {options.map((option) => (
+            <Option
+              key={option.id}
+              isSelected={selected?.id === option.id}
+              onSelect={() => {
+                setSelected(option);
+                // The note was only required without an item.
+                clearError();
+              }}
+              media={
+                <ItemThumbnail
+                  size="lg"
+                  thumbnailPath={option.thumbnailPath}
+                  type={option.type}
+                />
+              }
+              title={option.readableIdWithRevision ?? option.name}
+              description={option.name}
+              badge={
+                option.onOperation && (
+                  <Badge variant="secondary">
+                    <Trans>This operation</Trans>
+                  </Badge>
+                )
+              }
+            />
+          ))}
+          {query.data?.error && (
+            <p className="px-1 text-sm text-muted-foreground">
+              <Trans>
+                The list failed to load. You can still describe what you need.
+              </Trans>
+            </p>
+          )}
+        </div>
+        <TextArea
+          name="note"
+          label={selected ? t`Note` : t`What do you need?`}
+          placeholder={
+            selected
+              ? t`How many, where, anything the feeder should know`
+              : t`Describe it: what, how many, where`
+          }
+          size="lg"
+        />
+      </VStack>
+    </>
+  );
+}
+
+function Option({
+  isSelected,
+  onSelect,
+  media,
+  title,
+  description,
+  badge
+}: {
+  isSelected: boolean;
+  onSelect: () => void;
+  media: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  badge?: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isSelected}
+      onClick={onSelect}
+      className={cn(
+        "flex w-full shrink-0 items-center gap-3 rounded-lg border p-2 text-left",
+        isSelected ? "border-primary bg-accent" : "border-border"
+      )}
+    >
+      {media}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-base/6 font-medium">{title}</span>
+        <span className="truncate text-sm text-muted-foreground">
+          {description}
+        </span>
+      </span>
+      {badge}
+      <LuCheck
+        aria-hidden
+        className={cn("size-5 shrink-0", !isSelected && "invisible")}
+      />
+    </button>
   );
 }

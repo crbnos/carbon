@@ -128,6 +128,10 @@ msgstr "{0} of {1} complete"
 msgid "{0} of {1} completed"
 msgstr "{0} of {1} completed"
 
+#. placeholder {0}: requests.length
+msgid "{0} open"
+msgstr "{0} open"
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} queued"
@@ -988,6 +992,9 @@ msgstr "Density"
 msgid "Depot"
 msgstr "Depot"
 
+msgid "Describe it: what, how many, where"
+msgstr "Describe it: what, how many, where"
+
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
 
@@ -1216,6 +1223,9 @@ msgstr "Failed to fetch storageUnits"
 msgid "Failed to get options"
 msgstr "Failed to get options"
 
+msgid "Failed to load material requests"
+msgstr "Failed to load material requests"
+
 msgid "Failed to process image"
 msgstr "Failed to process image"
 
@@ -1388,6 +1398,9 @@ msgstr "How Carbon looks in this browser."
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr "How many, where, anything the feeder should know"
 
 msgid "How many?"
 msgstr "How many?"
@@ -1802,6 +1815,9 @@ msgstr "matches"
 msgid "Material requested"
 msgstr "Material requested"
 
+msgid "Material requests"
+msgstr "Material requests"
+
 msgid "Materials"
 msgstr "Materials"
 
@@ -2018,6 +2034,9 @@ msgstr "No open inspections"
 msgid "No open jobs"
 msgstr "No open jobs"
 
+msgid "No open material requests"
+msgstr "No open material requests"
+
 msgid "No open service jobs at this location"
 msgstr "No open service jobs at this location"
 
@@ -2149,6 +2168,9 @@ msgstr "Normal"
 
 msgid "Not in this operation"
 msgstr "Not in this operation"
+
+msgid "Not on the list: describe it below"
+msgstr "Not on the list: describe it below"
 
 msgid "Not scheduled"
 msgstr "Not scheduled"
@@ -2972,6 +2994,9 @@ msgstr "Search operators"
 msgid "Search operators..."
 msgstr "Search operators..."
 
+msgid "Search parts, consumables and tools"
+msgstr "Search parts, consumables and tools"
+
 msgid "Search projects and tasks"
 msgstr "Search projects and tasks"
 
@@ -3219,6 +3244,9 @@ msgstr "Soft deadline"
 msgid "Solid"
 msgstr "Solid"
 
+msgid "Something else"
+msgstr "Something else"
+
 msgid "Source"
 msgstr "Source"
 
@@ -3420,6 +3448,9 @@ msgstr "The jobs make different items — keep each job's parts apart."
 msgid "the kit"
 msgstr "the kit"
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr "The list failed to load. You can still describe what you need."
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 
@@ -3492,6 +3523,9 @@ msgstr "This lot is expired and can't be picked."
 
 msgid "This marks the dispatch as completed."
 msgstr "This marks the dispatch as completed."
+
+msgid "This operation"
+msgstr "This operation"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "This part was made to order. Scrapping it can reopen its routing to make a replacement."

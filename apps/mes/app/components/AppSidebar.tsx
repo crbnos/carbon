@@ -42,6 +42,7 @@ import {
   LuMapPin,
   LuMonitorPlay,
   LuPackageCheck,
+  LuPackageSearch,
   LuTruck,
   LuWrench
 } from "react-icons/lu";
@@ -66,6 +67,7 @@ export function AppSidebar({
   activeEvents,
   activeMaintenanceCount,
   openServiceJobCount,
+  openMaterialRequestCount,
   company,
   companies,
   consoleEnabled,
@@ -81,6 +83,7 @@ export function AppSidebar({
   activeEvents: number;
   activeMaintenanceCount: number;
   openServiceJobCount: number;
+  openMaterialRequestCount: number;
   company: Company;
   companies: Company[];
   consoleEnabled?: boolean;
@@ -105,7 +108,8 @@ export function AppSidebar({
       counts={{
         active: activeEvents,
         maintenance: activeMaintenanceCount,
-        service: openServiceJobCount
+        service: openServiceJobCount,
+        materialRequests: openMaterialRequestCount
       }}
     />
   );
@@ -366,7 +370,8 @@ function BackToErpLink() {
   );
 }
 
-export type QueueKey = keyof typeof MES_NAV_SHORTCUTS;
+/** Every digit has its queue, so material requests has no shortcut. */
+export type QueueKey = keyof typeof MES_NAV_SHORTCUTS | "materialRequests";
 
 /** The task queues, in rail order; each one's ⌥-digit comes from its key. */
 export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
@@ -380,7 +385,12 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "picking", icon: LuPackageCheck, to: path.to.picking },
     { key: "service", icon: LuHeadphones, to: path.to.service },
     { key: "inspections", icon: LuClipboardCheck, to: path.to.inspections },
-    { key: "lineFeed", icon: LuTruck, to: path.to.lineFeed }
+    { key: "lineFeed", icon: LuTruck, to: path.to.lineFeed },
+    {
+      key: "materialRequests",
+      icon: LuPackageSearch,
+      to: path.to.materialRequests
+    }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
@@ -400,7 +410,8 @@ export function useQueueTitles(): Record<QueueKey, string> {
       picking: t`Picking`,
       service: t`Service`,
       inspections: t`Inspections`,
-      lineFeed: t`Line feed`
+      lineFeed: t`Line feed`,
+      materialRequests: t`Material requests`
     }),
     [t]
   );
@@ -422,10 +433,16 @@ function QueueLinks({ counts }: { counts: Partial<Record<QueueKey, number>> }) {
   useShortcutKeyMap(
     useMemo(
       () =>
-        QUEUES.map((queue) => ({
-          shortcut: MES_NAV_SHORTCUTS[queue.key],
-          action: () => navigate(queue.to)
-        })),
+        QUEUES.flatMap((queue) =>
+          queue.key === "materialRequests"
+            ? []
+            : [
+                {
+                  shortcut: MES_NAV_SHORTCUTS[queue.key],
+                  action: () => navigate(queue.to)
+                }
+              ]
+        ),
       [navigate]
     )
   );

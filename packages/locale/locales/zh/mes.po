@@ -128,6 +128,10 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 已完成"
 
+#. placeholder {0}: requests.length
+msgid "{0} open"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 排队中"
@@ -988,6 +992,9 @@ msgstr "密度"
 msgid "Depot"
 msgstr "仓库"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "描述问题..."
 
@@ -1216,6 +1223,9 @@ msgstr "获取存储单位失败"
 msgid "Failed to get options"
 msgstr "获取选项失败"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "处理图像失败"
 
@@ -1388,6 +1398,9 @@ msgstr "Carbon 在此浏览器中的外观。"
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "多少个？"
@@ -1802,6 +1815,9 @@ msgstr "匹配"
 msgid "Material requested"
 msgstr "已申请物料"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "原材料"
 
@@ -2018,6 +2034,9 @@ msgstr "没有未结的检验"
 msgid "No open jobs"
 msgstr "没有未结的工单"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "此地点没有打开的服务工单"
 
@@ -2149,6 +2168,9 @@ msgstr "正常检验"
 
 msgid "Not in this operation"
 msgstr "不在此工序中"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "未安排"
@@ -2972,6 +2994,9 @@ msgstr "搜索操作员"
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "搜索项目和任务"
 
@@ -3219,6 +3244,9 @@ msgstr "软性截止日期"
 msgid "Solid"
 msgstr "纯色"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "来源"
 
@@ -3420,6 +3448,9 @@ msgstr "各工单生产不同的物料 — 保持每个工单的零件分开。"
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
 
@@ -3492,6 +3523,9 @@ msgstr "此批次已过期，无法拣货。"
 
 msgid "This marks the dispatch as completed."
 msgstr "这将标记维护工单为已完成。"
+
+msgid "This operation"
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路线以制造替换件。"
