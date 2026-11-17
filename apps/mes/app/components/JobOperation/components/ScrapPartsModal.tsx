@@ -21,7 +21,13 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useState } from "react";
-import { LuHand, LuMinus, LuPersonStanding, LuPlus } from "react-icons/lu";
+import {
+  LuCheck,
+  LuHand,
+  LuMinus,
+  LuPersonStanding,
+  LuPlus
+} from "react-icons/lu";
 import type { loader } from "~/routes/x+/scrap-parts.$operationId";
 import { scrapPartsValidator } from "~/services/models";
 import { path } from "~/utils/path";
@@ -50,6 +56,8 @@ function remember(key: string, value: string) {
 
 const lineKey = (materialId: string, itemId: string) =>
   `${materialId}:${itemId}`;
+const entityKey = (materialId: string, trackedEntityId: string) =>
+  `${materialId}#${trackedEntityId}`;
 
 /**
  * Opens the Scrap parts dialog for an operation, from any MES view: `open()`
@@ -110,15 +118,24 @@ function ScrapPartsModal({
   const setCount = (key: string, value: number) =>
     setCounts((prev) => ({ ...prev, [key]: Math.max(0, value) }));
 
-  const lines = materials.flatMap((m) =>
-    m.parts
+  // Untracked parts by count; tracked ones by the serial or batch used.
+  const lines = materials.flatMap((m) => [
+    ...m.parts
       .map((p) => ({
         materialId: m.id,
         itemId: p.itemId,
         quantity: countOf(lineKey(m.id, p.itemId))
       }))
+      .filter((line) => line.quantity > 0),
+    ...m.tracked
+      .map((e) => ({
+        materialId: m.id,
+        trackedEntityId: e.trackedEntityId,
+        quantity: countOf(entityKey(m.id, e.trackedEntityId))
+      }))
       .filter((line) => line.quantity > 0)
-  );
+  ]);
+  const anyTracked = lines.some((line) => "trackedEntityId" in line);
   const total = lines.reduce((sum, line) => sum + line.quantity, 0);
   // A remembered reason that no longer exists is dropped.
   const reasonId = reasons.some((r) => r.value === pickedReasonId)
@@ -130,9 +147,14 @@ function ScrapPartsModal({
       if (reasonId) remember(LAST_REASON, reasonId);
       remember(LAST_REPLACEMENT, replacement);
       toast.success(
-        replacement === "Water Spider"
-          ? t`Scrapped. The water spider is bringing replacements.`
-          : t`Scrapped. Grab replacements from the shelf.`
+        [
+          replacement === "Water Spider"
+            ? t`Scrapped. The water spider is bringing replacements.`
+            : t`Scrapped. Grab replacements from the shelf.`,
+          anyTracked ? t`Scan the replacement serials and batches in.` : ""
+        ]
+          .filter(Boolean)
+          .join(" ")
       );
       onClose();
     },
@@ -170,7 +192,7 @@ function ScrapPartsModal({
             <Hidden name="scrapReasonId" value={reasonId ?? ""} />
             <Hidden name="replacement" value={replacement} />
             <VStack spacing={4}>
-              <fieldset className="w-full">
+              <fieldset className="w-full min-w-0">
                 <legend className="mb-2 text-sm font-medium">
                   <Trans>Parts</Trans>
                 </legend>
@@ -181,8 +203,8 @@ function ScrapPartsModal({
                 ) : materials.length === 0 ? (
                   <p className="text-muted-foreground">
                     <Trans>
-                      Nothing on this operation can be scrapped by quantity.
-                      Scrap a serial or batch from Issue.
+                      Nothing on this operation can be scrapped yet. Serials and
+                      batches show once they are issued.
                     </Trans>
                   </p>
                 ) : (
@@ -211,6 +233,36 @@ function ScrapPartsModal({
                                   : t`${part.perKit} per kit · ${part.name}`
                               }
                               value={countOf(key)}
+                              onChange={(value) => setCount(key, value)}
+                            />
+                          );
+                        })}
+                        {material.tracked.map((entity) => {
+                          const key = entityKey(
+                            material.id,
+                            entity.trackedEntityId
+                          );
+                          const where = entity.kitReadableId
+                            ? t`in kit ${entity.kitReadableId}`
+                            : entity.name;
+                          return entity.trackingType === "Serial" ? (
+                            <SerialToggle
+                              key={key}
+                              itemReadableId={entity.itemReadableId}
+                              serial={entity.readableId}
+                              detail={where}
+                              selected={countOf(key) > 0}
+                              onToggle={() =>
+                                setCount(key, countOf(key) > 0 ? 0 : 1)
+                              }
+                            />
+                          ) : (
+                            <PartCounter
+                              key={key}
+                              readableId={entity.itemReadableId}
+                              detail={t`Batch ${entity.readableId} · ${entity.quantity} used · ${where}`}
+                              value={countOf(key)}
+                              max={entity.quantity}
                               onChange={(value) => setCount(key, value)}
                             />
                           );
@@ -273,11 +325,13 @@ function PartCounter({
   readableId,
   detail,
   value,
+  max,
   onChange
 }: {
   readableId: string;
   detail: string;
   value: number;
+  max?: number;
   onChange: (value: number) => void;
 }) {
   const { t } = useLingui();
@@ -311,15 +365,57 @@ function PartCounter({
         variant="secondary"
         size="lg"
         icon={<LuPlus />}
+        isDisabled={max !== undefined && value >= max}
         onClick={() => onChange(value + 1)}
       />
     </div>
   );
 }
 
+function SerialToggle({
+  itemReadableId,
+  serial,
+  detail,
+  selected,
+  onToggle
+}: {
+  itemReadableId: string;
+  serial: string;
+  detail: string;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onToggle}
+      className={cn(
+        "flex min-h-14 min-w-0 items-center gap-3 rounded-lg border px-4 py-2 text-left",
+        selected ? "border-primary bg-primary/10" : "hover:bg-accent"
+      )}
+    >
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate font-medium">
+          {itemReadableId} · {serial}
+        </span>
+        <span className="truncate text-sm text-muted-foreground">{detail}</span>
+      </div>
+      <span
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-md border",
+          selected && "border-primary bg-primary text-primary-foreground"
+        )}
+      >
+        {selected ? <LuCheck /> : null}
+      </span>
+    </button>
+  );
+}
+
 function Choices({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <fieldset className="w-full">
+    <fieldset className="w-full min-w-0">
       <legend className="mb-2 text-sm font-medium">{label}</legend>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{children}</div>
     </fieldset>

@@ -117,13 +117,22 @@ export const issueInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("scrapJobPart"),
     jobOperationId: z.string(),
+    // A tracked part names the serial or batch that was used; an untracked
+    // one, the item.
     lines: z
       .array(
-        z.object({
-          materialId: z.string(),
-          itemId: z.string(),
-          quantity: z.number().positive()
-        })
+        z.union([
+          z.object({
+            materialId: z.string(),
+            trackedEntityId: z.string(),
+            quantity: z.number().positive()
+          }),
+          z.object({
+            materialId: z.string(),
+            itemId: z.string(),
+            quantity: z.number().positive()
+          })
+        ])
       )
       .min(1),
     scrapReasonId: z.string(),

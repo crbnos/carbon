@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-17T02:32:03.802Z",
+  "exportedAt": "2026-11-17T02:47:32.818Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -6986,7 +6986,8 @@
         "notes",
         "idempotencyKey",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "trackedEntityId"
       ]
     },
     {

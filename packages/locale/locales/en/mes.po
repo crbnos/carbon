@@ -529,6 +529,11 @@ msgstr "Batch"
 msgid "Batch {0}"
 msgstr "Batch {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr "Batch {0} · {1} used · {where}"
+
 msgid "Batch Details"
 msgstr "Batch Details"
 
@@ -1386,6 +1391,10 @@ msgstr "in {0}"
 msgid "In an open menu"
 msgstr "In an open menu"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr "in kit {0}"
+
 msgid "In Progress"
 msgstr "In Progress"
 
@@ -2096,8 +2105,8 @@ msgstr "Nothing has failed yet, so say why the units are rejected. All {0} unit(
 msgid "Nothing matches your search."
 msgstr "Nothing matches your search."
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 
 msgid "Nothing on this page uses that barcode"
 msgstr "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "Scan or select the unit, then scan the kanban card again"
 
 msgid "Scan received"
 msgstr "Scan received"
+
+msgid "Scan the replacement serials and batches in."
+msgstr "Scan the replacement serials and batches in."
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."

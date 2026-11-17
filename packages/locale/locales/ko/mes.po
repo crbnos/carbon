@@ -529,6 +529,11 @@ msgstr "배치"
 msgid "Batch {0}"
 msgstr "배치 {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "배치 상세정보"
 
@@ -1386,6 +1391,10 @@ msgstr "{0} 후"
 msgid "In an open menu"
 msgstr "열린 메뉴에서"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "진행 중"
 
@@ -2096,7 +2105,7 @@ msgstr "아직 실패한 항목이 없으므로 단위를 거부하는 사유를
 msgid "Nothing matches your search."
 msgstr "검색과 일치하는 항목이 없습니다."
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "단위를 스캔하거나 선택한 다음 칸반 카드를 다시 스�
 
 msgid "Scan received"
 msgstr "스캔을 받았습니다"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시되는 6자리 코드를 입력하십시오."

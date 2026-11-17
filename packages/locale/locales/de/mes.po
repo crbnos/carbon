@@ -529,6 +529,11 @@ msgstr "Charge"
 msgid "Batch {0}"
 msgstr "Los {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "Los-Details"
 
@@ -1386,6 +1391,10 @@ msgstr "in {0}"
 msgid "In an open menu"
 msgstr "In einem offenen Menü"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
@@ -2096,7 +2105,7 @@ msgstr "Noch nichts ist fehlgeschlagen, daher begründen Sie, warum die Einheite
 msgid "Nothing matches your search."
 msgstr "Nichts stimmt Ihrer Suche überein."
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "Scannen oder wählen Sie die Einheit aus und scannen Sie dann die Kanban
 
 msgid "Scan received"
 msgstr "Scan empfangen"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scannen Sie diesen QR-Code mit Ihrer Authentifizierungs-App (z. B. Google Authenticator oder 1Password), und geben Sie dann den 6-stelligen Code ein, den sie anzeigt."

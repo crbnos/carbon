@@ -422,11 +422,18 @@ export const scrapPartsValidator = z.object({
   lines: zfd.json(
     z
       .array(
-        z.object({
-          materialId: z.string().min(1),
-          itemId: z.string().min(1),
-          quantity: z.number().positive()
-        })
+        z.union([
+          z.object({
+            materialId: z.string().min(1),
+            trackedEntityId: z.string().min(1),
+            quantity: z.number().positive()
+          }),
+          z.object({
+            materialId: z.string().min(1),
+            itemId: z.string().min(1),
+            quantity: z.number().positive()
+          })
+        ])
       )
       .min(1, { message: "Pick a part" })
   ),

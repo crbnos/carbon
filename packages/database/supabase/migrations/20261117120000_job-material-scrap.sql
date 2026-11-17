@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS "jobMaterialScrap" (
   "jobMaterialId" TEXT NOT NULL REFERENCES "jobMaterial"("id") ON DELETE CASCADE,
   "jobOperationId" TEXT NOT NULL REFERENCES "jobOperation"("id") ON DELETE CASCADE,
   "itemId" TEXT NOT NULL REFERENCES "item"("id") ON DELETE RESTRICT,
+  -- The serial or batch scrapped, for a tracked part.
+  "trackedEntityId" TEXT REFERENCES "trackedEntity"("id") ON DELETE RESTRICT,
   "quantity" NUMERIC NOT NULL CHECK ("quantity" > 0),
   "scrapReasonId" TEXT NOT NULL REFERENCES "scrapReason"("id") ON DELETE RESTRICT,
   "replacement" "jobMaterialScrapReplacement" NOT NULL,
@@ -27,7 +29,8 @@ CREATE TABLE IF NOT EXISTS "jobMaterialScrap" (
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT "jobMaterialScrap_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "jobMaterialScrap_idempotencyKey_key"
-    UNIQUE ("companyId", "idempotencyKey", "jobMaterialId", "itemId"),
+    UNIQUE NULLS NOT DISTINCT
+      ("companyId", "idempotencyKey", "jobMaterialId", "itemId", "trackedEntityId"),
   CONSTRAINT "jobMaterialScrap_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "jobMaterialScrap_materialRequestId_fkey" FOREIGN KEY ("materialRequestId", "companyId")
@@ -37,6 +40,7 @@ CREATE TABLE IF NOT EXISTS "jobMaterialScrap" (
 CREATE INDEX IF NOT EXISTS "jobMaterialScrap_jobMaterialId_idx" ON "jobMaterialScrap" ("jobMaterialId");
 CREATE INDEX IF NOT EXISTS "jobMaterialScrap_jobOperationId_idx" ON "jobMaterialScrap" ("jobOperationId");
 CREATE INDEX IF NOT EXISTS "jobMaterialScrap_itemId_idx" ON "jobMaterialScrap" ("itemId");
+CREATE INDEX IF NOT EXISTS "jobMaterialScrap_trackedEntityId_idx" ON "jobMaterialScrap" ("trackedEntityId");
 CREATE INDEX IF NOT EXISTS "jobMaterialScrap_scrapReasonId_idx" ON "jobMaterialScrap" ("scrapReasonId");
 CREATE INDEX IF NOT EXISTS "jobMaterialScrap_materialRequestId_idx" ON "jobMaterialScrap" ("materialRequestId");
 CREATE INDEX IF NOT EXISTS "jobMaterialScrap_createdBy_idx" ON "jobMaterialScrap" ("createdBy");

@@ -529,6 +529,11 @@ msgstr "Partia"
 msgid "Batch {0}"
 msgstr "Partia produkcyjna {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "Szczegóły partii produkcyjnej"
 
@@ -1386,6 +1391,10 @@ msgstr "za {0}"
 msgid "In an open menu"
 msgstr "W otwartym menu"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "W toku"
 
@@ -2096,7 +2105,7 @@ msgstr "Żadna próbka nie jest jeszcze niezaliczona, więc podaj powód odrzuce
 msgid "Nothing matches your search."
 msgstr "Nic nie pasuje do wyszukiwania."
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "Zeskanuj lub wybierz jednostkę, a następnie ponownie zeskanuj kartę k
 
 msgid "Scan received"
 msgstr "Skan odebrany"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Skanuj ten kod QR aplikacją uwierzytelniającą (np. Google Authenticator lub 1Password), a następnie wprowadź 6-cyfrowy kod, który wyświetla."

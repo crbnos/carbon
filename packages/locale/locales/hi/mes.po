@@ -529,6 +529,11 @@ msgstr "बैच"
 msgid "Batch {0}"
 msgstr "बैच {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "बैच विवरण"
 
@@ -1386,6 +1391,10 @@ msgstr "{0} में"
 msgid "In an open menu"
 msgstr "खुले मेनू में"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "प्रगति में"
 
@@ -2096,7 +2105,7 @@ msgstr "अभी तक कुछ भी विफल नहीं हुआ �
 msgid "Nothing matches your search."
 msgstr "आपकी खोज से कुछ नहीं मिला।"
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "इकाई को स्कैन करें या चुनें,
 
 msgid "Scan received"
 msgstr "स्कैन प्राप्त हुआ"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "इस QR कोड को अपने प्रमाणकर्ता ऐप्लिकेशन (जैसे Google Authenticator या 1Password) के साथ स्कैन करें, फिर इसके द्वारा दिया गया 6-अंकीय कोड दर्ज करें।"

@@ -529,6 +529,11 @@ msgstr "Партия"
 msgid "Batch {0}"
 msgstr "Серия {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "Детали серии"
 
@@ -1386,6 +1391,10 @@ msgstr "через {0}"
 msgid "In an open menu"
 msgstr "В открытом меню"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "В работе"
 
@@ -2096,7 +2105,7 @@ msgstr "Отказов пока нет, поэтому укажите причи
 msgid "Nothing matches your search."
 msgstr "Ничего не совпадает с вашим поиском."
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "Отсканируйте или выберите единицу, зат�
 
 msgid "Scan received"
 msgstr "Скан получен"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Отсканируйте этот QR код с помощью приложения аутентификации (например, Google Authenticator или 1Password), затем введите 6-значный код, который оно покажет."

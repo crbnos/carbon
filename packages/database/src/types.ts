@@ -32725,6 +32725,7 @@ export type Database = {
           quantity: number
           replacement: Database["public"]["Enums"]["jobMaterialScrapReplacement"]
           scrapReasonId: string
+          trackedEntityId: string | null
         }
         Insert: {
           companyId: string
@@ -32740,6 +32741,7 @@ export type Database = {
           quantity: number
           replacement: Database["public"]["Enums"]["jobMaterialScrapReplacement"]
           scrapReasonId: string
+          trackedEntityId?: string | null
         }
         Update: {
           companyId?: string
@@ -32755,6 +32757,7 @@ export type Database = {
           quantity?: number
           replacement?: Database["public"]["Enums"]["jobMaterialScrapReplacement"]
           scrapReasonId?: string
+          trackedEntityId?: string | null
         }
         Relationships: [
           {
@@ -32923,6 +32926,13 @@ export type Database = {
             columns: ["scrapReasonId"]
             isOneToOne: false
             referencedRelation: "scrapReason"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialScrap_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           }
         ]

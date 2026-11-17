@@ -529,6 +529,11 @@ msgstr "Lote"
 msgid "Batch {0}"
 msgstr "Lote de producción {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "Detalles del lote de producción"
 
@@ -1386,6 +1391,10 @@ msgstr "en {0}"
 msgid "In an open menu"
 msgstr "En un menú abierto"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "En curso"
 
@@ -2096,7 +2105,7 @@ msgstr "Todavía no hay fallos, así que indique el motivo por el que se rechaza
 msgid "Nothing matches your search."
 msgstr "Nada coincide con su búsqueda."
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "Escanea o selecciona la unidad y luego vuelve a escanear la tarjeta kanb
 
 msgid "Scan received"
 msgstr "Escaneo recibido"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Escanea este código QR con tu aplicación autenticadora (p. ej. Google Authenticator o 1Password), luego ingresa el código de 6 dígitos que muestra."

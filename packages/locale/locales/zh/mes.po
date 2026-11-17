@@ -529,6 +529,11 @@ msgstr "批次"
 msgid "Batch {0}"
 msgstr "生产批次 {0}"
 
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
+
 msgid "Batch Details"
 msgstr "生产批次详情"
 
@@ -1386,6 +1391,10 @@ msgstr "在 {0}"
 msgid "In an open menu"
 msgstr "在打开的菜单中"
 
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
+
 msgid "In Progress"
 msgstr "进行中"
 
@@ -2096,7 +2105,7 @@ msgstr "尚无失败项，因此请说明这些件被拒绝的原因。全部 {0
 msgid "Nothing matches your search."
 msgstr "没有匹配您搜索的内容。"
 
-msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
 msgstr ""
 
 msgid "Nothing on this page uses that barcode"
@@ -2790,6 +2799,9 @@ msgstr "请扫描或选择该单元，然后再次扫描看板卡"
 
 msgid "Scan received"
 msgstr "已收到扫码"
+
+msgid "Scan the replacement serials and batches in."
+msgstr ""
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "使用身份验证应用（如 Google Authenticator 或 1Password）扫码此 QR 代码，然后输入它显示的6位数代码。"
