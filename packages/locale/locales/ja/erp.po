@@ -924,6 +924,9 @@ msgstr "{count, plural, other {{fenceLabel}以降の追加 # 件}}"
 msgid "{count, plural, one {# row} other {# rows}}"
 msgstr "{count, plural, one {# 行} other {# 行}}"
 
+msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
+msgstr "{count, plural, other {この処理の # 個のツールはステップに紐付いていないため、すべてのステップに表示されます。}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {約# 行} other {約# 行}}"
 

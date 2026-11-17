@@ -142,7 +142,10 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import { StepLinkEditor } from "~/components/StepLinkEditor";
+import {
+  EveryStepToolsNote,
+  StepLinkEditor
+} from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
@@ -1873,15 +1876,14 @@ function JobStepTools({
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
-      (
-        tl.jobOperationStepIds ??
-        (
-          (tl as { jobOperationToolStep?: { jobOperationStepId: string }[] })
-            .jobOperationToolStep ?? []
-        ).map((s) => s.jobOperationStepId)
-      ).some((stepId) => stepId === step.id)
+      (tl.jobOperationToolStep ?? []).some(
+        (s) => s.jobOperationStepId === step.id
+      )
     )
     .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
+  const everyStepCount = (tools ?? []).filter(
+    (tl) => !tl.jobOperationToolStep?.length
+  ).length;
 
   const toggle = (toolId: string, linked: boolean) => {
     if (!step.id) return;
@@ -1911,6 +1913,7 @@ function JobStepTools({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      note={everyStepCount > 0 && <EveryStepToolsNote count={everyStepCount} />}
     />
   );
 }

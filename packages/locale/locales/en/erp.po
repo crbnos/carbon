@@ -924,6 +924,9 @@ msgstr "{count, plural, one {# More After {fenceLabel}} other {# More After {fen
 msgid "{count, plural, one {# row} other {# rows}}"
 msgstr "{count, plural, one {# row} other {# rows}}"
 
+msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
+msgstr "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {about # row} other {about # rows}}"
 
