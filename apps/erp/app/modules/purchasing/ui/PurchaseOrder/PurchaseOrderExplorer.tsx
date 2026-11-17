@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLineSupplierPartId } from "@carbon/documents/utils";
 import {
   Button,
   cn,
@@ -281,15 +282,19 @@ function PurchaseOrderLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId);
+  // The supplier's number is what is printed on the package being received.
   const subtitle =
     line.purchaseOrderLineType === "G/L Account"
       ? "G/L Account"
       : line.purchaseOrderLineType === "Fixed Asset"
         ? (line as any).assetName || line.description
-        : distinctItemText(
-            getItemReadableId(items, line.itemId),
-            line.description
-          );
+        : [
+            getLineSupplierPartId(line, itemReadableId),
+            distinctItemText(itemReadableId, line.description)
+          ]
+            .filter(Boolean)
+            .join(" · ");
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -300,7 +305,7 @@ function PurchaseOrderLineBody({
               ? line.description || "Indirect Expense"
               : line.purchaseOrderLineType === "Fixed Asset"
                 ? (line as any).assetReadableId || "Fixed Asset"
-                : getItemReadableId(items, line.itemId)}
+                : itemReadableId}
           </span>
           {subtitle && (
             <span className="text-muted-foreground text-xs truncate line-clamp-1">

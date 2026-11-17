@@ -29821,6 +29821,9 @@ msgstr "Tedarikçi Parça Numaraları"
 msgid "Supplier part updated"
 msgstr "Tedarikçi parçası güncellendi"
 
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "Tedarikçi Parçaları"
 

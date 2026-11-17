@@ -29821,6 +29821,9 @@ msgstr "供应商零件号"
 msgid "Supplier part updated"
 msgstr "供应商零件已更新"
 
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "供应商零件"
 

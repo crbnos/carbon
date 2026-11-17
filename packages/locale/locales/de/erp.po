@@ -29821,6 +29821,9 @@ msgstr "Lieferanten-Teilenummern"
 msgid "Supplier part updated"
 msgstr "Lieferantenteil aktualisiert"
 
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "Lieferantenteile"
 

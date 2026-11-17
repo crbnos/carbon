@@ -29821,6 +29821,9 @@ msgstr "Номера деталей поставщика"
 msgid "Supplier part updated"
 msgstr "Деталь поставщика обновлена"
 
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "Детали поставщика"
 
