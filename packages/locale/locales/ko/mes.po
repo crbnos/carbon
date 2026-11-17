@@ -2581,6 +2581,9 @@ msgstr "수량 {0}"
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "수량:"
 

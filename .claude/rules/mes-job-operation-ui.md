@@ -552,8 +552,11 @@ while its serial or batch materials are not scanned in.
   `x+/line-feed.transfer.tsx`, which calls `transferToStation`
   (`services/line-feed.server.ts`). It reads the station's shortage again,
   less the transfer lines already on their way, for the destination bin and
-  the most that may move, and checks that a named serial is still in the
-  source bin, so a resend creates nothing. Then it calls the ERP's
+  whether the station still needs the part, and checks that a named serial is
+  still in the source bin, so a resend of a move that covered the need creates
+  nothing. The button has a quantity field for a loose part: it starts at what
+  the station is short of, and the feeder may type more (a whole box), up to
+  what the bin holds; a serial kit moves one at a time. Then it calls the ERP's
   `api+/inventory.stock-transfer.move.ts` (`createStockTransfer` with
   `moveNow`). "Bring kit" is the same move for the rack kit's serial. The
   action answers with a flash, because a move that lands unmounts its button.

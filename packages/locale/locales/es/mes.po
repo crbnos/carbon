@@ -2581,6 +2581,9 @@ msgstr "Cantidad {0}"
 msgid "Quantity must be greater than 0"
 msgstr "La cantidad debe ser mayor que 0"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "Cantidad:"
 

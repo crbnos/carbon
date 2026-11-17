@@ -15,7 +15,10 @@ export type StationTransfer = {
   itemId: string;
   /** The bin the feeder grabbed it from. */
   fromStorageUnitId: string;
-  /** The most to move; the station's need caps it. */
+  /**
+   * How much to move. The feeder may bring more than the station needs now;
+   * the source bin's stock caps it. A serial is capped at the need.
+   */
   quantity: number;
   /** The serial or batch to move, when the line feed knows it (a kit). */
   trackedEntityId?: string;
@@ -32,11 +35,13 @@ const refused = (message: string): StationTransferResult => ({
  * Bring a part to a station: a stock transfer from the bin the feeder grabbed
  * it from to the station's bin, moved at once.
  *
- * The caller only says what to move and from where. The destination and the
- * most that may move are read here: the station's shortage less the transfers
- * already on their way to it. A named serial or batch must still be in the
- * source bin. So a second send of the same move finds nothing left to bring,
- * or the unit gone, and creates nothing. The ERP creates and posts the
+ * The caller says what to move, how much and from where. The destination and
+ * whether the station still needs it are read here: its shortage less the
+ * transfers already on their way to it. A named serial or batch must still be
+ * in the source bin. So a second send of a move that covered the need finds
+ * the station no longer short, or the unit gone, and creates nothing. A loose
+ * part may move in a larger quantity than the need (a whole box); the ERP
+ * refuses more than the source bin holds. The ERP creates and posts the
  * transfer (its storage rules, tracking and stock checks apply), as the
  * caller: `request` carries their session.
  */
@@ -117,7 +122,9 @@ export async function transferToStation(
         itemId,
         fromStorageUnitId,
         toStorageUnitId: shortage.data.storageUnitId,
-        quantity: Math.min(args.quantity, need),
+        quantity: args.trackedEntityId
+          ? Math.min(args.quantity, need)
+          : args.quantity,
         trackedEntityId: args.trackedEntityId
       }
     ])

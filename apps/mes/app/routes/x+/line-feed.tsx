@@ -14,6 +14,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  Input,
   toast
 } from "@carbon/react";
 import { formatQuantity } from "@carbon/utils";
@@ -1215,9 +1216,10 @@ function StationLine({
 }
 
 /**
- * Grab it, tap, carry it over: one tap moves the stock from the source bin to
- * the station's bin. The server decides the destination and caps the
- * quantity at what the station is still short of. The action flashes what
+ * Grab it, type how many, tap, carry it over: one tap moves the stock from
+ * the source bin to the station's bin. The quantity starts at what the
+ * station is short of; the feeder can bring more (a whole box), up to what
+ * the bin holds. The server decides the destination. The action flashes what
  * happened: a move that lands removes this button before it could say so.
  */
 function TransferButton({
@@ -1232,14 +1234,21 @@ function TransferButton({
   from: string | null;
 }) {
   const { locale } = useLocale();
+  const { t } = useLingui();
   const fetcher = useAction<{ success: boolean }>();
-  const quantity = formatQuantity(source.quantity, locale);
+  // What the feeder typed; until then, the suggested quantity.
+  const [typed, setTyped] = useState<string | null>(null);
+  const entered = typed === null ? source.quantity : Number(typed);
+  const valid = Number.isFinite(entered) && entered > 0;
+  const quantity = valid ? formatQuantity(entered, locale) : "";
+  // A kit moves one serial at a time.
+  const adjustable = !source.trackedEntityId;
 
   return (
     <fetcher.Form
       method="post"
       action={path.to.lineFeedTransfer}
-      className="w-full"
+      className="flex w-full gap-2"
     >
       <input type="hidden" name="workCenterId" value={workCenterId} />
       <input type="hidden" name="itemId" value={itemId} />
@@ -1248,7 +1257,6 @@ function TransferButton({
         name="fromStorageUnitId"
         value={source.storageUnitId}
       />
-      <input type="hidden" name="quantity" value={source.quantity} />
       {source.trackedEntityId && (
         <input
           type="hidden"
@@ -1256,14 +1264,31 @@ function TransferButton({
           value={source.trackedEntityId}
         />
       )}
+      {adjustable ? (
+        <Input
+          name="quantity"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          max={source.onHand}
+          step="any"
+          size="lg"
+          value={typed ?? String(source.quantity)}
+          onChange={(event) => setTyped(event.target.value)}
+          aria-label={t`Quantity to move`}
+          className="w-24 shrink-0 text-center tabular-nums"
+        />
+      ) : (
+        <input type="hidden" name="quantity" value={source.quantity} />
+      )}
       <Button
         type="submit"
         variant="secondary"
         size="lg"
         leftIcon={<LuArrowRightLeft />}
         isLoading={fetcher.isPending}
-        isDisabled={fetcher.isPending}
-        className="w-full"
+        isDisabled={fetcher.isPending || !valid || entered > source.onHand}
+        className="min-w-0 flex-1"
       >
         {from ? (
           <Trans>

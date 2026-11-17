@@ -2581,6 +2581,9 @@ msgstr "मात्रा {0}"
 msgid "Quantity must be greater than 0"
 msgstr "मात्रा 0 से अधिक होनी चाहिए"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "मात्रा:"
 
