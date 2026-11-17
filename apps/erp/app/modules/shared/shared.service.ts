@@ -12467,24 +12467,43 @@ export async function createDocument(
           ].filter((id): id is string => !!id)
         )
       ];
-      const [inspectionAssignments, receiptLocations] = await Promise.all([
-        many(
-          db,
-          "itemInspectionDocumentAssignment",
-          { companyId, usage: "Receipt", itemId: receiptItemIds },
-          { columns: ["itemId"] }
-        ),
-        many(
-          db,
-          "location",
-          { companyId, id: lineLocationIds },
-          { columns: ["id", "inspectionStorageUnitId"] }
+      const pinnedStorageUnitIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.storageUnitId)
+            .filter((id): id is string => !!id)
         )
-      ]);
+      ];
+      const [inspectionAssignments, receiptLocations, pinnedStorageUnits] =
+        await Promise.all([
+          many(
+            db,
+            "itemInspectionDocumentAssignment",
+            { companyId, usage: "Receipt", itemId: receiptItemIds },
+            { columns: ["itemId"] }
+          ),
+          many(
+            db,
+            "location",
+            { companyId, id: lineLocationIds },
+            { columns: ["id", "inspectionStorageUnitId"] }
+          ),
+          many(
+            db,
+            "storageUnit",
+            { companyId, id: pinnedStorageUnitIds },
+            { columns: ["id", "locationId"] }
+          )
+        ]);
       if (inspectionAssignments.error)
         throw new Error(inspectionAssignments.error.message);
       if (receiptLocations.error)
         throw new Error(receiptLocations.error.message);
+      if (pinnedStorageUnits.error)
+        throw new Error(pinnedStorageUnits.error.message);
+      const storageUnitLocation = new Map(
+        (pinnedStorageUnits.data ?? []).map((row) => [row.id, row.locationId])
+      );
       const inspectedItemIds = new Set(
         isOutsideOperation
           ? []
@@ -12536,6 +12555,14 @@ export async function createDocument(
         const unitPrice = d.unitPrice ?? 0;
         const outstandingQuantity =
           d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
+        // Every line is received at the receipt's location (the insert below
+        // sets it), so its bin must be one of that location's.
+        const lineLocationId = locationId ?? d.locationId ?? null;
+        const pinnedStorageUnitId =
+          d.storageUnitId &&
+          storageUnitLocation.get(d.storageUnitId) === lineLocationId
+            ? d.storageUnitId
+            : null;
 
         const shippingAndTaxUnitCost =
           ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
@@ -12558,15 +12585,15 @@ export async function createDocument(
           unitPrice:
             unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
-          locationId: d.locationId ?? null,
+          locationId: lineLocationId,
           requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
             (inspectedItemIds.has(d.itemId)
-              ? inspectionUnitByLocation.get(d.locationId ?? locationId ?? "")
+              ? inspectionUnitByLocation.get(lineLocationId ?? "")
               : null) ??
-            d.storageUnitId ??
+            pinnedStorageUnitId ??
             defaultStorageUnitByItemLocation.get(
-              pickMethodKey(d.itemId!, d.locationId ?? null)
+              pickMethodKey(d.itemId!, lineLocationId)
             ) ??
             null,
           createdBy: userId ?? ""

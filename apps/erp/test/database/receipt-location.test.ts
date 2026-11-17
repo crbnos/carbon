@@ -17,7 +17,10 @@ import {
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
 
-async function purchaseOrderAt(f: Fixture): Promise<string> {
+async function purchaseOrderAt(
+  f: Fixture,
+  storageUnitId?: string
+): Promise<string> {
   const purchaseOrderId = `${f.prefix}-po-location`;
   await seed(f, async (trx) => {
     const interaction = await trx
@@ -58,6 +61,7 @@ async function purchaseOrderAt(f: Fixture): Promise<string> {
         conversionFactor: 1,
         inventoryUnitOfMeasureCode: "EA",
         locationId: f.locationId,
+        storageUnitId,
         companyId: f.companyId,
         createdBy: USER
       })
@@ -119,6 +123,62 @@ databaseTest(
         })
       );
       expect(await receiptLocation(f, receipt.id)).toBe(f.otherLocationId);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a receipt moved to another location does not keep a bin of the old one",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const binAtOldLocation = `${f.prefix}-bin-a`;
+      await seed(f, (trx) =>
+        trx
+          .insertInto("storageUnit")
+          .values({
+            id: binAtOldLocation,
+            name: "Old location bin",
+            locationId: f.locationId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const purchaseOrderId = await purchaseOrderAt(f, binAtOldLocation);
+      const receipt = unwrap(
+        await invokeCreate(handlesOf(f.ctx), {
+          type: "receiptFromPurchaseOrder",
+          purchaseOrderId,
+          locationId: f.locationId
+        })
+      );
+      const lineBin = () =>
+        f.db
+          .selectFrom("receiptLine")
+          .select(["locationId", "storageUnitId"])
+          .where("receiptId", "=", receipt.id)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+      expect(await lineBin()).toEqual({
+        locationId: f.locationId,
+        storageUnitId: binAtOldLocation
+      });
+
+      unwrap(
+        await invokeCreate(handlesOf(f.ctx), {
+          type: "receiptFromPurchaseOrder",
+          purchaseOrderId,
+          locationId: f.otherLocationId,
+          receiptId: receipt.id
+        })
+      );
+      expect(await lineBin()).toEqual({
+        locationId: f.otherLocationId,
+        storageUnitId: null
+      });
     } finally {
       await f.cleanup();
     }
