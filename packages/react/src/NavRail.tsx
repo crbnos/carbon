@@ -27,6 +27,7 @@ import { Link, useLocation } from "react-router";
 import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
+import { markHoverCardItem, navItemAt } from "./hooks/useSlidingHoverCard";
 import { useShellThemeStyle } from "./hooks/useThemeStyle";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
@@ -45,7 +46,7 @@ const focusRingClasses = [
 ];
 
 export const navRailItemClasses = [
-  "relative text-foreground/70 hover:text-foreground",
+  "relative text-foreground/70 hover:text-foreground data-[hover-card]:text-foreground",
   "h-10 w-10 group-data-[state=expanded]:w-full",
   "flex items-center rounded-md",
   "group-data-[state=collapsed]:justify-center",
@@ -122,26 +123,73 @@ export function NavRail({
   // One hover card for the whole rail, moved with a transform to the item
   // under the pointer, so the highlight travels between items instead of
   // each item fading its own. Written straight to the element: a hover must
-  // not re-render the rail.
-  const moveHoverCard = useCallback((item: HTMLElement | null) => {
-    const card = hoverCardRef.current;
-    const nav = navRef.current;
-    if (!card || !nav) return;
-    if (!item) {
-      card.style.opacity = "0";
-      return;
-    }
-    const top =
-      item.getBoundingClientRect().top -
-      nav.getBoundingClientRect().top +
-      nav.scrollTop;
-    // Entering the rail: appear on the item rather than slide in from
-    // wherever the card was last.
-    card.style.transitionProperty = card.style.opacity === "1" ? "" : "opacity";
-    card.style.transform = `translateY(${top}px)`;
-    card.dataset.tone = item.dataset.hoverTone ?? "";
-    card.style.opacity = "1";
-  }, []);
+  // not re-render the rail. The item under the card is marked
+  // `data-hover-card`, so it keeps its hover look (text color, a shortcut
+  // hint) in the gap below it.
+  const hoverCardItem = useRef<HTMLElement | null>(null);
+  const moveHoverCard = useCallback(
+    (item: HTMLElement | null, { instant = false } = {}) => {
+      const card = hoverCardRef.current;
+      const nav = navRef.current;
+      if (!card || !nav) return;
+      markHoverCardItem(hoverCardItem, item);
+      if (!item) {
+        card.style.opacity = "0";
+        return;
+      }
+      const itemRect = item.getBoundingClientRect();
+      const top =
+        itemRect.top - nav.getBoundingClientRect().top + nav.scrollTop;
+      // The card is not inside the scrolling list, so the list does not clip
+      // it. A row the list has partly scrolled out of view, under the footer,
+      // is cut at the list's edge: cut the card there too, or it covers the
+      // footer's rows.
+      const list = item.closest<HTMLElement>("[data-nav-list]");
+      const listRect = list?.getBoundingClientRect();
+      const cutTop = listRect ? Math.max(0, listRect.top - itemRect.top) : 0;
+      const cutBottom = listRect
+        ? Math.max(0, itemRect.bottom - listRect.bottom)
+        : 0;
+      // Entering the rail: appear on the item rather than slide in from
+      // wherever the card was last. A scroll moves the rows themselves, so the
+      // card moves with them instead of sliding after them.
+      card.style.transitionProperty =
+        card.style.opacity === "1" && !instant ? "" : "opacity";
+      card.style.transform = `translateY(${top}px)`;
+      card.style.clipPath = `inset(${cutTop}px 0px ${cutBottom}px 0px)`;
+      card.dataset.tone = item.dataset.hoverTone ?? "";
+      card.style.opacity = "1";
+    },
+    []
+  );
+
+  // The card only moves when the pointer passes onto another item, but a
+  // scroll moves the items under a still pointer: the card stayed where the
+  // first item had been. On scroll it goes to the item now under the
+  // pointer, or, over a gap, follows its own item (re-cut at the list's
+  // edge). Once a frame, however often the list scrolls.
+  const lastMouse = useRef<{ x: number; y: number } | null>(null);
+  const scrollFrame = useRef<number>();
+  useEffect(
+    () => () => {
+      if (scrollFrame.current !== undefined) {
+        cancelAnimationFrame(scrollFrame.current);
+      }
+    },
+    []
+  );
+  const followScroll = useCallback(() => {
+    if (!hoverCardItem.current || scrollFrame.current !== undefined) return;
+    scrollFrame.current = requestAnimationFrame(() => {
+      scrollFrame.current = undefined;
+      const nav = navRef.current;
+      const mouse = lastMouse.current;
+      if (!nav || !mouse || !hoverCardItem.current) return;
+      moveHoverCard(navItemAt(nav, mouse) ?? hoverCardItem.current, {
+        instant: true
+      });
+    });
+  }, [moveHoverCard]);
 
   const [holds, setHolds] = useState(0);
   const hold = useCallback(() => {
@@ -209,6 +257,8 @@ export function NavRail({
             the rail transparent, so nothing can paint over a scrolling list. */}
         <VStack
           spacing={1}
+          data-nav-list=""
+          onScroll={followScroll}
           className="min-h-0 flex-1 px-2 pb-1 overflow-x-hidden overflow-y-auto hide-scrollbar scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
           {header ? (
@@ -315,6 +365,7 @@ export function NavRail({
         // while the pointer crosses one, and only leaves with the pointer.
         onPointerOver={(event) => {
           if (hoverBlocked || event.pointerType !== "mouse") return;
+          lastMouse.current = { x: event.clientX, y: event.clientY };
           const item = (event.target as HTMLElement).closest<HTMLElement>(
             "[data-nav-item]"
           );
@@ -323,6 +374,9 @@ export function NavRail({
         // Mouse only: a tap on a touch tablet must not expand the rail.
         onPointerMove={(event) => {
           lastPointerType.current = event.pointerType;
+          if (event.pointerType === "mouse") {
+            lastMouse.current = { x: event.clientX, y: event.clientY };
+          }
           if (hoverBlocked || hovered || openTimer.current) return;
           if (event.pointerType !== "mouse" || hoverSuppressed.current) return;
           openTimer.current = setTimeout(() => {
@@ -353,7 +407,7 @@ export function NavRail({
           className={cn(
             "pointer-events-none absolute left-2 right-2 top-0 h-10 rounded-md opacity-0",
             "bg-active/60 data-[tone=accent]:bg-accent",
-            "transition-[transform,opacity,background-color] duration-150 ease-out motion-reduce:transition-none"
+            "transition-[transform,opacity,background-color,clip-path] duration-150 ease-out motion-reduce:transition-none"
           )}
         />
         {content}
@@ -439,7 +493,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
             ? "bg-active text-active-foreground dark:shadow-button-base"
             : // On the desktop rail one card slides between the hovered
               // items instead; the active item keeps its own background.
-              "hover:bg-active/60 hover:text-active-foreground group-data-[sliding-hover]:hover:bg-transparent",
+              "hover:bg-active/60 hover:text-active-foreground data-[hover-card]:text-active-foreground group-data-[sliding-hover]:hover:bg-transparent",
           className
         )}
       >

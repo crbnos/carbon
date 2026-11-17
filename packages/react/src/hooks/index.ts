@@ -33,6 +33,7 @@ import { useRouteDialog } from "./useRouteDialog";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
+import { useSlidingHoverCard } from "./useSlidingHoverCard";
 import { useThemePreview } from "./useThemePreview";
 import {
   setThemePreview,
@@ -84,6 +85,7 @@ export {
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,
+  useSlidingHoverCard,
   useThemeContent,
   useThemePreview,
   useThemeStyle,

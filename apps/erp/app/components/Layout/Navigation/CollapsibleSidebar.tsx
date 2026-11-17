@@ -7,6 +7,7 @@ import {
   IconButton,
   useMode,
   useShellThemeStyle,
+  useSlidingHoverCard,
   useViewport
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -18,7 +19,6 @@ import type { Location } from "react-router";
 import { useLocation, useMatches, useNavigation } from "react-router";
 import { useUIStore } from "~/stores/ui";
 import type { Handle } from "~/utils/handle";
-import { useSlidingHoverCard } from "./useSlidingHoverCard";
 
 interface CollapsibleSidebarContextValue {
   hasSidebar: boolean;
