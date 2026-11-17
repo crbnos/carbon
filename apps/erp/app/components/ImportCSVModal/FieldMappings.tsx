@@ -61,6 +61,7 @@ import {
   matchCsvValue,
   toMatchableOption
 } from "./enumMatch";
+import { isEnumStepAsked } from "./enumSteps";
 import { useCreateLookup } from "./useCreateLookup";
 import { useCsvContext } from "./useCsvContext";
 
@@ -70,6 +71,7 @@ type EnumData =
       description: string;
       creatableLookup?: CreatableLookup;
       creatableForm?: CreatableForm;
+      askWhenMapped?: string;
       options: readonly string[];
     }
   | {
@@ -77,6 +79,7 @@ type EnumData =
       description: string;
       creatableLookup?: CreatableLookup;
       creatableForm?: CreatableForm;
+      askWhenMapped?: string;
       fetcher: (
         client: SupabaseClient<Database>,
         companyId: string
@@ -183,8 +186,13 @@ export function FieldMapping({
       label: string;
       enumData: EnumData;
     }
-  ][] = Object.entries(mappableFields).filter(
-    ([_, { type }]) => type === "enum"
+  ][] = Object.entries(mappableFields).filter(([_, field]) =>
+    isEnumStepAsked(field, columnMappings)
+  );
+  // A step the wizard skips sends no mapping, so a Default chosen before
+  // its column was unmapped does not reach the import.
+  const askedEnumMappings = Object.fromEntries(
+    enumFields.map(([name]) => [name, enumMappings[name]])
   );
 
   const steps = enumFields.length > 0 ? enumFields.length + 1 : 1;
@@ -271,7 +279,7 @@ export function FieldMapping({
               <input
                 type="hidden"
                 name="enumMappings"
-                value={JSON.stringify(enumMappings)}
+                value={JSON.stringify(askedEnumMappings)}
               />
             </>
           )}

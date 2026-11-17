@@ -27,6 +27,23 @@ describe("importSchemas covers every mappable field", () => {
   });
 });
 
+// A name that is not a field of its table hides that wizard step for good.
+describe("askWhenMapped names a field of its own table", () => {
+  const tables = Object.keys(fieldMappings) as (keyof typeof fieldMappings)[];
+
+  it.each(tables)("%s", (table) => {
+    const fields = fieldMappings[table] as Record<
+      string,
+      { enumData?: { askWhenMapped?: string } }
+    >;
+    const unknown = Object.values(fields)
+      .map((field) => field.enumData?.askWhenMapped)
+      .filter((name): name is string => !!name && !(name in fields));
+
+    expect(unknown).toEqual([]);
+  });
+});
+
 describe("item revision survives route validation", () => {
   const itemTables = [
     "part",
