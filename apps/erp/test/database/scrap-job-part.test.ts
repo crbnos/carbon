@@ -167,11 +167,10 @@ describe.skipIf(!hasLocalDatabase)("scrap job part", () => {
     return { ...job, kitMaterialId: kit.id };
   }
 
-  const scrap = (input: {
+  type Line = { materialId: string; itemId: string; quantity: number };
+  const scrapLines = (input: {
     jobOperationId: string;
-    materialId: string;
-    itemId: string;
-    quantity: number;
+    lines: Line[];
     replacement: "Shelf" | "Water Spider";
     idempotencyKey: string;
   }) =>
@@ -181,6 +180,17 @@ describe.skipIf(!hasLocalDatabase)("scrap job part", () => {
       { type: "scrapJobPart", scrapReasonId: reasonId, ...input },
       issue
     );
+  /** One part, as a tap on a single row does. */
+  const scrap = ({
+    materialId,
+    itemId,
+    quantity,
+    ...rest
+  }: Line & {
+    jobOperationId: string;
+    replacement: "Shelf" | "Water Spider";
+    idempotencyKey: string;
+  }) => scrapLines({ ...rest, lines: [{ materialId, itemId, quantity }] });
 
   const scrapRows = (jobId: string) =>
     f.db
@@ -301,6 +311,38 @@ describe.skipIf(!hasLocalDatabase)("scrap job part", () => {
     }
   );
 
+  databaseTest(
+    "scraps what one bad weld ruined in one go: tubes from the kit and a loose part",
+    async () => {
+      const job = await jobWithKit("weld");
+      const input = {
+        jobOperationId: job.operationId,
+        lines: [
+          { materialId: job.kitMaterialId, itemId: f.partId, quantity: 2 },
+          { materialId: job.materialId, itemId: f.partId, quantity: 1 }
+        ],
+        replacement: "Water Spider" as const,
+        idempotencyKey: `${f.prefix}-weld`
+      };
+      expect((await scrapLines(input)).error).toBeNull();
+      expect((await scrapLines(input)).error).toBeNull();
+
+      const rows = await scrapRows(job.jobId);
+      expect(
+        rows.map((r) => Number(r.quantity)).sort((a, b) => a - b)
+      ).toEqual([-2, -1]);
+      const requests = await f.db
+        .selectFrom("materialRequest")
+        .select("note")
+        .where("jobOperationId", "=", job.operationId)
+        .execute();
+      expect(requests.map((r) => r.note).sort()).toEqual([
+        "1 to replace scrap",
+        "2 to replace scrap"
+      ]);
+    }
+  );
+
   databaseTest("refuses a part that is not in the kit", async () => {
     const job = await jobWithKit("foreign");
     const result = await scrap({
@@ -312,7 +354,7 @@ describe.skipIf(!hasLocalDatabase)("scrap job part", () => {
       idempotencyKey: `${f.prefix}-foreign`
     });
     expect(result.error?.message).toBe(
-      "This part cannot be scrapped from this material"
+      "This part cannot be scrapped at this operation"
     );
     expect(await scrapRows(job.jobId)).toHaveLength(0);
   });

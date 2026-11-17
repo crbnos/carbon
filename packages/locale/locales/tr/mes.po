@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
@@ -862,6 +865,9 @@ msgstr "Hat beslemesi yüklenemedi"
 
 msgid "Could not look up this label. Try again."
 msgstr "Bu etiket aranamadı. Tekrar deneyin."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Ülke kodu"
@@ -2087,11 +2093,11 @@ msgstr "Notlar"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Henüz hiçbir numune kalmadı, bu yüzden birimlerin neden reddedildiğini belirtin. Tüm {0} adet Reddedildi durumuna geçecek."
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "Aramanızla eşleşen hiçbir şey yok."
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "Bu sayfada hiçbir şey bu barkodu kullanmıyor"
@@ -2135,6 +2141,12 @@ msgstr "Yolda"
 
 msgid "one combined lot · planned"
 msgstr "bir birleştirilmiş Lot · planlandı"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "İş emri başına bir · planlandı"
@@ -2794,11 +2806,11 @@ msgstr "Zamanlama çakışması"
 msgid "Scrap"
 msgstr "Fire"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "Fire {readableId}"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "Fire malzemesi"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

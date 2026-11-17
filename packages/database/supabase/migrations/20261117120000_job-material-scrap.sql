@@ -1,8 +1,8 @@
--- An operator scrapping parts of a job material from the operation screen: a
--- loose part, or parts inside a kit. The parts are replaced from the shelf, so
--- the stock movement is a scrap from the part's shelf bin (itemLedger,
--- documentType 'Scrap', documentLineId = this row). This row is the event and
--- its retry guard: one row per idempotency key.
+-- An operator scrapping parts at an operation: loose parts, or parts inside a
+-- kit. The parts are replaced from the shelf, so the stock movement is a scrap
+-- from the part's shelf bin (itemLedger, documentType 'Scrap', documentLineId
+-- = this row). One row per part scrapped; the rows of one scrap share its
+-- idempotency key, which is their retry guard.
 -- RLS ships through the authz manifest (packages/database/src/authz/manifest.ts).
 
 SET lock_timeout = '5s';
@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS "jobMaterialScrap" (
   "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT "jobMaterialScrap_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "jobMaterialScrap_idempotencyKey_key" UNIQUE ("companyId", "idempotencyKey"),
+  CONSTRAINT "jobMaterialScrap_idempotencyKey_key"
+    UNIQUE ("companyId", "idempotencyKey", "jobMaterialId", "itemId"),
   CONSTRAINT "jobMaterialScrap_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "jobMaterialScrap_materialRequestId_fkey" FOREIGN KEY ("materialRequestId", "companyId")

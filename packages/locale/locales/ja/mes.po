@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
@@ -862,6 +865,9 @@ msgstr "ラインフィードを読み込めませんでした"
 
 msgid "Could not look up this label. Try again."
 msgstr "このラベルを検索できませんでした。再試行してください。"
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "国番号"
@@ -2087,11 +2093,11 @@ msgstr "メモ"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "まだ不合格はありません。個体を却下する理由を入力してください。全{0}個が却下済になります。"
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "検索に該当するものがありません。"
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "このページにはそのバーコードを使うものがありません"
@@ -2135,6 +2141,12 @@ msgstr "移動中"
 
 msgid "one combined lot · planned"
 msgstr "1つの統合ロット · 計画済"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "1つ/製造指図 · 計画済"
@@ -2794,11 +2806,11 @@ msgstr "スケジュール競合"
 msgid "Scrap"
 msgstr "スクラップ"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "{readableId} をスクラップ"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "材料をスクラップ"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

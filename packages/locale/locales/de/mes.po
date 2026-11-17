@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} Fertigungsaufträge"
@@ -862,6 +865,9 @@ msgstr "Die Linienversorgung konnte nicht geladen werden"
 
 msgid "Could not look up this label. Try again."
 msgstr "Dieses Etikett konnte nicht abgerufen werden. Bitte versuchen Sie es erneut."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Ländervorwahl"
@@ -2087,11 +2093,11 @@ msgstr "Notizen"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Noch nichts ist fehlgeschlagen, daher begründen Sie, warum die Einheiten abgelehnt werden. Alle {0} Einheit(en) werden abgelehnt."
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "Nichts stimmt Ihrer Suche überein."
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "Nichts auf dieser Seite verwendet diesen Barcode"
@@ -2135,6 +2141,12 @@ msgstr "Unterwegs"
 
 msgid "one combined lot · planned"
 msgstr "eine kombinierte Charge · geplant"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "eine pro Fertigungsauftrag · geplant"
@@ -2794,11 +2806,11 @@ msgstr "Planungskonflikt"
 msgid "Scrap"
 msgstr "Ausschuss"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "Ausschuss {readableId}"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "Ausschusspaterial"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

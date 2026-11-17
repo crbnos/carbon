@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
@@ -862,6 +865,9 @@ msgstr "无法加载生产线"
 
 msgid "Could not look up this label. Try again."
 msgstr "无法查询此标签，请重试。"
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "国家代码"
@@ -2087,11 +2093,11 @@ msgstr "备注"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "尚无失败项，因此请说明这些件被拒绝的原因。全部 {0} 件将被标记为已拒绝。"
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "没有匹配您搜索的内容。"
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "此页面上没有使用该条码的内容"
@@ -2135,6 +2141,12 @@ msgstr "在途中"
 
 msgid "one combined lot · planned"
 msgstr "一个组合批次 · 已计划"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "每个工单一个 · 已计划"
@@ -2794,11 +2806,11 @@ msgstr "排程冲突"
 msgid "Scrap"
 msgstr "报废"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "报废 {readableId}"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "报废原材料"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

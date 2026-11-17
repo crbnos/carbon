@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
@@ -862,6 +865,9 @@ msgstr "लाइन फ़ीड लोड नहीं हो सका"
 
 msgid "Could not look up this label. Try again."
 msgstr "यह लेबल खोजा नहीं जा सका। फिर से प्रयास करें।"
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "देश कोड"
@@ -2087,11 +2093,11 @@ msgstr "नोट्स"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "अभी तक कुछ भी विफल नहीं हुआ है, इसलिए बताएँ कि इकाइयाँ अस्वीकृत क्यों हैं। सभी {0} इकाई(याँ) अस्वीकृत कर दी जाएँगी।"
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "आपकी खोज से कुछ नहीं मिला।"
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "इस पेज पर कुछ भी उस बारकोड का उपयोग नहीं करता"
@@ -2135,6 +2141,12 @@ msgstr "रास्ते में"
 
 msgid "one combined lot · planned"
 msgstr "एक संयुक्त लॉट · योजनाबद्ध"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "प्रति जॉब एक · योजनाबद्ध"
@@ -2794,11 +2806,11 @@ msgstr "शेड्यूलिंग संघर्ष"
 msgid "Scrap"
 msgstr "स्क्रैप"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "स्क्रैप {readableId}"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "स्क्रैप सामग्री"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

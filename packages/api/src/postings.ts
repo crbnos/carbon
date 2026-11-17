@@ -111,15 +111,21 @@ export const issueInput = z.discriminatedUnion("type", [
     scrapReasonId: z.string(),
     makeReplacement: z.boolean().optional()
   }),
-  // Scrap untracked parts of a job material (its own part, or parts inside a
-  // kit) and replace them from the shelf. Retried with the same key, it books
-  // once.
+  // Scrap untracked parts at an operation (a material's own part, or parts
+  // inside a kit) and replace them from the shelf. Retried with the same key,
+  // it books once.
   z.object({
     type: z.literal("scrapJobPart"),
     jobOperationId: z.string(),
-    materialId: z.string(),
-    itemId: z.string(),
-    quantity: z.number().positive(),
+    lines: z
+      .array(
+        z.object({
+          materialId: z.string(),
+          itemId: z.string(),
+          quantity: z.number().positive()
+        })
+      )
+      .min(1),
     scrapReasonId: z.string(),
     replacement: z.enum(["Shelf", "Water Spider"]),
     notes: z.string().optional(),

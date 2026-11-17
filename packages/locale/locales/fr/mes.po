@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} ordres de fabrication"
@@ -862,6 +865,9 @@ msgstr "Impossible de charger l'alimentation de ligne"
 
 msgid "Could not look up this label. Try again."
 msgstr "Impossible de rechercher cette étiquette. Réessayez."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Indicatif pays"
@@ -2087,11 +2093,11 @@ msgstr "Notes"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Aucun échec pour l'instant, indiquez donc pourquoi les unités sont rejetées. Les {0} unité(s) seront Rejetées."
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "Rien ne correspond à votre recherche."
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "Rien sur cette page n'utilise ce code-barres"
@@ -2135,6 +2141,12 @@ msgstr "En route"
 
 msgid "one combined lot · planned"
 msgstr "un lot combiné · planifié"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "un par ordre de fabrication · planifié"
@@ -2794,11 +2806,11 @@ msgstr "Conflit d'ordonnancement"
 msgid "Scrap"
 msgstr "Rebut"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "Rebut {readableId}"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "Mise au rebut du matériel"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

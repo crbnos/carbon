@@ -271,8 +271,8 @@ export const path = {
       const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
-    scrapPart: (materialId: string) =>
-      generatePath(`${x}/material/${materialId}/scrap-part`),
+    scrapParts: (operationId: string) =>
+      generatePath(`${x}/scrap-parts/${operationId}`),
     scrapReasons: `${api}/scrap-reasons`,
     service: `${x}/service`,
     serviceJob: (id: string) => generatePath(`${x}/service/${id}`),

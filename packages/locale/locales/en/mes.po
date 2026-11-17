@@ -222,6 +222,9 @@ msgstr "{onHand} of {need}"
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr "{onHand} on hand · covers {covers} of {demand}"
 
+msgid "{readableId} to scrap"
+msgstr "{readableId} to scrap"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} jobs"
@@ -862,6 +865,9 @@ msgstr "Could not load the line feed"
 
 msgid "Could not look up this label. Try again."
 msgstr "Could not look up this label. Try again."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr "Count what is ruined. Replacements come from the shelf."
 
 msgid "Country code"
 msgstr "Country code"
@@ -2087,11 +2093,11 @@ msgstr "Notes"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-
 msgid "Nothing matches your search."
 msgstr "Nothing matches your search."
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
 
 msgid "Nothing on this page uses that barcode"
 msgstr "Nothing on this page uses that barcode"
@@ -2135,6 +2141,12 @@ msgstr "On its way"
 
 msgid "one combined lot · planned"
 msgstr "one combined lot · planned"
+
+msgid "One less {readableId}"
+msgstr "One less {readableId}"
+
+msgid "One more {readableId}"
+msgstr "One more {readableId}"
 
 msgid "one per job · planned"
 msgstr "one per job · planned"
@@ -2794,11 +2806,11 @@ msgstr "Scheduling conflict"
 msgid "Scrap"
 msgstr "Scrap"
 
-msgid "Scrap {quantity}"
-msgstr "Scrap {quantity}"
-
 msgid "Scrap {readableId}"
 msgstr "Scrap {readableId}"
+
+msgid "Scrap {total}"
+msgstr "Scrap {total}"
 
 msgid "Scrap material"
 msgstr "Scrap material"
@@ -2808,6 +2820,9 @@ msgstr "Scrap parts"
 
 msgid "Scrap parts of {label}"
 msgstr "Scrap parts of {label}"
+
+msgid "Scrap parts of {partName}"
+msgstr "Scrap parts of {partName}"
 
 msgid "Scrap quantity"
 msgstr "Scrap quantity"

@@ -10,35 +10,35 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { scrapJobPartValidator } from "~/services/models";
+import { scrapPartsValidator } from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
 
-/** The parts of a job material an operator can scrap and replace from the shelf. */
+/** The parts an operator can scrap at an operation and replace from the shelf. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
-  const { materialId } = params;
-  if (!materialId) throw new Response("Missing material", { status: 400 });
+  const { operationId } = params;
+  if (!operationId) throw new Response("Missing operation", { status: 400 });
 
-  const material = await getScrappableParts(getDatabaseClient(), {
+  const operation = await getScrappableParts(getDatabaseClient(), {
     companyId,
-    jobMaterialId: materialId
+    jobOperationId: operationId
   });
-  if (!material) throw new Response("Material not found", { status: 404 });
-  return { parts: material.parts };
+  if (!operation) throw new Response("Operation not found", { status: 404 });
+  return { materials: operation.materials };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
-  const { materialId } = params;
-  if (!materialId) throw new Response("Missing material", { status: 400 });
+  const { operationId } = params;
+  if (!operationId) throw new Response("Missing operation", { status: 400 });
 
-  const validation = await validator(scrapJobPartValidator).validate(
+  const validation = await validator(scrapPartsValidator).validate(
     await request.formData()
   );
   if (validation.error) return validationError(validation.error);
 
   const refusal = await abilityBlockRefusal(getCarbonServiceRole(), {
-    operationId: validation.data.jobOperationId,
+    operationId,
     employeeId: userId,
     companyId
   });
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const posted = await erpPosting(
     "issue",
     { companyId, userId },
-    { type: "scrapJobPart", materialId, ...validation.data }
+    { type: "scrapJobPart", ...validation.data, jobOperationId: operationId }
   );
   if (posted.error) {
     return data(
@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         message:
           posted.error.status < 500
             ? posted.error.message
-            : "Failed to scrap the part"
+            : "Failed to scrap the parts"
       },
       { status: posted.error.status }
     );

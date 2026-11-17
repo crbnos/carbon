@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} производственных заказов"
@@ -862,6 +865,9 @@ msgstr "Не удалось загрузить линию подачи"
 
 msgid "Could not look up this label. Try again."
 msgstr "Не удалось найти эту метку. Попробуйте ещё раз."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Код страны"
@@ -2087,11 +2093,11 @@ msgstr "Примечания"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Отказов пока нет, поэтому укажите причину, по которой единицы отклонены. Все единицы ({0}) будут отклонены."
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "Ничего не совпадает с вашим поиском."
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "На этой странице ничто не использует этот штрихкод"
@@ -2135,6 +2141,12 @@ msgstr "В пути"
 
 msgid "one combined lot · planned"
 msgstr "одна объединённая партия · запланировано"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "одна на производственный заказ · запланировано"
@@ -2794,11 +2806,11 @@ msgstr "Конфликт расписания"
 msgid "Scrap"
 msgstr "Брак"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "Браковать {readableId}"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "Браковка материала"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"

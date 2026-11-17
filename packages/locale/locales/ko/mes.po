@@ -222,6 +222,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{readableId} to scrap"
+msgstr ""
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
@@ -862,6 +865,9 @@ msgstr "라인 피드를 불러올 수 없습니다"
 
 msgid "Could not look up this label. Try again."
 msgstr "이 라벨을 조회할 수 없습니다. 다시 시도하세요."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "국가 코드"
@@ -2087,11 +2093,11 @@ msgstr "메모"
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "아직 실패한 항목이 없으므로 단위를 거부하는 사유를 입력하세요. 모든 {0}개 단위가 거부됨 상태로 처리됩니다."
 
-msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
-msgstr ""
-
 msgid "Nothing matches your search."
 msgstr "검색과 일치하는 항목이 없습니다."
+
+msgid "Nothing on this operation can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing on this page uses that barcode"
 msgstr "이 페이지에서 해당 바코드를 사용하는 항목이 없습니다"
@@ -2135,6 +2141,12 @@ msgstr "이동 중"
 
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
+
+msgid "One less {readableId}"
+msgstr ""
+
+msgid "One more {readableId}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "작업 지시당 하나 · 계획됨"
@@ -2794,11 +2806,11 @@ msgstr "일정 충돌"
 msgid "Scrap"
 msgstr "스크랩"
 
-msgid "Scrap {quantity}"
-msgstr ""
-
 msgid "Scrap {readableId}"
 msgstr "{readableId} 스크랩"
+
+msgid "Scrap {total}"
+msgstr ""
 
 msgid "Scrap material"
 msgstr "자재 스크랩"
@@ -2807,6 +2819,9 @@ msgid "Scrap parts"
 msgstr ""
 
 msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
 msgstr ""
 
 msgid "Scrap quantity"
