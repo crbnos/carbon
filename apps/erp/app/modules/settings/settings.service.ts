@@ -6064,7 +6064,7 @@ export async function pushOnshapePart(
     if (resolved === "create") {
       const item = merged.items.get(row.partId) ?? proposedFor(row, plan);
       const fieldValues = planCustomFieldValues(row);
-      const created = await upsertPart(client, {
+      const created = await upsertPart(client, ctx.asSystem.pg, {
         id: item.readableId,
         name: item.name,
         description: item.description ?? undefined,
@@ -6599,7 +6599,7 @@ export async function pushOnshapeAssembly(
       planned.customFields ?? [],
       true
     ).values;
-    const created = await upsertPart(client, {
+    const created = await upsertPart(client, ctx.asSystem.pg, {
       id: item.readableId,
       name: item.name,
       description: item.description ?? undefined,
@@ -8341,6 +8341,7 @@ export async function pushOnshapeRelease(
       const { proposed } = decision;
       const insertedItem = await upsertPart(
         client,
+        ctx.asSystem.pg,
         partInsert(
           proposed,
           companyId,
@@ -8535,6 +8536,7 @@ export async function pushOnshapeRelease(
         );
       const createdChild = await upsertPart(
         client,
+        ctx.asSystem.pg,
         partInsert(
           proposed,
           companyId,

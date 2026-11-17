@@ -3285,6 +3285,144 @@ export async function upsertPickMethodWithShelfLife(
   });
 }
 
+// Jobs whose materials take an item's new unit of measure: nothing has been
+// issued against them. Finished jobs keep the unit they ran in.
+const unitFollowingJobStatuses = ["Draft", "Planned"] as const;
+const finishedJobStatuses = ["Completed", "Cancelled", "Closed"] as const;
+
+/** The distinct labels, at most `limit` of them, then how many more. */
+function listLabels(labels: string[], limit = 10) {
+  const unique = [...new Set(labels)];
+  const shown = unique.slice(0, limit).join(", ");
+  return unique.length > limit
+    ? `${shown} and ${unique.length - limit} more`
+    : shown;
+}
+
+/**
+ * Sets items' unit of measure and copies the code to the materials that still
+ * follow the item: those on Draft make methods and on Draft or Planned jobs.
+ * Runs on the caller's transaction.
+ *
+ * Carbon keeps no conversion between units, so a material on an Active method
+ * or a released, unfinished job would keep its quantity under the new unit.
+ * The change is refused while one exists, before anything is written, and the
+ * refusal names those methods and jobs. Archived methods and finished jobs
+ * keep the unit they were made in. Items whose unit is already the code are
+ * skipped, so a full-replace save that resends the unit writes nothing.
+ *
+ * @returns The refusal, or null once written.
+ */
+export async function writeItemUnitOfMeasure(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    userId: string;
+    unitOfMeasureCode: string;
+  }
+): Promise<string | null> {
+  const { companyId, unitOfMeasureCode } = args;
+  // Locked so two unit changes on an item serialize.
+  const changing = await trx
+    .selectFrom("item")
+    .select("id")
+    .where("id", "in", args.itemIds)
+    .where("companyId", "=", companyId)
+    .where("unitOfMeasureCode", "is distinct from", unitOfMeasureCode)
+    .forUpdate()
+    .execute();
+  if (changing.length === 0) return null;
+  const itemIds = changing.map((item) => item.id);
+
+  // FOR SHARE on the method and job rows holds their status until commit, so a
+  // Draft activated or a job released meanwhile cannot slip between the check
+  // and the copy below.
+  const methods = await trx
+    .selectFrom("methodMaterial as material")
+    .innerJoin("makeMethod as method", "method.id", "material.makeMethodId")
+    .innerJoin("item as parent", "parent.id", "method.itemId")
+    .select(["method.version", "parent.readableIdWithRevision"])
+    .where("material.itemId", "in", itemIds)
+    .where("material.companyId", "=", companyId)
+    .where("material.unitOfMeasureCode", "<>", unitOfMeasureCode)
+    .where("method.status", "=", "Active")
+    .forShare("method")
+    .execute();
+  const jobs = await trx
+    .selectFrom("jobMaterial as material")
+    .innerJoin("job", "job.id", "material.jobId")
+    .select("job.jobId")
+    .where("material.itemId", "in", itemIds)
+    .where("material.companyId", "=", companyId)
+    .where("material.unitOfMeasureCode", "is distinct from", unitOfMeasureCode)
+    .where("job.status", "not in", [
+      ...unitFollowingJobStatuses,
+      ...finishedJobStatuses
+    ])
+    .forShare("job")
+    .execute();
+
+  if (methods.length > 0 || jobs.length > 0) {
+    const holders: string[] = [];
+    const fixes: string[] = [];
+    if (methods.length > 0) {
+      holders.push(
+        `Active methods ${listLabels(
+          methods.map((m) => `${m.readableIdWithRevision} v${m.version}`)
+        )}`
+      );
+      fixes.push(
+        "replace those methods with a version that drops or replaces this material"
+      );
+    }
+    if (jobs.length > 0) {
+      holders.push(`released jobs ${listLabels(jobs.map((j) => j.jobId))}`);
+      fixes.push("finish or cancel those jobs");
+    }
+    return (
+      `The unit of measure can't change to ${unitOfMeasureCode}: ${holders.join(" and ")} ` +
+      "use this item in its current unit, and their quantities would be read in the new one. " +
+      `To change it, ${fixes.join(" and ")}, or create a new item in the new unit.`
+    );
+  }
+
+  const audit = { updatedBy: args.userId, updatedAt: datetime.timestamp() };
+  await trx
+    .updateTable("item")
+    .set({ unitOfMeasureCode, ...audit })
+    .where("id", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  await trx
+    .updateTable("methodMaterial")
+    .set({ unitOfMeasureCode, ...audit })
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .where("makeMethodId", "in", (eb) =>
+      eb
+        .selectFrom("makeMethod")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+    )
+    .execute();
+  await trx
+    .updateTable("jobMaterial")
+    .set({ unitOfMeasureCode, ...audit })
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .where("jobId", "in", (eb) =>
+      eb
+        .selectFrom("job")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("status", "in", unitFollowingJobStatuses)
+    )
+    .execute();
+  return null;
+}
+
 /**
  * Updates item-level method/sourcing columns and mirrors the change down to
  * every methodMaterial that references the item — in a single transaction, so
@@ -3511,10 +3649,12 @@ async function resolveTypedItemRevision(
  * The update half of upsertPart / upsertTool / upsertConsumable /
  * upsertService: resolves the item, then writes the item row and the typed
  * row. Each write selects its row back so a miss fails instead of reporting
- * success.
+ * success. A changed unit of measure goes first, through
+ * `writeItemUnitOfMeasure`, so its refusal writes nothing.
  */
 async function updateTypedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     id: string;
     companyId: string;
@@ -3531,12 +3671,29 @@ async function updateTypedItem(
   if (resolved.error) return resolved;
   const { id: itemId, readableId } = resolved.data;
 
+  const { unitOfMeasureCode, ...item } = args.item;
+  if (unitOfMeasureCode) {
+    try {
+      const refusal = await db.transaction().execute((trx) =>
+        writeItemUnitOfMeasure(trx, {
+          itemIds: [itemId],
+          companyId: args.companyId,
+          userId: args.updatedBy,
+          unitOfMeasureCode
+        })
+      );
+      if (refusal) return { data: null, error: ruleError(refusal) };
+    } catch (error) {
+      return { data: null, error: writeError(error) };
+    }
+  }
+
   const table = typedItemTables[args.type];
   const audit = { updatedBy: args.updatedBy, updatedAt: datetime.timestamp() };
   const [itemWrite, typedWrite] = await Promise.all([
     client
       .from("item")
-      .update({ ...sanitize(args.item), ...audit })
+      .update({ ...sanitize(item), ...audit })
       .eq("id", itemId)
       .eq("companyId", args.companyId)
       .select("id")
@@ -3568,6 +3725,7 @@ const typedItemTables = {
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   consumable:
     | (z.infer<typeof consumableValidator> & {
         companyId: string;
@@ -3653,7 +3811,7 @@ export async function upsertConsumable(
     return newConsumable;
   }
 
-  const updated = await updateTypedItem(client, {
+  const updated = await updateTypedItem(client, db, {
     id: consumable.id,
     companyId: consumable.companyId,
     updatedBy: consumable.updatedBy,
@@ -3845,6 +4003,7 @@ export async function resolveItemIdFromExtractedText(
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   part:
     | (z.infer<typeof partValidator> & {
         companyId: string;
@@ -3946,7 +4105,7 @@ export async function upsertPart(
     return newPart;
   }
 
-  const updated = await updateTypedItem(client, {
+  const updated = await updateTypedItem(client, db, {
     id: part.id,
     companyId: part.companyId,
     updatedBy: part.updatedBy,
@@ -6070,9 +6229,19 @@ export async function upsertMaterial(
         changes: plan.data.changed
       });
 
+      const { unitOfMeasureCode, ...itemFields } = itemUpdate;
+      if (unitOfMeasureCode) {
+        const refusal = await writeItemUnitOfMeasure(trx, {
+          itemIds: [itemId],
+          companyId,
+          userId: updatedBy,
+          unitOfMeasureCode
+        });
+        if (refusal) throw new MaterialRuleViolation(refusal);
+      }
       await trx
         .updateTable("item")
-        .set({ ...itemUpdate, updatedBy, updatedAt })
+        .set({ ...itemFields, updatedBy, updatedAt })
         .where("id", "=", itemId)
         .where("companyId", "=", companyId)
         .execute();
@@ -6575,7 +6744,7 @@ export async function upsertService(
     return { data: null, error: ruleError("Service id is required") };
   }
 
-  const updated = await updateTypedItem(client, {
+  const updated = await updateTypedItem(client, db, {
     id: service.id,
     companyId: service.companyId,
     updatedBy: service.updatedBy,
@@ -6737,6 +6906,7 @@ export async function upsertUnitOfMeasure(
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   tool:
     | (z.infer<typeof toolValidator> & {
         companyId: string;
@@ -6824,7 +6994,7 @@ export async function upsertTool(
     return newTool;
   }
 
-  const updated = await updateTypedItem(client, {
+  const updated = await updateTypedItem(client, db, {
     id: tool.id,
     companyId: tool.companyId,
     updatedBy: tool.updatedBy,

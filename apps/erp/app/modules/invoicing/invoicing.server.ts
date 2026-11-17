@@ -1444,7 +1444,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
           itemId = existingId;
         } else {
           // The service role: the invoicing-scoped client cannot insert items.
-          const created = await upsertPart(serviceRole, {
+          const created = await upsertPart(serviceRole, ctx.asSystem.pg, {
             id: name,
             name,
             revision: "0",

@@ -14,6 +14,7 @@ import { NewRecordPage } from "~/components/NewRecordPage";
 import { toolValidator } from "~/modules/items/items.models";
 import { upsertTool } from "~/modules/items/items.service";
 import { ToolForm } from "~/modules/items/ui/Tools";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { newRecordMeta } from "~/utils/meta";
@@ -42,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createTool = await upsertTool(client, {
+  const createTool = await upsertTool(client, getDatabaseClient(), {
     ...validation.data,
     companyId,
     customFields: setCustomFields(formData),

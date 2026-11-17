@@ -135,7 +135,12 @@ export const setItemTrackingType = defineServiceFn({
  * Change items' name, description, manufacturer part number or unit of measure.
  *
  * @remarks
- * A field left out is unchanged; every item gets the same value.
+ * A field left out is unchanged; every item gets the same value. A new unit of
+ * measure is copied to the items' materials on Draft methods and on Draft or
+ * Planned jobs (`writeItemUnitOfMeasure`). It is refused, and nothing is
+ * written, while an Active method or a released job uses an item in its old
+ * unit: Carbon keeps no conversion between units, so their quantities would
+ * be read in the new one. The refusal names those methods and jobs.
  *
  * @mcp
  */
@@ -145,11 +150,31 @@ export const setItemFields = defineServiceFn({
     name: z.string().optional(),
     description: z.string().optional(),
     mpn: z.string().optional(),
-    unitOfMeasureCode: z.string().optional()
+    unitOfMeasureCode: z.string().min(1).optional()
   }),
   permission: { update: "parts" },
 
-  async run(ctx, { ids, ...fields }) {
+  async run(ctx, { ids, unitOfMeasureCode, ...fields }) {
+    if (unitOfMeasureCode !== undefined) {
+      try {
+        const refusal = await ctx.asSystem.pg.transaction().execute((trx) =>
+          service.writeItemUnitOfMeasure(trx, {
+            itemIds: ids,
+            companyId: ctx.company.id,
+            userId: ctx.auditUserId,
+            unitOfMeasureCode
+          })
+        );
+        if (refusal) return ctx.error("rule", refusal);
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          "Failed to change the unit of measure",
+          err
+        );
+      }
+    }
+
     const update = await ctx.asCaller.supabase
       .from("item")
       .update({
@@ -601,11 +626,15 @@ export const createPart = defineServiceFn({
 
   async run(ctx, part) {
     const companyId = ctx.company.id;
-    const created = await service.upsertPart(ctx.asCaller.supabase, {
-      ...part,
-      companyId,
-      createdBy: ctx.auditUserId
-    });
+    const created = await service.upsertPart(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        ...part,
+        companyId,
+        createdBy: ctx.auditUserId
+      }
+    );
     const id = created.data?.id;
     if (created.error || !id) {
       return ctx.error("internal", "Failed to insert part", created.error);
@@ -630,14 +659,17 @@ export const updatePart = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, part) {
-    const updated = await service.upsertPart(ctx.asCaller.supabase, {
-      ...part,
-      companyId: ctx.company.id,
-      updatedBy: ctx.auditUserId
-    });
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update part", updated.error);
-    }
+    const updated = await service.upsertPart(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        ...part,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    const saved = unwrap(ctx, updated);
+    if (saved instanceof CarbonError) return saved;
     return { id: part.id };
   }
 });
@@ -658,14 +690,17 @@ export const updateTool = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, tool) {
-    const updated = await service.upsertTool(ctx.asCaller.supabase, {
-      ...tool,
-      companyId: ctx.company.id,
-      updatedBy: ctx.auditUserId
-    });
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update tool", updated.error);
-    }
+    const updated = await service.upsertTool(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        ...tool,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    const saved = unwrap(ctx, updated);
+    if (saved instanceof CarbonError) return saved;
     return { id: tool.id };
   }
 });
@@ -4215,6 +4250,7 @@ export const createConsumable = defineServiceFn({
   async run(ctx, input) {
     return await service.upsertConsumable(
       ctx.asCaller.supabase,
+      ctx.asSystem.pg,
       payload(ctx, input).forCreate() as never
     );
   }
@@ -4272,6 +4308,7 @@ export const updateConsumable = defineServiceFn({
   async run(ctx, input) {
     return await service.upsertConsumable(
       ctx.asCaller.supabase,
+      ctx.asSystem.pg,
       payload(ctx, input).forUpdate() as never
     );
   }
@@ -6250,6 +6287,7 @@ export const createTool = defineServiceFn({
   async run(ctx, input) {
     return await service.upsertTool(
       ctx.asCaller.supabase,
+      ctx.asSystem.pg,
       payload(ctx, input).forCreate() as never
     );
   }

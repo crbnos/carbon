@@ -14626,7 +14626,7 @@ export async function createQuoteLineForFile(
     revision = `${base} (${suffix})`;
   }
 
-  const part = await upsertPart(serviceRole, {
+  const part = await upsertPart(serviceRole, ctx.asSystem.pg, {
     id: readableId,
     name: readableId,
     defaultMethodType: "Make to Order",

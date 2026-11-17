@@ -21,6 +21,7 @@ import {
   ItemNotes,
   ItemRiskRegister
 } from "~/modules/items/ui/Item";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -40,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateConsumable = await upsertConsumable(client, {
+  const updateConsumable = await upsertConsumable(client, getDatabaseClient(), {
     ...validation.data,
     id: itemId,
     companyId,

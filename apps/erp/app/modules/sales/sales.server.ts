@@ -667,7 +667,7 @@ export const mapSalesRfqLines = defineServiceFn({
       if (itemIdByName.has(name)) continue;
       // The service role: the sales-scoped client cannot insert items.
       // upsertPart has no batch form.
-      const created = await upsertPart(serviceRole, {
+      const created = await upsertPart(serviceRole, ctx.asSystem.pg, {
         id: name,
         name,
         revision: "0",
