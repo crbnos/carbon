@@ -64,27 +64,39 @@ const entityKey = (materialId: string, trackedEntityId: string) =>
  * Opens the Scrap parts dialog for an operation, from any MES view: `open()`
  * from a menu, `open(materialId)` from a part's row to start on that part.
  */
-export function useScrapParts(operationId: string | undefined) {
-  const [open, setOpen] = useState<{ materialId?: string } | null>(null);
+export function useScrapParts(operationId: string) {
+  const [state, setState] = useState<{ open: boolean; materialId?: string }>({
+    open: false
+  });
+  const close = () => setState((prev) => ({ ...prev, open: false }));
   return {
-    open: (materialId?: string) => setOpen({ materialId }),
-    modal:
-      open && operationId ? (
-        <ScrapPartsModal
-          operationId={operationId}
-          focusMaterialId={open.materialId}
-          onClose={() => setOpen(null)}
-        />
-      ) : null
+    open: (materialId?: string) => setState({ open: true, materialId }),
+    // Stays mounted so the dialog animates closed.
+    modal: (
+      <Modal
+        open={state.open}
+        onOpenChange={(open) => {
+          if (!open) close();
+        }}
+      >
+        <ModalContent size="large">
+          <ScrapPartsForm
+            operationId={operationId}
+            focusMaterialId={state.materialId}
+            onClose={close}
+          />
+        </ModalContent>
+      </Modal>
+    )
   };
 }
 
 /**
  * Scrap the parts one mistake ruined at an operation (loose parts, or parts
- * inside a kit) and replace them from the shelf. Mounted per open, so each
- * open is one idempotency key.
+ * inside a kit) and replace them from the shelf. The dialog mounts its content
+ * per open, so each open loads afresh and is one idempotency key.
  */
-function ScrapPartsModal({
+function ScrapPartsForm({
   operationId,
   focusMaterialId,
   onClose
@@ -165,163 +177,152 @@ function ScrapPartsModal({
   });
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
+    <ValidatedForm
+      action={path.to.scrapParts(operationId)}
+      method="post"
+      validator={scrapPartsValidator}
+      fetcher={action}
     >
-      <ModalContent size="large">
-        <ValidatedForm
-          action={path.to.scrapParts(operationId)}
-          method="post"
-          validator={scrapPartsValidator}
-          fetcher={action}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Scrap parts</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Count what is ruined. Replacements come from the shelf.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="jobOperationId" value={operationId} />
-            <Hidden name="idempotencyKey" value={idempotencyKey} />
-            <Hidden name="lines" value={JSON.stringify(lines)} />
-            <Hidden name="scrapReasonId" value={reasonId ?? ""} />
-            <Hidden name="replacement" value={replacement} />
-            <VStack spacing={4}>
-              <fieldset className="w-full min-w-0">
-                <legend className="mb-2 text-sm font-medium">
-                  <Trans>Parts</Trans>
-                </legend>
-                {loaded.isLoading ? (
-                  <p className="text-muted-foreground">
-                    <Trans>Loading parts...</Trans>
-                  </p>
-                ) : materials.length === 0 ? (
-                  <p className="text-muted-foreground">
-                    <Trans>
-                      Nothing on this operation can be scrapped yet. Serials and
-                      batches show once they are issued.
-                    </Trans>
-                  </p>
-                ) : (
-                  <div className="flex max-h-[40vh] flex-col gap-3 overflow-y-auto">
-                    {materials.map((material) => (
-                      <div key={material.id} className="flex flex-col gap-1.5">
-                        {material.isKit && (
-                          <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-                            <Badge variant="secondary">
-                              <Trans>Kit</Trans>
-                            </Badge>
-                            <span className="truncate">
-                              {material.readableId} · {material.name}
-                            </span>
-                          </div>
-                        )}
-                        {material.parts.map((part) => {
-                          const key = lineKey(material.id, part.itemId);
-                          return (
-                            <PartCounter
-                              key={key}
-                              readableId={part.readableId}
-                              detail={
-                                part.perKit === null
-                                  ? part.name
-                                  : t`${part.perKit} per kit · ${part.name}`
-                              }
-                              value={countOf(key)}
-                              onChange={(value) => setCount(key, value)}
-                            />
-                          );
-                        })}
-                        {material.tracked.map((entity) => {
-                          const key = entityKey(
-                            material.id,
-                            entity.trackedEntityId
-                          );
-                          const where = entity.kitReadableId
-                            ? t`in kit ${entity.kitReadableId}`
-                            : entity.name;
-                          return entity.trackingType === "Serial" ? (
-                            <SerialToggle
-                              key={key}
-                              itemReadableId={entity.itemReadableId}
-                              serial={entity.readableId}
-                              detail={where}
-                              selected={countOf(key) > 0}
-                              onToggle={() =>
-                                setCount(key, countOf(key) > 0 ? 0 : 1)
-                              }
-                            />
-                          ) : (
-                            <PartCounter
-                              key={key}
-                              readableId={entity.itemReadableId}
-                              label={`${entity.itemReadableId} ${entity.readableId}`}
-                              detail={t`Batch ${entity.readableId} · ${entity.quantity} used · ${where}`}
-                              value={countOf(key)}
-                              max={entity.quantity}
-                              onChange={(value) => setCount(key, value)}
-                            />
-                          );
-                        })}
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Scrap parts</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>Count what is ruined. Replacements come from the shelf.</Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="jobOperationId" value={operationId} />
+        <Hidden name="idempotencyKey" value={idempotencyKey} />
+        <Hidden name="lines" value={JSON.stringify(lines)} />
+        <Hidden name="scrapReasonId" value={reasonId ?? ""} />
+        <Hidden name="replacement" value={replacement} />
+        <VStack spacing={4}>
+          <fieldset className="w-full min-w-0">
+            <legend className="mb-2 text-sm font-medium">
+              <Trans>Parts</Trans>
+            </legend>
+            {loaded.isLoading ? (
+              <p className="text-muted-foreground">
+                <Trans>Loading parts...</Trans>
+              </p>
+            ) : materials.length === 0 ? (
+              <p className="text-muted-foreground">
+                <Trans>
+                  Nothing on this operation can be scrapped yet. Serials and
+                  batches show once they are issued.
+                </Trans>
+              </p>
+            ) : (
+              <div className="flex max-h-[40vh] flex-col gap-3 overflow-y-auto">
+                {materials.map((material) => (
+                  <div key={material.id} className="flex flex-col gap-1.5">
+                    {material.isKit && (
+                      <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                        <Badge variant="secondary">
+                          <Trans>Kit</Trans>
+                        </Badge>
+                        <span className="truncate">
+                          {material.readableId} · {material.name}
+                        </span>
                       </div>
-                    ))}
+                    )}
+                    {material.parts.map((part) => {
+                      const key = lineKey(material.id, part.itemId);
+                      return (
+                        <PartCounter
+                          key={key}
+                          readableId={part.readableId}
+                          detail={
+                            part.perKit === null
+                              ? part.name
+                              : t`${part.perKit} per kit · ${part.name}`
+                          }
+                          value={countOf(key)}
+                          onChange={(value) => setCount(key, value)}
+                        />
+                      );
+                    })}
+                    {material.tracked.map((entity) => {
+                      const key = entityKey(
+                        material.id,
+                        entity.trackedEntityId
+                      );
+                      const where = entity.kitReadableId
+                        ? t`in kit ${entity.kitReadableId}`
+                        : entity.name;
+                      return entity.trackingType === "Serial" ? (
+                        <SerialToggle
+                          key={key}
+                          itemReadableId={entity.itemReadableId}
+                          serial={entity.readableId}
+                          detail={where}
+                          selected={countOf(key) > 0}
+                          onToggle={() =>
+                            setCount(key, countOf(key) > 0 ? 0 : 1)
+                          }
+                        />
+                      ) : (
+                        <PartCounter
+                          key={key}
+                          readableId={entity.itemReadableId}
+                          label={`${entity.itemReadableId} ${entity.readableId}`}
+                          detail={t`Batch ${entity.readableId} · ${entity.quantity} used · ${where}`}
+                          value={countOf(key)}
+                          max={entity.quantity}
+                          onChange={(value) => setCount(key, value)}
+                        />
+                      );
+                    })}
                   </div>
-                )}
-              </fieldset>
-
-              <Choices label={t`Reason`}>
-                {reasons.map((reason) => (
-                  <Tile
-                    key={reason.value}
-                    selected={reason.value === reasonId}
-                    onClick={() => setPickedReasonId(reason.value)}
-                  >
-                    {reason.label}
-                  </Tile>
                 ))}
-              </Choices>
+              </div>
+            )}
+          </fieldset>
 
-              <Choices label={t`Replacement`}>
-                <Tile
-                  selected={replacement === "Shelf"}
-                  onClick={() => setReplacement("Shelf")}
-                >
-                  <LuHand /> <Trans>I'll grab it from the shelf</Trans>
-                </Tile>
-                <Tile
-                  selected={replacement === "Water Spider"}
-                  onClick={() => setReplacement("Water Spider")}
-                >
-                  <LuPersonStanding /> <Trans>Ask the water spider</Trans>
-                </Tile>
-              </Choices>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              variant="destructive"
-              size="lg"
-              isLoading={action.isPending}
-              isDisabled={action.isPending || total === 0 || !reasonId}
+          <Choices label={t`Reason`}>
+            {reasons.map((reason) => (
+              <Tile
+                key={reason.value}
+                selected={reason.value === reasonId}
+                onClick={() => setPickedReasonId(reason.value)}
+              >
+                {reason.label}
+              </Tile>
+            ))}
+          </Choices>
+
+          <Choices label={t`Replacement`}>
+            <Tile
+              selected={replacement === "Shelf"}
+              onClick={() => setReplacement("Shelf")}
             >
-              <Trans>Scrap {total}</Trans>
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+              <LuHand /> <Trans>I'll grab it from the shelf</Trans>
+            </Tile>
+            <Tile
+              selected={replacement === "Water Spider"}
+              onClick={() => setReplacement("Water Spider")}
+            >
+              <LuPersonStanding /> <Trans>Ask the water spider</Trans>
+            </Tile>
+          </Choices>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          variant="destructive"
+          size="lg"
+          isLoading={action.isPending}
+          isDisabled={action.isPending || total === 0 || !reasonId}
+        >
+          <Trans>Scrap {total}</Trans>
+        </Button>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

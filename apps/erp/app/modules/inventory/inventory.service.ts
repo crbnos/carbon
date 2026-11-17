@@ -30678,12 +30678,14 @@ async function scrapConsumedEntity(
       .updateTable("trackedEntity")
       .set(split.parentUpdate)
       .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
       .execute();
   } else {
     await trx
       .updateTable("trackedEntity")
       .set({ status: "Scrapped" })
       .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
       .execute();
   }
 
@@ -30774,6 +30776,7 @@ async function scrapConsumedEntity(
         estimatedQuantity: sql<number>`coalesce(${eb.ref("estimatedQuantity")}, 0) + ${quantity}`
       }))
       .where("id", "=", existing.id)
+      .where("companyId", "=", companyId)
       .execute();
     return;
   }
@@ -32761,8 +32764,9 @@ export async function issueMaterial(
             );
           }
           if (
-            quantity > entity.quantity ||
-            (entity.trackingType === "Serial" && quantity !== entity.quantity)
+            quantity > round(entity.quantity) ||
+            (entity.trackingType === "Serial" &&
+              !isFullDraw(entity.quantity, quantity))
           ) {
             throw new InvalidInputError(
               `${entity.readableId} holds ${entity.quantity}`
@@ -33038,6 +33042,7 @@ export async function issueMaterial(
             .updateTable("jobMaterialScrap")
             .set({ materialRequestId: request.id })
             .where("id", "in", pending.scrapIds)
+            .where("companyId", "=", companyId)
             .execute();
         }
       });
