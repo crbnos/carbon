@@ -266,6 +266,41 @@ describe.skipIf(!hasLocalDatabase)("scrap job part", () => {
     });
   });
 
+  databaseTest(
+    "scraps a loose material mid-job and leaves what was issued alone",
+    async () => {
+      // Five tubes on the job, all issued; two get ruined at the weld.
+      const job = await jobFixture(f, "loose");
+      await f.db
+        .updateTable("jobMaterial")
+        .set({ quantity: 5, estimatedQuantity: 5, quantityIssued: 5 })
+        .where("id", "=", job.materialId)
+        .execute();
+
+      const result = await scrap({
+        jobOperationId: job.operationId,
+        materialId: job.materialId,
+        itemId: f.partId,
+        quantity: 2,
+        replacement: "Shelf",
+        idempotencyKey: `${f.prefix}-loose`
+      });
+      expect(result.error).toBeNull();
+
+      const rows = await scrapRows(job.jobId);
+      expect(rows.map((r) => [Number(r.quantity), r.storageUnitId])).toEqual([
+        [-2, shelfId]
+      ]);
+      // The three good tubes and the two replacements still cover the five.
+      const tubes = await f.db
+        .selectFrom("jobMaterial")
+        .select("quantityIssued")
+        .where("id", "=", job.materialId)
+        .executeTakeFirstOrThrow();
+      expect(Number(tubes.quantityIssued)).toBe(5);
+    }
+  );
+
   databaseTest("refuses a part that is not in the kit", async () => {
     const job = await jobWithKit("foreign");
     const result = await scrap({
