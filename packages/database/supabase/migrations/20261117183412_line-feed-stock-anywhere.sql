@@ -7,8 +7,10 @@
 -- The raw/source row changes (20261116150000_line-feed-lanes.sql is the body
 -- this one starts from):
 --
---   raw   source   one row per part a station consumes (open demand, or the
---                  part of a Transfer kanban into the station), always.
+--   raw   source   one row per part a station consumes (open demand, the part
+--                  of a Transfer kanban into the station, or a part of a kit
+--                  it consumes), always. A bin under a lineside unit is
+--                  lineside, never a source.
 --                  "storageUnitId" = the item's default bin when it holds stock,
 --                  else the fullest bin, else NULL: the stock is in no bin, or
 --                  there is none. quantity = on hand there (0 for none).
@@ -175,10 +177,28 @@ AS $$
       AND k."locationId" = p_location_id
       AND k."replenishmentSystem" = 'Transfer'
   ),
+  -- Every part a station consumes: its open demand, the parts of the Transfer
+  -- kanbans into it, and the parts of the kits it consumes.
   consumed AS (
     SELECT d."workCenterId", d."itemId" FROM demand d
     UNION
     SELECT s."workCenterId", s."itemId" FROM shelf s WHERE s."workCenterId" IS NOT NULL
+    UNION
+    SELECT k."workCenterId", s."itemId"
+    FROM shelf s
+    INNER JOIN kit k ON k."itemId" = s."kitItemId"
+  ),
+  -- The bins a part can be grabbed from: active, nettable, not a kit rack and
+  -- not lineside. A child of a lineside unit is lineside too.
+  warehouse_unit AS (
+    SELECT su."id"
+    FROM "storageUnit" su
+    WHERE su."companyId" = p_company_id
+      AND su."locationId" = p_location_id
+      AND su."active"
+      AND su."effectiveNettable"
+      AND NOT su."kitRack"
+      AND get_effective_work_center_id(su."id") IS NULL
   ),
   shelf_stock AS (
     SELECT il."itemId", il."storageUnitId", SUM(il."quantity") AS "quantity"
@@ -196,7 +216,6 @@ AS $$
     FROM (
       SELECT il."itemId", il."storageUnitId", SUM(il."quantity") AS "quantity"
       FROM "itemLedger" il
-      LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
       WHERE il."companyId" = p_company_id
         AND il."locationId" = p_location_id
         AND il."itemId" IN (SELECT c."itemId" FROM consumed c)
@@ -204,7 +223,7 @@ AS $$
         AND (il."trackedEntityStatus" IS NULL OR il."trackedEntityStatus" NOT IN ('Rejected', 'Scrapped'))
         AND (
           il."storageUnitId" IS NULL
-          OR (su."workCenterId" IS NULL AND NOT su."kitRack" AND su."effectiveNettable" AND su."active")
+          OR il."storageUnitId" IN (SELECT wu."id" FROM warehouse_unit wu)
         )
       GROUP BY il."itemId", il."storageUnitId"
       HAVING SUM(il."quantity") > 0
@@ -224,7 +243,6 @@ AS $$
   site_stock AS (
     SELECT il."itemId", SUM(il."quantity") AS "quantity"
     FROM "itemLedger" il
-    LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
     WHERE il."companyId" = p_company_id
       AND il."locationId" = p_location_id
       AND il."itemId" IN (SELECT c."itemId" FROM consumed c)
@@ -232,7 +250,7 @@ AS $$
       AND (il."trackedEntityStatus" IS NULL OR il."trackedEntityStatus" NOT IN ('Rejected', 'Scrapped'))
       AND (
         il."storageUnitId" IS NULL
-        OR (su."workCenterId" IS NULL AND NOT su."kitRack" AND su."effectiveNettable" AND su."active")
+        OR il."storageUnitId" IN (SELECT wu."id" FROM warehouse_unit wu)
       )
     GROUP BY il."itemId"
   ),

@@ -433,7 +433,6 @@ export function laneNeed(lane: Omit<Lane, "need" | "severity">): LaneNeed {
   if (shortages.some(isShort)) return "short";
   if (
     lane.work.deliver > 0 ||
-    lane.station.status === "low" ||
     lane.looseRows.some((row) => row.kind === "request") ||
     shortages.some(
       (row) => row.cover === "site" || row.cover === "fed" || !row.cover
@@ -443,6 +442,8 @@ export function laneNeed(lane: Omit<Lane, "need" | "severity">): LaneNeed {
   }
   if (
     lane.verdict !== "ok" ||
+    // A transfer on its way covers the shortage: nothing to bring.
+    lane.station.status === "low" ||
     shortages.some((row) => row.cover === "upstream") ||
     lane.kits.some((kit) => kit.stationStatus !== "ok")
   ) {
@@ -635,10 +636,12 @@ function buildLane(
           onHand: held
         };
       }
-      if (
-        bin.need > 0 &&
-        bin.onHand + (bin.elsewhere?.onHand ?? 0) < bin.need
-      ) {
+      // Everything the warehouse holds counts, not only the best other bin.
+      const inWarehouse = Math.max(
+        bin.onHand + (bin.elsewhere?.onHand ?? 0),
+        other?.need ?? 0
+      );
+      if (bin.need > 0 && inWarehouse < bin.need) {
         work.rawShort += 1;
         short.add(bin.itemId);
       }
@@ -755,6 +758,9 @@ function claimStock(
     return { taken, claimed: round(onHand - free) };
   };
 
+  const siteKey = (itemId: string) => `site:${itemId}`;
+  const onSite = (itemId: string) => site.onHand.get(itemId) ?? 0;
+
   for (const lane of lanesInLineOrder) {
     for (const kit of lane.kits) {
       if (kit.stationStatus !== "out") continue;
@@ -788,10 +794,17 @@ function claimStock(
           ...(claimed > 0 && { claimed })
         };
         // A kanban part is brought from its source bin while that holds some.
-        if (line.cover === "fed" && taken > 0) continue;
+        // The bin is part of the warehouse, so the claim counts there too.
+        if (line.cover === "fed" && taken > 0) {
+          take(siteKey(line.itemId), onSite(line.itemId), taken);
+          continue;
+        }
       }
-      const onSite = site.onHand.get(line.itemId) ?? 0;
-      const covered = take(`site:${line.itemId}`, onSite, wanted).taken;
+      const covered = take(
+        siteKey(line.itemId),
+        onSite(line.itemId),
+        wanted
+      ).taken;
       line.cover =
         covered >= wanted
           ? "site"
@@ -844,15 +857,20 @@ export function buildFlow(
   for (const step of steps) {
     size.set(step.itemId ?? "", (size.get(step.itemId ?? "") ?? 0) + 1);
   }
-  const rank = (step: LaneRowInput): [number, number, string] => [
-    step.replenishing ? 0 : 1,
-    -(size.get(step.itemId ?? "") ?? 0),
-    step.itemId ?? ""
-  ];
+  // A routing with an open job first, then the one with the most stations.
+  const outranks = (a: LaneRowInput, b: LaneRowInput) => {
+    const running =
+      Number(Boolean(b.replenishing)) - Number(Boolean(a.replenishing));
+    if (running !== 0) return running < 0;
+    const stations =
+      (size.get(b.itemId ?? "") ?? 0) - (size.get(a.itemId ?? "") ?? 0);
+    if (stations !== 0) return stations < 0;
+    return (a.itemId ?? "") < (b.itemId ?? "");
+  };
   const chosen = new Map<string, LaneRowInput>();
   for (const step of steps) {
     const current = chosen.get(step.workCenterId);
-    if (!current || rank(step) < rank(current)) {
+    if (!current || outranks(step, current)) {
       chosen.set(step.workCenterId, step);
     }
   }

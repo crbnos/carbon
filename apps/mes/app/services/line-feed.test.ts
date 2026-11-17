@@ -717,6 +717,57 @@ describe("buildLaneBoard", () => {
     ).toMatchObject({ need: "idle", severity: "unknown" });
   });
 
+  it("a kanban claim counts against the warehouse; covered stock waits", () => {
+    // B9 holds all 4 the warehouse has. A is fed from it by a kanban and
+    // takes them, so B cannot be told to bring the same 4.
+    const [a, b] = buildLaneBoard({
+      stations: [
+        station("A", "out", [shortOf("A", "BOLT", 4)]),
+        station("B", "out", [shortOf("B", "BOLT", 4)])
+      ],
+      laneRows: [
+        { workCenterId: "A", tier: "station", state: "line", quantity: 1 },
+        { workCenterId: "B", tier: "station", state: "line", quantity: 2 },
+        {
+          workCenterId: "A",
+          tier: "raw",
+          state: "bin",
+          itemId: "BOLT",
+          storageUnitId: "WH1-B9",
+          quantity: 4
+        },
+        ...["A", "B"].map((workCenterId) =>
+          sourceOf(workCenterId, {
+            itemId: "BOLT",
+            storageUnitId: "WH1-B9",
+            quantity: 4,
+            need: 4
+          })
+        )
+      ]
+    });
+    expect(a.looseRows[0].cover).toBe("fed");
+    expect(b.looseRows[0].cover).toBe("none");
+    expect([a.toBring, b.toBring]).toEqual([1, 0]);
+
+    // A transfer on its way covers the shortage: nothing to bring.
+    const covered = lane([], station("A3", "low"));
+    expect([covered.need, covered.toBring]).toEqual(["waiting", 0]);
+
+    // The default bin holds 1 of the 2 a kit needs, and the warehouse 91.
+    const stocked = lane([
+      slot(1),
+      ...shelf(1),
+      sourceOf("A3", {
+        itemId: "IGN",
+        storageUnitId: "WH1-B1",
+        quantity: 1,
+        need: 91
+      })
+    ]);
+    expect(stocked.work.rawShort).toBe(0);
+  });
+
   it("runs lanes in line order, or worst first, and counts their work", () => {
     const stations = [
       station("C", "out", [shortOf("C", "BOLT", 1)]),
@@ -798,5 +849,29 @@ describe("buildFlow", () => {
       { type: "line", itemId: "ENGINE", steps: [["A1"], ["A2a", "A2b"]] },
       { type: "other", itemId: null, steps: [["LATHE", "OLD"]] }
     ]);
+  });
+
+  it("gives a shared station to the routing with more stations", () => {
+    // Compared as numbers: 3 stations beat 2, and 10 beat 9.
+    const shared = (longer: number, shorter: number) => {
+      const others = [
+        ...Array.from({ length: longer - 1 }, (_, i) =>
+          step(`L${i}`, "LONG", 20 + i)
+        ),
+        ...Array.from({ length: shorter - 1 }, (_, i) =>
+          step(`S${i}`, "SHORT", 20 + i)
+        )
+      ];
+      const flow = buildFlow(
+        ["X", ...others.map((row) => row.workCenterId)].map((id) => ({
+          workCenterId: id,
+          name: id
+        })),
+        [step("X", "SHORT", 10), step("X", "LONG", 10), ...others]
+      );
+      return flow.find((row) => row.steps.flat().includes("X"))?.itemId;
+    };
+    expect(shared(3, 2)).toBe("LONG");
+    expect(shared(10, 9)).toBe("LONG");
   });
 });

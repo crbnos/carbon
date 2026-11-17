@@ -135,6 +135,10 @@ const summaryKinds: SummaryKind[] = [
   "rawShort"
 ];
 
+/** The key of work that names no work center: its lane has no id. */
+const NO_STATION = "none";
+const laneKey = (lane: Lane) => lane.workCenterId ?? NO_STATION;
+
 const inSummary = (lane: Lane, kind: SummaryKind) =>
   kind === "out"
     ? lane.severity === "red"
@@ -176,11 +180,11 @@ export default function LineFeedRoute() {
     lanes
       .filter(
         (lane) =>
-          lane.workCenterId &&
           (shown === undefined || inSummary(lane, shown)) &&
-          (search === "" || (lane.name ?? "").toLowerCase().includes(search))
+          (search === "" ||
+            (lane.name ?? t`No station`).toLowerCase().includes(search))
       )
-      .map((lane) => [lane.workCenterId, lane])
+      .map((lane) => [laneKey(lane), lane])
   );
   const withParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -191,7 +195,9 @@ export default function LineFeedRoute() {
 
   // The open station is the user's own choice: opening it reads nothing new.
   const [openId, setOpenId] = useState<string | null>(null);
-  const open = lanes.find((lane) => lane.workCenterId === openId);
+  const open = openId
+    ? lanes.find((lane) => laneKey(lane) === openId)
+    : undefined;
 
   // Work centers and storage units broadcast on the shared reference topic,
   // which `handle.realtime` cannot name: a new station, lineside storage unit
@@ -301,8 +307,8 @@ function FlowMap({
   onOpen
 }: {
   flow: FlowRow[];
-  /** The lanes the filters leave, by work center. */
-  visible: Map<string | null, Lane>;
+  /** The lanes the filters leave, by `laneKey`. */
+  visible: Map<string, Lane>;
   names: Names;
   onOpen: (workCenterId: string) => void;
 }) {
@@ -328,6 +334,8 @@ function FlowMap({
           ]
             .filter(Boolean)
             .join(" · ");
+
+  const noStation = visible.get(NO_STATION);
 
   return (
     <div className="flex flex-1 min-h-0 flex-col gap-3 overflow-auto p-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
@@ -416,6 +424,20 @@ function FlowMap({
           </section>
         );
       })}
+      {noStation && (
+        // Work that names no work center (a request, a transfer) is on no
+        // routing: it has its own tile so it can be opened and resolved.
+        <section className="flex flex-col gap-2">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <Trans>No station</Trans>
+          </h2>
+          <StationTile
+            lane={noStation}
+            label={tileLabel(noStation)}
+            onOpen={onOpen}
+          />
+        </section>
+      )}
     </div>
   );
 }
@@ -433,7 +455,7 @@ function StationTile({
   return (
     <button
       type="button"
-      onClick={() => lane.workCenterId && onOpen(lane.workCenterId)}
+      onClick={() => onOpen(laneKey(lane))}
       className={cn(
         "flex min-h-11 w-40 flex-col justify-center gap-0.5 rounded-md border px-2 py-1 text-left",
         tone.lane,
@@ -441,7 +463,7 @@ function StationTile({
       )}
     >
       <span className="line-clamp-2 text-xs font-semibold leading-tight">
-        {lane.name}
+        {lane.name ?? <Trans>No station</Trans>}
       </span>
       <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <span
@@ -1145,7 +1167,6 @@ function StationLine({
         {canTransfer &&
           row.source &&
           row.source.quantity > 0 &&
-          (row.cover === "fed" || row.cover === "site" || !row.cover) &&
           row.workCenterId &&
           row.itemId && (
             <TransferButton

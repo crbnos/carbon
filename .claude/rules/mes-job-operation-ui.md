@@ -523,7 +523,9 @@ while its serial or batch materials are not scanned in.
   the one with the most stations. One-step routings (kit benches) share the
   "Kitting and preparation" row; stations on no running routing fold into
   "Other stations". A tile shows the station's name, colour and need, and
-  opens the lane below in a drawer (local state, no read).
+  opens the lane below in a drawer (local state, no read). Work that names no
+  work center (a request, a transfer) is on no routing: it gets a "No station"
+  tile under the map.
 - **Need.** A station works from its lineside stock, and one water spider
   brings it. A station's colour is its `Lane.need` (`laneNeed`).
   `claimStock` gives the warehouse's stock out in process order and sets each
@@ -578,7 +580,10 @@ while its serial or batch materials are not scanned in.
   still in the source bin, so a resend of a move that covered the need creates
   nothing. The button has a quantity field for a loose part: it starts at what
   the station is short of, and the feeder may type more (a whole box), up to
-  what the bin holds; a serial kit moves one at a time. Then it calls the ERP's
+  what the bin holds; a serial kit moves one at a time. `transferToStation`
+  reads the source bin's stock again (the board's own `raw` row) and refuses
+  more than it holds, because the ERP's transfer pick takes a bin below zero
+  without refusing. A short part with some stock keeps its Move button. Then it calls the ERP's
   `api+/inventory.stock-transfer.move.ts` (`createStockTransfer` with
   `moveNow`). "Bring kit" is the same move for the rack kit's serial. The
   action answers with a flash, because a move that lands unmounts its button.
