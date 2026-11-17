@@ -20,6 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { nanoid } from "nanoid";
 import { type ReactNode, useState } from "react";
 import {
   LuCheck,
@@ -95,7 +96,9 @@ function ScrapPartsModal({
   const { t } = useLingui();
   const loaded = useLoaderQuery<typeof loader>(path.to.scrapParts(operationId));
   const reasons = useScrapReasons();
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  // nanoid, not crypto.randomUUID: a station on plain HTTP has no secure
+  // context.
+  const [idempotencyKey] = useState(() => nanoid());
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [pickedReasonId, setPickedReasonId] = useState(() =>
     remembered(LAST_REASON)
@@ -260,6 +263,7 @@ function ScrapPartsModal({
                             <PartCounter
                               key={key}
                               readableId={entity.itemReadableId}
+                              label={`${entity.itemReadableId} ${entity.readableId}`}
                               detail={t`Batch ${entity.readableId} · ${entity.quantity} used · ${where}`}
                               value={countOf(key)}
                               max={entity.quantity}
@@ -323,12 +327,15 @@ function ScrapPartsModal({
 
 function PartCounter({
   readableId,
+  label = readableId,
   detail,
   value,
   max,
   onChange
 }: {
   readableId: string;
+  /** Names the buttons: two batches of one part need their numbers. */
+  label?: string;
   detail: string;
   value: number;
   max?: number;
@@ -347,7 +354,7 @@ function PartCounter({
         <span className="truncate text-sm text-muted-foreground">{detail}</span>
       </div>
       <IconButton
-        aria-label={t`One less ${readableId}`}
+        aria-label={t`One less ${label}`}
         variant="secondary"
         size="lg"
         icon={<LuMinus />}
@@ -355,13 +362,13 @@ function PartCounter({
         onClick={() => onChange(value - 1)}
       />
       <span
-        aria-label={t`${readableId} to scrap`}
+        aria-label={t`${label} to scrap`}
         className="w-8 text-center text-lg font-semibold tabular-nums"
       >
         {value}
       </span>
       <IconButton
-        aria-label={t`One more ${readableId}`}
+        aria-label={t`One more ${label}`}
         variant="secondary"
         size="lg"
         icon={<LuPlus />}

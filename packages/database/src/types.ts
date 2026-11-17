@@ -32866,55 +32866,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "jobMaterialScrap_jobMaterialId_fkey"
-            columns: ["jobMaterialId"]
-            isOneToOne: false
-            referencedRelation: "jobMaterial"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterialScrap_jobMaterialId_fkey"
-            columns: ["jobMaterialId"]
-            isOneToOne: false
-            referencedRelation: "jobMaterialWithMakeMethodId"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterialScrap_jobMaterialId_fkey"
-            columns: ["jobMaterialId"]
-            isOneToOne: false
-            referencedRelation: "openJobMaterialLines"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterialScrap_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterialScrap_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationQueueTime"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterialScrap_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithDependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterialScrap_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "jobMaterialScrap_materialRequestId_fkey"
             columns: ["materialRequestId", "companyId"]
             isOneToOne: false

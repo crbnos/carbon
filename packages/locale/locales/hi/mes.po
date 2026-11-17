@@ -200,6 +200,9 @@ msgstr "{hours} घंटा"
 msgid "{issued} of {required}"
 msgstr "{required} में से {issued}"
 
+msgid "{label} to scrap"
+msgstr ""
+
 msgid "{label}, overdue"
 msgstr "{label}, अतिदेय"
 
@@ -220,9 +223,6 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
-msgstr ""
-
-msgid "{readableId} to scrap"
 msgstr ""
 
 #. placeholder {0}: step.perMember.length
@@ -2151,10 +2151,10 @@ msgstr "रास्ते में"
 msgid "one combined lot · planned"
 msgstr "एक संयुक्त लॉट · योजनाबद्ध"
 
-msgid "One less {readableId}"
+msgid "One less {label}"
 msgstr ""
 
-msgid "One more {readableId}"
+msgid "One more {label}"
 msgstr ""
 
 msgid "one per job · planned"

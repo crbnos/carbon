@@ -14,8 +14,11 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE TABLE IF NOT EXISTS "jobMaterialScrap" (
   "id" TEXT NOT NULL DEFAULT id('jms'),
   "companyId" TEXT NOT NULL,
-  "jobMaterialId" TEXT NOT NULL REFERENCES "jobMaterial"("id") ON DELETE CASCADE,
-  "jobOperationId" TEXT NOT NULL REFERENCES "jobOperation"("id") ON DELETE CASCADE,
+  -- Soft references, as trackedActivity.sourceDocumentId: getting a job's
+  -- method again replaces its materials and operations, and the scrap record
+  -- (and the ledger rows that point at it) must outlive them.
+  "jobMaterialId" TEXT NOT NULL,
+  "jobOperationId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL REFERENCES "item"("id") ON DELETE RESTRICT,
   -- The serial or batch scrapped, for a tracked part.
   "trackedEntityId" TEXT REFERENCES "trackedEntity"("id") ON DELETE RESTRICT,

@@ -30619,6 +30619,12 @@ async function scrapConsumedEntity(
       `${entity.readableId} was already scrapped or given back`
     );
   }
+  // Read before the lock: another scrap may have taken part of the batch.
+  if (round(quantity) > round(Number(current.quantity))) {
+    throw new InvalidInputError(
+      `${entity.readableId} holds ${round(Number(current.quantity))}`
+    );
+  }
 
   let scrappedId = current.id;
   if (!isFullDraw(Number(current.quantity), quantity)) {
@@ -30820,15 +30826,21 @@ async function relieveConsumedToScrap(
       scrapAccountId: string;
       workInProgressAccount: string;
       dimensionMap: Map<string, string>;
+      /** The job's project charge, when the caller already read it. */
+      projectCharge?: Awaited<ReturnType<typeof loadJobProjectCharge>>;
     };
   }
 ) {
   const { companyId, userId, jobId, quantity, accounting } = args;
   const scrapCost = args.unitCost * quantity;
   if (scrapCost <= 0) return;
-  const scrapProjectCharge = jobId
-    ? await loadJobProjectCharge(trx, companyId, jobId)
-    : null;
+  // A consume-to-project job charged the part to the project, not WIP.
+  const scrapProjectCharge =
+    accounting.projectCharge !== undefined
+      ? accounting.projectCharge
+      : jobId
+        ? await loadJobProjectCharge(trx, companyId, jobId)
+        : null;
   const journalEntryId = await sequence.getNextSequence(
     trx,
     "journalEntry",
@@ -32712,17 +32724,17 @@ export async function issueMaterial(
         .executeTakeFirst();
       if (booked) break;
 
-      await assertCompanyRecords(
-        db,
-        "scrapReason",
-        [scrapReasonId],
-        companyId,
-        "Scrap reason"
-      );
-      const operation = await getScrappableParts(db, {
-        companyId,
-        jobOperationId
-      });
+      const [, operation, scrapAccounting] = await Promise.all([
+        assertCompanyRecords(
+          db,
+          "scrapReason",
+          [scrapReasonId],
+          companyId,
+          "Scrap reason"
+        ),
+        getScrappableParts(db, { companyId, jobOperationId }),
+        loadScrapAccountingContext(db, companyId)
+      ]);
       if (!operation) throw new NotFoundError("Job operation not found");
 
       // Each line against what the operation lists: an untracked part by
@@ -32736,6 +32748,9 @@ export async function issueMaterial(
       const lines = validatedPayload.lines.map((line) => {
         const material = materialById.get(line.materialId);
         const quantity = round(line.quantity);
+        if (quantity <= 0) {
+          throw new InvalidInputError("Scrap a quantity above zero");
+        }
         if ("trackedEntityId" in line) {
           const entity = material?.tracked.find(
             (e) => e.trackedEntityId === line.trackedEntityId
@@ -32779,8 +32794,16 @@ export async function issueMaterial(
         throw new InvalidInputError("Each part can be listed once");
       }
       const lineByKey = new Map(lines.map((l, i) => [keys[i], l]));
-
-      const scrapAccounting = await loadScrapAccountingContext(db, companyId);
+      // A used part's cost is relieved from WIP, which a finished job has
+      // already closed out.
+      if (
+        lines.some((line) => line.entity) &&
+        ["Completed", "Closed", "Cancelled"].includes(operation.jobStatus ?? "")
+      ) {
+        throw new InvalidInputError(
+          "This job is finished: its used parts can no longer be scrapped"
+        );
+      }
       const itemIds = [...new Set(lines.map((line) => line.itemId))];
 
       await db.transaction().execute(async (trx) => {
@@ -32852,6 +32875,24 @@ export async function issueMaterial(
         ]);
         const itemById = new Map(items.map((item) => [item.id, item]));
         const costByItem = new Map(itemCosts.map((c) => [c.itemId, c]));
+        const projectCharge = lines.some((line) => line.entity)
+          ? await loadJobProjectCharge(trx, companyId, operation.jobId)
+          : null;
+        const wipAccounting = {
+          postingStatus: scrapAccounting.postingStatus,
+          accountingPeriodId: scrapAccounting.accountingPeriodId,
+          today: scrapAccounting.today,
+          scrapAccountId: scrapAccounting.scrapAccountId,
+          workInProgressAccount:
+            scrapAccounting.accountDefaults.workInProgressAccount,
+          dimensionMap: scrapAccounting.dimensionMap,
+          projectCharge
+        };
+        // Replacements for the water spider, one request per part.
+        const toRequest = new Map<
+          string,
+          { quantity: number; scrapIds: string[] }
+        >();
 
         for (const scrap of scraps) {
           const line = lineByKey.get(
@@ -32875,15 +32916,7 @@ export async function issueMaterial(
               unitCost: Number(itemCost?.unitCost ?? 0),
               scrapReasonId,
               operation,
-              accounting: {
-                postingStatus: scrapAccounting.postingStatus,
-                accountingPeriodId: scrapAccounting.accountingPeriodId,
-                today: scrapAccounting.today,
-                scrapAccountId: scrapAccounting.scrapAccountId,
-                workInProgressAccount:
-                  scrapAccounting.accountDefaults.workInProgressAccount,
-                dimensionMap: scrapAccounting.dimensionMap
-              }
+              accounting: wipAccounting
             });
           } else {
             // The bad parts go to scrap and good ones come off the shelf, so
@@ -32976,25 +33009,36 @@ export async function issueMaterial(
           }
 
           if (replacement === "Water Spider") {
-            const request = await trx
-              .insertInto("materialRequest")
-              .values({
-                companyId,
-                locationId: operation.locationId,
-                workCenterId: operation.workCenterId,
-                jobOperationId,
-                itemId,
-                note: `${quantity} to replace scrap`,
-                createdBy: userId
-              })
-              .returning(["id"])
-              .executeTakeFirstOrThrow();
-            await trx
-              .updateTable("jobMaterialScrap")
-              .set({ materialRequestId: request.id })
-              .where("id", "=", scrap.id)
-              .execute();
+            const pending = toRequest.get(itemId) ?? {
+              quantity: 0,
+              scrapIds: []
+            };
+            pending.quantity = round(pending.quantity + quantity);
+            pending.scrapIds.push(scrap.id);
+            toRequest.set(itemId, pending);
           }
+        }
+
+        for (const [itemId, pending] of toRequest) {
+          const request = await trx
+            .insertInto("materialRequest")
+            .values({
+              companyId,
+              // The station's line feed, as createMaterialRequest files it.
+              locationId: operation.requestLocationId,
+              workCenterId: operation.workCenterId,
+              jobOperationId,
+              itemId,
+              note: `${pending.quantity} to replace scrap`,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+          await trx
+            .updateTable("jobMaterialScrap")
+            .set({ materialRequestId: request.id })
+            .where("id", "in", pending.scrapIds)
+            .execute();
         }
       });
 

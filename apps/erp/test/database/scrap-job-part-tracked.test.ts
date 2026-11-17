@@ -274,6 +274,41 @@ describe.skipIf(!hasLocalDatabase)("scrap tracked job parts", () => {
     }
   );
 
+  databaseTest("refuses a used part on a finished job", async () => {
+    const serial = `${f.prefix}-tube-done`;
+    const job = await jobWithTracked("done", serialItemId, [
+      { id: serial, quantity: 1 }
+    ]);
+    expect(
+      (
+        await consume(job.trackedMaterialId, job.unitId, [
+          { trackedEntityId: serial, quantity: 1 }
+        ])
+      ).error
+    ).toBeNull();
+    await f.db
+      .updateTable("job")
+      .set({ status: "Completed" })
+      .where("id", "=", job.jobId)
+      .execute();
+
+    const result = await scrap(
+      job.operationId,
+      [
+        {
+          materialId: job.trackedMaterialId,
+          trackedEntityId: serial,
+          quantity: 1
+        }
+      ],
+      `${f.prefix}-done`
+    );
+    expect(result.error?.message).toBe(
+      "This job is finished: its used parts can no longer be scrapped"
+    );
+    expect(await scrapToAccount(job.jobId)).toBe(0);
+  });
+
   databaseTest("scraps part of a batch that was used", async () => {
     const lot = `${f.prefix}-lot`;
     const job = await jobWithTracked("batch", batchItemId, [

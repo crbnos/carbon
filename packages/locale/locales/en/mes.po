@@ -200,6 +200,9 @@ msgstr "{hours} h"
 msgid "{issued} of {required}"
 msgstr "{issued} of {required}"
 
+msgid "{label} to scrap"
+msgstr "{label} to scrap"
+
 msgid "{label}, overdue"
 msgstr "{label}, overdue"
 
@@ -221,9 +224,6 @@ msgstr "{onHand} of {need}"
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr "{onHand} on hand · covers {covers} of {demand}"
-
-msgid "{readableId} to scrap"
-msgstr "{readableId} to scrap"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -2151,11 +2151,11 @@ msgstr "On its way"
 msgid "one combined lot · planned"
 msgstr "one combined lot · planned"
 
-msgid "One less {readableId}"
-msgstr "One less {readableId}"
+msgid "One less {label}"
+msgstr "One less {label}"
 
-msgid "One more {readableId}"
-msgstr "One more {readableId}"
+msgid "One more {label}"
+msgstr "One more {label}"
 
 msgid "one per job · planned"
 msgstr "one per job · planned"

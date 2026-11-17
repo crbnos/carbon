@@ -47,8 +47,11 @@ export type ScrappableMaterial = {
 
 export type ScrappableOperation = {
   jobId: string;
+  jobStatus: string | null;
   jobMakeMethodId: string;
   locationId: string;
+  /** Where the station's water spider works: the work center's location. */
+  requestLocationId: string;
   projectId: string | null;
   workCenterId: string | null;
   materials: ScrappableMaterial[];
@@ -62,6 +65,7 @@ export async function getScrappableParts(
   const operation = await db
     .selectFrom("jobOperation as o")
     .innerJoin("job as j", "j.id", "o.jobId")
+    .leftJoin("workCenter as wc", "wc.id", "o.workCenterId")
     .where("o.id", "=", args.jobOperationId)
     .where("o.companyId", "=", companyId)
     .select([
@@ -69,7 +73,9 @@ export async function getScrappableParts(
       "o.jobMakeMethodId",
       "o.workCenterId",
       "j.locationId",
-      "j.projectId"
+      "j.projectId",
+      "j.status",
+      "wc.locationId as workCenterLocationId"
     ])
     .executeTakeFirst();
   if (
@@ -125,49 +131,54 @@ export async function getScrappableParts(
     .orderBy("i.readableIdWithRevision")
     .execute();
 
-  const kitItemIds = [
-    ...new Set(
-      materials
-        .filter((m) => m.isKit && m.methodType === "Pull from Inventory")
-        .map((m) => m.itemId!)
-    )
-  ];
-  // Each kit's parts, from its active make method (else its latest draft).
-  const kitParts = kitItemIds.length
-    ? await db
-        .with("method", (qb) =>
-          qb
-            .selectFrom("makeMethod as m")
-            .where("m.itemId", "in", kitItemIds)
-            .where("m.companyId", "=", companyId)
-            .where("m.status", "<>", "Archived")
-            .distinctOn("m.itemId")
-            .orderBy("m.itemId")
-            .orderBy((eb) => eb("m.status", "=", "Active"), "desc")
-            .orderBy("m.version", "desc")
-            .select(["m.id", "m.itemId"])
-        )
-        .selectFrom("method")
-        .innerJoin("methodMaterial as mm", "mm.makeMethodId", "method.id")
-        .innerJoin("item as i", "i.id", "mm.itemId")
-        .where("mm.methodType", "=", "Pull from Inventory")
-        .where("i.itemTrackingType", "=", "Inventory")
-        .groupBy([
-          "method.itemId",
-          "mm.itemId",
-          "i.readableIdWithRevision",
-          "i.name"
-        ])
-        .select((eb) => [
-          "method.itemId as kitItemId",
-          "mm.itemId",
-          "i.readableIdWithRevision",
-          "i.name",
-          eb.fn.sum<string>("mm.quantity").as("perKit")
-        ])
-        .orderBy("i.readableIdWithRevision")
-        .execute()
-    : [];
+  const kitMaterials = materials.filter(
+    (m) => m.isKit && m.methodType === "Pull from Inventory"
+  );
+  const kitMaterialIds = new Set(kitMaterials.map((m) => m.id!));
+  const kitItemIds = [...new Set(kitMaterials.map((m) => m.itemId!))];
+  // Each kit's parts, from its active make method (else its latest draft),
+  // and the serials and batches used: they do not depend on each other.
+  const [kitParts, tracked] = await Promise.all([
+    kitItemIds.length
+      ? db
+          .with("method", (qb) =>
+            qb
+              .selectFrom("makeMethod as m")
+              .where("m.itemId", "in", kitItemIds)
+              .where("m.companyId", "=", companyId)
+              .where("m.status", "<>", "Archived")
+              .distinctOn("m.itemId")
+              .orderBy("m.itemId")
+              .orderBy((eb) => eb("m.status", "=", "Active"), "desc")
+              .orderBy("m.version", "desc")
+              .select(["m.id", "m.itemId"])
+          )
+          .selectFrom("method")
+          .innerJoin("methodMaterial as mm", "mm.makeMethodId", "method.id")
+          .innerJoin("item as i", "i.id", "mm.itemId")
+          .where("mm.methodType", "=", "Pull from Inventory")
+          .where("i.itemTrackingType", "=", "Inventory")
+          .groupBy([
+            "method.itemId",
+            "mm.itemId",
+            "i.readableIdWithRevision",
+            "i.name"
+          ])
+          .select((eb) => [
+            "method.itemId as kitItemId",
+            "mm.itemId",
+            "i.readableIdWithRevision",
+            "i.name",
+            eb.fn.sum<string>("mm.quantity").as("perKit")
+          ])
+          .orderBy("i.readableIdWithRevision")
+          .execute()
+      : [],
+    consumedEntities(db, {
+      companyId,
+      materialIds: materials.map((m) => m.id!)
+    })
+  ]);
   const partsByKit = new Map<string, ScrappablePart[]>();
   for (const part of kitParts) {
     const list = partsByKit.get(part.kitItemId!) ?? [];
@@ -180,15 +191,6 @@ export async function getScrappableParts(
     partsByKit.set(part.kitItemId!, list);
   }
 
-  const tracked = await consumedEntities(db, {
-    companyId,
-    materialIds: materials.map((m) => m.id!)
-  });
-  const kitMaterialIds = new Set(
-    materials
-      .filter((m) => m.isKit && m.methodType === "Pull from Inventory")
-      .map((m) => m.id!)
-  );
   // The kit serials themselves are not offered: the parts inside them are.
   const kitEntities = tracked.filter((e) => kitMaterialIds.has(e.materialId));
   const inKits = await consumedEntities(db, {
@@ -212,14 +214,15 @@ export async function getScrappableParts(
 
   return {
     jobId: operation.jobId,
+    jobStatus: operation.status ?? null,
     jobMakeMethodId,
     locationId,
+    requestLocationId: operation.workCenterLocationId ?? locationId,
     projectId: operation.projectId ?? null,
     workCenterId: operation.workCenterId ?? null,
     materials: materials
       .map((m) => {
-        const isKit =
-          Boolean(m.isKit) && m.methodType === "Pull from Inventory";
+        const isKit = kitMaterialIds.has(m.id!);
         // A kit itself is not a part to scrap and replace: its parts are.
         const parts: ScrappablePart[] = isKit
           ? (partsByKit.get(m.itemId!) ?? [])
@@ -274,6 +277,24 @@ async function consumedEntities(
     .where("a.companyId", "=", args.companyId)
     .where("a.type", "=", "Consume")
     .where("e.status", "=", "Consumed")
+    // Only where it was last consumed: a part given back and used again
+    // elsewhere belongs to that later use.
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("trackedActivityInput as later")
+            .innerJoin(
+              "trackedActivity as la",
+              "la.id",
+              "later.trackedActivityId"
+            )
+            .whereRef("later.trackedEntityId", "=", "e.id")
+            .where("la.type", "=", "Consume")
+            .whereRef("la.createdAt", ">", "a.createdAt")
+            .select("later.trackedEntityId")
+        )
+      )
+    )
     .where("i.itemTrackingType", "in", ["Serial", "Batch"])
     .$if(byMaterial, (qb) =>
       qb

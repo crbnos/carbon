@@ -336,10 +336,8 @@ describe.skipIf(!hasLocalDatabase)("scrap job part", () => {
         .select("note")
         .where("jobOperationId", "=", job.operationId)
         .execute();
-      expect(requests.map((r) => r.note).sort()).toEqual([
-        "1 to replace scrap",
-        "2 to replace scrap"
-      ]);
+      // The same part from the kit and the loose line: one request for both.
+      expect(requests.map((r) => r.note)).toEqual(["3 to replace scrap"]);
     }
   );
 

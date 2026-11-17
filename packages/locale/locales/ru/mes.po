@@ -200,6 +200,9 @@ msgstr "{hours} ч"
 msgid "{issued} of {required}"
 msgstr "{issued} из {required}"
 
+msgid "{label} to scrap"
+msgstr ""
+
 msgid "{label}, overdue"
 msgstr "{label}, просрочено"
 
@@ -220,9 +223,6 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
-msgstr ""
-
-msgid "{readableId} to scrap"
 msgstr ""
 
 #. placeholder {0}: step.perMember.length
@@ -2151,10 +2151,10 @@ msgstr "В пути"
 msgid "one combined lot · planned"
 msgstr "одна объединённая партия · запланировано"
 
-msgid "One less {readableId}"
+msgid "One less {label}"
 msgstr ""
 
-msgid "One more {readableId}"
+msgid "One more {label}"
 msgstr ""
 
 msgid "one per job · planned"
