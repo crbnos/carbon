@@ -16315,10 +16315,11 @@ export async function postReceipt(
                 // The receipt is the only record of what the supplier
                 // finished, so the operation completes what the line has
                 // received across all its receipts, in the job's units.
-                const quantityComplete =
+                const quantityComplete = round(
                   ((purchaseOrderLine.quantityReceived ?? 0) +
                     recivedQuantityInPurchaseUnit) *
-                  (receiptLines[0]!.conversionFactor ?? 1);
+                    (receiptLines[0]!.conversionFactor ?? 1)
+                );
 
                 return {
                   ...acc,

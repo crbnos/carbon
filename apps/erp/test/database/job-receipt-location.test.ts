@@ -71,6 +71,37 @@ databaseTest(
 );
 
 databaseTest(
+  "a completion with no location refuses a storage unit at another location",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await jobFixture(f, "foreign-unit");
+      const foreignShelf = `${f.prefix}-shelf-foreign`;
+      await seed(f, (trx) =>
+        trx
+          .insertInto("storageUnit")
+          .values({
+            id: foreignShelf,
+            name: foreignShelf,
+            locationId: f.otherLocationId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      await expect(
+        sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, ${foreignShelf}, ${null}, ${f.companyId}, ${USER})`.execute(
+          f.db
+        )
+      ).rejects.toThrow(/is not at the location of job/);
+      expect(await jobReceipts(f, job.jobId)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "a completion to another location keeps it and does not take the job's storage unit",
   async () => {
     const f = await alwaysPostFixture();

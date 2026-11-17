@@ -150,15 +150,32 @@ BEGIN
     RAISE EXCEPTION 'Job % does not belong to company %', p_job_id, COALESCE(p_company_id, '<null>');
   END IF;
 
-  -- A caller that names no location receives into the job's own location and
-  -- storage unit. A caller that names a location keeps its own storage unit
+  -- A caller that names no location receives into the job's own location, and
+  -- into the job's own storage unit when it names none. A storage unit must be
+  -- at that location: a bin of another location would split the units between
+  -- two counts. A caller that names a location keeps its own storage unit
   -- choice: the job's storage unit belongs to the job's location.
   IF p_location_id IS NULL THEN
     p_location_id := v_job_location_id;
-    p_storage_unit_id := COALESCE(
-      p_storage_unit_id,
-      (SELECT "storageUnitId" FROM "job" WHERE id = p_job_id AND "companyId" = p_company_id)
-    );
+    IF p_storage_unit_id IS NULL THEN
+      SELECT j."storageUnitId"
+      INTO p_storage_unit_id
+      FROM "job" j
+      INNER JOIN "storageUnit" su
+        ON su.id = j."storageUnitId"
+        AND su."companyId" = p_company_id
+        AND su."locationId" = v_job_location_id
+      WHERE j.id = p_job_id
+        AND j."companyId" = p_company_id;
+    ELSIF NOT EXISTS (
+      SELECT 1
+      FROM "storageUnit"
+      WHERE id = p_storage_unit_id
+        AND "companyId" = p_company_id
+        AND "locationId" = v_job_location_id
+    ) THEN
+      RAISE EXCEPTION 'Storage unit % is not at the location of job %', p_storage_unit_id, v_job_id_readable;
+    END IF;
   END IF;
 
   -- Make to Asset: a job that targets a fixed asset class completes into one

@@ -130,6 +130,27 @@ async function operation(f: Fixture, operationId: string) {
   return { status: row.status, quantityComplete: Number(row.quantityComplete) };
 }
 
+/** The job's status and the units its completion received to stock. */
+async function jobReceived(f: Fixture, jobId: string) {
+  const job = await f.db
+    .selectFrom("job")
+    .select("status")
+    .where("id", "=", jobId)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const receipts = await f.db
+    .selectFrom("itemLedger")
+    .select("quantity")
+    .where("companyId", "=", f.companyId)
+    .where("documentType", "=", "Job Receipt")
+    .where("documentId", "=", jobId)
+    .execute();
+  return {
+    status: job.status,
+    received: receipts.reduce((sum, row) => sum + Number(row.quantity), 0)
+  };
+}
+
 databaseTest(
   "receiving an outside processing order completes the operation by what was received, across receipts",
   async () => {
@@ -147,6 +168,12 @@ databaseTest(
       expect(await operation(f, order.operationId)).toEqual({
         status: "Done",
         quantityComplete: 10
+      });
+      // The operation was the job's last, so its Done completed the job with
+      // what the operation finished, not what it had before this receipt.
+      expect(await jobReceived(f, order.jobId)).toEqual({
+        status: "Completed",
+        received: 10
       });
     } finally {
       await f.cleanup();
