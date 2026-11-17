@@ -685,7 +685,11 @@ upload, the same `generateHTML` read-only render.
   lot's passed quantity also adds its **Use As Is** part
   (`inspection_use_as_is`, `20261116122219`), so a receipt whose NCR keeps
   rejected parts reads Put Away only once those are put away too. The
-  roll-up ignores Non-Inventory lots.
+  roll-up ignores Non-Inventory lots. The same refresh sets
+  `receipt.rejectedAtInspection` (`20261117143127`): true while a counted lot
+  is `Failed` or `Partial`. The Inventory sidebar's "Inspection failed" link
+  filters on it, not on the status, because a receipt with a Partial lot reads
+  Put Away once its passed stock is put away.
 - **Use As Is → Put Away.** Once a receipt lot's NCR is Closed, the parts it
   dispositioned Use As Is are put away like passed stock; Rework, Scrap and
   Return to Supplier parts are not (they are moved by hand). One SQL

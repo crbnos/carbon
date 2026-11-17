@@ -331,6 +331,8 @@ BEGIN
     public.inspection_held_quantity(company, item, unit)::text, '8');
   PERFORM pg_temp.expect('roll-up: partial',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Partially Passed');
+  PERFORM pg_temp.expect('a Partial lot marks the receipt rejected at inspection',
+    (SELECT "rejectedAtInspection"::text FROM "receipt" WHERE "id" = rcpt), 'true');
   PERFORM pg_temp.expect('the accepted quantity moves',
     pg_temp.refused(company, item, location, unit, NULL, -92, usr)::text, 'false');
   PERFORM pg_temp.expect('the remainder stays held',
@@ -402,6 +404,21 @@ BEGIN
   UPDATE "stockTransfer" SET "status" = 'Completed' WHERE "id" = transfer AND "status" <> 'Completed';
   PERFORM pg_temp.expect('roll-up: put away',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Put Away');
+  PERFORM pg_temp.expect('a Passed lot rejected nothing',
+    (SELECT "rejectedAtInspection"::text FROM "receipt" WHERE "id" = rcpt), 'false');
+
+  -- A Partial lot whose passed part is put away reads Put Away, and the
+  -- receipt stays rejected at inspection: its remainder is still held.
+  PERFORM set_config('app.inspection_release', 'on', true);
+  UPDATE "inspection" SET "status" = 'Partial', "acceptedQuantity" = 92 WHERE "id" = lot;
+  PERFORM set_config('app.inspection_release', '', true);
+  PERFORM pg_temp.expect('roll-up: a Partial lot put away',
+    (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Put Away');
+  PERFORM pg_temp.expect('a Partial lot put away stays rejected at inspection',
+    (SELECT "rejectedAtInspection"::text FROM "receipt" WHERE "id" = rcpt), 'true');
+  PERFORM set_config('app.inspection_release', 'on', true);
+  UPDATE "inspection" SET "status" = 'Passed', "acceptedQuantity" = NULL WHERE "id" = lot;
+  PERFORM set_config('app.inspection_release', '', true);
 
   -- Put Away is judged per line: a second passed line with nothing put away
   -- keeps the receipt waiting, even when the first line was over-picked.
@@ -428,6 +445,8 @@ BEGIN
   PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('roll-up: cancelled lot',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Not Required');
+  PERFORM pg_temp.expect('cancelled lots reject nothing',
+    (SELECT "rejectedAtInspection"::text FROM "receipt" WHERE "id" = rcpt), 'false');
 
   -- A goods-in unit may be nettable: a lot that names a nettable unit counts
   -- in the roll-up like any other.
@@ -526,7 +545,7 @@ BEGIN
     PERFORM pg_temp.expect('a nettable unit may be named a goods-in unit',
       pg_temp.refused_edit(format('UPDATE "location" SET "inspectionStorageUnitId" = %L WHERE "id" = %L', bin, location),
         '%must be%')::text, 'false');
-    UPDATE "location" SET "inspectionStorageUnitId" = unit WHERE "id" = location;
+    UPDATE "location" l SET "inspectionStorageUnitId" = unit WHERE l."id" = location;
   END;
 
   DECLARE

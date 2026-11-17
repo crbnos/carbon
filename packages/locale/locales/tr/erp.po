@@ -24935,6 +24935,9 @@ msgstr "Zamanı Reddet"
 msgid "Rejected"
 msgstr "Reddedilmiş"
 
+msgid "Rejected at Inspection"
+msgstr "Muayenede reddedildi"
+
 msgid "Rejected By"
 msgstr "Tarafından Reddedildi"
 

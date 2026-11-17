@@ -24935,6 +24935,9 @@ msgstr "거부 시간"
 msgid "Rejected"
 msgstr "반려됨"
 
+msgid "Rejected at Inspection"
+msgstr "검사에서 불합격"
+
 msgid "Rejected By"
 msgstr "반려자"
 

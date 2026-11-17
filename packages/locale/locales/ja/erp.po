@@ -24935,6 +24935,9 @@ msgstr "却下時間"
 msgid "Rejected"
 msgstr "却下"
 
+msgid "Rejected at Inspection"
+msgstr "検査で不合格"
+
 msgid "Rejected By"
 msgstr "却下者"
 

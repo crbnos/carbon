@@ -24935,6 +24935,9 @@ msgstr "Zeit ablehnen"
 msgid "Rejected"
 msgstr "Abgelehnt"
 
+msgid "Rejected at Inspection"
+msgstr "Bei Prüfung abgelehnt"
+
 msgid "Rejected By"
 msgstr "Abgelehnt von"
 
