@@ -3139,7 +3139,8 @@ export async function updateSupplierContact(
     const contactRowUpdate = await client
       .from("supplierContact")
       .update(contactRow)
-      .eq("contactId", supplierContact.contactId);
+      .eq("contactId", supplierContact.contactId)
+      .eq("companyId", supplierContact.companyId);
 
     if (contactRowUpdate.error) {
       return contactRowUpdate;
