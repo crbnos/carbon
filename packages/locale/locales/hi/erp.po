@@ -29725,6 +29725,9 @@ msgstr "आपूर्तिकर्ता भाग संख्या"
 msgid "Supplier part updated"
 msgstr "आपूर्तिकर्ता पार्ट अपडेट किया गया"
 
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "आपूर्तिकर्ता पार्ट्स"
 

@@ -29725,6 +29725,9 @@ msgstr "仕入先品番"
 msgid "Supplier part updated"
 msgstr "仕入先部品が更新されました"
 
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "仕入先部品"
 
