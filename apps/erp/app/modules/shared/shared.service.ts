@@ -12381,8 +12381,16 @@ export async function createDocument(
       if (purchaseOrderLines.error)
         throw new Error(purchaseOrderLines.error.message);
 
-      let locationId = purchaseOrder.data.locationId;
+      // A Draft whose location the user changed keeps the location they chose.
+      const locationChosen =
+        !!userLocationId &&
+        !!receipt.data &&
+        userLocationId !== receipt.data.locationId;
+      let locationId = locationChosen
+        ? userLocationId
+        : purchaseOrder.data.locationId;
       if (
+        !locationChosen &&
         purchaseOrderLines.data.some(
           (d) => d.locationId !== locationId && d.locationId === userLocationId
         )
