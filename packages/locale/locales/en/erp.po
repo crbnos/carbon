@@ -366,6 +366,14 @@ msgstr "{0} available, {1} committed"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM lines unmatched: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr "{0} by method version"
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr "{0} by operator"
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -628,6 +636,10 @@ msgstr "{0} ops · {1} pcs"
 msgid "{0} orders"
 msgstr "{0} orders"
 
+#. placeholder {0}: selected.label
+msgid "{0} over time"
+msgstr "{0} over time"
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} part links had no matching BOM line on the operation"
@@ -763,6 +775,10 @@ msgstr "{0} will be saved as {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Year"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1571,6 +1587,12 @@ msgstr "2 to 6 capital letters or digits, such as SNS"
 msgid "2 years"
 msgstr "2 years"
 
+msgid "25th"
+msgstr "25th"
+
+msgid "25th – 75th"
+msgstr "25th – 75th"
+
 msgid "28 Days"
 msgstr "28 Days"
 
@@ -1657,6 +1679,9 @@ msgstr "5MB file limit"
 
 msgid "6 months"
 msgstr "6 months"
+
+msgid "75th"
+msgstr "75th"
 
 msgid "7D"
 msgstr "7D"
@@ -13835,6 +13860,9 @@ msgstr "Finish To"
 msgid "Finish with material unpicked?"
 msgstr "Finish with material unpicked?"
 
+msgid "Finished"
+msgstr "Finished"
+
 msgid "Finished goods"
 msgstr "Finished goods"
 
@@ -15511,6 +15539,9 @@ msgstr "Include materials on the traveler"
 msgid "Include operations on the traveler"
 msgstr "Include operations on the traveler"
 
+msgid "Include outliers"
+msgstr "Include outliers"
+
 msgid "Included"
 msgstr "Included"
 
@@ -16791,6 +16822,9 @@ msgstr "Labor time"
 msgid "Labor Time"
 msgstr "Labor Time"
 
+msgid "Labor time per unit"
+msgstr "Labor time per unit"
+
 msgid "Labor transfer"
 msgstr "Labor transfer"
 
@@ -16821,8 +16855,20 @@ msgstr "Larger"
 msgid "Largest child"
 msgstr "Largest child"
 
+msgid "Last 12 months"
+msgstr "Last 12 months"
+
+msgid "Last 2 years"
+msgstr "Last 2 years"
+
+msgid "Last 6 months"
+msgstr "Last 6 months"
+
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
+
+msgid "Last 90 days"
+msgstr "Last 90 days"
 
 msgid "Last Activity"
 msgstr "Last Activity"
@@ -17711,6 +17757,9 @@ msgstr "Machine time"
 msgid "Machine Time"
 msgstr "Machine Time"
 
+msgid "Machine time per unit"
+msgstr "Machine time per unit"
+
 msgid "Machine unit"
 msgstr "Machine unit"
 
@@ -18244,6 +18293,9 @@ msgstr "Matrix"
 msgid "Maturity Analysis"
 msgstr "Maturity Analysis"
 
+msgid "Max"
+msgstr "Max"
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "Max {0} per unit"
@@ -18281,6 +18333,9 @@ msgstr "Maximum share of price (PBP)"
 msgid "MCP Command"
 msgstr "MCP Command"
 
+msgid "Mean"
+msgstr "Mean"
+
 msgid "Mean Time Between Failures"
 msgstr "Mean Time Between Failures"
 
@@ -18292,6 +18347,9 @@ msgstr "Measurement Standard"
 
 msgid "Media Size"
 msgstr "Media Size"
+
+msgid "Median"
+msgstr "Median"
 
 msgid "Medium"
 msgstr "Medium"
@@ -18585,6 +18643,9 @@ msgstr "Monthly (calendar)"
 msgid "Monthly Depreciation"
 msgstr "Monthly Depreciation"
 
+msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
+msgstr "Monthly median, with the middle half of runs shaded and each new method version marked"
+
 msgid "Monthly Rent"
 msgstr "Monthly Rent"
 
@@ -18840,6 +18901,17 @@ msgstr "My Saved View"
 
 msgid "My Time"
 msgstr "My Time"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr "n = {0}"
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr "n = {0}, {1} excluded"
 
 msgid "Name"
 msgstr "Name"
@@ -19946,6 +20018,9 @@ msgstr "No files uploaded"
 
 msgid "No findings"
 msgstr "No findings"
+
+msgid "No finished operations with clocked time in this range"
+msgstr "No finished operations with clocked time in this range"
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "No fixed asset was acquired before the cutover date."
@@ -21653,6 +21728,9 @@ msgstr "Operation quantity"
 msgid "Operation supplier process"
 msgstr "Operation supplier process"
 
+msgid "Operation time overview"
+msgstr "Operation time overview"
+
 msgid "Operation timer auto-start disabled"
 msgstr "Operation timer auto-start disabled"
 
@@ -21916,6 +21994,9 @@ msgstr "Outbound"
 
 msgid "Outgoing"
 msgstr "Outgoing"
+
+msgid "Outliers"
+msgstr "Outliers"
 
 msgid "Output"
 msgstr "Output"
@@ -26489,8 +26570,14 @@ msgstr "Runs around the clock"
 msgid "Runs during every shift at the location."
 msgstr "Runs during every shift at the location."
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+
 msgid "Runs only during the shifts you select."
 msgstr "Runs only during the shifts you select."
+
+msgid "Runs shared between operators are left out"
+msgstr "Runs shared between operators are left out"
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "Runs to an end date. A unit still out after it keeps billing."
@@ -27367,11 +27454,17 @@ msgstr "Select an event…"
 msgid "Select an issue type"
 msgstr "Select an issue type"
 
+msgid "Select an item"
+msgstr "Select an item"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Select an item and specify the quantity to issue"
 
 msgid "Select an item first"
 msgstr "Select an item first"
+
+msgid "Select an item to compare its operation times"
+msgstr "Select an item to compare its operation times"
 
 msgid "Select an item to configure"
 msgstr "Select an item to configure"
@@ -28003,6 +28096,9 @@ msgstr "Setup time"
 
 msgid "Setup Time"
 msgstr "Setup Time"
+
+msgid "Setup time per run"
+msgstr "Setup time per run"
 
 msgid "Setup unit"
 msgstr "Setup unit"
@@ -32497,6 +32593,9 @@ msgstr "Time & Materials and Cost Plus lines bill from project cost every billin
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 
+msgid "Time Analysis"
+msgstr "Time Analysis"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
 
@@ -33228,6 +33327,9 @@ msgstr "Type:"
 
 msgid "Types"
 msgstr "Types"
+
+msgid "Typical"
+msgstr "Typical"
 
 msgid "U.S. Person Attestation"
 msgstr "U.S. Person Attestation"

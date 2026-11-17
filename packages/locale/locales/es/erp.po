@@ -366,6 +366,14 @@ msgstr "{0} disponibles, {1} comprometidas"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} líneas BOM sin coincidencia: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} no se puede eliminar porque todavía está en uso por {where}. Cambie primero esos registros a otra unidad de medida."
@@ -628,6 +636,10 @@ msgstr "{0} op. · {1} pzas."
 msgid "{0} orders"
 msgstr "{0} pedidos"
 
+#. placeholder {0}: selected.label
+msgid "{0} over time"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} vínculos de pieza sin línea BOM coincidente en la operación"
@@ -763,6 +775,10 @@ msgstr "{0} se guardará como {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Año"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1571,6 +1587,12 @@ msgstr "2 a 6 letras mayúsculas o dígitos, como SNS"
 msgid "2 years"
 msgstr "2 años"
 
+msgid "25th"
+msgstr ""
+
+msgid "25th – 75th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 Días"
 
@@ -1657,6 +1679,9 @@ msgstr "Límite de archivo de 5MB"
 
 msgid "6 months"
 msgstr "6 meses"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7 días"
@@ -13835,6 +13860,9 @@ msgstr "Terminar En"
 msgid "Finish with material unpicked?"
 msgstr "¿Finalizar sin recoger el material?"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "Producto terminado"
 
@@ -15511,6 +15539,9 @@ msgstr "Incluir materiales en la hoja viajera"
 msgid "Include operations on the traveler"
 msgstr "Incluir operaciones en la hoja viajera"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "Incluido"
 
@@ -16791,6 +16822,9 @@ msgstr "Tiempo de mano de obra"
 msgid "Labor Time"
 msgstr "Tiempo de Mano de Obra"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "Transferencia de mano de obra"
 
@@ -16821,8 +16855,20 @@ msgstr "Más grande"
 msgid "Largest child"
 msgstr "Hijo más grande"
 
+msgid "Last 12 months"
+msgstr ""
+
+msgid "Last 2 years"
+msgstr ""
+
+msgid "Last 6 months"
+msgstr ""
+
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
+
+msgid "Last 90 days"
+msgstr ""
 
 msgid "Last Activity"
 msgstr "Última actividad"
@@ -17711,6 +17757,9 @@ msgstr "Tiempo de máquina"
 msgid "Machine Time"
 msgstr "Tiempo de Máquina"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "Unidad de máquina"
 
@@ -18244,6 +18293,9 @@ msgstr "Matriz"
 msgid "Maturity Analysis"
 msgstr "Análisis de Vencimiento"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "Máx. {0} por unidad"
@@ -18281,6 +18333,9 @@ msgstr "Participación máxima del precio (PBP)"
 msgid "MCP Command"
 msgstr "Comando MCP"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "Tiempo Medio Entre Fallos"
 
@@ -18292,6 +18347,9 @@ msgstr "Patrón de medición"
 
 msgid "Media Size"
 msgstr "Tamaño de Medio"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "Medio"
@@ -18585,6 +18643,9 @@ msgstr "Mensual (calendario)"
 msgid "Monthly Depreciation"
 msgstr "Depreciación Mensual"
 
+msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
+msgstr ""
+
 msgid "Monthly Rent"
 msgstr "Renta mensual"
 
@@ -18840,6 +18901,17 @@ msgstr "Mi Vista Guardada"
 
 msgid "My Time"
 msgstr "Mi tiempo"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "Nombre"
@@ -19946,6 +20018,9 @@ msgstr "No hay archivos cargados"
 
 msgid "No findings"
 msgstr "Sin hallazgos"
+
+msgid "No finished operations with clocked time in this range"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "No se adquirió ningún activo fijo antes de la fecha de corte."
@@ -21653,6 +21728,9 @@ msgstr "Cantidad de operación"
 msgid "Operation supplier process"
 msgstr "Proceso del proveedor de la operación"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "Inicio automático de temporizador de operación deshabilitado"
 
@@ -21916,6 +21994,9 @@ msgstr "Saliente"
 
 msgid "Outgoing"
 msgstr "Salida"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "Salida"
@@ -26489,8 +26570,14 @@ msgstr "Se ejecuta las 24 horas"
 msgid "Runs during every shift at the location."
 msgstr "Se ejecuta durante todos los turnos en la ubicación."
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "Se ejecuta solo durante los turnos que seleccione."
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "Se ejecuta hasta una fecha de finalización. Una unidad aún en circulación después sigue generando facturas."
@@ -27367,11 +27454,17 @@ msgstr "Seleccionar un evento…"
 msgid "Select an issue type"
 msgstr "Selecciona un tipo de problema"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Selecciona un artículo y especifica la cantidad a emitir"
 
 msgid "Select an item first"
 msgstr "Selecciona un elemento primero"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "Selecciona un artículo para configurar"
@@ -28003,6 +28096,9 @@ msgstr "tiempo de preparación"
 
 msgid "Setup Time"
 msgstr "Tiempo de preparación"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "Unidad de configuración"
@@ -32497,6 +32593,9 @@ msgstr "Las líneas de Tiempo y Materiales y Costo Más se facturan desde el cos
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Las líneas de Tiempo y Materiales y Costo Más se muestran aquí. Las líneas de Precio Fijo se facturan en eventos de facturación."
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Utilización de tiempo y dólares de la flota de alquiler por activo y clase"
 
@@ -33228,6 +33327,9 @@ msgstr "Tipo:"
 
 msgid "Types"
 msgstr "Tipos"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "Atestación de Persona Estadounidense"

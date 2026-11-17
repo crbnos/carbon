@@ -366,6 +366,14 @@ msgstr "{0} उपलब्ध, {1} आरक्षित"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM पंक्तियाँ मेल नहीं खाईं: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} को हटाया नहीं जा सकता क्योंकि यह अभी भी {where} में उपयोग में है। पहले उन रिकॉर्ड को किसी दूसरी माप की इकाई में बदलें।"
@@ -628,6 +636,10 @@ msgstr "{0} ऑपरेशन · {1} टुकड़े"
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
 
+#. placeholder {0}: selected.label
+msgid "{0} over time"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} पार्ट लिंक के पास ऑपरेशन पर कोई मेल खाने वाली BOM पंक्ति नहीं थी"
@@ -763,6 +775,10 @@ msgstr "{0} को {name} के रूप में सहेजा जाए�
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-वर्ष"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1571,6 +1587,12 @@ msgstr "2 से 6 बड़े अक्षर या अंक, जैसे S
 msgid "2 years"
 msgstr "2 वर्ष"
 
+msgid "25th"
+msgstr ""
+
+msgid "25th – 75th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 दिन"
 
@@ -1657,6 +1679,9 @@ msgstr "5MB फ़ाइल सीमा"
 
 msgid "6 months"
 msgstr "6 महीने"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7 दिन"
@@ -13835,6 +13860,9 @@ msgstr "समाप्त करने के लिए"
 msgid "Finish with material unpicked?"
 msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "तैयार माल"
 
@@ -15511,6 +15539,9 @@ msgstr "ट्रैवलर पर सामग्री शामिल क�
 msgid "Include operations on the traveler"
 msgstr "ट्रैवलर पर ऑपरेशन शामिल करें"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "शामिल"
 
@@ -16791,6 +16822,9 @@ msgstr "श्रम समय"
 msgid "Labor Time"
 msgstr "श्रम समय"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "श्रम स्थानांतरण"
 
@@ -16821,8 +16855,20 @@ msgstr "बड़ा"
 msgid "Largest child"
 msgstr "सबसे बड़ा चाइल्ड"
 
+msgid "Last 12 months"
+msgstr ""
+
+msgid "Last 2 years"
+msgstr ""
+
+msgid "Last 6 months"
+msgstr ""
+
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
+
+msgid "Last 90 days"
+msgstr ""
 
 msgid "Last Activity"
 msgstr "अंतिम गतिविधि"
@@ -17711,6 +17757,9 @@ msgstr "मशीन समय"
 msgid "Machine Time"
 msgstr "मशीन समय"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "मशीन इकाई"
 
@@ -18244,6 +18293,9 @@ msgstr "मैट्रिक्स"
 msgid "Maturity Analysis"
 msgstr "परिपक्वता विश्लेषण"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "प्रति इकाई अधिकतम {0}"
@@ -18281,6 +18333,9 @@ msgstr "कीमत का अधिकतम हिस्सा (PBP)"
 msgid "MCP Command"
 msgstr "MCP कमांड"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "विफलताओं के बीच औसत समय"
 
@@ -18292,6 +18347,9 @@ msgstr "मापन मानक"
 
 msgid "Media Size"
 msgstr "मीडिया आकार"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "मध्यम"
@@ -18585,6 +18643,9 @@ msgstr "मासिक (कैलेंडर)"
 msgid "Monthly Depreciation"
 msgstr "मासिक मूल्यह्रास"
 
+msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
+msgstr ""
+
 msgid "Monthly Rent"
 msgstr "मासिक किराया"
 
@@ -18840,6 +18901,17 @@ msgstr "मेरा सहेजा गया दृश्य"
 
 msgid "My Time"
 msgstr "मेरा समय"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "नाम"
@@ -19946,6 +20018,9 @@ msgstr "कोई फ़ाइल अपलोड नहीं की गई"
 
 msgid "No findings"
 msgstr "कोई निष्कर्ष नहीं"
+
+msgid "No finished operations with clocked time in this range"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "कटऑवर तारीख से पहले कोई अचल संपत्ति खरीदी नहीं गई थी।"
@@ -21653,6 +21728,9 @@ msgstr "ऑपरेशन मात्रा"
 msgid "Operation supplier process"
 msgstr "ऑपरेशन आपूर्तिकर्ता प्रक्रिया"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "ऑपरेशन टाइमर ऑटो-स्टार्ट अक्षम"
 
@@ -21916,6 +21994,9 @@ msgstr "निर्गामी"
 
 msgid "Outgoing"
 msgstr "बाहर जाने वाला"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "आउटपुट"
@@ -26489,8 +26570,14 @@ msgstr "24 घंटे चलता है"
 msgid "Runs during every shift at the location."
 msgstr "स्थान पर हर शिफ्ट के दौरान चलता है।"
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "केवल आपके द्वारा चुनी गई शिफ्टों के दौरान चलता है।"
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "एक अंतिम तारीख तक चलता है। एक इकाई अभी भी इसके बाद बिलिंग जारी रखती है।"
@@ -27367,11 +27454,17 @@ msgstr "एक घटना चुनें…"
 msgid "Select an issue type"
 msgstr "एक समस्या प्रकार चुनें"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "एक आइटम चुनें और जारी करने के लिए मात्रा निर्दिष्ट करें"
 
 msgid "Select an item first"
 msgstr "पहले एक आइटम चुनें"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "कॉन्फ़िगर करने के लिए एक आइटम चुनें"
@@ -28003,6 +28096,9 @@ msgstr "सेटअप समय"
 
 msgid "Setup Time"
 msgstr "सेटअप समय"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "सेटअप इकाई"
@@ -32497,6 +32593,9 @@ msgstr "समय और सामग्री और Cost Plus पंक्त�
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "समय और सामग्री और Cost Plus पंक्तियां यहां दिखाई देती हैं। निश्चित मूल्य पंक्तियां बिलिंग घटनाओं पर चालान करती हैं।"
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "संपत्ति और वर्ग द्वारा किराया बेड़े का समय और डॉलर उपयोग"
 
@@ -33228,6 +33327,9 @@ msgstr "प्रकार:"
 
 msgid "Types"
 msgstr "प्रकार"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "U.S. व्यक्ति साक्ष्य"

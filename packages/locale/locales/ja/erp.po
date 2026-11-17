@@ -366,6 +366,14 @@ msgstr "利用可能 {0}、引当済 {1}"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM明細が一致しません: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0}は{where}でまだ使用されているため削除できません。先にそれらのレコードを別の単位に変更してください。"
@@ -628,6 +636,10 @@ msgstr "{0} 作業 · {1} 個"
 msgid "{0} orders"
 msgstr "{0}件の注文"
 
+#. placeholder {0}: selected.label
+msgid "{0} over time"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} 部品リンクは工程上の一致するBOM明細がありません"
@@ -763,6 +775,10 @@ msgstr "{0} は {name} として保存されます"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0} 年"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1571,6 +1587,12 @@ msgstr "SNSなどの2～6文字の大文字または数字"
 msgid "2 years"
 msgstr "2 年"
 
+msgid "25th"
+msgstr ""
+
+msgid "25th – 75th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28日"
 
@@ -1657,6 +1679,9 @@ msgstr "5MBファイル制限"
 
 msgid "6 months"
 msgstr "6 ヶ月"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7日"
@@ -13835,6 +13860,9 @@ msgstr "完成先"
 msgid "Finish with material unpicked?"
 msgstr "ピッキングされていない材料のまま完了しますか？"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "完成品"
 
@@ -15511,6 +15539,9 @@ msgstr "現品票に材料を含める"
 msgid "Include operations on the traveler"
 msgstr "現品票に工程を含める"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "含まれています"
 
@@ -16791,6 +16822,9 @@ msgstr "労務時間"
 msgid "Labor Time"
 msgstr "労務時間"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "労務転送"
 
@@ -16821,8 +16855,20 @@ msgstr "より大きい"
 msgid "Largest child"
 msgstr "最大子"
 
+msgid "Last 12 months"
+msgstr ""
+
+msgid "Last 2 years"
+msgstr ""
+
+msgid "Last 6 months"
+msgstr ""
+
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
+
+msgid "Last 90 days"
+msgstr ""
 
 msgid "Last Activity"
 msgstr "最終更新"
@@ -17711,6 +17757,9 @@ msgstr "機械時間"
 msgid "Machine Time"
 msgstr "機械時間"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "機械単位"
 
@@ -18244,6 +18293,9 @@ msgstr "マトリックス"
 msgid "Maturity Analysis"
 msgstr "満期分析"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "1個あたり最大{0}"
@@ -18281,6 +18333,9 @@ msgstr "価格の最大シェア（PBP）"
 msgid "MCP Command"
 msgstr "MCPコマンド"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "平均故障間隔"
 
@@ -18292,6 +18347,9 @@ msgstr "計量標準"
 
 msgid "Media Size"
 msgstr "メディアサイズ"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "中"
@@ -18585,6 +18643,9 @@ msgstr "毎月（暦月）"
 msgid "Monthly Depreciation"
 msgstr "毎月減価償却"
 
+msgid "Monthly median, with the middle half of runs shaded and each new method version marked"
+msgstr ""
+
 msgid "Monthly Rent"
 msgstr "毎月のレンタル料"
 
@@ -18840,6 +18901,17 @@ msgstr "マイ保存ビュー"
 
 msgid "My Time"
 msgstr "私の時間"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "名前"
@@ -19946,6 +20018,9 @@ msgstr "ファイルがアップロードされていません"
 
 msgid "No findings"
 msgstr "検査結果がありません"
+
+msgid "No finished operations with clocked time in this range"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "カットオーバー日前に取得された固定資産がありません"
@@ -21653,6 +21728,9 @@ msgstr "オペレーション数量"
 msgid "Operation supplier process"
 msgstr "工程仕入先工法"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "工程タイマーの自動開始が無効になりました"
 
@@ -21916,6 +21994,9 @@ msgstr "出荷"
 
 msgid "Outgoing"
 msgstr "発送"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "出力"
@@ -26489,8 +26570,14 @@ msgstr "24時間実行"
 msgid "Runs during every shift at the location."
 msgstr "ロケーションのすべてのシフト中に実行されます。"
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "選択したシフト中のみ実行されます。"
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "終了日まで実行されます。その後も返却されていない個は請求され続けます。"
@@ -27367,11 +27454,17 @@ msgstr "イベントを選択…"
 msgid "Select an issue type"
 msgstr "問題タイプを選択"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "アイテムを選択し、発行する数量を指定してください"
 
 msgid "Select an item first"
 msgstr "最初にアイテムを選択してください"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "設定するアイテムを選択"
@@ -28003,6 +28096,9 @@ msgstr "段取り時間"
 
 msgid "Setup Time"
 msgstr "段取り時間"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "セットアップ単位"
@@ -32497,6 +32593,9 @@ msgstr "Time & Materials明細とコストプラス明細は、毎請求期間�
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Time & Materials明細とコストプラス明細がここに表示されます。固定価格明細は請求イベント時に請求されます。"
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"
 
@@ -33228,6 +33327,9 @@ msgstr "タイプ:"
 
 msgid "Types"
 msgstr "タイプ"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "米国人証明"
