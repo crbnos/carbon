@@ -24,6 +24,7 @@ import { Fragment } from "react";
 import {
   LuGitBranchPlus,
   LuPackageCheck,
+  LuPackageX,
   LuQrCode,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -170,6 +171,43 @@ function isTracked(material: JobMaterial) {
   return material.requiresBatchTracking || material.requiresSerialTracking;
 }
 
+// A hint only: the server lists what can actually be scrapped (the part
+// itself when untracked, or the parts inside a kit).
+function canScrapParts(material: JobMaterial) {
+  return material.methodType === "Pull from Inventory";
+}
+
+function ScrapPartsButton({
+  material,
+  onScrap,
+  disabled,
+  size
+}: {
+  material: JobMaterial;
+  onScrap?: (material: JobMaterial) => void;
+  disabled?: boolean;
+  size?: "lg";
+}) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  if (!onScrap || !canScrapParts(material)) return null;
+  const label =
+    getItemReadableId(items, material.itemId ?? "") ||
+    material.description ||
+    "";
+  return (
+    <IconButton
+      aria-label={t`Scrap parts of ${label}`}
+      variant="ghost"
+      size={size}
+      icon={<LuPackageX />}
+      className={size ? undefined : "h-8 w-8"}
+      isDisabled={disabled}
+      onClick={() => onScrap(material)}
+    />
+  );
+}
+
 function estimatedQuantity(material: JobMaterial, parentIsSerial: boolean) {
   return parentIsSerial && isTracked(material)
     ? `${material.quantity ?? material.estimatedQuantity}/${
@@ -266,7 +304,13 @@ function PickedBreakdown({
  * The stock the job can draw does not cover what it still needs of the part.
  * `available of needed`, so the operator sees how much to expect.
  */
-export function ShortStockBadge({ material }: { material: JobMaterial }) {
+export function ShortStockBadge({
+  material,
+  className
+}: {
+  material: JobMaterial;
+  className?: string;
+}) {
   const { t } = useLingui();
   const shortage = material.stockShortage;
   if (!shortage) return null;
@@ -274,7 +318,7 @@ export function ShortStockBadge({ material }: { material: JobMaterial }) {
   return (
     <Badge
       variant="red"
-      className="w-fit gap-1 shrink-0 tabular-nums"
+      className={cn("w-fit gap-1 shrink-0 tabular-nums", className)}
       title={t`In stock: ${available}. Still needed: ${needed}.`}
     >
       <LuTriangleAlert className="size-3" />
@@ -318,8 +362,16 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
 }
 
 /** Where a part comes from: the bins that hold it now, or that it is made here. */
-export function MaterialSource({ material }: { material: JobMaterial }) {
+export function MaterialSource({
+  material,
+  compact
+}: {
+  material: JobMaterial;
+  /** Smaller badges, for a dense card where they sit under the part's name. */
+  compact?: boolean;
+}) {
   const { t } = useLingui();
+  const badgeClass = compact ? "min-h-5 px-2 text-xs" : undefined;
   const madeHere = material.methodType === "Make to Order";
   const liveStorageUnits = (
     material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
@@ -333,9 +385,10 @@ export function MaterialSource({ material }: { material: JobMaterial }) {
       : [material.storageUnitName ?? t`Location not known`];
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    // Compact: the badges join the caller's own wrapping row.
+    <div className={compact ? "contents" : "flex flex-wrap items-center gap-1"}>
       {material.methodType !== "Pull from Inventory" && (
-        <Badge variant="secondary">
+        <Badge variant="secondary" className={badgeClass}>
           <MethodIcon
             type={material.methodType ?? ""}
             isKit={material.kit ?? false}
@@ -349,7 +402,11 @@ export function MaterialSource({ material }: { material: JobMaterial }) {
         </Badge>
       )}
       {locations.map((location, index) => (
-        <Badge key={`${location}-${index}`} variant="secondary">
+        <Badge
+          key={`${location}-${index}`}
+          variant="secondary"
+          className={badgeClass}
+        >
           {location}
         </Badge>
       ))}
@@ -367,6 +424,8 @@ type OperationMaterialsProps = {
   /** Only for batched operations. */
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
   onIssue: (material: JobMaterial) => void;
+  /** Scrap parts of a pulled material, or parts inside a kit. */
+  onScrap?: (material: JobMaterial) => void;
   // The operator may not issue on this operation (ability policy 'block')
   disabled?: boolean;
 };
@@ -388,6 +447,7 @@ function MaterialsTable({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -516,7 +576,16 @@ function MaterialsTable({
                         </div>
                       )}
                     </Td>
-                    <Td className="text-right">{issueButton(parent)}</Td>
+                    <Td className="text-right">
+                      <HStack spacing={1} className="justify-end">
+                        <ScrapPartsButton
+                          material={material}
+                          onScrap={onScrap}
+                          disabled={disabled}
+                        />
+                        {issueButton(parent)}
+                      </HStack>
+                    </Td>
                   </Tr>
 
                   {kitChildren.map((child, index) => (
@@ -564,7 +633,16 @@ function MaterialsTable({
                         {estimatedQuantity(child.material, parentIsSerial)}
                       </Td>
                       <Td>{actualQuantity(child.material, parentIsSerial)}</Td>
-                      <Td className="text-right">{issueButton(child)}</Td>
+                      <Td className="text-right">
+                        <HStack spacing={1} className="justify-end">
+                          <ScrapPartsButton
+                            material={child.material}
+                            onScrap={onScrap}
+                            disabled={disabled}
+                          />
+                          {issueButton(child)}
+                        </HStack>
+                      </Td>
                     </Tr>
                   ))}
                 </Fragment>
@@ -581,6 +659,7 @@ function MaterialsList({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -643,7 +722,13 @@ function MaterialsList({
           ) : null}
         </div>
         {/* A fixed slot, so the quantities line up. */}
-        <div className="flex min-w-28 shrink-0 justify-end">
+        <div className="flex min-w-28 shrink-0 items-center justify-end gap-1">
+          <ScrapPartsButton
+            material={material}
+            onScrap={onScrap}
+            disabled={disabled}
+            size="lg"
+          />
           {row.issue === "scan" && row.isKitChild ? (
             <IconButton
               aria-label={issueLabel(material)}

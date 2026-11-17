@@ -102,6 +102,11 @@ import {
   resolveSamplingPlan,
   type SamplingStandard
 } from "@carbon/database/sampling";
+import {
+  getScrappableParts,
+  type ScrappableEntity,
+  type ScrappableOperation
+} from "@carbon/database/scrappable-parts";
 import * as sequence from "@carbon/database/sequence";
 import {
   expandSerialTrackedLines,
@@ -118,6 +123,7 @@ import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { defaultAutoPrint } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
@@ -4554,6 +4560,39 @@ export async function upsertBatchProperty(
 }
 
 /**
+ * A kit rack holds built kits off the line, so it cannot be lineside: by its
+ * own work center, or by the one it inherits from its parent.
+ */
+export async function refuseLinesideKitRack(
+  ctx: ServiceContext,
+  unit: {
+    kitRack?: boolean;
+    workCenterId?: string | null;
+    parentId?: string | null;
+  }
+): Promise<CarbonError | null> {
+  if (!unit.kitRack) return null;
+  let lineside = Boolean(unit.workCenterId);
+  if (!lineside && unit.parentId) {
+    const inherited = await getEffectiveWorkCenterId(
+      ctx.asCaller.supabase,
+      unit.parentId
+    );
+    if (inherited.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save storage unit",
+        inherited.error
+      );
+    }
+    lineside = Boolean(inherited.data);
+  }
+  return lineside
+    ? ctx.error("rule", "A kit rack cannot be assigned to a work center")
+    : null;
+}
+
+/**
  * Refuses a kanban whose To or From storage unit is non-nettable. Stock there is
  * not supply: replenishing into it builds stock nothing may use, and a Transfer
  * from it would release quarantined stock to production on every scan.
@@ -4692,14 +4731,22 @@ function toNettableColumn<
 export async function upsertStorageUnit(
   client: SupabaseClient<Database>,
   storageUnit:
-    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+    | (Omit<
+        z.infer<typeof storageUnitValidator>,
+        "id" | "nonNettable" | "kitRack"
+      > & {
         nonNettable?: boolean;
+        kitRack?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+    | (Omit<
+        z.infer<typeof storageUnitValidator>,
+        "id" | "nonNettable" | "kitRack"
+      > & {
         nonNettable?: boolean;
+        kitRack?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -8577,7 +8624,10 @@ export async function salesOrderShipmentLocationOf(
   };
 }
 
-/** Print a document's labels (or a new kanban's cards) when its location's printer auto-prints. */
+/**
+ * Print a document's labels (a new kanban's cards, a shipment's packing slip)
+ * when its location's printer auto-prints.
+ */
 export async function autoPrint(
   ctx: ServiceContext,
   {
@@ -8586,10 +8636,15 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment" | "Kanban" | "PickingList";
+    sourceDocument:
+      | "Receipt"
+      | "Shipment"
+      | "Kanban"
+      | "PickingList"
+      | "PackingSlip";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping" | "kanban" | "inventory";
+    context: "receiving" | "shipping" | "kanban" | "inventory" | "documents";
   }
 ) {
   if (!locationId) return;
@@ -8600,7 +8655,7 @@ export async function autoPrint(
       locationId,
       context
     );
-    if (config?.autoPrint ?? true) {
+    if (config?.autoPrint ?? defaultAutoPrint(context)) {
       await trigger("print-job", {
         sourceDocument,
         sourceDocumentId,
@@ -30454,6 +30509,7 @@ export const issueMaterialPermission = {
     jobOperationSerialComplete: { update: "production" },
     jobOperationScrap: { update: "production" },
     partToOperation: { update: "production" },
+    scrapJobPart: { update: "production" },
     scrapTrackedEntity: { update: "production" },
     mergeTrackedEntities: { update: "inventory" },
     trackedEntitiesToBatch: { update: "production" },
@@ -30526,6 +30582,453 @@ export async function dryRunJobOperationIssues(
   } catch (err) {
     if (!(err instanceof DryRunRollback)) throw err;
   }
+}
+
+/**
+ * Scrap a serial or batch that was consumed at an operation: split off the
+ * scrapped quantity of a batch, mark it Scrapped under a Scrap activity (its
+ * genealogy keeps where it was used), relieve its cost from WIP, and reopen
+ * the requirement so a replacement is scanned in: the material's own, or for
+ * a part inside a kit serial, a line for that part on the job.
+ */
+async function scrapConsumedEntity(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    scrapId: string;
+    jobOperationId: string;
+    materialId: string;
+    entity: ScrappableEntity;
+    quantity: number;
+    item: {
+      id: string;
+      name: string | null;
+      type: Database["public"]["Enums"]["itemType"] | null;
+      itemTrackingType: string | null;
+      readableIdWithRevision: string | null;
+    };
+    itemPostingGroupId: string | null;
+    unitCost: number;
+    scrapReasonId: string;
+    operation: ScrappableOperation;
+    accounting: Parameters<typeof relieveConsumedToScrap>[1]["accounting"];
+  }
+) {
+  const { companyId, userId, entity, quantity, item, operation } = args;
+  const current = await trx
+    .selectFrom("trackedEntity")
+    .selectAll()
+    .where("id", "=", entity.trackedEntityId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirstOrThrow();
+  if (current.status !== "Consumed") {
+    throw new InvalidInputError(
+      `${entity.readableId} was already scrapped or given back`
+    );
+  }
+  // Read before the lock: another scrap may have taken part of the batch.
+  if (round(quantity) > round(Number(current.quantity))) {
+    throw new InvalidInputError(
+      `${entity.readableId} holds ${round(Number(current.quantity))}`
+    );
+  }
+
+  let scrappedId = current.id;
+  if (!isFullDraw(Number(current.quantity), quantity)) {
+    scrappedId = nanoid();
+    const split = buildBatchSplitRecords({
+      parent: {
+        id: current.id,
+        readableId: current.readableId,
+        quantity: Number(current.quantity),
+        sourceDocument: current.sourceDocument,
+        sourceDocumentId: current.sourceDocumentId,
+        sourceDocumentReadableId: current.sourceDocumentReadableId,
+        itemId: current.itemId ?? null,
+        expirationDate: current.expirationDate ?? null,
+        attributes: current.attributes as Record<string, unknown> | null
+      },
+      drawQuantity: quantity,
+      childId: scrappedId,
+      splitActivityId: nanoid(),
+      activitySourceDocument: "Job Material",
+      activitySourceDocumentId: args.materialId,
+      bin: { storageUnitId: null, locationId: operation.locationId },
+      itemLedgerItemId: item.id,
+      companyId,
+      userId,
+      postingDate: args.accounting.today,
+      childStatus: "Scrapped"
+    });
+    // A consumed batch holds no stock, so the split books no ledger rows.
+    await trx
+      .insertInto("trackedActivity")
+      .values(
+        split.activityInsert as Insertable<KyselyDatabase["trackedActivity"]>
+      )
+      .execute();
+    await trx
+      .insertInto("trackedEntity")
+      .values(
+        split.childEntityInsert as Insertable<KyselyDatabase["trackedEntity"]>
+      )
+      .execute();
+    await trx
+      .insertInto("trackedActivityInput")
+      .values(split.activityInputInsert)
+      .execute();
+    await trx
+      .insertInto("trackedActivityOutput")
+      .values(split.activityOutputInsert)
+      .execute();
+    await trx
+      .updateTable("trackedEntity")
+      .set(split.parentUpdate)
+      .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  } else {
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Scrapped" })
+      .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+
+  const activityId = nanoid();
+  await trx
+    .insertInto("trackedActivity")
+    .values({
+      id: activityId,
+      type: "Scrap",
+      sourceDocument: "Job Material",
+      sourceDocumentId: args.materialId,
+      sourceDocumentReadableId: item.readableIdWithRevision ?? "",
+      attributes: {
+        Job: operation.jobId,
+        "Job Material": args.materialId,
+        "Scrap Reason": args.scrapReasonId,
+        Employee: userId
+      },
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+  await trx
+    .insertInto("trackedActivityInput")
+    .values({
+      trackedActivityId: activityId,
+      trackedEntityId: scrappedId,
+      quantity,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+  if (entity.parentEntityId) {
+    await trx
+      .insertInto("trackedActivityOutput")
+      .values({
+        trackedActivityId: activityId,
+        trackedEntityId: entity.parentEntityId,
+        quantity,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+  }
+
+  await relieveConsumedToScrap(trx, {
+    companyId,
+    userId,
+    jobId: operation.jobId,
+    locationId: operation.locationId,
+    itemId: item.id,
+    itemReadableId: item.readableIdWithRevision ?? "",
+    itemPostingGroupId: args.itemPostingGroupId,
+    unitCost: args.unitCost,
+    quantity,
+    scrapReasonId: args.scrapReasonId,
+    workCenterId: operation.workCenterId,
+    lineReference: `scrapJobPart:${args.scrapId}`,
+    accounting: args.accounting
+  });
+
+  if (!entity.kitReadableId) {
+    // Consumed into the material: its requirement reopens.
+    await trx
+      .updateTable("jobMaterial")
+      .set((eb) => ({
+        quantityIssued: sql<number>`greatest(0, ${eb.ref("quantityIssued")} - ${quantity})`
+      }))
+      .where("id", "=", args.materialId)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  // Inside a kit serial: the job now needs the replacement part itself.
+  const existing = await trx
+    .selectFrom("jobMaterial")
+    .select("id")
+    .where("jobMakeMethodId", "=", operation.jobMakeMethodId)
+    .where("itemId", "=", item.id)
+    .where("methodType", "=", "Pull from Inventory")
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (existing) {
+    await trx
+      .updateTable("jobMaterial")
+      .set((eb) => ({
+        estimatedQuantity: sql<number>`coalesce(${eb.ref("estimatedQuantity")}, 0) + ${quantity}`
+      }))
+      .where("id", "=", existing.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  await trx
+    .insertInto("jobMaterial")
+    .values({
+      companyId,
+      createdBy: userId,
+      description: item.name ?? "",
+      itemId: item.id,
+      jobId: operation.jobId,
+      jobMakeMethodId: operation.jobMakeMethodId,
+      jobOperationId: args.jobOperationId,
+      itemType: item.type ?? "Part",
+      methodType: "Pull from Inventory",
+      quantity: 0,
+      estimatedQuantity: quantity,
+      quantityIssued: 0,
+      requiresBatchTracking: item.itemTrackingType === "Batch",
+      requiresSerialTracking: item.itemTrackingType === "Serial",
+      unitCost: args.unitCost
+    })
+    .execute();
+}
+
+/**
+ * Relieve a consumed part's cost from WIP to scrap: Dr scrapAccount / Cr WIP
+ * (or the project account of a consume-to-project job) at the item's unit
+ * cost, with the scrap dimensions. A part with no cost posts nothing.
+ */
+async function relieveConsumedToScrap(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    jobId: string | null;
+    locationId: string | null;
+    itemId: string;
+    itemReadableId: string;
+    itemPostingGroupId: string | null;
+    unitCost: number;
+    quantity: number;
+    scrapReasonId: string;
+    workCenterId: string | null;
+    lineReference: string;
+    accounting: {
+      postingStatus: AutomaticJournalStatus;
+      accountingPeriodId: string | null;
+      today: string;
+      scrapAccountId: string;
+      workInProgressAccount: string;
+      dimensionMap: Map<string, string>;
+      /** The job's project charge, when the caller already read it. */
+      projectCharge?: Awaited<ReturnType<typeof loadJobProjectCharge>>;
+    };
+  }
+) {
+  const { companyId, userId, jobId, quantity, accounting } = args;
+  const scrapCost = args.unitCost * quantity;
+  if (scrapCost <= 0) return;
+  // A consume-to-project job charged the part to the project, not WIP.
+  const scrapProjectCharge =
+    accounting.projectCharge !== undefined
+      ? accounting.projectCharge
+      : jobId
+        ? await loadJobProjectCharge(trx, companyId, jobId)
+        : null;
+  const journalEntryId = await sequence.getNextSequence(
+    trx,
+    "journalEntry",
+    companyId
+  );
+  const journalResult = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId: accounting.accountingPeriodId,
+      description: `Scrap — ${args.itemReadableId}`,
+      postingDate: accounting.today,
+      companyId,
+      sourceType: "Job Consumption",
+      status: accounting.postingStatus,
+      postedAt: datetime.timestamp(),
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  const journalLineReference = nanoid();
+  const line = {
+    journalId: journalResult.id,
+    quantity,
+    documentType: "Scrap" as const,
+    documentId: jobId,
+    documentLineReference: args.lineReference,
+    journalLineReference,
+    companyId
+  };
+  const journalLineResults = await trx
+    .insertInto("journalLine")
+    .values([
+      {
+        ...line,
+        accountId: accounting.scrapAccountId,
+        description: "Scrap Account",
+        amount: debit("expense", scrapCost)
+      },
+      {
+        ...line,
+        accountId:
+          scrapProjectCharge?.accountId ?? accounting.workInProgressAccount,
+        description:
+          scrapProjectCharge && !scrapProjectCharge.keepsWip
+            ? "Project Material"
+            : "WIP Account",
+        amount: credit("asset", scrapCost)
+      }
+    ])
+    .returning(["id"])
+    .execute();
+
+  const dimensionValues: Array<[string, string | null]> = [
+    ["Item", args.itemId],
+    ["ItemPostingGroup", args.itemPostingGroupId],
+    ["Location", args.locationId],
+    ["ScrapReason", args.scrapReasonId],
+    ["WorkCenter", args.workCenterId],
+    ["Employee", userId]
+  ];
+  const dimensionInserts = journalLineResults.flatMap((row, index) =>
+    [
+      ...dimensionValues,
+      // The project tags go on the project credit only.
+      ...(scrapProjectCharge && index === 1
+        ? ([
+            ["Project", scrapProjectCharge.projectId],
+            ["ProjectElement", scrapProjectCharge.projectElementId]
+          ] as Array<[string, string | null]>)
+        : [])
+    ]
+      .filter(
+        ([entityType, valueId]) =>
+          accounting.dimensionMap.has(entityType) && valueId
+      )
+      .map(([entityType, valueId]) => ({
+        journalLineId: row.id,
+        dimensionId: accounting.dimensionMap.get(entityType)!,
+        valueId: valueId as string,
+        companyId
+      }))
+  );
+  if (dimensionInserts.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionInserts)
+      .execute();
+  }
+
+  if (scrapProjectCharge && jobId) {
+    await insertJobProjectLedgerRows(trx, {
+      charge: scrapProjectCharge,
+      jobId,
+      companyId,
+      userId,
+      documentType: "Scrap",
+      rows: [
+        {
+          itemId: args.itemId,
+          quantity: -quantity,
+          amount: -scrapCost,
+          journalLineId: journalLineResults[1]?.id ?? null
+        }
+      ]
+    });
+  }
+}
+
+/**
+ * The accounting a scrap posts with: the posting status, the default accounts,
+ * the active dimensions, today and its period, and the scrap account. Read
+ * before the transaction parks the (size 1) pool.
+ */
+async function loadScrapAccountingContext(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+) {
+  const [company, postingStatus, accountDefaults, timeZone] = await Promise.all(
+    [
+      single(db, "company", { id: companyId }, { columns: ["companyGroupId"] }),
+      // Provisional before the company's accounting cutover, Posted after it.
+      journalPostingStatus(db, companyId),
+      getDefaultPostingGroup(db, companyId),
+      getCompanyTimeZone(db, companyId)
+    ]
+  );
+  if (company.error) throw new Error("Failed to fetch company");
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: company.data.companyGroupId!,
+      active: true,
+      entityType: [
+        "ItemPostingGroup",
+        "Item",
+        "Location",
+        "ScrapReason",
+        "WorkCenter",
+        "Employee",
+        "Project",
+        "ProjectElement"
+      ]
+    },
+    { columns: ["id", "entityType"] }
+  );
+  const dimensionMap = new Map<string, string>();
+  for (const dim of dimensions.data ?? []) {
+    if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+  }
+
+  const today = datetime.today(timeZone).toString();
+  return {
+    postingStatus,
+    accountDefaults: accountDefaults.data,
+    dimensionMap,
+    today,
+    // A Provisional journal has no accounting period.
+    accountingPeriodId:
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, today)
+        : null,
+    // An empty scrapAccount falls back to the variance account.
+    scrapAccountId: resolveDefaultAccount(
+      accountDefaults.data,
+      "scrapAccount",
+      postingStatus
+    ).accountId
+  };
 }
 
 export async function issueMaterial(
@@ -32211,6 +32714,350 @@ export async function issueMaterial(
       });
       break;
     }
+    case "scrapJobPart": {
+      const {
+        jobOperationId,
+        scrapReasonId,
+        replacement,
+        notes,
+        idempotencyKey,
+        companyId,
+        userId
+      } = validatedPayload;
+
+      // A retry of a scrap already booked: its serials are no longer listed,
+      // so it is answered before they are checked. Concurrent copies are
+      // caught by the key's unique constraint below.
+      const booked = await db
+        .selectFrom("jobMaterialScrap")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("idempotencyKey", "=", idempotencyKey)
+        .executeTakeFirst();
+      if (booked) break;
+
+      const [, operation, scrapAccounting] = await Promise.all([
+        assertCompanyRecords(
+          db,
+          "scrapReason",
+          [scrapReasonId],
+          companyId,
+          "Scrap reason"
+        ),
+        getScrappableParts(db, { companyId, jobOperationId }),
+        loadScrapAccountingContext(db, companyId)
+      ]);
+      if (!operation) throw new NotFoundError("Job operation not found");
+
+      // Each line against what the operation lists: an untracked part by
+      // item, a tracked one by the serial or batch that was used.
+      const materialById = new Map(operation.materials.map((m) => [m.id, m]));
+      const lineKey = (
+        materialId: string,
+        itemId: string,
+        trackedEntityId: string | null
+      ) => `${materialId}:${itemId}:${trackedEntityId ?? ""}`;
+      const lines = validatedPayload.lines.map((line) => {
+        const material = materialById.get(line.materialId);
+        const quantity = round(line.quantity);
+        if (quantity <= 0) {
+          throw new InvalidInputError("Scrap a quantity above zero");
+        }
+        if ("trackedEntityId" in line) {
+          const entity = material?.tracked.find(
+            (e) => e.trackedEntityId === line.trackedEntityId
+          );
+          if (!entity) {
+            throw new InvalidInputError(
+              "This serial or batch was not used at this operation"
+            );
+          }
+          if (
+            quantity > round(entity.quantity) ||
+            (entity.trackingType === "Serial" &&
+              !isFullDraw(entity.quantity, quantity))
+          ) {
+            throw new InvalidInputError(
+              `${entity.readableId} holds ${entity.quantity}`
+            );
+          }
+          return {
+            materialId: line.materialId,
+            itemId: entity.itemId,
+            quantity,
+            entity
+          };
+        }
+        if (!material?.parts.some((p) => p.itemId === line.itemId)) {
+          throw new InvalidInputError(
+            "This part cannot be scrapped at this operation"
+          );
+        }
+        return {
+          materialId: line.materialId,
+          itemId: line.itemId,
+          quantity,
+          entity: null
+        };
+      });
+      const keys = lines.map((l) =>
+        lineKey(l.materialId, l.itemId, l.entity?.trackedEntityId ?? null)
+      );
+      if (new Set(keys).size !== keys.length) {
+        throw new InvalidInputError("Each part can be listed once");
+      }
+      const lineByKey = new Map(lines.map((l, i) => [keys[i], l]));
+      // A used part's cost is relieved from WIP, which a finished job has
+      // already closed out.
+      if (
+        lines.some((line) => line.entity) &&
+        ["Completed", "Closed", "Cancelled"].includes(operation.jobStatus ?? "")
+      ) {
+        throw new InvalidInputError(
+          "This job is finished: its used parts can no longer be scrapped"
+        );
+      }
+      const itemIds = [...new Set(lines.map((line) => line.itemId))];
+
+      await db.transaction().execute(async (trx) => {
+        await assertPostingStatusUnchanged(
+          trx,
+          companyId,
+          scrapAccounting.postingStatus
+        );
+
+        // The retry guard: a replay finds its key taken and books nothing.
+        const scraps = await trx
+          .insertInto("jobMaterialScrap")
+          .values(
+            lines.map((line) => ({
+              companyId,
+              jobMaterialId: line.materialId,
+              jobOperationId,
+              itemId: line.itemId,
+              trackedEntityId: line.entity?.trackedEntityId ?? null,
+              quantity: line.quantity,
+              scrapReasonId,
+              replacement,
+              notes: notes || null,
+              idempotencyKey,
+              createdBy: userId
+            }))
+          )
+          .onConflict((oc) =>
+            oc
+              .columns([
+                "companyId",
+                "idempotencyKey",
+                "jobMaterialId",
+                "itemId",
+                "trackedEntityId"
+              ])
+              .doNothing()
+          )
+          .returning(["id", "jobMaterialId", "itemId", "trackedEntityId"])
+          .execute();
+        if (scraps.length === 0) return;
+
+        const [items, itemCosts, stripes] = await Promise.all([
+          trx
+            .selectFrom("item")
+            .select([
+              "id",
+              "name",
+              "type",
+              "itemTrackingType",
+              "replenishmentSystem",
+              "readableIdWithRevision"
+            ])
+            .where("id", "in", itemIds)
+            .execute(),
+          trx
+            .selectFrom("itemCost")
+            .select([
+              "itemId",
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ])
+            .where("itemId", "in", itemIds)
+            .where("companyId", "=", companyId)
+            .execute(),
+          loadDemandStripes(trx, companyId, operation.projectId)
+        ]);
+        const itemById = new Map(items.map((item) => [item.id, item]));
+        const costByItem = new Map(itemCosts.map((c) => [c.itemId, c]));
+        const projectCharge = lines.some((line) => line.entity)
+          ? await loadJobProjectCharge(trx, companyId, operation.jobId)
+          : null;
+        const wipAccounting = {
+          postingStatus: scrapAccounting.postingStatus,
+          accountingPeriodId: scrapAccounting.accountingPeriodId,
+          today: scrapAccounting.today,
+          scrapAccountId: scrapAccounting.scrapAccountId,
+          workInProgressAccount:
+            scrapAccounting.accountDefaults.workInProgressAccount,
+          dimensionMap: scrapAccounting.dimensionMap,
+          projectCharge
+        };
+        // Replacements for the water spider, one request per part.
+        const toRequest = new Map<
+          string,
+          { quantity: number; scrapIds: string[] }
+        >();
+
+        for (const scrap of scraps) {
+          const line = lineByKey.get(
+            lineKey(scrap.jobMaterialId, scrap.itemId, scrap.trackedEntityId)
+          )!;
+          const { itemId, quantity } = line;
+          const item = itemById.get(itemId)!;
+          const itemCost = costByItem.get(itemId);
+
+          if (line.entity) {
+            await scrapConsumedEntity(trx, {
+              companyId,
+              userId,
+              scrapId: scrap.id,
+              jobOperationId,
+              materialId: line.materialId,
+              entity: line.entity,
+              quantity,
+              item,
+              itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+              unitCost: Number(itemCost?.unitCost ?? 0),
+              scrapReasonId,
+              operation,
+              accounting: wipAccounting
+            });
+          } else {
+            // The bad parts go to scrap and good ones come off the shelf, so
+            // the material stays whole: a scrap from the shelf bin.
+            const storageUnitId =
+              (await getNettableDefaultStorageUnitId(
+                trx,
+                itemId,
+                operation.locationId,
+                companyId
+              )) ??
+              (
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId,
+                  locationId: operation.locationId,
+                  stripes
+                })
+              )?.storageUnitId ??
+              null;
+            const draws = await drawUntrackedAtBin(trx, {
+              companyId,
+              itemId,
+              locationId: operation.locationId,
+              storageUnitId,
+              stripes,
+              quantity
+            });
+
+            for (const draw of draws) {
+              await bookAdjustment(trx, {
+                ledger: {
+                  postingDate: scrapAccounting.today,
+                  itemId,
+                  quantity: -draw.quantity,
+                  locationId: operation.locationId,
+                  storageUnitId,
+                  trackedEntityId: null,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Scrap",
+                  documentId: operation.jobId,
+                  documentLineId: scrap.id,
+                  scrapReasonId,
+                  projectId: draw.stripe,
+                  companyId,
+                  createdBy: userId
+                },
+                item: {
+                  itemTrackingType: item.itemTrackingType,
+                  replenishmentSystem: item.replenishmentSystem,
+                  itemPostingGroupId: itemCost?.itemPostingGroupId ?? null
+                },
+                itemCost: {
+                  costingMethod: itemCost?.costingMethod ?? "Average",
+                  unitCost: Number(itemCost?.unitCost ?? 0),
+                  standardCost: Number(itemCost?.standardCost ?? 0)
+                },
+                accounting: {
+                  postingStatus: scrapAccounting.postingStatus,
+                  accountingPeriodId: scrapAccounting.accountingPeriodId,
+                  accountDefaults: {
+                    rawMaterialsAccount:
+                      scrapAccounting.accountDefaults.rawMaterialsAccount,
+                    finishedGoodsAccount:
+                      scrapAccounting.accountDefaults.finishedGoodsAccount,
+                    inventoryAdjustmentVarianceAccount:
+                      scrapAccounting.accountDefaults
+                        .inventoryAdjustmentVarianceAccount
+                  },
+                  offsetAccount: scrapAccounting.scrapAccountId,
+                  offsetDescription: "Scrap Account",
+                  description: `Scrap — ${item.readableIdWithRevision ?? ""}`,
+                  userId,
+                  dimensions: Object.fromEntries(scrapAccounting.dimensionMap),
+                  extraDimensions: [
+                    { entityType: "ScrapReason", valueId: scrapReasonId },
+                    ...(operation.workCenterId
+                      ? [
+                          {
+                            entityType: "WorkCenter",
+                            valueId: operation.workCenterId
+                          }
+                        ]
+                      : []),
+                    { entityType: "Employee", valueId: userId }
+                  ]
+                }
+              });
+            }
+          }
+
+          if (replacement === "Water Spider") {
+            const pending = toRequest.get(itemId) ?? {
+              quantity: 0,
+              scrapIds: []
+            };
+            pending.quantity = round(pending.quantity + quantity);
+            pending.scrapIds.push(scrap.id);
+            toRequest.set(itemId, pending);
+          }
+        }
+
+        for (const [itemId, pending] of toRequest) {
+          const request = await trx
+            .insertInto("materialRequest")
+            .values({
+              companyId,
+              // The station's line feed, as createMaterialRequest files it.
+              locationId: operation.requestLocationId,
+              workCenterId: operation.workCenterId,
+              jobOperationId,
+              itemId,
+              note: `${pending.quantity} to replace scrap`,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+          await trx
+            .updateTable("jobMaterialScrap")
+            .set({ materialRequestId: request.id })
+            .where("id", "in", pending.scrapIds)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+      });
+
+      break;
+    }
     case "scrapTrackedEntity": {
       const {
         trackedEntityId,
@@ -32254,63 +33101,14 @@ export async function issueMaterial(
         throw new Error("Tracked entity has already been scrapped");
       }
 
-      const companyRecordScrap = await single(
-        db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
-      );
-      if (companyRecordScrap.error) throw new Error("Failed to fetch company");
-      // Provisional before the company's accounting cutover, Posted after it.
-      const postingStatusScrap = await journalPostingStatus(db, companyId);
-
-      const accountDefaultsScrap = await getDefaultPostingGroup(db, companyId);
-      if (accountDefaultsScrap.error || !accountDefaultsScrap.data) {
-        throw new Error("Error getting account defaults");
-      }
-
-      const dimensionsScrap = await many(
-        db,
-        "dimension",
-        {
-          companyGroupId: companyRecordScrap.data.companyGroupId!,
-          active: true,
-          entityType: [
-            "ItemPostingGroup",
-            "Item",
-            "Location",
-            "ScrapReason",
-            "WorkCenter",
-            "Employee",
-            "Project",
-            "ProjectElement"
-          ]
-        },
-        { columns: ["id", "entityType"] }
-      );
-
-      const dimensionMapScrap = new Map<string, string>();
-      if (dimensionsScrap.data) {
-        for (const dim of dimensionsScrap.data) {
-          if (dim.entityType) dimensionMapScrap.set(dim.entityType, dim.id);
-        }
-      }
-
-      const todayScrap = datetime
-        .today(await getCompanyTimeZone(db, companyId))
-        .toString();
-      // Resolve the period BEFORE the transaction parks the (size 1) pool.
-      // A Provisional journal has no accounting period.
-      const accountingPeriodIdScrap =
-        postingStatusScrap === "Posted"
-          ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
-          : null;
-      // An empty scrapAccount falls back to the variance account.
-      const scrapAccountIdScrap = resolveDefaultAccount(
-        accountDefaultsScrap.data,
-        "scrapAccount",
-        postingStatusScrap
-      ).accountId;
+      const {
+        postingStatus: postingStatusScrap,
+        accountDefaults: accountDefaultsScrap,
+        dimensionMap: dimensionMapScrap,
+        today: todayScrap,
+        accountingPeriodId: accountingPeriodIdScrap,
+        scrapAccountId: scrapAccountIdScrap
+      } = await loadScrapAccountingContext(db, companyId);
 
       let didReplace = false;
       await db.transaction().execute(async (trx) => {
@@ -32487,12 +33285,10 @@ export async function issueMaterial(
               postingStatus: postingStatusScrap,
               accountingPeriodId: accountingPeriodIdScrap,
               accountDefaults: {
-                rawMaterialsAccount:
-                  accountDefaultsScrap.data.rawMaterialsAccount,
-                finishedGoodsAccount:
-                  accountDefaultsScrap.data.finishedGoodsAccount,
+                rawMaterialsAccount: accountDefaultsScrap.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsScrap.finishedGoodsAccount,
                 inventoryAdjustmentVarianceAccount:
-                  accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount
+                  accountDefaultsScrap.inventoryAdjustmentVarianceAccount
               },
               offsetAccount: scrapAccountIdScrap,
               offsetDescription: "Scrap Account",
@@ -32507,127 +33303,28 @@ export async function issueMaterial(
           // Relieve it to scrap (Dr scrapAccount / Cr WIP at the item's unit
           // cost — materials-only, spec decision 6) and reopen the material
           // requirement so a replacement can be issued.
-          const scrapCost = resolvedItemCost.unitCost * quantity;
-          if (scrapCost > 0) {
-            // A consume-to-project job charged the part to the project, not
-            // WIP, so the scrap is relieved from the project account.
-            const scrapProjectCharge = job?.id
-              ? await loadJobProjectCharge(trx, companyId, job.id)
-              : null;
-            const journalEntryId = await sequence.getNextSequence(
-              trx,
-              "journalEntry",
-              companyId
-            );
-            const journalResult = await trx
-              .insertInto("journal")
-              .values({
-                journalEntryId,
-                accountingPeriodId: accountingPeriodIdScrap,
-                description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
-                postingDate: todayScrap,
-                companyId,
-                sourceType: "Job Consumption",
-                status: postingStatusScrap,
-                postedAt: datetime.timestamp(),
-                postedBy: userId,
-                createdBy: userId
-              })
-              .returning(["id"])
-              .executeTakeFirstOrThrow();
-
-            const journalLineReference = nanoid();
-            const journalLineResults = await trx
-              .insertInto("journalLine")
-              .values([
-                {
-                  journalId: journalResult.id,
-                  accountId: scrapAccountIdScrap,
-                  description: "Scrap Account",
-                  amount: debit("expense", scrapCost),
-                  quantity,
-                  documentType: "Scrap",
-                  documentId: job?.id ?? null,
-                  documentLineReference: `scrapTrackedEntity:${materialId}`,
-                  journalLineReference,
-                  companyId
-                },
-                {
-                  journalId: journalResult.id,
-                  accountId:
-                    scrapProjectCharge?.accountId ??
-                    accountDefaultsScrap.data.workInProgressAccount,
-                  description:
-                    scrapProjectCharge && !scrapProjectCharge.keepsWip
-                      ? "Project Material"
-                      : "WIP Account",
-                  amount: credit("asset", scrapCost),
-                  quantity,
-                  documentType: "Scrap",
-                  documentId: job?.id ?? null,
-                  documentLineReference: `scrapTrackedEntity:${materialId}`,
-                  journalLineReference,
-                  companyId
-                }
-              ])
-              .returning(["id"])
-              .execute();
-
-            const scrapDimensionValues: Array<[string, string | null]> = [
-              ["Item", consumedItemId],
-              ["ItemPostingGroup", resolvedItemCost.itemPostingGroupId],
-              ["Location", job?.locationId ?? null],
-              ["ScrapReason", scrapReasonId],
-              ["WorkCenter", scrapWorkCenterId],
-              ["Employee", userId]
-            ];
-            const dimensionInserts = journalLineResults.flatMap((line, index) =>
-              [
-                ...scrapDimensionValues,
-                // The project tags go on the project credit only.
-                ...(scrapProjectCharge && index === 1
-                  ? ([
-                      ["Project", scrapProjectCharge.projectId],
-                      ["ProjectElement", scrapProjectCharge.projectElementId]
-                    ] as Array<[string, string | null]>)
-                  : [])
-              ]
-                .filter(
-                  ([entityType, valueId]) =>
-                    dimensionMapScrap.has(entityType) && valueId
-                )
-                .map(([entityType, valueId]) => ({
-                  journalLineId: line.id,
-                  dimensionId: dimensionMapScrap.get(entityType)!,
-                  valueId: valueId as string,
-                  companyId
-                }))
-            );
-            if (dimensionInserts.length > 0) {
-              await trx
-                .insertInto("journalLineDimension")
-                .values(dimensionInserts)
-                .execute();
+          await relieveConsumedToScrap(trx, {
+            companyId,
+            userId,
+            jobId: job?.id ?? null,
+            locationId: job?.locationId ?? null,
+            itemId: consumedItemId,
+            itemReadableId: item?.readableIdWithRevision ?? "",
+            itemPostingGroupId: resolvedItemCost.itemPostingGroupId,
+            unitCost: resolvedItemCost.unitCost,
+            quantity,
+            scrapReasonId,
+            workCenterId: scrapWorkCenterId,
+            lineReference: `scrapTrackedEntity:${materialId}`,
+            accounting: {
+              postingStatus: postingStatusScrap,
+              accountingPeriodId: accountingPeriodIdScrap,
+              today: todayScrap,
+              scrapAccountId: scrapAccountIdScrap,
+              workInProgressAccount: accountDefaultsScrap.workInProgressAccount,
+              dimensionMap: dimensionMapScrap
             }
-
-            if (scrapProjectCharge && job?.id) {
-              await insertJobProjectLedgerRows(trx, {
-                charge: scrapProjectCharge,
-                jobId: job.id,
-                companyId,
-                userId,
-                documentType: "Scrap",
-                rows: [
-                  {
-                    itemId: consumedItemId,
-                    quantity: -quantity,
-                    amount: -scrapCost,
-                    journalLineId: journalLineResults[1]?.id ?? null
-                  }
-                ]
-              });
-            }
-          }
+          });
 
           // Reopen the requirement — the consumed part is gone, so the
           // assembly needs a replacement issued.

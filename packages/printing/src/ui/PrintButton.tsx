@@ -34,6 +34,7 @@ export function PrintButton({
   locationId,
   context,
   workCenterId,
+  format,
   fileRoutes,
   disabled,
   variant = "secondary",
@@ -46,7 +47,11 @@ export function PrintButton({
   locationId: string | undefined;
   context: PrinterContext;
   workCenterId?: string;
-  fileRoutes: FileRoutes;
+  /** Lists only printers of this format, e.g. "pdf" for a full-page document. */
+  format?: "zpl" | "pdf";
+  /** Label downloads offered when no printer is set up. Without them the
+   *  button is hidden when there is no printer to send to. */
+  fileRoutes?: FileRoutes;
   disabled?: boolean;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
@@ -56,21 +61,30 @@ export function PrintButton({
   /** The labeled button's text. Defaults to "Print". */
   label?: ReactNode;
 }) {
-  const { printerRoutes, resolvePrinterRoute, printPath } = usePrinting();
+  const {
+    printerRoutes: allPrinterRoutes,
+    resolvePrinterRoute,
+    printPath
+  } = usePrinting();
   const modal = useDisclosure();
   const downloadModal = useDisclosure();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
 
-  const defaultPrinter = resolvePrinterRoute(locationId, context, workCenterId);
+  const printerRoutes = format
+    ? allPrinterRoutes.filter((route) => route.format === format)
+    : allPrinterRoutes;
+  const resolvedPrinter = resolvePrinterRoute(
+    locationId,
+    context,
+    workCenterId
+  );
+  const defaultPrinter =
+    resolvedPrinter && (!format || resolvedPrinter.format === format)
+      ? resolvedPrinter
+      : undefined;
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(
     defaultPrinter?.id ?? ""
   );
-
-  useEffect(() => {
-    if (modal.isOpen) {
-      setSelectedPrinterId(defaultPrinter?.id ?? printerRoutes[0]?.id ?? "");
-    }
-  }, [modal.isOpen, defaultPrinter?.id, printerRoutes]);
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -83,6 +97,7 @@ export function PrintButton({
 
   const handleClick = () => {
     if (printerRoutes.length > 0) {
+      setSelectedPrinterId(defaultPrinter?.id ?? printerRoutes[0]?.id ?? "");
       modal.onOpen();
     } else {
       downloadModal.onOpen();
@@ -105,6 +120,8 @@ export function PrintButton({
       }
     );
   };
+
+  if (printerRoutes.length === 0 && !fileRoutes) return null;
 
   return (
     <>
@@ -189,12 +206,14 @@ export function PrintButton({
         </ModalContent>
       </Modal>
 
-      <LabelDownloadModal
-        sourceDocumentId={sourceDocumentId}
-        fileRoutes={fileRoutes}
-        isOpen={downloadModal.isOpen}
-        onClose={downloadModal.onClose}
-      />
+      {fileRoutes && (
+        <LabelDownloadModal
+          sourceDocumentId={sourceDocumentId}
+          fileRoutes={fileRoutes}
+          isOpen={downloadModal.isOpen}
+          onClose={downloadModal.onClose}
+        />
+      )}
     </>
   );
 }

@@ -81,6 +81,10 @@ import {
 } from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import {
+  assignReceiptBatchNumbers,
+  receiptBatchNumberBase
+} from "@carbon/database/receipt-batch-numbers";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
@@ -11545,16 +11549,64 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
-async function receiptQuantitiesStartAtZero(
+async function receiptSettings(
   db: Kysely<KyselyDatabase>,
   companyId: string
-): Promise<boolean> {
+): Promise<{ startAtZero: boolean; batchNumbersFromPurchaseOrder: boolean }> {
   const row = await db
     .selectFrom("companySettings")
-    .select("receiptQuantitiesStartAtZero")
+    .select([
+      "receiptQuantitiesStartAtZero",
+      "receiptBatchNumbersFromPurchaseOrder"
+    ])
     .where("id", "=", companyId)
     .executeTakeFirst();
-  return row?.receiptQuantitiesStartAtZero === true;
+  return {
+    startAtZero: row?.receiptQuantitiesStartAtZero === true,
+    batchNumbersFromPurchaseOrder:
+      row?.receiptBatchNumbersFromPurchaseOrder === true
+  };
+}
+
+/**
+ * Deletes a Draft receipt's lines so they can be rebuilt from a new source,
+ * releasing the batches and serials tagged with them (deleted with no stock
+ * history, else unlinked) rather than leaving them on dead line ids. The
+ * receipt is locked and re-read here: a post that won the race refuses.
+ */
+async function deleteDraftReceiptLines(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const draft = await trx
+    .selectFrom("receipt")
+    .select("id")
+    .where("id", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Draft")
+    .forUpdate()
+    .executeTakeFirst();
+  if (!draft) throw new Error("Only a Draft receipt can be rebuilt");
+
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where(
+      sql<boolean>`attributes @> ${JSON.stringify({ Receipt: receiptId })}::jsonb`
+    )
+    .execute();
+  await releaseReceiptSerialEntities(
+    trx,
+    companyId,
+    entities.map((entity) => entity.id)
+  );
+  await trx
+    .deleteFrom("receiptLine")
+    .where("receiptId", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .execute();
 }
 
 export const createDocumentPermission = {
@@ -12444,7 +12496,21 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero, batchNumbersFromPurchaseOrder } =
+        await receiptSettings(db, companyId);
+      const batchNumberBase =
+        batchNumbersFromPurchaseOrder && purchaseOrder.data.purchaseOrderId
+          ? receiptBatchNumberBase(
+              purchaseOrder.data.purchaseOrderId,
+              datetime
+                .today(
+                  locationId
+                    ? await getLocationTimeZone(db, locationId, companyId)
+                    : await getCompanyTimeZone(db, companyId)
+                )
+                .toString()
+            )
+          : null;
 
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12520,6 +12586,11 @@ export async function createDocument(
               sourceDocument: "Purchase Order",
               sourceDocumentId: purchaseOrder.data.id,
               sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              // The draft may be switching to a PO from a different supplier.
+              // Generated batches take their Supplier attribute from the
+              // receipt, so it has to follow the new PO.
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
               locationId: locationId,
               updatedBy: userId
             })
@@ -12527,12 +12598,7 @@ export async function createDocument(
             .returning(["id", "receiptId"])
             .where("companyId", "=", companyId)
             .execute();
-          // delete existing receipt lines
-          await trx
-            .deleteFrom("receiptLine")
-            .where("receiptId", "=", receiptId)
-            .where("companyId", "=", companyId)
-            .execute();
+          await deleteDraftReceiptLines(trx, companyId, receiptId);
         } else {
           receiptIdReadable = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
@@ -12556,7 +12622,7 @@ export async function createDocument(
         }
 
         if (receiptLineItems.length > 0) {
-          await trx
+          const lines = await trx
             .insertInto("receiptLine")
             .values(
               receiptLineItems.map((line) => ({
@@ -12565,7 +12631,33 @@ export async function createDocument(
                 locationId
               }))
             )
+            .returning([
+              "id",
+              "itemId",
+              "receivedQuantity",
+              "requiresBatchTracking"
+            ])
             .execute();
+
+          if (batchNumberBase) {
+            await assignReceiptBatchNumbers(trx, {
+              companyId,
+              receiptId,
+              purchaseOrderId: purchaseOrder.data.id!,
+              base: batchNumberBase,
+              lines: lines.flatMap((line) =>
+                line.requiresBatchTracking && line.itemId
+                  ? [
+                      {
+                        id: line.id,
+                        itemId: line.itemId,
+                        receivedQuantity: Number(line.receivedQuantity ?? 0)
+                      }
+                    ]
+                  : []
+              )
+            });
+          }
         }
 
         const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
@@ -12663,7 +12755,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
@@ -12742,11 +12834,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -12865,7 +12953,7 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12946,11 +13034,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -13036,7 +13120,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]

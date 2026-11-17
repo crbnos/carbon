@@ -5026,3 +5026,43 @@ changed-file check before claiming a typecheck improvement. Report those cases
 separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** ERP typecheck performance work and other cached validation tasks.
+
+## A copy of an engine's rule reads the engine first
+
+**Context:** The sales order delivery date check walks the bill of materials with its own SQL to add up the cumulative lead time.
+
+**Problem:** MRP's explosion (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`, and the `methodCorrectionId IS NULL` filter in `mrp.ts`) leaves out quantity-0 lines and correction materials. The copy did not. A configured item's other configurations, which sit at quantity 0, added their lead time: one test item went from 67 days to 407.
+
+**Rule:** Before you write a calculation that another engine already does (BOM explosion, stock netting, supply and due dates), read that engine and apply the same filters. Name the engine in a comment beside the copy, so the two stay in step.
+
+**Applies to:** Order promising, quote lead time, and any read outside MRP that walks a BOM or nets stock.
+
+## A condition added to one branch is tested on its mirror
+
+**Context:** The delivery date check decides two things from the same free stock: whether a date passes, and the earliest date it suggests.
+
+**Problem:** The rule "goods are usable from the day they arrive" went into the earliest date only. A date in the week of a delivery, but before it, still passed. In the same change, the whole-order check left every line it checked out of the order's demand. An undated line is never checked, so its demand disappeared and a dated line could be promised its stock.
+
+**Rule:** For each condition you add, list every other place that decides the same thing (the verdict and the suggestion; the rows you exclude because "they are handled elsewhere" and the rows that really are handled there). Test the case that falls between them.
+
+**Applies to:** Decision engines that return both a verdict and a suggested value, and any exclusion justified by another step.
+
+## A background job that reads, works, then writes compares before it writes
+
+**Context:** A sales order line saved at the Capacity level is checked by an Inngest job that reads the line, runs the shop schedule simulation, then writes the result.
+
+**Problem:** Reading the line at the start protects against an old event, not against a save that lands during the simulation. The job wrote a result for the old quantity over the newer one, and credited a newer kept date to the user whose save started the job.
+
+**Rule:** Walk the timeline read → slow work → write with a second save in the middle. Make the write conditional on the inputs that were read (`WHERE col IS NOT DISTINCT FROM v.col … RETURNING id`), and raise side effects only for the rows written. Put in the event what the triggering save wrote, so the job can tell when a later save has replaced it.
+
+**Applies to:** Every deferred check or recalculation that writes a result computed from a row a user can still edit.
+
+## Regenerated DB types carry whatever the local database holds
+
+**Context:** A worktree's local database is shared by every branch checked out in it. `pnpm db:migrate` regenerates `packages/database/src/types.ts` from that database, not from the branch's migrations.
+
+**Problem:** The regenerated types picked up another branch's table and columns on two SQL functions that no migration defines. CI's "Database types" job regenerates from migrations alone, so the committed types failed it. Applying the wanted hunks with `git apply --unidiff-zero` then put new function types inside an unrelated type, because zero-context hunks do not anchor in a 100k-line file.
+
+**Rule:** After regenerating, diff `types.ts` against the base branch and keep only the lines your migration explains; restore the rest. Move them by matching text (the table's `Row` / `Insert` / `Update` blocks, the function's alphabetical neighbour), never by zero-context patches. The typecheck and CI's "Database types" job are the proof.
+
+**Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.
