@@ -3800,9 +3800,6 @@ msgstr ""
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Enviamos um link de login e um código de 6 dígitos por email. Siga o link ou insira o código aqui."
 
-msgid "Wet"
-msgstr "Úmido"
-
 msgid "What do you need?"
 msgstr "De que você precisa?"
 
