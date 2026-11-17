@@ -4431,7 +4431,7 @@ msgid "Approving deletes the purchase order and all of its lines now. This canno
 msgstr "승인하면 발주서와 모든 라인이 즉시 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr "승인하면 {receipts}이(가) 역분개된 후 발주서와 모든 라인이 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+msgstr "승인하면 {receipts}을(를) 역분개한 뒤 발주서와 모든 라인을 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr "승인하면 {readableId}이(가) 무효 처리되어 전기가 역분개된 후 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
@@ -16276,7 +16276,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」 레코드에서 아직 사용 중입니다. 먼저 제거하세요."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "공급업체 측 장부에는 전혀 영향을 주지 않습니다. 먼저 해당 발주서의 출하와 선급금을 무효 처리하고, 매입 송장에서 해당 라인을 제거하세요. 그 전까지는 요청이 거부됩니다."
+msgstr "공급업체 측 장부에는 영향을 주지 않습니다. 먼저 해당 발주서의 입고와 선급금을 무효 처리하고, 매입 송장에서 해당 라인을 제거하세요. 그 전까지는 요청이 거부됩니다."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "상태와 관계없이 {readableId}을(를) 영구 삭제합니다. 되돌릴 수 없습니다."
@@ -20838,7 +20838,7 @@ msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "아직 삭제되지 않았습니다. 요청은 다른 관리자의 승인 대기로 넘어가며, 관리자 중 한 명이 승인하면 삭제됩니다."
+msgstr "아직 아무것도 삭제되지 않습니다. 요청은 다른 관리자들의 승인 목록으로 전달되며, 그중 한 명이 승인하면 삭제됩니다."
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "아직 삭제되지 않았습니다. 요청은 다른 관리자의 승인 대기로 넘어가며, 관리자 중 한 명이 승인하면 주문이 삭제됩니다."
@@ -22405,7 +22405,7 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "이에 적용된 지불과 크레딧 메모는 먼저 적용이 해제됩니다. 각 지불은 전기 상태로 남으며, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 보관됩니다. 이미 인식된 매출은 역분개됩니다."
+msgstr "이 건에 적용된 지불과 메모는 먼저 적용이 해제됩니다. 각 지불은 전기된 상태로 남아, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 남습니다. 이 건에서 이미 인식된 매출은 역분개됩니다."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "이에 적용된 지불과 크레딧 메모는 먼저 적용이 해제됩니다. 각 지불은 전기 상태로 남으며, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 보관됩니다. 자본화된 고정자산에 추가된 가치는 다시 차감되며, 이미 전기된 감가상각은 그대로 남습니다."
@@ -22723,7 +22723,7 @@ msgid "Picking Lists"
 msgstr "피킹 리스트"
 
 msgid "Picking lists are created by hand"
-msgstr "피킹 리스트는 수동으로 생성됩니다"
+msgstr "피킹 리스트는 수동으로 생성합니다"
 
 msgid "Picking lists on release disabled"
 msgstr "릴리스 시 피킹 리스트 사용 안 함"
@@ -25658,7 +25658,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "통제된 환경에서 필수입니다 — 감사 로깅을 끌 수 없습니다."
 
 msgid "Required tracked parts disabled"
-msgstr "필수 추적 부품 사용 안 함"
+msgstr "필수 추적 부품 비활성화됨"
 
 msgid "Required tracked parts enabled"
 msgstr "필수 추적 부품 사용"
@@ -33035,7 +33035,7 @@ msgid "Travel"
 msgstr "출장"
 
 msgid "Traveler labels disabled"
-msgstr "작업 이동표 라벨 사용 안 함"
+msgstr "작업 이동표 라벨 비활성화됨"
 
 msgid "Traveler labels enabled"
 msgstr "작업 이동표 라벨 사용"
@@ -33171,7 +33171,7 @@ msgid "Type {0} to confirm"
 msgstr "확인하려면 {0}을(를) 입력하세요."
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr "확인하려면 {purchaseOrderReadableId} 입력"
+msgstr "확인하려면 {purchaseOrderReadableId}을(를) 입력하세요"
 
 msgid "Type {readableId} to confirm"
 msgstr "확인하려면 {readableId} 입력"
@@ -34774,7 +34774,7 @@ msgid "What to set up"
 msgstr "설정할 항목"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "잘못 입력된 내용과, 정정하거나 무효 처리할 수 없는 이유"
+msgstr "잘못 입력된 내용과, 이를 수정하거나 대신 무효 처리할 수 없는 이유"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "잘못 입력된 내용과, 주문을 정정하거나 마감할 수 없는 이유"

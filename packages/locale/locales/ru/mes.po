@@ -206,6 +206,9 @@ msgstr ""
 msgid "{label}, overdue"
 msgstr "{label}, просрочено"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "{lost} отсканированных единиц не были списаны. Отсканируйте их снова."
+
 msgid "{maxSizeMB}MB limit"
 msgstr "Ограничение {maxSizeMB}МБ"
 
@@ -1484,6 +1487,18 @@ msgstr "Выпущено {issuedQuantity} из {lotLabel}"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "Выпущено {issuedQuantity} из {lotLabel} — осталось {remainingQuantity}"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "Списано {quantity} {name} ({issued} из {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "Списано {quantity} {name} из партий {batches} ({issued} из {required})"
+
+msgid "Issuing"
+msgstr "Списание"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "Списание. Еще отсканировано: {waiting}."
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Он все еще используется записью «{table}»; удалите его сначала."

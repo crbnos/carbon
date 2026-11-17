@@ -13,10 +13,12 @@ import { issueScannedItem } from "~/services/issue.server";
 const issueScanValidator = z.object({
   jobOperationId: z.string().min(1),
   itemId: z.string().min(1),
+  // How many scans of the item this request carries.
+  pieces: zfd.numeric(z.number().int().min(1).max(1000).optional()),
   parentTrackedEntityId: zfd.text(z.string().optional())
 });
 
-/** An item sticker scanned on an operation screen: issue it to the job. */
+/** Item stickers scanned on an operation screen: issue them to the job. */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { userId, companyId, caller, permissions } = await requirePermissions(
