@@ -30,6 +30,7 @@ import {
   PhoneThumbnail,
   QuantityStat
 } from "./OperationCardParts";
+import { ShipCountdown } from "./ShipCountdown";
 
 type OperationsListProps = {
   operations: Operation[];
@@ -39,6 +40,8 @@ type OperationsListProps = {
   /** When set, a card is a button that selects the operation. */
   onSelect?: (operation: Operation) => void;
   selectedId?: string;
+  /** The plant's calendar day; with it, a card shows the ship countdown. */
+  today?: string;
 };
 
 const settings = {
@@ -56,7 +59,8 @@ export function OperationsList({
   operations,
   getHref,
   onSelect,
-  selectedId
+  selectedId,
+  today
 }: OperationsListProps) {
   return (
     <>
@@ -67,6 +71,7 @@ export function OperationsList({
           getHref={getHref}
           onSelect={onSelect}
           isSelected={selectedId === operation.id}
+          today={today}
           {...settings}
         />
       ))}
@@ -79,6 +84,7 @@ type OperationCardProps = {
   getHref?: (operation: Operation) => string;
   onSelect?: (operation: Operation) => void;
   isSelected?: boolean;
+  today?: string;
 } & OperationSettings;
 
 const cardVariants = cva(
@@ -113,7 +119,8 @@ function OperationCard({
   showEmployee,
   showProgress,
   showStatus,
-  showThumbnail
+  showThumbnail,
+  today
 }: OperationCardProps) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
@@ -224,6 +231,9 @@ function OperationCard({
               </HStack>
             )}
           </>
+        )}
+        {showDueDate && today && operation.jobShipByDate && (
+          <ShipCountdown shipByDate={operation.jobShipByDate} today={today} />
         )}
         {(operation.assignee ||
           (operation.tags && operation.tags.length > 0)) && (

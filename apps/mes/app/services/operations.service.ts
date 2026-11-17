@@ -160,7 +160,7 @@ export async function getOpenJobs(
   let query = client
     .from("jobs")
     .select(
-      "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
+      "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, shipByDate, assignee, jobMakeMethodId"
     )
     .eq("companyId", args.companyId)
     .eq("locationId", args.locationId);
@@ -1316,6 +1316,7 @@ export async function getJobOperationForCompany(
 }
 
 export async function getJob(client: SupabaseClient<Database>, jobId: string) {
+  // @ts-ignore TS5114/TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons.md)
   return client
     .from("jobs")
     .select("*, customer(name)")

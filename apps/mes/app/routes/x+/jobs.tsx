@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -20,6 +21,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuSearch } from "react-icons/lu";
@@ -29,6 +31,7 @@ import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
+import { ShipCountdown } from "~/components/ShipCountdown";
 import { userContext } from "~/context";
 import { useUser } from "~/hooks";
 import {
@@ -54,9 +57,11 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const locationId = context.get(userContext)?.locationId;
 
-  const [jobs, workCenters] = await Promise.all([
+  const [jobs, workCenters, timeZone] = await Promise.all([
     getOpenJobs(serviceRole, { companyId, locationId }),
-    getWorkCenterOptionsByLocation(serviceRole, { companyId, locationId })
+    getWorkCenterOptionsByLocation(serviceRole, { companyId, locationId }),
+    // The factory's calendar day: the ship countdown flips at its midnight.
+    getLocationTimeZone(serviceRole, locationId, companyId)
   ]);
 
   if (jobs.error) {
@@ -90,7 +95,8 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       workCenterIds: (job.id && workCenterIdsByJob[job.id]) || []
     })),
     workCenters: workCenters.data ?? [],
-    trackedEntities
+    trackedEntities,
+    today: datetime.today(timeZone).toString()
   };
 }
 
@@ -106,6 +112,8 @@ type Job = {
   quantityComplete: number | null;
   dueDate: string | null;
   deadlineType: string | null;
+  /** the date the job's sales order line ships */
+  shipByDate: string | null;
   assignee: string | null;
   jobMakeMethodId: string | null;
   workCenterIds: string[];
@@ -137,7 +145,8 @@ export default function JobsRoute() {
   const { isPhone } = useViewport();
   const { t } = useLingui();
   const { id: userId, company } = useUser();
-  const { jobs, workCenters, trackedEntities } = useLoaderData<typeof loader>();
+  const { jobs, workCenters, trackedEntities, today } =
+    useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
   const [storedWorkCenterIds, setStoredWorkCenterIds] = useLocalStorage<
     string[]
@@ -258,6 +267,12 @@ export default function JobsRoute() {
                               variant="date"
                               fallback="—"
                             />
+                            <ShipCountdown
+                              shipByDate={job.shipByDate}
+                              today={today}
+                              jobStatus={job.status}
+                              className="text-xs"
+                            />
                           </div>
                         </Link>
                       </li>
@@ -337,6 +352,12 @@ export default function JobsRoute() {
                                 value={job.dueDate}
                                 variant="date"
                                 fallback="—"
+                              />
+                              <ShipCountdown
+                                shipByDate={job.shipByDate}
+                                today={today}
+                                jobStatus={job.status}
+                                className="ml-2 text-xs"
                               />
                             </Td>
                             <Td className="text-muted-foreground">

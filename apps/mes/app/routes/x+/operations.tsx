@@ -166,6 +166,12 @@ function collapseBatches(
       priority: Math.min(...members.map((m) => m.priority)),
       dueDate: earliest?.dueDate ?? members[0].dueDate,
       deadlineType: earliest?.deadlineType ?? members[0].deadlineType,
+      // The batch ships with its first member to ship.
+      shipByDate:
+        members
+          .map((m) => m.shipByDate)
+          .filter((date): date is string => !!date)
+          .sort()[0] ?? null,
       hasConflict: conflicted.length > 0 || undefined,
       conflictReason: conflicted.length
         ? conflicted
@@ -458,6 +464,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
             // The JOB's due date, as on the operation view: the op's need-by
             // target labelled "Due" read as the job being due weeks early.
             dueDate: op.jobDueDate ?? undefined,
+            shipByDate: op.jobShipByDate ?? null,
             duration:
               operation.setupDuration +
               Math.max(operation.laborDuration, operation.machineDuration),

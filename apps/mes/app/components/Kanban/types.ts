@@ -56,6 +56,8 @@ const itemValidator = z.object({
   dueDateScope: z.enum(["job", "operation"]).optional(),
   duration: z.number().optional(), // miliseconds
   deadlineType: z.enum(deadlineTypes).optional(),
+  // The job's ship-by date: its sales order line's promised date.
+  shipByDate: z.string().nullable().optional(),
   itemDescription: z.string().optional(),
   itemReadableId: z.string().optional(),
   jobReadableId: z.string().optional(),

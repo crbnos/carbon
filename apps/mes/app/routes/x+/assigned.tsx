@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getCompanyTimeZone, getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -21,6 +22,7 @@ import {
   useLocalStorage,
   VStack
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -60,9 +62,14 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const locationId = context.get(userContext)?.locationId;
 
-  const [operations, workCenters] = await Promise.all([
+  const [operations, workCenters, timeZone] = await Promise.all([
     getJobOperationsAssignedToEmployee(serviceRole, userId, companyId),
-    getWorkCentersByCompany(serviceRole, companyId)
+    getWorkCentersByCompany(serviceRole, companyId),
+    // The factory's calendar day: due dates and the ship countdown flip at
+    // its midnight, not the device's.
+    locationId
+      ? getLocationTimeZone(serviceRole, locationId, companyId)
+      : getCompanyTimeZone(serviceRole, companyId)
   ]);
 
   if (operations.error) {
@@ -91,7 +98,8 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
         ...jobProjects.data[op.jobId]
       })) ?? [],
     workCenters: workCenters?.data ?? [],
-    locationId
+    locationId,
+    today: datetime.today(timeZone).toString()
   };
 }
 
@@ -117,7 +125,7 @@ const defaultDisplaySettings: DisplaySettings = {
 
 export default function AssignedRoute() {
   const { t } = useLingui();
-  const { operations, workCenters, locationId } =
+  const { operations, workCenters, locationId, today } =
     useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
   const [view, setView] = useLocalStorage<AssignedView>(
@@ -214,6 +222,7 @@ export default function AssignedRoute() {
       description: operation.description,
       dueDate: operation.operationDueDate,
       dueDateScope: "operation" as const,
+      shipByDate: operation.jobShipByDate ?? null,
       duration:
         operation.setupDuration +
         Math.max(operation.laborDuration, operation.machineDuration),
@@ -427,7 +436,7 @@ export default function AssignedRoute() {
             </ClientOnly>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
-              <OperationsList operations={filteredOperations} />
+              <OperationsList operations={filteredOperations} today={today} />
             </div>
           )
         ) : searchTerm ? (

@@ -42,6 +42,7 @@ import {
   PhoneThumbnail,
   QuantityStat
 } from "~/components/OperationCardParts";
+import { ShipCountdown } from "~/components/ShipCountdown";
 import { useDateFormatter } from "~/hooks";
 import { withOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -103,10 +104,13 @@ export function ItemCard({
     customers: { id: string; name: string }[];
     today: string | null;
   }>("/x/operations");
+  const assignedData = useRouteData<{ today: string | null }>("/x/assigned");
   // The factory's calendar day from the loader (location time zone); the
   // device's own day only when there is no location.
   const scheduleToday =
-    routeData?.today ?? today(getLocalTimeZone()).toString();
+    routeData?.today ??
+    assignedData?.today ??
+    today(getLocalTimeZone()).toString();
 
   const customer = showCustomer
     ? routeData?.customers.find((c) => c.id === item.customerId)
@@ -331,6 +335,9 @@ export function ItemCard({
                 </TooltipContent>
               </Tooltip>
             </HStack>
+          )}
+          {showDueDate && item.shipByDate && (
+            <ShipCountdown shipByDate={item.shipByDate} today={scheduleToday} />
           )}
           {showDueDate && item.dueDate && (
             <HStack className="justify-start space-x-2">

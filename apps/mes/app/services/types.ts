@@ -79,7 +79,11 @@ export type JobOperationParameter = NonNullable<
   Awaited<ReturnType<typeof getJobOperationProcedure>>["parameters"]
 >[number];
 
-export type Operation = BaseOperation & Durations;
+export type Operation = BaseOperation &
+  Durations & {
+    /** The job's ship-by date, where the read returns it (assigned view). */
+    jobShipByDate?: string | null;
+  };
 export type OperationWithDetails = BaseOperationWithDetails & Durations;
 
 export type OperationSettings = {
