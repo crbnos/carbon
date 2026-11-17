@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,6 +206,9 @@ msgstr "{hours} घंटा"
 msgid "{issued} of {required}"
 msgstr "{required} में से {issued}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
@@ -215,6 +224,9 @@ msgstr "{name}, {0}, {percent}% पूर्ण"
 
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
+
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
 
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} में से {numerator}"
@@ -234,6 +246,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel} टाइमर शुरू हुआ"
@@ -595,6 +610,13 @@ msgstr "बोर्ड दृश्य"
 
 msgid "Bold"
 msgstr "बोल्ड"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "{quantity} लाएँ"
@@ -1325,6 +1347,12 @@ msgstr "चरण {0} पर जाएँ: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "चरण {0} पर जाएँ: {1} (हो गया)"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1545,6 +1573,9 @@ msgstr ""
 msgid "Kitter"
 msgstr ""
 
+msgid "Kitting and preparation"
+msgstr ""
+
 msgid "Labor"
 msgstr "श्रम"
 
@@ -1689,6 +1720,9 @@ msgstr "लॉट ट्रैक किया गया"
 msgid "Low"
 msgstr "निम्न"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "मशीन"
 
@@ -1697,6 +1731,9 @@ msgstr "मशीन अब रखरखाव के लिए बंद है
 
 msgid "Machine, timer running"
 msgstr "मशीन, टाइमर चल रहा है"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "मुख्य"
@@ -1827,6 +1864,9 @@ msgstr "नाम"
 msgid "Navigation"
 msgstr "नेविगेशन"
 
+msgid "Need {quantity}"
+msgstr ""
+
 msgid "Need material"
 msgstr "सामग्री की ज़रूरत"
 
@@ -1936,9 +1976,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "अभी कोई अवकाश सेट नहीं है। अपने प्रबंधक से ERP में एक सेट करने के लिए कहें।"
 
-msgid "No lineside storage"
-msgstr "कोई लाइनसाइड भंडारण नहीं"
-
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
 
@@ -1971,6 +2008,9 @@ msgstr "इस स्थान पर कोई खुला सेवा जॉ
 
 msgid "No open units to allocate"
 msgstr "आवंटित करने के लिए कोई खुली इकाई नहीं"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "कोई ऑपरेटर नहीं"
@@ -2047,6 +2087,9 @@ msgstr "कोई स्टेशन नहीं"
 msgid "No stations at this location"
 msgstr "इस स्थान पर कोई स्टेशन नहीं"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "कोई स्टॉक नहीं"
 
@@ -2076,6 +2119,12 @@ msgstr "MRP से बाहर"
 
 msgid "None"
 msgstr "कोई नहीं"
+
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
 
 msgid "None on the shelf"
 msgstr ""
@@ -2245,6 +2294,9 @@ msgstr "या इस गुप्त को मैन्युअल रूप 
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2553,6 +2605,9 @@ msgstr ""
 msgid "Re"
 msgstr "अस्वीकार"
 
+msgid "Ready"
+msgstr ""
+
 msgid "Reason"
 msgstr "कारण"
 
@@ -2727,9 +2782,6 @@ msgstr "रिच टेक्स्ट"
 
 msgid "Running"
 msgstr "चल रहा है"
-
-msgid "Running low"
-msgstr "कम हो रहा है"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2911,6 +2963,9 @@ msgstr ""
 msgid "Search recent operations"
 msgstr "हाल के ऑपरेशन खोजें"
 
+msgid "Search stations"
+msgstr ""
+
 msgid "Search..."
 msgstr "खोजें..."
 
@@ -3056,6 +3111,9 @@ msgstr "छोटा"
 msgid "Short"
 msgstr "कम"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
@@ -3143,12 +3201,6 @@ msgstr "नरम समय-सीमा"
 msgid "Solid"
 msgstr "ठोस"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
-msgstr ""
-
 msgid "Source"
 msgstr "स्रोत"
 
@@ -3206,7 +3258,7 @@ msgstr "स्टेशन उपयोगकर्ता"
 msgid "Station: {stationName}"
 msgstr "स्टेशन: {stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3481,6 +3533,9 @@ msgstr "समय प्रकार"
 msgid "Time Worked"
 msgstr "किया गया समय"
 
+msgid "to bring lineside"
+msgstr ""
+
 msgid "To pick"
 msgstr "पिकिंग के लिए"
 
@@ -3715,6 +3770,9 @@ msgstr "देखें या खोलें"
 msgid "View Traceability"
 msgstr "ट्रेसेबिलिटी देखें"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "वारंटी"
 
@@ -3723,9 +3781,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "हमने आपको एक साइन-इन लिंक और एक 6-अंकीय कोड ईमेल किया है। लिंक का अनुसरण करें, या यहाँ कोड दर्ज करें।"
-
-msgid "Wet"
-msgstr "गीला"
 
 msgid "What do you need?"
 msgstr "आपको किस चीज़ की ज़रूरत है?"

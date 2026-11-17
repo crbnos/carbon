@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,6 +206,9 @@ msgstr "{hours} 小时"
 msgid "{issued} of {required}"
 msgstr "{issued} / {required}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
@@ -215,6 +224,9 @@ msgstr "{name}, {0}, 已完成 {percent}%"
 
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
+
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator}/{denominator}"
@@ -234,6 +246,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel}计时已开始"
@@ -595,6 +610,13 @@ msgstr "看板视图"
 
 msgid "Bold"
 msgstr "粗体"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "携带 {quantity}"
@@ -1325,6 +1347,12 @@ msgstr "前往步骤 {0}：{1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "前往步骤 {0}：{1}（已完成）"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1545,6 +1573,9 @@ msgstr ""
 msgid "Kitter"
 msgstr ""
 
+msgid "Kitting and preparation"
+msgstr ""
+
 msgid "Labor"
 msgstr "人工"
 
@@ -1689,6 +1720,9 @@ msgstr "批次已追踪"
 msgid "Low"
 msgstr "低"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "机器"
 
@@ -1697,6 +1731,9 @@ msgstr "机器现在正在维护吗？"
 
 msgid "Machine, timer running"
 msgstr "机器，计时器运行中"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "主菜单"
@@ -1827,6 +1864,9 @@ msgstr "名称"
 msgid "Navigation"
 msgstr "导航"
 
+msgid "Need {quantity}"
+msgstr ""
+
 msgid "Need material"
 msgstr "需要物料"
 
@@ -1936,9 +1976,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "尚未设置假期。请您的经理在 ERP 中设置。"
 
-msgid "No lineside storage"
-msgstr "没有线边存储"
-
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
 
@@ -1971,6 +2008,9 @@ msgstr "此地点没有打开的服务工单"
 
 msgid "No open units to allocate"
 msgstr "没有未结的件可分配"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "无操作员"
@@ -2047,6 +2087,9 @@ msgstr "没有工位"
 msgid "No stations at this location"
 msgstr "此地点没有工位"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "无库存"
 
@@ -2076,6 +2119,12 @@ msgstr "不计入MRP"
 
 msgid "None"
 msgstr "无"
+
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
 
 msgid "None on the shelf"
 msgstr ""
@@ -2245,6 +2294,9 @@ msgstr "或手动输入此密钥:"
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2553,6 +2605,9 @@ msgstr ""
 msgid "Re"
 msgstr "拒收数"
 
+msgid "Ready"
+msgstr ""
+
 msgid "Reason"
 msgstr "原因"
 
@@ -2727,9 +2782,6 @@ msgstr "富文本"
 
 msgid "Running"
 msgstr "运行中"
-
-msgid "Running low"
-msgstr "库存偏低"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2911,6 +2963,9 @@ msgstr ""
 msgid "Search recent operations"
 msgstr "搜索近期工序"
 
+msgid "Search stations"
+msgstr ""
+
 msgid "Search..."
 msgstr "搜索..."
 
@@ -3056,6 +3111,9 @@ msgstr "短缺"
 msgid "Short"
 msgstr "缺货"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
@@ -3143,12 +3201,6 @@ msgstr "软性截止日期"
 msgid "Solid"
 msgstr "纯色"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
-msgstr ""
-
 msgid "Source"
 msgstr "来源"
 
@@ -3206,7 +3258,7 @@ msgstr "工位用户"
 msgid "Station: {stationName}"
 msgstr "工位：{stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3481,6 +3533,9 @@ msgstr "时间类型"
 msgid "Time Worked"
 msgstr "工作时间"
 
+msgid "to bring lineside"
+msgstr ""
+
 msgid "To pick"
 msgstr "待拣货"
 
@@ -3715,6 +3770,9 @@ msgstr "查看或打开"
 msgid "View Traceability"
 msgstr "查看可追溯性"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "保修"
 
@@ -3723,9 +3781,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "我们已向您发送了登录链接和6位代码。点击该链接或在此处输入代码。"
-
-msgid "Wet"
-msgstr "湿式"
 
 msgid "What do you need?"
 msgstr "您需要什么？"

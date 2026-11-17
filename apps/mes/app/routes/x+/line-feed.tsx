@@ -5,15 +5,27 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { useAction, useRevalidator, useTopic } from "@carbon/query";
-import { Badge, Button, cn, toast } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  cn,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  toast
+} from "@carbon/react";
 import { formatQuantity } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
   LuArrowRightLeft,
   LuCheck,
   LuChevronDown,
+  LuChevronRight,
   LuExternalLink
 } from "react-icons/lu";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
@@ -22,17 +34,19 @@ import { DateTime } from "~/components";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
+import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
 import { useRealtimeRevalidator, useUser } from "~/hooks";
 import { getLineFeed } from "~/services/inventory.service";
 import type {
+  FlowRow,
   Lane,
   LaneKit,
+  LaneNeed,
   LaneSeverity,
   LaneSummary,
   LineFeedRow,
   RawBin,
-  StationStockStatus,
   StockSource
 } from "~/services/line-feed";
 import type { Handle } from "~/utils/handle";
@@ -58,6 +72,7 @@ export const meta: MetaFunction = () => pageMeta("Line feed");
 
 type Names = {
   itemReadableIds: Record<string, string>;
+  itemNames: Record<string, string>;
   itemThumbnailPaths: Record<string, string>;
   storageUnitNames: Record<string, string>;
   jobReadableIds: Record<string, string>;
@@ -66,8 +81,10 @@ type Names = {
 
 const emptyLineFeed = {
   lanes: [] as Lane[],
-  summary: { out: 0, deliver: 0, finish: 0, build: 0, rawShort: 0 },
+  flow: [] as FlowRow[],
+  summary: { out: 0, bring: 0, deliver: 0, finish: 0, build: 0, rawShort: 0 },
   itemReadableIds: {},
+  itemNames: {},
   itemThumbnailPaths: {},
   storageUnitNames: {},
   jobReadableIds: {},
@@ -88,11 +105,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const canTransfer =
     permissions.inventory?.create?.includes(companyId) ?? false;
 
-  const sort =
-    new URL(request.url).searchParams.get("sort") === "worst"
-      ? "worst"
-      : "line";
-  const lineFeed = await getLineFeed(client, { companyId, locationId, sort });
+  const lineFeed = await getLineFeed(client, { companyId, locationId });
   if (lineFeed.error || !lineFeed.data) {
     logger.error("Failed to load the line feed", {
       companyId,
@@ -114,6 +127,7 @@ type SummaryKind = keyof LaneSummary;
 
 const summaryKinds: SummaryKind[] = [
   "out",
+  "bring",
   "deliver",
   "finish",
   "build",
@@ -121,25 +135,62 @@ const summaryKinds: SummaryKind[] = [
 ];
 
 const inSummary = (lane: Lane, kind: SummaryKind) =>
-  kind === "out" ? lane.severity === "red" : lane.work[kind] > 0;
+  kind === "out"
+    ? lane.severity === "red"
+    : kind === "bring"
+      ? lane.toBring > 0
+      : lane.work[kind] > 0;
+
+/** What a station needs, in a word. */
+function useNeedLabels(): Record<LaneNeed, string> {
+  const { t } = useLingui();
+  return {
+    short: t`Short`,
+    bring: t`Bring`,
+    waiting: t`Waiting`,
+    ready: t`Ready`,
+    idle: t`No open work`
+  };
+}
 
 export default function LineFeedRoute() {
-  const { lanes, summary, canTransfer, loadFailed, noLocation, ...names } =
-    useLoaderData<typeof loader>();
+  const {
+    lanes,
+    flow,
+    summary,
+    canTransfer,
+    loadFailed,
+    noLocation,
+    ...names
+  } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const { t } = useLingui();
 
-  // The sort and the highlighted summary count live in the URL, so the board
-  // holds no state of its own and a link to it opens the same view.
+  // The selected summary count and the station search live in the URL, so a
+  // link to the board opens the same view.
   const [searchParams] = useSearchParams();
-  const worstFirst = searchParams.get("sort") === "worst";
   const shown = summaryKinds.find((kind) => kind === searchParams.get("show"));
+  const search = (searchParams.get("search") ?? "").trim().toLowerCase();
+  const visible = new Map(
+    lanes
+      .filter(
+        (lane) =>
+          lane.workCenterId &&
+          (shown === undefined || inSummary(lane, shown)) &&
+          (search === "" || (lane.name ?? "").toLowerCase().includes(search))
+      )
+      .map((lane) => [lane.workCenterId, lane])
+  );
   const withParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
     return `?${next}`;
   };
+
+  // The open station is the user's own choice: opening it reads nothing new.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = lanes.find((lane) => lane.workCenterId === openId);
 
   // Work centers and storage units broadcast on the shared reference topic,
   // which `handle.realtime` cannot name: a new station, lineside storage unit
@@ -156,22 +207,14 @@ export default function LineFeedRoute() {
     }
   });
 
-  const sortToggle = (
-    <Button asChild variant="secondary">
-      <Link to={withParam("sort", worstFirst ? null : "worst")} replace>
-        {worstFirst ? (
-          <Trans>Sort: worst first</Trans>
-        ) : (
-          <Trans>Sort: line order</Trans>
-        )}
-      </Link>
-    </Button>
+  const searchBox = (
+    <SearchFilter param="search" placeholder={t`Search stations`} />
   );
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <MesAppBar title={<Trans>Line feed</Trans>} actions={sortToggle} />
-      <MesQueueHeader title={<Trans>Line feed</Trans>} actions={sortToggle} />
+      <MesAppBar title={<Trans>Line feed</Trans>} actions={searchBox} />
+      <MesQueueHeader title={<Trans>Line feed</Trans>} actions={searchBox} />
 
       {loadFailed ? (
         <MesEmptyState
@@ -194,18 +237,40 @@ export default function LineFeedRoute() {
             shown={shown}
             hrefFor={(kind) => withParam("show", kind === shown ? null : kind)}
           />
-          <div className="flex flex-1 min-h-0 snap-x snap-mandatory items-start gap-4 overflow-auto p-4 scroll-px-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-            {lanes.map((lane) => (
-              <LaneColumn
-                key={lane.workCenterId ?? "none"}
-                lane={lane}
-                name={lane.name ?? t`No station`}
-                dimmed={shown !== undefined && !inSummary(lane, shown)}
-                canTransfer={canTransfer}
-                names={names}
-              />
-            ))}
-          </div>
+          {visible.size > 0 ? (
+            <FlowMap
+              flow={flow}
+              visible={visible}
+              names={names}
+              onOpen={setOpenId}
+            />
+          ) : (
+            <MesEmptyState
+              className="flex-1 w-full"
+              title={<Trans>No stations match</Trans>}
+            />
+          )}
+          <Drawer
+            open={open !== undefined}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) setOpenId(null);
+            }}
+          >
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>{open?.name ?? t`No station`}</DrawerTitle>
+              </DrawerHeader>
+              <DrawerBody className="p-3">
+                {open && (
+                  <LaneColumn
+                    lane={open}
+                    canTransfer={canTransfer}
+                    names={names}
+                  />
+                )}
+              </DrawerBody>
+            </DrawerContent>
+          </Drawer>
         </>
       ) : (
         <MesEmptyState
@@ -223,7 +288,172 @@ export default function LineFeedRoute() {
   );
 }
 
-/** The board's work by kind. A count links to the board with its lanes lit. */
+/**
+ * The stations in the order of the process, one tile each: its colour and a
+ * word say what it needs. A row is the routing of one made item; a row comes
+ * before the row it feeds. A tile opens the station.
+ */
+function FlowMap({
+  flow,
+  visible,
+  names,
+  onOpen
+}: {
+  flow: FlowRow[];
+  /** The lanes the filters leave, by work center. */
+  visible: Map<string | null, Lane>;
+  names: Names;
+  onOpen: (workCenterId: string) => void;
+}) {
+  const { t } = useLingui();
+  const labels = useNeedLabels();
+  // What the water spider reads: how many parts are missing, how many to bring.
+  const tileLabel = (lane: Lane) => {
+    const short = lane.looseRows.filter((row) => row.cover === "none").length;
+    const parts = [
+      short > 0 && t`Short ${short}`,
+      lane.toBring > 0 && t`Bring ${lane.toBring}`
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(" · ") : labels[lane.need];
+  };
+  const title = (row: FlowRow) =>
+    row.type === "prep"
+      ? t`Kitting and preparation`
+      : row.type === "other"
+        ? t`Other stations`
+        : [
+            names.itemReadableIds[row.itemId ?? ""],
+            names.itemNames[row.itemId ?? ""]
+          ]
+            .filter(Boolean)
+            .join(" · ");
+
+  return (
+    <div className="flex flex-1 min-h-0 flex-col gap-3 overflow-auto p-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      {flow.map((row) => {
+        // Only a routing has steps in order; the other rows are a plain list.
+        const steps = (
+          row.type === "line" ? row.steps : row.steps.flat().map((id) => [id])
+        )
+          .map((ids) => ids.flatMap((id) => visible.get(id) ?? []))
+          .filter((step) => step.length > 0);
+        if (steps.length === 0) return null;
+        const feeds = row.feeds && visible.get(row.feeds.workCenterId)?.name;
+        const heading = (
+          <>
+            <span className="truncate">{title(row)}</span>
+            {feeds && (
+              <span className="normal-case tracking-normal">
+                <Trans>goes to {feeds}</Trans>
+              </span>
+            )}
+          </>
+        );
+        const headingClass =
+          "flex flex-wrap items-baseline gap-x-2 text-xs font-medium uppercase tracking-wide text-muted-foreground";
+        const tiles = (
+          <ol className="flex flex-wrap items-center gap-y-2">
+            {steps.map((step, index) => (
+              <li
+                key={step[0].workCenterId}
+                className={cn(
+                  "flex items-center",
+                  row.type !== "line" && "mr-2"
+                )}
+              >
+                {row.type === "line" && index > 0 && (
+                  <LuChevronRight
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                )}
+                <div className="flex flex-col gap-1">
+                  {step.map((lane) => (
+                    <StationTile
+                      key={lane.workCenterId}
+                      lane={lane}
+                      label={tileLabel(lane)}
+                      onOpen={onOpen}
+                    />
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ol>
+        );
+        // The stations off the process fold away unless one needs something.
+        if (row.type === "other") {
+          const calm = steps.every(([lane]) =>
+            ["idle", "ready"].includes(lane.need)
+          );
+          return (
+            <details key="other" open={!calm} className="group/other">
+              <summary
+                className={cn(
+                  headingClass,
+                  "min-h-11 cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden"
+                )}
+              >
+                {heading}
+                <span className="tabular-nums">{steps.length}</span>
+                <LuChevronDown
+                  className="size-4 self-center group-open/other:rotate-180"
+                  aria-hidden
+                />
+              </summary>
+              {tiles}
+            </details>
+          );
+        }
+        return (
+          <section
+            key={`${row.type}:${row.itemId}`}
+            className="flex flex-col gap-2"
+          >
+            <h2 className={headingClass}>{heading}</h2>
+            {tiles}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function StationTile({
+  lane,
+  label,
+  onOpen
+}: {
+  lane: Lane;
+  label: string;
+  onOpen: (workCenterId: string) => void;
+}) {
+  const tone = laneTone[lane.severity];
+  return (
+    <button
+      type="button"
+      onClick={() => lane.workCenterId && onOpen(lane.workCenterId)}
+      className={cn(
+        "flex min-h-11 w-40 flex-col justify-center gap-0.5 rounded-md border px-2 py-1 text-left",
+        tone.lane,
+        lane.need === "idle" && "opacity-60"
+      )}
+    >
+      <span className="line-clamp-2 text-xs font-semibold leading-tight">
+        {lane.name}
+      </span>
+      <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span
+          className={cn("size-2 shrink-0 rounded-full", tone.dot)}
+          aria-hidden
+        />
+        {label}
+      </span>
+    </button>
+  );
+}
+
+/** The board's work by kind. A count links to the board with only its lanes. */
 function SummaryStrip({
   summary,
   shown,
@@ -235,7 +465,8 @@ function SummaryStrip({
 }) {
   const { t } = useLingui();
   const labels: Record<SummaryKind, string> = {
-    out: t`stations out`,
+    out: t`stations short`,
+    bring: t`to bring lineside`,
     deliver: t`kits to deliver`,
     finish: t`kits to finish`,
     build: t`kits to build`,
@@ -286,23 +517,38 @@ type Tone = "green" | "yellow" | "red" | "gray";
  */
 function LaneColumn({
   lane,
-  name,
-  dimmed,
   canTransfer,
   names
 }: {
   lane: Lane;
-  name: string;
-  dimmed: boolean;
   /** The user may move stock: the rows offer it. */
   canTransfer: boolean;
   names: Names;
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const tone = laneTone[lane.severity];
-  const shortParts = lane.shortItemIds
+  const needLabels = useNeedLabels();
+  const name = lane.name ?? t`No station`;
+  const needTone: Record<LaneNeed, Tone> = {
+    short: "red",
+    bring: "yellow",
+    waiting: "yellow",
+    ready: "green",
+    idle: "gray"
+  };
+  // What to bring comes first, then what to wait for.
+  const toBring = (row: LineFeedRow) =>
+    row.cover === "site" || row.cover === "fed" ? 0 : 1;
+  const toAct = [...lane.looseRows].sort((a, b) => toBring(a) - toBring(b));
+  // A lane can be short of twenty parts: the header names three.
+  const namedParts = lane.shortItemIds
+    .slice(0, 3)
     .map((id) => names.itemReadableIds[id] ?? t`Unknown part`)
     .join(", ");
+  const moreParts = lane.shortItemIds.length - 3;
+  const shortParts =
+    moreParts > 0 ? t`${namedParts} and ${moreParts} more` : namedParts;
   const verdict: Record<Lane["verdict"], { label: string; who?: string }> = {
     deliver: { label: t`Deliver`, who: t`Water spider` },
     finish: { label: t`Finish kit`, who: t`Kitter` },
@@ -310,32 +556,23 @@ function LaneColumn({
     rawShort: { label: t`Raw short: ${shortParts}`, who: t`Purchasing` },
     ok: { label: t`OK` }
   };
-  const stationLabel: Record<StationStockStatus, string> = {
-    wet: t`Wet`,
-    low: t`Running low`,
-    out: t`Out`,
-    unknown: t`No lineside storage`
-  };
-  const stationTone: Record<StationStockStatus, Tone> = {
-    wet: "green",
-    low: "yellow",
-    out: "red",
-    unknown: "gray"
-  };
-  const { station } = lane;
 
   const worstBin = (["empty", "short", "low"] as const).find((status) =>
     lane.raw.some((bin) => bin.status === status)
   );
   const binLabel = { empty: t`Empty`, short: t`Short`, low: t`Low` };
   const rackLow = lane.kits.some((kit) => kit.rackGap > 0);
+  const kitsReady = formatQuantity(
+    lane.kits.reduce((sum, kit) => sum + quantityOf(kit.complete), 0),
+    locale
+  );
+  const rackEmpty = lane.kits.every((kit) => kit.complete.length === 0);
 
   return (
     <section
       className={cn(
-        "flex w-[calc(100vw-2rem)] shrink-0 snap-start flex-col gap-2 rounded-lg border p-2 transition-opacity sm:w-[340px]",
-        tone.lane,
-        dimmed && "opacity-40"
+        "flex w-full flex-col gap-2 rounded-lg border p-2",
+        tone.lane
       )}
     >
       <header className="flex items-center gap-3 px-2 py-1">
@@ -344,18 +581,18 @@ function LaneColumn({
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold">{name}</h2>
-          <div className="text-sm font-medium">
-            {lane.verdict === "ok" && station.status !== "wet"
-              ? stationLabel[station.status]
-              : verdict[lane.verdict].label}
-            {verdict[lane.verdict].who && (
-              <span className="font-normal text-muted-foreground">
-                {" · "}
-                {verdict[lane.verdict].who}
-              </span>
-            )}
-          </div>
+          <h2 className="text-base font-semibold">{needLabels[lane.need]}</h2>
+          {lane.verdict !== "ok" && (
+            <div className="text-sm font-medium">
+              {verdict[lane.verdict].label}
+              {verdict[lane.verdict].who && (
+                <span className="font-normal text-muted-foreground">
+                  {" · "}
+                  {verdict[lane.verdict].who}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -402,9 +639,23 @@ function LaneColumn({
       <Tier
         label={<Trans>Kit rack</Trans>}
         chip={
-          lane.kits.length === 0 ? t`Fed directly` : rackLow ? t`Low` : t`OK`
+          lane.kits.length === 0
+            ? t`Fed directly`
+            : rackEmpty
+              ? t`Empty`
+              : rackLow
+                ? t`Low · ${kitsReady} ready`
+                : t`${kitsReady} ready`
         }
-        tone={lane.kits.length === 0 ? "gray" : rackLow ? "yellow" : "green"}
+        tone={
+          lane.kits.length === 0
+            ? "gray"
+            : rackEmpty
+              ? "red"
+              : rackLow
+                ? "yellow"
+                : "green"
+        }
       >
         {lane.kits.map((kit) => (
           <KitRackLine key={kit.itemId} kit={kit} names={names} />
@@ -413,8 +664,8 @@ function LaneColumn({
 
       <Tier
         label={<Trans>Station</Trans>}
-        chip={stationLabel[station.status]}
-        tone={stationTone[station.status]}
+        chip={needLabels[lane.need]}
+        tone={needTone[lane.need]}
       >
         {lane.kits.map((kit) => (
           <StationKitLine
@@ -424,12 +675,12 @@ function LaneColumn({
             names={names}
           />
         ))}
-        {lane.kits.length > 0 && lane.looseRows.length > 0 && (
+        {lane.kits.length > 0 && toAct.length > 0 && (
           <TierHeading>
             <Trans>Loose parts</Trans>
           </TierHeading>
         )}
-        {lane.looseRows.map((row) => (
+        {toAct.map((row) => (
           <StationLine
             key={row.key}
             row={row}
@@ -450,6 +701,7 @@ function LaneColumn({
                 ? (names.storageUnitNames[row.storageUnitId] ?? null)
                 : null
             }
+            laneName={name}
             reference={
               row.materialRequestId
                 ? (names.jobReadableIds[row.materialRequestId] ?? null)
@@ -555,6 +807,12 @@ function RawBinLine({ bin, names }: { bin: RawBin; names: Names }) {
     ok: { variant: "green", label: <Trans>OK</Trans> }
   } as const;
   const { variant, label } = badge[bin.status];
+  const elsewhere = bin.elsewhere
+    ? formatQuantity(bin.elsewhere.onHand, locale)
+    : null;
+  const otherBin = bin.elsewhere?.storageUnitId
+    ? names.storageUnitNames[bin.elsewhere.storageUnitId]
+    : null;
 
   const line = (
     <>
@@ -570,7 +828,16 @@ function RawBinLine({ bin, names }: { bin: RawBin; names: Names }) {
             <Trans>No default bin</Trans>
           )}
           {bin.status !== "ok" &&
-            (bin.replenishing ? (
+            (bin.elsewhere ? (
+              otherBin ? (
+                <Trans>
+                  {" "}
+                  · {elsewhere} in {otherBin}
+                </Trans>
+              ) : (
+                <Trans> · {elsewhere} in no bin</Trans>
+              )
+            ) : bin.replenishing ? (
               <Trans> · On order</Trans>
             ) : (
               <Trans> · Nothing ordered</Trans>
@@ -780,6 +1047,7 @@ function StationLine({
   thumbnailPath,
   source,
   storageUnit,
+  laneName,
   reference
 }: {
   row: LineFeedRow;
@@ -790,6 +1058,8 @@ function StationLine({
   source: string | null;
   /** Where a transfer is going: a station can have several storage units. */
   storageUnit: string | null;
+  /** The lane's own name: a storage unit named the same is not repeated. */
+  laneName: string;
   reference: string | null;
 }) {
   const { locale } = useLocale();
@@ -800,6 +1070,15 @@ function StationLine({
     const onHand = row.source
       ? formatQuantity(row.source.onHand, locale)
       : null;
+    // Earlier stations matter only when they leave this one short.
+    const claimed =
+      row.source && row.source.quantity < (row.quantity ?? 0)
+        ? (row.source.claimed ?? 0)
+        : 0;
+    const free = row.source
+      ? formatQuantity(row.source.onHand - claimed, locale)
+      : null;
+    const unbinned = formatQuantity(row.supply?.unbinned ?? 0, locale);
     return (
       <li className="flex flex-col gap-2 px-3 py-2">
         <div className="flex items-center gap-3">
@@ -810,35 +1089,71 @@ function StationLine({
             </div>
             <div className="truncate text-xs text-muted-foreground">
               {row.source ? (
-                <Trans>
-                  Grab from {source} · {onHand} there
-                </Trans>
-              ) : (
+                claimed > 0 ? (
+                  <Trans>
+                    Grab from {source} · {free} of {onHand} left for this
+                    station
+                  </Trans>
+                ) : (
+                  <Trans>
+                    Grab from {source} · {onHand} there
+                  </Trans>
+                )
+              ) : !row.supply ? (
                 <Trans>None on the shelf</Trans>
+              ) : row.supply.unbinned > 0 ? (
+                <Trans>{unbinned} in stock, in no bin</Trans>
+              ) : row.supply.replenishing ? (
+                <Trans>None in stock · On order</Trans>
+              ) : (
+                <Trans>None in stock · Nothing ordered</Trans>
               )}
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
-            <Badge variant={row.stockStatus === "out" ? "red" : "yellow"}>
-              {row.stockStatus === "out" ? (
-                <Trans>Out</Trans>
-              ) : (
-                <Trans>Low</Trans>
-              )}
-            </Badge>
+            {row.cover === "fed" || row.cover === "site" ? (
+              <Badge variant="yellow">
+                <Trans>Bring</Trans>
+              </Badge>
+            ) : row.cover === "upstream" ? (
+              <Badge variant="yellow">
+                <Trans>Made here</Trans>
+              </Badge>
+            ) : row.cover === "none" ? (
+              <Badge variant="red">
+                <Trans>Short</Trans>
+              </Badge>
+            ) : (
+              <Badge variant={row.stockStatus === "out" ? "red" : "yellow"}>
+                {row.stockStatus === "out" ? (
+                  <Trans>Out</Trans>
+                ) : (
+                  <Trans>Low</Trans>
+                )}
+              </Badge>
+            )}
             <span className="text-sm tabular-nums">
-              <Trans>Bring {quantity}</Trans>
+              {row.cover === "fed" || row.cover === "site" || !row.cover ? (
+                <Trans>Bring {quantity}</Trans>
+              ) : (
+                <Trans>Need {quantity}</Trans>
+              )}
             </span>
           </div>
         </div>
-        {canTransfer && row.source && row.workCenterId && row.itemId && (
-          <TransferButton
-            workCenterId={row.workCenterId}
-            itemId={row.itemId}
-            source={row.source}
-            from={source}
-          />
-        )}
+        {canTransfer &&
+          row.source &&
+          row.source.quantity > 0 &&
+          (row.cover === "fed" || row.cover === "site" || !row.cover) &&
+          row.workCenterId &&
+          row.itemId && (
+            <TransferButton
+              workCenterId={row.workCenterId}
+              itemId={row.itemId}
+              source={row.source}
+              from={source}
+            />
+          )}
       </li>
     );
   }
@@ -862,7 +1177,9 @@ function StationLine({
             {quantity && <span className="tabular-nums">× {quantity}</span>}
           </span>
           <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-            {storageUnit && <span>{storageUnit} ·</span>}
+            {storageUnit && storageUnit !== laneName && (
+              <span>{storageUnit} ·</span>
+            )}
             {reference}
             <LuExternalLink className="size-3" aria-hidden />
           </span>

@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  buildFlow,
   buildLaneBoard,
   buildLineFeedRows,
   buildStationBoard,
@@ -11,7 +12,6 @@ import {
   type LineFeedRequestInput,
   type LineFeedRow,
   type LineFeedTransferInput,
-  laneSeverity,
   laneVerdict,
   type StationCard,
   summarizeLanes
@@ -214,16 +214,6 @@ describe("laneVerdict", () => {
     expect(laneVerdict({ ...none, rawShort: 1 })).toBe("rawShort");
     expect(laneVerdict(none)).toBe("ok");
   });
-
-  it("is red when the station is out, amber when low or not ok", () => {
-    expect(laneSeverity("out", "deliver")).toBe("red");
-    expect(laneSeverity("low", "ok")).toBe("amber");
-    expect(laneSeverity("wet", "rawShort")).toBe("amber");
-    expect(laneSeverity("wet", "ok")).toBe("green");
-    // No lineside storage: its stock cannot be read, so it is not green.
-    expect(laneSeverity("unknown", "ok")).toBe("unknown");
-    expect(laneSeverity("unknown", "rawShort")).toBe("amber");
-  });
 });
 
 describe("buildLaneBoard", () => {
@@ -284,8 +274,15 @@ describe("buildLaneBoard", () => {
     })
   ];
 
+  // A3 has an open operation.
   const lane = (laneRows: LaneRowInput[], card = station("A3")) =>
-    buildLaneBoard({ stations: [card], laneRows })[0];
+    buildLaneBoard({
+      stations: [card],
+      laneRows: [
+        { workCenterId: "A3", tier: "station", state: "line", quantity: 1 },
+        ...laneRows
+      ]
+    })[0];
 
   it("worked example: a fed station with an empty igniter bin is raw short, in amber", () => {
     const shortage: LineFeedRow = {
@@ -355,7 +352,9 @@ describe("buildLaneBoard", () => {
       station("A3", "out")
     );
     expect(out.verdict).toBe("deliver");
-    expect(out.severity).toBe("red");
+    // A kit to bring is work for the water spider, not a missing part.
+    expect(out.need).toBe("bring");
+    expect(out.severity).toBe("amber");
     expect(out.work).toMatchObject({ deliver: 1, rawShort: 1 });
     expect(out.kits[0].stationStatus).toBe("bring");
     expect(out.kits[0].source).toMatchObject({
@@ -482,6 +481,7 @@ describe("buildLaneBoard", () => {
     expect(direct.looseRows).toEqual([
       {
         ...shortage,
+        cover: "fed",
         source: { storageUnitId: "WH1-B9", onHand: 5, quantity: 5 }
       }
     ]);
@@ -531,12 +531,195 @@ describe("buildLaneBoard", () => {
     expect(direct.raw[0].kitItemIds).toEqual([]);
     expect(direct.raw).toMatchObject([{ need: 8, status: "short" }]);
     expect(direct.verdict).toBe("rawShort");
-    expect(direct.severity).toBe("red");
+    expect(direct.need).toBe("bring");
+  });
+
+  const shortOf = (
+    workCenterId: string,
+    itemId: string,
+    quantity: number
+  ): LineFeedRow => ({
+    kind: "shortage",
+    key: `shortage:${workCenterId}:${itemId}`,
+    workCenterId,
+    storageUnitId: `${workCenterId}-LINE`,
+    itemId,
+    quantity,
+    onHand: 0,
+    stockStatus: "out",
+    createdAt: null
+  });
+  const sourceOf = (
+    workCenterId: string,
+    row: Omit<LaneRowInput, "workCenterId" | "tier" | "state">
+  ): LaneRowInput => ({ workCenterId, tier: "raw", state: "source", ...row });
+
+  it("stock in no bin is not a raw shortage; no stock at all is", () => {
+    const unbinned = lane(
+      [sourceOf("A3", { itemId: "BOLT", quantity: 40 })],
+      station("A3", "out", [shortOf("A3", "BOLT", 8)])
+    );
+    expect(unbinned.looseRows[0].source).toBeUndefined();
+    expect(unbinned.looseRows[0].supply).toEqual({
+      unbinned: 40,
+      replenishing: false
+    });
+    expect(unbinned.work.rawShort).toBe(0);
+
+    const none = lane(
+      [
+        sourceOf("A3", {
+          itemId: "BOLT",
+          quantity: 0,
+          replenishing: true
+        })
+      ],
+      station("A3", "out", [shortOf("A3", "BOLT", 8)])
+    );
+    expect(none.looseRows[0].supply).toEqual({
+      unbinned: 0,
+      replenishing: true
+    });
+    expect(none.work.rawShort).toBe(1);
+    expect(none.shortItemIds).toEqual(["BOLT"]);
+    expect(none.verdict).toBe("rawShort");
+  });
+
+  it("an empty shelf bin names the part's stock in another bin", () => {
+    const [empty] = lane([
+      a3("bin", { itemId: "BOLT", storageUnitId: "WH1-B9", quantity: 0 }),
+      sourceOf("A3", { itemId: "BOLT", storageUnitId: "WH1-G5", quantity: 90 })
+    ]).raw;
+    expect(empty).toMatchObject({
+      status: "empty",
+      elsewhere: { storageUnitId: "WH1-G5", onHand: 90 }
+    });
+
+    // The kit's igniter bin is empty, but another bin covers the two it needs.
+    const covered = lane([
+      slot(1),
+      ...shelf(0),
+      sourceOf("A3", { itemId: "IGN", storageUnitId: "WH1-G5", quantity: 90 })
+    ]);
+    expect(covered.work.rawShort).toBe(0);
+  });
+
+  it("gives a bin's stock and a rack kit to one station, in line order", () => {
+    const stations = [
+      station("B", "out", [shortOf("B", "BOLT", 4)]),
+      station("A", "out", [shortOf("A", "BOLT", 4)])
+    ];
+    const kitRows = (workCenterId: string): LaneRowInput[] => [
+      {
+        workCenterId,
+        tier: "kit",
+        state: "slot",
+        itemId: "KIT",
+        storageUnitId: "KIT-RACK-1",
+        need: 1
+      },
+      {
+        workCenterId,
+        tier: "kit",
+        state: "complete",
+        itemId: "KIT",
+        trackedEntityId: "K-1",
+        storageUnitId: "KIT-RACK-1",
+        quantity: 1
+      }
+    ];
+    const [first, second] = buildLaneBoard({
+      stations,
+      laneRows: [
+        { workCenterId: "A", tier: "station", state: "line", quantity: 1 },
+        { workCenterId: "B", tier: "station", state: "line", quantity: 2 },
+        ...["A", "B"].flatMap((workCenterId) => [
+          sourceOf(workCenterId, {
+            itemId: "BOLT",
+            storageUnitId: "WH1-B9",
+            quantity: 6
+          }),
+          ...kitRows(workCenterId)
+        ])
+      ],
+      // The board's order does not change who gets the stock.
+      sort: "worst"
+    });
+    expect([first.name, second.name]).toEqual(["A", "B"]);
+    expect(first.looseRows[0].source).toEqual({
+      storageUnitId: "WH1-B9",
+      onHand: 6,
+      quantity: 4
+    });
+    expect(second.looseRows[0].source).toEqual({
+      storageUnitId: "WH1-B9",
+      onHand: 6,
+      quantity: 2,
+      claimed: 4
+    });
+    // One kit on the rack: the first station brings it, the second waits.
+    expect(first.kits[0].stationStatus).toBe("bring");
+    expect(first.kits[0].source?.trackedEntityId).toBe("K-1");
+    expect(second.kits[0].stationStatus).toBe("out");
+    expect(second.kits[0].source).toBeUndefined();
+    expect([first.work.deliver, second.work.deliver]).toEqual([1, 0]);
+  });
+
+  it("a part in the warehouse is to bring; a part made here is waited on", () => {
+    const need = (row: Omit<LaneRowInput, "workCenterId" | "tier" | "state">) =>
+      lane(
+        [
+          sourceOf("A3", { itemId: "BOLT", ...row }),
+          {
+            workCenterId: "B1",
+            tier: "flow",
+            state: "step",
+            itemId: "MADE",
+            quantity: 10
+          },
+          sourceOf("A3", { itemId: "MADE", quantity: 0, need: 0 })
+        ],
+        station("A3", "out", [shortOf("A3", "BOLT", 8)])
+      );
+    // The warehouse holds 40: the 8 are to bring lineside, not missing.
+    const covered = need({ storageUnitId: "WH1-B9", quantity: 40, need: 40 });
+    expect(covered.looseRows[0].cover).toBe("site");
+    expect([covered.need, covered.severity]).toEqual(["bring", "amber"]);
+    expect(covered.toBring).toBe(1);
+
+    // Lineside covers the open work: nothing is short.
+    const ready = lane([]);
+    expect([ready.need, ready.severity]).toEqual(["ready", "green"]);
+
+    const short = need({ storageUnitId: "WH1-B9", quantity: 5, need: 5 });
+    expect(short.looseRows[0].cover).toBe("none");
+    expect([short.need, short.severity]).toEqual(["short", "red"]);
+
+    const upstream = lane(
+      [
+        {
+          workCenterId: "B1",
+          tier: "flow",
+          state: "step",
+          itemId: "MADE",
+          quantity: 10
+        },
+        sourceOf("A3", { itemId: "MADE", quantity: 0, need: 0 })
+      ],
+      station("A3", "out", [shortOf("A3", "MADE", 1)])
+    );
+    expect(upstream.looseRows[0].cover).toBe("upstream");
+    expect(upstream.need).toBe("waiting");
+
+    // No open operation and nothing short.
+    expect(
+      buildLaneBoard({ stations: [station("A3")], laneRows: [] })[0]
+    ).toMatchObject({ need: "idle", severity: "unknown" });
   });
 
   it("runs lanes in line order, or worst first, and counts their work", () => {
     const stations = [
-      station("C", "out"),
+      station("C", "out", [shortOf("C", "BOLT", 1)]),
       station("B"),
       station("A"),
       station("Z")
@@ -552,10 +735,68 @@ describe("buildLaneBoard", () => {
     expect(names("worst")).toEqual(["C", "B", "A", "Z"]);
     expect(summarizeLanes(buildLaneBoard({ stations, laneRows }))).toEqual({
       out: 1,
+      bring: 0,
       deliver: 0,
       finish: 0,
       build: 0,
       rawShort: 0
     });
+  });
+});
+
+describe("buildFlow", () => {
+  const stations = ["A1", "A2a", "A2b", "S1", "S2", "KIT", "LATHE", "OLD"].map(
+    (id) => ({ workCenterId: id, name: id })
+  );
+  const step = (
+    workCenterId: string,
+    itemId: string,
+    quantity: number,
+    running = true
+  ): LaneRowInput => ({
+    workCenterId,
+    tier: "flow",
+    state: "step",
+    itemId,
+    quantity,
+    replenishing: running
+  });
+
+  it("lays stations out in routing order, a feeder before the line it feeds", () => {
+    const flow = buildFlow(stations, [
+      // The engine line: A1, then two parallel A2 stations.
+      step("A1", "ENGINE", 10),
+      step("A2b", "ENGINE", 20),
+      step("A2a", "ENGINE", 20),
+      // The sub-assembly line feeds the engine at A2a.
+      step("S2", "SUB", 20),
+      step("S1", "SUB", 10),
+      {
+        workCenterId: "A2a",
+        tier: "flow",
+        state: "feed",
+        itemId: "SUB",
+        parentKitItemId: "ENGINE",
+        quantity: 20
+      },
+      // A kit bench has a one-step routing.
+      step("KIT", "KIT-ITEM", 10),
+      // A longer routing with no open job does not take the engine's stations.
+      step("A1", "OLD-ENGINE", 10, false),
+      step("A2a", "OLD-ENGINE", 20, false),
+      step("A2b", "OLD-ENGINE", 20, false),
+      step("OLD", "OLD-ENGINE", 30, false)
+    ]);
+    expect(flow).toEqual([
+      { type: "prep", itemId: null, steps: [["KIT"]] },
+      {
+        type: "line",
+        itemId: "SUB",
+        steps: [["S1"], ["S2"]],
+        feeds: { itemId: "ENGINE", workCenterId: "A2a" }
+      },
+      { type: "line", itemId: "ENGINE", steps: [["A1"], ["A2a", "A2b"]] },
+      { type: "other", itemId: null, steps: [["LATHE", "OLD"]] }
+    ]);
   });
 });
