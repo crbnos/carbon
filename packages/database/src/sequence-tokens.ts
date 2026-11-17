@@ -61,10 +61,11 @@ export function interpolateSequenceDate(
 
 /**
  * True when a format labels the ISO week with the calendar year (`%{yy}%{ww}`,
- * `%{yyyy}-W%{ww}`) and has no month or day for that year to belong to. Such a
- * format names the wrong year for up to three days around each new year; it
- * wants `%{wyy}` or `%{wyyyy}`. The SQL migration that moved existing formats
- * to the week year used the same test.
+ * `%{yyyy}-W%{ww}`), has no month or day for that year to belong to, and uses
+ * no week year token. Such a format names the wrong year for up to three days
+ * around each new year; it wants `%{wyy}` or `%{wyyyy}`. A format that already
+ * has a week year keeps its calendar year on purpose. The SQL migration that
+ * moved existing formats to the week year used the same test.
  */
 export function usesCalendarYearForWeek(
   ...values: Array<string | null | undefined>
@@ -74,6 +75,8 @@ export function usesCalendarYearForWeek(
     format.includes("%{ww}") &&
     (format.includes("%{yyyy}") || format.includes("%{yy}")) &&
     !format.includes("%{mm}") &&
-    !format.includes("%{dd}")
+    !format.includes("%{dd}") &&
+    !format.includes("%{wyy}") &&
+    !format.includes("%{wyyyy}")
   );
 }

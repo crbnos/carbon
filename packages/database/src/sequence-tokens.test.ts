@@ -96,6 +96,7 @@ describe("isoWeek", () => {
     date.subtract({ days: getDayOfWeek(date, "en-GB") });
 
   it("matches the 4 January rule for every day from 2000 to 2100", () => {
+    const mismatches: string[] = [];
     let date = new CalendarDate(2000, 1, 1);
     const end = new CalendarDate(2100, 12, 31);
     while (date.compare(end) <= 0) {
@@ -111,9 +112,13 @@ describe("isoWeek", () => {
         Math.floor(
           mondayOf(date).compare(mondayOf(new CalendarDate(year, 1, 4))) / 7
         ) + 1;
-      expect(isoWeek(date), date.toString()).toEqual({ week, year });
+      const actual = isoWeek(date);
+      if (actual.week !== week || actual.year !== year) {
+        mismatches.push(`${date}: ${actual.year}-W${actual.week}`);
+      }
       date = date.add({ days: 1 });
     }
+    expect(mismatches).toEqual([]);
   });
 });
 
@@ -124,6 +129,8 @@ describe("usesCalendarYearForWeek", () => {
     ["%{ww}", "-%{yy}", true],
     ["%{wyy}%{ww}-", null, false],
     ["%{wyyyy}-W%{ww}-", null, false],
+    ["%{yyyy}-", "-%{wyy}%{ww}", false],
+    ["%{yy}-%{wyyyy}W%{ww}", null, false],
     ["%{yyyy}%{mm}%{dd}-W%{ww}-", null, false],
     ["%{yyyy}-%{mm}-W%{ww}", null, false],
     ["JE-%{yyyy}-%{mm}-", null, false],
@@ -151,11 +158,11 @@ describe.skipIf(!url)(
         [ALL_TOKENS]
       );
       expect(rows).toHaveLength(36890);
-      for (const { day, value } of rows) {
-        expect(value, day).toBe(
-          interpolateSequenceDate(ALL_TOKENS, "UTC", at(day, 13, 9))
-        );
-      }
+      const mismatches = rows.filter(
+        ({ day, value }) =>
+          value !== interpolateSequenceDate(ALL_TOKENS, "UTC", at(day, 13, 9))
+      );
+      expect(mismatches).toEqual([]);
     });
   }
 );

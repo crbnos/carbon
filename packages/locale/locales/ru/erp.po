@@ -14244,6 +14244,12 @@ msgstr "Полное имя"
 msgid "Full setup and migrations"
 msgstr "Полная наладка и миграции"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
 
@@ -16186,6 +16192,9 @@ msgstr "Является группой организаций поставщи�
 msgid "Is supplier type group"
 msgstr "Является группой типов поставщиков"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "Проблема"
 
@@ -17537,6 +17546,9 @@ msgstr "Местоположение"
 
 msgid "Location / Item"
 msgstr "Местоположение / Товар"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "Название местоположения"
@@ -27231,6 +27243,9 @@ msgstr "Поиск..."
 msgid "Search…"
 msgstr "Поиск…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Секунды для завершения"
 
@@ -35471,6 +35486,9 @@ msgstr "Написаны отсутствующие операции {0} док�
 
 msgid "Year"
 msgstr "Год"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "Закрытие года"

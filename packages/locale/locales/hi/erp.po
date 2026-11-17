@@ -14244,6 +14244,12 @@ msgstr "पूरा नाम"
 msgid "Full setup and migrations"
 msgstr "पूर्ण सेटअप और माइग्रेशन"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "पूर्ण मूल्यह्रासित"
 
@@ -16186,6 +16192,9 @@ msgstr "आपूर्तिकर्ता संगठन समूह है
 msgid "Is supplier type group"
 msgstr "आपूर्तिकर्ता प्रकार समूह है"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "समस्या"
 
@@ -17537,6 +17546,9 @@ msgstr "स्थान"
 
 msgid "Location / Item"
 msgstr "स्थान / आइटम"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
@@ -27231,6 +27243,9 @@ msgstr "खोजें..."
 msgid "Search…"
 msgstr "खोजें…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "पूरा करने के सेकंड"
 
@@ -35471,6 +35486,9 @@ msgstr "{0} दस्तावेज़ों की लापता जर्�
 
 msgid "Year"
 msgstr "साल"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "वर्षांत समापन"

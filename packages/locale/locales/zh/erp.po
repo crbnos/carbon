@@ -14244,6 +14244,12 @@ msgstr "全名"
 msgid "Full setup and migrations"
 msgstr "完整设置和迁移"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "已提足折旧"
 
@@ -16186,6 +16192,9 @@ msgstr "是供应商组织组"
 msgid "Is supplier type group"
 msgstr "是供应商类型组"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "问题"
 
@@ -17537,6 +17546,9 @@ msgstr "位置"
 
 msgid "Location / Item"
 msgstr "位置 / 物品"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -27231,6 +27243,9 @@ msgstr "搜索..."
 msgid "Search…"
 msgstr "搜索…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完成秒数"
 
@@ -35471,6 +35486,9 @@ msgstr "为 {0} 份文件写入了缺失的凭证"
 
 msgid "Year"
 msgstr "年份"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "年终结账"

@@ -14244,6 +14244,12 @@ msgstr "Nom complet"
 msgid "Full setup and migrations"
 msgstr "Réglage complet et migrations"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "Totalement amorti"
 
@@ -16186,6 +16192,9 @@ msgstr "Est un groupe d'organisation fournisseur"
 msgid "Is supplier type group"
 msgstr "Est un groupe de type fournisseur"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "Problème"
 
@@ -17537,6 +17546,9 @@ msgstr "Emplacement"
 
 msgid "Location / Item"
 msgstr "Emplacement / Article"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "Nom du lieu"
@@ -27231,6 +27243,9 @@ msgstr "Rechercher..."
 msgid "Search…"
 msgstr "Rechercher…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Secondes pour compléter"
 
@@ -35471,6 +35486,9 @@ msgstr "A écrit les écritures manquantes de {0} documents"
 
 msgid "Year"
 msgstr "Année"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "Clôture de fin d'exercice"

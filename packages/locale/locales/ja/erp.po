@@ -14244,6 +14244,12 @@ msgstr "氏名"
 msgid "Full setup and migrations"
 msgstr "完全なセットアップとマイグレーション"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
 
@@ -16186,6 +16192,9 @@ msgstr "仕入先組織グループです"
 msgid "Is supplier type group"
 msgstr "仕入先タイプグループです"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "問題"
 
@@ -17537,6 +17546,9 @@ msgstr "ロケーション"
 
 msgid "Location / Item"
 msgstr "場所 / 品目"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -27231,6 +27243,9 @@ msgstr "検索..."
 msgid "Search…"
 msgstr "検索…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完了までの秒数"
 
@@ -35471,6 +35486,9 @@ msgstr "{0}件のドキュメントの不足している仕訳を記述"
 
 msgid "Year"
 msgstr "年"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "年度末決算"

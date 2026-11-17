@@ -14244,6 +14244,12 @@ msgstr "전체 이름"
 msgid "Full setup and migrations"
 msgstr "완전한 셋업 및 마이그레이션"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "상각 완료"
 
@@ -16186,6 +16192,9 @@ msgstr "공급업체 조직 그룹입니다"
 msgid "Is supplier type group"
 msgstr "공급업체 유형 그룹입니다"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "이슈"
 
@@ -17537,6 +17546,9 @@ msgstr "위치"
 
 msgid "Location / Item"
 msgstr "위치 / 항목"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -27231,6 +27243,9 @@ msgstr "검색..."
 msgid "Search…"
 msgstr "검색…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "완료할 시간(초)"
 
@@ -35471,6 +35486,9 @@ msgstr "{0}개 문서의 누락된 전표 작성됨"
 
 msgid "Year"
 msgstr "연도"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "연말 마감"

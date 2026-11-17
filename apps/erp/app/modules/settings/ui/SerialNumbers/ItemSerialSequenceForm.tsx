@@ -191,7 +191,7 @@ const ItemSerialSequenceForm = ({
                 bordered
               />
               <SequenceTokenHelp
-                extraTokens={[["%{location}", "Location code"]]}
+                extraTokens={[["%{location}", t`Location code`]]}
               />
             </VStack>
           </DrawerBody>

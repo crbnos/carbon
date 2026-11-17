@@ -14244,6 +14244,12 @@ msgstr "Tam adı"
 msgid "Full setup and migrations"
 msgstr "Tam kurulum ve göçler"
 
+msgid "Full Year"
+msgstr ""
+
+msgid "Full Year of the ISO Week"
+msgstr ""
+
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
 
@@ -16186,6 +16192,9 @@ msgstr "Tedarikçi kuruluş grubu mu"
 msgid "Is supplier type group"
 msgstr "Tedarikçi türü grubu mu"
 
+msgid "ISO Week"
+msgstr ""
+
 msgid "Issue"
 msgstr "Sorun"
 
@@ -17537,6 +17546,9 @@ msgstr "Konum"
 
 msgid "Location / Item"
 msgstr "Konum / Ürün"
+
+msgid "Location code"
+msgstr ""
 
 msgid "Location Name"
 msgstr "Konum Adı"
@@ -27231,6 +27243,9 @@ msgstr "Ara..."
 msgid "Search…"
 msgstr "Ara…"
 
+msgid "Second"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Tamamlanmak için gereken saniye"
 
@@ -35471,6 +35486,9 @@ msgstr "{0} belgenin eksik muhasebe fişlerini yazdı"
 
 msgid "Year"
 msgstr "Yıl"
+
+msgid "Year of the ISO Week"
+msgstr ""
 
 msgid "Year-End Close"
 msgstr "Yıl Sonu Kapanışı"

@@ -4,29 +4,31 @@
 
 import { usesCalendarYearForWeek } from "@carbon/database/sequence-tokens";
 import { Alert, AlertDescription, AlertTitle, VStack } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
 
-const DATE_TOKENS = [
-  ["%{yyyy}", "Full Year"],
-  ["%{yy}", "Year"],
-  ["%{mm}", "Month"],
-  ["%{ww}", "ISO Week"],
-  ["%{wyyyy}", "Full Year of the ISO Week"],
-  ["%{wyy}", "Year of the ISO Week"],
-  ["%{dd}", "Day"],
-  ["%{hh}", "Hour"],
-  ["%{ss}", "Second"]
-] as const;
-
+/** `extraTokens` labels arrive translated, as the date tokens' are here. */
 export function SequenceTokenHelp({
   extraTokens = []
 }: {
   extraTokens?: ReadonlyArray<readonly [string, string]>;
 }) {
+  const { t } = useLingui();
+  const dateTokens: ReadonlyArray<readonly [string, string]> = [
+    ["%{yyyy}", t`Full Year`],
+    ["%{yy}", t`Year`],
+    ["%{mm}", t`Month`],
+    ["%{ww}", t`ISO Week`],
+    ["%{wyyyy}", t`Full Year of the ISO Week`],
+    ["%{wyy}", t`Year of the ISO Week`],
+    ["%{dd}", t`Day`],
+    ["%{hh}", t`Hour`],
+    ["%{ss}", t`Second`]
+  ];
+
   return (
     <VStack spacing={0}>
-      {[...DATE_TOKENS, ...extraTokens].map(([token, label]) => (
+      {[...dateTokens, ...extraTokens].map(([token, label]) => (
         <p key={token} className="text-muted-foreground text-sm">
           {`${token} = ${label}`}
         </p>
