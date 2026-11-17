@@ -16,6 +16,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { REDIS_DB_MAX } from "../topology.js";
 import {
   buildDownArgs,
+  buildImagesArgs,
   buildUpArgs,
   isTransientPullError,
   missingSharedServices,
@@ -116,6 +117,28 @@ describe("buildUpArgs", () => {
     const args = buildUpArgs(STACK, { services: ["postgres"] });
     expect(profilesIn(args)).toEqual([]);
     expect(args).toContain("postgres");
+  });
+});
+
+describe("buildImagesArgs", () => {
+  const compose = ["compose", "-f", "shared.yml", "-p", "crbn-shared"];
+
+  it("lists every image when no service is named", () => {
+    expect(buildImagesArgs(compose)).toEqual([
+      ...compose,
+      "config",
+      "--images"
+    ]);
+  });
+
+  it("names the services after the subcommand", () => {
+    expect(buildImagesArgs(compose, ["redis", "edge-runtime"])).toEqual([
+      ...compose,
+      "config",
+      "--images",
+      "redis",
+      "edge-runtime"
+    ]);
   });
 });
 
