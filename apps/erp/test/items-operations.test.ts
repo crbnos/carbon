@@ -198,10 +198,18 @@ describe("details saves", () => {
     unitOfMeasureCode: "EA"
   } as const;
 
-  /** The item row once a save's item writes have landed on it. */
+  /** The item row once the save's item updates whose filters match it have
+   *  landed on it, as the database would apply them. */
   function itemAfter(row: Record<string, unknown>, writes: Write[]) {
+    const matches = (write: Write) =>
+      write.filters.every(([column, value]) =>
+        Array.isArray(value) ? value.includes(row[column]) : row[column] === value
+      );
     return writes
-      .filter((write) => write.table === "item" && write.op === "update")
+      .filter(
+        (write) =>
+          write.table === "item" && write.op === "update" && matches(write)
+      )
       .reduce((item, write) => ({ ...item, ...(write.values as object) }), row);
   }
 
@@ -210,7 +218,12 @@ describe("details saves", () => {
     ["updateTool", (ctx: any) => updateTool(ctx, { ...details, revision: "0" })],
     ["updateConsumable", (ctx: any) => updateConsumable(ctx, details)]
   ])("%s leaves an inactive item inactive", async (_name, save) => {
-    const stored = { id: "i1", readableId: "P1", active: false };
+    const stored = {
+      id: "i1",
+      companyId: "company-1",
+      readableId: "P1",
+      active: false
+    };
     const { client, writes } = fakeClient({ item: stored });
 
     const result = await save(contextFor(client));
