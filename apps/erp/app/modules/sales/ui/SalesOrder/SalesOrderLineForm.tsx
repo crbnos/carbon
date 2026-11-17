@@ -288,25 +288,27 @@ const SalesOrderLineForm = ({
       });
   }, [pricingRuleId, carbon]);
 
+  // A new line starts on its ship-by date (arrive-by − transit days); a line
+  // that ships no item takes the order's promised date, as the server does.
+  // Only an untouched default moves.
+  const defaultDateForType = (t: string) => {
+    if (initialValues.id) return;
+    const shipBy = initialValues.promisedDate || null;
+    const arrival = routeData?.salesOrder?.receiptPromisedDate ?? shipBy;
+    if (promisedDate !== shipBy && promisedDate !== arrival) return;
+    setPromisedDate(
+      [...DELIVERY_CHECKED_LINE_TYPES].some((type) => type === t)
+        ? shipBy
+        : arrival
+    );
+  };
+
   const onTypeChange = (t: SalesOrderLineType | "Item") => {
     setItemFilter(t);
     // "Item" is the "All Items" filter, always compatible with the selection.
     if (t === "Item") return;
     setLineType(t as typeof lineType);
-    // A new line starts on its ship-by date (arrive-by − transit days); a line
-    // that ships no item takes the order's promised date, as the server does.
-    // Only an untouched default moves.
-    if (!initialValues.id) {
-      const shipBy = initialValues.promisedDate || null;
-      const arrival = routeData?.salesOrder?.receiptPromisedDate ?? shipBy;
-      if (promisedDate === shipBy || promisedDate === arrival) {
-        setPromisedDate(
-          [...DELIVERY_CHECKED_LINE_TYPES].some((type) => type === t)
-            ? shipBy
-            : arrival
-        );
-      }
-    }
+    defaultDateForType(String(t));
     // Clear itemData only when the new filter excludes the currently selected
     // item — otherwise a stale itemId of the old type would post with the new
     // salesOrderLineType.
@@ -451,6 +453,7 @@ const SalesOrderLineForm = ({
 
     if (item.data?.type) {
       setLineType(item.data.type as typeof lineType);
+      defaultDateForType(item.data.type);
     }
     setItemData({
       itemId,
@@ -531,7 +534,10 @@ const SalesOrderLineForm = ({
     <>
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as "item" | "asset")}
+        onValueChange={(v) => {
+          setActiveTab(v as "item" | "asset");
+          defaultDateForType(v === "asset" ? "Fixed Asset" : lineType);
+        }}
         className="w-full"
       >
         <ModalCardProvider type={type}>
@@ -1066,6 +1072,8 @@ const SalesOrderLineForm = ({
                             name="promisedDate"
                             label={t`Promised Date`}
                             termId="sales-order-line-promised-date"
+                            value={promisedDate ?? undefined}
+                            onChange={setPromisedDate}
                           />
                           <NumberControlled
                             name="saleQuantity"
