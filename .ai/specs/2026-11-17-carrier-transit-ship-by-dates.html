@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/specs/2026-11-17-carrier-transit-ship-by-dates.md" />
-<meta name="explain-source-hash" content="ff07048b2999dd5bd0061978e9e2f641d65de568" />
+<meta name="explain-source-hash" content="59f4bad845002ce15c6a2712ded8ecb36ca997b0" />
 <title>Carrier transit time and ship-by dates</title>
 <style>
   :root {
@@ -428,7 +428,7 @@
             <tr><td><code>recalculateSalesOrderShipByDates</code></td><td><code>sales.server.ts</code></td><td>new operation: the "Yes" of the prompt, in one Kysely transaction</td></tr>
             <tr><td><code>x+/sales-order+/$orderId.ship-by-dates.tsx</code></td><td><code>apps/erp/app/routes/</code></td><td>new resource route</td></tr>
             <tr><td><code>createSalesOrderLine</code></td><td><code>sales.server.ts</code></td><td>change: the default <code>promisedDate</code></td></tr>
-            <tr><td><code>upsertCustomerLocationTransitTime</code>, <code>deleteCustomerLocationTransitTime</code>, <code>getCustomerLocationTransitTimes</code></td><td><code>sales.server.ts</code></td><td>new operations</td></tr>
+            <tr><td><code>createCustomerLocationTransitTime</code> and <code>updateCustomerLocationTransitTime</code>, <code>deleteCustomerLocationTransitTime</code>, <code>getCustomerLocationTransitTimes</code></td><td><code>sales.server.ts</code></td><td>new operations</td></tr>
             <tr><td><code>shippingMethodValidator</code></td><td><code>inventory.models.ts</code></td><td>change: adds <code>transitDays</code></td></tr>
             <tr><td><code>getShippingMethodTransitStats</code></td><td><code>inventory.server.ts</code></td><td>new operation</td></tr>
             <tr><td><code>postShipment</code></td><td><code>inventory.service.ts</code></td><td>change: sets <code>estimatedDeliveryDate</code></td></tr>
@@ -483,6 +483,16 @@
           <li>The new line route starts from <code>defaultShipBy</code>.</li>
         </ol>
         <p>The browser test passed for every flow. The playbook is <code>.ai/playbooks/carrier-transit-ship-by-dates.md</code>.</p>
+        <p>The code review and edge-case pass fixed 7 more points:</p>
+        <ul>
+          <li>The prompt opens only when the plan shows the saved arrive-by date, shipping method and ship-to.</li>
+          <li>The recalculation locks the order inside its transaction.</li>
+          <li>An override has a create and an update operation. An update refuses another customer's override.</li>
+          <li>One query reads a lane's transit days. <code>arrivalForLane</code> turns a lane and a ship date into an arrival.</li>
+          <li>A new line's default date follows its type on every path.</li>
+          <li>The MES views show the countdown only on the plant's day.</li>
+          <li>The database tests that fail here fail on <code>main</code> too, because of table ownership in the shared dev database.</li>
+        </ul>
       </div>
     </details>
   </section>

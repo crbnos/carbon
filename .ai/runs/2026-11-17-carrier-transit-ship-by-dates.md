@@ -22,6 +22,8 @@
 - Self-review: 2 must-fix (weekend arrive-by ship-by; noisy backfill) and 3 risks fixed in 677dc7d2bf. Remaining risks recorded in the spec.
 - Test: browser verification passed for all 7 flows, user approved. 2 bugs found and fixed in 466bbb6d2b (new line route default, missing space). Playbook `.ai/playbooks/carrier-transit-ship-by-dates.md`.
 
+- Second pass (user request): code review (10 findings, 8 fixed), a fresh review of the fixes (6 risks, 5 fixed), browser edge cases (clear and void a delivery, duplicate, edit and delete an override, a holiday, a Saturday arrive-by, unknown and 0 transit days, a drop shipment, a locked order, quote conversion, today and tomorrow on MES, the line type default, regressions of shipping method create, customer Shipping save and line create), and the database tests (1428 pass; the failures repeat on `main`).
+
 ## Outcome
 
 - Branch naveenkash/shipping-priority-queue, all work committed. No PR opened (not requested).
