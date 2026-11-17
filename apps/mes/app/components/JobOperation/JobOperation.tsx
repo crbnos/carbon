@@ -2757,7 +2757,7 @@ export const JobOperation = ({
                       <Await resolve={workCenter}>
                         {(resolvedWorkCenter) =>
                           resolvedWorkCenter.data && (
-                            <span className="line-clamp-1 text-sm font-medium">
+                            <span className="text-sm break-words font-medium">
                               {resolvedWorkCenter.data?.name}
                             </span>
                           )
@@ -2770,7 +2770,7 @@ export const JobOperation = ({
                   <dt className="text-xs text-muted-foreground">
                     <Trans>Item</Trans>
                   </dt>
-                  <dd className="line-clamp-1 text-sm font-medium">
+                  <dd className="text-sm break-words font-medium">
                     {scope === "batch" && batchFacts
                       ? batchFacts.items.length === 1
                         ? batchFacts.items[0]
