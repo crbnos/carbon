@@ -118,6 +118,7 @@ import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { defaultAutoPrint } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
@@ -8618,7 +8619,10 @@ export async function salesOrderShipmentLocationOf(
   };
 }
 
-/** Print a document's labels (or a new kanban's cards) when its location's printer auto-prints. */
+/**
+ * Print a document's labels (a new kanban's cards, a shipment's packing slip)
+ * when its location's printer auto-prints.
+ */
 export async function autoPrint(
   ctx: ServiceContext,
   {
@@ -8627,10 +8631,15 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment" | "Kanban" | "PickingList";
+    sourceDocument:
+      | "Receipt"
+      | "Shipment"
+      | "Kanban"
+      | "PickingList"
+      | "PackingSlip";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping" | "kanban" | "inventory";
+    context: "receiving" | "shipping" | "kanban" | "inventory" | "documents";
   }
 ) {
   if (!locationId) return;
@@ -8641,7 +8650,7 @@ export async function autoPrint(
       locationId,
       context
     );
-    if (config?.autoPrint ?? true) {
+    if (config?.autoPrint ?? defaultAutoPrint(context)) {
       await trigger("print-job", {
         sourceDocument,
         sourceDocumentId,

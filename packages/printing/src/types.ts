@@ -14,6 +14,8 @@ export type LocationAssignment = {
   receiving: ContextAssignment;
   inventory: ContextAssignment;
   kanban: ContextAssignment;
+  /** Full-page documents (packing slips, invoices); absent on older settings. */
+  documents?: ContextAssignment;
   workCenters: Record<string, ContextAssignment>;
 };
 
