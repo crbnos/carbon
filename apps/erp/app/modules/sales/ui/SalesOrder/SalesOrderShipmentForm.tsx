@@ -143,7 +143,10 @@ const SalesOrderShipmentForm = forwardRef<
           checkShipBy.current = changed
             ? {
                 arriveBy: data.receiptPromisedDate || null,
-                shippingMethodId: data.shippingMethodId || null
+                shippingMethodId: data.shippingMethodId || null,
+                customerLocationId: data.dropShipment
+                  ? data.customerLocationId || null
+                  : (routeData?.salesOrder?.customerLocationId ?? null)
               }
             : null;
         }}

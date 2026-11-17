@@ -49,7 +49,7 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   LuBox,
   LuChevronRight,
@@ -291,11 +291,16 @@ const SalesOrderLineForm = ({
   // A new line starts on its ship-by date (arrive-by − transit days); a line
   // that ships no item takes the order's promised date, as the server does.
   // Only an untouched default moves.
+  // The latest date, read through a ref: an item pick awaits its reads, and
+  // the date the user types meanwhile must not count as untouched.
+  const promisedDateRef = useRef(promisedDate);
+  promisedDateRef.current = promisedDate;
   const defaultDateForType = (t: string) => {
     if (initialValues.id) return;
     const shipBy = initialValues.promisedDate || null;
     const arrival = routeData?.salesOrder?.receiptPromisedDate ?? shipBy;
-    if (promisedDate !== shipBy && promisedDate !== arrival) return;
+    const current = promisedDateRef.current;
+    if (current !== shipBy && current !== arrival) return;
     setPromisedDate(
       [...DELIVERY_CHECKED_LINE_TYPES].some((type) => type === t)
         ? shipBy

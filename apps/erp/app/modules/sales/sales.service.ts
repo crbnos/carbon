@@ -24625,6 +24625,25 @@ export async function saveCustomerLocationTransitTime(
       : null);
   if (refused) return refused;
 
+  // An update stays with its customer: the override's current ship-to must
+  // be this customer's too, or one call could move it to another customer.
+  if (input.id) {
+    const existing = await ctx.asSystem.pg
+      .selectFrom("customerLocationTransitTime as clt")
+      .innerJoin("customerLocation as cl", (join) =>
+        join
+          .onRef("cl.id", "=", "clt.customerLocationId")
+          .onRef("cl.companyId", "=", "clt.companyId")
+      )
+      .select("cl.customerId")
+      .where("clt.id", "=", input.id)
+      .where("clt.companyId", "=", ctx.company.id)
+      .executeTakeFirst();
+    if (existing?.customerId !== input.customerId) {
+      return ctx.error("notFound", "The transit time could not be found");
+    }
+  }
+
   const common = {
     companyId: ctx.company.id,
     customerLocationId: input.customerLocationId,

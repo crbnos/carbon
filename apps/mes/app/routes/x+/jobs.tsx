@@ -57,15 +57,17 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const locationId = context.get(userContext)?.locationId;
 
-  const [jobs, workCenters, timeZone] = await Promise.all([
+  const [jobs, workCenters, today] = await Promise.all([
     getOpenJobs(serviceRole, { companyId, locationId }),
     getWorkCenterOptionsByLocation(serviceRole, { companyId, locationId }),
     // The factory's calendar day: the ship countdown flips at its midnight.
     // A failed read hides the countdown and keeps the list.
-    getLocationTimeZone(serviceRole, locationId, companyId).catch((error) => {
-      log.error("Failed to load the location time zone", { error });
-      return null;
-    })
+    getLocationTimeZone(serviceRole, locationId, companyId)
+      .then((timeZone) => datetime.today(timeZone).toString())
+      .catch((error) => {
+        log.error("Failed to load the location time zone", { error });
+        return null;
+      })
   ]);
 
   if (jobs.error) {
@@ -100,7 +102,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     })),
     workCenters: workCenters.data ?? [],
     trackedEntities,
-    today: timeZone ? datetime.today(timeZone).toString() : null
+    today
   };
 }
 

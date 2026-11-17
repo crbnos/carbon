@@ -107,10 +107,8 @@ export function ItemCard({
   const assignedData = useRouteData<{ today: string | null }>("/x/assigned");
   // The factory's calendar day from the loader (location time zone); the
   // device's own day only when there is no location.
-  const scheduleToday =
-    routeData?.today ??
-    assignedData?.today ??
-    today(getLocalTimeZone()).toString();
+  const plantToday = routeData?.today ?? assignedData?.today ?? null;
+  const scheduleToday = plantToday ?? today(getLocalTimeZone()).toString();
 
   const customer = showCustomer
     ? routeData?.customers.find((c) => c.id === item.customerId)
@@ -336,8 +334,9 @@ export function ItemCard({
               </Tooltip>
             </HStack>
           )}
-          {showDueDate && item.shipByDate && (
-            <ShipCountdown shipByDate={item.shipByDate} today={scheduleToday} />
+          {/* The countdown needs the plant's day; without it, none. */}
+          {showDueDate && item.shipByDate && plantToday && (
+            <ShipCountdown shipByDate={item.shipByDate} today={plantToday} />
           )}
           {showDueDate && item.dueDate && (
             <HStack className="justify-start space-x-2">

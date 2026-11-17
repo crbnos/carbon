@@ -65,9 +65,13 @@ const SalesOrderProperties = () => {
       toastServiceError(data);
     },
     onSuccess: () => {
-      if (lastField.current === "receiptPromisedDate") {
+      const field = lastField.current;
+      // One check per save: a later custom-field save on this fetcher must
+      // not ask again.
+      lastField.current = null;
+      if (field === "receiptPromisedDate") {
         shipBy.check({ arriveBy: lastValue.current });
-      } else if (lastField.current === "customerLocationId") {
+      } else if (field === "customerLocationId") {
         shipBy.check();
       }
     }

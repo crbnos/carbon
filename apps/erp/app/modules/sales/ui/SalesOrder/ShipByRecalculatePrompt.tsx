@@ -27,6 +27,8 @@ import { path } from "~/utils/path";
 export type ShipByExpectation = {
   arriveBy?: string | null;
   shippingMethodId?: string | null;
+  /** the effective ship-to: the drop-ship location, else the header's */
+  customerLocationId?: string | null;
 };
 
 /**
@@ -66,7 +68,10 @@ export function useShipByRecalculatePrompt(salesOrderId: string) {
         (loaded.arriveBy ?? "") === (expected.arriveBy ?? "")) &&
       (expected.shippingMethodId === undefined ||
         (loaded.lane.shippingMethodId ?? "") ===
-          (expected.shippingMethodId ?? "")));
+          (expected.shippingMethodId ?? "")) &&
+      (expected.customerLocationId === undefined ||
+        (loaded.lane.customerLocationId ?? "") ===
+          (expected.customerLocationId ?? "")));
   const open = asked && plan.state === "idle" && changes > 0 && saved;
 
   const prompt = (
