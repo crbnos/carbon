@@ -5066,3 +5066,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** After regenerating, diff `types.ts` against the base branch and keep only the lines your migration explains; restore the rest. Move them by matching text (the table's `Row` / `Insert` / `Update` blocks, the function's alphabetical neighbour), never by zero-context patches. The typecheck and CI's "Database types" job are the proof.
 
 **Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.
+
+## Two `crbn up` in one worktree take each other down
+
+**Context:** `crbn up` records its pid in `~/.carbon/stacks/<slug>/up`, and its teardown first stops whichever `crbn up` that file names.
+
+**Problem:** An agent started `crbn up` in the background, then the user started another in the same worktree. The second overwrote the marker and reused the first's dev servers. Stopping the agent's run then SIGINT'd the user's run through the marker, and every app went down.
+
+**Rule:** Run one `crbn up` per worktree. Check `ps` for a running one (or ask) before starting it, and never stop it while someone else may be using it.
+
+**Applies to:** Agents and humans booting a stack in a shared worktree.

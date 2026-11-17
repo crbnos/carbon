@@ -335,7 +335,8 @@ these fields. Each one is optional except `materialRequests`; omitted, the row i
 The validator checks them:
 
 - `operation` names a `bop` order of the same method.
-- A tracked shelf holds no Scrapped lot, and its lots sum to the `openingStock` at that shelf.
+- A tracked shelf's lots (On Hold, Rejected and Scrapped included) sum to the `openingStock` at that
+  shelf, and a Scrapped lot on it is scrapped from that same shelf.
 - `replenishmentLevel` is on a Transfer kanban, and it is an integer of 0 or more.
 - `serials` is on a Serial item, has one entry per unit, and repeats no serial and no other seeded
   tracked-entity id (`onHandTracked`, a receipt `lotNumber`, `genealogyInputs`, the
