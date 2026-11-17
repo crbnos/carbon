@@ -127,7 +127,6 @@ import { defaultAutoPrint } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
-  addBusinessDays,
   assertEntityCoversPick,
   buildBatchMergeRecords,
   buildBatchSplitRecords,
@@ -184,6 +183,7 @@ import {
   receivedAfterReceiptReversal
 } from "~/modules/purchasing/purchasing.models";
 import {
+  arrivalForLane,
   futureDeliveryError,
   futureReturnError,
   getHolidayDateSet,
@@ -193,9 +193,7 @@ import {
   receiptReturnError,
   refreshSalesReturnOrderStatus,
   rentalShipmentVoidBlocker,
-  resolveTransitDays,
   returnRentalUnit,
-  transitHolidayRange,
   unitLabel,
   unitReturnValidator
 } from "~/modules/sales/sales.service";
@@ -19820,26 +19818,19 @@ export async function postShipment(
             // The day the goods should arrive: today + the transit days of
             // the shipment's method for the order's ship-to (a drop shipment
             // goes to the shipment's customer location), in business days.
-            const transit = await resolveTransitDays(db, {
-              companyId,
-              shippingMethodId: shipmentHeader.shippingMethodId ?? null,
-              customerLocationId: salesOrderDelivery.data.dropShipment
-                ? (salesOrderDelivery.data.customerLocationId ?? null)
-                : (salesOrder.data.customerLocationId ?? null),
-              locationId: shipmentHeader.locationId ?? null,
-              shipDate: today
-            });
-            const transitRange = transit
-              ? transitHolidayRange([today], transit.transitDays)
-              : null;
-            const estimatedDeliveryDate =
-              transit && transitRange
-                ? addBusinessDays(
-                    today,
-                    transit.transitDays,
-                    await getHolidayDateSet(db, companyId, transitRange)
-                  )
-                : null;
+            const estimatedDeliveryDate = await arrivalForLane(
+              db,
+              {
+                companyId,
+                shippingMethodId: shipmentHeader.shippingMethodId ?? null,
+                customerLocationId: salesOrderDelivery.data.dropShipment
+                  ? (salesOrderDelivery.data.customerLocationId ?? null)
+                  : (salesOrder.data.customerLocationId ?? null),
+                locationId: shipmentHeader.locationId ?? null,
+                shipDate: today
+              },
+              today
+            );
 
             const companyRecord = await single(
               db,

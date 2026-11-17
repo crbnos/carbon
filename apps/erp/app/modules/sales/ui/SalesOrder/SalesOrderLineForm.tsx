@@ -94,7 +94,10 @@ import {
   isSalesOrderLocked,
   salesOrderLineValidator
 } from "../../sales.models";
-import { methodTakesConfiguration } from "../../sales.utils";
+import {
+  DELIVERY_CHECKED_LINE_TYPES,
+  methodTakesConfiguration
+} from "../../sales.utils";
 import type {
   PriceTraceStep,
   SalesOrder,
@@ -290,6 +293,20 @@ const SalesOrderLineForm = ({
     // "Item" is the "All Items" filter, always compatible with the selection.
     if (t === "Item") return;
     setLineType(t as typeof lineType);
+    // A new line starts on its ship-by date (arrive-by − transit days); a line
+    // that ships no item takes the order's promised date, as the server does.
+    // Only an untouched default moves.
+    if (!initialValues.id) {
+      const shipBy = initialValues.promisedDate || null;
+      const arrival = routeData?.salesOrder?.receiptPromisedDate ?? shipBy;
+      if (promisedDate === shipBy || promisedDate === arrival) {
+        setPromisedDate(
+          [...DELIVERY_CHECKED_LINE_TYPES].some((type) => type === t)
+            ? shipBy
+            : arrival
+        );
+      }
+    }
     // Clear itemData only when the new filter excludes the currently selected
     // item — otherwise a stale itemId of the old type would post with the new
     // salesOrderLineType.

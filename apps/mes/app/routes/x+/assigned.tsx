@@ -67,9 +67,14 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     getWorkCentersByCompany(serviceRole, companyId),
     // The factory's calendar day: due dates and the ship countdown flip at
     // its midnight, not the device's.
-    locationId
+    (locationId
       ? getLocationTimeZone(serviceRole, locationId, companyId)
       : getCompanyTimeZone(serviceRole, companyId)
+    ).catch((error) => {
+      // A failed read hides the countdown and keeps the page.
+      log.error("Failed to load the time zone", { error });
+      return null;
+    })
   ]);
 
   if (operations.error) {
@@ -99,7 +104,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       })) ?? [],
     workCenters: workCenters?.data ?? [],
     locationId,
-    today: datetime.today(timeZone).toString()
+    today: timeZone ? datetime.today(timeZone).toString() : null
   };
 }
 
@@ -436,7 +441,10 @@ export default function AssignedRoute() {
             </ClientOnly>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
-              <OperationsList operations={filteredOperations} today={today} />
+              <OperationsList
+                operations={filteredOperations}
+                today={today ?? undefined}
+              />
             </div>
           )
         ) : searchTerm ? (

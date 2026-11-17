@@ -74,10 +74,9 @@ const CustomerTransitTimes = ({
             </CardDescription>
           </CardHeader>
           <CardAction>
-            {permissions.can("create", "sales") &&
-              permissions.can("update", "sales") && (
-                <New to={path.to.newCustomerTransitTime(customerId)} />
-              )}
+            {permissions.can("create", "sales") && (
+              <New to={path.to.newCustomerTransitTime(customerId)} />
+            )}
           </CardAction>
         </HStack>
         <CardContent>

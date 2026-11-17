@@ -110,6 +110,7 @@ import type {
   Violation
 } from "@carbon/utils";
 import {
+  addBusinessDays,
   BILLABLE_REASON_FUNDING_LIMIT,
   billingBasisMismatch,
   billingBasisMismatchMessages,
@@ -134,6 +135,7 @@ import {
   generateRentalBillingPeriods,
   getSalesReturnOrderStatus,
   type InvoiceAutomation,
+  isUniqueViolation,
   type LeasePaymentTerms,
   type LessorClassification,
   type LessorScheduleLine,
@@ -24265,29 +24267,45 @@ export async function resolveTransitDays(
 ): Promise<TransitDays | null> {
   if (!lane.shippingMethodId) return null;
 
-  if (lane.customerLocationId) {
-    const override = await db
-      .selectFrom("customerLocationTransitTime")
-      .select("transitDays")
-      .where("companyId", "=", lane.companyId)
-      .where("customerLocationId", "=", lane.customerLocationId)
-      .where("shippingMethodId", "=", lane.shippingMethodId)
-      .executeTakeFirst();
-    if (override) {
-      return { transitDays: override.transitDays, source: "Ship-to override" };
-    }
-  }
-
-  const method = await db
-    .selectFrom("shippingMethod")
-    .select("transitDays")
-    .where("companyId", "=", lane.companyId)
-    .where("id", "=", lane.shippingMethodId)
+  // One read: the shipping method, with the ship-to's override for it.
+  const row = await db
+    .selectFrom("shippingMethod as sm")
+    .leftJoin("customerLocationTransitTime as clt", (join) =>
+      join
+        .onRef("clt.shippingMethodId", "=", "sm.id")
+        .onRef("clt.companyId", "=", "sm.companyId")
+        .on("clt.customerLocationId", "=", lane.customerLocationId ?? "")
+    )
+    .select(["sm.transitDays as methodDays", "clt.transitDays as overrideDays"])
+    .where("sm.companyId", "=", lane.companyId)
+    .where("sm.id", "=", lane.shippingMethodId)
     .executeTakeFirst();
-  if (method?.transitDays === null || method?.transitDays === undefined) {
-    return null;
+  if (!row) return null;
+  if (row.overrideDays !== null && row.overrideDays !== undefined) {
+    return { transitDays: row.overrideDays, source: "Ship-to override" };
   }
-  return { transitDays: method.transitDays, source: "Shipping method" };
+  if (row.methodDays === null || row.methodDays === undefined) return null;
+  return { transitDays: row.methodDays, source: "Shipping method" };
+}
+
+/**
+ * The day goods leaving on `shipDate` arrive on a lane: `shipDate` + the
+ * lane's transit days, in business days. Null when the transit days are
+ * unknown. The one place that turns a lane and a ship date into an arrival.
+ */
+export async function arrivalForLane(
+  db: Kysely<KyselyDatabase>,
+  lane: TransitLane,
+  shipDate: string
+): Promise<string | null> {
+  const transit = await resolveTransitDays(db, lane);
+  if (!transit) return null;
+  const holidays = await getHolidayDateSet(
+    db,
+    lane.companyId,
+    transitHolidayRange([shipDate], transit.transitDays)!
+  );
+  return addBusinessDays(shipDate.slice(0, 10), transit.transitDays, holidays);
 }
 
 /**
@@ -24392,6 +24410,10 @@ export async function getSalesOrderTransit(
 export type SalesOrderShipByPlan = {
   arriveBy: string | null;
   transit: TransitDays | null;
+  /** the order's lane: its shipping method and effective ship-to */
+  lane: TransitLane;
+  /** the ship-by date a new line takes: arrive-by − transit days */
+  defaultShipBy: string | null;
   lines: ShipByPlanEntry[];
 };
 
@@ -24427,6 +24449,15 @@ export async function getSalesOrderShipByPlan(
   return {
     arriveBy: transit.arriveBy,
     transit: transit.transit,
+    lane: transit.lane,
+    defaultShipBy:
+      transit.arriveBy && transit.transit
+        ? latestShipByDate(
+            transit.arriveBy,
+            transit.transit.transitDays,
+            holidays
+          )
+        : null,
     lines: planShipByDates({
       arriveBy: transit.arriveBy,
       transitDays: transit.transit?.transitDays ?? null,
@@ -24447,11 +24478,11 @@ export async function getDefaultShipByDate(
 ): Promise<string | null> {
   const transit = await getSalesOrderTransit(db, companyId, salesOrderId);
   if (!transit?.arriveBy || !transit.transit) return null;
-  const range = transitHolidayRange(
-    [transit.arriveBy],
-    transit.transit.transitDays
-  )!;
-  const holidays = await getHolidayDateSet(db, companyId, range);
+  const holidays = await getHolidayDateSet(
+    db,
+    companyId,
+    transitHolidayRange([transit.arriveBy], transit.transit.transitDays)!
+  );
   return latestShipByDate(
     transit.arriveBy,
     transit.transit.transitDays,
@@ -24562,6 +24593,69 @@ export async function upsertCustomerLocationTransitTime(
     .eq("companyId", companyId)
     .select("id")
     .single();
+}
+
+/**
+ * The body of the create and update operations: the ship-to must be the
+ * customer's and the shipping method the company's (the ids come from a
+ * form or the API), and a pair holds one override.
+ */
+export async function saveCustomerLocationTransitTime(
+  ctx: ServiceContext,
+  input: {
+    id?: string;
+    customerId: string;
+    customerLocationId: string;
+    shippingMethodId: string;
+    transitDays: number;
+  }
+) {
+  const refused =
+    (await refuseUnlessOwned(ctx, "customerLocation", {
+      id: input.customerLocationId,
+      customerId: input.customerId
+    })) ??
+    (await refuseUnlessOwned(ctx, "shippingMethod", {
+      id: input.shippingMethodId
+    })) ??
+    (input.id
+      ? await refuseUnlessOwned(ctx, "customerLocationTransitTime", {
+          id: input.id
+        })
+      : null);
+  if (refused) return refused;
+
+  const common = {
+    companyId: ctx.company.id,
+    customerLocationId: input.customerLocationId,
+    shippingMethodId: input.shippingMethodId,
+    transitDays: input.transitDays
+  };
+  const result = await upsertCustomerLocationTransitTime(
+    ctx.asCaller.supabase,
+    input.id
+      ? {
+          ...common,
+          id: input.id,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        }
+      : { ...common, createdBy: ctx.auditUserId }
+  );
+  if (result.error && isUniqueViolation(result.error)) {
+    return ctx.error(
+      "conflict",
+      "This ship-to address already has transit days for this shipping method"
+    );
+  }
+  if (result.error) {
+    return ctx.error(
+      "internal",
+      "Failed to save the transit time",
+      result.error
+    );
+  }
+  return result.data;
 }
 
 export async function deleteCustomerLocationTransitTime(

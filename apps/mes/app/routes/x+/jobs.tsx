@@ -61,7 +61,11 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     getOpenJobs(serviceRole, { companyId, locationId }),
     getWorkCenterOptionsByLocation(serviceRole, { companyId, locationId }),
     // The factory's calendar day: the ship countdown flips at its midnight.
-    getLocationTimeZone(serviceRole, locationId, companyId)
+    // A failed read hides the countdown and keeps the list.
+    getLocationTimeZone(serviceRole, locationId, companyId).catch((error) => {
+      log.error("Failed to load the location time zone", { error });
+      return null;
+    })
   ]);
 
   if (jobs.error) {
@@ -96,7 +100,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     })),
     workCenters: workCenters.data ?? [],
     trackedEntities,
-    today: datetime.today(timeZone).toString()
+    today: timeZone ? datetime.today(timeZone).toString() : null
   };
 }
 
@@ -267,12 +271,14 @@ export default function JobsRoute() {
                               variant="date"
                               fallback="—"
                             />
-                            <ShipCountdown
-                              shipByDate={job.shipByDate}
-                              today={today}
-                              jobStatus={job.status}
-                              className="text-xs"
-                            />
+                            {today && (
+                              <ShipCountdown
+                                shipByDate={job.shipByDate}
+                                today={today}
+                                jobStatus={job.status}
+                                className="text-xs"
+                              />
+                            )}
                           </div>
                         </Link>
                       </li>
@@ -353,12 +359,14 @@ export default function JobsRoute() {
                                 variant="date"
                                 fallback="—"
                               />
-                              <ShipCountdown
-                                shipByDate={job.shipByDate}
-                                today={today}
-                                jobStatus={job.status}
-                                className="ml-2 text-xs"
-                              />
+                              {today && (
+                                <ShipCountdown
+                                  shipByDate={job.shipByDate}
+                                  today={today}
+                                  jobStatus={job.status}
+                                  className="ml-2 text-xs"
+                                />
+                              )}
                             </Td>
                             <Td className="text-muted-foreground">
                               {job.deadlineType ?? "—"}

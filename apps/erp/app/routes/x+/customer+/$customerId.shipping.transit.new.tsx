@@ -19,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _, ...transitTime } = input.data;
   const api = await carbon(args.request);
-  const result = await api.sales.upsertCustomerLocationTransitTime({
+  const result = await api.sales.createCustomerLocationTransitTime({
     ...transitTime,
     customerId: input.params.customerId
   });

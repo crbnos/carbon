@@ -44,7 +44,10 @@ import {
   salesOrderShipmentValidator
 } from "../../sales.models";
 import type { SalesOrder } from "../../types";
-import { useShipByRecalculatePrompt } from "./ShipByRecalculatePrompt";
+import {
+  type ShipByExpectation,
+  useShipByRecalculatePrompt
+} from "./ShipByRecalculatePrompt";
 
 type SalesOrderShipmentFormProps = {
   initialValues: z.infer<typeof salesOrderShipmentValidator>;
@@ -64,12 +67,15 @@ const SalesOrderShipmentForm = forwardRef<
   const shipBy = useShipByRecalculatePrompt(initialValues.id);
   // Set on a save that changes the arrive-by date, the shipping method or the
   // ship-to: once the save lands, ask about the lines' ship-by dates.
-  const checkShipBy = useRef(false);
+  // The action redirects on success and on failure, so the prompt checks
+  // the plan against the submitted terms (`ShipByExpectation`).
+  const checkShipBy = useRef<ShipByExpectation | null>(null);
   const fetcher = useAction<typeof action>({
     onSettled: () => {
-      if (!checkShipBy.current) return;
-      checkShipBy.current = false;
-      shipBy.check();
+      const expectation = checkShipBy.current;
+      if (!expectation) return;
+      checkShipBy.current = null;
+      shipBy.check(expectation);
     }
   });
   const [dropShip, setDropShip] = useState<boolean>(
@@ -126,7 +132,7 @@ const SalesOrderShipmentForm = forwardRef<
         fetcher={fetcher}
         isDisabled={isLocked}
         onSubmit={(data) => {
-          checkShipBy.current =
+          const changed =
             (data.receiptPromisedDate ?? "") !==
               (initialValues.receiptPromisedDate ?? "") ||
             (data.shippingMethodId ?? "") !==
@@ -134,6 +140,12 @@ const SalesOrderShipmentForm = forwardRef<
             (data.customerLocationId ?? "") !==
               (initialValues.customerLocationId ?? "") ||
             !!data.dropShipment !== !!initialValues.dropShipment;
+          checkShipBy.current = changed
+            ? {
+                arriveBy: data.receiptPromisedDate || null,
+                shippingMethodId: data.shippingMethodId || null
+              }
+            : null;
         }}
       >
         <CardHeader>

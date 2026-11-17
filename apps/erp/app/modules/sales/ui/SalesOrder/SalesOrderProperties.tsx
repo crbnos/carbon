@@ -59,15 +59,15 @@ const SalesOrderProperties = () => {
   // The field of the last save: a new arrive-by date or ship-to may move
   // the lines' ship-by dates, so the save asks once it lands.
   const lastField = useRef<string | null>(null);
+  const lastValue = useRef<string | null>(null);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
     },
     onSuccess: () => {
-      if (
-        lastField.current === "receiptPromisedDate" ||
-        lastField.current === "customerLocationId"
-      ) {
+      if (lastField.current === "receiptPromisedDate") {
+        shipBy.check({ arriveBy: lastValue.current });
+      } else if (lastField.current === "customerLocationId") {
         shipBy.check();
       }
     }
@@ -85,6 +85,7 @@ const SalesOrderProperties = () => {
         return;
       }
       lastField.current = field;
+      lastValue.current = value || null;
       const formData = new FormData();
 
       formData.append("ids", orderId);

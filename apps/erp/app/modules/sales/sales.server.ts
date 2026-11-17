@@ -25,7 +25,6 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
-  isUniqueViolation,
   requireAffected,
   round,
   suggestContractType,
@@ -11507,19 +11506,42 @@ export const getCustomerLocationTransitTime = defineServiceFn({
 });
 
 /**
- * Save a transit day override
+ * Add a transit day override
  *
  * @remarks
  * Sets the transit days for one ship-to address of the customer and one
- * shipping method. With `id`, updates that override. One override exists per
- * pair.
+ * shipping method. They replace the shipping method's own transit days for
+ * orders to that address. One override exists per pair.
  *
  * @param transitDays - Business days a shipment to this address takes with this shipping method.
  * @mcp
  */
-export const upsertCustomerLocationTransitTime = defineServiceFn({
+export const createCustomerLocationTransitTime = defineServiceFn({
   input: z.object({
-    id: z.string().optional(),
+    customerId: z.string().min(1),
+    customerLocationId: z.string().min(1),
+    shippingMethodId: z.string().min(1),
+    transitDays: z.number().int().min(0)
+  }),
+  permission: { create: "sales" },
+  async run(ctx, input) {
+    return service.saveCustomerLocationTransitTime(ctx, input);
+  }
+});
+
+/**
+ * Change a transit day override
+ *
+ * @remarks
+ * Changes the ship-to address, the shipping method or the transit days of
+ * an override. One override exists per pair.
+ *
+ * @param transitDays - Business days a shipment to this address takes with this shipping method.
+ * @mcp
+ */
+export const updateCustomerLocationTransitTime = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
     customerId: z.string().min(1),
     customerLocationId: z.string().min(1),
     shippingMethodId: z.string().min(1),
@@ -11527,50 +11549,7 @@ export const upsertCustomerLocationTransitTime = defineServiceFn({
   }),
   permission: { update: "sales" },
   async run(ctx, input) {
-    if (!input.id && !ctx.can({ create: "sales" })) {
-      return ctx.error("forbidden", "You cannot create transit times");
-    }
-    // The ship-to must be this customer's, and the shipping method this
-    // company's: the ids come from the form.
-    const refused =
-      (await refuseUnlessOwned(ctx, "customerLocation", {
-        id: input.customerLocationId,
-        customerId: input.customerId
-      })) ??
-      (await refuseUnlessOwned(ctx, "shippingMethod", {
-        id: input.shippingMethodId
-      })) ??
-      (input.id
-        ? await refuseUnlessOwned(ctx, "customerLocationTransitTime", {
-            id: input.id
-          })
-        : null);
-    if (refused) return refused;
-
-    const common = {
-      companyId: ctx.company.id,
-      customerLocationId: input.customerLocationId,
-      shippingMethodId: input.shippingMethodId,
-      transitDays: input.transitDays
-    };
-    const result = await service.upsertCustomerLocationTransitTime(
-      ctx.asCaller.supabase,
-      input.id
-        ? {
-            ...common,
-            id: input.id,
-            updatedBy: ctx.auditUserId,
-            updatedAt: datetime.timestamp()
-          }
-        : { ...common, createdBy: ctx.auditUserId }
-    );
-    if (result.error && isUniqueViolation(result.error)) {
-      return ctx.error(
-        "conflict",
-        "This ship-to address already has transit days for this shipping method"
-      );
-    }
-    return unwrap(ctx, result);
+    return service.saveCustomerLocationTransitTime(ctx, input);
   }
 });
 
@@ -11616,21 +11595,9 @@ export const getSalesOrderShipByDates = defineServiceFn({
     );
     if (!plan)
       return ctx.error("notFound", "The sales order could not be found");
-    const proposed =
-      plan.lines.find((line) => line.proposedShipBy !== null)?.proposedShipBy ??
-      null;
     return {
       ...plan,
-      changes: plan.lines.filter((line) => line.changes).length,
-      defaultShipBy:
-        proposed ??
-        (plan.arriveBy && plan.transit
-          ? await service.getDefaultShipByDate(
-              ctx.asSystem.pg,
-              ctx.company.id,
-              input.salesOrderId
-            )
-          : null)
+      changes: plan.lines.filter((line) => line.changes).length
     };
   }
 });
@@ -11658,6 +11625,24 @@ export const recalculateSalesOrderShipByDates = defineServiceFn({
     if (locked) return locked;
 
     const moved = await ctx.transaction(async (tx) => {
+      // Lock the order and check it again: a confirm that lands after the
+      // check above must not let the lines move.
+      const order = await tx.asSystem.pg
+        .selectFrom("salesOrder")
+        .select("status")
+        .where("id", "=", input.salesOrderId)
+        .where("companyId", "=", tx.company.id)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!order) {
+        return tx.error("notFound", "The sales order could not be found");
+      }
+      if (isSalesOrderLocked(order.status)) {
+        return tx.error(
+          "conflict",
+          "Cannot change the lines of a locked sales order. Reopen it first."
+        );
+      }
       const plan = await service.getSalesOrderShipByPlan(
         tx.asSystem.pg,
         tx.company.id,
@@ -11671,7 +11656,7 @@ export const recalculateSalesOrderShipByDates = defineServiceFn({
         lines: plan.lines
       });
     });
-    // The body returns no refusal: a failed write throws and rolls back.
+    if (moved.error) return moved.error;
     const lineIds = moved.data ?? [];
     if (lineIds.length > 0) {
       // A moved date is a new promise: check it as a line save would. A
