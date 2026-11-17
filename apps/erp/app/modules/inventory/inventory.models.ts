@@ -423,7 +423,8 @@ export const storageUnitValidator = z.object({
   workCenterId: zfd.text(z.string().optional()),
   storageTypeIds: zfd.repeatableOfType(z.string()).default([]),
   // Stored as storageUnit.nettable = !nonNettable (see upsertStorageUnit).
-  nonNettable: zfd.checkbox()
+  nonNettable: zfd.checkbox(),
+  kitRack: zfd.checkbox()
 });
 
 export const storageTypeValidator = z.object({

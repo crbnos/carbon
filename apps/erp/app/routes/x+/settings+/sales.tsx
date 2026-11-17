@@ -41,6 +41,7 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
+  deliveryDateCheckSettingsValidator,
   digitalQuoteValidator,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
@@ -48,6 +49,7 @@ import {
   settingsToggle
 } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { DeliveryDateCheckCard } from "~/modules/settings/ui/Sales/DeliveryDateCheckCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -105,6 +107,9 @@ const salesSettingsForm = z.discriminatedUnion("intent", [
     .transform(({ salesRuleNotificationGroup }) => ({
       salesRuleNotificationGroup: salesRuleNotificationGroup ?? []
     })),
+  deliveryDateCheckSettingsValidator
+    .extend({ intent: z.literal("deliveryDateControl") })
+    .transform(({ deliveryDateControl }) => ({ deliveryDateControl })),
   quoteLineCategoryMarkupsSettingsValidator
     .extend({ intent: z.literal("categoryMarkups") })
     .transform(({ intent: _, ...quoteLineCategoryMarkups }) => ({
@@ -362,6 +367,10 @@ export default function SalesSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <DeliveryDateCheckCard
+          deliveryDateControl={companySettings.deliveryDateControl ?? "None"}
+        />
 
         <SettingsSectionHeader>
           <Trans>Quotes</Trans>

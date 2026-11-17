@@ -229,7 +229,9 @@ marker on it ("<serial> is still being built on its own job"). With `travelerSca
 the MES traveler scan) it also locks the `jobMaterial` `FOR UPDATE` and refuses when the
 requirement is already filled (`assertTravelerRequirementOpen`): for a serial parent, the
 material's per-unit quantity less what is consumed into that parent for the material; for
-any other parent, `estimatedQuantity` (else `quantity`) less `quantityIssued`. The **return** of the un-consumed
+any other parent, `estimatedQuantity` (else `quantity`) less `quantityIssued`. The Issue dialog
+gets the same lock and refusal for a planned material; the refusal carries `overIssue: true`, and
+the dialog's "Issue anyway" sends the issue again with `allowOverIssue`. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
 policies — and at job cancel, with `cancelling: true`, before the status flips) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
 that operation completed the job, otherwise only when

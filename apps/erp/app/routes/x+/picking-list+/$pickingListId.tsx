@@ -13,8 +13,8 @@ import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getPickingList,
-  getPickingListAvailability,
   getPickingListLines,
+  getPickingListLiveBins,
   getPickingListRecommendations,
   getPickingListRelatedItems
 } from "~/modules/inventory/inventory.service";
@@ -34,6 +34,19 @@ export const handle: Handle = {
       table: "pickingListLine",
       column: "pickingListId",
       param: "pickingListId"
+    },
+    {
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.pickingListLines ?? [])
+              .map((line: { itemId?: string | null }) => line.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ],
   breadcrumb: detailBreadcrumb(
@@ -54,10 +67,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { pickingListId } = params;
   if (!pickingListId) throw new Response("Not found", { status: 404 });
 
-  const [pickingList, pickingListLines, availability] = await Promise.all([
+  const [pickingList, pickingListLines, liveBins] = await Promise.all([
     getPickingList(client, pickingListId),
     getPickingListLines(client, pickingListId),
-    getPickingListAvailability(client, pickingListId)
+    getPickingListLiveBins(client, pickingListId, companyId)
   ]);
 
   if (pickingList.error) {
@@ -80,11 +93,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (liveBins.error) {
+    throw redirect(
+      path.to.pickingLists,
+      await flash(request, error(liveBins.error, "Failed to load current bins"))
+    );
+  }
+
   return {
     pickingList: pickingList.data,
     pickingListLines: (pickingListLines.data ?? []).map((line) => ({
       ...line,
-      availableQuantity: availability.get(line.id) ?? 0
+      liveStorageUnits: liveBins.data.get(line.id) ?? []
     })),
     // Deferred (not awaited): recommended serial/batch lots per line, streamed in
     // after the list paints so the at-a-glance subtext never blocks first render.

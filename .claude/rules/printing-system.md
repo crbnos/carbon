@@ -66,13 +66,22 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
      for delivery (else mark `completed`). After the step, one `step.sendEvent("deliver", …)` sends a
      `carbon/print-job-deliver` event per collected job.
 3. **Deliver** — `print-job-deliver.ts` (event `carbon/print-job-deliver`, `retries: 0`): loads the job,
-   sets `printing`, looks up the route `apiKey` by `printerUrl`, `sendToProxyBox` (PDF content is
+   sets `printing`, finds the route by `printerUrl` and, when it `hasApiKey`, reads the key with
+   `getPrinterApiKey` (the `get_printer_api_key` RPC), `sendToProxyBox` (PDF content is
    base64 → Buffer), then `completed`. Timeouts throw `NonRetriableError` (content may already have
    printed — avoid duplicate copies).
 
 ## PDF/ZPL generation — `print-job/renderers.tsx`
 
-- `renderItemWithTemplate` — used when the route has a `templateId` **and** `BINDERY_PRESS_API_KEY`
+- **Label templates** (`labelTemplate`, `lt` id, `20261116162754_label-templates.sql`): company-wide
+  BinderyPress template ids keyed by `(labelType, mediaSizeId)`, unique on
+  `(companyId, mediaSizeId, labelType)`. Label types (`labelTemplateTypes`, `registry.ts`):
+  `serialLabel`, `batchLabel`, `kanbanCard`, `storageUnitLabel`; `getLabelTemplateType` maps a
+  `productLabel` to serial or batch by the item's `trackingType`. In `create-print-jobs`, when the
+  resolved printer has a media size, `getLabelTemplatesForMediaSize` loads that size's templates once
+  (one query) and each label takes the one for its label type. Managed under Settings → Printing →
+  Label Templates (`saveLabelTemplate` / `removeLabelTemplate`, unpublished).
+- `renderItemWithTemplate` — used when the label has a template **and** `BINDERY_PRESS_API_KEY`
   is set; calls `renderWithBinderyPress` (POST `https://api.binderypress.dev/v1/render`, `delivery:
   "inline"`; ZPL returns text, PDF/PNG returns base64).
 - `renderItemBuiltIn` — used when no template but `builtInRenderer !== null`. PDF path renders the
@@ -85,13 +94,19 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   height below its top (`fitQrModule`), so a long traveler URL is never cropped. A kanban card needs media that
   `canHoldKanbanLabel` accepts for ZPL; a PDF printer with smaller media prints the company's
   `kanbanLabelSize` instead.
-- If neither (`builtInRenderer === null`, no template) → job fails asking for a BinderyPress template.
+- If neither (`builtInRenderer === null`, no template) → job fails naming the label type and media size to add a template for.
 
 ## Printer routing & assignments
 
 - **`printerRoute`** table (`pr` id) = physical printer: `companyId, locationId?, name, format(zpl|pdf
-  CHECK), mediaSizeId?, printerUrl, apiKey?, templateId?`. Unique `(companyId, COALESCE(locationId,''),
-  name)`. (`20260326000000_print-manager.sql`; `templateId` added `20260509000000`.)
+  CHECK), mediaSizeId?, printerUrl, hasApiKey`. The ProxyBox API key is in Supabase Vault
+  as `printer:<companyId>:<routeId>` (`20261117091847_printer-api-key-vault.sql`), never in a column
+  and never sent to the browser: `set_printer_api_key` / `get_printer_api_key` are service role only
+  (`setPrinterApiKey` / `getPrinterApiKey`). The settings form treats it as write-only (blank keeps
+  it, `removeApiKey` clears it); deleting a route clears its key, and a key whose route is gone is
+  never read. Unique `(companyId, COALESCE(locationId,''),
+  name)`. (`20260326000000_print-manager.sql`.) A route has no template: templates are per label type
+  and media size (above).
 - **Assignments** live in `companySettings.printing` JSONB (`PrintingSettings` →
   `assignments[locationId]: LocationAssignment`). Contexts (`printerContexts`, `assignments.ts`):
   `default | shipping | receiving | inventory | kanban | workCenter`. `getPrinterContextForSource` maps
@@ -108,7 +123,7 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Redis printer-config cache — `packages/printing/src/cache.server.ts`
 
 `getCachedPrinterConfig(...)` → `CachedPrinterConfig { printerRouteId, printerUrl, format, mediaSizeId,
-templateId, autoPrint }`. Key `printing:{companyId}:{locationId}:{context}` (workCenter →
+autoPrint }`. Key `printing:{companyId}:{locationId}:{context}` (workCenter →
 `...:wc:{contextId}`), TTL 1h (`@carbon/kv` redis). Redis failures fall through to DB silently.
 `invalidatePrinterCache(companyId)` deletes `printing:{companyId}:*` — call it after any printer-route
 upsert/delete or assignment update.

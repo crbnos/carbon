@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Removing this path will also disconnect # connection.} 
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -582,6 +586,13 @@ msgstr "{0} of {memberCount} member jobs are not completed yet — their output 
 msgid "{0} of {whole} done"
 msgstr "{0} of {whole} done"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr "{0} on {1}: line in {2}, stocked in {3}"
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} on your timecards"
@@ -662,6 +673,11 @@ msgstr "{0} scrapped"
 #. placeholder {0}: selected.size
 msgid "{0} selected"
 msgstr "{0} selected"
+
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr "{0} short for {1}"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1063,6 +1079,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# open job has materials with no s
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Took # value.} other {Took # values.}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} kept this date. The earliest delivery date is {earliest}."
 
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} by day"
@@ -1695,6 +1714,12 @@ msgstr "A closed project takes no more charges and cannot be reopened. Close it 
 
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
@@ -2473,6 +2498,12 @@ msgstr "A unit draws its number the first time it is worked on, scrapped or rece
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 
+msgid "a user"
+msgstr "a user"
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "A user keeps a sales order date that can't be met"
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 
@@ -3191,6 +3222,9 @@ msgstr "Add Job"
 msgid "Add Journal Entry"
 msgstr "Add Journal Entry"
 
+msgid "Add Label Template"
+msgstr "Add Label Template"
+
 msgid "Add labor"
 msgstr "Add labor"
 
@@ -3384,6 +3418,9 @@ msgstr "Add steps to preview the operator view."
 
 msgid "Add Supplier"
 msgstr "Add Supplier"
+
+msgid "Add Template"
+msgstr "Add Template"
 
 msgid "Add the charge numbers you worked on this week, then click a day to log time."
 msgstr "Add the charge numbers you worked on this week, then click a day to log time."
@@ -4152,6 +4189,9 @@ msgstr "Any item group"
 
 msgid "Any item type"
 msgstr "Any item type"
+
+msgid "Any promised date saves without a warning."
+msgstr "Any promised date saves without a warning."
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
@@ -5588,6 +5628,9 @@ msgstr "Batch is not available"
 msgid "Batch items require a sales order"
 msgstr "Batch items require a sales order"
 
+msgid "Batch Label"
+msgstr "Batch Label"
+
 msgid "Batch number"
 msgstr "Batch number"
 
@@ -5607,6 +5650,12 @@ msgstr "Batch number for {itemReadableId}"
 
 msgid "Batch number is required"
 msgstr "Batch number is required"
+
+msgid "Batch numbers are entered by hand"
+msgstr "Batch numbers are entered by hand"
+
+msgid "Batch numbers are generated"
+msgstr "Batch numbers are generated"
 
 msgid "Batch or Serial Number"
 msgstr "Batch or Serial Number"
@@ -5880,6 +5929,12 @@ msgstr "Bills the work charged to this element and the elements below it"
 msgid "Bills until it is cancelled"
 msgstr "Bills until it is cancelled"
 
+msgid "BinderyPress template ID"
+msgstr "BinderyPress template ID"
+
+msgid "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
+msgstr "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
+
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
 
@@ -6110,6 +6165,9 @@ msgstr "Build role-based training materials"
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
 
+msgid "Buildable Quantity"
+msgstr "Buildable Quantity"
+
 msgid "Builds"
 msgstr "Builds"
 
@@ -6318,6 +6376,9 @@ msgstr "Called a method in Carbon — the components plus operations that produc
 
 msgid "Camera"
 msgstr "Camera"
+
+msgid "Can Make Now"
+msgstr "Can Make Now"
 
 msgid "Can't be restored"
 msgstr "Can't be restored"
@@ -6903,8 +6964,14 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr "Check"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
+
+msgid "Check Quantity"
+msgstr "Check Quantity"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -6924,6 +6991,15 @@ msgstr "Checking Stripe for this customer…"
 msgid "Checking the batch's jobs..."
 msgstr "Checking the batch's jobs..."
 
+msgid "Checking the delivery date"
+msgstr "Checking the delivery date"
+
+msgid "Checking the delivery date…"
+msgstr "Checking the delivery date…"
+
+msgid "Checking the shop's schedule…"
+msgstr "Checking the shop's schedule…"
+
 msgid "Checking the Stripe customer link…"
 msgstr "Checking the Stripe customer link…"
 
@@ -6932,6 +7008,12 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Checkpoints"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Checks free stock week by week, then the lead time."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Checks free stock, then the shop's schedule for made items."
 
 msgid "Children"
 msgstr "Children"
@@ -7515,6 +7597,9 @@ msgstr "Compare with…"
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Compares a submitted week with the employee's timecards."
 
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Compares the date with the item's lead time, BOM included."
+
 msgid "Compatibility rules"
 msgstr "Compatibility rules"
 
@@ -7599,6 +7684,9 @@ msgstr "Completion Time"
 
 msgid "Completion time by job"
 msgstr "Completion time by job"
+
+msgid "Component"
+msgstr "Component"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8651,6 +8739,12 @@ msgstr "Could not release {0}: {1}"
 msgid "Could not save"
 msgstr "Could not save"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr "Couldn't calculate the buildable quantity"
+
+msgid "Couldn't check the delivery date. You can still save."
+msgstr "Couldn't check the delivery date. You can still save."
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Couldn't check whether {appName} is connected."
 
@@ -8662,6 +8756,9 @@ msgstr "Couldn't complete the Onshape connection"
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Couldn't complete the Onshape Government connection"
+
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Couldn't complete the Onshape V2 Government connection"
 
 msgid "Couldn't confirm the account"
 msgstr "Couldn't confirm the account"
@@ -8695,6 +8792,9 @@ msgstr "Couldn't save the Onshape connection"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Couldn't save the Onshape Government connection"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Couldn't save the Onshape V2 Government connection"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Couldn't save the Ramp connection"
@@ -9652,6 +9752,15 @@ msgstr "Date issued"
 msgid "Date Issued"
 msgstr "Date Issued"
 
+msgid "Date kept"
+msgstr "Date kept"
+
+msgid "Date not confirmed"
+msgstr "Date not confirmed"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Date not confirmed. The earliest delivery date is {earliest}."
+
 msgid "Date paid"
 msgstr "Date paid"
 
@@ -10406,6 +10515,11 @@ msgstr "Delete Supplier Type"
 msgid "Delete the {0} invoice"
 msgstr "Delete the {0} invoice"
 
+#. placeholder {0}: labelTypeNames[deleting.labelType]
+#. placeholder {1}: getMediaSizeLabel(deleting.mediaSizeId)
+msgid "Delete the {0} template for {1}? These labels will print with the built-in layout."
+msgstr "Delete the {0} template for {1}? These labels will print with the built-in layout."
+
 #. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Delete the milestone {0}? Its elements stay, without a milestone."
@@ -10521,6 +10635,12 @@ msgstr "Delivery Country"
 
 msgid "Delivery Date"
 msgstr "Delivery Date"
+
+msgid "Delivery Date Check"
+msgstr "Delivery Date Check"
+
+msgid "Delivery date check updated"
+msgstr "Delivery date check updated"
 
 msgid "Delivery Location"
 msgstr "Delivery Location"
@@ -11708,6 +11828,9 @@ msgstr "Edit Journal Entry"
 msgid "Edit Kanban"
 msgstr "Edit Kanban"
 
+msgid "Edit Label Template"
+msgstr "Edit Label Template"
+
 msgid "Edit labor"
 msgstr "Edit labor"
 
@@ -12146,6 +12269,9 @@ msgstr "Enable to block issuing or posting for a supplier with no contact or no 
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
+
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
 
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Enable to generate IDs and descriptions for raw materials."
@@ -13700,6 +13826,9 @@ msgstr "Finished Goods"
 msgid "Finished Goods (default)"
 msgstr "Finished Goods (default)"
 
+msgid "Finished Goods Available"
+msgstr "Finished Goods Available"
+
 msgid "finishes"
 msgstr "finishes"
 
@@ -13968,6 +14097,9 @@ msgstr "Four-eyes enforcement disabled"
 msgid "Four-eyes enforcement enabled"
 msgstr "Four-eyes enforcement enabled"
 
+msgid "Free stock by {promised} is only {free}."
+msgstr "Free stock by {promised} is only {free}."
+
 msgid "Freeze the old system, no new transactions"
 msgstr "Freeze the old system, no new transactions"
 
@@ -14026,6 +14158,9 @@ msgstr "From and To are the same storage unit"
 
 msgid "From and To can't be the same storage unit"
 msgstr "From and To can't be the same storage unit"
+
+msgid "From available component stock"
+msgstr "From available component stock"
 
 msgid "From customer"
 msgstr "From customer"
@@ -14216,6 +14351,9 @@ msgstr "Generate a new 4-digit PIN. The operator's current PIN stops working imm
 
 msgid "Generate and send customer invoices"
 msgstr "Generate and send customer invoices"
+
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr "Generate Batch Numbers from the Purchase Order"
 
 msgid "Generate Billable Items"
 msgstr "Generate Billable Items"
@@ -14731,6 +14869,9 @@ msgstr "Hold the journal as a warning to fix."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+
 msgid "Holiday"
 msgstr "Holiday"
 
@@ -15107,6 +15248,9 @@ msgstr "If ordered, no stockout projected in the next 48 weeks"
 
 msgid "If something is off track"
 msgstr "If something is off track"
+
+msgid "If stock committed to open orders were used"
+msgstr "If stock committed to open orders were used"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
@@ -16415,6 +16559,9 @@ msgstr "Just one"
 msgid "Kanban"
 msgstr "Kanban"
 
+msgid "Kanban Card"
+msgstr "Kanban Card"
+
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban for {kanbanName}"
 
@@ -16502,6 +16649,9 @@ msgstr "Kind of record"
 msgid "Kit"
 msgstr "Kit"
 
+msgid "Kit rack"
+msgstr "Kit rack"
+
 msgid "label"
 msgstr "label"
 
@@ -16518,6 +16668,15 @@ msgstr "Label size"
 msgid "Label Size"
 msgstr "Label Size"
 
+msgid "Label template created"
+msgstr "Label template created"
+
+msgid "Label template updated"
+msgstr "Label template updated"
+
+msgid "Label Templates"
+msgstr "Label Templates"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "Label to complete the current operation for this kanban"
 
@@ -16527,6 +16686,9 @@ msgstr "Label to create a {0} for this kanban"
 
 msgid "Label to start the next operation for this kanban"
 msgstr "Label to start the next operation for this kanban"
+
+msgid "Label Type"
+msgstr "Label Type"
 
 msgid "Labels"
 msgstr "Labels"
@@ -16855,9 +17017,6 @@ msgstr "Leave a comment..."
 msgid "Leave any related receipts untouched"
 msgstr "Leave any related receipts untouched"
 
-msgid "Leave blank for built-in"
-msgstr "Leave blank for built-in"
-
 msgid "Leave blank to use the next revision automatically"
 msgstr "Leave blank to use the next revision automatically"
 
@@ -16872,6 +17031,9 @@ msgstr "Leave empty to pick a color from the name"
 
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Leave empty to use the check in Settings → Sales."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Leave empty, or enter 0, to show everything MRP plans."
@@ -17017,6 +17179,9 @@ msgstr "Lights-out (24/7)"
 
 msgid "Likelihood"
 msgstr "Likelihood"
+
+msgid "Limits To"
+msgstr "Limits To"
 
 msgid "Line"
 msgstr "Line"
@@ -17330,6 +17495,9 @@ msgstr "Location / Item"
 msgid "Location Name"
 msgstr "Location Name"
 
+msgid "Location not known"
+msgstr "Location not known"
+
 msgid "Location ownership updated"
 msgstr "Location ownership updated"
 
@@ -17538,6 +17706,9 @@ msgstr "MACRS Convention"
 
 msgid "MACRS Property Class"
 msgstr "MACRS Property Class"
+
+msgid "Made"
+msgstr "Made"
 
 msgid "Magic link"
 msgstr "Magic link"
@@ -18767,6 +18938,14 @@ msgstr "Net Investment in Leases"
 msgid "Net Investment in Leases (default)"
 msgstr "Net Investment in Leases (default)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Net of {0} already paid as a prepayment."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "Net of {0} already received as a deposit."
+
 msgid "Net right-of-use asset"
 msgstr "Net right-of-use asset"
 
@@ -19067,6 +19246,9 @@ msgstr "New Project Stock Transfer"
 
 msgid "New purchase order"
 msgstr "New purchase order"
+
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
 
 msgid "New Quality Document"
 msgstr "New Quality Document"
@@ -19815,6 +19997,9 @@ msgstr "No jobs were created"
 msgid "No journal lines in scope for this period"
 msgstr "No journal lines in scope for this period"
 
+msgid "No label templates. Every label prints with the built-in layout."
+msgstr "No label templates. Every label prints with the built-in layout."
+
 msgid "No labels"
 msgstr "No labels"
 
@@ -20474,6 +20659,9 @@ msgstr "Non-working days that scheduling and capacity respect"
 msgid "None"
 msgstr "None"
 
+msgid "None (full page)"
+msgstr "None (full page)"
+
 msgid "None available"
 msgstr "None available"
 
@@ -20655,6 +20843,10 @@ msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals,
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nothing is due. Invoices are created automatically when a period comes due."
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr "Nothing is short for {0}"
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "Nothing is synced until you turn sync on."
 
@@ -20742,6 +20934,9 @@ msgstr "now"
 
 msgid "Number"
 msgstr "Number"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Number of inventory units per purchase unit"
@@ -20860,6 +21055,11 @@ msgstr "On hand"
 msgid "On Hand"
 msgstr "On Hand"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr "On hand {0}, committed {1}"
+
 msgid "On hand {before} to {after}"
 msgstr "On hand {before} to {after}"
 
@@ -20881,6 +21081,9 @@ msgstr "On Jobs"
 
 msgid "On order"
 msgstr "On order"
+
+msgid "On Order"
+msgstr "On Order"
 
 msgid "On Production Demand"
 msgstr "On Production Demand"
@@ -21119,6 +21322,24 @@ msgstr "Onshape rejected the authorization"
 msgid "Onshape Status"
 msgstr "Onshape Status"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government denied the connection"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government didn't return an authorization code"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government is already connected"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government isn't configured"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government rejected the authorization"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 is already connected"
+
 msgid "Onshape version"
 msgstr "Onshape version"
 
@@ -21308,6 +21529,9 @@ msgstr "Open the books at a cutover date. Enabling accounting is one-way."
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Open the Onshape Government integration and save its settings to connect again."
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Open the Onshape V2 Government integration and save its settings to connect again."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Open the Ramp integration and try connecting again to finish setup."
@@ -22639,6 +22863,9 @@ msgstr "Planning"
 msgid "Planning action"
 msgstr "Planning action"
 
+msgid "Planning and Sales"
+msgstr "Planning and Sales"
+
 msgid "Planning group"
 msgstr "Planning group"
 
@@ -23945,8 +24172,15 @@ msgstr "Quantity scrapped"
 msgid "Quantity shipped"
 msgstr "Quantity shipped"
 
+msgid "Quantity to check"
+msgstr "Quantity to check"
+
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Quantity to credit for line {lineNumber}"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr "Quantity to pick of {0}"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Quantity to return for {itemReadableId}"
@@ -24297,6 +24531,12 @@ msgstr "Recalculating…"
 
 msgid "Receipt"
 msgstr "Receipt"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr "Receipt batch numbers are now entered by hand"
+
+msgid "Receipt batch numbers are now generated"
+msgstr "Receipt batch numbers are now generated"
 
 msgid "Receipt ID"
 msgstr "Receipt ID"
@@ -24722,6 +24962,9 @@ msgstr "Reject Time"
 msgid "Rejected"
 msgstr "Rejected"
 
+msgid "Rejected at Inspection"
+msgstr "Rejected at Inspection"
+
 msgid "Rejected By"
 msgstr "Rejected By"
 
@@ -24821,6 +25064,9 @@ msgstr "Releasing the batch releases its jobs, and each one must be ready for th
 msgid "Reload the page to try again."
 msgstr "Reload the page to try again."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+
 msgid "Remaining"
 msgstr "Remaining"
 
@@ -24888,6 +25134,9 @@ msgstr "Remove {label}"
 
 msgid "Remove {name}"
 msgstr "Remove {name}"
+
+msgid "Remove API key"
+msgstr "Remove API key"
 
 msgid "Remove Asset"
 msgstr "Remove Asset"
@@ -25164,6 +25413,9 @@ msgstr "Reorder Quantity"
 
 msgid "Reorder Quantity:"
 msgstr "Reorder Quantity:"
+
+msgid "Reordering"
+msgstr "Reordering"
 
 msgid "Reordering policy"
 msgstr "Reordering policy"
@@ -26539,6 +26791,9 @@ msgstr "Saved views"
 msgid "Saved Views"
 msgstr "Saved Views"
 
+msgid "Saved. Leave blank to keep it"
+msgstr "Saved. Leave blank to keep it"
+
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total
 msgid "Saving {0}/{1}"
@@ -27004,6 +27259,9 @@ msgstr "Select a default approver"
 msgid "Select a document"
 msgstr "Select a document"
 
+msgid "Select a label size"
+msgstr "Select a label size"
+
 msgid "Select a new owner"
 msgstr "Select a new owner"
 
@@ -27012,6 +27270,9 @@ msgstr "Select a new parent group for this account."
 
 msgid "Select a plan"
 msgstr "Select a plan"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "Select a plan to get started. Switch or cancel anytime."
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
@@ -27419,6 +27680,9 @@ msgstr "Serial number is not available"
 
 msgid "Serial number is required"
 msgstr "Serial number is required"
+
+msgid "Serial Number Label"
+msgstr "Serial Number Label"
 
 msgid "Serial Number:"
 msgstr "Serial Number:"
@@ -28827,6 +29091,9 @@ msgstr "Stock"
 msgid "Stock and planning"
 msgstr "Stock and planning"
 
+msgid "Stock at:"
+msgstr "Stock at:"
+
 msgid "Stock Availability"
 msgstr "Stock Availability"
 
@@ -28951,6 +29218,9 @@ msgstr "Storage Unit (optional)"
 
 msgid "Storage unit for {itemName}"
 msgstr "Storage unit for {itemName}"
+
+msgid "Storage Unit Label"
+msgstr "Storage Unit Label"
 
 msgid "storage units"
 msgstr "storage units"
@@ -30146,6 +30416,9 @@ msgstr "The batch is {0}, not Planned"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"
 
+msgid "The bill of materials contains itself"
+msgstr "The bill of materials contains itself"
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "The bill rate is locked: the estimate was sent to the customer."
 
@@ -30449,6 +30722,9 @@ msgstr "The document could not be downloaded."
 
 msgid "The document could not be opened."
 msgstr "The document could not be opened."
+
+msgid "The earliest delivery date is {earliest}."
+msgstr "The earliest delivery date is {earliest}."
 
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
@@ -30917,6 +31193,9 @@ msgstr "The Onshape connection expired"
 msgid "The Onshape Government connection expired"
 msgstr "The Onshape Government connection expired"
 
+msgid "The Onshape V2 Government connection expired"
+msgstr "The Onshape V2 Government connection expired"
+
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."
 msgstr "The opening balances are as of the end of {0}."
@@ -31225,6 +31504,9 @@ msgstr "The services this contract bills: one-time fees and recurring charges. C
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
+
+msgid "The shop cannot finish this by {promised}."
+msgstr "The shop cannot finish this by {promised}."
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
@@ -31556,6 +31838,9 @@ msgstr "These accounts need a replacement"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "These are the record's own notes. Changing them here changes them on the record too."
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"
 
@@ -31573,6 +31858,9 @@ msgstr "These have no batch number, so a transfer can't pick them. Give them a b
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
+
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "These items still have material to pick. Finishing now marks the list Partial."
@@ -31695,6 +31983,9 @@ msgstr "This customer type's rate"
 
 msgid "This customer's rate"
 msgstr "This customer's rate"
+
+msgid "This date cannot be met"
+msgstr "This date cannot be met"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "This department has no work centers at {locationName}. Pick another department or location."
@@ -32122,6 +32413,9 @@ msgstr "Three-way match"
 #. placeholder {0}: formatDate(endDate)
 msgid "Through {0}"
 msgstr "Through {0}"
+
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
+msgstr "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
@@ -33101,6 +33395,9 @@ msgstr "Unit Sale Price"
 msgid "Units"
 msgstr "Units"
 
+msgid "Units don't match"
+msgstr "Units don't match"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Units of base currency per one unit of this currency; used to translate amounts on posting."
 
@@ -33402,6 +33699,9 @@ msgstr "Updated successfully"
 msgid "Updated task status"
 msgstr "Updated task status"
 
+msgid "Updating…"
+msgstr "Updating…"
+
 msgid "Upgrade"
 msgstr "Upgrade"
 
@@ -33534,6 +33834,9 @@ msgstr "Use ... to get the next part ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use {earliest}"
+msgstr "Use {earliest}"
+
 msgid "Use a different account"
 msgstr "Use a different account"
 
@@ -33659,6 +33962,9 @@ msgstr "Uses on this job"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Uses sub-assembly {0} · {1}"
+
+msgid "Using All On Hand"
+msgstr "Using All On Hand"
 
 msgid "VAC"
 msgstr "VAC"
@@ -34165,11 +34471,17 @@ msgstr "Warn but allow"
 msgid "Warn this many days before expiry"
 msgstr "Warn this many days before expiry"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Warn when the person inspecting an inbound item is the same person who received it."
 
 msgid "Warning"
 msgstr "Warning"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
 
 msgid "Warranty"
 msgstr "Warranty"

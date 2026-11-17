@@ -28,7 +28,8 @@ AS $function$
     select permissions from "userPermission" into perms where id = uid;
     role_object := jsonb_build_object('role', company_role);
 
-
-    return (role_object || perms)::jsonb;
+    -- A console operator has no "userPermission" row. `jsonb || NULL` is NULL,
+    -- so without the COALESCE the whole result, role included, was lost.
+    return (role_object || COALESCE(perms, '{}'::jsonb))::jsonb;
   END;
 $function$;

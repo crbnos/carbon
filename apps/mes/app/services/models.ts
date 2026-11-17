@@ -241,9 +241,8 @@ export const issueTrackedEntityValidator = z.object({
   // Set when policy is BlockWithOverride and operator typed a reason.
   overrideExpired: z.boolean().optional(),
   overrideReason: z.string().optional(),
-  // Set by a traveler scan: the server resolves the material and quantity from
-  // the scanned unit and refuses a wrong item.
-  travelerScan: z.boolean().optional()
+  // Set after the operator confirms an issue past the requirement.
+  allowOverIssue: z.boolean().optional()
 });
 
 export const baseQuantityValidator = finishValidator.extend({
@@ -416,6 +415,32 @@ export const qualityIssueValidator = z.object({
     error: "Priority is required"
   }),
   trackedEntityId: zfd.text(z.string().optional())
+});
+
+export const scrapPartsValidator = z.object({
+  jobOperationId: z.string().min(1),
+  lines: zfd.json(
+    z
+      .array(
+        z.union([
+          z.object({
+            materialId: z.string().min(1),
+            trackedEntityId: z.string().min(1),
+            quantity: z.number().positive()
+          }),
+          z.object({
+            materialId: z.string().min(1),
+            itemId: z.string().min(1),
+            quantity: z.number().positive()
+          })
+        ])
+      )
+      .min(1, { message: "Pick a part" })
+  ),
+  scrapReasonId: z.string().min(1, { message: "Pick a reason" }),
+  replacement: z.enum(["Shelf", "Water Spider"]),
+  notes: zfd.text(z.string().optional()),
+  idempotencyKey: z.string().min(1)
 });
 
 export const materialRequestValidator = z.object({

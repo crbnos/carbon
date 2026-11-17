@@ -36,7 +36,12 @@
     "typecheck": {
       "dependsOn": ["transit"],
       "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
-      "outputs": [".react-router/types/**", ".source/**", "lib/*.generated.ts"]
+      "outputs": [
+        ".react-router/types/**",
+        ".source/**",
+        "lib/*.generated.ts",
+        ".cache/typecheck.tsbuildinfo"
+      ]
     },
     "lint": {
       "inputs": [

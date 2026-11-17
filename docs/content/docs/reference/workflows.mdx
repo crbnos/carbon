@@ -24,7 +24,9 @@ Every workflow has exactly one **Trigger** step, and it works one of two ways. T
 You pick the exact field you care about. Ten record types can be watched — purchase orders, sales orders, jobs, items, receipts, shipments, quotes, suppliers, customers, and issues — each with its own short list of watched fields. A change to a field nobody watches starts nothing at all.
 </Callout>
 
-**Business moments.** Below the per-record events, the picker has one group headed **"Business moments"**: the nine points in Carbon's own flows where something meaningful finished: a job released or put on hold, a job operation completed, a quote sent or accepted, a receipt or shipment posted, a sales or purchase invoice posted. A <Term>business moment</Term> hands your workflow the *identity* of each record, not a copy of its fields; add a **Find** step when you need to read something the moment didn't name.
+**Business moments.** Below the per-record events, the picker has one group headed **"Business moments"**. It lists ten points in Carbon's own flows: a job released or put on hold, a job operation completed, a quote sent or accepted, a receipt or shipment posted, a sales or purchase invoice posted, and a user keeping a sales order date that the [delivery date check](/docs/reference/sales-orders#delivery-date-check) says can't be met.
+
+A <Term>business moment</Term> hands your workflow the *identity* of each record, not a copy of its fields; add a **Find** step when you need to read something the moment didn't name.
 
 **Schedules.** In **"Schedule"** mode you pick a **"Frequency"** of Daily, Weekly, or Monthly, the days it applies to, a **"Time of day"**, and a **"Timezone"**; the builder shows a live **"Next fires at:"** line as you change it.
 

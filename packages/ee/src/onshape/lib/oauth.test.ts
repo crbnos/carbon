@@ -44,11 +44,16 @@ vi.mock("@carbon/env", () => ({
   }
 }));
 
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  getConflictingOnshapeConnection,
   hasOnshapeIntegration,
+  isOnshapeCustomerAppIntegrationId,
   isOnshapeIntegrationId,
   normalizeOnshapeUrl
 } from "./connection";
+import { isOnshapePanelIntegrationId } from "./integration-id";
 import { getOnshapeAuthorizeUrl, getOnshapeOAuthConfig } from "./oauth";
 
 const government = {
@@ -141,6 +146,22 @@ describe("getOnshapeOAuthConfig", () => {
     });
   });
 
+  it("gives the Government panel its own private app and callback", () => {
+    expect(getOnshapeOAuthConfig("onshape-v2-government", government)).toEqual({
+      clientId: "gov-client",
+      clientSecret: "gov-secret",
+      redirectUri:
+        "https://itar.carbon.ms/api/integrations/onshape-v2-government/oauth",
+      baseUrl: "https://acme.onshape.example",
+      authorizeUrl: "https://acme.onshape.example/oauth/authorize",
+      tokenUrl: "https://acme.onshape.example/oauth/token"
+    });
+  });
+
+  it("never lends the panel's environment client to the Government panel", () => {
+    expect(getOnshapeOAuthConfig("onshape-v2-government", {})).toBeNull();
+  });
+
   it("is unconfigured until every Government field is present", () => {
     for (const key of Object.keys(government)) {
       expect(
@@ -174,4 +195,66 @@ describe("integration identity", () => {
     expect(hasOnshapeIntegration(new Set(["onshape-government"]))).toBe(true);
     expect(hasOnshapeIntegration(new Set(["jira"]))).toBe(false);
   });
+
+  it("keeps the panel grants out of the sync connections", () => {
+    expect(isOnshapeIntegrationId("onshape-v2")).toBe(false);
+    expect(isOnshapeIntegrationId("onshape-v2-government")).toBe(false);
+    expect(isOnshapePanelIntegrationId("onshape-v2")).toBe(true);
+    expect(isOnshapePanelIntegrationId("onshape-v2-government")).toBe(true);
+    expect(isOnshapePanelIntegrationId("onshape-government")).toBe(false);
+  });
+
+  it("treats only the Government ids as customer-owned apps", () => {
+    expect(isOnshapeCustomerAppIntegrationId("onshape-government")).toBe(true);
+    expect(isOnshapeCustomerAppIntegrationId("onshape-v2-government")).toBe(
+      true
+    );
+    expect(isOnshapeCustomerAppIntegrationId("onshape")).toBe(false);
+    expect(isOnshapeCustomerAppIntegrationId("onshape-v2")).toBe(false);
+  });
+});
+
+// Answers every companyIntegration read with `result`.
+function readingClient(result: {
+  data: { id: string } | null;
+  error: { message: string } | null;
+}) {
+  const query: Record<string, unknown> = {};
+  for (const method of ["from", "select", "in", "eq", "limit"]) {
+    query[method] = () => query;
+  }
+  query.maybeSingle = async () => result;
+  return query as unknown as SupabaseClient<Database>;
+}
+
+describe("getConflictingOnshapeConnection", () => {
+  it("names the other active connection of the same pair", async () => {
+    await expect(
+      getConflictingOnshapeConnection(
+        readingClient({ data: { id: "onshape-v2" }, error: null }),
+        "company",
+        "onshape-v2-government"
+      )
+    ).resolves.toBe("onshape-v2");
+    await expect(
+      getConflictingOnshapeConnection(
+        readingClient({ data: null, error: null }),
+        "company",
+        "onshape-government"
+      )
+    ).resolves.toBeNull();
+  });
+
+  it.each(["onshape-government", "onshape-v2-government"] as const)(
+    "refuses to read a failed lookup as no conflict (%s)",
+    async (integrationId) => {
+      await expect(
+        getConflictingOnshapeConnection(
+          readingClient({ data: null, error: { message: "timeout" } }),
+          "company",
+          integrationId
+        )
+      ).rejects.toThrow("timeout");
+    }
+  );
 });

@@ -40,6 +40,7 @@ import {
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
@@ -47,6 +48,26 @@ import { path } from "~/utils/path";
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 const logger = getLogger("mes", "assembly");
+
+export const handle: Handle = {
+  realtime: [
+    {
+      // Stock of this operation's parts placed in, or taken from, a bin while
+      // it is open: each part shows where it is now.
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.materials?.materials ?? [])
+              .map((material: { itemId?: string | null }) => material.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
+    }
+  ]
+};
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(

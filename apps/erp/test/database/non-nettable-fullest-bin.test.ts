@@ -226,7 +226,7 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
   );
 
   databaseTest(
-    "a pick is refused when its source became non-nettable after the list was made",
+    "a pick never takes stock from a source that became non-nettable after the list was made",
     async () => {
       const item = await newItem("picked");
       const shelf = `${f.prefix}-pick-shelf`;
@@ -277,7 +277,6 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
           .execute();
       });
       await receive(item, shelf, 5);
-      await receive(item, warehouse, 5);
       // Quarantined after the list was generated.
       await f.db
         .updateTable("storageUnit")
@@ -300,10 +299,14 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
           postPicking
         );
 
+      // The quarantined shelf holds the only stock: nothing may be picked.
       const refused = await pick("held");
       expect(refused.error?.message).toContain(
         `${shelf} is non-nettable. A picking list never takes stock from a non-nettable storage unit`
       );
+      // Once a nettable bin holds stock, the same line draws from that bin.
+      await receive(item, warehouse, 5);
+      expect((await pick("held")).error).toBeNull();
       expect((await pick("free")).error).toBeNull();
       const moved = await f.db
         .selectFrom("itemLedger")
@@ -315,6 +318,8 @@ describe.skipIf(!hasLocalDatabase)("fullest bin guess", () => {
         .execute();
       expect(moved).toEqual([
         { storageUnitId: warehouse, quantity: -2 },
+        { storageUnitId: warehouse, quantity: -2 },
+        { storageUnitId: lineside, quantity: 2 },
         { storageUnitId: lineside, quantity: 2 }
       ]);
     }

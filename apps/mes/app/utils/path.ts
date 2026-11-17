@@ -16,6 +16,9 @@ const file = `/file`;
 // operator chrome (sidebar, pin-in overlay, time-card warning).
 const display = "/display";
 
+/** Marks an operation link a traveler scan opened (`?scanned`). */
+export const TRAVELER_PARAM = "scanned";
+
 export const path = {
   to: {
     acknowledge: `${x}/acknowledge`,
@@ -25,11 +28,15 @@ export const path = {
     addAndIssueServiceJobItem: (jobId: string) =>
       generatePath(`${x}/service/${jobId}/add-and-issue`),
     api: {
-      batchNumbers: (itemId: string, operationId?: string) =>
+      batchNumbers: (itemId: string, operationId: string) =>
         generatePath(
-          `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+          `${api}/batch-numbers?itemId=${itemId}&operationId=${operationId}`
         ),
       failureModes: `${api}/failure-modes`,
+      issueInventoryBins: (itemId: string, operationId: string) =>
+        generatePath(
+          `${api}/issue-inventory-bins?itemId=${itemId}&operationId=${operationId}`
+        ),
       loginVerifyCode: `${api}/login/verify-code`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
@@ -40,9 +47,9 @@ export const path = {
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
-      serialNumbers: (itemId: string, operationId?: string) =>
+      serialNumbers: (itemId: string, operationId: string) =>
         generatePath(
-          `${api}/serial-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+          `${api}/serial-numbers?itemId=${itemId}&operationId=${operationId}`
         ),
       ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (
@@ -80,6 +87,7 @@ export const path = {
     // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
     erpApi: `${x}/proxy/api`,
     erpInspection: (id: string) => `${ERP_URL}/x/inspection/${id}`,
+    erpKanban: (id: string) => `${ERP_URL}/x/inventory/kanbans/${id}`,
     erpStockTransfer: (id: string) => `${ERP_URL}/x/stock-transfer/${id}`,
     erpTraceability: (id: string) =>
       `${getAppUrl()}${x}/traceability/graph?trackedEntityId=${id}`,
@@ -204,6 +212,7 @@ export const path = {
       generatePath(`${x}/inspection-lot/${id}/verdict`),
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
+    issueScan: `${x}/issue-scan`,
     issueTrackedEntity: `${x}/issue-tracked-entity`,
     itemMaster: (itemId: string, type: string) =>
       `${getAppUrl()}${x}/${type.toLowerCase()}/${itemId}/details`,
@@ -215,6 +224,7 @@ export const path = {
     lineFeed: `${x}/line-feed`,
     lineFeedResolve: (id: string) =>
       generatePath(`${x}/line-feed/${id}/resolve`),
+    lineFeedTransfer: `${x}/line-feed/transfer`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
@@ -261,6 +271,8 @@ export const path = {
       const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
+    scrapParts: (operationId: string) =>
+      generatePath(`${x}/scrap-parts/${operationId}`),
     scrapReasons: `${api}/scrap-reasons`,
     service: `${x}/service`,
     serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
@@ -276,7 +288,7 @@ export const path = {
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
     traveler: (id: string) => generatePath(`${x}/traveler/${id}`),
-    travelerResolve: `${x}/traveler/resolve`,
+    travelerScan: `${x}/traveler/scan`,
     triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,

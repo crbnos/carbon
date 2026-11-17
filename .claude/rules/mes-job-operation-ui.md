@@ -268,6 +268,19 @@ of a paused URL, which is itself a valid link.
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
   compares the label's PATH, because a label holds the origin it was printed
   from. It accepts the completed barcode override and the printed label.
+- An ERP item link (`/x/part/<id>`, also material, tool, consumable;
+  `parseItemCode`, `~/utils/itemScan`) scanned on the operation page is issued
+  to the job, and the operator stays on the page (`useItemScan` →
+  `x+/issue-scan.tsx` → `issueScannedItem`, `services/issue.server.ts`). The
+  server decides (`planItemScanIssue`, tested): an untracked material is set to
+  the quantity the job requires (`Set Quantity`), a batch material takes the
+  lots `getSuggestedAllocationForMaterial` suggests at the job's location for
+  what is still short. Both are safe to repeat: a second scan issues nothing. A
+  serial part, a part the job makes, a short lot or a work-center rule opens
+  the Issue dialog on the material. The scan also issues while the Issue
+  dialog is open, and the dialog then closes. On the assembly page an item
+  scan opens the Issue dialog on the part (each unit takes its own scan). The
+  layout never opens an item link on either page.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the
@@ -351,9 +364,19 @@ was printed from.
   `parentTrackedEntityId` and exactly one child. `resolveTravelerMaterial`
   (`services/traveler.server.ts`) sets the material and quantity from the
   scanned unit. It refuses a unit that is not `Available`, an item the make
-  method does not use ("This job does not use …"), an item no material still
-  needs, and a batch-tracked material (batch lots issue from the Issue dialog).
+  method does not use ("This job does not use …") and an item no material still
+  needs. A scanned batch lot issues what the material still needs
+  (`pickTravelerMaterial`'s `needed`: the job's shortfall, or what a serial
+  unit does not hold yet), up to what the lot holds where the job can draw it
+  (`batchScanQuantity`, tested, over `get_issue_tracked_entity_stock`: the
+  job's location, nettable bins, its stripes), so one scan of a received lot's
+  label issues it. A quarantined lot, or one at another location, is refused.
   It is the gate; the chooser's filter only mirrors it.
+- **The Issue dialog's Scan tab starts empty.** Only the Select tab is filled
+  in (the picked or suggested lots, or a sole lot); switching to Scan clears
+  the rows, and switching back fills Select again. A scanned lot takes the
+  quantity needed, up to what it holds, and the scanner's Enter submits it.
+  The header shows the part's photo and number.
 - **What still needs the item** (`pickTravelerMaterial`, `~/utils/traveler`,
   tested). Only a material on this operation, then one with no operation, can
   take the unit (each group in id order). A serial parent
@@ -441,9 +464,21 @@ while its serial or batch materials are not scanned in.
   the author (the insert requires `createdBy` to be the caller). The request sits at the operation's
   work center and that work center's location, else the operator's location.
 - **The line feed.** `x+/line-feed.tsx` (`path.to.lineFeed`, a sidebar queue,
-  `alt+0`, `view: inventory`) shows the line feeder's queue at the operator's
-  location. `getLineFeed` (`services/inventory.service.ts`) reads 3 sources, and
-  `buildLineFeedRows` (`services/line-feed.ts`, tested) orders them:
+  `alt+0`, `view: inventory`) is a station board: one card per active work
+  center at the operator's location, built by `buildStationBoard`
+  (`services/line-feed.ts`, tested). Green (`wet`) has no shortage; yellow
+  (`low`) holds some of a short part, has an open material request, or has its
+  shortage covered by a transfer on its way; orange (`out`) holds none of a
+  part it needs; gray (`unknown`) has no lineside storage unit. The stations
+  that need stock come first. Each card lists its rows: parts out, parts low,
+  requests, then transfers on their way (with their storage unit). "Bring N"
+  is the shortage less the transfer lines already going to that station for
+  the item; a shortage they cover is not listed. Rows for a work center that
+  is not on the board (none, inactive, another location) get their own card,
+  ranked by the same status. The page also reloads on `workCenter` and
+  `storageUnit` changes, through the shared reference topic (`useTopic`).
+  `getLineFeed` (`services/inventory.service.ts`) reads 3 sources for the
+  rows, and `buildLineFeedRows` builds them:
   1. Open material requests, oldest first.
   2. Lineside shortages (`get_line_feed_shortages`, newest definition
      `20261113014205_line-feed-first-operation-stripes.sql`), largest first.
@@ -455,6 +490,40 @@ while its serial or batch materials are not scanned in.
      its project's stock, then unassigned stock; every other job uses
      unassigned stock only. `onHand` is the stock that can cover the demand.
   3. Outstanding stock transfer lines to a work center's storage unit, oldest first.
+- **Lanes.** The board shows each station card as the bottom tier of a lane
+  (`buildLaneBoard`, tested; spec `.ai/specs/2026-11-16-line-feed-lanes.md`):
+  raw shelf, kit rack, station. A kit is a Make item whose default storage
+  unit (`pickMethod`) is a `storageUnit."kitRack"` unit, its slot on the rack;
+  a kit job builds it, so an incomplete kit is an open kit job with unissued
+  parts. `get_line_feed_lanes` (`20261116150000_line-feed-lanes.sql`) returns
+  one row per fact (its header lists the `tier`/`state` pairs). `buildLane`
+  counts the lane's work (`LaneWork`): `deliver` (the station is out of a kit,
+  none on its way, and the rack has one), `finish` (an incomplete kit whose
+  missing parts are on the shelf), `build` (the rack is below its Make kanban
+  quantity and the shelf covers a kit), `rawShort` (a needed bin is empty or
+  short). `laneVerdict` is the first non-zero count in that order; severity is
+  red when the station is `out`, amber when it is `low` or the verdict is not
+  ok, `unknown` (gray) when it has no lineside storage. The shelf and station tiers split kit parts from loose parts
+  (`RawBin.kitItemIds`, `Lane.looseRows`); a kit's own shortage shows on its
+  kit line (`LaneKit.stationStatus`), not as a part to bring. A lane with no kit reads "Fed directly" and lists the source bins of the
+  Transfer kanbans into its station. The sort (`?sort=worst`) and the lit
+  summary count (`?show=`) live in the URL; the loader sorts. `kanban` does
+  not broadcast, so a new card shows on the next stock, job or PO change.
+- **Grab and move.** A short loose part shows its picture and where to grab
+  it (`LineFeedRow.source`): the source bin of the station's Transfer kanban
+  while it holds stock, else the function's `raw`/`source` row (the item's
+  default bin when it holds stock, else the fullest bin of unassigned,
+  nettable stock off the line). "Move N from BIN" posts to
+  `x+/line-feed.transfer.tsx`, which calls `transferToStation`
+  (`services/line-feed.server.ts`). It reads the station's shortage again,
+  less the transfer lines already on their way, for the destination bin and
+  the most that may move, and checks that a named serial is still in the
+  source bin, so a resend creates nothing. Then it calls the ERP's
+  `api+/inventory.stock-transfer.move.ts` (`createStockTransfer` with
+  `moveNow`). "Bring kit" is the same move for the rack kit's serial. The
+  action answers with a flash, because a move that lands unmounts its button.
+  The loader's `canTransfer` (create inventory) hides the buttons from a
+  user the action would turn away.
 - **Resolve.** A request card posts to `x+/line-feed.$materialRequestId.resolve.tsx`,
   which calls `resolveMaterialRequest` with the user's client. Only the
   requester or an inventory editor can resolve it; the RLS refusal comes back
@@ -479,6 +548,25 @@ while its serial or batch materials are not scanned in.
   shape is a contract with `parseJobFilePath`
   (`apps/erp/app/utils/supabase.ts`), which gates the customer-portal file route.
 - **`components/Parameter.tsx`** — exports `ParametersListItem`.
+- **Material source and unissue.** `MaterialSource` (`components/Materials.tsx`) shows a
+  material's method and where its stock is now: `liveStorageUnits` from
+  `getJobMaterialsByOperationId` (RPC `get_job_issue_bins`, one read per job), "WIP" for a
+  made part, "Location not known" when no bin holds stock. A failed bin read is logged and the
+  material shows the bin it names. For an untracked material with a quantity issued,
+  `IssueMaterialModal` has an Issue / Unissue toggle: Unissue posts `Positive Adjmt.` up to
+  the issued quantity, and the ERP returns the stock to the bins it was drawn from. In Issue
+  mode the modal lists the bins with stock ("Stock at:", `api+/issue-inventory-bins.ts`). The
+  serial and batch lists (`getIssueLotsForItem`) offer only the lots in stock at the job's own
+  location, with each lot's bin (`get_issue_tracked_entity_stock`). The location and stripes are
+  read from the operation's job on the server (`getJobOperationIssueScope`), never taken from
+  the browser; the suggested allocation reads the same scope.
+- **Short stock.** `getJobMaterialsByOperationId` sets `stockShortage`
+  (`{ available, needed }`) on a Pull from Inventory material when the stock in
+  its `liveStorageUnits` is less than what the job's materials of that item still
+  need (`materialStockShortages`, `~/utils/materialStock`, tested; job-wide, set
+  before `quantityIssued` is narrowed to one unit). `ShortStockBadge` shows it in
+  the materials table and list, the assembly parts list and the Issue dialog
+  header. No shortage is shown when the bin read failed.
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.

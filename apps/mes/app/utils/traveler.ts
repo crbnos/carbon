@@ -8,7 +8,7 @@ import { EPSILON, round } from "@carbon/utils";
  * The tracked entity id in a traveler link (`/x/traveler/<id>`). The label
  * holds the origin it was printed from, which need not be this deployment's
  * MES_URL, so only the path is compared. A raw id from an old label is not a
- * link: the resolve route handles it.
+ * link: the scan endpoint looks it up.
  */
 export function parseTravelerCode(input: string): string | null {
   let url: URL;
@@ -25,8 +25,8 @@ export function parseTravelerCode(input: string): string | null {
   } catch {
     return null;
   }
-  // `/x/traveler/resolve` is the raw-id route, not a unit.
-  if (!id || id === "resolve") return null;
+  // `/x/traveler/scan` is the scan endpoint, not a unit.
+  if (!id || id === "scan") return null;
   return id;
 }
 
@@ -126,7 +126,14 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
   /** The scanned unit's item. */
   itemId: string | null;
   unitConsumed: TravelerConsumption[] | null;
-}): { kind: "issue"; material: T } | { kind: "full" } | { kind: "notUsed" } {
+}):
+  | {
+      kind: "issue";
+      material: T /** What the material still needs. */;
+      needed: number;
+    }
+  | { kind: "full" }
+  | { kind: "notUsed" } {
   const byId = (a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   const eligible = [
     ...materials.filter((m) => m.jobOperationId === jobOperationId).sort(byId),
@@ -136,7 +143,9 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
 
   if (!unitConsumed) {
     const material = eligible.find((m) => jobMaterialShortfall(m) > EPSILON);
-    return material ? { kind: "issue", material } : { kind: "full" };
+    return material
+      ? { kind: "issue", material, needed: jobMaterialShortfall(material) }
+      : { kind: "full" };
   }
 
   const known = new Set(materials.map((m) => m.id));
@@ -163,9 +172,24 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
     const covered = Math.min(need, unattributed);
     need = round(need - covered);
     unattributed = round(unattributed - covered);
-    if (need > EPSILON) return { kind: "issue", material };
+    if (need > EPSILON) return { kind: "issue", material, needed: need };
   }
   return { kind: "full" };
+}
+
+/**
+ * How much one scan of a batch lot's label issues: what the material still
+ * needs, up to what the lot holds in stock the job can draw (its own
+ * location, nettable bins, its stripes). Zero when the lot has none there.
+ */
+export function batchScanQuantity({
+  needed,
+  available
+}: {
+  needed: number;
+  available: number;
+}): number {
+  return Math.max(0, round(Math.min(needed, available)));
 }
 
 /**
@@ -263,43 +287,102 @@ export function travelerIssueCandidates({
   return candidates.map((operation) => operation.id);
 }
 
+/** A free unit's claim: the unit it is issued into and the material it fills. */
+export type TravelerClaim = {
+  operationId: string;
+  parentTrackedEntityId: string;
+  materialId: string;
+};
+
 /**
- * What a traveler scan on an operation screen does. An available unit is
- * issued into the operation. A unit already inside this job's unit (its
- * target is reserved on this make method) opens that unit, with no issue.
- * Anything else goes through the traveler route.
+ * Where a free scanned unit (a kit, a finished sub-assembly) goes at each
+ * candidate operation, in the order given; at most one claim per operation.
+ * A serial make method offers every unit still open at the operation, in unit
+ * order with `preferredUnitId` first, and takes the first that does not hold
+ * the item yet: with five kits in flight, the sixth kit claims the sixth unit.
+ * Any other make method has one parent, its next open unit, and takes the
+ * item while the job still needs it.
  */
-export function travelerScanAction({
-  scannedStatus,
-  targetTrackedEntityId,
-  targetStatus,
-  targetJobMakeMethodId,
-  targetInProduction,
-  operationJobMakeMethodId
+export function pickTravelerClaims<
+  M extends TravelerMaterial & { jobMakeMethodId: string }
+>({
+  operations,
+  unitIds,
+  isOpenAt,
+  serialMakeMethodIds,
+  materials,
+  itemId,
+  consumed,
+  preferredUnitId
 }: {
-  scannedStatus: string | null;
-  targetTrackedEntityId: string | null;
-  targetStatus: string | null;
-  targetJobMakeMethodId: string | null;
-  /** The target unit's own job still has open operations for it. */
-  targetInProduction: boolean;
-  operationJobMakeMethodId: string | null;
-}):
-  | { kind: "issue" }
-  | { kind: "open"; trackedEntityId: string }
-  | { kind: "navigate" } {
-  // A unit of this operation's own make method opens here, whatever its
-  // status: a serial unit turns Available after any completed operation.
-  if (
-    targetTrackedEntityId &&
-    (targetStatus === "Reserved" || targetStatus === "Available") &&
-    operationJobMakeMethodId &&
-    targetJobMakeMethodId === operationJobMakeMethodId
-  ) {
-    return { kind: "open", trackedEntityId: targetTrackedEntityId };
+  operations: { id: string; jobMakeMethodId: string }[];
+  /** Live unit ids of each make method, in unit order. */
+  unitIds: Map<string, string[]>;
+  isOpenAt: (unitId: string, operationId: string) => boolean;
+  serialMakeMethodIds: Set<string>;
+  materials: M[];
+  itemId: string | null;
+  /** What is consumed into each serial unit (`getUnitConsumption`). */
+  consumed: Map<string, TravelerConsumption[]>;
+  preferredUnitId?: string | null;
+}): TravelerClaim[] {
+  const claims: TravelerClaim[] = [];
+  for (const operation of operations) {
+    const ids = unitIds.get(operation.jobMakeMethodId) ?? [];
+    const open = ids.filter((id) => isOpenAt(id, operation.id));
+    const serial = serialMakeMethodIds.has(operation.jobMakeMethodId);
+    const parents = serial
+      ? preferredUnitId && open.includes(preferredUnitId)
+        ? [preferredUnitId, ...open.filter((id) => id !== preferredUnitId)]
+        : open
+      : [open[0] ?? ids[ids.length - 1]].filter((id): id is string => !!id);
+    const own = materials.filter(
+      (m) => m.jobMakeMethodId === operation.jobMakeMethodId
+    );
+    for (const parentId of parents) {
+      const picked = pickTravelerMaterial({
+        materials: own,
+        jobOperationId: operation.id,
+        itemId,
+        unitConsumed: serial ? (consumed.get(parentId) ?? []) : null
+      });
+      if (picked.kind === "issue") {
+        claims.push({
+          operationId: operation.id,
+          parentTrackedEntityId: parentId,
+          materialId: picked.material.id
+        });
+        break;
+      }
+    }
   }
-  // A unit still being built elsewhere is never issued: open its own work.
-  if (targetInProduction) return { kind: "navigate" };
-  if (scannedStatus === "Available") return { kind: "issue" };
-  return { kind: "navigate" };
+  return claims;
+}
+
+/**
+ * Whether a scan may issue a free unit into its best claim without asking.
+ * On an operation page the claim stays inside that operation, so it may. On
+ * any other page only a serial unit (one part, one label) goes in unasked: a
+ * batch lot would issue stock, so it asks. An operator with a station takes
+ * the best claim only at that station; one with none takes it only when it is
+ * the one place at the location that needs the part.
+ */
+export function isTravelerClaimAuto({
+  onOperationPage,
+  isSerial,
+  workCenterId,
+  optionWorkCenterIds
+}: {
+  onOperationPage: boolean;
+  isSerial: boolean;
+  /** The operator's station today. */
+  workCenterId: string | null;
+  /** The work center of each claim, best first. */
+  optionWorkCenterIds: (string | null)[];
+}): boolean {
+  if (onOperationPage) return true;
+  if (!isSerial || optionWorkCenterIds.length === 0) return false;
+  return workCenterId === null
+    ? optionWorkCenterIds.length === 1
+    : optionWorkCenterIds[0] === workCenterId;
 }
