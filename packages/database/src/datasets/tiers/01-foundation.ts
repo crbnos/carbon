@@ -336,7 +336,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
         : "Other";
     ctx.refs.shippingMethods[name] = await insertId(ctx, "shippingMethod", {
       name,
-      carrier
+      carrier,
+      transitDays: demoTransitDays(name)
     });
   }
 
@@ -769,4 +770,30 @@ function partyAddress(
     postalCode: data.partyAddressPostalCode,
     countryCode: data.partyAddressCountryCode
   };
+}
+
+/**
+ * The business days a demo shipping method takes, read from its name the way
+ * the carrier is: overnight or next day 1, second day 2, will call, pickup or
+ * a same-day courier 0, ground and freight 5. Any other name has none.
+ */
+function demoTransitDays(name: string): number | null {
+  const lower = name.toLowerCase();
+  if (lower.includes("overnight") || lower.includes("next day")) return 1;
+  if (lower.includes("2nd day") || lower.includes("2day")) return 2;
+  if (
+    lower.includes("will call") ||
+    lower.includes("pickup") ||
+    lower.includes("hot shot")
+  ) {
+    return 0;
+  }
+  if (
+    lower.includes("ground") ||
+    lower.includes("freight") ||
+    lower.includes("ltl")
+  ) {
+    return 5;
+  }
+  return null;
 }
