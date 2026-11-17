@@ -16,8 +16,11 @@ export type ScrappablePart = {
   itemId: string;
   readableId: string;
   name: string;
+  thumbnailPath: string | null;
   /** Per kit, for a part inside a kit; null for the material's own part. */
   perKit: number | null;
+  /** How many the job plans to use on this material. */
+  quantity: number;
 };
 
 /** A serial or batch used on the operation, to scrap by its own identity. */
@@ -28,6 +31,7 @@ export type ScrappableEntity = {
   itemId: string;
   itemReadableId: string;
   name: string;
+  thumbnailPath: string | null;
   trackingType: "Serial" | "Batch";
   quantity: number;
   /** What it was consumed into: the unit, or a kit serial. */
@@ -113,8 +117,10 @@ export async function getScrappableParts(
       "jm.id",
       "jm.itemId",
       "jm.methodType",
+      "jm.estimatedQuantity",
       "i.readableIdWithRevision",
       "i.name",
+      "i.thumbnailPath",
       "i.itemTrackingType",
       // A kit pulled from stock: its shelf slot at the location is a kit rack
       // (line feed lanes).
@@ -162,13 +168,15 @@ export async function getScrappableParts(
             "method.itemId",
             "mm.itemId",
             "i.readableIdWithRevision",
-            "i.name"
+            "i.name",
+            "i.thumbnailPath"
           ])
           .select((eb) => [
             "method.itemId as kitItemId",
             "mm.itemId",
             "i.readableIdWithRevision",
             "i.name",
+            "i.thumbnailPath",
             eb.fn.sum<string>("mm.quantity").as("perKit")
           ])
           .orderBy("i.readableIdWithRevision")
@@ -179,13 +187,14 @@ export async function getScrappableParts(
       materialIds: materials.map((m) => m.id!)
     })
   ]);
-  const partsByKit = new Map<string, ScrappablePart[]>();
+  const partsByKit = new Map<string, Omit<ScrappablePart, "quantity">[]>();
   for (const part of kitParts) {
     const list = partsByKit.get(part.kitItemId!) ?? [];
     list.push({
       itemId: part.itemId!,
       readableId: part.readableIdWithRevision ?? "",
       name: part.name ?? "",
+      thumbnailPath: part.thumbnailPath ?? null,
       perKit: Number(part.perKit)
     });
     partsByKit.set(part.kitItemId!, list);
@@ -199,11 +208,11 @@ export async function getScrappableParts(
   });
   const kitByEntity = new Map(kitEntities.map((e) => [e.trackedEntityId, e]));
   const trackedByMaterial = new Map<string, ScrappableEntity[]>();
-  const add = (materialId: string, entity: ScrappableEntity) =>
-    trackedByMaterial.set(materialId, [
-      ...(trackedByMaterial.get(materialId) ?? []),
-      entity
-    ]);
+  const add = (materialId: string, entity: ScrappableEntity) => {
+    const list = trackedByMaterial.get(materialId);
+    if (list) list.push(entity);
+    else trackedByMaterial.set(materialId, [entity]);
+  };
   for (const e of tracked) {
     if (!kitMaterialIds.has(e.materialId)) add(e.materialId, e);
   }
@@ -223,16 +232,22 @@ export async function getScrappableParts(
     materials: materials
       .map((m) => {
         const isKit = kitMaterialIds.has(m.id!);
+        const planned = Number(m.estimatedQuantity ?? 0);
         // A kit itself is not a part to scrap and replace: its parts are.
         const parts: ScrappablePart[] = isKit
-          ? (partsByKit.get(m.itemId!) ?? [])
+          ? (partsByKit.get(m.itemId!) ?? []).map((part) => ({
+              ...part,
+              quantity: (part.perKit ?? 1) * planned
+            }))
           : m.itemTrackingType === "Inventory"
             ? [
                 {
                   itemId: m.itemId!,
                   readableId: m.readableIdWithRevision ?? "",
                   name: m.name ?? "",
-                  perKit: null
+                  thumbnailPath: m.thumbnailPath ?? null,
+                  perKit: null,
+                  quantity: planned
                 }
               ]
             : [];
@@ -312,6 +327,7 @@ async function consumedEntities(
       "i.id as itemId",
       "i.readableIdWithRevision",
       "i.name",
+      "i.thumbnailPath",
       "i.itemTrackingType",
       "a.sourceDocumentId as materialId",
       "ao.trackedEntityId as parentEntityId"
@@ -324,6 +340,7 @@ async function consumedEntities(
       itemId: row.itemId,
       itemReadableId: row.readableIdWithRevision ?? "",
       name: row.name ?? "",
+      thumbnailPath: row.thumbnailPath ?? null,
       trackingType: row.itemTrackingType as "Serial" | "Batch",
       quantity: Number(row.quantity),
       parentEntityId: row.parentEntityId ?? null,
@@ -335,4 +352,75 @@ async function consumedEntities(
         a.itemReadableId.localeCompare(b.itemReadableId) ||
         a.readableId.localeCompare(b.readableId, undefined, { numeric: true })
     );
+}
+
+/** One part of the operation, however many of its materials use it. */
+export type ScrappableGroup = {
+  key: string;
+  itemId: string;
+  readableId: string;
+  name: string;
+  thumbnailPath: string | null;
+  /** How many are on the operation: planned if untracked, else those used. */
+  quantity: number;
+  /** The kit it sits in, for a part inside a kit. */
+  kit: { readableId: string; perKit: number | null } | null;
+  /** The materials an untracked scrap can book against; empty if tracked. */
+  materialIds: string[];
+  tracked: (ScrappableEntity & { materialId: string })[];
+};
+
+/**
+ * The operation's scrappable parts, one row per part: the same part on
+ * several materials is listed once. A kit's parts stay with their kit.
+ */
+export function groupScrappableParts(
+  materials: ScrappableMaterial[]
+): ScrappableGroup[] {
+  const groups = new Map<string, ScrappableGroup>();
+  for (const material of materials) {
+    const groupOf = (
+      item: Pick<ScrappablePart, "itemId" | "name" | "thumbnailPath"> & {
+        readableId: string;
+        perKit: number | null;
+      }
+    ) => {
+      const key = material.isKit
+        ? `${material.id}:${item.itemId}`
+        : item.itemId;
+      let group = groups.get(key);
+      if (!group) {
+        group = {
+          key,
+          itemId: item.itemId,
+          readableId: item.readableId,
+          name: item.name,
+          thumbnailPath: item.thumbnailPath,
+          quantity: 0,
+          kit: material.isKit
+            ? { readableId: material.readableId, perKit: item.perKit }
+            : null,
+          materialIds: [],
+          tracked: []
+        };
+        groups.set(key, group);
+      }
+      return group;
+    };
+    for (const part of material.parts) {
+      const group = groupOf(part);
+      group.quantity += part.quantity;
+      group.materialIds.push(material.id);
+    }
+    for (const entity of material.tracked) {
+      const group = groupOf({
+        ...entity,
+        readableId: entity.itemReadableId,
+        perKit: null
+      });
+      group.quantity += entity.quantity;
+      group.tracked.push({ ...entity, materialId: material.id });
+    }
+  }
+  return [...groups.values()];
 }

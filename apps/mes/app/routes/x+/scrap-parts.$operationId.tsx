@@ -4,7 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getScrappableParts } from "@carbon/database/scrappable-parts";
+import {
+  getScrappableParts,
+  groupScrappableParts
+} from "@carbon/database/scrappable-parts";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -24,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobOperationId: operationId
   });
   if (!operation) throw new Response("Operation not found", { status: 404 });
-  return { materials: operation.materials };
+  return { parts: groupScrappableParts(operation.materials) };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
