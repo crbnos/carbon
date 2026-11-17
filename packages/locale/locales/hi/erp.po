@@ -20468,6 +20468,9 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
+
 msgid "No running job to cancel"
 msgstr "रद्द करने के लिए कोई चल रहा जॉब नहीं"
 
@@ -21359,6 +21362,9 @@ msgstr "केवल योग्य कर्मचारी ही इस प�
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "केवल सीरियल नंबर वाली इकाइयों को अचल संपत्ति के रूप में पूंजीकृत करके ही किराए पर दिया जा सकता है। एक जोड़ने के लिए, पार्ट के इन्वेंटरी टैब को खोलें, भंडारण इकाई के तहत सीरियल नंबर खोजें, और अचल संपत्ति के रूप में पूंजीकृत करें विकल्प चुनें।"
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "केवल ये कर्मचारी DCAA समयपत्रण में परियोजना के लिए समय प्रभारित कर सकते हैं।"

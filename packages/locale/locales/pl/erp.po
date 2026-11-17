@@ -20468,6 +20468,9 @@ msgstr "Brak wierszy tutaj."
 msgid "No rules assigned"
 msgstr "Brak przypisanych reguł"
 
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
+
 msgid "No running job to cancel"
 msgstr "Brak uruchomionego zlecenia produkcyjnego do anulowania"
 
@@ -21359,6 +21362,9 @@ msgstr "Tylko wykwalifikowani pracownicy mogą być zaplanowani i uruchamiać te
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Tylko serializowane jednostki kapitalizowane jako środki trwałe mogą być wynajmowane. Aby dodać jedną, otwórz kartę Zapasy części, znajdź numer seryjny w Jednostkach magazynowych i wybierz Kapitalizuj jako Środek trwały."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "Tylko ci pracownicy mogą naliczać czas na projekt w rejestrze czasu DCAA."

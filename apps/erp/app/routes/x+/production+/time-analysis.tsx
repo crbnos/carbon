@@ -11,7 +11,6 @@ import {
   CardTitle,
   ClientOnly,
   Combobox,
-  DateTimePicker,
   HStack,
   Select,
   SelectContent,
@@ -27,12 +26,7 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import type { DateValue } from "@internationalized/date";
-import {
-  parseAbsolute,
-  toCalendarDateTime,
-  toZoned
-} from "@internationalized/date";
+import { now, parseAbsolute } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -41,11 +35,10 @@ import { z } from "zod";
 import { DateTime } from "~/components";
 import Empty from "~/components/Empty";
 import { useUrlParams } from "~/hooks";
-import { useCompanyTimeZone } from "~/hooks/useCompanyTimeZone";
-import type { TimeGrouping } from "~/modules/production/operation-time-analysis";
 import {
   getOperationRuns,
   getOperationTimeDistributions,
+  RUN_LIMIT,
   timeTypes
 } from "~/modules/production/operation-time-analysis";
 import {
@@ -53,6 +46,7 @@ import {
   formatSeconds,
   seriesColor
 } from "~/modules/production/ui/TimeAnalysis/BoxPlot";
+import { DateTimeRange } from "~/modules/production/ui/TimeAnalysis/DateTimeRange";
 import {
   RunHistogram,
   RunScatter
@@ -84,49 +78,43 @@ export async function loader({ request }: LoaderFunctionArgs) {
     Object.fromEntries(new URL(request.url).searchParams)
   );
   // Without a range: the twelve months up to now.
-  const to = params.to ?? new Date().toISOString();
-  const from =
-    params.from ?? new Date(Date.parse(to) - 365 * 86_400_000).toISOString();
-  if (!params.itemId) {
+  const end = parseAbsolute(params.to ?? now("UTC").toAbsoluteString(), "UTC");
+  const to = end.toAbsoluteString();
+  const from = params.from ?? end.subtract({ years: 1 }).toAbsoluteString();
+  const { itemId, operation } = params;
+  if (!itemId) {
     return {
       ...params,
-      operations: [],
       from,
       to,
+      operations: [],
       versions: [],
-      runs: [],
-      operators: []
+      operators: [],
+      runs: []
     };
   }
 
   const db = getDatabaseClient();
   const filter = {
     companyId,
-    itemId: params.itemId,
+    itemId,
     type: params.type,
     from,
     to,
     includeOutliers: params.outliers === "1"
   };
-  const { operation } = params;
-
-  const distributions = (groupBy: TimeGrouping) =>
-    getOperationTimeDistributions(db, { ...filter, operation, groupBy });
-
-  const [operations, versions, operators, runs] = await Promise.all([
-    getOperationTimeDistributions(db, { ...filter, groupBy: "operation" }),
-    operation ? distributions("version") : [],
-    operation ? distributions("operator") : [],
+  const [distributions, runs] = await Promise.all([
+    getOperationTimeDistributions(db, { ...filter, operation }),
     operation ? getOperationRuns(db, { ...filter, operation }) : []
   ]);
 
-  return { ...params, from, to, operations, versions, operators, runs };
+  return { ...params, from, to, ...distributions, runs };
 }
 
 export default function TimeAnalysisRoute() {
   const { t } = useLingui();
   const data = useLoaderData<typeof loader>();
-  const [, setParams] = useUrlParams();
+  const [search, setParams] = useUrlParams();
   const [items] = useItems();
   const selectedIndex = data.operations.findIndex(
     (o) => o.key === data.operation
@@ -142,17 +130,6 @@ export default function TimeAnalysisRoute() {
     Labor: t`Labor time per unit`,
     Machine: t`Machine time per unit`
   };
-  const timeZone = useCompanyTimeZone();
-  const instant = (name: "from" | "to") => ({
-    size: "sm" as const,
-    value: toCalendarDateTime(parseAbsolute(data[name], timeZone)),
-    onChange: (value: DateValue | null) =>
-      value &&
-      setParams({
-        [name]: toZoned(toCalendarDateTime(value), timeZone).toAbsoluteString()
-      })
-  });
-
   return (
     <VStack spacing={4} className="h-full w-full overflow-y-auto p-4">
       <HStack className="w-full flex-wrap">
@@ -186,17 +163,13 @@ export default function TimeAnalysisRoute() {
         {/* The picker's markup differs between server and browser. */}
         <ClientOnly fallback={<div className="h-8 w-[31rem]" />}>
           {() => (
-            <HStack>
-              <div className="w-60">
-                <DateTimePicker {...instant("from")} aria-label={t`From`} />
-              </div>
-              <span className="text-sm text-muted-foreground">
-                <Trans>to</Trans>
-              </span>
-              <div className="w-60">
-                <DateTimePicker {...instant("to")} aria-label={t`To`} />
-              </div>
-            </HStack>
+            <DateTimeRange
+              // Remounted when the applied range changes, not when "now" moves.
+              key={`${search.get("from")}|${search.get("to")}`}
+              from={data.from}
+              to={data.to}
+              onChange={setParams}
+            />
           )}
         </ClientOnly>
         <label className="flex items-center gap-2 text-sm">
@@ -237,11 +210,11 @@ export default function TimeAnalysisRoute() {
             <CardContent>
               <BoxPlot
                 data={data.operations}
-                selected={data.operation}
+                selected={selected?.key}
                 onSelect={(operation) =>
                   setParams({
                     operation:
-                      operation === data.operation ? undefined : operation
+                      operation === selected?.key ? undefined : operation
                   })
                 }
               />
@@ -259,7 +232,12 @@ export default function TimeAnalysisRoute() {
                     <Trans>
                       Each point is one run. The dotted lines are the average of
                       each method version across the runs made with it.
-                    </Trans>
+                    </Trans>{" "}
+                    {data.runs.length === RUN_LIMIT && (
+                      <Trans>
+                        Only the latest {RUN_LIMIT} runs are plotted.
+                      </Trans>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -313,7 +291,15 @@ export default function TimeAnalysisRoute() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <BoxPlot data={data.operators} color={color} />
+                  {data.operators.length > 0 ? (
+                    <BoxPlot data={data.operators} color={color} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      <Trans>
+                        No run in this range was worked by one operator alone
+                      </Trans>
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>

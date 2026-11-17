@@ -20468,6 +20468,9 @@ msgstr "Pas de lignes ici."
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
 
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
+
 msgid "No running job to cancel"
 msgstr "Pas d'ordre de fabrication en cours à annuler"
 
@@ -21359,6 +21362,9 @@ msgstr "Seuls les employés qualifiés peuvent être planifiés pour et exécute
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Seules les unités en série capitalisées comme immobilisations peuvent être louées. Pour en ajouter une, ouvrez l'onglet Stocks de la pièce, trouvez le numéro de série sous Unités de stockage, et choisissez Capitaliser comme immobilisation."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "Seuls ces employés peuvent facturer du temps au projet dans la tenue de temps DCAA."

@@ -20468,6 +20468,9 @@ msgstr "这里没有行。"
 msgid "No rules assigned"
 msgstr "没有已分配的规则"
 
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
+
 msgid "No running job to cancel"
 msgstr "没有正在运行的工单可取消"
 
@@ -21359,6 +21362,9 @@ msgstr "只有合格的员工才能被安排和运行此流程"
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "仅具有序列号且已作为固定资产资本化的件才能出租。要添加一个，请打开该零件的库存管理选项卡，在存储单元下查找序列号，然后选择作为固定资产资本化。"
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "只有这些员工可以在DCAA工时记录中向项目计工时。"

@@ -20468,6 +20468,9 @@ msgstr "No rows here."
 msgid "No rules assigned"
 msgstr "No rules assigned"
 
+msgid "No run in this range was worked by one operator alone"
+msgstr "No run in this range was worked by one operator alone"
+
 msgid "No running job to cancel"
 msgstr "No running job to cancel"
 
@@ -21359,6 +21362,9 @@ msgstr "Only qualified employees can be scheduled for and run this process"
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr "Only the latest {RUN_LIMIT} runs are plotted."
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "Only these employees can charge time to the project in DCAA timekeeping."

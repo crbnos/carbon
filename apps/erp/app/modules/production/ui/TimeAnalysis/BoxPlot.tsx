@@ -4,14 +4,16 @@
 
 import { cn } from "@carbon/react";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
+import { round } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { TimeDistribution } from "../../operation-time-analysis";
 
 export function formatSeconds(seconds: number) {
-  if (seconds < 90) return `${Math.round(seconds)}s`;
-  if (seconds < 5400) return `${+(seconds / 60).toFixed(1)}m`;
-  return `${+(seconds / 3600).toFixed(1)}h`;
+  if (seconds < 10) return `${round(seconds, 1)}s`;
+  if (seconds < 90) return `${round(seconds, 0)}s`;
+  if (seconds < 5400) return `${round(seconds / 60, 1)}m`;
+  return `${round(seconds / 3600, 1)}h`;
 }
 
 type Row = TimeDistribution & { whiskers: [number, number]; color: string };
@@ -28,8 +30,10 @@ function Box(props: {
   height?: number;
   payload?: Row;
   selected?: string;
+  onSelect?: (key: string) => void;
 }) {
   const { x = 0, y = 0, width = 0, height = 0, payload, selected } = props;
+  const { onSelect } = props;
   if (!payload) return null;
   const [low, high] = payload.whiskers;
   const at = (seconds: number) =>
@@ -44,6 +48,14 @@ function Box(props: {
       className={cn("text-foreground", dimmed && "opacity-50")}
       stroke="currentColor"
       strokeWidth={1.5}
+      {...(onSelect && {
+        role: "button",
+        tabIndex: 0,
+        "aria-label": payload.label,
+        "aria-pressed": selected === payload.key,
+        onKeyDown: (event) =>
+          (event.key === "Enter" || event.key === " ") && onSelect(payload.key)
+      })}
     >
       <line x1={center} x2={center} y1={at(payload.max)} y2={at(payload.q3)} />
       <line x1={center} x2={center} y1={at(payload.q1)} y2={at(payload.min)} />
@@ -165,7 +177,9 @@ export function BoxPlot({
         <Bar
           dataKey="whiskers"
           isAnimationActive={false}
-          shape={<Box selected={selected} />}
+          shape={<Box selected={selected} onSelect={onSelect} />}
+          // The whole column takes the click, not only the painted marks.
+          background={onSelect ? { fill: "transparent" } : false}
           className={onSelect && "cursor-pointer"}
           onClick={onSelect && ((row: Row) => onSelect(row.key))}
         />

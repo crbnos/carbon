@@ -3,6 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
+import { RoundingMode, round } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useDateFormatter } from "@react-aria/i18n";
 import {
   Bar,
@@ -15,6 +18,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+import { useCompanyTimeZone } from "~/hooks/useCompanyTimeZone";
 import type { TimeDistribution, TimeRun } from "../../operation-time-analysis";
 import { formatSeconds } from "./BoxPlot";
 
@@ -34,7 +38,18 @@ export function RunScatter({
   to: string;
   color: string;
 }) {
-  const day = useDateFormatter({ month: "short", day: "numeric" });
+  // The company's calendar, as the range pickers use; the year only when the
+  // range spans more than one.
+  const timeZone = useCompanyTimeZone();
+  const day = useDateFormatter({
+    month: "short",
+    day: "numeric",
+    year:
+      parseAbsolute(from, timeZone).year === parseAbsolute(to, timeZone).year
+        ? undefined
+        : "2-digit",
+    timeZone
+  });
   const points = runs.map((run) => ({ ...run, time: Date.parse(run.endedAt) }));
   // Runs arrive oldest first, so a version's span is its first and last point.
   const spans = new Map<number, [number, number]>();
@@ -119,6 +134,7 @@ export function RunHistogram({
   mean: number;
   color: string;
 }) {
+  const { t } = useLingui();
   if (runs.length === 0) return null;
   let low = Infinity;
   let high = -Infinity;
@@ -127,10 +143,10 @@ export function RunHistogram({
     high = Math.max(high, seconds);
   }
   // Sturges' rule.
-  const count = Math.ceil(Math.log2(runs.length)) + 1;
+  const count = round(Math.log2(runs.length), 0, RoundingMode.Up) + 1;
   const width = (high - low) / count || 1;
   const bin = (seconds: number) =>
-    Math.min(Math.floor((seconds - low) / width), count - 1);
+    Math.min(round((seconds - low) / width, 0, RoundingMode.Down), count - 1);
   const bins = Array.from({ length: count }, (_, i) => ({
     label: `${formatSeconds(low + i * width)} – ${formatSeconds(low + (i + 1) * width)}`,
     runs: 0
@@ -144,7 +160,13 @@ export function RunHistogram({
         <XAxis {...axis} dataKey="label" />
         <YAxis {...axis} width={32} allowDecimals={false} />
         <ChartTooltip cursor={{ fillOpacity: 0.4 }} />
-        <Bar dataKey="runs" fill={color} radius={2} isAnimationActive={false}>
+        <Bar
+          dataKey="runs"
+          name={t`Runs`}
+          fill={color}
+          radius={2}
+          isAnimationActive={false}
+        >
           {bins.map((_, i) => (
             <Cell key={i} fillOpacity={i === bin(mean) ? 1 : 0.45} />
           ))}
