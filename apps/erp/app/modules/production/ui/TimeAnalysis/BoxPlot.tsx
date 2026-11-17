@@ -4,7 +4,7 @@
 
 import { cn } from "@carbon/react";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
-import { round } from "@carbon/utils";
+import { RoundingMode, round } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { TimeDistribution } from "../../operation-time-analysis";
@@ -96,7 +96,8 @@ function Box(props: {
         stroke="none"
         className="fill-muted-foreground text-[11px]"
       >
-        {payload.excluded > 0 ? (
+        {/* A narrow column has room for the count only; the tooltip has both. */}
+        {payload.excluded > 0 && width >= 110 ? (
           <Trans>
             n = {payload.count}, {payload.excluded} excluded
           </Trans>
@@ -139,6 +140,44 @@ function BoxTooltip({ payload }: { payload?: { payload: Row }[] }) {
   );
 }
 
+// Names wrap onto two lines and are cut to their column, so neighbours never
+// overlap; the full name is the tick's title and the tooltip's heading.
+function Tick(props: {
+  x?: number;
+  y?: number;
+  width?: number;
+  visibleTicksCount?: number;
+  payload?: { value: string };
+}) {
+  const { x = 0, y = 0, width = 0, visibleTicksCount = 1, payload } = props;
+  const label = payload?.value ?? "";
+  // About 6.5px a character at this size.
+  const fit = Math.max(
+    round(width / visibleTicksCount / 6.5, 0, RoundingMode.Down),
+    4
+  );
+  const lines = [""];
+  for (const word of label.split(" ")) {
+    const last = lines.length - 1;
+    const joined = lines[last] ? `${lines[last]} ${word}` : word;
+    if (!lines[last] || joined.length <= fit) lines[last] = joined;
+    else lines.push(word);
+  }
+
+  return (
+    <text x={x} y={y} textAnchor="middle" className="fill-muted-foreground">
+      <title>{label}</title>
+      {lines.slice(0, 2).map((line, i) => (
+        <tspan key={i} x={x} dy={i ? 14 : 12}>
+          {line.length > fit || (i === 1 && lines.length > 2)
+            ? `${line.slice(0, fit - 1)}…`
+            : line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
+
 export function BoxPlot({
   data,
   selected,
@@ -166,7 +205,14 @@ export function BoxPlot({
     >
       <BarChart data={rows} margin={{ top: 24, right: 8 }}>
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} />
+        <XAxis
+          dataKey="label"
+          tickLine={false}
+          axisLine={false}
+          interval={0}
+          height={40}
+          tick={<Tick />}
+        />
         <YAxis
           tickLine={false}
           axisLine={false}
