@@ -152,6 +152,16 @@ import { resolvePrice, getCustomer } from "~/modules/sales/sales.service";
 import { applyPriceRules } from "~/modules/sales/sales.utils";
 ```
 
+## Ship-by dates and transit days (sub-area)
+
+Spec: `.ai/specs/2026-11-17-carrier-transit-ship-by-dates.md`. A line's `promisedDate` is the day it ships (ship-by); the order's `salesOrderShipment.receiptPromisedDate` is the day it arrives (arrive-by). Transit days, in business days (Monday to Friday minus the `holiday` rows, `addBusinessDays` / `subtractBusinessDays` in `@carbon/utils`), sit between them.
+
+- **Lookup** — `resolveTransitDays(db, lane)` (`sales.service.ts`) is the only reader of transit days: the `customerLocationTransitTime` row for the ship-to and shipping method, else `shippingMethod.transitDays`, else null (unknown: calculate nothing). `TransitLane` already carries the origin `locationId` and `shipDate`, unread today, for a carrier integration to add a step between the two. `getSalesOrderTransit` resolves an order's lane; the ship-to follows `resolveSalesOrderShipTo` (a drop shipment's own customer location).
+- **Planning** — `planShipByDates` / `estimateArrival` (`sales.utils.ts`, pure, `sales.ship-by.test.ts`) give each line its proposed ship-by, estimated arrival, `lateToArrive` and `changes` (an open line of a `DELIVERY_CHECKED_LINE_TYPES` type whose date differs). `getSalesOrderShipByPlan` / `getDefaultShipByDate` / `applySalesOrderShipByPlan` are the building blocks; the operations are `getSalesOrderShipByDates` (also `defaultShipBy`) and `recalculateSalesOrderShipByDates` (one transaction, then the delivery date check with `capacity: "defer"` for the moved lines).
+- **Where it runs** — quote → order (`convertDocument`, `shared.service.ts`) sets arrive-by = latest ship-by + transit. `createSalesOrderLine` defaults an empty `promisedDate` to arrive-by − transit BEFORE `deliveryDateForSave`. The explorer seeds a new line from `shipByPlan.defaultShipBy` (the `$orderId` loader). A save of the arrive-by date, the shipping method or the ship-to opens `useShipByRecalculatePrompt` (`ui/SalesOrder/ShipByRecalculatePrompt.tsx`, route `$orderId.ship-by-dates.tsx`); it never moves a line without a yes. `LateToArriveFlag` (explorer) and `LateToArriveAlert` (line form, saved date only) show a line that cannot arrive in time.
+- **Overrides** — `customerLocationTransitTime` (RLS `company("sales", { read: "sales_view" })`, one row per ship-to + method) is edited on the customer Shipping tab (`CustomerTransitTimes`, routes `$customerId.shipping.transit.*`) through `upsertCustomerLocationTransitTime` / `deleteCustomerLocationTransitTime`; the upsert refuses a ship-to of another customer.
+- **The job's copy** — `job.shipByDate` follows the line's `promisedDate` through two database triggers (production `AGENTS.md`).
+
 ## Sales Rules (sub-area)
 
 Configurable if-condition-then-error/warn rules evaluated when an item is added to a **sales document** (quote line, sales order line, sales invoice line) — e.g. "if item type is X and the customer's ship-to country is Y → block". Lives **inside** this module: validators in `sales.models.ts`, UI in `ui/SalesRules/`; the admin CRUD is the family-parametrized implementation in `shared.service.ts` (see "Service functions" below). There is no `modules/sales-rules` directory — a rule feature is not its own domain.

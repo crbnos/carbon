@@ -137,6 +137,14 @@ import { getInventoryItems, insertManualInventoryAdjustment } from "~/modules/in
 import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/inventory/inventory.models";
 ```
 
+## Delivery dates and measured transit (sub-area)
+
+Spec: `.ai/specs/2026-11-17-carrier-transit-ship-by-dates.md`.
+
+- **Estimate** — `postShipment` (`case "Sales Order"`) sets `shipment.estimatedDeliveryDate` = today + `resolveTransitDays` (sales module) in business days, with the order's ship-to and the shipment's own `shippingMethodId`. Null when the transit days are unknown. A void leaves the dates on the voided row.
+- **Delivered** — `recordShipmentDelivery(db, …)` (`inventory.service.ts`) is the ONLY writer of `deliveredDate` + `deliveredSource` (`'Manual'` | `'Carrier'`, CHECK: both set or both null). Its refusals are the pure `shipmentDeliveryRefusal` (`inventory.utils.ts`, `inventory.delivery.test.ts`): not Posted, not a sales order shipment, a future date, a date before `postingDate`, a `'Carrier'` write over a `'Manual'` row. `markShipmentDelivered` (`update: inventory`, route `x+/shipment+/$shipmentId.delivered.tsx`, `ShipmentDeliveredModal`) calls it with `'Manual'`; a carrier tracking webhook calls it with `'Carrier'` after converting the UTC event time to the company's date.
+- **Statistics** — `getShippingMethodTransitStats` (building block and operation) reads a method's Posted, delivered sales shipments of the last `TRANSIT_STATS_WINDOW_DAYS` (90) and returns `summarizeTransitStats`: count, average business days, the rate delivered by the estimate and by the order's arrive-by date (early counts as on time), and `suggestedDays` (the average rounded up). Below `TRANSIT_STATS_MIN_SHIPMENTS` (5) only the count. `applyShippingMethodTransitSuggestion` saves `suggestedDays`; Carbon never changes `transitDays` by itself. The shipping method drawer shows the line and the **Use N days** button (route `shipping-methods.$shippingMethodId.transit-suggestion.tsx`).
+
 ## Storage Rules (sub-area)
 
 Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (the storage-legal subset of `enforcementRuleSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, UI in `ui/StorageRules/`; the admin CRUD is the family-parametrized implementation in `shared.service.ts` (see "Service functions" below). There is no `modules/storage-rules` directory — a rule feature is not its own domain.

@@ -62,6 +62,10 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 
 Engine, sync and press rules: `.claude/rules/oee-provider.md`.
 
+### Ship-by date
+
+`job.shipByDate` is a read-only copy of the linked `salesOrderLine.promisedDate` (the day the line ships). Two plain triggers (migration `20261117132417_carrier-transit-ship-by-dates.sql`, not event-system interceptors, because an interceptor cannot change `NEW`) are its only writers: `job_set_ship_by_date` (BEFORE INSERT or UPDATE OF `salesOrderLineId`, `shipByDate` on `job`, so a direct write is reset and the FK's ON DELETE SET NULL clears it) and `sales_order_line_sync_job_ship_by_date` (AFTER UPDATE OF `promisedDate` on `salesOrderLine`). Both run as their owner. No application code writes it. The scheduler, priority and overdue flags still read `job.dueDate`; the MES ship countdown reads `shipByDate` (the `jobs` view and the RPCs `get_active_job_operations_by_location` / `get_assigned_job_operations` return it as `shipByDate` / `jobShipByDate`).
+
 ## Safety
 
 ### Always
