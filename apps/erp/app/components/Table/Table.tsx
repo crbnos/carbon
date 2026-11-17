@@ -182,6 +182,8 @@ interface TableProps<T extends object> {
   // the column picker and CSV download; both default on.
   withColumnOrdering?: boolean;
   withCsvExport?: boolean;
+  /** Direct download route for a CSV assembled by the server. */
+  csvExportHref?: string;
   withSimpleSorting?: boolean;
   sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
@@ -409,6 +411,7 @@ const Table = <T extends object>({
   withSidebarTrigger = true,
   withColumnOrdering = true,
   withCsvExport = true,
+  csvExportHref,
   withSimpleSorting = true,
   sort,
   getRowId,
@@ -1568,10 +1571,11 @@ const Table = <T extends object>({
     !params.get("search")?.trim();
 
   // Phones export from the toolbar's ⋯ (list and grid alike); desktop keeps
-  // the toolbar's Download button. Both export the table's current rows; an
-  // infinite list first loads the rest (or hands a big export to a job).
+  // the toolbar's Download button. A route URL downloads its server response;
+  // otherwise the table exports its rows or starts a large background export.
   const csvExport = withCsvExport
     ? {
+        href: csvExportHref,
         data: tableData,
         columnAccessors,
         exportValues,
@@ -1743,6 +1747,7 @@ const Table = <T extends object>({
           compact={compact}
           data={tableData}
           infiniteExport={csvExport?.infinite}
+          csvExportHref={csvExportHref}
           editMode={editMode}
           filters={filters}
           isEmpty={isTableEmpty}

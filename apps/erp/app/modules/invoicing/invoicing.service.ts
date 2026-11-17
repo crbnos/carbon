@@ -5290,7 +5290,7 @@ export async function getApTieOut(
     .single();
 }
 
-export async function getArOpenByCustomer(
+export function getArOpenByCustomer(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -5301,7 +5301,7 @@ export async function getArOpenByCustomer(
   });
 }
 
-export async function getApOpenBySupplier(
+export function getApOpenBySupplier(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -5319,7 +5319,49 @@ export type AgingOptions = {
   bucketDays?: [number, number, number];
 };
 
-export async function getArAging(
+function parseBuckets(raw: string | null): [number, number, number] {
+  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
+  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
+    return [parts[0], parts[1], parts[2]];
+  }
+  return [30, 60, 90];
+}
+
+/** A `YYYY-MM-DD` calendar date, or null for anything else. */
+function parseIsoDate(raw: string | null): string | null {
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  try {
+    return parseDate(raw).toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The AR/AP aging pages, the receivables/payables workbenches and their CSV
+ * downloads all read the same three query params, so they parse them here:
+ * `asOfDate` (default: today in the company's time zone), `agingMethod` and
+ * `bucketDays` ("30,60,90"). A bad value falls back to the default — a stale
+ * bookmark must not 500.
+ */
+export async function getAgingParams(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  request: Request
+) {
+  const url = new URL(request.url);
+  const asOfDate =
+    parseIsoDate(url.searchParams.get("asOfDate")) ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const agingMethod: "dueDate" | "documentDate" =
+    url.searchParams.get("agingMethod") === "documentDate"
+      ? "documentDate"
+      : "dueDate";
+  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
+  return { asOfDate, agingMethod, bucketDays };
+}
+
+export function getArAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
@@ -5336,7 +5378,7 @@ export async function getArAging(
   });
 }
 
-export async function getApAging(
+export function getApAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
@@ -5352,6 +5394,20 @@ export async function getApAging(
     _bucket3: b3
   });
 }
+
+export function getAgingUnappliedPayments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  asOfDate: string,
+  side: "ar" | "ap"
+) {
+  return client.rpc("get_aging_unapplied_payments", {
+    _company_id: companyId,
+    _as_of_date: asOfDate,
+    _side: side
+  });
+}
+
 // Documents a payment can be a deposit for — or a refund of: every open sales
 // order and Draft/Active rental agreement (a new customer deposit), every open
 // purchase order (a new supplier prepayment), plus every document a posted

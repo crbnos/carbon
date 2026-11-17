@@ -107997,6 +107997,18 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_aging_unapplied_payments: {
+        Args: { _as_of_date: string; _company_id: string; _side: string }
+        Returns: {
+          documentId: string
+          documentNumber: string
+          documentType: string
+          openInBase: number
+          originalInBase: number
+          partyId: string
+          transactionDate: string
+        }[]
+      }
       get_ap_aging: {
         Args: {
           _aging_method?: string
@@ -108029,9 +108041,12 @@ export type Database = {
           exchangeRate: number
           openInBase: number
           openInCurrency: number
+          originalInBase: number
           settled: number
           supplierId: string
+          supplierReference: string
           totalAmount: number
+          transactionDate: string
         }[]
       }
       get_ap_tie_out: {
@@ -108080,8 +108095,10 @@ export type Database = {
           exchangeRate: number
           openInBase: number
           openInCurrency: number
+          originalInBase: number
           settled: number
           totalAmount: number
+          transactionDate: string
         }[]
       }
       get_ar_tie_out: {

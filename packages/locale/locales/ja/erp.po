@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {目標より # 日遅れ} other {目標より 
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 個の請求対象項目がレビュー待ちです} other {# 個の請求対象項目がレビュー待ちです}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}～{b2}日"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}～{b3}日"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}日以上"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}のマークアップ（数量 {quantity}）"
 
@@ -1525,6 +1534,9 @@ msgstr "1 件の未転記文書"
 
 msgid "1 year"
 msgstr "1 年"
+
+msgid "1-{b1} Days"
+msgstr "1～{b1}日"
 
 msgid "12 monthly periods"
 msgstr "12ヶ月間の期間"
@@ -9810,6 +9822,9 @@ msgstr "部品を注文してから利用可能になるまでの日数。計画
 msgid "Days Off"
 msgstr "休日"
 
+msgid "Days Past Due"
+msgstr "延滞日数"
+
 msgid "Days Remaining"
 msgstr "残り日数"
 
@@ -10919,6 +10934,9 @@ msgstr "無効にする"
 msgid "Disabled"
 msgstr "無効"
 
+msgid "Disbursement"
+msgstr "出金"
+
 msgid "Discard"
 msgstr "破棄"
 
@@ -11169,6 +11187,9 @@ msgstr "{0}行をダウンロードして修正"
 
 msgid "Download CSV"
 msgstr "CSVをダウンロード"
+
+msgid "Download Excel"
+msgstr "Excelをダウンロード"
 
 msgid "Download Labels"
 msgstr "ラベルをダウンロード"
@@ -21350,6 +21371,9 @@ msgstr "アカウントマッピングを開く"
 msgid "Open Actions"
 msgstr "オープンアクション"
 
+msgid "Open Amount"
+msgstr "未決済額"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを作成する"
 
@@ -21803,6 +21827,9 @@ msgstr "オリジン"
 
 msgid "Original"
 msgstr "元"
+
+msgid "Original Amount"
+msgstr "当初金額"
 
 msgid "Original Count"
 msgstr "元のカウント"

@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Zi
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# abrechenbarer Artikel wartet auf Überprüfung} other {# abrechenbare Artikel warten auf Überprüfung}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} Tage"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} Tage"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ Tage"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}-Aufschlag für Menge {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1 unveröffentlichtes Dokument"
 
 msgid "1 year"
 msgstr "1 Jahr"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} Tage"
 
 msgid "12 monthly periods"
 msgstr "12 monatliche Perioden"
@@ -9810,6 +9822,9 @@ msgstr "Tage vom Bestellen eines Teils bis zu seiner Verfügbarkeit; der Planung
 msgid "Days Off"
 msgstr "Tage frei"
 
+msgid "Days Past Due"
+msgstr "Tage überfällig"
+
 msgid "Days Remaining"
 msgstr "Verbleibende Tage"
 
@@ -10919,6 +10934,9 @@ msgstr "Deaktivieren"
 msgid "Disabled"
 msgstr "Deaktiviert"
 
+msgid "Disbursement"
+msgstr "Auszahlung"
+
 msgid "Discard"
 msgstr "Verwerfen"
 
@@ -11169,6 +11187,9 @@ msgstr "Herunterladen {0} Zeile(n) zum Beheben"
 
 msgid "Download CSV"
 msgstr "CSV herunterladen"
+
+msgid "Download Excel"
+msgstr "Excel herunterladen"
 
 msgid "Download Labels"
 msgstr "Etiketten herunterladen"
@@ -21350,6 +21371,9 @@ msgstr "Kontenzuordnung öffnen"
 msgid "Open Actions"
 msgstr "Offene Maßnahmen"
 
+msgid "Open Amount"
+msgstr "Offener Betrag"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie ein NCR für MRB-Verwendungsentscheid"
 
@@ -21803,6 +21827,9 @@ msgstr "Ursprung"
 
 msgid "Original"
 msgstr "Original"
+
+msgid "Original Amount"
+msgstr "Ursprünglicher Betrag"
 
 msgid "Original Count"
 msgstr "Ursprüngliche Anzahl"

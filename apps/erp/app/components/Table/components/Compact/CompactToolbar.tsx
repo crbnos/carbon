@@ -94,7 +94,7 @@ export function CompactToolbar({
   const canFilter =
     filters.length > 0 || (withSort && Object.keys(sortKeyToLabel).length > 0);
   const activeCount = urlFiltersParams.filter(Boolean).length;
-  const canExport = Boolean(csvExport?.data.length);
+  const canExport = Boolean(csvExport?.href || csvExport?.data.length);
   const hasBuiltIns = canExport || Boolean(importCSV?.length || onSelect);
   const hasMenu = hasBuiltIns || Boolean(menuItems);
 
@@ -216,14 +216,22 @@ export function CompactToolbar({
   );
 }
 
-/**
- * Export CSV, mounted only when there is something to export. Its hook reads
- * the signed-in company's items, suppliers, people and customers to name the
- * ids in the file, and a signed-out page — a customer portal — has no company
- * to read: called unconditionally, it threw "useUser must be used within an
- * authenticated route" and the page answered 500.
- */
 function ExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
+  if (csvExport.href) {
+    return (
+      <DropdownMenuItem asChild>
+        <a href={csvExport.href}>
+          <DropdownMenuIcon icon={<LuDownload />} />
+          <Trans>Export CSV</Trans>
+        </a>
+      </DropdownMenuItem>
+    );
+  }
+  return <ClientExportCsvItem csvExport={csvExport} />;
+}
+
+/** The client exporter needs company stores, which signed-out pages lack. */
+function ClientExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
   const { onClick: exportCsv } = useCsvDownload(csvExport);
   return (
     <DropdownMenuItem onClick={exportCsv}>

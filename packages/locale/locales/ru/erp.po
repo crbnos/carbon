@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Отставание от плана на # д
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# биллинговый элемент ожидает рассмотрения} other {# биллинговых элементов ожидают рассмотрения}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} дней"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} дней"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ дней"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}: наценка для количества {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1 неопубликованный документ"
 
 msgid "1 year"
 msgstr "1 год"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} дней"
 
 msgid "12 monthly periods"
 msgstr "12 ежемесячных периодов"
@@ -9810,6 +9822,9 @@ msgstr "Дни от заказа детали до ее доступности; 
 msgid "Days Off"
 msgstr "Выходные дни"
 
+msgid "Days Past Due"
+msgstr "Дни просрочки"
+
 msgid "Days Remaining"
 msgstr "Дней осталось"
 
@@ -10919,6 +10934,9 @@ msgstr "Отключить"
 msgid "Disabled"
 msgstr "Отключено"
 
+msgid "Disbursement"
+msgstr "Выплата"
+
 msgid "Discard"
 msgstr "Отклонить"
 
@@ -11169,6 +11187,9 @@ msgstr "Скачать {0} строку(и) для исправления"
 
 msgid "Download CSV"
 msgstr "Скачать CSV"
+
+msgid "Download Excel"
+msgstr "Скачать Excel"
 
 msgid "Download Labels"
 msgstr "Скачать этикетки"
@@ -21350,6 +21371,9 @@ msgstr "Открыть распределение счетов"
 msgid "Open Actions"
 msgstr "Открытые действия"
 
+msgid "Open Amount"
+msgstr "Непогашенная сумма"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения о браке"
 
@@ -21803,6 +21827,9 @@ msgstr "Источник"
 
 msgid "Original"
 msgstr "Оригинал"
+
+msgid "Original Amount"
+msgstr "Первоначальная сумма"
 
 msgid "Original Count"
 msgstr "Исходный подсчет"
