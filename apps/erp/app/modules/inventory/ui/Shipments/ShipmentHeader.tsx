@@ -12,7 +12,13 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import { LuCheckCheck, LuCreditCard, LuTicketX, LuTrash } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuCreditCard,
+  LuPackageCheck,
+  LuTicketX,
+  LuTrash
+} from "react-icons/lu";
 import { Await, useNavigate, useNavigation, useParams } from "react-router";
 import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
@@ -25,6 +31,7 @@ import type {
 } from "~/modules/inventory/types";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import { path } from "~/utils/path";
+import ShipmentDeliveredModal from "./ShipmentDeliveredModal";
 import ShipmentPostModal from "./ShipmentPostModal";
 import ShipmentStatus from "./ShipmentStatus";
 import ShipmentVoidModal from "./ShipmentVoidModal";
@@ -46,6 +53,7 @@ const ShipmentHeader = () => {
   const permissions = usePermissions();
   const postModal = useDisclosure();
   const voidModal = useDisclosure();
+  const deliveredModal = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
   const shipment = routeData?.shipment;
@@ -90,6 +98,18 @@ const ShipmentHeader = () => {
                 Posted <DateTime value={shipment.postingDate} variant="date" />
               </Trans>
             )
+          ) : null,
+          isPosted && shipment.deliveredDate ? (
+            <Trans key="delivered">
+              Delivered{" "}
+              <DateTime value={shipment.deliveredDate} variant="date" />
+            </Trans>
+          ) : isPosted && shipment.estimatedDeliveryDate ? (
+            <Trans key="estimated">
+              Arrives{" "}
+              <DateTime value={shipment.estimatedDeliveryDate} variant="date" />{" "}
+              (estimated)
+            </Trans>
           ) : null
         ]}
         menuItems={
@@ -143,6 +163,21 @@ const ShipmentHeader = () => {
               format="pdf"
               label={<Trans>Packing Slip</Trans>}
             />
+            {isPosted &&
+              shipment.sourceDocument === "Sales Order" &&
+              permissions.can("update", "inventory") && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuPackageCheck />}
+                  onClick={deliveredModal.onOpen}
+                >
+                  {shipment.deliveredDate ? (
+                    <Trans>Edit Delivery</Trans>
+                  ) : (
+                    <Trans>Mark Delivered</Trans>
+                  )}
+                </Button>
+              )}
             {shipment.sourceDocument === "Sales Order" &&
               permissions.can("view", "invoicing") && (
                 <InvoiceButton
@@ -166,6 +201,15 @@ const ShipmentHeader = () => {
 
       <ShipmentPostModal open={postModal.isOpen} onClose={postModal.onClose} />
       <ShipmentVoidModal open={voidModal.isOpen} onClose={voidModal.onClose} />
+      {isPosted && (
+        <ShipmentDeliveredModal
+          shipmentId={shipmentId}
+          postingDate={shipment.postingDate}
+          deliveredDate={shipment.deliveredDate}
+          open={deliveredModal.isOpen}
+          onClose={deliveredModal.onClose}
+        />
+      )}
       <ConfirmDelete
         action={path.to.deleteShipment(shipmentId)}
         isOpen={deleteDisclosure.isOpen}

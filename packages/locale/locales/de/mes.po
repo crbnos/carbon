@@ -179,6 +179,9 @@ msgstr "{completions} bestandene Einheit(en) werden abgeschlossen."
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Ziel um # Tage}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} fehlgeschlagen"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, überfällig"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB Grenze"
@@ -3049,6 +3055,12 @@ msgstr "Rüsten"
 
 msgid "Setup, timer running"
 msgstr "Rüsten, Timer läuft"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "kurz"

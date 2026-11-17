@@ -179,6 +179,9 @@ msgstr "{completions} zaliczonych sztuk będzie zakończone."
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Opóźnione o # dzień} few {Opóźnione o # dni} many {Opóźnione o # dni} other {Opóźnione o # dnia}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} niezgodnych"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, po terminie"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "limit {maxSizeMB}MB"
@@ -3049,6 +3055,12 @@ msgstr "Ustawienie"
 
 msgid "Setup, timer running"
 msgstr "Przezbrojenie, licznik działa"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "krótkie"

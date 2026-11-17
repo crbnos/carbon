@@ -127,6 +127,7 @@ import { defaultAutoPrint } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
+  addBusinessDays,
   assertEntityCoversPick,
   buildBatchMergeRecords,
   buildBatchSplitRecords,
@@ -185,13 +186,16 @@ import {
 import {
   futureDeliveryError,
   futureReturnError,
+  getHolidayDateSet,
   insertUnitActivity,
   lockAgreement,
   type RentalUnitReturn,
   receiptReturnError,
   refreshSalesReturnOrderStatus,
   rentalShipmentVoidBlocker,
+  resolveTransitDays,
   returnRentalUnit,
+  transitHolidayRange,
   unitLabel,
   unitReturnValidator
 } from "~/modules/sales/sales.service";
@@ -317,7 +321,12 @@ import {
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
   inventoryCountGroupId,
+  type ShipmentDeliverySource,
+  shipmentDeliveryRefusal,
   spreadBatchCount,
+  summarizeTransitStats,
+  TRANSIT_STATS_WINDOW_DAYS,
+  type TransitStats,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -19808,6 +19817,30 @@ export async function postShipment(
             });
             if (customer.error) throw new Error("Failed to fetch customer");
 
+            // The day the goods should arrive: today + the transit days of
+            // the shipment's method for the order's ship-to (a drop shipment
+            // goes to the shipment's customer location), in business days.
+            const transit = await resolveTransitDays(db, {
+              companyId,
+              shippingMethodId: shipmentHeader.shippingMethodId ?? null,
+              customerLocationId: salesOrderDelivery.data.dropShipment
+                ? (salesOrderDelivery.data.customerLocationId ?? null)
+                : (salesOrder.data.customerLocationId ?? null),
+              locationId: shipmentHeader.locationId ?? null,
+              shipDate: today
+            });
+            const transitRange = transit
+              ? transitHolidayRange([today], transit.transitDays)
+              : null;
+            const estimatedDeliveryDate =
+              transit && transitRange
+                ? addBusinessDays(
+                    today,
+                    transit.transitDays,
+                    await getHolidayDateSet(db, companyId, transitRange)
+                  )
+                : null;
+
             const companyRecord = await single(
               db,
               "company",
@@ -20522,7 +20555,8 @@ export async function postShipment(
                 .set({
                   status: "Posted",
                   postingDate: today,
-                  postedBy: userId
+                  postedBy: userId,
+                  estimatedDeliveryDate
                 })
                 .where("id", "=", shipmentId)
                 .where("companyId", "=", companyId)
@@ -36122,4 +36156,106 @@ export async function issueMaterial(
     success: true,
     message: "x"
   };
+}
+
+/**
+ * Record, change or clear the date a sales shipment reached the customer.
+ *
+ * The only writer of `shipment.deliveredDate` and `deliveredSource`. The Mark
+ * Delivered action calls it with `source: "Manual"`; a carrier tracking
+ * integration calls it with `source: "Carrier"`, after it converts the
+ * carrier's UTC event time to the company's date. A carrier write never
+ * replaces a date a user entered (`shipmentDeliveryRefusal`).
+ */
+export async function recordShipmentDelivery(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    shipmentId: string;
+    deliveredDate: string | null;
+    source: ShipmentDeliverySource;
+    userId: string;
+    /** the company's today, YYYY-MM-DD */
+    today: string;
+  }
+): Promise<{ error: string | null }> {
+  return withTransaction(db, async (trx) => {
+    const shipment = await trx
+      .selectFrom("shipment")
+      .select(["status", "sourceDocument", "postingDate", "deliveredSource"])
+      .where("id", "=", args.shipmentId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!shipment) return { error: "The shipment could not be found" };
+
+    const refusal = shipmentDeliveryRefusal(shipment, {
+      deliveredDate: args.deliveredDate,
+      source: args.source,
+      today: args.today
+    });
+    if (refusal) return { error: refusal };
+
+    const deliveredDate = args.deliveredDate?.slice(0, 10) ?? null;
+    await trx
+      .updateTable("shipment")
+      .set({
+        deliveredDate,
+        deliveredSource: deliveredDate === null ? null : args.source,
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", args.shipmentId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    return { error: null };
+  });
+}
+
+/**
+ * The measured transit time of a shipping method: its Posted sales shipments
+ * delivered in the last `TRANSIT_STATS_WINDOW_DAYS` days, summarized by
+ * `summarizeTransitStats`. Each row carries its order's arrive-by date.
+ */
+export async function getShippingMethodTransitStats(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; shippingMethodId: string; today: string }
+): Promise<TransitStats> {
+  const since = parseDate(args.today)
+    .subtract({ days: TRANSIT_STATS_WINDOW_DAYS })
+    .toString();
+  const rows = await db
+    .selectFrom("shipment as s")
+    .leftJoin("salesOrderShipment as ss", (join) =>
+      join
+        .onRef("ss.id", "=", "s.sourceDocumentId")
+        .onRef("ss.companyId", "=", "s.companyId")
+    )
+    .select([
+      "s.postingDate",
+      "s.deliveredDate",
+      "s.estimatedDeliveryDate",
+      "ss.receiptPromisedDate as promisedArrival"
+    ])
+    .where("s.companyId", "=", args.companyId)
+    .where("s.shippingMethodId", "=", args.shippingMethodId)
+    .where("s.status", "=", "Posted")
+    .where("s.sourceDocument", "=", "Sales Order")
+    .where("s.deliveredDate", "is not", null)
+    .where("s.postingDate", ">=", since)
+    .execute();
+
+  const holidays = await getHolidayDateSet(db, args.companyId, {
+    from: since,
+    to: args.today
+  });
+  return summarizeTransitStats(
+    rows.map((row) => ({
+      postingDate: row.postingDate!,
+      deliveredDate: row.deliveredDate!,
+      estimatedDeliveryDate: row.estimatedDeliveryDate ?? null,
+      promisedArrival: row.promisedArrival ?? null
+    })),
+    holidays
+  );
 }

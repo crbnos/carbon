@@ -179,6 +179,9 @@ msgstr "{completions}個の合格ユニットが完了します。"
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, other {目標より#日遅れ}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} 件不合格"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}、期限超過"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
@@ -3049,6 +3055,12 @@ msgstr "段取り"
 
 msgid "Setup, timer running"
 msgstr "段取り、タイマー実行中"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "短縮"

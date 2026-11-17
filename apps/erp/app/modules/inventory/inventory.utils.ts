@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { parseCsvLines } from "@carbon/files/csv";
-import { round } from "@carbon/utils";
+import { businessDaysBetween, RoundingMode, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 
@@ -532,4 +532,124 @@ export function batchPropertyFilter(
     return matches.join(",");
   });
   return clauses.join(",");
+}
+
+// ── Delivery dates (spec .ai/specs/2026-11-17-carrier-transit-ship-by-dates.md) ──
+
+/** Below this many delivered shipments, the transit statistics show nothing. */
+export const TRANSIT_STATS_MIN_SHIPMENTS = 5;
+/** The days of delivered shipments the transit statistics read. */
+export const TRANSIT_STATS_WINDOW_DAYS = 90;
+
+export type TransitStatsRow = {
+  postingDate: string;
+  deliveredDate: string;
+  estimatedDeliveryDate: string | null;
+  /** the order's arrive-by date (salesOrderShipment.receiptPromisedDate) */
+  promisedArrival: string | null;
+};
+
+export type TransitStats = {
+  count: number;
+  averageDays: number | null;
+  /** delivered on or before the estimate: the carrier and the transit days */
+  byEstimateRate: number | null;
+  /** delivered on or before the arrive-by date: on-time delivery (OTD) */
+  byPromiseRate: number | null;
+  /** the average rounded up: the transit days to adopt */
+  suggestedDays: number | null;
+};
+
+function onTimeRate(
+  rows: TransitStatsRow[],
+  reference: (row: TransitStatsRow) => string | null
+): number | null {
+  const judged = rows.filter((row) => reference(row) !== null);
+  if (judged.length === 0) return null;
+  const onTime = judged.filter(
+    (row) => row.deliveredDate.slice(0, 10) <= reference(row)!.slice(0, 10)
+  ).length;
+  return onTime / judged.length;
+}
+
+/**
+ * The measured transit time of a shipping method's delivered shipments. An
+ * early delivery counts as on time. With fewer than
+ * `TRANSIT_STATS_MIN_SHIPMENTS` rows, only the count is returned.
+ */
+export function summarizeTransitStats(
+  rows: TransitStatsRow[],
+  holidays: ReadonlySet<string> = new Set()
+): TransitStats {
+  const count = rows.length;
+  if (count < TRANSIT_STATS_MIN_SHIPMENTS) {
+    return {
+      count,
+      averageDays: null,
+      byEstimateRate: null,
+      byPromiseRate: null,
+      suggestedDays: null
+    };
+  }
+  const total = rows.reduce(
+    (sum, row) =>
+      sum +
+      businessDaysBetween(
+        row.postingDate.slice(0, 10),
+        row.deliveredDate.slice(0, 10),
+        holidays
+      ),
+    0
+  );
+  const average = total / count;
+  return {
+    count,
+    averageDays: round(average, 1),
+    byEstimateRate: onTimeRate(rows, (row) => row.estimatedDeliveryDate),
+    byPromiseRate: onTimeRate(rows, (row) => row.promisedArrival),
+    suggestedDays: round(average, 0, RoundingMode.Up)
+  };
+}
+
+export type ShipmentDeliverySource = "Manual" | "Carrier";
+
+/**
+ * Why a delivered date cannot be written on a shipment, or null when it can.
+ * `recordShipmentDelivery` (inventory.service.ts) is its only caller, so the
+ * Mark Delivered action and a carrier integration refuse the same cases.
+ */
+export function shipmentDeliveryRefusal(
+  shipment: {
+    status: string;
+    sourceDocument: string | null;
+    postingDate: string | null;
+    deliveredSource: ShipmentDeliverySource | null;
+  },
+  args: {
+    deliveredDate: string | null;
+    source: ShipmentDeliverySource;
+    today: string;
+  }
+): string | null {
+  if (shipment.status !== "Posted") {
+    return "Only a posted shipment can be marked delivered";
+  }
+  if (shipment.sourceDocument !== "Sales Order") {
+    return "Only a sales order shipment can be marked delivered";
+  }
+  const deliveredDate = args.deliveredDate?.slice(0, 10) ?? null;
+  if (deliveredDate !== null && deliveredDate > args.today) {
+    return "The delivery date cannot be in the future";
+  }
+  if (
+    deliveredDate !== null &&
+    shipment.postingDate !== null &&
+    deliveredDate < shipment.postingDate.slice(0, 10)
+  ) {
+    return "The delivery date cannot be before the shipment posted";
+  }
+  if (args.source === "Carrier" && shipment.deliveredSource === "Manual") {
+    return "A carrier update cannot replace a date a user entered";
+  }
+  return null;
 }

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -85,12 +86,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // what needs the order's or the invoice lines' values follows together, and
   // the originating quote waits for the opportunity.
   const serviceRole = getCarbonServiceRole();
-  const [salesOrder, lines, companySettings, invoiceLines] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderLines(client, orderId),
-    getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
-  ]);
+  const [salesOrder, lines, companySettings, invoiceLines, shipByPlan] =
+    await Promise.all([
+      getSalesOrder(client, orderId),
+      getSalesOrderLines(client, orderId),
+      getCompanySettings(serviceRole, companyId),
+      getSalesOrderInvoiceLines(client, orderId),
+      // Each line's ship-by date against the arrive-by date and transit days.
+      carbon(request).then((api) =>
+        api.sales.getSalesOrderShipByDates({ salesOrderId: orderId })
+      )
+    ]);
 
   if (salesOrder.error) {
     throw redirect(
@@ -197,6 +203,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
+    shipByPlan: shipByPlan.data ?? null,
     files: getOpportunityDocuments(client, companyId, opportunity.data.id),
     relatedItems: getSalesOrderRelatedItems(
       client,

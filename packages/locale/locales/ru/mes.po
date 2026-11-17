@@ -179,6 +179,9 @@ msgstr "{completions} пройденных единиц будут заверш�
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Отставание на # день} few {Отставание на # дня} many {Отставание на # дней} other {Отставание на # дня}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} не прошли"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, просрочено"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "Ограничение {maxSizeMB}МБ"
@@ -3049,6 +3055,12 @@ msgstr "Наладка"
 
 msgid "Setup, timer running"
 msgstr "Наладка, таймер запущен"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "короткий"

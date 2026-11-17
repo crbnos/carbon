@@ -150,6 +150,7 @@ import {
   round,
   salesTypeRequirementError,
   searchFilter,
+  subtractBusinessDays,
   suggestContractType,
   suggestCoverage,
   sumFunding,
@@ -291,7 +292,11 @@ import {
   SERVICE_RETURN_LINE_QUANTITY_MESSAGE
 } from "./sales.models";
 import { renderSalesOrderPdf } from "./sales.pdf";
-import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
+import type {
+  CategoryMarkups,
+  QuoteLinePriceSource,
+  ShipByPlanEntry
+} from "./sales.utils";
 import {
   applyPriceRules,
   asConfiguration,
@@ -304,6 +309,7 @@ import {
   getDefaultRentalRates,
   getEffectiveDefaultMarkups,
   nextDeliveryDateRecord,
+  planShipByDates,
   priceListOverrideScopes,
   priceOverrideScopeError,
   QUOTE_BASE_PRICE_SOURCES,
@@ -24219,4 +24225,353 @@ export async function generateContractBillableItems(
     });
     return { generated };
   });
+}
+
+// ── Transit days and ship-by dates ───────────────────────────────────────
+// Spec: .ai/specs/2026-11-17-carrier-transit-ship-by-dates.md. A line's
+// promisedDate is its ship-by date; salesOrderShipment.receiptPromisedDate is
+// the order's arrive-by date; transit days (business days) sit between them.
+
+/** Where and when goods travel: every input a transit time lookup needs. */
+export type TransitLane = {
+  companyId: string;
+  shippingMethodId: string | null;
+  /** the ship-to address */
+  customerLocationId: string | null;
+  /** the plant the goods leave from */
+  locationId: string | null;
+  /** YYYY-MM-DD */
+  shipDate: string | null;
+};
+
+export type TransitDays = {
+  transitDays: number;
+  source: "Ship-to override" | "Shipping method";
+};
+
+/**
+ * The transit days of a lane: the ship-to override for the shipping method,
+ * else the shipping method's own, else null ("unknown": calculate nothing).
+ *
+ * This is the seam a carrier integration plugs into: it adds one step between
+ * the override and the shipping method, and a value to `source`. The lane
+ * already carries the origin plant, the ship-to address and the ship date a
+ * carrier API needs, so no caller changes. `locationId` and `shipDate` are
+ * not read yet.
+ */
+export async function resolveTransitDays(
+  db: Kysely<KyselyDatabase>,
+  lane: TransitLane
+): Promise<TransitDays | null> {
+  if (!lane.shippingMethodId) return null;
+
+  if (lane.customerLocationId) {
+    const override = await db
+      .selectFrom("customerLocationTransitTime")
+      .select("transitDays")
+      .where("companyId", "=", lane.companyId)
+      .where("customerLocationId", "=", lane.customerLocationId)
+      .where("shippingMethodId", "=", lane.shippingMethodId)
+      .executeTakeFirst();
+    if (override) {
+      return { transitDays: override.transitDays, source: "Ship-to override" };
+    }
+  }
+
+  const method = await db
+    .selectFrom("shippingMethod")
+    .select("transitDays")
+    .where("companyId", "=", lane.companyId)
+    .where("id", "=", lane.shippingMethodId)
+    .executeTakeFirst();
+  if (method?.transitDays === null || method?.transitDays === undefined) {
+    return null;
+  }
+  return { transitDays: method.transitDays, source: "Shipping method" };
+}
+
+/**
+ * The company's holidays between two dates, inclusive, as a set of
+ * YYYY-MM-DD. The Kysely sibling of `getHolidayDates`
+ * (production.service.ts), for callers inside a transaction.
+ */
+export async function getHolidayDateSet(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  range: { from: string; to: string }
+): Promise<Set<string>> {
+  const rows = await db
+    .selectFrom("holiday")
+    .select("date")
+    .where("companyId", "=", companyId)
+    .where("date", ">=", range.from)
+    .where("date", "<=", range.to)
+    .execute();
+  return new Set(rows.map((row) => String(row.date).slice(0, 10)));
+}
+
+/**
+ * The holiday window around a set of dates that business-day steps of up to
+ * `transitDays` can reach: every weekend and holiday on the way is covered.
+ */
+export function transitHolidayRange(
+  dates: (string | null | undefined)[],
+  transitDays: number
+): { from: string; to: string } | null {
+  const known = dates
+    .filter((date): date is string => !!date)
+    .map((date) => date.slice(0, 10))
+    .sort();
+  if (known.length === 0) return null;
+  const margin = transitDays * 2 + 31;
+  return {
+    from: parseDate(known[0]!).subtract({ days: margin }).toString(),
+    to: parseDate(known[known.length - 1]!)
+      .add({ days: margin })
+      .toString()
+  };
+}
+
+export type SalesOrderTransit = {
+  salesOrderId: string;
+  /** the order's arrive-by date */
+  arriveBy: string | null;
+  lane: TransitLane;
+  transit: TransitDays | null;
+};
+
+/**
+ * A sales order's arrive-by date and transit lane. The ship-to follows
+ * `resolveSalesOrderShipTo` (@carbon/ee/rules): a drop shipment goes to the
+ * shipment's customer location, never the header's.
+ */
+export async function getSalesOrderTransit(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  salesOrderId: string
+): Promise<SalesOrderTransit | null> {
+  const row = await db
+    .selectFrom("salesOrder as so")
+    .leftJoin("salesOrderShipment as ss", (join) =>
+      join
+        .onRef("ss.id", "=", "so.id")
+        .onRef("ss.companyId", "=", "so.companyId")
+    )
+    .select([
+      "so.id",
+      "so.customerLocationId as headerCustomerLocationId",
+      "so.locationId as orderLocationId",
+      "ss.receiptPromisedDate",
+      "ss.shippingMethodId",
+      "ss.locationId as shipmentLocationId",
+      "ss.dropShipment",
+      "ss.customerLocationId as shipmentCustomerLocationId"
+    ])
+    .where("so.id", "=", salesOrderId)
+    .where("so.companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!row) return null;
+
+  const lane: TransitLane = {
+    companyId,
+    shippingMethodId: row.shippingMethodId ?? null,
+    customerLocationId: row.dropShipment
+      ? (row.shipmentCustomerLocationId ?? null)
+      : (row.headerCustomerLocationId ?? null),
+    locationId: row.shipmentLocationId ?? row.orderLocationId ?? null,
+    shipDate: null
+  };
+  return {
+    salesOrderId,
+    arriveBy: row.receiptPromisedDate ?? null,
+    lane,
+    transit: await resolveTransitDays(db, lane)
+  };
+}
+
+export type SalesOrderShipByPlan = {
+  arriveBy: string | null;
+  transit: TransitDays | null;
+  lines: ShipByPlanEntry[];
+};
+
+/**
+ * Each line of a sales order against the order's arrive-by date: the
+ * proposed ship-by date, the estimated arrival and "Late to arrive".
+ */
+export async function getSalesOrderShipByPlan(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  salesOrderId: string
+): Promise<SalesOrderShipByPlan | null> {
+  const transit = await getSalesOrderTransit(db, companyId, salesOrderId);
+  if (!transit) return null;
+
+  const lines = await db
+    .selectFrom("salesOrderLine")
+    .select(["id", "salesOrderLineType", "sentComplete", "promisedDate"])
+    .where("companyId", "=", companyId)
+    .where("salesOrderId", "=", salesOrderId)
+    .execute();
+
+  const range = transit.transit
+    ? transitHolidayRange(
+        [transit.arriveBy, ...lines.map((line) => line.promisedDate)],
+        transit.transit.transitDays
+      )
+    : null;
+  const holidays = range
+    ? await getHolidayDateSet(db, companyId, range)
+    : new Set<string>();
+
+  return {
+    arriveBy: transit.arriveBy,
+    transit: transit.transit,
+    lines: planShipByDates({
+      arriveBy: transit.arriveBy,
+      transitDays: transit.transit?.transitDays ?? null,
+      holidays,
+      lines
+    })
+  };
+}
+
+/**
+ * The ship-by date a new line of the order defaults to: arrive-by − transit
+ * days, or null when either is unknown.
+ */
+export async function getDefaultShipByDate(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  salesOrderId: string
+): Promise<string | null> {
+  const transit = await getSalesOrderTransit(db, companyId, salesOrderId);
+  if (!transit?.arriveBy || !transit.transit) return null;
+  const range = transitHolidayRange(
+    [transit.arriveBy],
+    transit.transit.transitDays
+  )!;
+  const holidays = await getHolidayDateSet(db, companyId, range);
+  return subtractBusinessDays(
+    transit.arriveBy.slice(0, 10),
+    transit.transit.transitDays,
+    holidays
+  );
+}
+
+/**
+ * Move the ship-by date of every line the plan changes, in one statement.
+ * Returns the ids of the lines it moved.
+ */
+export async function applySalesOrderShipByPlan(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    salesOrderId: string;
+    userId: string;
+    lines: ShipByPlanEntry[];
+  }
+): Promise<string[]> {
+  const changes = args.lines.filter(
+    (line) => line.changes && line.proposedShipBy !== null
+  );
+  if (changes.length === 0) return [];
+  // Every line takes the same proposed date: arrive-by − transit days.
+  const shipBy = changes[0]!.proposedShipBy!;
+  const updated = await db
+    .updateTable("salesOrderLine")
+    .set({
+      promisedDate: shipBy,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("companyId", "=", args.companyId)
+    .where("salesOrderId", "=", args.salesOrderId)
+    .where(
+      "id",
+      "in",
+      changes.map((line) => line.id)
+    )
+    .returning("id")
+    .execute();
+  return updated.map((row) => row.id);
+}
+
+/** The transit day overrides of a customer's ship-to addresses. */
+export async function getCustomerLocationTransitTimes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string
+) {
+  return client
+    .from("customerLocationTransitTime")
+    .select(
+      "id, customerLocationId, shippingMethodId, transitDays, customerLocation!inner(name, customerId), shippingMethod(name)"
+    )
+    .eq("companyId", companyId)
+    .eq("customerLocation.customerId", customerId)
+    .order("transitDays");
+}
+
+/** One transit day override. */
+export async function getCustomerLocationTransitTime(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  id: string
+) {
+  return client
+    .from("customerLocationTransitTime")
+    .select("id, customerLocationId, shippingMethodId, transitDays")
+    .eq("companyId", companyId)
+    .eq("id", id)
+    .maybeSingle();
+}
+
+export async function upsertCustomerLocationTransitTime(
+  client: SupabaseClient<Database>,
+  row:
+    | {
+        companyId: string;
+        customerLocationId: string;
+        shippingMethodId: string;
+        transitDays: number;
+        createdBy: string;
+      }
+    | {
+        id: string;
+        companyId: string;
+        customerLocationId: string;
+        shippingMethodId: string;
+        transitDays: number;
+        updatedBy: string;
+        updatedAt: string;
+      }
+) {
+  if ("createdBy" in row) {
+    return client
+      .from("customerLocationTransitTime")
+      .insert(row)
+      .select("id")
+      .single();
+  }
+  const { id, companyId, ...update } = row;
+  return client
+    .from("customerLocationTransitTime")
+    .update(update)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function deleteCustomerLocationTransitTime(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  id: string
+) {
+  return client
+    .from("customerLocationTransitTime")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }

@@ -860,6 +860,9 @@ msgstr "{categoryLabel}のマークアップ（数量 {quantity}）"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
+msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+msgstr ""
+
 msgid "{code} counted"
 msgstr "{code} がカウント済"
 
@@ -4812,6 +4815,9 @@ msgstr "Webhook: {0} を削除してもよろしいですか?これは元に戻�
 msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 msgstr "これらのレンタル料金を削除してもよろしいですか？既に追加されたレンタル明細はその料金を保持します。この操作は取り消せません。"
 
+msgid "Are you sure you want to delete these transit days?"
+msgstr ""
+
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "このアプリケーション承認ルールを削除してもよろしいですか？この操作は取り消せません。"
 
@@ -5015,6 +5021,9 @@ msgstr "本当ですか？"
 
 msgid "Arrears"
 msgstr "延滞"
+
+msgid "Arrives <0/> (estimated)"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "工場の処理待ちキューの最前列に割り込むように。"
@@ -6219,6 +6228,9 @@ msgstr "ビジネスコンポーネント"
 
 msgid "Business component (R&D)"
 msgstr "ビジネスコンポーネント(R&D)"
+
+msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
+msgstr ""
 
 msgid "Business moment"
 msgstr "ビジネスモーメント"
@@ -10597,8 +10609,14 @@ msgstr "納入先都道府県と郵便番号"
 msgid "Delivered"
 msgstr "配送済"
 
+msgid "Delivered <0/>"
+msgstr ""
+
 msgid "Delivered on"
 msgstr "配送日"
+
+msgid "Delivered On"
+msgstr ""
 
 msgid "Deliveries"
 msgstr "納品"
@@ -11735,6 +11753,9 @@ msgstr "得意先ステータスを編集"
 msgid "Edit Customer Type"
 msgstr "得意先タイプを編集"
 
+msgid "Edit Delivery"
+msgstr ""
+
 msgid "Edit Demand Forecast"
 msgstr "所要量予測を編集"
 
@@ -12028,6 +12049,9 @@ msgstr "転送を編集"
 
 msgid "Edit Transfer Line"
 msgstr "転送明細を編集"
+
+msgid "Edit Transit Time"
+msgstr ""
 
 msgid "Edit Type"
 msgstr "タイプを編集"
@@ -12631,6 +12655,9 @@ msgstr "見積もり <0>{0}</0>"
 
 msgid "Estimated cost to complete"
 msgstr "完了までの推定原価"
+
+msgid "Estimated Delivery"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "推定期間"
@@ -16565,6 +16592,9 @@ msgstr "保持"
 msgid "Keep Current"
 msgstr "現在の設定を保持"
 
+msgid "Keep dates"
+msgstr ""
+
 msgid "Keep demo data"
 msgstr "デモデータを保持する"
 
@@ -16778,6 +16808,9 @@ msgstr "最大子"
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
 
+msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
+
 msgid "Last Activity"
 msgstr "最終更新"
 
@@ -16859,6 +16892,12 @@ msgstr "夜遅く、{name}さん。"
 
 msgid "Late Reason"
 msgstr "遅刻理由"
+
+msgid "Late to arrive"
+msgstr ""
+
+msgid "Late to arrive: estimated {estimated}, promised {promised}."
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "早い週が使い尽くされた後、後の週が消費されます。"
@@ -17942,6 +17981,9 @@ msgstr "完了にマーク"
 
 msgid "Mark Dark Mode"
 msgstr "マークダークモード"
+
+msgid "Mark Delivered"
+msgstr ""
 
 msgid "Mark done"
 msgstr "完了にマーク"
@@ -19346,6 +19388,9 @@ msgstr "新しい転送"
 msgid "New Transfer Line"
 msgstr "新規転送明細"
 
+msgid "New Transit Time"
+msgstr ""
+
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
 
@@ -20490,6 +20535,9 @@ msgstr "この期間に取引がありません"
 msgid "No transfers"
 msgstr "転送なし"
 
+msgid "No transit times yet. Orders use the shipping method's transit days."
+msgstr ""
+
 msgid "No unassigned jobs"
 msgstr "未割り当ての製造指図がありません"
 
@@ -20668,6 +20716,9 @@ msgstr "未設定"
 
 msgid "Not delivered"
 msgstr "未配送"
+
+msgid "Not enough deliveries yet to measure the transit time."
+msgstr ""
 
 msgid "not enough jobs to cover quantity"
 msgstr "数量を満たすのに製造指図が足りません"
@@ -24496,8 +24547,14 @@ msgstr "再計算"
 msgid "Recalculate Run"
 msgstr "再計算実行"
 
+msgid "Recalculate ship dates"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "単位原価を再計算"
+
+msgid "Recalculated the ship dates"
+msgstr ""
 
 msgid "Recalculating…"
 msgstr "計算中…"
@@ -26746,6 +26803,9 @@ msgstr "文書レイアウトを保存しました"
 msgid "Saved signature"
 msgstr "署名を保存しました"
 
+msgid "Saved the delivery date"
+msgstr ""
+
 msgid "Saved this document"
 msgstr "このドキュメントを保存しました"
 
@@ -28047,6 +28107,9 @@ msgstr "出荷"
 msgid "Ship Back"
 msgstr "返送"
 
+msgid "Ship By (job)"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "出荷日"
 
@@ -28145,6 +28208,9 @@ msgstr "出荷日"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "この得意先の出荷済明細のうち、返品待ち数量がある行"
+
+msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "出荷数量"
@@ -30416,6 +30482,12 @@ msgstr "期日までにスケジュールされた作業の予算コスト。最
 msgid "The burden run burdens project cost with this pool"
 msgstr "バーデン実行はこのプールを使用してプロジェクト原価に負荷をかけます"
 
+msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+msgstr ""
+
+msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+msgstr ""
+
 msgid "The capital assets you own and depreciate"
 msgstr "所有・減価償却する固定資産"
 
@@ -30630,11 +30702,17 @@ msgstr "得意先が契約に同意した日付—契約が成立した日です
 msgid "The date the customer expects to receive the goods"
 msgstr "得意先が商品の受け取りを予定している日付"
 
+msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+msgstr ""
+
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "商品が実際に倉庫を離れた日付。出荷の転記に記録され、オンタイム配送スコアリングに使用されます。"
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "期間の予測所要量をカバーするために、品目がサイト上で必要な日付。"
+
+msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
+msgstr ""
 
 msgid "The date the return authorization expires"
 msgstr "返品認可の有効期限"
@@ -31262,6 +31340,9 @@ msgstr "本ポジションでは、下書きまたは外部で請求された請
 
 msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "転記済時間は反対仕訳済であり、これらの時間が代わりに請求されます"
+
+msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
+msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "このイシューに適用されるタスクと承認要件のプリセットバンドル。設定されると、イシュータイプのデフォルトワークフローを置き換えます。"
@@ -32992,6 +33073,15 @@ msgstr "トランジット"
 msgid "Transit & Institution"
 msgstr "トランジット・機関番号"
 
+msgid "Transit Days"
+msgstr ""
+
+msgid "Transit Days (ship-to)"
+msgstr ""
+
+msgid "Transit Times"
+msgstr ""
+
 msgid "Trash"
 msgstr "ゴミ箱"
 
@@ -33666,6 +33756,9 @@ msgstr "正常に更新されました"
 msgid "Updated task status"
 msgstr "タスクステータスが更新されました"
 
+msgid "Updated transit days"
+msgstr ""
+
 msgid "Updating…"
 msgstr ""
 
@@ -33800,6 +33893,9 @@ msgstr "「...」を使用して次のパートIDを取得します"
 
 msgid "Use ... to get the next tool ID"
 msgstr "「...」を使用して次のツールIDを取得します"
+
+msgid "Use {days} days"
+msgstr ""
 
 msgid "Use {earliest}"
 msgstr "{earliest}を使用"
@@ -34776,9 +34872,6 @@ msgstr "シリアルまたはバッチが期限切れになるとき、および
 msgid "When an invoice is created"
 msgstr "請求書が作成されるとき"
 
-msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-msgstr "Carbonが商品の到着を約束した日付。出荷方法の輸送日数と組み合わせて、発送日の逆算を決定します。"
-
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "繰延収益、見越収益およびリース利息収益が認識される場合"
 
@@ -34851,6 +34944,9 @@ msgstr "得意先のリクエストが現在のものでなくなった日。こ
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "商品が実際に到着した日時。入荷に記録され、仕入先の定時配達スコアリングに使用されます。"
 
+msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+msgstr ""
+
 msgid "When the job is created"
 msgstr "製造指図が作成されるとき"
 
@@ -34902,14 +34998,14 @@ msgstr "これをオンにすると、時間、材料、購買がプロジェク
 msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 msgstr "この品目の単位がシリアル番号を描画するとき。空のままにすると、設定 → 生産に従います。"
 
+msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+msgstr ""
+
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "これが正しく見えたら、同意済みとしてマークしてください。これでコマンドセンターの検出ステップが完了します。"
 
 msgid "When this milestone completes, the plan changes only through a change request"
 msgstr "このマイルストーンが完了すると、計画は変更要求を通じてのみ変更されます。"
-
-msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
-msgstr "この特定の明細が出荷される予定の日。分割出荷のために注文ヘッダーの回答納期を明細ごとに置き換えます。"
 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "この特定のロット/シリアルが期限切れになるとき。FEFO ピッキングと消費時のシェルフライフポリシーを駆動します。"

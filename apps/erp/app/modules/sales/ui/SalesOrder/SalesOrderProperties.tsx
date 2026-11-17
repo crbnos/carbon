@@ -17,7 +17,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { LuCopy, LuKeySquare, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
@@ -44,6 +44,7 @@ import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { isSalesOrderLocked } from "../../sales.models";
 import type { SalesOrder } from "../../types";
+import { useShipByRecalculatePrompt } from "./ShipByRecalculatePrompt";
 
 const SalesOrderProperties = () => {
   const { t } = useLingui();
@@ -54,9 +55,21 @@ const SalesOrderProperties = () => {
     salesOrder: SalesOrder;
   }>(path.to.salesOrder(orderId));
 
+  const shipBy = useShipByRecalculatePrompt(orderId);
+  // The field of the last save: a new arrive-by date or ship-to may move
+  // the lines' ship-by dates, so the save asks once it lands.
+  const lastField = useRef<string | null>(null);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
+    },
+    onSuccess: () => {
+      if (
+        lastField.current === "receiptPromisedDate" ||
+        lastField.current === "customerLocationId"
+      ) {
+        shipBy.check();
+      }
     }
   });
   const { company } = useUser();
@@ -71,6 +84,7 @@ const SalesOrderProperties = () => {
       if (value === routeData?.salesOrder[field]) {
         return;
       }
+      lastField.current = field;
       const formData = new FormData();
 
       formData.append("ids", orderId);
@@ -468,6 +482,7 @@ const SalesOrderProperties = () => {
         tags={[]}
         onUpdate={onUpdateCustomFields}
       />
+      {shipBy.prompt}
     </VStack>
   );
 };

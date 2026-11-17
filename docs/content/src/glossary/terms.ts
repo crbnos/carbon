@@ -1145,6 +1145,10 @@ export const terms = {
     term: msg`Carrier Account`,
     definition: msg`The GL account charges for this carrier post to (freight expense, freight in/out).`
   },
+  "shipping-method-transit-days": {
+    term: msg`Transit Days`,
+    definition: msg`The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date.`
+  },
   "shipping-method-tracking-url": {
     term: msg`Tracking URL`,
     definition: msg`The carrier's tracking-page URL with {trackingNumber} as a placeholder — Carbon substitutes the actual number when generating links on shipments.`
@@ -1196,6 +1200,14 @@ export const terms = {
   "shipment-source-document-id": {
     term: msg`Source Document ID`,
     definition: msg`The specific SO, transfer, or RMA this shipment posts against; available IDs depend on the source document type above.`
+  },
+  "shipment-estimated-delivery-date": {
+    term: msg`Estimated Delivery`,
+    definition: msg`The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts.`
+  },
+  "shipment-delivered-date": {
+    term: msg`Delivered On`,
+    definition: msg`The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted.`
   },
 
   // ── Inventory adjustment modal (InventoryStorageUnits) ──────────────────
@@ -1565,6 +1577,10 @@ export const terms = {
     term: msg`Due Date (job)`,
     definition: msg`The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules.`
   },
+  "job-ship-by-date": {
+    term: msg`Ship By (job)`,
+    definition: msg`The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date.`
+  },
   "job-priority": {
     term: msg`Job Priority`,
     definition: msg`The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating.`
@@ -1817,6 +1833,10 @@ export const terms = {
     term: msg`Shipping Customer`,
     definition: msg`The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch).`
   },
+  "customer-location-transit-time": {
+    term: msg`Transit Days (ship-to)`,
+    definition: msg`The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address.`
+  },
   "customer-incoterm": {
     term: msg`Incoterm`,
     definition: msg`The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer.`
@@ -1907,7 +1927,7 @@ export const terms = {
   },
   "sales-order-line-promised-date": {
     term: msg`Promised Date`,
-    definition: msg`When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments.`
+    definition: msg`When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days.`
   },
   "sales-order-line-fulfillment-location": {
     term: msg`Fulfillment Location`,
@@ -1945,7 +1965,7 @@ export const terms = {
   },
   "sales-order-shipment-receipt-promised-date": {
     term: msg`Receipt Promised Date`,
-    definition: msg`When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc.`
+    definition: msg`When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date.`
   },
   "sales-order-shipment-date": {
     term: msg`Shipment Date`,

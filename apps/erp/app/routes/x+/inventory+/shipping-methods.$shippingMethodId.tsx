@@ -25,10 +25,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { shippingMethodId } = params;
   if (!shippingMethodId) throw notFound("shippingMethodId not found");
 
-  const shippingMethod = await getShippingMethod(client, shippingMethodId);
+  const [shippingMethod, transitStats] = await Promise.all([
+    getShippingMethod(client, shippingMethodId),
+    carbon(request).then((api) =>
+      api.inventory.getShippingMethodTransitStats({ shippingMethodId })
+    )
+  ]);
 
   return {
-    shippingMethod: shippingMethod?.data ?? null
+    shippingMethod: shippingMethod?.data ?? null,
+    transitStats: transitStats.data ?? null
   };
 }
 
@@ -42,6 +48,8 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.inventory.updateShippingMethod({
     ...shippingMethod,
     id: input.params.shippingMethodId,
+    // An emptied field clears the transit days.
+    transitDays: shippingMethod.transitDays ?? null,
     customFields: input.formData && setCustomFields(input.formData)
   });
   // An error is toasted and the drawer stays open.
@@ -53,7 +61,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditShippingMethodsRoute() {
-  const { shippingMethod } = useLoaderData<typeof loader>();
+  const { shippingMethod, transitStats } = useLoaderData<typeof loader>();
   const dialog = useRouteDialog();
 
   const initialValues = {
@@ -62,6 +70,7 @@ export default function EditShippingMethodsRoute() {
     carrier: (shippingMethod?.carrier ?? "") as ShippingCarrier,
     carrierAccountId: shippingMethod?.carrierAccountId ?? "",
     trackingUrl: shippingMethod?.trackingUrl ?? "",
+    transitDays: shippingMethod?.transitDays ?? undefined,
     ...getCustomFields(shippingMethod?.customFields)
   };
 
@@ -69,6 +78,7 @@ export default function EditShippingMethodsRoute() {
     <ShippingMethodForm
       key={initialValues.id}
       initialValues={initialValues}
+      transitStats={transitStats}
       open={dialog.open}
       onClose={dialog.close}
     />

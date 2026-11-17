@@ -179,6 +179,9 @@ msgstr "{completions} unità superate verranno completate."
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {In ritardo rispetto al target di # giorno} other {In ritardo rispetto al target di # giorni}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} non conformi"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, in ritardo"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
@@ -3049,6 +3055,12 @@ msgstr "Attrezzaggio"
 
 msgid "Setup, timer running"
 msgstr "Attrezzaggio, timer in corso"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "breve"

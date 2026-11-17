@@ -141,6 +141,7 @@ export default function SalesOrderExplorer() {
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
     customer: Customer;
+    shipByPlan: ShipByPlan | null;
   }>(path.to.salesOrder(orderId));
   const permissions = usePermissions();
 
@@ -154,7 +155,10 @@ export default function SalesOrderExplorer() {
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
     taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    // promisedDate is the day the line ships: the order's promised arrival
+    // minus the transit days. With no transit days known, the arrival date.
     promisedDate:
+      salesOrderData?.shipByPlan?.defaultShipBy ??
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",
@@ -385,6 +389,46 @@ function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
   );
 }
 
+type ShipByPlan = {
+  arriveBy: string | null;
+  defaultShipBy: string | null;
+  lines: {
+    id: string;
+    estimatedArrival: string | null;
+    lateToArrive: boolean;
+  }[];
+};
+
+/**
+ * A line whose ship-by date plus the transit days lands after the order's
+ * promised arrival date.
+ */
+function LateToArriveFlag({ lineId }: { lineId: string }) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const { orderId } = useParams();
+  const routeData = useRouteData<{ shipByPlan: ShipByPlan | null }>(
+    path.to.salesOrder(orderId!)
+  );
+  const plan = routeData?.shipByPlan;
+  const entry = plan?.lines.find((line) => line.id === lineId);
+  if (!plan || !entry?.lateToArrive) return null;
+  const estimated = formatDate(entry.estimatedArrival, undefined, locale);
+  const promised = formatDate(plan.arriveBy, undefined, locale);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="relative z-10 shrink-0 text-amber-500">
+          <LuTruck className="h-3.5 w-3.5" aria-label={t`Late to arrive`} />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {t`Late to arrive: estimated ${estimated}, promised ${promised}.`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function SalesOrderLineItem({
   line,
   isDisabled,
@@ -448,6 +492,7 @@ function SalesOrderLineItem({
                     : getItemReadableId(items, line.itemId)}
                 </span>
                 <DeliveryDateFlag line={line} />
+                {line.id && <LateToArriveFlag lineId={line.id} />}
               </HStack>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">

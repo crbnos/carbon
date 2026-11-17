@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,7 +15,10 @@ import {
   getCustomerShipping,
   updateCustomerShipping
 } from "~/modules/sales/sales.service";
-import { CustomerShippingForm } from "~/modules/sales/ui/Customer";
+import {
+  CustomerShippingForm,
+  CustomerTransitTimes
+} from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -25,7 +29,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const customerShipping = await getCustomerShipping(client, customerId);
+  const [customerShipping, transitTimes] = await Promise.all([
+    getCustomerShipping(client, customerId),
+    carbon(request).then((api) =>
+      api.sales.getCustomerLocationTransitTimes({ customerId })
+    )
+  ]);
 
   if (customerShipping.error || !customerShipping.data) {
     throw redirect(
@@ -38,7 +47,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    customerShipping: customerShipping.data
+    customerShipping: customerShipping.data,
+    transitTimes: transitTimes.data ?? []
   };
 }
 
@@ -82,7 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function CustomerShippingRoute() {
-  const { customerShipping } = useLoaderData<typeof loader>();
+  const { customerShipping, transitTimes } = useLoaderData<typeof loader>();
   const initialValues = {
     customerId: customerShipping?.customerId ?? "",
     shippingCustomerId: customerShipping?.shippingCustomerId ?? "",
@@ -97,9 +107,15 @@ export default function CustomerShippingRoute() {
   };
 
   return (
-    <CustomerShippingForm
-      key={initialValues.customerId}
-      initialValues={initialValues}
-    />
+    <div className="flex flex-col gap-4">
+      <CustomerShippingForm
+        key={initialValues.customerId}
+        initialValues={initialValues}
+      />
+      <CustomerTransitTimes
+        customerId={initialValues.customerId}
+        transitTimes={transitTimes}
+      />
+    </div>
   );
 }

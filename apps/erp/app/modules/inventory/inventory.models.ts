@@ -547,7 +547,19 @@ export const shippingMethodValidator = z.object({
     error: "Carrier is required"
   }),
   carrierAccountId: zfd.text(z.string().optional()),
-  trackingUrl: zfd.text(z.string().optional())
+  trackingUrl: zfd.text(z.string().optional()),
+  transitDays: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Transit days must be a whole number" })
+      .min(0, { message: "Transit days cannot be negative" })
+      .optional()
+  )
+});
+
+/** Mark Delivered: the date the customer received the goods; empty clears it. */
+export const shipmentDeliveredValidator = z.object({
+  deliveredDate: zfd.text(z.string().optional())
 });
 
 export const splitValidator = z.object({

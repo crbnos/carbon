@@ -134,6 +134,7 @@ import { detectImplementationSignals } from "@carbon/onboarding/server";
 import type { PrinterRoute } from "@carbon/printing";
 import type { SalesPostingAccount } from "@carbon/utils";
 import {
+  addBusinessDays,
   assertBalanced,
   async,
   credit,
@@ -202,9 +203,12 @@ import { getLocationsList } from "~/modules/resources/resources.service";
 import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
+  getHolidayDateSet,
   getSalesOrder,
   getSalesOrderCustomerDetails,
-  getSalesOrderLines
+  getSalesOrderLines,
+  resolveTransitDays,
+  transitHolidayRange
 } from "~/modules/sales/sales.service";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
@@ -10029,15 +10033,39 @@ export async function convertDocument(
             };
           });
 
-        // The order is promised when its last line is: the latest line
-        // promise (today + that line's quoted lead time). A requested date
-        // the quote already carries is the customer's and is kept.
-        const receiptPromisedDate =
+        // A line's promisedDate is the day it ships (today + its quoted lead
+        // time). The order's promised date is the day it arrives: the latest
+        // line ship date + the shipping method's transit days, in business
+        // days. With no transit days known, it is the latest ship date. A
+        // requested date the quote already carries is the customer's and is
+        // kept.
+        const latestShipBy =
           salesOrderLineInserts
             .map((insert) => insert.promisedDate)
             .filter((date): date is string => !!date)
             .sort()
             .at(-1) ?? null;
+        const transit = latestShipBy
+          ? await resolveTransitDays(trx, {
+              companyId,
+              shippingMethodId: quoteShipping.data.shippingMethodId ?? null,
+              customerLocationId: quote.data.customerLocationId ?? null,
+              locationId: quoteShipping.data.locationId ?? locationId ?? null,
+              shipDate: latestShipBy
+            })
+          : null;
+        const transitRange =
+          latestShipBy && transit
+            ? transitHolidayRange([latestShipBy], transit.transitDays)
+            : null;
+        const receiptPromisedDate =
+          latestShipBy && transit && transitRange
+            ? addBusinessDays(
+                latestShipBy,
+                transit.transitDays,
+                await getHolidayDateSet(trx, companyId, transitRange)
+              )
+            : latestShipBy;
 
         // Copy quoteShipment data to salesOrderShipment
         await trx

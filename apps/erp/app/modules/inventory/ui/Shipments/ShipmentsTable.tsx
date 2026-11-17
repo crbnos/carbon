@@ -275,6 +275,32 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
         }
       },
       {
+        accessorKey: "estimatedDeliveryDate",
+        header: t`Estimated Delivery`,
+        cell: (item) => (
+          <DateTime value={item.getValue<string | null>()} variant="date" />
+        ),
+        meta: {
+          filter: {
+            type: "dateRange"
+          },
+          icon: <LuCalendar />
+        }
+      },
+      {
+        accessorKey: "deliveredDate",
+        header: t`Delivered`,
+        cell: (item) => (
+          <DateTime value={item.getValue<string | null>()} variant="date" />
+        ),
+        meta: {
+          filter: {
+            type: "dateRange"
+          },
+          icon: <LuCalendar />
+        }
+      },
+      {
         accessorKey: "assignee",
         header: t`Assignee`,
         cell: ({ row }) => (

@@ -860,6 +860,9 @@ msgstr "Narzut {categoryLabel} dla ilości {quantity}"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
 
+msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+msgstr ""
+
 msgid "{code} counted"
 msgstr "{code} policzone"
 
@@ -4812,6 +4815,9 @@ msgstr "Czy na pewno chcesz usunąć webhook: {0}? Tej czynności nie można cof
 msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 msgstr "Na pewno chcesz usunąć te stawki wynajmu? Już dodane pozycje wynajmu zachowają swoje stawki. Nie można tego cofnąć."
 
+msgid "Are you sure you want to delete these transit days?"
+msgstr ""
+
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć tę regułę zatwierdzania? Tej operacji nie można cofnąć."
 
@@ -5015,6 +5021,9 @@ msgstr "Jesteś pewny?"
 
 msgid "Arrears"
 msgstr "Zaległości"
+
+msgid "Arrives <0/> (estimated)"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Jakby wysunęło się na początek kolejki warsztatu."
@@ -6219,6 +6228,9 @@ msgstr "Komponent Biznesowy"
 
 msgid "Business component (R&D)"
 msgstr "Komponent biznesowy (R&D)"
+
+msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
+msgstr ""
 
 msgid "Business moment"
 msgstr "Moment biznesowy"
@@ -10597,8 +10609,14 @@ msgstr "Dostawa do – stan i kod pocztowy"
 msgid "Delivered"
 msgstr "Dostarczona"
 
+msgid "Delivered <0/>"
+msgstr ""
+
 msgid "Delivered on"
 msgstr "Dostarczono dnia"
+
+msgid "Delivered On"
+msgstr ""
 
 msgid "Deliveries"
 msgstr "Dostawy"
@@ -11735,6 +11753,9 @@ msgstr "Edytuj status klienta"
 msgid "Edit Customer Type"
 msgstr "Edytuj typ klienta"
 
+msgid "Edit Delivery"
+msgstr ""
+
 msgid "Edit Demand Forecast"
 msgstr "Edytuj prognozę zapotrzebowania"
 
@@ -12028,6 +12049,9 @@ msgstr "Edytuj Transfer"
 
 msgid "Edit Transfer Line"
 msgstr "Edytuj Pozycję przesunięcia"
+
+msgid "Edit Transit Time"
+msgstr ""
 
 msgid "Edit Type"
 msgstr "Edytuj typ"
@@ -12631,6 +12655,9 @@ msgstr "Szacowany <0>{0}</0>"
 
 msgid "Estimated cost to complete"
 msgstr "Szacunkowy koszt do ukończenia"
+
+msgid "Estimated Delivery"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "Szacunkowy czas trwania"
@@ -16565,6 +16592,9 @@ msgstr "Zachowaj"
 msgid "Keep Current"
 msgstr "Zachowaj bieżące"
 
+msgid "Keep dates"
+msgstr ""
+
 msgid "Keep demo data"
 msgstr "Zachowaj dane demonstracyjne"
 
@@ -16778,6 +16808,9 @@ msgstr "Największy element podrzędny"
 msgid "Last 6 Months"
 msgstr "Ostatnie 6 miesięcy"
 
+msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
+
 msgid "Last Activity"
 msgstr "Ostatnia aktywność"
 
@@ -16859,6 +16892,12 @@ msgstr "Późny wieczór, {name}."
 
 msgid "Late Reason"
 msgstr "Powód opóźnienia"
+
+msgid "Late to arrive"
+msgstr ""
+
+msgid "Late to arrive: estimated {estimated}, promised {promised}."
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Późniejsze tygodnie są zużywane, gdy wcześniejsze zostały wyczerpane."
@@ -17942,6 +17981,9 @@ msgstr "Oznacz jako ukończone"
 
 msgid "Mark Dark Mode"
 msgstr "Znak Tryb Ciemny"
+
+msgid "Mark Delivered"
+msgstr ""
 
 msgid "Mark done"
 msgstr "Oznacz jako gotowe"
@@ -19346,6 +19388,9 @@ msgstr "Nowy Transfer"
 msgid "New Transfer Line"
 msgstr "Nowa Pozycja przesunięcia"
 
+msgid "New Transit Time"
+msgstr ""
+
 msgid "New Unit of Measure"
 msgstr "Nowa jednostka miary"
 
@@ -20490,6 +20535,9 @@ msgstr "Brak transakcji w tym okresie"
 msgid "No transfers"
 msgstr "Brak przesunięć"
 
+msgid "No transit times yet. Orders use the shipping method's transit days."
+msgstr ""
+
 msgid "No unassigned jobs"
 msgstr "Brak nieprzydzielonych zleceń produkcyjnych"
 
@@ -20668,6 +20716,9 @@ msgstr "Nie skonfigurowane"
 
 msgid "Not delivered"
 msgstr "Nie dostarczone"
+
+msgid "Not enough deliveries yet to measure the transit time."
+msgstr ""
 
 msgid "not enough jobs to cover quantity"
 msgstr "za mało zleceń produkcyjnych, by pokryć ilość"
@@ -24496,8 +24547,14 @@ msgstr "Przelicz ponownie"
 msgid "Recalculate Run"
 msgstr "Przelicz przebieg"
 
+msgid "Recalculate ship dates"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "Przelicz koszt jednostkowy"
+
+msgid "Recalculated the ship dates"
+msgstr ""
 
 msgid "Recalculating…"
 msgstr "Przeliczanie…"
@@ -26746,6 +26803,9 @@ msgstr "Zapisano układ dokumentu"
 msgid "Saved signature"
 msgstr "Zapisany podpis"
 
+msgid "Saved the delivery date"
+msgstr ""
+
 msgid "Saved this document"
 msgstr "Zapisano ten dokument"
 
@@ -28047,6 +28107,9 @@ msgstr "Wysyłka"
 msgid "Ship Back"
 msgstr "Wyślij z powrotem"
 
+msgid "Ship By (job)"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "Data wysyłki"
 
@@ -28145,6 +28208,9 @@ msgstr "Data wysyłki"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Wysłane linie dla tego klienta z pozostałą ilością do zwrotu"
+
+msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Wysłana Ilość"
@@ -30416,6 +30482,12 @@ msgstr "Budżetowany koszt pracy zaplanowanej do daty, z budżetów i dat najnow
 msgid "The burden run burdens project cost with this pool"
 msgstr "Przebieg obciążenia obciąża koszt projektu tym poolem"
 
+msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+msgstr ""
+
+msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+msgstr ""
+
 msgid "The capital assets you own and depreciate"
 msgstr "Środki trwałe, które posiadasz i amortyzujesz"
 
@@ -30630,11 +30702,17 @@ msgstr "Data, w której klient zgodził się na umowę - kiedy transakcja zosta�
 msgid "The date the customer expects to receive the goods"
 msgstr "Data, w której klient oczekuje otrzymania towarów"
 
+msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+msgstr ""
+
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "Data, kiedy towary faktycznie opuszczają magazyn; zarejestrowana w księgowaniu przesyłki i używana do oceny wysyłki na czas."
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "Data, w której artykuł jest wymagany na miejscu, aby pokryć prognozowane zapotrzebowanie na dany okres."
+
+msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
+msgstr ""
 
 msgid "The date the return authorization expires"
 msgstr "Data wygaśnięcia autoryzacji zwrotu"
@@ -31262,6 +31340,9 @@ msgstr "Pozycja liczba faktur opracowanych lub zafakturowanych zewnętrznie oraz
 
 msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "Zaksięgowane godziny są cofnięte i zamiast tego są rozliczane te godziny"
+
+msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
+msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Wstępnie ustawiony pakiet zadań i wymagań zatwierdzenia stosowany do tego problemu; zastępuje domyślny przepływ pracy typu problemu, jeśli jest ustawiony."
@@ -32992,6 +33073,15 @@ msgstr "Tranzyt"
 msgid "Transit & Institution"
 msgstr "Tranzyt i Instytucja"
 
+msgid "Transit Days"
+msgstr ""
+
+msgid "Transit Days (ship-to)"
+msgstr ""
+
+msgid "Transit Times"
+msgstr ""
+
 msgid "Trash"
 msgstr "Kosz"
 
@@ -33666,6 +33756,9 @@ msgstr "Pomyślnie zaktualizowano"
 msgid "Updated task status"
 msgstr "Zaktualizowany status zadania"
 
+msgid "Updated transit days"
+msgstr ""
+
 msgid "Updating…"
 msgstr ""
 
@@ -33800,6 +33893,9 @@ msgstr "Użyj ... aby uzyskać następny identyfikator części"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Użyj ... aby uzyskać następny identyfikator narzędzia"
+
+msgid "Use {days} days"
+msgstr ""
 
 msgid "Use {earliest}"
 msgstr "Użyj {earliest}"
@@ -34776,9 +34872,6 @@ msgstr "Kiedy serial lub partia wygasa i co się dzieje, jeśli jest używany po
 msgid "When an invoice is created"
 msgstr "Kiedy faktura jest tworzona"
 
-msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-msgstr "Kiedy Carbon zobowiązał się na dostarczenie towaru; połączone z dniami tranzytu Sposobu wysyłki, determinuje to wsteczne obliczenie daty wysyłki."
-
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Gdy przychody opóźnione, naliczone i z odsetek leasingowych będą ujęte"
 
@@ -34851,6 +34944,9 @@ msgstr "Gdy prośba klienta przestaje być aktualna; po tej dacie RFQ jest autom
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Kiedy towary faktycznie przybyły; zarejestrowane na paragonie i używane do oceny punktualności dostawy dostawcy."
 
+msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+msgstr ""
+
 msgid "When the job is created"
 msgstr "Gdy zlecenie produkcyjne jest tworzone"
 
@@ -34902,14 +34998,14 @@ msgstr "Gdy to jest włączone, czas, materiał i zakupy obciążają element pr
 msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 msgstr "Kiedy sztuki tego artykułu losują swoje numery seryjne. Pozostaw puste, aby postępować zgodnie z Ustawienia → Produkcja."
 
+msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+msgstr ""
+
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Gdy to wygląda dobrze, oznacz jako uzgodnione. To kończy krok Odkrywania w Twoim centrum dowodzenia."
 
 msgid "When this milestone completes, the plan changes only through a change request"
 msgstr "Gdy ten kamień milowy zostanie ukończony, plan zmienia się tylko poprzez żądanie zmiany"
-
-msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
-msgstr "Kiedy ta konkretna pozycja jest obiecana do wysyłki; nadpisanie na poziomie pozycji daty potwierdzonej nagłówka zamówienia dla podzielonych wysyłek."
 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "Gdy ta konkretna partia/numer seryjny wygaśnie; napędza kompletację FEFO i politykę trwałości przy zużyciu."

@@ -860,6 +860,9 @@ msgstr "{categoryLabel}: наценка для количества {quantity}"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
+msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+msgstr ""
+
 msgid "{code} counted"
 msgstr "{code} подсчитано"
 
@@ -4812,6 +4815,9 @@ msgstr "Вы уверены, что хотите удалить вебхук: {0
 msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 msgstr "Вы уверены, что хотите удалить эти ставки аренды? Строки аренды, уже добавленные, сохраняют свои ставки. Это нельзя отменить."
 
+msgid "Are you sure you want to delete these transit days?"
+msgstr ""
+
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить это правило утверждения? Это действие невозможно отменить."
 
@@ -5015,6 +5021,9 @@ msgstr "Вы уверены?"
 
 msgid "Arrears"
 msgstr "Задолженность"
+
+msgid "Arrives <0/> (estimated)"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Как будто прыгнула в начало цеховой очереди"
@@ -6219,6 +6228,9 @@ msgstr "Компонент бизнеса"
 
 msgid "Business component (R&D)"
 msgstr "Деловой компонент (НИОКР)"
+
+msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
+msgstr ""
 
 msgid "Business moment"
 msgstr "Бизнес-момент"
@@ -10597,8 +10609,14 @@ msgstr "Доставить в: штат и почтовый индекс"
 msgid "Delivered"
 msgstr "Доставлено"
 
+msgid "Delivered <0/>"
+msgstr ""
+
 msgid "Delivered on"
 msgstr "Доставлено"
+
+msgid "Delivered On"
+msgstr ""
 
 msgid "Deliveries"
 msgstr "Поставки"
@@ -11735,6 +11753,9 @@ msgstr "Изменить статус покупателя"
 msgid "Edit Customer Type"
 msgstr "Изменить тип покупателя"
 
+msgid "Edit Delivery"
+msgstr ""
+
 msgid "Edit Demand Forecast"
 msgstr "Изменить прогноз потребностей"
 
@@ -12028,6 +12049,9 @@ msgstr "Изменить перемещение"
 
 msgid "Edit Transfer Line"
 msgstr "Изменить строку перемещения"
+
+msgid "Edit Transit Time"
+msgstr ""
 
 msgid "Edit Type"
 msgstr "Изменить тип"
@@ -12631,6 +12655,9 @@ msgstr "Расчетный <0>{0}</0>"
 
 msgid "Estimated cost to complete"
 msgstr "Прогнозируемая стоимость завершения"
+
+msgid "Estimated Delivery"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "Предполагаемая продолжительность"
@@ -16565,6 +16592,9 @@ msgstr "Сохранить"
 msgid "Keep Current"
 msgstr "Сохранить текущие"
 
+msgid "Keep dates"
+msgstr ""
+
 msgid "Keep demo data"
 msgstr "Сохранить демонстрационные данные"
 
@@ -16778,6 +16808,9 @@ msgstr "Наибольший дочерний элемент"
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
 
+msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
+
 msgid "Last Activity"
 msgstr "Последняя активность"
 
@@ -16859,6 +16892,12 @@ msgstr "Поздно вечером, {name}."
 
 msgid "Late Reason"
 msgstr "Причина задержки"
+
+msgid "Late to arrive"
+msgstr ""
+
+msgid "Late to arrive: estimated {estimated}, promised {promised}."
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Запас из поздних недель расходуется после того, как запас из ранних недель исчерпан."
@@ -17942,6 +17981,9 @@ msgstr "Отметить как завершено"
 
 msgid "Mark Dark Mode"
 msgstr "Логотип в тёмном режиме"
+
+msgid "Mark Delivered"
+msgstr ""
 
 msgid "Mark done"
 msgstr "Отметить как готово"
@@ -19346,6 +19388,9 @@ msgstr "Новый трансфер"
 msgid "New Transfer Line"
 msgstr "Новая Строка перемещения"
 
+msgid "New Transit Time"
+msgstr ""
+
 msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
 
@@ -20490,6 +20535,9 @@ msgstr "Нет транзакций в этом периоде"
 msgid "No transfers"
 msgstr "Нет перемещений"
 
+msgid "No transit times yet. Orders use the shipping method's transit days."
+msgstr ""
+
 msgid "No unassigned jobs"
 msgstr "Нет неназначенных производственных заказов"
 
@@ -20668,6 +20716,9 @@ msgstr "Не настроено"
 
 msgid "Not delivered"
 msgstr "Не доставлено"
+
+msgid "Not enough deliveries yet to measure the transit time."
+msgstr ""
 
 msgid "not enough jobs to cover quantity"
 msgstr "недостаточно производственных заказов для покрытия количества"
@@ -24496,8 +24547,14 @@ msgstr "Пересчитать"
 msgid "Recalculate Run"
 msgstr "Пересчитать"
 
+msgid "Recalculate ship dates"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "Пересчитать себестоимость единицы"
+
+msgid "Recalculated the ship dates"
+msgstr ""
 
 msgid "Recalculating…"
 msgstr "Пересчет…"
@@ -26746,6 +26803,9 @@ msgstr "Сохранена разметка документа"
 msgid "Saved signature"
 msgstr "Подпись сохранена"
 
+msgid "Saved the delivery date"
+msgstr ""
+
 msgid "Saved this document"
 msgstr "Этот документ сохранён"
 
@@ -28047,6 +28107,9 @@ msgstr "Отправить"
 msgid "Ship Back"
 msgstr "Отправить обратно"
 
+msgid "Ship By (job)"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "Дата отправки"
 
@@ -28145,6 +28208,9 @@ msgstr "Дата отгрузки"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Отгруженные строки для этого покупателя с количеством, оставшимся для возврата"
+
+msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "Отправленное кол-во"
@@ -30416,6 +30482,12 @@ msgstr "Сметная стоимость работы, запланирован
 msgid "The burden run burdens project cost with this pool"
 msgstr "Запуск бремени обременяет себестоимость проекта этим пулом"
 
+msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+msgstr ""
+
+msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+msgstr ""
+
 msgid "The capital assets you own and depreciate"
 msgstr "Основные средства, которыми вы владеете и амортизируете"
 
@@ -30630,11 +30702,17 @@ msgstr "Дата, когда покупатель согласился с кон
 msgid "The date the customer expects to receive the goods"
 msgstr "Дата, когда покупатель ожидает получить товары"
 
+msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+msgstr ""
+
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "Дата фактического отправления товаров со склада; записывается в проведении отгрузки и используется для оценки доставки в срок."
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "Дата, когда Номенклатура требуется на месте для удовлетворения прогнозируемой Потребности периода."
+
+msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
+msgstr ""
 
 msgid "The date the return authorization expires"
 msgstr "Дата истечения разрешения на возврат"
@@ -31262,6 +31340,9 @@ msgstr "Позиция показывает количество счетов-ф
 
 msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "Проведенные часы сторнированы и вместо них начислены эти часы"
+
+msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
+msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
@@ -32992,6 +33073,15 @@ msgstr "Транзит"
 msgid "Transit & Institution"
 msgstr "Транзит и учреждение"
 
+msgid "Transit Days"
+msgstr ""
+
+msgid "Transit Days (ship-to)"
+msgstr ""
+
+msgid "Transit Times"
+msgstr ""
+
 msgid "Trash"
 msgstr "Корзина"
 
@@ -33666,6 +33756,9 @@ msgstr "Успешно обновлено"
 msgid "Updated task status"
 msgstr "Обновлен статус задачи"
 
+msgid "Updated transit days"
+msgstr ""
+
 msgid "Updating…"
 msgstr ""
 
@@ -33800,6 +33893,9 @@ msgstr "Используйте ... для получения следующег�
 
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
+
+msgid "Use {days} days"
+msgstr ""
 
 msgid "Use {earliest}"
 msgstr "Использовать {earliest}"
@@ -34776,9 +34872,6 @@ msgstr "Когда истекает срок годности серии или 
 msgid "When an invoice is created"
 msgstr "Когда создается счет-фактура"
 
-msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-msgstr "Когда Carbon обязалась доставить товары; в сочетании с днями доставки способа доставки, это определяет обратный расчет даты отправки."
-
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Отложенная выручка, накопленная выручка и доход от процентов по аренде будут признаны"
 
@@ -34851,6 +34944,9 @@ msgstr "Когда запрос покупателя перестает быть
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Когда товары действительно прибыли; записано в квитанцию и используется для оценки доставки поставщика вовремя."
 
+msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+msgstr ""
+
 msgid "When the job is created"
 msgstr "Когда производственный заказ создается"
 
@@ -34902,14 +34998,14 @@ msgstr "Если это включено, время, материал и зак
 msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 msgstr "Когда единицы этой номенклатуры получают свои серийные номера. Оставьте пусто для следования Настройки → Производство."
 
+msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+msgstr ""
+
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Когда это выглядит правильно, отметьте это как согласованное. Это завершает шаг Открытия на вашем центре управления."
 
 msgid "When this milestone completes, the plan changes only through a change request"
 msgstr "Когда этот этап завершается, план изменяется только через запрос на изменение"
-
-msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
-msgstr "Когда эта конкретная строка должна быть отгружена; переопределение по строкам дата подтверждения заголовка заказа для раздельных отгрузок."
 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "Когда эта конкретная партия/серийный номер истекает; определяет отбор FEFO и политику сроков годности при потреблении."

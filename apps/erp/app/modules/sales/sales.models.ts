@@ -255,6 +255,23 @@ export const customerPaymentValidator = z.object({
   paymentTermId: zfd.text(z.string().optional())
 });
 
+/** Transit days for one ship-to address and shipping method pair. */
+export const customerLocationTransitTimeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerLocationId: z
+    .string()
+    .min(1, { message: "Ship-to location is required" }),
+  shippingMethodId: z
+    .string()
+    .min(1, { message: "Shipping method is required" }),
+  transitDays: zfd.numeric(
+    z
+      .number({ error: "Transit days are required" })
+      .int({ message: "Transit days must be a whole number" })
+      .min(0, { message: "Transit days cannot be negative" })
+  )
+});
+
 export const customerShippingValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
   shippingCustomerId: zfd.text(z.string().optional()),

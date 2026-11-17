@@ -25,6 +25,7 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  isUniqueViolation,
   requireAffected,
   round,
   suggestContractType,
@@ -2354,13 +2355,32 @@ export const createSalesOrderLine = defineServiceFn({
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
     const companyId = ctx.company.id;
-    const line = service.withLineTarget(input);
+    let line = service.withLineTarget(input);
     const locked = await service.unlockedSalesOrder(
       ctx,
       line.salesOrderId,
       "Cannot add lines to a locked sales order. Reopen it first."
     );
     if (locked) return locked;
+
+    // A line that ships an item and has no ship-by date takes the order's
+    // arrive-by date minus the transit days. It is set before the delivery
+    // date check below, so the check reads this date.
+    if (
+      !line.promisedDate &&
+      utils.DELIVERY_CHECKED_LINE_TYPES.has(
+        line.salesOrderLineType as Parameters<
+          typeof utils.DELIVERY_CHECKED_LINE_TYPES.has
+        >[0]
+      )
+    ) {
+      const shipBy = await service.getDefaultShipByDate(
+        ctx.asSystem.pg,
+        companyId,
+        line.salesOrderId
+      );
+      if (shipBy) line = { ...line, promisedDate: shipBy };
+    }
 
     // Checked here rather than only in the picker: the API reaches this too.
     if (line.itemId) {
@@ -11438,5 +11458,246 @@ export const getProjectBillingBackup = defineServiceFn({
         salesInvoiceId
       })
     );
+  }
+});
+
+/**
+ * Get a customer's transit day overrides
+ *
+ * @remarks
+ * The transit days set for each ship-to address and shipping method pair of
+ * a customer. An override wins over the shipping method's own transit days.
+ *
+ * @mcp read
+ */
+export const getCustomerLocationTransitTimes = defineServiceFn({
+  input: z.object({ customerId: z.string().min(1) }),
+  permission: { view: "sales" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getCustomerLocationTransitTimes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.customerId
+      )
+    );
+  }
+});
+
+/**
+ * Get a transit day override
+ *
+ * @mcp read
+ */
+export const getCustomerLocationTransitTime = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { view: "sales" },
+  async run(ctx, input) {
+    const row = await service.getCustomerLocationTransitTime(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.id
+    );
+    if (!row.error && !row.data) {
+      return ctx.error("notFound", "The transit time could not be found");
+    }
+    return unwrap(ctx, row);
+  }
+});
+
+/**
+ * Save a transit day override
+ *
+ * @remarks
+ * Sets the transit days for one ship-to address of the customer and one
+ * shipping method. With `id`, updates that override. One override exists per
+ * pair.
+ *
+ * @param transitDays - Business days a shipment to this address takes with this shipping method.
+ * @mcp
+ */
+export const upsertCustomerLocationTransitTime = defineServiceFn({
+  input: z.object({
+    id: z.string().optional(),
+    customerId: z.string().min(1),
+    customerLocationId: z.string().min(1),
+    shippingMethodId: z.string().min(1),
+    transitDays: z.number().int().min(0)
+  }),
+  permission: { update: "sales" },
+  async run(ctx, input) {
+    if (!input.id && !ctx.can({ create: "sales" })) {
+      return ctx.error("forbidden", "You cannot create transit times");
+    }
+    // The ship-to must be this customer's, and the shipping method this
+    // company's: the ids come from the form.
+    const refused =
+      (await refuseUnlessOwned(ctx, "customerLocation", {
+        id: input.customerLocationId,
+        customerId: input.customerId
+      })) ??
+      (await refuseUnlessOwned(ctx, "shippingMethod", {
+        id: input.shippingMethodId
+      })) ??
+      (input.id
+        ? await refuseUnlessOwned(ctx, "customerLocationTransitTime", {
+            id: input.id
+          })
+        : null);
+    if (refused) return refused;
+
+    const common = {
+      companyId: ctx.company.id,
+      customerLocationId: input.customerLocationId,
+      shippingMethodId: input.shippingMethodId,
+      transitDays: input.transitDays
+    };
+    const result = await service.upsertCustomerLocationTransitTime(
+      ctx.asCaller.supabase,
+      input.id
+        ? {
+            ...common,
+            id: input.id,
+            updatedBy: ctx.auditUserId,
+            updatedAt: datetime.timestamp()
+          }
+        : { ...common, createdBy: ctx.auditUserId }
+    );
+    if (result.error && isUniqueViolation(result.error)) {
+      return ctx.error(
+        "conflict",
+        "This ship-to address already has transit days for this shipping method"
+      );
+    }
+    return unwrap(ctx, result);
+  }
+});
+
+/**
+ * Delete a transit day override
+ *
+ * @mcp destructive
+ */
+export const deleteCustomerLocationTransitTime = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { delete: "sales" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteCustomerLocationTransitTime(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a sales order's ship-by plan
+ *
+ * @remarks
+ * For each line: its ship-by date (`promisedDate`), the ship-by date the
+ * order's arrive-by date and transit days propose, the estimated arrival, and
+ * whether the line is late to arrive. `changes` counts the open lines a
+ * recalculation would move. `defaultShipBy` is the date a new line takes.
+ *
+ * @mcp read
+ */
+export const getSalesOrderShipByDates = defineServiceFn({
+  input: z.object({ salesOrderId: z.string().min(1) }),
+  permission: { view: "sales" },
+  async run(ctx, input) {
+    const plan = await service.getSalesOrderShipByPlan(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      input.salesOrderId
+    );
+    if (!plan)
+      return ctx.error("notFound", "The sales order could not be found");
+    const proposed =
+      plan.lines.find((line) => line.proposedShipBy !== null)?.proposedShipBy ??
+      null;
+    return {
+      ...plan,
+      changes: plan.lines.filter((line) => line.changes).length,
+      defaultShipBy:
+        proposed ??
+        (plan.arriveBy && plan.transit
+          ? await service.getDefaultShipByDate(
+              ctx.asSystem.pg,
+              ctx.company.id,
+              input.salesOrderId
+            )
+          : null)
+    };
+  }
+});
+
+/**
+ * Recalculate a sales order's ship-by dates
+ *
+ * @remarks
+ * Sets the ship-by date (`promisedDate`) of every open line that ships an
+ * item to the order's arrive-by date minus the transit days, in business
+ * days. A fully shipped line keeps its date. Then checks the moved lines'
+ * delivery dates again.
+ *
+ * @mcp
+ */
+export const recalculateSalesOrderShipByDates = defineServiceFn({
+  input: z.object({ salesOrderId: z.string().min(1) }),
+  permission: { update: "sales" },
+  async run(ctx, input) {
+    const locked = await service.unlockedSalesOrder(
+      ctx,
+      input.salesOrderId,
+      "Cannot change the lines of a locked sales order. Reopen it first."
+    );
+    if (locked) return locked;
+
+    const moved = await ctx.transaction(async (tx) => {
+      const plan = await service.getSalesOrderShipByPlan(
+        tx.asSystem.pg,
+        tx.company.id,
+        input.salesOrderId
+      );
+      if (!plan) return [];
+      return service.applySalesOrderShipByPlan(tx.asSystem.pg, {
+        companyId: tx.company.id,
+        salesOrderId: input.salesOrderId,
+        userId: tx.auditUserId,
+        lines: plan.lines
+      });
+    });
+    if (moved.error) return moved.error;
+
+    const lineIds = moved.data;
+    if (lineIds.length > 0) {
+      // A moved date is a new promise: check it as a line save would. A
+      // failed check never undoes the move.
+      try {
+        const { pendingLineIds } = await service.checkSalesOrderDeliveryDates(
+          ctx,
+          { salesOrderId: input.salesOrderId, lineIds, capacity: "defer" }
+        );
+        if (pendingLineIds.length > 0) {
+          await trigger("sales-order.delivery-date-check", {
+            companyId: ctx.company.id,
+            salesOrderId: input.salesOrderId,
+            lineIds: pendingLineIds,
+            userId: ctx.auditUserId
+          });
+        }
+      } catch (error) {
+        logger.error("Failed to check moved ship-by dates", {
+          companyId: ctx.company.id,
+          salesOrderId: input.salesOrderId,
+          error
+        });
+      }
+    }
+    return { salesOrderLineIds: lineIds };
   }
 });

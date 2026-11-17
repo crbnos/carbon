@@ -13,13 +13,15 @@ import type {
   Timing
 } from "@carbon/utils";
 import {
+  addBusinessDays,
   classifyLessorLease,
   classifyRentalLine,
   defaultRentalRates,
   equals,
   leasePaymentTerms,
   rentalTermMonths,
-  round
+  round,
+  subtractBusinessDays
 } from "@carbon/utils";
 import {
   parseAbsolute,
@@ -1240,4 +1242,90 @@ export function saveIsCurrent(
     rowDate === (saved.promisedDate?.slice(0, 10) || null) &&
     Number(row.saleQuantity ?? 0) === Number(saved.saleQuantity ?? 0)
   );
+}
+
+// ── Ship-by dates (spec .ai/specs/2026-11-17-carrier-transit-ship-by-dates.md) ──
+// A line's promisedDate is its ship-by date: the day it leaves the plant. The
+// order's salesOrderShipment.receiptPromisedDate is its arrive-by date. Transit
+// days, in business days, sit between the two.
+
+/** The day a line shipping on `shipBy` arrives, or null when either is unknown. */
+export function estimateArrival(
+  shipBy: string | null | undefined,
+  transitDays: number | null | undefined,
+  holidays: ReadonlySet<string> = new Set()
+): string | null {
+  if (!shipBy || transitDays === null || transitDays === undefined) return null;
+  return addBusinessDays(shipBy.slice(0, 10), transitDays, holidays);
+}
+
+export type ShipByPlanLine = {
+  id: string;
+  salesOrderLineType: SalesOrderLineType;
+  sentComplete: boolean | null;
+  promisedDate: string | null;
+};
+
+export type ShipByPlanEntry = {
+  id: string;
+  promisedDate: string | null;
+  /** arrive-by − transit days; null when either is unknown */
+  proposedShipBy: string | null;
+  /** promisedDate + transit days; null when either is unknown */
+  estimatedArrival: string | null;
+  /** the estimated arrival is after the arrive-by date */
+  lateToArrive: boolean;
+  /** a recalculation would move this line's ship-by date */
+  changes: boolean;
+};
+
+/**
+ * Each line's ship-by date against the order's arrive-by date. A line
+ * changes only when it ships an item (`DELIVERY_CHECKED_LINE_TYPES`), is not
+ * fully shipped, and its date differs from arrive-by − transit days.
+ */
+export function planShipByDates(args: {
+  arriveBy: string | null | undefined;
+  transitDays: number | null | undefined;
+  holidays?: ReadonlySet<string>;
+  lines: ShipByPlanLine[];
+}): ShipByPlanEntry[] {
+  const holidays = args.holidays ?? new Set<string>();
+  const arriveBy = args.arriveBy ? args.arriveBy.slice(0, 10) : null;
+  const known =
+    arriveBy !== null &&
+    args.transitDays !== null &&
+    args.transitDays !== undefined;
+  const proposedShipBy = known
+    ? subtractBusinessDays(arriveBy, args.transitDays as number, holidays)
+    : null;
+
+  return args.lines.map((line) => {
+    const promisedDate = line.promisedDate
+      ? line.promisedDate.slice(0, 10)
+      : null;
+    const estimatedArrival = estimateArrival(
+      promisedDate,
+      args.transitDays,
+      holidays
+    );
+    const ships = DELIVERY_CHECKED_LINE_TYPES.has(line.salesOrderLineType);
+    return {
+      id: line.id,
+      promisedDate,
+      proposedShipBy: ships ? proposedShipBy : null,
+      estimatedArrival: ships ? estimatedArrival : null,
+      lateToArrive:
+        ships &&
+        line.sentComplete !== true &&
+        arriveBy !== null &&
+        estimatedArrival !== null &&
+        estimatedArrival > arriveBy,
+      changes:
+        ships &&
+        line.sentComplete !== true &&
+        proposedShipBy !== null &&
+        proposedShipBy !== promisedDate
+    };
+  });
 }

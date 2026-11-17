@@ -860,6 +860,9 @@ msgstr "मात्रा {quantity} के लिए {categoryLabel} मार
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
+msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+msgstr ""
+
 msgid "{code} counted"
 msgstr "{code} गिना गया"
 
@@ -4812,6 +4815,9 @@ msgstr "क्या आप वेबहुक {0} को हटाना चा
 msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 msgstr "क्या आप निश्चित हैं कि आप इन किराया दरों को हटाना चाहते हैं? पहले से जोड़ी गई किराया पंक्तियाँ अपनी दरें रखती हैं। इसे पूर्ववत नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete these transit days?"
+msgstr ""
+
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "क्या आप इस अनुमोदन नियम को हटाना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
@@ -5015,6 +5021,9 @@ msgstr "क्या आप सुनिश्चित हैं?"
 
 msgid "Arrears"
 msgstr "बकाया"
+
+msgid "Arrives <0/> (estimated)"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "मानो यह कार्यशाला की कतार के आगे कूद गया हो।"
@@ -6219,6 +6228,9 @@ msgstr "व्यावसायिक घटक"
 
 msgid "Business component (R&D)"
 msgstr "व्यावसायिक घटक (R&D)"
+
+msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
+msgstr ""
 
 msgid "Business moment"
 msgstr "व्यावसायिक क्षण"
@@ -10597,8 +10609,14 @@ msgstr "डिलीवरी प्राप्तकर्ता का रा
 msgid "Delivered"
 msgstr "डिलीवर किया गया"
 
+msgid "Delivered <0/>"
+msgstr ""
+
 msgid "Delivered on"
 msgstr "को डिलीवर किया गया"
+
+msgid "Delivered On"
+msgstr ""
 
 msgid "Deliveries"
 msgstr "डिलीवरी"
@@ -11735,6 +11753,9 @@ msgstr "ग्राहक स्थिति संपादित करें
 msgid "Edit Customer Type"
 msgstr "ग्राहक प्रकार संपादित करें"
 
+msgid "Edit Delivery"
+msgstr ""
+
 msgid "Edit Demand Forecast"
 msgstr "मांग पूर्वानुमान संपादित करें"
 
@@ -12028,6 +12049,9 @@ msgstr "ट्रांसफर संपादित करें"
 
 msgid "Edit Transfer Line"
 msgstr "स्थानांतरण पंक्ति संपादित करें"
+
+msgid "Edit Transit Time"
+msgstr ""
 
 msgid "Edit Type"
 msgstr "प्रकार संपादित करें"
@@ -12631,6 +12655,9 @@ msgstr "अनुमानित <0>{0}</0>"
 
 msgid "Estimated cost to complete"
 msgstr "पूर्ण करने के लिए अनुमानित लागत"
+
+msgid "Estimated Delivery"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "अनुमानित अवधि"
@@ -16565,6 +16592,9 @@ msgstr "रखें"
 msgid "Keep Current"
 msgstr "वर्तमान रखें"
 
+msgid "Keep dates"
+msgstr ""
+
 msgid "Keep demo data"
 msgstr "डेमो डेटा रखें"
 
@@ -16778,6 +16808,9 @@ msgstr "सबसे बड़ा चाइल्ड"
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
 
+msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
+
 msgid "Last Activity"
 msgstr "अंतिम गतिविधि"
 
@@ -16859,6 +16892,12 @@ msgstr "शाम को देर में, {name}।"
 
 msgid "Late Reason"
 msgstr "देरी का कारण"
+
+msgid "Late to arrive"
+msgstr ""
+
+msgid "Late to arrive: estimated {estimated}, promised {promised}."
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "बाद के सप्ताह तब उपयोग किए जाते हैं जब पहले वाले समाप्त हो जाते हैं।"
@@ -17942,6 +17981,9 @@ msgstr "पूर्ण चिह्नित करें"
 
 msgid "Mark Dark Mode"
 msgstr "मार्क डार्क मोड"
+
+msgid "Mark Delivered"
+msgstr ""
 
 msgid "Mark done"
 msgstr "पूर्ण चिह्नित करें"
@@ -19346,6 +19388,9 @@ msgstr "नया स्थानांतरण"
 msgid "New Transfer Line"
 msgstr "नई स्थानांतरण पंक्ति"
 
+msgid "New Transit Time"
+msgstr ""
+
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
 
@@ -20490,6 +20535,9 @@ msgstr "इस अवधि में कोई लेनदेन नहीं"
 msgid "No transfers"
 msgstr "कोई स्थानांतरण नहीं"
 
+msgid "No transit times yet. Orders use the shipping method's transit days."
+msgstr ""
+
 msgid "No unassigned jobs"
 msgstr "कोई अनिर्दिष्ट जॉब नहीं"
 
@@ -20668,6 +20716,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not delivered"
 msgstr "डिलीवर नहीं किया गया"
+
+msgid "Not enough deliveries yet to measure the transit time."
+msgstr ""
 
 msgid "not enough jobs to cover quantity"
 msgstr "मात्रा पूरी करने के लिए पर्याप्त जॉब नहीं हैं"
@@ -24496,8 +24547,14 @@ msgstr "पुनः गणना करें"
 msgid "Recalculate Run"
 msgstr "पुनः गणना चलाएँ"
 
+msgid "Recalculate ship dates"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "इकाई लागत की पुनः गणना करें"
+
+msgid "Recalculated the ship dates"
+msgstr ""
 
 msgid "Recalculating…"
 msgstr "पुनः गणना की जा रही है…"
@@ -26746,6 +26803,9 @@ msgstr "दस्तावेज़ लेआउट सहेजा गया"
 msgid "Saved signature"
 msgstr "हस्ताक्षर सहेजा गया"
 
+msgid "Saved the delivery date"
+msgstr ""
+
 msgid "Saved this document"
 msgstr "यह दस्तावेज़ सहेजा गया"
 
@@ -28047,6 +28107,9 @@ msgstr "भेजें"
 msgid "Ship Back"
 msgstr "वापस भेजें"
 
+msgid "Ship By (job)"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "शिप की तारीख"
 
@@ -28145,6 +28208,9 @@ msgstr "भेजी गई तिथि"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "इस ग्राहक के लिए भेजी गई लाइनें जिनमें वापसी के लिए मात्रा बाकी है"
+
+msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "भेजी गई मात्रा"
@@ -30416,6 +30482,12 @@ msgstr "एक तारीख तक निर्धारित काम क�
 msgid "The burden run burdens project cost with this pool"
 msgstr "बोझ चलाना इस पूल के साथ परियोजना लागत को दबाता है"
 
+msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+msgstr ""
+
+msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+msgstr ""
+
 msgid "The capital assets you own and depreciate"
 msgstr "पूंजीगत संपत्ति जिसे आप मालिक हैं और मूल्यह्रास करते हैं"
 
@@ -30630,11 +30702,17 @@ msgstr "वह तारीख जब ग्राहक अनुबंध स�
 msgid "The date the customer expects to receive the goods"
 msgstr "वह नियत तिथि जिस पर ग्राहक को माल प्राप्त होने की अपेक्षा है"
 
+msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+msgstr ""
+
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "वह तारीख जब सामान वास्तव में गोदाम से बाहर निकलते हैं; शिपमेंट पोस्टिंग पर दर्ज किया जाता है और समय पर शिपिंग स्कोरिंग के लिए उपयोग किया जाता है।"
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "वह तारीख जिस दिन आइटम साइट पर आवश्यक है ताकि अवधि की अनुमानित मांग को पूरा किया जा सके।"
+
+msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
+msgstr ""
 
 msgid "The date the return authorization expires"
 msgstr "वह तारीख जब रिटर्न प्राधिकरण समाप्त हो जाता है"
@@ -31262,6 +31340,9 @@ msgstr "स्थिति बाहरी रूप से तैयार क�
 
 msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "पोस्ट किए गए घंटों को प्रतिवर्तित किया जाता है और इन घंटों को बजाय चार्ज किया जाता है"
+
+msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
+msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "कार्यों और अनुमोदन आवश्यकताओं का पूर्वनिर्धारित बंडल इस समस्या पर लागू होता है; जब सेट किया जाता है तो समस्या प्रकार के डिफ़ॉल्ट वर्कफ़्लो को ओवरराइड करता है।"
@@ -32992,6 +33073,15 @@ msgstr "ट्रांजिट"
 msgid "Transit & Institution"
 msgstr "ट्रांजिट और संस्था"
 
+msgid "Transit Days"
+msgstr ""
+
+msgid "Transit Days (ship-to)"
+msgstr ""
+
+msgid "Transit Times"
+msgstr ""
+
 msgid "Trash"
 msgstr "ट्रैश"
 
@@ -33666,6 +33756,9 @@ msgstr "सफलतापूर्वक अपडेट किया गया
 msgid "Updated task status"
 msgstr "कार्य स्थिति अपडेट की गई"
 
+msgid "Updated transit days"
+msgstr ""
+
 msgid "Updating…"
 msgstr ""
 
@@ -33800,6 +33893,9 @@ msgstr "अगला पार्ट आईडी प्राप्त कर�
 
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
+
+msgid "Use {days} days"
+msgstr ""
 
 msgid "Use {earliest}"
 msgstr "{earliest} का उपयोग करें"
@@ -34776,9 +34872,6 @@ msgstr "जब एक सीरियल या बैच समाप्त ह
 msgid "When an invoice is created"
 msgstr "जब एक चालान बनाया जाता है"
 
-msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-msgstr "जब कार्बन ने माल के आने का वचन दिया; शिपिंग विधि के ट्रांजिट दिनों के साथ संयुक्त, यह जहाज तारीख की पिछली गणना को चलाता है।"
-
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "जब आस्थगित, संचित और पट्टा-ब्याज राजस्व को मान्यता दी जाएगी"
 
@@ -34851,6 +34944,9 @@ msgstr "जब ग्राहक का अनुरोध वर्तमा�
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "जब सामान वास्तव में आ गए; रसीद पर दर्ज किए गए और आपूर्तिकर्ता की समय पर डिलीवरी स्कोरिंग के लिए उपयोग किए गए।"
 
+msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+msgstr ""
+
 msgid "When the job is created"
 msgstr "जब जॉब बनाया जाता है"
 
@@ -34902,14 +34998,14 @@ msgstr "जब यह चालू हो, समय, सामग्री औ�
 msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 msgstr "जब इस आइटम की इकाइयाँ अपने सीरियल नंबर निकालती हैं। सेटिंग्स → उत्पादन का पालन करने के लिए खाली छोड़ें।"
 
+msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+msgstr ""
+
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "जब यह सही लगे, तो इसे सहमत के रूप में चिह्नित करें। यह आपके कमांड सेंटर पर डिस्कवरी चरण को पूरा करता है।"
 
 msgid "When this milestone completes, the plan changes only through a change request"
 msgstr "जब यह मील का पत्थर पूरा हो जाता है, योजना में केवल परिवर्तन अनुरोध के माध्यम से परिवर्तन होता है।"
-
-msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
-msgstr "जब यह विशिष्ट पंक्ति भेजने के लिए वादा की जाती है; विभाजित शिपमेंट के लिए आदेश हेडर के वादा की गई तिथि का प्रति-पंक्ति ओवरराइड।"
 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "जब यह विशिष्ट लॉट/सीरियल समाप्त हो जाता है; FEFO पिकिंग और खपत पर शेल्फ-लाइफ नीति को संचालित करता है।"

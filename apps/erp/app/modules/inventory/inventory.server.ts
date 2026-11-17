@@ -7190,6 +7190,15 @@ export const createShippingMethod = defineServiceFn({
     carrier: z.enum(["UPS", "FedEx", "USPS", "DHL", "Other"]),
     carrierAccountId: z.string().optional(),
     trackingUrl: z.string().optional(),
+    transitDays: z
+      .number()
+      .int()
+      .min(0)
+      .nullable()
+      .describe(
+        "Business days a shipment takes to arrive. Null when not known."
+      )
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
@@ -7219,6 +7228,15 @@ export const updateShippingMethod = defineServiceFn({
       carrier: z.enum(["UPS", "FedEx", "USPS", "DHL", "Other"]),
       carrierAccountId: z.string().optional(),
       trackingUrl: z.string().optional(),
+      transitDays: z
+        .number()
+        .int()
+        .min(0)
+        .nullable()
+        .describe(
+          "Business days a shipment takes to arrive. Null when not known."
+        )
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The shipping method to update.").optional()
     })
@@ -7986,5 +8004,111 @@ export const recostSerialUnit = defineServiceFn({
     return run(ctx, "recost-serial-unit", () =>
       service.recostSerialUnit(ctx, input)
     );
+  }
+});
+
+/**
+ * Get a shipping method's measured transit time
+ *
+ * @remarks
+ * The Posted sales shipments of the shipping method delivered in the last 90
+ * days: how many, their average transit time in business days, the share
+ * delivered by the estimate and by the order's promised (arrive-by) date, and
+ * the transit days the average suggests. Below 5 shipments, only the count.
+ *
+ * @mcp read
+ */
+export const getShippingMethodTransitStats = defineServiceFn({
+  input: z.object({ shippingMethodId: z.string().min(1) }),
+  permission: { view: "inventory" },
+  async run(ctx, input) {
+    const db = ctx.asSystem.pg;
+    const today = datetime
+      .today(await getCompanyTimeZone(db, ctx.company.id))
+      .toString();
+    return service.getShippingMethodTransitStats(db, {
+      companyId: ctx.company.id,
+      shippingMethodId: input.shippingMethodId,
+      today
+    });
+  }
+});
+
+/**
+ * Use a shipping method's measured transit time
+ *
+ * @remarks
+ * Sets the shipping method's transit days to its measured average transit
+ * time, rounded up. Refused when fewer than 5 delivered shipments are known.
+ *
+ * @mcp
+ */
+export const applyShippingMethodTransitSuggestion = defineServiceFn({
+  input: z.object({ shippingMethodId: z.string().min(1) }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const db = ctx.asSystem.pg;
+    const today = datetime
+      .today(await getCompanyTimeZone(db, ctx.company.id))
+      .toString();
+    const stats = await service.getShippingMethodTransitStats(db, {
+      companyId: ctx.company.id,
+      shippingMethodId: input.shippingMethodId,
+      today
+    });
+    if (stats.suggestedDays === null) {
+      return ctx.error(
+        "rule",
+        "Not enough delivered shipments to measure the transit time"
+      );
+    }
+    const updated = await db
+      .updateTable("shippingMethod")
+      .set({
+        transitDays: stats.suggestedDays,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", input.shippingMethodId)
+      .where("companyId", "=", ctx.company.id)
+      .returning("id")
+      .executeTakeFirst();
+    if (!updated) return ctx.error("notFound", NOT_FOUND);
+    return { transitDays: stats.suggestedDays };
+  }
+});
+
+/**
+ * Mark a sales shipment delivered
+ *
+ * @remarks
+ * Records the date a posted sales shipment reached the customer, or clears
+ * it when `deliveredDate` is empty. Refuses a date in the future or before
+ * the shipment posted.
+ *
+ * @param deliveredDate - The date the customer received the goods (YYYY-MM-DD). Empty clears it.
+ * @mcp
+ */
+export const markShipmentDelivered = defineServiceFn({
+  input: z.object({
+    shipmentId: z.string().min(1),
+    deliveredDate: z.string().nullable().optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, input) {
+    const db = ctx.asSystem.pg;
+    const today = datetime
+      .today(await getCompanyTimeZone(db, ctx.company.id))
+      .toString();
+    const result = await service.recordShipmentDelivery(db, {
+      companyId: ctx.company.id,
+      shipmentId: input.shipmentId,
+      deliveredDate: input.deliveredDate || null,
+      source: "Manual",
+      userId: ctx.auditUserId,
+      today
+    });
+    if (result.error) return ctx.error("rule", result.error);
+    return { shipmentId: input.shipmentId };
   }
 });

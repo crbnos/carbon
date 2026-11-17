@@ -179,6 +179,9 @@ msgstr "{completions} geçti birim(ler) tamamlanacak."
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} başarısız"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, gecikmiş"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
@@ -3049,6 +3055,12 @@ msgstr "Kurulum"
 
 msgid "Setup, timer running"
 msgstr "Hazırlık, zamanlayıcı çalışıyor"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "kısa"

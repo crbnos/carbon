@@ -9,6 +9,7 @@ import { memo, useCallback, useMemo } from "react";
 import {
   LuBanknote,
   LuBookMarked,
+  LuCalendarClock,
   LuGlobe,
   LuPencil,
   LuTrash,
@@ -78,6 +79,14 @@ const ShippingMethodsTable = memo(
               }))
             },
             icon: <LuTruck />
+          }
+        },
+        {
+          accessorKey: "transitDays",
+          header: t`Transit Days`,
+          cell: (item) => item.getValue<number | null>() ?? "",
+          meta: {
+            icon: <LuCalendarClock />
           }
         },
         {

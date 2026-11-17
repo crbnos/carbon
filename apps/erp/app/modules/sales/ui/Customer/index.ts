@@ -14,6 +14,8 @@ import CustomerPaymentForm from "./CustomerPaymentForm";
 import CustomerShippingForm from "./CustomerShippingForm";
 import CustomerSidebar from "./CustomerSidebar";
 import CustomerTaxForm from "./CustomerTaxForm";
+import CustomerTransitTimeForm from "./CustomerTransitTimeForm";
+import CustomerTransitTimes from "./CustomerTransitTimes";
 
 export {
   CustomerBankAccountForm,
@@ -27,5 +29,7 @@ export {
   CustomerPaymentForm,
   CustomerShippingForm,
   CustomerSidebar,
-  CustomerTaxForm
+  CustomerTaxForm,
+  CustomerTransitTimeForm,
+  CustomerTransitTimes
 };

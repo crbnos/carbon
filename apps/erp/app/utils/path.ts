@@ -818,6 +818,8 @@ export const path = {
     customerStatuses: `${x}/sales/customer-statuses`,
     customers: `${x}/sales/customers`,
     customerTax: (id: string) => generatePath(`${x}/customer/${id}/tax`),
+    customerTransitTime: (customerId: string, id: string) =>
+      generatePath(`${x}/customer/${customerId}/shipping/transit/${id}`),
     customerType: (id: string) =>
       generatePath(`${x}/sales/customer-types/${id}`),
     customerTypes: `${x}/sales/customer-types`,
@@ -914,6 +916,8 @@ export const path = {
       ),
     deleteCustomerStatus: (id: string) =>
       generatePath(`${x}/sales/customer-statuses/delete/${id}`),
+    deleteCustomerTransitTime: (customerId: string, id: string) =>
+      generatePath(`${x}/customer/${customerId}/shipping/transit/delete/${id}`),
     deleteCustomerType: (id: string) =>
       generatePath(`${x}/sales/customer-types/delete/${id}`),
     deleteCustomField: (tableId: string, id: string) =>
@@ -1919,6 +1923,8 @@ export const path = {
     newCustomerRentalRate: (id: string) =>
       generatePath(`${x}/part/${id}/sales/rental-rates/new`),
     newCustomerStatus: `${x}/sales/customer-statuses/new`,
+    newCustomerTransitTime: (id: string) =>
+      generatePath(`${x}/customer/${id}/shipping/transit/new`),
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
@@ -2639,6 +2645,8 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/payment`),
     salesOrderRelease: (id: string) =>
       generatePath(`${x}/sales-order/${id}/release`),
+    salesOrderShipByDates: (id: string) =>
+      generatePath(`${x}/sales-order/${id}/ship-by-dates`),
     salesOrderShipment: (id: string) =>
       generatePath(`${x}/sales-order/${id}/shipment`),
     salesOrderStatus: (id: string) =>
@@ -2761,6 +2769,8 @@ export const path = {
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
     shipment: (id: string) => generatePath(`${x}/shipment/${id}`),
+    shipmentDelivered: (id: string) =>
+      generatePath(`${x}/shipment/${id}/delivered`),
     shipmentDetails: (id: string) =>
       generatePath(`${x}/shipment/${id}/details`),
     shipmentFixedAssetLineUpdate: `${x}/shipment/fixed-asset-lines/update`,
@@ -2775,6 +2785,8 @@ export const path = {
     shippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,
+    shippingMethodTransitSuggestion: (id: string) =>
+      generatePath(`${x}/inventory/shipping-methods/${id}/transit-suggestion`),
     splitIssueItem: `${x}/issue/item/split`,
     sso: `${x}/settings/sso`,
     stockMovementCorrect: (id: string) =>

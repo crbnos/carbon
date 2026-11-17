@@ -860,6 +860,9 @@ msgstr "{quantity} 수량의 {categoryLabel} 마크업"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
+msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+msgstr ""
+
 msgid "{code} counted"
 msgstr "{code} 계산 완료"
 
@@ -4812,6 +4815,9 @@ msgstr "웹훅 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수
 msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 msgstr "이 임차 요금을 정말로 삭제하시겠습니까? 이미 추가된 임차 라인은 요금을 유지합니다. 이는 취소할 수 없습니다."
 
+msgid "Are you sure you want to delete these transit days?"
+msgstr ""
+
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "이 승인 규칙을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -5015,6 +5021,9 @@ msgstr "확실합니까?"
 
 msgid "Arrears"
 msgstr "연체금"
+
+msgid "Arrives <0/> (estimated)"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "마치 공장의 대기열 맨 앞으로 뛰어든 것처럼."
@@ -6219,6 +6228,9 @@ msgstr "사업 요소"
 
 msgid "Business component (R&D)"
 msgstr "비즈니스 구성요소 (R&D)"
+
+msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
+msgstr ""
 
 msgid "Business moment"
 msgstr "비즈니스 순간"
@@ -10597,8 +10609,14 @@ msgstr "납품처 주/도 및 우편번호"
 msgid "Delivered"
 msgstr "배송됨"
 
+msgid "Delivered <0/>"
+msgstr ""
+
 msgid "Delivered on"
 msgstr "배송일"
+
+msgid "Delivered On"
+msgstr ""
 
 msgid "Deliveries"
 msgstr "배송"
@@ -11735,6 +11753,9 @@ msgstr "고객 상태 편집"
 msgid "Edit Customer Type"
 msgstr "고객 유형 편집"
 
+msgid "Edit Delivery"
+msgstr ""
+
 msgid "Edit Demand Forecast"
 msgstr "소요량 예측 편집"
 
@@ -12028,6 +12049,9 @@ msgstr "이송 편집"
 
 msgid "Edit Transfer Line"
 msgstr "이송 라인 편집"
+
+msgid "Edit Transit Time"
+msgstr ""
 
 msgid "Edit Type"
 msgstr "유형 편집"
@@ -12631,6 +12655,9 @@ msgstr "예상 <0>{0}</0>"
 
 msgid "Estimated cost to complete"
 msgstr "완료까지의 예상 원가"
+
+msgid "Estimated Delivery"
+msgstr ""
 
 msgid "Estimated Duration"
 msgstr "예상 소요시간"
@@ -16565,6 +16592,9 @@ msgstr "유지"
 msgid "Keep Current"
 msgstr "현재 값 유지"
 
+msgid "Keep dates"
+msgstr ""
+
 msgid "Keep demo data"
 msgstr "데모 데이터 유지"
 
@@ -16778,6 +16808,9 @@ msgstr "가장 큰 자식"
 msgid "Last 6 Months"
 msgstr "지난 6개월"
 
+msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr ""
+
 msgid "Last Activity"
 msgstr "최근 활동"
 
@@ -16859,6 +16892,12 @@ msgstr "{name}님, 저녁이 늦어가는군요."
 
 msgid "Late Reason"
 msgstr "지연 사유"
+
+msgid "Late to arrive"
+msgstr ""
+
+msgid "Late to arrive: estimated {estimated}, promised {promised}."
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "이전 주가 모두 소진된 후 이후 주가 소진됩니다."
@@ -17942,6 +17981,9 @@ msgstr "완료로 표시"
 
 msgid "Mark Dark Mode"
 msgstr "다크 모드로 표시"
+
+msgid "Mark Delivered"
+msgstr ""
 
 msgid "Mark done"
 msgstr "완료로 표시"
@@ -19346,6 +19388,9 @@ msgstr "새 이동"
 msgid "New Transfer Line"
 msgstr "신규 이송 라인"
 
+msgid "New Transit Time"
+msgstr ""
+
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
 
@@ -20490,6 +20535,9 @@ msgstr "이 기간에 거래가 없습니다"
 msgid "No transfers"
 msgstr "이송 없음"
 
+msgid "No transit times yet. Orders use the shipping method's transit days."
+msgstr ""
+
 msgid "No unassigned jobs"
 msgstr "할당되지 않은 작업 지시 없음"
 
@@ -20668,6 +20716,9 @@ msgstr "미설정"
 
 msgid "Not delivered"
 msgstr "배송되지 않음"
+
+msgid "Not enough deliveries yet to measure the transit time."
+msgstr ""
 
 msgid "not enough jobs to cover quantity"
 msgstr "수량을 충족할 작업 지시가 부족함"
@@ -24496,8 +24547,14 @@ msgstr "재계산"
 msgid "Recalculate Run"
 msgstr "재계산 실행"
 
+msgid "Recalculate ship dates"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "원가 재계산"
+
+msgid "Recalculated the ship dates"
+msgstr ""
 
 msgid "Recalculating…"
 msgstr "재계산 중…"
@@ -26746,6 +26803,9 @@ msgstr "문서 레이아웃 저장됨"
 msgid "Saved signature"
 msgstr "서명 저장됨"
 
+msgid "Saved the delivery date"
+msgstr ""
+
 msgid "Saved this document"
 msgstr "이 문서를 저장했습니다"
 
@@ -28047,6 +28107,9 @@ msgstr "출하"
 msgid "Ship Back"
 msgstr "반품"
 
+msgid "Ship By (job)"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "배송 일자"
 
@@ -28145,6 +28208,9 @@ msgstr "출하일"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "이 고객의 배송 라인 중 반품할 수량이 남아 있는 라인"
+
+msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
+msgstr ""
 
 msgid "Shipped Qty"
 msgstr "출하 수량"
@@ -30416,6 +30482,12 @@ msgstr "특정 날짜까지 예약된 작업의 예산 원가, 최신 기준의 
 msgid "The burden run burdens project cost with this pool"
 msgstr "부담 실행은 이 풀로 프로젝트 원가에 부담을 줍니다"
 
+msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+msgstr ""
+
+msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+msgstr ""
+
 msgid "The capital assets you own and depreciate"
 msgstr "소유하고 감가상각하는 고정자산"
 
@@ -30630,11 +30702,17 @@ msgstr "고객이 계약에 동의한 날짜(거래가 성사된 날)입니다. 
 msgid "The date the customer expects to receive the goods"
 msgstr "고객이 상품 수령을 예상하는 날짜"
 
+msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+msgstr ""
+
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "상품이 실제로 창고를 떠나는 날짜로, 출하 전기에 기록되고 시간 내 배송 점수에 사용됩니다."
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "기간의 예상 소요량을 충당하기 위해 현장에서 품목이 필요한 날짜"
+
+msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
+msgstr ""
 
 msgid "The date the return authorization expires"
 msgstr "반품 허가 만료 날짜"
@@ -31262,6 +31340,9 @@ msgstr "위치는 외부에서 초안되거나 청구된 송장과 인식된 월
 
 msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "전기된 시간이 역분개되고 대신 이 시간이 청구됩니다."
+
+msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
+msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "이 이슈에 적용되는 사전 정의된 작업 및 승인 요구사항 묶음입니다. 설정 시 이슈 유형의 기본 워크플로를 재정의합니다."
@@ -32992,6 +33073,15 @@ msgstr "운송"
 msgid "Transit & Institution"
 msgstr "운송 및 기관"
 
+msgid "Transit Days"
+msgstr ""
+
+msgid "Transit Days (ship-to)"
+msgstr ""
+
+msgid "Transit Times"
+msgstr ""
+
 msgid "Trash"
 msgstr "휴지통"
 
@@ -33666,6 +33756,9 @@ msgstr "성공적으로 업데이트되었습니다"
 msgid "Updated task status"
 msgstr "작업 상태 업데이트됨"
 
+msgid "Updated transit days"
+msgstr ""
+
 msgid "Updating…"
 msgstr ""
 
@@ -33800,6 +33893,9 @@ msgstr "다음 품목 ID를 가져오려면 ...을(를) 사용하세요"
 
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"
+
+msgid "Use {days} days"
+msgstr ""
 
 msgid "Use {earliest}"
 msgstr "{earliest} 사용"
@@ -34776,9 +34872,6 @@ msgstr "일련번호 또는 배치가 만료되는 시점과 만료 후 사용 �
 msgid "When an invoice is created"
 msgstr "송장이 생성될 때"
 
-msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-msgstr "Carbon이 재화 도착을 약속한 시점으로, 배송 방법의 운송 일수와 결합되어 출하일 역산에 사용됩니다."
-
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "이연, 발생 및 임차료 이자 매출이 인식될 때"
 
@@ -34851,6 +34944,9 @@ msgstr "고객의 요청이 더 이상 유효하지 않을 때; 이 날짜가 �
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "재화가 실제로 도착한 시점으로, 입고에 기록되며 공급업체 정시 납품 평가에 사용됩니다."
 
+msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+msgstr ""
+
 msgid "When the job is created"
 msgstr "작업 지시가 생성될 때"
 
@@ -34902,14 +34998,14 @@ msgstr "이것이 켜져 있으면 시간, 자재 및 구매가 프로젝트의 
 msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 msgstr "이 품목의 개가 시리얼 번호를 그릴 때. 설정 → 생산을 따르려면 비워두세요."
 
+msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+msgstr ""
+
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "이 내용이 맞으면 합의됨으로 표시하세요. 그러면 커맨드 센터의 발견(Discovery) 단계가 완료됩니다."
 
 msgid "When this milestone completes, the plan changes only through a change request"
 msgstr "이 마일스톤이 완료되면 변경 요청을 통해서만 계획이 변경됩니다."
-
-msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
-msgstr "이 특정 라인의 출하 약속일; 분할 출하에 대한 주문 헤더의 약속일에 대한 라인별 재정의"
 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "이 특정 로트/시리얼이 만료될 때; FEFO 피킹 및 소모 시 보존 기간 정책을 결정합니다."

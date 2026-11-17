@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -13,7 +14,7 @@ import {
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import type { z } from "zod";
 import {
   Boolean,
@@ -43,6 +44,7 @@ import {
   salesOrderShipmentValidator
 } from "../../sales.models";
 import type { SalesOrder } from "../../types";
+import { useShipByRecalculatePrompt } from "./ShipByRecalculatePrompt";
 
 type SalesOrderShipmentFormProps = {
   initialValues: z.infer<typeof salesOrderShipmentValidator>;
@@ -59,7 +61,17 @@ const SalesOrderShipmentForm = forwardRef<
 >(({ initialValues, defaultCollapsed = false }, ref) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<typeof action>();
+  const shipBy = useShipByRecalculatePrompt(initialValues.id);
+  // Set on a save that changes the arrive-by date, the shipping method or the
+  // ship-to: once the save lands, ask about the lines' ship-by dates.
+  const checkShipBy = useRef(false);
+  const fetcher = useAction<typeof action>({
+    onSettled: () => {
+      if (!checkShipBy.current) return;
+      checkShipBy.current = false;
+      shipBy.check();
+    }
+  });
   const [dropShip, setDropShip] = useState<boolean>(
     initialValues.dropShipment ?? false
   );
@@ -113,6 +125,16 @@ const SalesOrderShipmentForm = forwardRef<
         defaultValues={initialValues}
         fetcher={fetcher}
         isDisabled={isLocked}
+        onSubmit={(data) => {
+          checkShipBy.current =
+            (data.receiptPromisedDate ?? "") !==
+              (initialValues.receiptPromisedDate ?? "") ||
+            (data.shippingMethodId ?? "") !==
+              (initialValues.shippingMethodId ?? "") ||
+            (data.customerLocationId ?? "") !==
+              (initialValues.customerLocationId ?? "") ||
+            !!data.dropShipment !== !!initialValues.dropShipment;
+        }}
       >
         <CardHeader>
           <CardTitle>
@@ -205,6 +227,7 @@ const SalesOrderShipmentForm = forwardRef<
           </Submit>
         </CardFooter>
       </ValidatedForm>
+      {shipBy.prompt}
     </Card>
   );
 });

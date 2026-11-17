@@ -179,6 +179,9 @@ msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, other {목표에서 #일 뒤짐}}"
 
+msgid "{days, plural, one {Ships in # day} other {Ships in # days}}"
+msgstr ""
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings}개 불합격"
 
@@ -205,6 +208,9 @@ msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, 기한 초과"
+
+msgid "{late, plural, one {# day late} other {# days late}}"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
@@ -3049,6 +3055,12 @@ msgstr "설정"
 
 msgid "Setup, timer running"
 msgstr "셋업, 타이머 실행 중"
+
+msgid "Ships today"
+msgstr ""
+
+msgid "Ships tomorrow"
+msgstr ""
 
 msgid "short"
 msgstr "부족"

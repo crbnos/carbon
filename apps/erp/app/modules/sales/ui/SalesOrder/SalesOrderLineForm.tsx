@@ -102,6 +102,7 @@ import type {
 } from "../../types";
 import { PriceTraceModal } from "../Pricing/PriceTraceModal";
 import { DeliveryDateCheckAlert } from "./DeliveryDateCheckAlert";
+import { LateToArriveAlert } from "./LateToArriveAlert";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -875,6 +876,13 @@ const SalesOrderLineForm = ({
                           locationId={locationId}
                           promisedDate={promisedDate}
                           onUseEarliestDate={setPromisedDate}
+                        />
+                      )}
+                      {!isService && (
+                        <LateToArriveAlert
+                          orderId={orderId}
+                          lineId={initialValues.id}
+                          promisedDate={promisedDate}
                         />
                       )}
 

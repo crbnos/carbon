@@ -860,6 +860,9 @@ msgstr "{categoryLabel} markup for quantity {quantity}"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
+msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+msgstr "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
+
 msgid "{code} counted"
 msgstr "{code} counted"
 
@@ -4812,6 +4815,9 @@ msgstr "Are you sure you want to delete the webhook: {0}? This cannot be undone.
 msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 msgstr "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 
+msgid "Are you sure you want to delete these transit days?"
+msgstr "Are you sure you want to delete these transit days?"
+
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Are you sure you want to delete this approval rule? This cannot be undone."
 
@@ -5015,6 +5021,9 @@ msgstr "Are you sure?"
 
 msgid "Arrears"
 msgstr "Arrears"
+
+msgid "Arrives <0/> (estimated)"
+msgstr "Arrives <0/> (estimated)"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "As if it jumped to the front of the shop's queue."
@@ -6219,6 +6228,9 @@ msgstr "Business Component"
 
 msgid "Business component (R&D)"
 msgstr "Business component (R&D)"
+
+msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
+msgstr "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
 
 msgid "Business moment"
 msgstr "Business moment"
@@ -10597,8 +10609,14 @@ msgstr "Deliver To State and Postal Code"
 msgid "Delivered"
 msgstr "Delivered"
 
+msgid "Delivered <0/>"
+msgstr "Delivered <0/>"
+
 msgid "Delivered on"
 msgstr "Delivered on"
+
+msgid "Delivered On"
+msgstr "Delivered On"
 
 msgid "Deliveries"
 msgstr "Deliveries"
@@ -11735,6 +11753,9 @@ msgstr "Edit Customer Status"
 msgid "Edit Customer Type"
 msgstr "Edit Customer Type"
 
+msgid "Edit Delivery"
+msgstr "Edit Delivery"
+
 msgid "Edit Demand Forecast"
 msgstr "Edit Demand Forecast"
 
@@ -12028,6 +12049,9 @@ msgstr "Edit Transfer"
 
 msgid "Edit Transfer Line"
 msgstr "Edit Transfer Line"
+
+msgid "Edit Transit Time"
+msgstr "Edit Transit Time"
 
 msgid "Edit Type"
 msgstr "Edit Type"
@@ -12631,6 +12655,9 @@ msgstr "Estimated <0>{0}</0>"
 
 msgid "Estimated cost to complete"
 msgstr "Estimated cost to complete"
+
+msgid "Estimated Delivery"
+msgstr "Estimated Delivery"
 
 msgid "Estimated Duration"
 msgstr "Estimated Duration"
@@ -16565,6 +16592,9 @@ msgstr "Keep"
 msgid "Keep Current"
 msgstr "Keep Current"
 
+msgid "Keep dates"
+msgstr "Keep dates"
+
 msgid "Keep demo data"
 msgstr "Keep demo data"
 
@@ -16778,6 +16808,9 @@ msgstr "Largest child"
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
 
+msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+msgstr "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
+
 msgid "Last Activity"
 msgstr "Last Activity"
 
@@ -16859,6 +16892,12 @@ msgstr "Late in the evening, {name}."
 
 msgid "Late Reason"
 msgstr "Late Reason"
+
+msgid "Late to arrive"
+msgstr "Late to arrive"
+
+msgid "Late to arrive: estimated {estimated}, promised {promised}."
+msgstr "Late to arrive: estimated {estimated}, promised {promised}."
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Later weeks are consumed once earlier ones are used up."
@@ -17942,6 +17981,9 @@ msgstr "Mark Complete"
 
 msgid "Mark Dark Mode"
 msgstr "Mark Dark Mode"
+
+msgid "Mark Delivered"
+msgstr "Mark Delivered"
 
 msgid "Mark done"
 msgstr "Mark done"
@@ -19346,6 +19388,9 @@ msgstr "New Transfer"
 msgid "New Transfer Line"
 msgstr "New Transfer Line"
 
+msgid "New Transit Time"
+msgstr "New Transit Time"
+
 msgid "New Unit of Measure"
 msgstr "New Unit of Measure"
 
@@ -20490,6 +20535,9 @@ msgstr "No transactions in this period"
 msgid "No transfers"
 msgstr "No transfers"
 
+msgid "No transit times yet. Orders use the shipping method's transit days."
+msgstr "No transit times yet. Orders use the shipping method's transit days."
+
 msgid "No unassigned jobs"
 msgstr "No unassigned jobs"
 
@@ -20668,6 +20716,9 @@ msgstr "Not Configured"
 
 msgid "Not delivered"
 msgstr "Not delivered"
+
+msgid "Not enough deliveries yet to measure the transit time."
+msgstr "Not enough deliveries yet to measure the transit time."
 
 msgid "not enough jobs to cover quantity"
 msgstr "not enough jobs to cover quantity"
@@ -24496,8 +24547,14 @@ msgstr "Recalculate"
 msgid "Recalculate Run"
 msgstr "Recalculate Run"
 
+msgid "Recalculate ship dates"
+msgstr "Recalculate ship dates"
+
 msgid "Recalculate Unit Cost"
 msgstr "Recalculate Unit Cost"
+
+msgid "Recalculated the ship dates"
+msgstr "Recalculated the ship dates"
 
 msgid "Recalculating…"
 msgstr "Recalculating…"
@@ -26746,6 +26803,9 @@ msgstr "Saved document layout"
 msgid "Saved signature"
 msgstr "Saved signature"
 
+msgid "Saved the delivery date"
+msgstr "Saved the delivery date"
+
 msgid "Saved this document"
 msgstr "Saved this document"
 
@@ -28047,6 +28107,9 @@ msgstr "Ship"
 msgid "Ship Back"
 msgstr "Ship Back"
 
+msgid "Ship By (job)"
+msgstr "Ship By (job)"
+
 msgid "Ship Date"
 msgstr "Ship Date"
 
@@ -28145,6 +28208,9 @@ msgstr "Shipped Date"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Shipped lines for this customer with quantity remaining to return"
+
+msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
+msgstr "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
 
 msgid "Shipped Qty"
 msgstr "Shipped Qty"
@@ -30416,6 +30482,12 @@ msgstr "The budgeted cost of the work scheduled by a date, from the latest basel
 msgid "The burden run burdens project cost with this pool"
 msgstr "The burden run burdens project cost with this pool"
 
+msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+msgstr "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
+
+msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+msgstr "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
+
 msgid "The capital assets you own and depreciate"
 msgstr "The capital assets you own and depreciate"
 
@@ -30630,11 +30702,17 @@ msgstr "The date the customer agreed to the contract — when the deal was won. 
 msgid "The date the customer expects to receive the goods"
 msgstr "The date the customer expects to receive the goods"
 
+msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+msgstr "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
+
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "The date the item is required on-site to cover the period's projected demand."
+
+msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
+msgstr "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
 
 msgid "The date the return authorization expires"
 msgstr "The date the return authorization expires"
@@ -31262,6 +31340,9 @@ msgstr "The position counts invoices drafted or billed externally and months rec
 
 msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "The posted hours are reversed and these hours are charged instead"
+
+msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
+msgstr "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
@@ -32992,6 +33073,15 @@ msgstr "Transit"
 msgid "Transit & Institution"
 msgstr "Transit & Institution"
 
+msgid "Transit Days"
+msgstr "Transit Days"
+
+msgid "Transit Days (ship-to)"
+msgstr "Transit Days (ship-to)"
+
+msgid "Transit Times"
+msgstr "Transit Times"
+
 msgid "Trash"
 msgstr "Trash"
 
@@ -33666,6 +33756,9 @@ msgstr "Updated successfully"
 msgid "Updated task status"
 msgstr "Updated task status"
 
+msgid "Updated transit days"
+msgstr "Updated transit days"
+
 msgid "Updating…"
 msgstr "Updating…"
 
@@ -33800,6 +33893,9 @@ msgstr "Use ... to get the next part ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
+
+msgid "Use {days} days"
+msgstr "Use {days} days"
 
 msgid "Use {earliest}"
 msgstr "Use {earliest}"
@@ -34776,9 +34872,6 @@ msgstr "When a serial or batch expires, and what happens if used after — a com
 msgid "When an invoice is created"
 msgstr "When an invoice is created"
 
-msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-msgstr "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
-
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "When deferred, accrued and lease-interest revenue will be recognized"
 
@@ -34851,6 +34944,9 @@ msgstr "When the customer's request stops being current; past this date the RFQ 
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 
+msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+msgstr "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
+
 msgid "When the job is created"
 msgstr "When the job is created"
 
@@ -34902,14 +34998,14 @@ msgstr "When this is on, time, material and purchases charge an element of a pro
 msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 msgstr "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 
+msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+msgstr "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
+
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 
 msgid "When this milestone completes, the plan changes only through a change request"
 msgstr "When this milestone completes, the plan changes only through a change request"
-
-msgid "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
-msgstr "When this specific line is promised to ship; per-line override of the order header's Promised Date for split shipments."
 
 msgid "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
 msgstr "When this specific lot/serial expires; drives FEFO picking and the shelf-life policy on consumption."
