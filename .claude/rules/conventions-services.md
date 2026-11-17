@@ -84,6 +84,10 @@ export const cancelJob = defineServiceFn({
   forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
   an operation only when it is safe with nothing but its input: the API runs
   the gate and `run`, nothing the route does around the call.
+- **Clearing a field**: an update's optional field whose column is nullable is
+  `.nullable().optional()`. A JSON caller has no `undefined`: it leaves a field
+  out to keep it and sends `null` to clear it, as a blank form field does
+  through `sanitize`. The supplier and customer updates follow this.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
   anything but service functions in `{module}.server.ts`.

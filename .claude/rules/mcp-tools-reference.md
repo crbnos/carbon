@@ -128,7 +128,9 @@ any other value export in a server file fails generation.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
   admits `undefined` is optional. Enum members are sorted, so the hash does not
-  move with the checker's type ids. The type carries no descriptions, so
+  move with the checker's type ids. A nullable enum lists `null` too, last:
+  `z.fromJSONSchema` checks `enum` apart from `type`, so without it the
+  published schema refused the null the operation takes. The type carries no descriptions, so
   `inputFieldDescriptions` (`scripts/lib/input-docs.ts`) reads each top-level
   field's `.describe("…")` from the source, following the validator an input
   extends; `@param` overrides it. A loose input whose `run` calls a building

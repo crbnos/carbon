@@ -188,4 +188,16 @@ describe("published input schemas", () => {
       value: input
     });
   });
+
+  // A schema that fails to compile lets every input through, which would pass
+  // the cases above too.
+  it("still refuse a value outside a nullable enum", () => {
+    const schema = tools.get("sales_updateCustomerShipping");
+    if (!schema) throw new Error("sales_updateCustomerShipping is not published");
+    const result = jsonSchemaInput(schema)["~standard"].validate({
+      customerId: "cus_1",
+      incoterm: "XXX"
+    });
+    expect(result).toHaveProperty("issues");
+  });
 });

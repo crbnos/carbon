@@ -3608,7 +3608,7 @@ export async function updateCustomerContact(
     contactId: string;
     companyId: string;
     contact: z.infer<typeof customerContactValidator>;
-    customerLocationId?: string;
+    customerLocationId?: string | null;
     customFields?: Json;
   }
 ) {
@@ -3658,17 +3658,24 @@ export async function updateCustomerContact(
     }
   }
 
-  if (customerContact.customFields) {
-    const customFieldUpdate = await client
+  // The location is written whenever it is sent, custom fields or not: an API
+  // caller clears it with null. Left out (or blank in the form), it is kept.
+  const contactRow = {
+    ...(customerContact.customFields
+      ? { customFields: customerContact.customFields }
+      : {}),
+    ...(customerContact.customerLocationId !== undefined
+      ? { customerLocationId: customerContact.customerLocationId }
+      : {})
+  };
+  if (Object.keys(contactRow).length > 0) {
+    const contactRowUpdate = await client
       .from("customerContact")
-      .update({
-        customFields: customerContact.customFields,
-        customerLocationId: customerContact.customerLocationId
-      })
+      .update(contactRow)
       .eq("contactId", customerContact.contactId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+    if (contactRowUpdate.error) {
+      return contactRowUpdate;
     }
   }
   // The contact id is the row key and the location is set on customerContact
@@ -3692,12 +3699,12 @@ export async function updateCustomerLocation(
     addressId: string;
     name: string;
     address: {
-      addressLine1?: string;
-      addressLine2?: string;
-      city?: string;
-      stateProvince?: string;
-      countryCode?: string;
-      postalCode?: string;
+      addressLine1?: string | null;
+      addressLine2?: string | null;
+      city?: string | null;
+      stateProvince?: string | null;
+      countryCode?: string | null;
+      postalCode?: string | null;
     };
     customFields?: Json;
   }
