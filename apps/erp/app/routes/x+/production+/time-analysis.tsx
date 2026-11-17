@@ -11,7 +11,6 @@ import {
   CardTitle,
   ClientOnly,
   Combobox,
-  HStack,
   Select,
   SelectContent,
   SelectItem,
@@ -132,7 +131,7 @@ export default function TimeAnalysisRoute() {
   };
   return (
     <VStack spacing={4} className="h-full w-full overflow-y-auto p-4">
-      <HStack className="w-full flex-wrap">
+      <div className="flex w-full flex-wrap items-center gap-2">
         <div className="w-72">
           <Combobox
             size="sm"
@@ -181,7 +180,7 @@ export default function TimeAnalysisRoute() {
           />
           <Trans>Include outliers</Trans>
         </label>
-      </HStack>
+      </div>
 
       {data.operations.length === 0 ? (
         <Empty>
