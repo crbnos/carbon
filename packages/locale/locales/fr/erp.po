@@ -586,6 +586,13 @@ msgstr "{0} de {memberCount} ordres de fabrication ne sont pas encore terminés 
 msgid "{0} of {whole} done"
 msgstr "{0} sur {whole} fait"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} sur vos feuilles de temps"
@@ -666,6 +673,11 @@ msgstr "{0} rebuté"
 #. placeholder {0}: selected.size
 msgid "{0} selected"
 msgstr "{0} sélectionnés"
+
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -6141,6 +6153,9 @@ msgstr "Créer des matériels de formation basés sur les rôles"
 msgid "Build tailored, role-based training materials"
 msgstr "Créer des matériels de formation personnalisés et basés sur les rôles"
 
+msgid "Buildable Quantity"
+msgstr ""
+
 msgid "Builds"
 msgstr "Fabrications"
 
@@ -6349,6 +6364,9 @@ msgstr "Appelée une méthode en Carbon — les composants plus les opérations 
 
 msgid "Camera"
 msgstr "Caméra"
+
+msgid "Can Make Now"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "Impossible à restaurer"
@@ -6939,6 +6957,9 @@ msgstr "Contrôle"
 
 msgid "Check operations on the left to build the batch."
 msgstr "Cochez les opérations à gauche pour créer le lot."
+
+msgid "Check Quantity"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Vérifiez le registre des articles pour tous les articles ayant une quantité disponible négative à la fin de la période — généralement un reçu manquant ou une comptabilisation désordonnée qui fausse la valeur des stocks et le coût des marchandises vendues. Marquez comme fait une fois examiné, ou ignorez avec une raison."
@@ -7651,6 +7672,9 @@ msgstr "Temps d'exécution"
 
 msgid "Completion time by job"
 msgstr "Délai de réalisation par ordre de fabrication"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8702,6 +8726,9 @@ msgstr "Impossible de lancer {0} : {1}"
 
 msgid "Could not save"
 msgstr "N'a pas pu enregistrer"
+
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
 
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
@@ -13778,6 +13805,9 @@ msgstr "Produits Finis"
 msgid "Finished Goods (default)"
 msgstr "Produits Finis (par défaut)"
 
+msgid "Finished Goods Available"
+msgstr ""
+
 msgid "finishes"
 msgstr "Déduction supplémentaire de première année prise avant le début du calendrier MACRS régulier."
 
@@ -14107,6 +14137,9 @@ msgstr "De et Vers sont la même unité de stockage"
 
 msgid "From and To can't be the same storage unit"
 msgstr "L'origine et la destination ne peuvent pas être la même unité de stockage"
+
+msgid "From available component stock"
+msgstr ""
 
 msgid "From customer"
 msgstr "Du client"
@@ -15194,6 +15227,9 @@ msgstr "Si commandé, aucune rupture de stock prévue au cours des 48 prochaines
 
 msgid "If something is off track"
 msgstr "Si quelque chose déraille"
+
+msgid "If stock committed to open orders were used"
+msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Si vous souhaitez modifier les numéros de pièce, veuillez cliquer sur Annuler et attribuer manuellement les pièces pour chaque ligne avant la conversion."
@@ -17123,6 +17159,9 @@ msgstr "Lumières éteintes (24/7)"
 msgid "Likelihood"
 msgstr "Probabilité"
 
+msgid "Limits To"
+msgstr ""
+
 msgid "Line"
 msgstr "Ligne"
 
@@ -17646,6 +17685,9 @@ msgstr "Convention MACRS"
 
 msgid "MACRS Property Class"
 msgstr "Classe de Propriété MACRS"
+
+msgid "Made"
+msgstr ""
 
 msgid "Magic link"
 msgstr "Lien magique"
@@ -20777,6 +20819,10 @@ msgstr "Rien n’est encore supprimé. La demande est soumise à l’approbation
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Rien n'est dû. Les factures sont créées automatiquement lorsqu'une période arrive à échéance."
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr ""
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "Rien n'est synchronisé jusqu'à ce que vous activiez la synchronisation."
 
@@ -20985,6 +21031,11 @@ msgstr "En stock"
 msgid "On Hand"
 msgstr "En stock"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr ""
+
 msgid "On hand {before} to {after}"
 msgstr "En stock : de {before} à {after}"
 
@@ -21006,6 +21057,9 @@ msgstr "Sur ordres de fabrication"
 
 msgid "On order"
 msgstr "Commandé"
+
+msgid "On Order"
+msgstr ""
 
 msgid "On Production Demand"
 msgstr "À la demande de production"
@@ -24088,6 +24142,9 @@ msgstr "Quantité mise au rebut"
 msgid "Quantity shipped"
 msgstr "Quantité expédiée"
 
+msgid "Quantity to check"
+msgstr ""
+
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Quantité à créditer pour la ligne {lineNumber}"
 
@@ -24973,6 +25030,9 @@ msgstr "Lancer le lot de production lance ses ordres de fabrication, et chacun d
 
 msgid "Reload the page to try again."
 msgstr "Rechargez la page pour réessayer."
+
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
 
 msgid "Remaining"
 msgstr "Restant"
@@ -30317,6 +30377,9 @@ msgstr "Le lot de production est {0}, pas Planifié"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Le lot s'exécute au rythme de son membre le plus urgent — les autres sont avancés"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "Le tarif de facturation est verrouillé : le devis a été envoyé au client."
 
@@ -31736,6 +31799,9 @@ msgstr "Ces comptes ont besoin d'un remplacement"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "Ce sont les notes propres à l'enregistrement. Les modifier ici les modifie aussi sur l'enregistrement."
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Ces champs personnalisés ne seront disponibles que pour les entités ayant les mêmes balises"
 
@@ -31753,6 +31819,9 @@ msgstr "Ceux-ci n'ont pas de numéro de lot de production, donc un transfert ne 
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "Ceux-ci n'ont pas de numéro de série, donc un transfert ne peut pas les prélever. Attribuez à chacun un numéro de série pour le déplacer."
+
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Ces articles ont toujours du matériel à prélever. Terminer maintenant marque la liste comme Partielle."
@@ -32305,6 +32374,9 @@ msgstr "Rapprochement à trois voies"
 #. placeholder {0}: formatDate(endDate)
 msgid "Through {0}"
 msgstr "Jusqu'au {0}"
+
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Miniature"
@@ -33284,6 +33356,9 @@ msgstr "Prix de vente unitaire"
 msgid "Units"
 msgstr "Unités"
 
+msgid "Units don't match"
+msgstr ""
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Unités de devise de base par une unité de cette devise ; utilisé pour traduire les montants lors de la comptabilisation."
 
@@ -33848,6 +33923,9 @@ msgstr "Utilisations sur cet ordre de fabrication"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Utilise le sous-ensemble {0} · {1}"
+
+msgid "Using All On Hand"
+msgstr ""
 
 msgid "VAC"
 msgstr "VAC"

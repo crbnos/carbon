@@ -586,6 +586,13 @@ msgstr "{memberCount}个工单中{0}个尚未完成——其产出将一直缺�
 msgid "{0} of {whole} done"
 msgstr "{0} / {whole} 已完成"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "工时记录中的 {0}"
@@ -666,6 +673,11 @@ msgstr "{0} 报废"
 #. placeholder {0}: selected.size
 msgid "{0} selected"
 msgstr "{0} 已选择"
+
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -6141,6 +6153,9 @@ msgstr "构建基于角色的培训材料"
 msgid "Build tailored, role-based training materials"
 msgstr "构建定制的、基于角色的培训材料"
 
+msgid "Buildable Quantity"
+msgstr ""
+
 msgid "Builds"
 msgstr "构建"
 
@@ -6349,6 +6364,9 @@ msgstr "在Carbon中称为方法 — 生产一个零件的组成部分和工序�
 
 msgid "Camera"
 msgstr "摄像头"
+
+msgid "Can Make Now"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "无法恢复"
@@ -6939,6 +6957,9 @@ msgstr "检查"
 
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
+
+msgid "Check Quantity"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
@@ -7651,6 +7672,9 @@ msgstr "完成时间"
 
 msgid "Completion time by job"
 msgstr "按工单统计的完成时间"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8702,6 +8726,9 @@ msgstr "无法下达{0}：{1}"
 
 msgid "Could not save"
 msgstr "无法保存"
+
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
 
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
@@ -13778,6 +13805,9 @@ msgstr "成品"
 msgid "Finished Goods (default)"
 msgstr "成品（默认）"
 
+msgid "Finished Goods Available"
+msgstr ""
+
 msgid "finishes"
 msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
@@ -14107,6 +14137,9 @@ msgstr "来源和目标为同一存储单元"
 
 msgid "From and To can't be the same storage unit"
 msgstr "来源和目标存储单元不能相同"
+
+msgid "From available component stock"
+msgstr ""
 
 msgid "From customer"
 msgstr "来自客户"
@@ -15194,6 +15227,9 @@ msgstr "如果已订购，未来48周内无缺货预测"
 
 msgid "If something is off track"
 msgstr "如果有什么偏离轨道"
+
+msgid "If stock committed to open orders were used"
+msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
@@ -17123,6 +17159,9 @@ msgstr "熄灯（24/7）"
 msgid "Likelihood"
 msgstr "可能性"
 
+msgid "Limits To"
+msgstr ""
+
 msgid "Line"
 msgstr "行"
 
@@ -17646,6 +17685,9 @@ msgstr "MACRS公约"
 
 msgid "MACRS Property Class"
 msgstr "MACRS资产类别"
+
+msgid "Made"
+msgstr ""
 
 msgid "Magic link"
 msgstr "魔法链接"
@@ -20777,6 +20819,10 @@ msgstr "尚未删除。该请求将提交给其他管理员审批，待其中一
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "当前没有应付款项。当到期期间来临时，发票会自动生成。"
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr ""
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "在启用同步前，没有任何内容会被同步。"
 
@@ -20985,6 +21031,11 @@ msgstr "现有"
 msgid "On Hand"
 msgstr "现有"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr ""
+
 msgid "On hand {before} to {after}"
 msgstr "现有：从 {before} 到 {after}"
 
@@ -21006,6 +21057,9 @@ msgstr "在工单上"
 
 msgid "On order"
 msgstr "已订购"
+
+msgid "On Order"
+msgstr ""
 
 msgid "On Production Demand"
 msgstr "生产需求上"
@@ -24088,6 +24142,9 @@ msgstr "报废数量"
 msgid "Quantity shipped"
 msgstr "发运数量"
 
+msgid "Quantity to check"
+msgstr ""
+
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "第 {lineNumber} 行的贷记数量"
 
@@ -24973,6 +25030,9 @@ msgstr "下达生产批次会下达其工单，每个工单都必须为车间做
 
 msgid "Reload the page to try again."
 msgstr "重新加载页面以重试。"
+
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
 
 msgid "Remaining"
 msgstr "剩余"
@@ -30317,6 +30377,9 @@ msgstr "生产批次为 {0}，不是已计划"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "账单费率已锁定：估价已发送给客户。"
 
@@ -31736,6 +31799,9 @@ msgstr "这些账户需要替换"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "这些是记录本身的备注。在此处更改也会同时更改记录上的备注。"
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
 
@@ -31753,6 +31819,9 @@ msgstr "这些物料没有生产批次号，因此调拨无法拣货。为其分
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "这些物料没有序列号，因此调拨无法拣货。为每件物料分配序列号后即可移动。"
+
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
@@ -32305,6 +32374,9 @@ msgstr "三单匹配"
 #. placeholder {0}: formatDate(endDate)
 msgid "Through {0}"
 msgstr "至 {0}"
+
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "缩略图"
@@ -33284,6 +33356,9 @@ msgstr "单位销售价格"
 msgid "Units"
 msgstr "单位"
 
+msgid "Units don't match"
+msgstr ""
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
 
@@ -33848,6 +33923,9 @@ msgstr "本工单中的使用情况"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "使用子装配体{0} · {1}"
+
+msgid "Using All On Hand"
+msgstr ""
 
 msgid "VAC"
 msgstr "VAC"

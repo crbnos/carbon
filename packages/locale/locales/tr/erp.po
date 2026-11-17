@@ -586,6 +586,13 @@ msgstr "{0} / {memberCount} üye iş emirlerinin henüz tamamlanmadığı — bu
 msgid "{0} of {whole} done"
 msgstr "{0} / {whole} bitti"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} puantajda"
@@ -666,6 +673,11 @@ msgstr "{0} hurdaya alındı"
 #. placeholder {0}: selected.size
 msgid "{0} selected"
 msgstr "{0} seçildi"
+
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -6141,6 +6153,9 @@ msgstr "Rol tabanlı eğitim materyalleri oluşturun"
 msgid "Build tailored, role-based training materials"
 msgstr "Özelleştirilmiş, rol tabanlı eğitim materyalleri oluşturun"
 
+msgid "Buildable Quantity"
+msgstr ""
+
 msgid "Builds"
 msgstr "Üretimler"
 
@@ -6349,6 +6364,9 @@ msgstr "Carbon'da bir yöntem olarak adlandırılır — bir parçayı oluştura
 
 msgid "Camera"
 msgstr "Kamera"
+
+msgid "Can Make Now"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "Geri yüklenemez"
@@ -6939,6 +6957,9 @@ msgstr "Kontrol"
 
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
+
+msgid "Check Quantity"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok kartı için stok kartı defterini kontrol edin — genellikle eksik bir mal kabul veya envanter değerini ve satılan malın maliyetini bozan sıra dışı bir muhasebeleştirme. İncelendikten sonra bitti olarak işaretleyin veya bir gerekçeyle atlayın."
@@ -7651,6 +7672,9 @@ msgstr "Tamamlama Süresi"
 
 msgid "Completion time by job"
 msgstr "İş emrine göre tamamlanma süresi"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8702,6 +8726,9 @@ msgstr "{0} serbest bırakılamadı: {1}"
 
 msgid "Could not save"
 msgstr "Kaydedilemedi"
+
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
 
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
@@ -13778,6 +13805,9 @@ msgstr "Mamul"
 msgid "Finished Goods (default)"
 msgstr "Mamul (varsayılan)"
 
+msgid "Finished Goods Available"
+msgstr ""
+
 msgid "finishes"
 msgstr "Normal MACRS programı başlamadan önce alınan ilk yıl ek indirimi."
 
@@ -14107,6 +14137,9 @@ msgstr "Nereden ve Nereye aynı depolama birimi"
 
 msgid "From and To can't be the same storage unit"
 msgstr "Nereden ve nereye aynı depolama birimi olamaz."
+
+msgid "From available component stock"
+msgstr ""
 
 msgid "From customer"
 msgstr "Müşteriden"
@@ -15194,6 +15227,9 @@ msgstr "Sipariş edildiyse, sonraki 48 haftada stoksuzluk projeksiyonu yoktur"
 
 msgid "If something is off track"
 msgstr "Bir şey yolunda değilse"
+
+msgid "If stock committed to open orders were used"
+msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Parça numaralarını değiştirmek isterseniz, lütfen iptal'e tıklayın ve dönüştürmeden önce her bir satır öğesi için parçaları manuel olarak atayın."
@@ -17123,6 +17159,9 @@ msgstr "Işıklar kapalı (24/7)"
 msgid "Likelihood"
 msgstr "Olasılık"
 
+msgid "Limits To"
+msgstr ""
+
 msgid "Line"
 msgstr "Satır"
 
@@ -17646,6 +17685,9 @@ msgstr "MACRS Sözleşmesi"
 
 msgid "MACRS Property Class"
 msgstr "MACRS Mülk Sınıfı"
+
+msgid "Made"
+msgstr ""
 
 msgid "Magic link"
 msgstr "Sihirli Bağlantı"
@@ -20777,6 +20819,10 @@ msgstr "Henüz bir şey silinmedi. Talep diğer yöneticilerin onayına gider ve
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Ödenmesi gereken bir şey yok. Bir dönem ödeme süresine girdiğinde faturalar otomatik olarak oluşturulur."
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr ""
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "Eşitlemeyi açana kadar hiçbir şey eşitlenmez."
 
@@ -20985,6 +21031,11 @@ msgstr "Eldeki"
 msgid "On Hand"
 msgstr "Stokta"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr ""
+
 msgid "On hand {before} to {after}"
 msgstr "Eldeki: {before} değerinden {after} değerine"
 
@@ -21006,6 +21057,9 @@ msgstr "İş emirlerinde"
 
 msgid "On order"
 msgstr "Siparişte"
+
+msgid "On Order"
+msgstr ""
 
 msgid "On Production Demand"
 msgstr "Üretim Talebinde"
@@ -24088,6 +24142,9 @@ msgstr "Hurdaya çıkarılan miktar"
 msgid "Quantity shipped"
 msgstr "Sevk edilen miktar"
 
+msgid "Quantity to check"
+msgstr ""
+
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} satırı için alacaklandırılacak miktar"
 
@@ -24973,6 +25030,9 @@ msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birini
 
 msgid "Reload the page to try again."
 msgstr "Sayfayı yeniden yükleyin ve tekrar deneyin."
+
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
 
 msgid "Remaining"
 msgstr "Kalan"
@@ -30317,6 +30377,9 @@ msgstr "Parti {0}'dir, Planlandı değil"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çekilir"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "Fatura oranı kilitlidir: tahmin müşteriye gönderilmiştir."
 
@@ -31736,6 +31799,9 @@ msgstr "Bu hesapların yerine geçmesi gerekli"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "Bunlar kaydın kendi notlarıdır. Burada değiştirmek kayıtta da değiştirir."
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Bu özel alanlar yalnızca aynı etiketlere sahip varlıklar için kullanılabilir"
 
@@ -31753,6 +31819,9 @@ msgstr "Bunların parti numarası yok, bu yüzden transfer bunları toplayamaz. 
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "Bunların seri numarası yok, bu yüzden transfer bunları toplayamaz. Taşımak için her birine seri numarası atayın."
+
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
@@ -32305,6 +32374,9 @@ msgstr "Üçlü eşleştirme"
 #. placeholder {0}: formatDate(endDate)
 msgid "Through {0}"
 msgstr "Şu tarihe kadar {0}"
+
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"
@@ -33284,6 +33356,9 @@ msgstr "Birim Satış Fiyatı"
 msgid "Units"
 msgstr "Birimler"
 
+msgid "Units don't match"
+msgstr ""
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Bu paranın bir biriminin temel para cinsinden kaç birim olduğunu gösterir; muhasebeleştirme sırasında tutarları çevirmek için kullanılır."
 
@@ -33848,6 +33923,9 @@ msgstr "Bu iş emrindeki kullanımlar"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Alt montajı {0} · {1} kullanır"
+
+msgid "Using All On Hand"
+msgstr ""
 
 msgid "VAC"
 msgstr "VAC"

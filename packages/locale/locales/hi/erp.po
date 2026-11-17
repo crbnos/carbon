@@ -586,6 +586,13 @@ msgstr "{0} का {memberCount} सदस्य जॉब अभी तक प�
 msgid "{0} of {whole} done"
 msgstr "{0} का {whole} हो गया"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} आपके टाइमकार्ड पर"
@@ -666,6 +673,11 @@ msgstr "{0} स्क्रैप किया गया"
 #. placeholder {0}: selected.size
 msgid "{0} selected"
 msgstr "{0} चुने गए"
+
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -6141,6 +6153,9 @@ msgstr "भूमिका-आधारित प्रशिक्षण सा
 msgid "Build tailored, role-based training materials"
 msgstr "अनुकूलित, भूमिका-आधारित प्रशिक्षण सामग्री बनाएं"
 
+msgid "Buildable Quantity"
+msgstr ""
+
 msgid "Builds"
 msgstr "बिल्ड"
 
@@ -6349,6 +6364,9 @@ msgstr "Carbon में एक विधि कहा जाता है — �
 
 msgid "Camera"
 msgstr "कैमरा"
+
+msgid "Can Make Now"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "पुनः स्थापित नहीं किया जा सकता"
@@ -6939,6 +6957,9 @@ msgstr "जाँच"
 
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
+
+msgid "Check Quantity"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक किसी भी आइटम के लिए आइटम लेजर की जांच करें जिसमें नकारात्मक ऑन-हैंड मात्रा है — आमतौर पर एक लापता प्राप्ति या एक गलत क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए माल की लागत को विकृत करती है। एक बार समीक्षा के बाद इसे हो गया के रूप में चिह्नित करें, या कारण के साथ छोड़ दें।"
@@ -7651,6 +7672,9 @@ msgstr "पूर्ण होने का समय"
 
 msgid "Completion time by job"
 msgstr "जॉब के अनुसार पूर्ण होने का समय"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8702,6 +8726,9 @@ msgstr "जारी नहीं कर सके {0}: {1}"
 
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
+
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
 
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
@@ -13778,6 +13805,9 @@ msgstr "तैयार माल"
 msgid "Finished Goods (default)"
 msgstr "तैयार माल (डिफ़ॉल्ट)"
 
+msgid "Finished Goods Available"
+msgstr ""
+
 msgid "finishes"
 msgstr "नियमित MACRS अनुसूची शुरू होने से पहले लिया गया पहले वर्ष का अतिरिक्त कटौती।"
 
@@ -14107,6 +14137,9 @@ msgstr "\"से\" और \"तक\" एक ही भंडारण इका�
 
 msgid "From and To can't be the same storage unit"
 msgstr "‘से’ और ‘तक’ एक ही भंडारण इकाई नहीं हो सकते"
+
+msgid "From available component stock"
+msgstr ""
 
 msgid "From customer"
 msgstr "ग्राहक से"
@@ -15194,6 +15227,9 @@ msgstr "यदि ऑर्डर किया जाता है, तो अ�
 
 msgid "If something is off track"
 msgstr "अगर कुछ गलत रास्ते पर है"
+
+msgid "If stock committed to open orders were used"
+msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "यदि आप पार्ट नंबर बदलना चाहते हैं, तो कृपया रद्द करें पर क्लिक करें और परिवर्तित करने से पहले प्रत्येक पंक्ति आइटम के लिए पार्ट्स को मैन्युअल रूप से असाइन करें।"
@@ -17123,6 +17159,9 @@ msgstr "लाइट्स आउट (24/7)"
 msgid "Likelihood"
 msgstr "संभावना"
 
+msgid "Limits To"
+msgstr ""
+
 msgid "Line"
 msgstr "लाइन"
 
@@ -17646,6 +17685,9 @@ msgstr "MACRS अभिसम्मति"
 
 msgid "MACRS Property Class"
 msgstr "MACRS संपत्ति वर्ग"
+
+msgid "Made"
+msgstr ""
 
 msgid "Magic link"
 msgstr "मैजिक लिंक"
@@ -20777,6 +20819,10 @@ msgstr "अभी कुछ भी हटाया नहीं गया है
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "कुछ भी देय नहीं है। जब अवधि आती है, तो चालान स्वचालित रूप से बनाए जाते हैं।"
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr ""
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "जब तक आप सिंक को चालू नहीं करते, तब तक कुछ भी सिंक नहीं होता है।"
 
@@ -20985,6 +21031,11 @@ msgstr "हाथ में"
 msgid "On Hand"
 msgstr "हाथ में"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr ""
+
 msgid "On hand {before} to {after}"
 msgstr "हाथ में: {before} से {after}"
 
@@ -21006,6 +21057,9 @@ msgstr "जॉब पर"
 
 msgid "On order"
 msgstr "ऑर्डर पर"
+
+msgid "On Order"
+msgstr ""
 
 msgid "On Production Demand"
 msgstr "उत्पादन मांग पर"
@@ -24088,6 +24142,9 @@ msgstr "स्क्रैप की गई मात्रा"
 msgid "Quantity shipped"
 msgstr "भेजी गई मात्रा"
 
+msgid "Quantity to check"
+msgstr ""
+
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "पंक्ति {lineNumber} के लिए जमा की जाने वाली मात्रा"
 
@@ -24973,6 +25030,9 @@ msgstr "बैच जारी करने से इसकी जॉब्स 
 
 msgid "Reload the page to try again."
 msgstr "फिर से कोशिश करने के लिए पृष्ठ पुनः लोड करें।"
+
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
 
 msgid "Remaining"
 msgstr "शेष"
@@ -30317,6 +30377,9 @@ msgstr "बैच {0} है, योजनाबद्ध नहीं"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "बैच अपने सबसे जरूरी सदस्य के समय चलता है — बाकी पहले खींचे जाते हैं"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "बिल दर लॉक है: अनुमान ग्राहक को भेजा गया था।"
 
@@ -31736,6 +31799,9 @@ msgstr "इन खातों को एक प्रतिस्थापन �
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "ये रिकॉर्ड के अपने नोट्स हैं। इन्हें यहाँ बदलने से रिकॉर्ड पर भी ये बदल जाएंगे।"
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "ये कस्टम फ़ील्ड केवल समान टैग वाली संस्थाओं के लिए उपलब्ध होंगी"
 
@@ -31753,6 +31819,9 @@ msgstr "इनमें बैच नंबर नहीं है, इसलि
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "इनका सीरियल नंबर नहीं है, इसलिए स्थानांतरण इन्हें चुन नहीं सकता। इन्हें स्थानांतरित करने के लिए हर एक को सीरियल नंबर दें।"
+
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
@@ -32305,6 +32374,9 @@ msgstr "थ्री-वे मिलान"
 #. placeholder {0}: formatDate(endDate)
 msgid "Through {0}"
 msgstr "{0} तक"
+
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "थंबनेल"
@@ -33284,6 +33356,9 @@ msgstr "यूनिट विक्रय मूल्य"
 msgid "Units"
 msgstr "इकाइयाँ"
 
+msgid "Units don't match"
+msgstr ""
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "मूल मुद्रा की इकाइयाँ प्रति इस मुद्रा की एक इकाई; पोस्टिंग पर राशि का अनुवाद करने के लिए उपयोग किया जाता है।"
 
@@ -33848,6 +33923,9 @@ msgstr "इस जॉब पर उपयोग"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "उप-विधानसभा {0} · {1} का उपयोग करता है"
+
+msgid "Using All On Hand"
+msgstr ""
 
 msgid "VAC"
 msgstr "VAC"
