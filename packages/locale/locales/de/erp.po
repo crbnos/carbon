@@ -27244,6 +27244,9 @@ msgstr "Wählen Sie eine neue übergeordnete Gruppe für dieses Konto."
 msgid "Select a plan"
 msgstr "Wählen Sie einen Plan"
 
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "Wählen Sie einen Plan, um zu beginnen. Wechseln oder kündigen Sie jederzeit."
+
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Wählen Sie einen Plan, um zu beginnen. Sie werden in den ersten {0} Tagen nicht belastet. Wechseln oder kündigen Sie jederzeit."

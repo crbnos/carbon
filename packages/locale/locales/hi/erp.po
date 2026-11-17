@@ -27244,6 +27244,9 @@ msgstr "इस खाते के लिए एक नया पैरेंट
 msgid "Select a plan"
 msgstr "एक योजना चुनें"
 
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "एक योजना चुनें शुरुआत करने के लिए। किसी भी समय स्विच या रद्द करें।"
+
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "एक योजना चुनें शुरुआत करने के लिए। आपको पहले {0} दिनों के लिए चार्ज नहीं किया जाएगा। किसी भी समय स्विच या रद्द करें।"
