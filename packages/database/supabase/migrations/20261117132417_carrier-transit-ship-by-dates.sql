@@ -111,12 +111,23 @@ CREATE TRIGGER "sales_order_line_sync_job_ship_by_date"
   EXECUTE FUNCTION public.sales_order_line_sync_job_ship_by_date();
 
 -- Existing jobs take their line's date.
+--
+-- The backfill is data, not a change anyone made: app.sync_in_progress keeps
+-- dispatch_event_batch from queueing an UPDATE event (webhooks, workflows,
+-- audit log) per job. The lock timeout makes the migration fail and run again
+-- behind a long transaction, instead of queueing every job writer behind it.
+-- Copied from 20261112235023_picking-list-travelers-printed.sql.
+SET lock_timeout = '5s';
+SET LOCAL "app.sync_in_progress" = 'true';
+
 UPDATE "job" j
 SET "shipByDate" = sol."promisedDate"
 FROM "salesOrderLine" sol
 WHERE sol."id" = j."salesOrderLineId"
   AND sol."companyId" = j."companyId"
   AND j."shipByDate" IS DISTINCT FROM sol."promisedDate";
+
+RESET lock_timeout;
 
 -- 4. Delivery dates on the shipment. Only recordShipmentDelivery
 -- (apps/erp/app/modules/inventory/inventory.service.ts) writes the delivered

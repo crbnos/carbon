@@ -150,7 +150,6 @@ import {
   round,
   salesTypeRequirementError,
   searchFilter,
-  subtractBusinessDays,
   suggestContractType,
   suggestCoverage,
   sumFunding,
@@ -308,6 +307,7 @@ import {
   decideRecalcPricing,
   getDefaultRentalRates,
   getEffectiveDefaultMarkups,
+  latestShipByDate,
   nextDeliveryDateRecord,
   planShipByDates,
   priceListOverrideScopes,
@@ -24452,8 +24452,8 @@ export async function getDefaultShipByDate(
     transit.transit.transitDays
   )!;
   const holidays = await getHolidayDateSet(db, companyId, range);
-  return subtractBusinessDays(
-    transit.arriveBy.slice(0, 10),
+  return latestShipByDate(
+    transit.arriveBy,
     transit.transit.transitDays,
     holidays
   );

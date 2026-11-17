@@ -47,9 +47,11 @@ const CustomerTransitTimeForm = ({
   const fetcher = useAction();
 
   const isEditing = !!initialValues.id;
-  const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+  // Saving goes through upsertCustomerLocationTransitTime, which needs
+  // update on sales, and create too for a new row.
+  const isDisabled =
+    !permissions.can("update", "sales") ||
+    (!isEditing && !permissions.can("create", "sales"));
 
   return (
     <Drawer

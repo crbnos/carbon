@@ -11671,9 +11671,8 @@ export const recalculateSalesOrderShipByDates = defineServiceFn({
         lines: plan.lines
       });
     });
-    if (moved.error) return moved.error;
-
-    const lineIds = moved.data;
+    // The body returns no refusal: a failed write throws and rolls back.
+    const lineIds = moved.data ?? [];
     if (lineIds.length > 0) {
       // A moved date is a new promise: check it as a line save would. A
       // failed check never undoes the move.

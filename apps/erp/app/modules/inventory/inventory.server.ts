@@ -8092,7 +8092,7 @@ export const applyShippingMethodTransitSuggestion = defineServiceFn({
 export const markShipmentDelivered = defineServiceFn({
   input: z.object({
     shipmentId: z.string().min(1),
-    deliveredDate: z.string().nullable().optional()
+    deliveredDate: z.iso.date().nullable().optional()
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
@@ -8108,6 +8108,7 @@ export const markShipmentDelivered = defineServiceFn({
       userId: ctx.auditUserId,
       today
     });
+    if (result.notFound) return ctx.error("notFound", result.error!);
     if (result.error) return ctx.error("rule", result.error);
     return { shipmentId: input.shipmentId };
   }

@@ -18,6 +18,7 @@ import {
   classifyRentalLine,
   defaultRentalRates,
   equals,
+  isBusinessDay,
   leasePaymentTerms,
   rentalTermMonths,
   round,
@@ -1259,6 +1260,27 @@ export function estimateArrival(
   return addBusinessDays(shipBy.slice(0, 10), transitDays, holidays);
 }
 
+/**
+ * The latest day a line can ship and still arrive by `arriveBy`: transit days
+ * counted back from the last business day on or before `arriveBy`. Carriers
+ * deliver on business days, so an arrive-by on a Saturday means "by Friday";
+ * counting back from the Saturday itself would ship a day late. With 0
+ * transit days (will call), the line ships on the arrive-by date.
+ */
+export function latestShipByDate(
+  arriveBy: string,
+  transitDays: number,
+  holidays: ReadonlySet<string> = new Set()
+): string {
+  const date = arriveBy.slice(0, 10);
+  if (transitDays <= 0) return date;
+  let delivery = parseDate(date);
+  while (!isBusinessDay(delivery.toString(), holidays)) {
+    delivery = delivery.subtract({ days: 1 });
+  }
+  return subtractBusinessDays(delivery.toString(), transitDays, holidays);
+}
+
 export type ShipByPlanLine = {
   id: string;
   salesOrderLineType: SalesOrderLineType;
@@ -1297,7 +1319,7 @@ export function planShipByDates(args: {
     args.transitDays !== null &&
     args.transitDays !== undefined;
   const proposedShipBy = known
-    ? subtractBusinessDays(arriveBy, args.transitDays as number, holidays)
+    ? latestShipByDate(arriveBy, args.transitDays as number, holidays)
     : null;
 
   return args.lines.map((line) => {

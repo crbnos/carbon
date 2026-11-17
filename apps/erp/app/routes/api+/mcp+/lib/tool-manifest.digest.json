@@ -1596,7 +1596,7 @@
     {"name":"sales_mapSalesRfqLines","classification":"WRITE","schema":"4ae629bfa52b","response":"2132422b3a2d","permission":"sales:update","paginates":false},
     {"name":"sales_previewContractAmendment","classification":"WRITE","schema":"0bd3a4ddb3d1","response":"351679e8ebb2","permission":"sales:update","paginates":false},
     {"name":"sales_previewContractCancellation","classification":"WRITE","schema":"12250e803bc9","response":"3ce9eb1c5d28","permission":"sales:update","paginates":false},
-    {"name":"sales_recalculateSalesOrderShipByDates","classification":"WRITE","schema":"d160a49d6787","response":"none","permission":"sales:update","paginates":false},
+    {"name":"sales_recalculateSalesOrderShipByDates","classification":"WRITE","schema":"d160a49d6787","response":"8f3ee189db5b","permission":"sales:update","paginates":false},
     {"name":"sales_releaseRentalUnit","classification":"WRITE","schema":"cd210541e589","response":"9729319c460e","permission":"sales:update","paginates":false},
     {"name":"sales_reopenSalesReturnOrder","classification":"WRITE","schema":"7f8214d1083f","response":"none","permission":"sales:update","paginates":false},
     {"name":"sales_replaceReturnedUnit","classification":"WRITE","schema":"db23e8f5b514","response":"d160a49d6787","permission":"sales:create","paginates":false},

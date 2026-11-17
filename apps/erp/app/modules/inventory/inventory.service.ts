@@ -36178,7 +36178,7 @@ export async function recordShipmentDelivery(
     /** the company's today, YYYY-MM-DD */
     today: string;
   }
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; notFound?: true }> {
   return withTransaction(db, async (trx) => {
     const shipment = await trx
       .selectFrom("shipment")
@@ -36187,7 +36187,9 @@ export async function recordShipmentDelivery(
       .where("companyId", "=", args.companyId)
       .forUpdate()
       .executeTakeFirst();
-    if (!shipment) return { error: "The shipment could not be found" };
+    if (!shipment) {
+      return { error: "The shipment could not be found", notFound: true };
+    }
 
     const refusal = shipmentDeliveryRefusal(shipment, {
       deliveredDate: args.deliveredDate,

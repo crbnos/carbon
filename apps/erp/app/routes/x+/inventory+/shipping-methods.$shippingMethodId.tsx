@@ -76,7 +76,9 @@ export default function EditShippingMethodsRoute() {
 
   return (
     <ShippingMethodForm
-      key={initialValues.id}
+      // Use N days saves transitDays outside the form: a new value remounts
+      // it, so a later Save does not write the old number back.
+      key={`${initialValues.id}:${initialValues.transitDays ?? ""}`}
       initialValues={initialValues}
       transitStats={transitStats}
       open={dialog.open}

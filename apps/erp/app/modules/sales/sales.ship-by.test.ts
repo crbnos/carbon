@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { estimateArrival, planShipByDates } from "./sales.utils";
+import {
+  estimateArrival,
+  latestShipByDate,
+  planShipByDates
+} from "./sales.utils";
 
 // 2026-11-20 is a Friday; 2026-11-27 is the Friday after.
 const part = (id: string, promisedDate: string | null, sentComplete = false) =>
@@ -115,5 +119,35 @@ describe("planShipByDates", () => {
       lines: [part("a", null)]
     });
     expect(line?.proposedShipBy).toBe("2026-11-19");
+  });
+});
+
+describe("latestShipByDate", () => {
+  it("counts back from Friday when the arrive-by date is a Saturday", () => {
+    // Saturday 2026-11-21, 1 transit day: ship Thursday, arrive Friday.
+    expect(latestShipByDate("2026-11-21", 1)).toBe("2026-11-19");
+    expect(estimateArrival("2026-11-19", 1)).toBe("2026-11-20");
+  });
+
+  it("counts back from the business day before a holiday arrive-by", () => {
+    // Thursday 2026-11-26 is a holiday: arrive by Wednesday, ship Tuesday.
+    const holidays = new Set(["2026-11-26"]);
+    expect(latestShipByDate("2026-11-26", 1, holidays)).toBe("2026-11-24");
+  });
+
+  it("keeps the arrive-by date for 0 transit days", () => {
+    expect(latestShipByDate("2026-11-21", 0)).toBe("2026-11-21");
+  });
+
+  it("never flags its own proposal late to arrive", () => {
+    for (const arriveBy of ["2026-11-21", "2026-11-22", "2026-11-23"]) {
+      const shipBy = latestShipByDate(arriveBy, 3);
+      const [line] = planShipByDates({
+        arriveBy,
+        transitDays: 3,
+        lines: [part("a", shipBy)]
+      });
+      expect(line).toMatchObject({ lateToArrive: false, changes: false });
+    }
   });
 });
