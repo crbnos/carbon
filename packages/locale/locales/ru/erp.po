@@ -366,6 +366,14 @@ msgstr "{0} доступно, {1} зарезервировано"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} строк спецификации не соответствуют: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} нельзя удалить, так как она всё ещё используется: {where}. Сначала измените эти записи на другую единицу измерения."
@@ -408,6 +416,10 @@ msgstr "{0} дней"
 #. placeholder {0}: file.name
 msgid "{0} deleted successfully"
 msgstr "{0} успешно удален"
+
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -673,6 +685,10 @@ msgstr "{0} сообщает, что реестр ведется"
 msgid "{0} rows"
 msgstr "{0} строк"
 
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} брак"
@@ -763,6 +779,10 @@ msgstr "{0} будет сохранено как {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-летний"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1574,6 +1594,9 @@ msgstr "2–6 прописных букв или цифр, например SNS"
 msgid "2 years"
 msgstr "2 года"
 
+msgid "25th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 дней"
 
@@ -1660,6 +1683,9 @@ msgstr "Лимит файла 5МБ"
 
 msgid "6 months"
 msgstr "6 месяцев"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7 дней"
@@ -11604,6 +11630,9 @@ msgstr "Каждый период — один месяц, по месячной
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "Каждый запущенный производственный заказ получает один лист отбора. Его детали передаются в единицу хранения прилинейного запаса каждого рабочего центра, который их использует."
 
@@ -13856,6 +13885,9 @@ msgstr "Завершить в"
 msgid "Finish with material unpicked?"
 msgstr "Завершить с непобранным материалом?"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "Готовая продукция"
 
@@ -15532,6 +15564,9 @@ msgstr "Включить материалы в маршрутный лист"
 msgid "Include operations on the traveler"
 msgstr "Включить операции в маршрутный лист"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "Включено"
 
@@ -16812,6 +16847,9 @@ msgstr "Трудозатраты"
 msgid "Labor Time"
 msgstr "Трудозатраты"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "Передача труда"
 
@@ -17732,6 +17770,9 @@ msgstr "Машинное время"
 msgid "Machine Time"
 msgstr "Время машины"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "Единица станка"
 
@@ -18265,6 +18306,9 @@ msgstr "Матрица"
 msgid "Maturity Analysis"
 msgstr "Анализ сроков"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "Не более {0} на единицу"
@@ -18302,6 +18346,9 @@ msgstr "Максимальная доля цены (PBP)"
 msgid "MCP Command"
 msgstr "Команда MCP"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "Среднее время между отказами"
 
@@ -18313,6 +18360,9 @@ msgstr "Эталон измерений"
 
 msgid "Media Size"
 msgstr "Размер носителя"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "Средний"
@@ -18861,6 +18911,17 @@ msgstr "Мой сохраненный вид"
 
 msgid "My Time"
 msgstr "Мое время"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "Имя"
@@ -19971,6 +20032,9 @@ msgstr "Файлы не загружены"
 msgid "No findings"
 msgstr "Нет выводов"
 
+msgid "No finished operations with clocked time in this range"
+msgstr ""
+
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "Ни одно основное средство не было приобретено до даты переходу."
 
@@ -20427,6 +20491,9 @@ msgstr "Нет строк здесь."
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
+
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
 
 msgid "No running job to cancel"
 msgstr "Нет активного производственного заказа для отмены"
@@ -21002,6 +21069,11 @@ msgstr "Количество открытых задач"
 msgid "Number of operations"
 msgstr "Количество операций"
 
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
+
 msgid "Number weeks by calendar week"
 msgstr "Нумеровать недели по календарной неделе"
 
@@ -21314,6 +21386,9 @@ msgstr "Только квалифицированные сотрудники м�
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Только сериализованные единицы, оформленные как основные средства, можно сдавать в аренду. Чтобы добавить один, откройте вкладку «Запасы» детали, найдите серийный номер в Единицах хранения и выберите «Оформить как основное средство»."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "Только эти сотрудники могут начислять время проекту в системе учета рабочего времени DCAA."
@@ -21677,6 +21752,9 @@ msgstr "Количество операций"
 msgid "Operation supplier process"
 msgstr "Процесс поставщика операции"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "Автозапуск таймера операции отключен"
 
@@ -21940,6 +22018,9 @@ msgstr "Исходящие"
 
 msgid "Outgoing"
 msgstr "Исходящие"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "Выход"
@@ -26516,8 +26597,14 @@ msgstr "Работает круглосуточно"
 msgid "Runs during every shift at the location."
 msgstr "Работает во время каждой смены на месте."
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "Работает только во время выбранных смен."
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "Работает до даты окончания. Единица, все еще находящаяся в пользовании после этого, продолжает выставлять счета."
@@ -27397,11 +27484,17 @@ msgstr "Выберите событие…"
 msgid "Select an issue type"
 msgstr "Выберите тип проблемы"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Выберите товар и укажите количество для выдачи"
 
 msgid "Select an item first"
 msgstr "Сначала выберите элемент"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "Выберите элемент для настройки"
@@ -28033,6 +28126,9 @@ msgstr "время наладки"
 
 msgid "Setup Time"
 msgstr "Время наладки"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "Единица настройки"
@@ -32533,6 +32629,9 @@ msgstr "Строки Time & Materials и Cost Plus выставляют счет
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Строки Time & Materials и Cost Plus отображаются здесь. Строки Fixed Price выставляют счет по событиям выставления счета."
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Использование арендного парка по времени и стоимости по активам и классам"
 
@@ -32622,6 +32721,9 @@ msgstr "Название события"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Право собственности переходит к покупателю по окончании срока."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "До"
@@ -33264,6 +33366,9 @@ msgstr "Тип:"
 
 msgid "Types"
 msgstr "Типы"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "Удостоверение лица США"

@@ -366,6 +366,14 @@ msgstr "可用 {0}，已承诺 {1}"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM 行不匹配：{names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改为其他计量单位。"
@@ -408,6 +416,10 @@ msgstr "{0} 天"
 #. placeholder {0}: file.name
 msgid "{0} deleted successfully"
 msgstr "{0} 已成功删除"
+
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -673,6 +685,10 @@ msgstr "{0}报告账本由以下机构持有"
 msgid "{0} rows"
 msgstr "{0} 行"
 
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 报废"
@@ -763,6 +779,10 @@ msgstr "{0} 将被保存为 {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0} 年"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1574,6 +1594,9 @@ msgstr "2 到 6 个大写字母或数字，例如 SNS"
 msgid "2 years"
 msgstr "2 年"
 
+msgid "25th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 天"
 
@@ -1660,6 +1683,9 @@ msgstr "5MB 文件大小限制"
 
 msgid "6 months"
 msgstr "6 个月"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7天"
@@ -11604,6 +11630,9 @@ msgstr "每个周期为一个月,按月费率计算。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "每个已下达的工单生成一张拣货单。其零件会配送到使用它们的每个工作中心的线边存储单元。"
 
@@ -13856,6 +13885,9 @@ msgstr "完成至"
 msgid "Finish with material unpicked?"
 msgstr "不拣货原材料就完成？"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "成品"
 
@@ -15532,6 +15564,9 @@ msgstr "在流转卡上包含原材料"
 msgid "Include operations on the traveler"
 msgstr "在流转卡上包含工序"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "已包含"
 
@@ -16812,6 +16847,9 @@ msgstr "人工工时"
 msgid "Labor Time"
 msgstr "人工工时"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "人工转移"
 
@@ -17732,6 +17770,9 @@ msgstr "机器工时"
 msgid "Machine Time"
 msgstr "机器工时"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "机器单位"
 
@@ -18265,6 +18306,9 @@ msgstr "矩阵"
 msgid "Maturity Analysis"
 msgstr "到期日分析"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "每件最多 {0} 次"
@@ -18302,6 +18346,9 @@ msgstr "价格最大份额(PBP)"
 msgid "MCP Command"
 msgstr "MCP 命令"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "平均故障间隔时间"
 
@@ -18313,6 +18360,9 @@ msgstr "测量标准"
 
 msgid "Media Size"
 msgstr "媒体尺寸"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "中等"
@@ -18861,6 +18911,17 @@ msgstr "我的保存视图"
 
 msgid "My Time"
 msgstr "我的时间"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "名称"
@@ -19971,6 +20032,9 @@ msgstr "未上传任何文件"
 msgid "No findings"
 msgstr "无检查结果"
 
+msgid "No finished operations with clocked time in this range"
+msgstr ""
+
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "在结转日期之前没有获取固定资产"
 
@@ -20427,6 +20491,9 @@ msgstr "这里没有行。"
 
 msgid "No rules assigned"
 msgstr "没有已分配的规则"
+
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
 
 msgid "No running job to cancel"
 msgstr "没有正在运行的工单可取消"
@@ -21002,6 +21069,11 @@ msgstr "未结任务数"
 msgid "Number of operations"
 msgstr "工序数量"
 
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
+
 msgid "Number weeks by calendar week"
 msgstr "按日历周为周编号"
 
@@ -21314,6 +21386,9 @@ msgstr "只有合格的员工才能被安排和运行此流程"
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "仅具有序列号且已作为固定资产资本化的件才能出租。要添加一个，请打开该零件的库存管理选项卡，在存储单元下查找序列号，然后选择作为固定资产资本化。"
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "只有这些员工可以在DCAA工时记录中向项目计工时。"
@@ -21677,6 +21752,9 @@ msgstr "操作数量"
 msgid "Operation supplier process"
 msgstr "工序供应商工艺"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "工序计时器自动启动已禁用"
 
@@ -21940,6 +22018,9 @@ msgstr "出库"
 
 msgid "Outgoing"
 msgstr "出库"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "输出"
@@ -26516,8 +26597,14 @@ msgstr "全天候运行"
 msgid "Runs during every shift at the location."
 msgstr "在该位置的每个班次期间运行。"
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "仅在您选择的班次期间运行。"
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "运行至结束日期。期后仍未归还的设备继续计费。"
@@ -27397,11 +27484,17 @@ msgstr "选择一个事件…"
 msgid "Select an issue type"
 msgstr "选择问题类型"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "选择一个项目并指定要发放的数量"
 
 msgid "Select an item first"
 msgstr "先选择一个项目"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "选择要配置的项目"
@@ -28033,6 +28126,9 @@ msgstr "换型时间"
 
 msgid "Setup Time"
 msgstr "换型时间"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "换型单位"
@@ -32533,6 +32629,9 @@ msgstr "工时与物料及成本加成行在每个开票期间按项目成本开
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "工时与物料及成本加成行显示在此。固定价格行按开票事件开票。"
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "按资产和类别统计的租赁设备的时间和成本利用率"
 
@@ -32622,6 +32721,9 @@ msgstr "事件标题"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "期限结束时，所有权转移给客户。"
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "至"
@@ -33264,6 +33366,9 @@ msgstr "类型："
 
 msgid "Types"
 msgstr "类型"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "美国人身份证明"

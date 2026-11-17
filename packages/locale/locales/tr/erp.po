@@ -366,6 +366,14 @@ msgstr "{0} kullanılabilir, {1} rezerve"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM satırı eşleştirilmedi: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} hâlâ {where} tarafından kullanıldığı için silinemez. Önce bu kayıtları farklı bir ölçü birimine değiştirin."
@@ -408,6 +416,10 @@ msgstr "{0} gün"
 #. placeholder {0}: file.name
 msgid "{0} deleted successfully"
 msgstr "{0} başarıyla silindi"
+
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -673,6 +685,10 @@ msgstr "{0} muhasebe defterinin şu kişi tarafından tutulduğunu bildiriyor"
 msgid "{0} rows"
 msgstr "{0} satır"
 
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} hurdaya alındı"
@@ -763,6 +779,10 @@ msgstr "{0}, {name} olarak kaydedilecek"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Yıl"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1574,6 +1594,9 @@ msgstr "2 ile 6 arasında büyük harf veya rakam, örneğin SNS"
 msgid "2 years"
 msgstr "2 yıl"
 
+msgid "25th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 Gün"
 
@@ -1660,6 +1683,9 @@ msgstr "5 MB dosya sınırı"
 
 msgid "6 months"
 msgstr "6 ay"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7G"
@@ -11604,6 +11630,9 @@ msgstr "Her dönem bir aydır, aylık oran için."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "Serbest bırakılan her iş emri için bir toplama listesi oluşturulur. Parçaları, bunları kullanan her iş merkezinin hat yanı depolama birimine gönderilir."
 
@@ -13856,6 +13885,9 @@ msgstr "Bitirmek İçin"
 msgid "Finish with material unpicked?"
 msgstr "Seçilmemiş malzeme ile Bitir?"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "Mamul"
 
@@ -15532,6 +15564,9 @@ msgstr "İş takip kartında malzeme dahil et"
 msgid "Include operations on the traveler"
 msgstr "İş takip kartında operasyonlar dahil et"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "Dahil"
 
@@ -16812,6 +16847,9 @@ msgstr "İşçilik süresi"
 msgid "Labor Time"
 msgstr "İşçilik Süresi"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "İşçilik transferi"
 
@@ -17732,6 +17770,9 @@ msgstr "Makine süresi"
 msgid "Machine Time"
 msgstr "Makine Süresi"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "Makine birimi"
 
@@ -18265,6 +18306,9 @@ msgstr "Matris"
 msgid "Maturity Analysis"
 msgstr "Vadesilik Analizi"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "Adet başına en fazla {0}"
@@ -18302,6 +18346,9 @@ msgstr "Fiyatın maksimum payı (PBP)"
 msgid "MCP Command"
 msgstr "MCP Komutu"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "Arızalar Arası Ortalama Süre"
 
@@ -18313,6 +18360,9 @@ msgstr "Ölçüm Standardı"
 
 msgid "Media Size"
 msgstr "Medya Boyutu"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "Orta"
@@ -18861,6 +18911,17 @@ msgstr "Kaydedilmiş Görünümüm"
 
 msgid "My Time"
 msgstr "Benim Zamanım"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "Adı"
@@ -19971,6 +20032,9 @@ msgstr "Yüklenmiş dosya yok"
 msgid "No findings"
 msgstr "Bulgu yok"
 
+msgid "No finished operations with clocked time in this range"
+msgstr ""
+
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "Cutover tarihinden ön hiçbir sabit kıymet satın alınmamıştır."
 
@@ -20427,6 +20491,9 @@ msgstr "Burada satır yok."
 
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
+
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
 
 msgid "No running job to cancel"
 msgstr "İptal edilecek çalışan iş emri yok"
@@ -21002,6 +21069,11 @@ msgstr "Açık görev sayısı"
 msgid "Number of operations"
 msgstr "Operasyon sayısı"
 
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
+
 msgid "Number weeks by calendar week"
 msgstr "Haftaları takvim haftasına göre numaralandır"
 
@@ -21314,6 +21386,9 @@ msgstr "Yalnızca nitelikli çalışanlar bu işlem için planlanabilir ve çal�
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Yalnızca seri numaralı ve sabit kıymet olarak aktifleştirilen adetler kiralanabilir. Bir adet eklemek için, parçanın Envanter sekmesini açın, Depolama birimleri altında seri numarasını bulun ve Sabit Kıymet Olarak Aktifleştir'i seçin."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "Yalnızca bu çalışanlar DCAA zaman takibinde projeye zaman ücretlendirebilir."
@@ -21677,6 +21752,9 @@ msgstr "İşlem miktarı"
 msgid "Operation supplier process"
 msgstr "Operasyon tedarikçi prosesi"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "Operasyon zamanlayıcı otomatik başlatma devre dışı bırakıldı"
 
@@ -21940,6 +22018,9 @@ msgstr "Giden"
 
 msgid "Outgoing"
 msgstr "Çıkış"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "Çıktı"
@@ -26516,8 +26597,14 @@ msgstr "Günün her saati çalışır"
 msgid "Runs during every shift at the location."
 msgstr "Konumdaki her vardiya sırasında çalışır."
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "Yalnızca seçtiğiniz vardiyalar sırasında çalışır."
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "Bir bitiş tarihine kadar çalışır. Dönem sonundan sonra hala iade edilmeyen adetler faturalandırmaya devam eder."
@@ -27397,11 +27484,17 @@ msgstr "Bir olay seçin…"
 msgid "Select an issue type"
 msgstr "Bir sorun türü seçin"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Bir ürün seçin ve çıkarılacak miktarı belirtin"
 
 msgid "Select an item first"
 msgstr "Önce bir öğe seçin"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "Yapılandırılacak bir öğe seçin"
@@ -28033,6 +28126,9 @@ msgstr "hazırlık süresi"
 
 msgid "Setup Time"
 msgstr "Hazırlık süresi"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "Kurulum birimi"
@@ -32533,6 +32629,9 @@ msgstr "Zaman & Malzemeleri ve Maliyet Artı satırları her faturalandırma dö
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Zaman & Malzemeleri ve Maliyet Artı satırları burada gösterilir. Sabit Fiyat satırları faturalandırma olaylarında faturalanır."
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"
 
@@ -32622,6 +32721,9 @@ msgstr "Olayın başlığı"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Mülkiyet, dönem sona erdiğinde müşteri'ye geçer."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "Kime"
@@ -33264,6 +33366,9 @@ msgstr "Tip:"
 
 msgid "Types"
 msgstr "Tipler"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "ABD Vatandaşı Tasdiki"

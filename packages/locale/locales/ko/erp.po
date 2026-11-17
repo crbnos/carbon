@@ -366,6 +366,14 @@ msgstr "가용 {0}, 할당 {1}"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0}개 BOM 라인이 일치하지 않음: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0}은(는) {where}에서 아직 사용 중이므로 삭제할 수 없습니다. 먼저 해당 레코드를 다른 단위로 변경하세요."
@@ -408,6 +416,10 @@ msgstr "{0}일"
 #. placeholder {0}: file.name
 msgid "{0} deleted successfully"
 msgstr "{0}이(가) 삭제되었습니다"
+
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -673,6 +685,10 @@ msgstr "{0}은(는) 원장이 다음에 의해 보유되고 있다고 보고합�
 msgid "{0} rows"
 msgstr "{0} 행"
 
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 폐기됨"
@@ -763,6 +779,10 @@ msgstr "{0}이 {name}으로 저장됩니다"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}년"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1574,6 +1594,9 @@ msgstr "SNS와 같은 2~6개의 대문자 또는 숫자"
 msgid "2 years"
 msgstr "2년"
 
+msgid "25th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28일"
 
@@ -1660,6 +1683,9 @@ msgstr "5MB 파일 제한"
 
 msgid "6 months"
 msgstr "6개월"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7일"
@@ -11604,6 +11630,9 @@ msgstr "각 기간은 1개월이며, 월별 요금으로 청구됩니다."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "릴리스된 작업 지시마다 피킹 리스트가 하나씩 생성됩니다. 해당 부품은 사용하는 각 작업장의 라인사이드 보관 단위로 보내집니다."
 
@@ -13856,6 +13885,9 @@ msgstr "종료 시점"
 msgid "Finish with material unpicked?"
 msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
 
+msgid "Finished"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "완제품"
 
@@ -15532,6 +15564,9 @@ msgstr "작업 이동표에 자재 포함"
 msgid "Include operations on the traveler"
 msgstr "작업 이동표에 공정 포함"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "포함됨"
 
@@ -16812,6 +16847,9 @@ msgstr "노무 시간"
 msgid "Labor Time"
 msgstr "노무 시간"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "노무 이송"
 
@@ -17732,6 +17770,9 @@ msgstr "기계 시간"
 msgid "Machine Time"
 msgstr "기계 시간"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "기계 단위"
 
@@ -18265,6 +18306,9 @@ msgstr "매트릭스"
 msgid "Maturity Analysis"
 msgstr "만기 분석"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "개당 최대 {0}"
@@ -18302,6 +18346,9 @@ msgstr "가격의 최대 몫(PBP)"
 msgid "MCP Command"
 msgstr "MCP 명령"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "평균 고장 간격(MTBF)"
 
@@ -18313,6 +18360,9 @@ msgstr "측정 표준"
 
 msgid "Media Size"
 msgstr "매체 크기"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "보통"
@@ -18861,6 +18911,17 @@ msgstr "내 저장된 보기"
 
 msgid "My Time"
 msgstr "내 시간"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "이름"
@@ -19971,6 +20032,9 @@ msgstr "업로드된 파일이 없습니다"
 msgid "No findings"
 msgstr "발견 사항 없음"
 
+msgid "No finished operations with clocked time in this range"
+msgstr ""
+
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "정산일 이전에 취득한 고정자산이 없습니다."
 
@@ -20427,6 +20491,9 @@ msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
+
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
 
 msgid "No running job to cancel"
 msgstr "취소할 실행 중인 작업 지시가 없습니다."
@@ -21002,6 +21069,11 @@ msgstr "열린 작업 수"
 msgid "Number of operations"
 msgstr "공정의 수"
 
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
+
 msgid "Number weeks by calendar week"
 msgstr "달력 주 기준으로 주 번호 매기기"
 
@@ -21314,6 +21386,9 @@ msgstr "자격이 있는 직원만 이 프로세스를 예약하고 실행할 �
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "시리얼 번호가 있고 고정자산으로 계정처리된 개만 임차할 수 있습니다. 하나를 추가하려면 부품의 재고 관리 탭을 열고 보관 단위 아래에서 시리얼 번호를 찾은 다음 고정자산으로 계정처리를 선택하세요."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "이 직원들만 DCAA 시간 추적에서 프로젝트에 시간을 청구할 수 있습니다."
@@ -21677,6 +21752,9 @@ msgstr "작업 수량"
 msgid "Operation supplier process"
 msgstr "공정 공급업체 공법"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "공정 타이머 자동 시작 비활성화됨"
 
@@ -21940,6 +22018,9 @@ msgstr "출고"
 
 msgid "Outgoing"
 msgstr "발신"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "산출물"
@@ -26516,8 +26597,14 @@ msgstr "하루 종일 실행"
 msgid "Runs during every shift at the location."
 msgstr "사업장의 모든 교대조 중에 실행됩니다."
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "선택한 교대조 중에만 실행됩니다."
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "종료 날짜까지 실행됩니다. 그 후에도 여전히 반출 중인 단위는 계속 청구됩니다."
@@ -27397,11 +27484,17 @@ msgstr "이벤트 선택…"
 msgid "Select an issue type"
 msgstr "이슈 유형 선택"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "품목을 선택하고 출고할 수량을 지정하세요"
 
 msgid "Select an item first"
 msgstr "먼저 품목을 선택하세요"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "구성할 품목을 선택하세요"
@@ -28033,6 +28126,9 @@ msgstr "셋업 시간"
 
 msgid "Setup Time"
 msgstr "셋업 시간"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "설정 단위"
@@ -32533,6 +32629,9 @@ msgstr "Time & Materials 및 원가가산 라인은 매 청구 기간마다 프�
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Time & Materials 및 원가가산 라인은 여기에 표시됩니다. 정가 라인은 청구 이벤트에서 청구됩니다."
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "자산 및 클래스별 임차 자산의 시간 및 달러 이용률"
 
@@ -32622,6 +32721,9 @@ msgstr "이벤트의 제목"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "약관이 종료되면 소유권이 고객에게 이전됩니다."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "까지"
@@ -33264,6 +33366,9 @@ msgstr "유형:"
 
 msgid "Types"
 msgstr "유형"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "미국인 증명"
