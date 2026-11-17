@@ -12,7 +12,10 @@ import {
 } from "@carbon/api/service-fn.server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as production from "../../app/modules/production/production.server";
-import { jobMethodReplacementRefusal } from "../../app/modules/production/production.service";
+import {
+  jobMethodReplacementRefusal,
+  upsertJobMethod
+} from "../../app/modules/production/production.service";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -110,6 +113,33 @@ describeLocal("Get Method on a job with recorded production", () => {
 
     expect(result.error?.category).toBe("rule");
     expect(events.map((row) => row.id)).toEqual([job.operationId]);
+  }, 60_000);
+
+  it("refuses inside the replace itself, so production recorded after the first check is kept", async () => {
+    // Straight to the replace, as a caller that checked before the production was recorded.
+    const result = await upsertJobMethod(client!, f.db, "itemToJob", {
+      sourceId: f.assemblyId,
+      targetId: job.jobId,
+      companyId: f.companyId,
+      userId: USER,
+      parts: {
+        billOfMaterial: true,
+        billOfProcess: true,
+        parameters: true,
+        tools: true,
+        steps: true,
+        workInstructions: true
+      }
+    });
+
+    const operations = await f.db
+      .selectFrom("jobOperation")
+      .select("id")
+      .where("jobId", "=", job.jobId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+    expect(result.error?.message).toMatch(/Production has been recorded/);
+    expect(operations.map((row) => row.id)).toEqual([job.operationId]);
   }, 60_000);
 
   it("checks only what the chosen parts replace", async () => {

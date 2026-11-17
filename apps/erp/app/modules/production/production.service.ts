@@ -13901,21 +13901,27 @@ function rowsReplacedByGetMethod(
   };
 }
 
+type MethodReplacementScope = { jobIds: string[]; jobMakeMethodId?: string };
+type ReplacedParts = { billOfMaterial: boolean; billOfProcess: boolean };
+
 /**
  * Why Get Method cannot replace a job's method, or null: the operations it
  * would delete have production or a supplier invoice recorded against them,
- * or the materials it would delete are on a picking list or already issued. `jobMakeMethodId`
- * narrows the check to that method and the sub-assemblies below it.
+ * or the materials it would delete are on a picking list or already issued.
+ * `jobMakeMethodId` narrows the check to that method and the sub-assemblies
+ * below it. With `lock`, inside the replace's own transaction, the rows it
+ * deletes are locked first: recording production on an operation takes a lock
+ * on its row, so nothing recorded after the check can be deleted with it.
  */
-export async function jobMethodReplacementRefusal(
-  ctx: ServiceContext,
-  scope: { jobIds: string[]; jobMakeMethodId?: string },
-  parts: { billOfMaterial: boolean; billOfProcess: boolean }
-): Promise<CarbonError | null> {
+async function methodReplacementBlocker(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts,
+  { lock = false }: { lock?: boolean } = {}
+): Promise<string | null> {
   if (scope.jobIds.length === 0) return null;
   if (!parts.billOfMaterial && !parts.billOfProcess) return null;
-  const db = ctx.asSystem.pg;
-  const companyId = ctx.company.id;
 
   const methods = await db
     .selectFrom("jobMakeMethod")
@@ -13956,6 +13962,10 @@ export async function jobMethodReplacementRefusal(
   };
   const checksOperations = operations === "all" || operations.length > 0;
   const checksMaterials = materials === "all" || materials.length > 0;
+  if (lock) {
+    if (checksOperations) await replacedOperations().forUpdate().execute();
+    if (checksMaterials) await replacedMaterials().forUpdate().execute();
+  }
 
   const [events, quantities, invoiceLines, pickLines, issued] =
     await Promise.all([
@@ -14008,30 +14018,46 @@ export async function jobMethodReplacementRefusal(
     ]);
 
   if (events.length > 0 || quantities.length > 0) {
-    return ctx.error(
-      "rule",
-      "Production has been recorded on this job, so its method cannot be replaced"
-    );
+    return "Production has been recorded on this job, so its method cannot be replaced";
   }
   if (invoiceLines.length > 0) {
-    return ctx.error(
-      "rule",
-      "A supplier has invoiced an operation on this job, so its method cannot be replaced"
-    );
+    return "A supplier has invoiced an operation on this job, so its method cannot be replaced";
   }
   if (pickLines.length > 0) {
-    return ctx.error(
-      "rule",
-      "This job has a picking list, so its bill of material cannot be replaced"
-    );
+    return "This job has a picking list, so its bill of material cannot be replaced";
   }
   if (issued.length > 0) {
-    return ctx.error(
-      "rule",
-      "Material has been issued to this job, so its bill of material cannot be replaced"
-    );
+    return "Material has been issued to this job, so its bill of material cannot be replaced";
   }
   return null;
+}
+
+/** The check before Get Method runs, as a refusal the caller can show. */
+export async function jobMethodReplacementRefusal(
+  ctx: ServiceContext,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts
+): Promise<CarbonError | null> {
+  const message = await methodReplacementBlocker(
+    ctx.asSystem.pg,
+    ctx.company.id,
+    scope,
+    parts
+  );
+  return message ? ctx.error("rule", message) : null;
+}
+
+/** The same check inside Get Method's transaction, under its row locks. */
+async function refuseMethodReplacement(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts
+): Promise<void> {
+  const message = await methodReplacementBlocker(trx, companyId, scope, parts, {
+    lock: true
+  });
+  if (message) throw new InvalidInputError(message);
 }
 
 /**
@@ -16704,6 +16730,12 @@ export async function getMethod(
             .execute();
         }
 
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobId] },
+          parts
+        );
         // Delete existing jobMakeMethod, jobMakeMethodOperation, jobMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -17797,6 +17829,12 @@ export async function getMethod(
           treeItemIds(methodTree, supersessionRedirect)
         );
         const insertedJobMaterialIds: string[] = [];
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobMakeMethod.data.jobId], jobMakeMethodId },
+          parts
+        );
         // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -20574,6 +20612,12 @@ export async function getMethod(
           trx,
           treeItemIds(jobMethodTree, supersessionRedirect)
         );
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [targetJobId] },
+          parts
+        );
         // Delete existing jobMakeMethods, jobMaterials, and jobOperations for the target job
         await Promise.all([
           parts.billOfMaterial
@@ -22391,6 +22435,12 @@ export async function getMethod(
         await itemDefaults.load(
           trx,
           treeItemIds(quoteMethodTree, supersessionRedirect)
+        );
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobId] },
+          parts
         );
         // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
         await Promise.all([
