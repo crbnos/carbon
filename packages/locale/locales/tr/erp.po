@@ -20638,6 +20638,9 @@ msgstr "Planlama ve kapasite tarafından dikkate alınan çalışılmayan günle
 msgid "None"
 msgstr "Yok"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "Kullanılabilir yok"
 
@@ -27225,6 +27228,9 @@ msgstr "Varsayılan onaylayıcı seçin"
 
 msgid "Select a document"
 msgstr "Belge seçin"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Yeni bir sahip seç"

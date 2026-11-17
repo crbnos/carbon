@@ -20638,6 +20638,9 @@ msgstr "Dni wolne, które harmonogram i pojemność uwzględniają"
 msgid "None"
 msgstr "Brak"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "Brak dostępnych"
 
@@ -27225,6 +27228,9 @@ msgstr "Wybierz domyślnego zatwierdzającego"
 
 msgid "Select a document"
 msgstr "Wybierz dokument"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Wybierz nowego właściciela"

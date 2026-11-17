@@ -16,17 +16,24 @@ export const manualPrintValidator = z.object({
   printerRouteId: z.string().optional()
 });
 
-export const printerRouteValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  locationId: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  format: z.enum(["zpl", "pdf"]),
-  mediaSizeId: z.string().min(1, { message: "Media size is required" }),
-  printerUrl: z.string().url({ message: "Must be a valid URL" }),
-  // Write-only: blank keeps the saved key, `removeApiKey` clears it.
-  apiKey: zfd.text(z.string().optional()),
-  removeApiKey: zfd.checkbox()
-});
+export const printerRouteValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    locationId: zfd.text(z.string().optional()),
+    name: z.string().min(1, { message: "Name is required" }),
+    format: z.enum(["zpl", "pdf"]),
+    // A label printer needs its label size; a document printer prints full
+    // pages and may have none.
+    mediaSizeId: zfd.text(z.string().optional()),
+    printerUrl: z.string().url({ message: "Must be a valid URL" }),
+    // Write-only: blank keeps the saved key, `removeApiKey` clears it.
+    apiKey: zfd.text(z.string().optional()),
+    removeApiKey: zfd.checkbox()
+  })
+  .refine((route) => route.format === "pdf" || !!route.mediaSizeId, {
+    message: "Media size is required",
+    path: ["mediaSizeId"]
+  });
 
 export const labelTemplateValidator = z.object({
   id: zfd.text(z.string().optional()),

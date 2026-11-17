@@ -20638,6 +20638,9 @@ msgstr "スケジューリングと容量計画が考慮する非稼働日"
 msgid "None"
 msgstr "なし"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "該当なし"
 
@@ -27225,6 +27228,9 @@ msgstr "デフォルト承認者を選択"
 
 msgid "Select a document"
 msgstr "文書を選択"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "新しい責任者を選択"

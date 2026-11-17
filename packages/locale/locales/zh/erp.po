@@ -20638,6 +20638,9 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 msgid "None"
 msgstr "无"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "无可用项"
 
@@ -27225,6 +27228,9 @@ msgstr "选择默认审批人"
 
 msgid "Select a document"
 msgstr "选择文件"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "选择新的负责人"

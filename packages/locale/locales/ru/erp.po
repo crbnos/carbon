@@ -20638,6 +20638,9 @@ msgstr "Нерабочие дни, которые учитываются при 
 msgid "None"
 msgstr "Нет"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "Нет доступных"
 
@@ -27225,6 +27228,9 @@ msgstr "Выберите утверждающего по умолчанию"
 
 msgid "Select a document"
 msgstr "Выберите документ"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Выбрать нового ответственного"

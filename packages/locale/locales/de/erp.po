@@ -20638,6 +20638,9 @@ msgstr "Arbeitsfreie Tage, die Planung und Kapazität berücksichtigen"
 msgid "None"
 msgstr "Keine"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "Keine verfügbar"
 
@@ -27225,6 +27228,9 @@ msgstr "Wählen Sie einen Standard-Genehmiger"
 
 msgid "Select a document"
 msgstr "Dokument auswählen"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Einen neuen Verantwortlichen auswählen"
