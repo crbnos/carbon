@@ -448,13 +448,18 @@ export function refuseForeignPath(
   return ctx.error("validation", "The file must be in this company's storage");
 }
 
+/** How long a file link handed to an API caller lasts: an hour, as the
+ *  supplier quote share page signs the part files it shows (`signItemFile`). */
+export const FILE_LINK_SECONDS = 60 * 60;
+
 /**
  * The link to a document's file: the `/download/:token` link the documents
  * list gives each row (`x+/documents+/search.tsx`). The caller reads the
  * document first, so no link is made for one it cannot see. The token names
- * `ctx.auditUserId` (an API key's creator) and, like the list's, has no
- * expiry: `download.$token.tsx` reads the document again as that user on
- * every download.
+ * `ctx.auditUserId` (an API key's creator), and `download.$token.tsx` reads
+ * the document again as that user on every download. Unlike the list's, it
+ * expires after `FILE_LINK_SECONDS`: a key's creator can outlive the key, so a
+ * link copied into a log would otherwise outlast the key's revocation.
  */
 export async function documentDownloadUrl(
   ctx: ServiceContext,
@@ -475,25 +480,21 @@ export async function documentDownloadUrl(
     return ctx.error("notFound", "The document has no file");
   }
 
-  const token = await generateDownloadToken({
-    userId: ctx.auditUserId,
-    companyId: ctx.company.id,
-    documentId
-  });
+  const token = await generateDownloadToken(
+    { userId: ctx.auditUserId, companyId: ctx.company.id, documentId },
+    { expiresInSeconds: FILE_LINK_SECONDS }
+  );
   return {
     documentId,
     name: document.data.name,
-    url: `${ERP_URL}${path.to.download(token)}`
+    url: `${ERP_URL}${path.to.download(token)}`,
+    expiresIn: FILE_LINK_SECONDS
   };
 }
 
-/** How long a signed link to a record's file lasts: an hour, as the supplier
- *  quote share page signs the part files it shows (`signItemFile`). */
-export const RECORD_FILE_URL_SECONDS = 60 * 60;
-
 /**
  * A signed link to a file on a record's Files tab, valid
- * `RECORD_FILE_URL_SECONDS`. The key is the one the record's upload URL
+ * `FILE_LINK_SECONDS`. The key is the one the record's upload URL
  * operation gives the same name (`buildDocumentUploadPath`). The operation's
  * gate is the access check, as the app's file route checks its caller and
  * then reads with the service role; an API key is no storage user, so its
@@ -509,7 +510,7 @@ export async function signRecordFileUrl(
 
   const signed = await storage(ctx.asSystem.supabase)
     .company(ctx.company.id)
-    .createSignedUrl(key, RECORD_FILE_URL_SECONDS);
+    .createSignedUrl(key, FILE_LINK_SECONDS);
   if (!signed.data) {
     if (await isStorageNotFound(signed.error)) {
       return ctx.error("notFound", "File not found");
@@ -528,6 +529,6 @@ export async function signRecordFileUrl(
   return {
     path: key,
     signedUrl: url.toString(),
-    expiresIn: RECORD_FILE_URL_SECONDS
+    expiresIn: FILE_LINK_SECONDS
   };
 }

@@ -414,12 +414,15 @@ of the model and the dispatch, as on upload.
 
 - **A document** (Documents module): `documents_getDocumentDownloadUrl({ documentId })`
   reads the row as the caller (`document`, scoped to the company) and returns
-  `{ documentId, name, url }`, where `url` is the `/download/<token>` link the
-  documents list gives each row (`generateDownloadToken`, minted in
-  `x+/documents+/search.tsx`). The token names `ctx.auditUserId` (an API key's
-  creator) and has no expiry; `download.$token.tsx` reads the document again as
-  that user on every download and records it (`recordDocumentDownload`). A key
-  sees every document of its company (`has_valid_api_key_for_company`), its
+  `{ documentId, name, url, expiresIn }`, where `url` is a `/download/<token>`
+  link like the one the documents list gives each row (`generateDownloadToken`,
+  minted in `x+/documents+/search.tsx`). The token names `ctx.auditUserId` (an
+  API key's creator) and, unlike the list's, expires after `FILE_LINK_SECONDS`
+  (3600): it names the creator, not the key, so without an expiry it outlived
+  the key's revocation. `download.$token.tsx` reads the document again as that
+  user on every download and records it (`recordDocumentDownload`); an expired
+  token (`DownloadTokenExpiredError`) opens `/download/error?reason=expired`. A
+  key sees every document of its company (`has_valid_api_key_for_company`), its
   creator only their read groups: a link to a document outside them opens the
   "unavailable" page.
 - **A record's file**: one READ per upload tool, same input (`{ <recordId>, name }`),
@@ -431,7 +434,7 @@ of the model and the dispatch, as on upload.
   `purchasing_getSupplierInteractionLineDocumentDownloadUrl`. Each calls
   `signRecordFileUrl` (`documents.service.ts`): the key is
   `buildDocumentUploadPath` (the upload's key for that name), the service role
-  signs it for `RECORD_FILE_URL_SECONDS` (3600) with `download=<name>`, and it
+  signs it for `FILE_LINK_SECONDS` (3600) with `download=<name>`, and it
   returns `{ path, signedUrl, expiresIn }`; no object is `notFound`. The service
   role, because an API key is not a storage user (see uploads). The app's own
   file route (`file+/preview+/$bucket.$.tsx`) streams to a session and has no

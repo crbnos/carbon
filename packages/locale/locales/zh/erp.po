@@ -32049,6 +32049,9 @@ msgstr "此部门在 {locationName} 没有工作中心。选择另一个部门�
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "此部门在此地点没有工作中心。选择另一个部门或地点。"
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
 

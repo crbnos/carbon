@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import {
+  DownloadTokenExpiredError,
   generateDownloadToken,
   verifyDownloadToken
 } from "./download-token.server";
@@ -14,6 +15,7 @@ vi.hoisted(() => {
 });
 
 afterAll(() => vi.unstubAllEnvs());
+afterEach(() => vi.useRealTimers());
 
 const payload = {
   userId: "user-1",
@@ -38,5 +40,27 @@ describe("download tokens", () => {
     const token = await generateDownloadToken(payload);
     const forged = withPayload(token, { ...payload, companyId: "company-2" });
     await expect(verifyDownloadToken(forged)).rejects.toThrow();
+  });
+
+  it("minted to expire verify until then and read as expired after", async () => {
+    vi.useFakeTimers({ now: Date.parse("2026-11-18T09:00:00Z") });
+    const token = await generateDownloadToken(payload, {
+      expiresInSeconds: 3600
+    });
+
+    vi.setSystemTime(Date.parse("2026-11-18T09:59:00Z"));
+    expect(await verifyDownloadToken(token)).toEqual(payload);
+
+    vi.setSystemTime(Date.parse("2026-11-18T10:01:00Z"));
+    await expect(verifyDownloadToken(token)).rejects.toBeInstanceOf(
+      DownloadTokenExpiredError
+    );
+  });
+
+  it("minted without an expiry still verify years later", async () => {
+    vi.useFakeTimers({ now: Date.parse("2026-11-18T09:00:00Z") });
+    const token = await generateDownloadToken(payload);
+    vi.setSystemTime(Date.parse("2031-11-18T09:00:00Z"));
+    expect(await verifyDownloadToken(token)).toEqual(payload);
   });
 });

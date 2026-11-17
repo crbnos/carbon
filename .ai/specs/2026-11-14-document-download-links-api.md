@@ -18,7 +18,7 @@ hour.
 ```mermaid
 flowchart LR
     C["API / MCP caller"] --> D["documents_getDocumentDownloadUrl"]:::new
-    D -->|"reads the document as the caller (RLS)"| T["/download/:token link (no expiry)"]
+    D -->|"reads the document as the caller (RLS)"| T["/download/:token link (1 hour)"]
     T --> R["download.$token.tsx: reads it again as the token's user, records the download"]
     C --> F["{module}_get{Record}DocumentDownloadUrl"]:::new
     F -->|"module view gate"| S["signRecordFileUrl: service role signs the record's key"]:::new
@@ -63,7 +63,7 @@ Each operation calls one building block, `signRecordFileUrl` (`documents.service
 
 1. Build the key with `buildDocumentUploadPath`, the function the upload operations use. The same record and name give the same key.
 2. Refuse a key outside the company or with unsafe syntax (`refuseForeignPath`, `validation`).
-3. Sign the key in the company bucket with the service role, for `RECORD_FILE_URL_SECONDS` (3600).
+3. Sign the key in the company bucket with the service role, for `FILE_LINK_SECONDS` (3600).
 4. If storage has no object at the key, refuse with `notFound`.
 5. Add `download=<file name>` to the URL, as `signItemFile` does, so a browser saves the file under its name.
 6. Return `{ path, signedUrl, expiresIn }`.
@@ -73,7 +73,7 @@ Each operation calls one building block, `signRecordFileUrl` (`documents.service
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | The user the document token names | `ctx.auditUserId` | The API path records this user on every write. For an API key it is the key's creator (`auditUserIdOf`, `service-fn.server.ts`). For an OAuth connector it is the user. For a workflow it is the user the run acts for. |
-| Document link expiry | None, as the documents list's token | The download route checks access again at download time as the token's user. A link stops working when that user loses access or the document is deleted. |
+| Document link expiry | 3600 seconds (`FILE_LINK_SECONDS`), set on the token (`expiresInSeconds`); the documents list's tokens keep none | The token names an API key's creator, not the key, so a link with no expiry kept working after the key was revoked (self-test 2026-11-17). An hour bounds a link copied into a log or a transcript. An expired link opens `/download/error?reason=expired`. |
 | Who a key's document link works for | The intersection of the key and its creator | The operation reads the document as the key, so it makes no link for a document the key cannot see. The route reads it again as the creator. A document that a key sees through `has_valid_api_key_for_company` but its creator cannot see (read groups) gets a link that opens the "unavailable" page. This is narrower than the key; it never gives the key more. |
 | Record file access check | The module's view permission, then the service role signs | The record's file list (`getItemFiles`, `getJobDocuments`, `getOpportunityDocuments`, `getSupplierInteractionDocuments`) gates on that permission. The app's file route (`file+/preview+/$bucket.$.tsx`) checks the caller, then reads with the service role. An API key is not a storage user, so a link signed with its own client is refused (`mcp-tools-reference.md` → File uploads). |
 | Record file link expiry | 3600 seconds | The app's file route streams the file to a signed-in session and has no link to expire. A signed URL is a bearer credential, so it needs a short life. The closest signed link to a record's file is the supplier quote share page (`signItemFile(…, 3600)`). 3600 is narrower than the 7-day email attachment links (`EMAIL_ATTACHMENT_URL_SECONDS`). |
@@ -93,7 +93,7 @@ None.
 - `production.server.ts`: `getJobDocumentDownloadUrl`.
 - `sales.server.ts`: `getOpportunityDocumentDownloadUrl`, `getOpportunityLineDocumentDownloadUrl`.
 - `purchasing.server.ts`: `getSupplierInteractionDocumentDownloadUrl`, `getSupplierInteractionLineDocumentDownloadUrl`.
-- `documents.service.ts`: building blocks `documentDownloadUrl`, `signRecordFileUrl` and the constant `RECORD_FILE_URL_SECONDS`.
+- `documents.service.ts`: building blocks `documentDownloadUrl`, `signRecordFileUrl` and the constant `FILE_LINK_SECONDS`.
 - `tool-manifest.digest.json`: 7 new READ lines.
 
 ## Closest Sibling
@@ -119,14 +119,14 @@ None.
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| A document link has no expiry and can be forwarded. | Med | The same as the documents list's export. The route checks access again as the token's user at each download. |
+| A document link can be forwarded within its hour. | Low | It expires after `FILE_LINK_SECONDS`. The route checks access again as the token's user at each download. |
 | A record file link works for anyone who holds it, for one hour. | Low | The link is short-lived, and the caller already had the module's view permission. |
 | A key's document link fails for a document that only the key can see. | Low | Stated in the operation's description; the refusal page names it "unavailable". |
 
 ## Open Questions
 
 - [x] Which user does a token minted for an API key name? — Answer: `ctx.auditUserId`, the key's creator (decision taken in the brief; confirmed in `auditUserIdOf`).
-- [x] Does a link minted for a key expire? — Answer: no for documents (mirrors the app's token); 3600 seconds for record files (narrower option, see Design Decisions).
+- [x] Does a link minted for a key expire? — Answer: yes, 3600 seconds for both document links and record files (decided 2026-11-18: a link with no expiry outlived the revoked key that minted it).
 
 ## Changelog
 

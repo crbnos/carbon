@@ -32049,6 +32049,9 @@ msgstr "この部門は{locationName}に作業区がありません。別の部�
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "この部門はこの拠点に作業区がありません。別の部門または拠点を選択してください。"
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
 

@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { verifyDownloadToken } from "@carbon/auth/download-token.server";
+import {
+  DownloadTokenExpiredError,
+  verifyDownloadToken
+} from "@carbon/auth/download-token.server";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDocumentDownloadUrl } from "../app/modules/documents/documents.server";
 import {
   createItemDocumentUploadUrl,
@@ -175,6 +178,8 @@ describe("a caller without access is refused", () => {
 });
 
 describe("the document link", () => {
+  afterEach(() => vi.useRealTimers());
+
   it("names the caller's company, the document and the user the call is recorded under", async () => {
     const { data, error } = await getDocumentDownloadUrl(
       contextOf(key(["documents"]), { rows }),
@@ -183,12 +188,31 @@ describe("the document link", () => {
     expect(error).toBeNull();
     const prefix = `${ERP_URL}/download/`;
     expect(data?.url.startsWith(prefix)).toBe(true);
-    expect(data).toEqual({ documentId: "doc-1", name: "Drawing.pdf", url: data?.url });
+    expect(data).toEqual({
+      documentId: "doc-1",
+      name: "Drawing.pdf",
+      url: data?.url,
+      expiresIn: 3600
+    });
     expect(await verifyDownloadToken(data!.url.slice(prefix.length))).toEqual({
       userId: "key-creator",
       companyId: COMPANY,
       documentId: "doc-1"
     });
+  });
+
+  it("stops working an hour after it is made", async () => {
+    vi.useFakeTimers({ now: Date.parse("2026-11-18T09:00:00Z") });
+    const { data } = await getDocumentDownloadUrl(
+      contextOf(key(["documents"]), { rows }),
+      { documentId: "doc-1" }
+    );
+    const token = data!.url.slice(`${ERP_URL}/download/`.length);
+
+    vi.setSystemTime(Date.parse("2026-11-18T10:01:00Z"));
+    await expect(verifyDownloadToken(token)).rejects.toBeInstanceOf(
+      DownloadTokenExpiredError
+    );
   });
 
   it("is not made for a document with no file", async () => {

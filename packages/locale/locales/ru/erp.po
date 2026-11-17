@@ -32049,6 +32049,9 @@ msgstr "Этот отдел не имеет рабочих центров на {
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "Этот отдел не имеет рабочих центров на этой площадке. Выберите другой отдел или площадку."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."
 

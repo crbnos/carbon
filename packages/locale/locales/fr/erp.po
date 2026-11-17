@@ -32049,6 +32049,9 @@ msgstr "Ce département n'a pas de poste de travail au site {locationName}. Choi
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "Ce département n'a pas de poste de travail à ce site. Choisissez un autre département ou un autre site."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Ce lien de téléchargement est invalide ou a été modifié."
 
