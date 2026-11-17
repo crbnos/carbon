@@ -117,6 +117,11 @@ msgstr "{0} de {1} completados"
 msgid "{0} of {1} completed"
 msgstr "{0} de {1} completados"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} en cola"
@@ -194,6 +199,9 @@ msgstr "{hours} h"
 
 msgid "{issued} of {required}"
 msgstr "{issued} de {required}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, atrasado"
@@ -448,6 +456,9 @@ msgstr "¿Está seguro de que desea marcar esta operación como hecha? Esto term
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Pida a un supervisor que agregue la habilidad de {processName} a su perfil."
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "Solicitado"
 
@@ -517,6 +528,11 @@ msgstr "Lote"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "Lote de producción {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "Detalles del lote de producción"
@@ -854,6 +870,9 @@ msgstr "No se pudo cargar la alimentación de línea"
 
 msgid "Could not look up this label. Try again."
 msgstr "No se pudo buscar esta etiqueta. Inténtelo de nuevo."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Código de país"
@@ -1341,6 +1360,9 @@ msgstr "Certifico esta declaración"
 msgid "I understand and want to complete without issuing"
 msgstr "Entiendo y deseo completar sin emitir"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Sigo trabajando"
 
@@ -1368,6 +1390,10 @@ msgstr "en {0}"
 
 msgid "In an open menu"
 msgstr "En un menú abierto"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "En curso"
@@ -1596,6 +1622,9 @@ msgstr "Cargado: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Cargando detalles del artículo..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Cargando. No es necesario escanear de nuevo."
@@ -2076,6 +2105,9 @@ msgstr "Todavía no hay fallos, así que indique el motivo por el que se rechaza
 msgid "Nothing matches your search."
 msgstr "Nada coincide con su búsqueda."
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "Nada en esta página usa ese código de barras"
 
@@ -2118,6 +2150,12 @@ msgstr "En camino"
 
 msgid "one combined lot · planned"
 msgstr "un lote combinado · planificado"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "uno por orden de trabajo · planificado"
@@ -2633,6 +2671,9 @@ msgstr "Reabrir el subensamble y crear una unidad de reemplazo"
 msgid "Repairable"
 msgstr "Reparable"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Solicitar material"
 
@@ -2759,6 +2800,9 @@ msgstr "Escanea o selecciona la unidad y luego vuelve a escanear la tarjeta kanb
 msgid "Scan received"
 msgstr "Escaneo recibido"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Escanea este código QR con tu aplicación autenticadora (p. ej. Google Authenticator o 1Password), luego ingresa el código de 6 dígitos que muestra."
 
@@ -2777,8 +2821,20 @@ msgstr "Desperdicio"
 msgid "Scrap {readableId}"
 msgstr "Desperdicio {readableId}"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "Material de desperdicio"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Cantidad de desperdicio"
@@ -2791,6 +2847,12 @@ msgstr "Desperdiciar unidad"
 
 msgid "Scrapped"
 msgstr "Descartado"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Descartando serie {trackedEntityReadableId}"

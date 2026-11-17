@@ -117,6 +117,11 @@ msgstr "{0} из {1} завершено"
 msgid "{0} of {1} completed"
 msgstr "{0} из {1} завершено"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} в очереди"
@@ -194,6 +199,9 @@ msgstr "{hours} ч"
 
 msgid "{issued} of {required}"
 msgstr "{issued} из {required}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, просрочено"
@@ -448,6 +456,9 @@ msgstr "Вы уверены, что хотите отметить эту опе�
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Попросите руководителя добавить навык «{processName}» в ваш профиль."
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "Запрошено"
 
@@ -517,6 +528,11 @@ msgstr "Партия"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "Серия {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "Детали серии"
@@ -854,6 +870,9 @@ msgstr "Не удалось загрузить линию подачи"
 
 msgid "Could not look up this label. Try again."
 msgstr "Не удалось найти эту метку. Попробуйте ещё раз."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Код страны"
@@ -1341,6 +1360,9 @@ msgstr "Я удостоверяю это заявление"
 msgid "I understand and want to complete without issuing"
 msgstr "Я понимаю и хочу завершить без выдачи"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Я ещё работаю"
 
@@ -1368,6 +1390,10 @@ msgstr "через {0}"
 
 msgid "In an open menu"
 msgstr "В открытом меню"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "В работе"
@@ -1596,6 +1622,9 @@ msgstr "Загружена: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Загрузка. Повторно сканировать не нужно."
@@ -2076,6 +2105,9 @@ msgstr "Отказов пока нет, поэтому укажите причи
 msgid "Nothing matches your search."
 msgstr "Ничего не совпадает с вашим поиском."
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "На этой странице ничто не использует этот штрихкод"
 
@@ -2118,6 +2150,12 @@ msgstr "В пути"
 
 msgid "one combined lot · planned"
 msgstr "одна объединённая партия · запланировано"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "одна на производственный заказ · запланировано"
@@ -2633,6 +2671,9 @@ msgstr "Открыть заново узел и создать единицу д
 msgid "Repairable"
 msgstr "Подлежит ремонту"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Запросить материал"
 
@@ -2759,6 +2800,9 @@ msgstr "Отсканируйте или выберите единицу, зат�
 msgid "Scan received"
 msgstr "Скан получен"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Отсканируйте этот QR код с помощью приложения аутентификации (например, Google Authenticator или 1Password), затем введите 6-значный код, который оно покажет."
 
@@ -2777,8 +2821,20 @@ msgstr "Брак"
 msgid "Scrap {readableId}"
 msgstr "Браковать {readableId}"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "Браковка материала"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Количество брака"
@@ -2791,6 +2847,12 @@ msgstr "Отправить единицу в брак"
 
 msgid "Scrapped"
 msgstr "Списано в брак"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Списание серийного номера {trackedEntityReadableId}"

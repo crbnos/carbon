@@ -117,6 +117,11 @@ msgstr "{1} 중 {0} 완료"
 msgid "{0} of {1} completed"
 msgstr "{1} 중 {0} 완료됨"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 대기열"
@@ -194,6 +199,9 @@ msgstr "{hours} 시간"
 
 msgid "{issued} of {required}"
 msgstr "{required} 중 {issued}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, 기한 초과"
@@ -448,6 +456,9 @@ msgstr "이 공정작업을 완료로 표시하시겠습니까? 이 작업은 �
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "감독자에게 프로필에 {processName} 역량을 추가하도록 요청하세요."
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "요청됨"
 
@@ -517,6 +528,11 @@ msgstr "배치"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "배치 {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "배치 상세정보"
@@ -854,6 +870,9 @@ msgstr "라인 피드를 불러올 수 없습니다"
 
 msgid "Could not look up this label. Try again."
 msgstr "이 라벨을 조회할 수 없습니다. 다시 시도하세요."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "국가 코드"
@@ -1341,6 +1360,9 @@ msgstr "이 진술을 인증합니다"
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
 
@@ -1368,6 +1390,10 @@ msgstr "{0} 후"
 
 msgid "In an open menu"
 msgstr "열린 메뉴에서"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "진행 중"
@@ -1596,6 +1622,9 @@ msgstr "로드됨: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "로드 중입니다. 다시 스캔할 필요가 없습니다."
@@ -2076,6 +2105,9 @@ msgstr "아직 실패한 항목이 없으므로 단위를 거부하는 사유를
 msgid "Nothing matches your search."
 msgstr "검색과 일치하는 항목이 없습니다."
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "이 페이지에서 해당 바코드를 사용하는 항목이 없습니다"
 
@@ -2118,6 +2150,12 @@ msgstr "이동 중"
 
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "작업 지시당 하나 · 계획됨"
@@ -2633,6 +2671,9 @@ msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 msgid "Repairable"
 msgstr "수리 가능"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "자재 요청"
 
@@ -2759,6 +2800,9 @@ msgstr "단위를 스캔하거나 선택한 다음 칸반 카드를 다시 스�
 msgid "Scan received"
 msgstr "스캔을 받았습니다"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시되는 6자리 코드를 입력하십시오."
 
@@ -2777,8 +2821,20 @@ msgstr "스크랩"
 msgid "Scrap {readableId}"
 msgstr "{readableId} 스크랩"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "자재 스크랩"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "스크랩 수량"
@@ -2791,6 +2847,12 @@ msgstr "개 스크랩"
 
 msgid "Scrapped"
 msgstr "스크랩됨"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "일련번호 {trackedEntityReadableId} 폐기"

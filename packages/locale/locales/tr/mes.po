@@ -117,6 +117,11 @@ msgstr "{0} adet / {1} adet tamamlandı"
 msgid "{0} of {1} completed"
 msgstr "{0} adet tamamlandı"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} kuyrukta"
@@ -194,6 +199,9 @@ msgstr "{hours} s"
 
 msgid "{issued} of {required}"
 msgstr "{issued} / {required}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, gecikmiş"
@@ -448,6 +456,9 @@ msgstr "Bu işlemi tamamlandı olarak işaretlemek istediğinizden emin misiniz?
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Yöneticinizden profilinize {processName} yetkinliğini eklemesini isteyin."
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "Talep edildi"
 
@@ -517,6 +528,11 @@ msgstr "Parti"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "Parti {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "Parti Detayları"
@@ -854,6 +870,9 @@ msgstr "Hat beslemesi yüklenemedi"
 
 msgid "Could not look up this label. Try again."
 msgstr "Bu etiket aranamadı. Tekrar deneyin."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Ülke kodu"
@@ -1341,6 +1360,9 @@ msgstr "Bu beyanı onaylarım"
 msgid "I understand and want to complete without issuing"
 msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
 
@@ -1368,6 +1390,10 @@ msgstr "{0} içinde"
 
 msgid "In an open menu"
 msgstr "Açık bir menüde"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
@@ -1596,6 +1622,9 @@ msgstr "Yüklendi: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Yükleniyor. Tekrar taramanıza gerek yok."
@@ -2076,6 +2105,9 @@ msgstr "Henüz hiçbir numune kalmadı, bu yüzden birimlerin neden reddedildiğ
 msgid "Nothing matches your search."
 msgstr "Aramanızla eşleşen hiçbir şey yok."
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "Bu sayfada hiçbir şey bu barkodu kullanmıyor"
 
@@ -2118,6 +2150,12 @@ msgstr "Yolda"
 
 msgid "one combined lot · planned"
 msgstr "bir birleştirilmiş Lot · planlandı"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "İş emri başına bir · planlandı"
@@ -2633,6 +2671,9 @@ msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 msgid "Repairable"
 msgstr "Onarılabilir"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Malzeme talep et"
 
@@ -2759,6 +2800,9 @@ msgstr "Birimi tarayın veya seçin, ardından kanban kartını yeniden tarayın
 msgid "Scan received"
 msgstr "Tarama alındı"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanızla tarayın (örn. Google Authenticator veya 1Password), ardından gösterdiği 6 haneli kodu girin."
 
@@ -2777,8 +2821,20 @@ msgstr "Fire"
 msgid "Scrap {readableId}"
 msgstr "Fire {readableId}"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "Fire malzemesi"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Fire miktarı"
@@ -2791,6 +2847,12 @@ msgstr "Adedi fireye ayır"
 
 msgid "Scrapped"
 msgstr "Hurdaya Ayrılan"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Seri hurdası {trackedEntityReadableId}"

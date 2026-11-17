@@ -84,6 +84,7 @@ import {
   LuListChecks,
   LuListFilter,
   LuPackageSearch,
+  LuPackageX,
   LuPause,
   LuPlay,
   LuTimer,
@@ -107,6 +108,7 @@ import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMate
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
+import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
 import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
@@ -596,6 +598,7 @@ export function AssemblyView({
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
   const needMaterialModal = useDisclosure();
+  const scrapParts = useScrapParts(operationId);
   const completeModal = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -2102,6 +2105,17 @@ export function AssemblyView({
             <LuFlag className="size-4" />
             <Trans>Flag issue</Trans>
           </button>
+          {operation ? (
+            <button
+              type="button"
+              disabled={abilityBlocked}
+              onClick={() => scrapParts.open()}
+              className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 md:gap-2 md:px-4 lg:flex"
+            >
+              <LuPackageX className="size-4" />
+              <Trans>Scrap parts</Trans>
+            </button>
+          ) : null}
           {headerActions}
         </header>
       )}
@@ -2682,14 +2696,30 @@ export function AssemblyView({
                                 issueModal.onOpen();
                               }
                         }
+                        onScrap={
+                          abilityBlocked ||
+                          m.methodType !== "Pull from Inventory"
+                            ? undefined
+                            : () => scrapParts.open(m.id)
+                        }
                       />
                     )
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  No materials assigned
-                </p>
+                <div className="flex flex-col items-start gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    No materials assigned
+                  </p>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuPackageX />}
+                    isDisabled={abilityBlocked}
+                    onClick={() => scrapParts.open()}
+                  >
+                    <Trans>Scrap parts</Trans>
+                  </Button>
+                </div>
               )}
             </SidebarSection>
 
@@ -2886,6 +2916,7 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
+      {scrapParts.modal}
       <NeedMaterialModal
         operationId={operationId}
         materials={allMaterials.flatMap((material) =>
@@ -3044,6 +3075,15 @@ export function AssemblyView({
                 onClick={() => {
                   actionsSheet.onClose();
                   qualityModal.onOpen();
+                }}
+              />
+              <ActionSheetButton
+                icon={<LuPackageX className="size-4 shrink-0" />}
+                label={t`Scrap parts`}
+                disabled={abilityBlocked}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  scrapParts.open();
                 }}
               />
               <ActionSheetButton
@@ -3433,6 +3473,7 @@ function getIssuedForUnit(
 function MaterialRow({
   material,
   onIssue,
+  onScrap,
   stepNumbers = [],
   currentStepNumber,
   unitIndex = 0,
@@ -3441,6 +3482,8 @@ function MaterialRow({
 }: {
   material: any;
   onIssue?: () => void;
+  /** Scrap ruined parts of it and replace them from the shelf. */
+  onScrap?: () => void;
   // 1-based step numbers where this part is used ("where used"); empty = General.
   stepNumbers?: number[];
   currentStepNumber?: number;
@@ -3501,7 +3544,7 @@ function MaterialRow({
   const interactive = !!onIssue && (isTracked || !fullyIssued);
   const Wrapper = interactive ? "button" : "div";
 
-  return (
+  const card = (
     <Wrapper
       {...(interactive
         ? {
@@ -3567,6 +3610,21 @@ function MaterialRow({
         )}
       </div>
     </Wrapper>
+  );
+  if (!onScrap) return card;
+  // The card is a button itself, so the scrap action sits beside it.
+  return (
+    <div className="flex items-stretch gap-1">
+      <div className="min-w-0 flex-1">{card}</div>
+      <IconButton
+        aria-label={t`Scrap parts of ${partName}`}
+        variant="ghost"
+        size="lg"
+        className="h-auto"
+        icon={<LuTrash />}
+        onClick={onScrap}
+      />
+    </div>
   );
 }
 

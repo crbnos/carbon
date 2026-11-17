@@ -25,6 +25,7 @@ import {
   LuGitBranchPlus,
   LuPackageCheck,
   LuQrCode,
+  LuTrash2,
   LuTriangleAlert
 } from "react-icons/lu";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
@@ -168,6 +169,43 @@ function toMaterialGroups({
 
 function isTracked(material: JobMaterial) {
   return material.requiresBatchTracking || material.requiresSerialTracking;
+}
+
+// A hint only: the server lists what can actually be scrapped (the part
+// itself when untracked, or the parts inside a kit).
+function canScrapParts(material: JobMaterial) {
+  return material.methodType === "Pull from Inventory";
+}
+
+function ScrapPartsButton({
+  material,
+  onScrap,
+  disabled,
+  size
+}: {
+  material: JobMaterial;
+  onScrap?: (material: JobMaterial) => void;
+  disabled?: boolean;
+  size?: "lg";
+}) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  if (!onScrap || !canScrapParts(material)) return null;
+  const label =
+    getItemReadableId(items, material.itemId ?? "") ||
+    material.description ||
+    "";
+  return (
+    <IconButton
+      aria-label={t`Scrap parts of ${label}`}
+      variant="ghost"
+      size={size}
+      icon={<LuTrash2 />}
+      className={size ? undefined : "h-8 w-8"}
+      isDisabled={disabled}
+      onClick={() => onScrap(material)}
+    />
+  );
 }
 
 function estimatedQuantity(material: JobMaterial, parentIsSerial: boolean) {
@@ -367,6 +405,8 @@ type OperationMaterialsProps = {
   /** Only for batched operations. */
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
   onIssue: (material: JobMaterial) => void;
+  /** Scrap parts of a pulled material, or parts inside a kit. */
+  onScrap?: (material: JobMaterial) => void;
   // The operator may not issue on this operation (ability policy 'block')
   disabled?: boolean;
 };
@@ -388,6 +428,7 @@ function MaterialsTable({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -516,7 +557,16 @@ function MaterialsTable({
                         </div>
                       )}
                     </Td>
-                    <Td className="text-right">{issueButton(parent)}</Td>
+                    <Td className="text-right">
+                      <HStack spacing={1} className="justify-end">
+                        <ScrapPartsButton
+                          material={material}
+                          onScrap={onScrap}
+                          disabled={disabled}
+                        />
+                        {issueButton(parent)}
+                      </HStack>
+                    </Td>
                   </Tr>
 
                   {kitChildren.map((child, index) => (
@@ -564,7 +614,16 @@ function MaterialsTable({
                         {estimatedQuantity(child.material, parentIsSerial)}
                       </Td>
                       <Td>{actualQuantity(child.material, parentIsSerial)}</Td>
-                      <Td className="text-right">{issueButton(child)}</Td>
+                      <Td className="text-right">
+                        <HStack spacing={1} className="justify-end">
+                          <ScrapPartsButton
+                            material={child.material}
+                            onScrap={onScrap}
+                            disabled={disabled}
+                          />
+                          {issueButton(child)}
+                        </HStack>
+                      </Td>
                     </Tr>
                   ))}
                 </Fragment>
@@ -581,6 +640,7 @@ function MaterialsList({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -643,7 +703,13 @@ function MaterialsList({
           ) : null}
         </div>
         {/* A fixed slot, so the quantities line up. */}
-        <div className="flex min-w-28 shrink-0 justify-end">
+        <div className="flex min-w-28 shrink-0 items-center justify-end gap-1">
+          <ScrapPartsButton
+            material={material}
+            onScrap={onScrap}
+            disabled={disabled}
+            size="lg"
+          />
           {row.issue === "scan" && row.isKitChild ? (
             <IconButton
               aria-label={issueLabel(material)}

@@ -117,6 +117,11 @@ msgstr "{0} में से {1} पूर्ण"
 msgid "{0} of {1} completed"
 msgstr "{0} में से {1} पूर्ण"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} कतार में"
@@ -194,6 +199,9 @@ msgstr "{hours} घंटा"
 
 msgid "{issued} of {required}"
 msgstr "{required} में से {issued}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, अतिदेय"
@@ -448,6 +456,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "एक पर्यवेक्षक से कहें कि वे आपकी प्रोफ़ाइल में {processName} कौशल जोड़ें।"
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "माँगा गया"
 
@@ -517,6 +528,11 @@ msgstr "बैच"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "बैच {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "बैच विवरण"
@@ -854,6 +870,9 @@ msgstr "लाइन फ़ीड लोड नहीं हो सका"
 
 msgid "Could not look up this label. Try again."
 msgstr "यह लेबल खोजा नहीं जा सका। फिर से प्रयास करें।"
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "देश कोड"
@@ -1341,6 +1360,9 @@ msgstr "मैं इस विवरण को प्रमाणित कर�
 msgid "I understand and want to complete without issuing"
 msgstr "मैं समझता हूँ और बिना जारी किए पूरा करना चाहता हूँ"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
@@ -1368,6 +1390,10 @@ msgstr "{0} में"
 
 msgid "In an open menu"
 msgstr "खुले मेनू में"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "प्रगति में"
@@ -1596,6 +1622,9 @@ msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "लोड हो रहा है। दोबारा स्कैन करने की ज़रूरत नहीं है।"
@@ -2076,6 +2105,9 @@ msgstr "अभी तक कुछ भी विफल नहीं हुआ �
 msgid "Nothing matches your search."
 msgstr "आपकी खोज से कुछ नहीं मिला।"
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "इस पेज पर कुछ भी उस बारकोड का उपयोग नहीं करता"
 
@@ -2118,6 +2150,12 @@ msgstr "रास्ते में"
 
 msgid "one combined lot · planned"
 msgstr "एक संयुक्त लॉट · योजनाबद्ध"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "प्रति जॉब एक · योजनाबद्ध"
@@ -2633,6 +2671,9 @@ msgstr "सब-असेंबली को फिर से खोलें औ
 msgid "Repairable"
 msgstr "मरम्मत योग्य"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "सामग्री का अनुरोध करें"
 
@@ -2759,6 +2800,9 @@ msgstr "इकाई को स्कैन करें या चुनें,
 msgid "Scan received"
 msgstr "स्कैन प्राप्त हुआ"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "इस QR कोड को अपने प्रमाणकर्ता ऐप्लिकेशन (जैसे Google Authenticator या 1Password) के साथ स्कैन करें, फिर इसके द्वारा दिया गया 6-अंकीय कोड दर्ज करें।"
 
@@ -2777,8 +2821,20 @@ msgstr "स्क्रैप"
 msgid "Scrap {readableId}"
 msgstr "स्क्रैप {readableId}"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "स्क्रैप सामग्री"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "स्क्रैप मात्रा"
@@ -2791,6 +2847,12 @@ msgstr "इकाई स्क्रैप करें"
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "सीरीयल को स्क्रैप किया जा रहा है {trackedEntityReadableId}"

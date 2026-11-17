@@ -117,6 +117,11 @@ msgstr "{0} von {1} abgeschlossen"
 msgid "{0} of {1} completed"
 msgstr "{0} von {1} abgeschlossen"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} in Warteschlange"
@@ -194,6 +199,9 @@ msgstr "{hours} h"
 
 msgid "{issued} of {required}"
 msgstr "{issued} von {required}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, überfällig"
@@ -448,6 +456,9 @@ msgstr "Möchten Sie diesen Arbeitsgang wirklich als erledigt markieren? Dies be
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Bitten Sie einen Vorgesetzten, die {processName} Qualifikation zu Ihrem Profil hinzuzufügen."
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "Angefragt"
 
@@ -517,6 +528,11 @@ msgstr "Charge"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "Los {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "Los-Details"
@@ -854,6 +870,9 @@ msgstr "Die Linienversorgung konnte nicht geladen werden"
 
 msgid "Could not look up this label. Try again."
 msgstr "Dieses Etikett konnte nicht abgerufen werden. Bitte versuchen Sie es erneut."
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "Ländervorwahl"
@@ -1341,6 +1360,9 @@ msgstr "Ich bestätige diese Erklärung"
 msgid "I understand and want to complete without issuing"
 msgstr "Ich verstehe und möchte ohne Ausgabe abschließen"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Ich arbeite noch"
 
@@ -1368,6 +1390,10 @@ msgstr "in {0}"
 
 msgid "In an open menu"
 msgstr "In einem offenen Menü"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "In Bearbeitung"
@@ -1596,6 +1622,9 @@ msgstr "Beladen: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Wird geladen. Sie müssen nicht erneut scannen."
@@ -2076,6 +2105,9 @@ msgstr "Noch nichts ist fehlgeschlagen, daher begründen Sie, warum die Einheite
 msgid "Nothing matches your search."
 msgstr "Nichts stimmt Ihrer Suche überein."
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "Nichts auf dieser Seite verwendet diesen Barcode"
 
@@ -2118,6 +2150,12 @@ msgstr "Unterwegs"
 
 msgid "one combined lot · planned"
 msgstr "eine kombinierte Charge · geplant"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "eine pro Fertigungsauftrag · geplant"
@@ -2633,6 +2671,9 @@ msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
 msgid "Repairable"
 msgstr "Reparierbar"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Material anfordern"
 
@@ -2759,6 +2800,9 @@ msgstr "Scannen oder wählen Sie die Einheit aus und scannen Sie dann die Kanban
 msgid "Scan received"
 msgstr "Scan empfangen"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scannen Sie diesen QR-Code mit Ihrer Authentifizierungs-App (z. B. Google Authenticator oder 1Password), und geben Sie dann den 6-stelligen Code ein, den sie anzeigt."
 
@@ -2777,8 +2821,20 @@ msgstr "Ausschuss"
 msgid "Scrap {readableId}"
 msgstr "Ausschuss {readableId}"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "Ausschusspaterial"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Ausschussmenge"
@@ -2791,6 +2847,12 @@ msgstr "Einheit als Ausschuss buchen"
 
 msgid "Scrapped"
 msgstr "Ausschuss"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Seriennummer {trackedEntityReadableId} wird verschrottet"

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261117091847",
+  "schemaVersion": "20261117120100",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T18:44:29.359Z",
+  "exportedAt": "2026-11-17T03:32:19.523Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -515,11 +515,12 @@
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
-        "deliveryDateControl",
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
-        "autoPickingListOnRelease"
+        "autoPickingListOnRelease",
+        "deliveryDateControl",
+        "receiptBatchNumbersFromPurchaseOrder"
       ]
     },
     {
@@ -3999,6 +4000,26 @@
       "columns": ["jobId", "userId"]
     },
     {
+      "name": "jobMaterialScrap",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobMaterialId",
+        "jobOperationId",
+        "itemId",
+        "quantity",
+        "scrapReasonId",
+        "replacement",
+        "materialRequestId",
+        "notes",
+        "idempotencyKey",
+        "createdBy",
+        "createdAt",
+        "trackedEntityId"
+      ]
+    },
+    {
       "name": "jobOperationNote",
       "rows": 0,
       "columns": [
@@ -5645,10 +5666,10 @@
         "sourceDocumentId",
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
-        "storageUnitId",
-        "acceptedQuantity",
         "workCenterId",
-        "assignee"
+        "assignee",
+        "storageUnitId",
+        "acceptedQuantity"
       ]
     },
     {

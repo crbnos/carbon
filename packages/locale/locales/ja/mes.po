@@ -117,6 +117,11 @@ msgstr "{0} / {1} 完了"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 完了済み"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0}件がキュー待ちです"
@@ -194,6 +199,9 @@ msgstr "{hours} 時間"
 
 msgid "{issued} of {required}"
 msgstr "{required}のうち{issued}"
+
+msgid "{label} to scrap"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}、期限超過"
@@ -448,6 +456,9 @@ msgstr "この工程を完了としてマークしてもよろしいですか？
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "スーパーバイザーにプロフィールに{processName}スキルを追加するよう依頼してください。"
 
+msgid "Ask the water spider"
+msgstr ""
+
 msgid "Asked"
 msgstr "依頼済み"
 
@@ -517,6 +528,11 @@ msgstr "バッチ"
 #. placeholder {0}: d.batchReadableId
 msgid "Batch {0}"
 msgstr "バッチ {0}"
+
+#. placeholder {0}: entity.readableId
+#. placeholder {1}: entity.quantity
+msgid "Batch {0} · {1} used · {where}"
+msgstr ""
 
 msgid "Batch Details"
 msgstr "バッチ詳細"
@@ -854,6 +870,9 @@ msgstr "ラインフィードを読み込めませんでした"
 
 msgid "Could not look up this label. Try again."
 msgstr "このラベルを検索できませんでした。再試行してください。"
+
+msgid "Count what is ruined. Replacements come from the shelf."
+msgstr ""
 
 msgid "Country code"
 msgstr "国番号"
@@ -1341,6 +1360,9 @@ msgstr "この声明を認証します"
 msgid "I understand and want to complete without issuing"
 msgstr "理解した上で払出なしで完了します"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "まだ作業中です"
 
@@ -1368,6 +1390,10 @@ msgstr "{0}で"
 
 msgid "In an open menu"
 msgstr "開いているメニュー内"
+
+#. placeholder {0}: entity.kitReadableId
+msgid "in kit {0}"
+msgstr ""
 
 msgid "In Progress"
 msgstr "進行中"
@@ -1596,6 +1622,9 @@ msgstr "ロード済み: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "読み込み中です。もう一度スキャンする必要はありません。"
@@ -2076,6 +2105,9 @@ msgstr "まだ不合格はありません。個体を却下する理由を入力
 msgid "Nothing matches your search."
 msgstr "検索に該当するものがありません。"
 
+msgid "Nothing on this operation can be scrapped yet. Serials and batches show once they are issued."
+msgstr ""
+
 msgid "Nothing on this page uses that barcode"
 msgstr "このページにはそのバーコードを使うものがありません"
 
@@ -2118,6 +2150,12 @@ msgstr "移動中"
 
 msgid "one combined lot · planned"
 msgstr "1つの統合ロット · 計画済"
+
+msgid "One less {label}"
+msgstr ""
+
+msgid "One more {label}"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "1つ/製造指図 · 計画済"
@@ -2633,6 +2671,9 @@ msgstr "サブアセンブリを再オープンし、代替品を作成"
 msgid "Repairable"
 msgstr "修理可能"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "資材を依頼"
 
@@ -2759,6 +2800,9 @@ msgstr "ユニットをスキャンまたは選択してから、かんばんカ
 msgid "Scan received"
 msgstr "スキャンを受け付けました"
 
+msgid "Scan the replacement serials and batches in."
+msgstr ""
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "このQRコードをスキャンしてください（例：Google AuthenticatorまたはOnePassword）、その後に表示される6桁のコードを入力してください。"
 
@@ -2777,8 +2821,20 @@ msgstr "スクラップ"
 msgid "Scrap {readableId}"
 msgstr "{readableId} をスクラップ"
 
+msgid "Scrap {total}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "材料をスクラップ"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
+
+msgid "Scrap parts of {partName}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "スクラップ数量"
@@ -2791,6 +2847,12 @@ msgstr "個をスクラップ"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "シリアル {trackedEntityReadableId} をスクラップ中"

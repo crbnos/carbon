@@ -951,6 +951,12 @@ export const manifest = {
   }),
   jobMakeMethod: company("production"),
   jobMaterial: company("production"),
+  // Written only by the scrapJobPart posting (system connection).
+  jobMaterialScrap: company("production", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   jobMaterialStep: policies({
     select: exists("jobMaterial", "jobMaterialId", "employee"),
     insert: exists("jobMaterial", "jobMaterialId", "production_create"),
