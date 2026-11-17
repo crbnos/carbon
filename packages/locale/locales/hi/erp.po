@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {लक्ष्य से # दिन पी�
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करता है} other {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करते हैं}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}–{b2} दिन"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}–{b3} दिन"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ दिन"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "मात्रा {quantity} के लिए {categoryLabel} मार्कअप"
 
@@ -1525,6 +1534,9 @@ msgstr "1 अपोस्ट किया गया दस्तावेज़"
 
 msgid "1 year"
 msgstr "1 वर्ष"
+
+msgid "1-{b1} Days"
+msgstr "1–{b1} दिन"
 
 msgid "12 monthly periods"
 msgstr "12 मासिक अवधियाँ"
@@ -9810,6 +9822,9 @@ msgstr "किसी हिस्से को ऑर्डर करने स�
 msgid "Days Off"
 msgstr "दिन बंद"
 
+msgid "Days Past Due"
+msgstr "देय तिथि से बीते दिन"
+
 msgid "Days Remaining"
 msgstr "शेष दिन"
 
@@ -10919,6 +10934,9 @@ msgstr "अक्षम करें"
 msgid "Disabled"
 msgstr "अक्षम"
 
+msgid "Disbursement"
+msgstr "संवितरण"
+
 msgid "Discard"
 msgstr "त्यागें"
 
@@ -11169,6 +11187,9 @@ msgstr "ठीक करने के लिए {0} पंक्ति(यों
 
 msgid "Download CSV"
 msgstr "CSV डाउनलोड करें"
+
+msgid "Download Excel"
+msgstr "Excel डाउनलोड करें"
 
 msgid "Download Labels"
 msgstr "लेबल डाउनलोड करें"
@@ -14498,6 +14519,9 @@ msgstr "GL खाता जहां ग्राहकों को दी ग�
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL खाता जहां आपूर्तिकर्ताओं से ली गई जल्दी भुगतान छूट दर्ज की जाती है।"
+
+msgid "GL Codes"
+msgstr "जीएल कोड"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "लेजर विरोधी-संपत्ति खाता जमा किया जाता है जब प्रत्येक अवधि में मूल्यह्रास पोस्ट होता है और पूरी तरह से डेबिट किया जाता है जब संपत्ति को बेचा या स्क्रैप किया जाता है।"
@@ -21350,6 +21374,9 @@ msgstr "खाता मैपिंग खोलें"
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
 
+msgid "Open Amount"
+msgstr "बकाया राशि"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
 
@@ -21803,6 +21830,9 @@ msgstr "मूल"
 
 msgid "Original"
 msgstr "मूल"
+
+msgid "Original Amount"
+msgstr "मूल राशि"
 
 msgid "Original Count"
 msgstr "मूल गणना"

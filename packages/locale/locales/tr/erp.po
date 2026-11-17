@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Hedeften # gün geride} other {Hedeften # gün
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# faturalama öğesi inceleme için bekliyor} other {# faturalama öğeleri inceleme için bekliyor}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} Gün"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} Gün"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ Gün"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{quantity} miktar için {categoryLabel} zammı"
 
@@ -1525,6 +1534,9 @@ msgstr "1 deftere geçmemiş belge"
 
 msgid "1 year"
 msgstr "1 yıl"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} Gün"
 
 msgid "12 monthly periods"
 msgstr "12 aylık dönem"
@@ -9810,6 +9822,9 @@ msgstr "Bir parça sipariş etmekten itibaren kullanılabilir olana kadar olan g
 msgid "Days Off"
 msgstr "İzin Günleri"
 
+msgid "Days Past Due"
+msgstr "Vade Tarihini Geçen Gün"
+
 msgid "Days Remaining"
 msgstr "Kalan Günler"
 
@@ -10919,6 +10934,9 @@ msgstr "Devre Dışı Bırak"
 msgid "Disabled"
 msgstr "Devre Dışı"
 
+msgid "Disbursement"
+msgstr "Tediye"
+
 msgid "Discard"
 msgstr "Atıkla"
 
@@ -11169,6 +11187,9 @@ msgstr "{0} satır(lar)ı düzeltmek için indirin"
 
 msgid "Download CSV"
 msgstr "CSV İndir"
+
+msgid "Download Excel"
+msgstr "Excel'i İndir"
 
 msgid "Download Labels"
 msgstr "Etiketleri İndir"
@@ -14498,6 +14519,9 @@ msgstr "Müşterilere verilen erken ödeme iskontolarının kaydedildiği muhase
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Tedarikçilerden alınan erken ödeme iskontolarının kaydedildiği muhasebe hesabı."
+
+msgid "GL Codes"
+msgstr "Muhasebe hesap kodları"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Amortisman muhasebeleştirildiğinde her dönem alacağa kaydedilen ve varlık satıldığında veya hurda hale getirildiğinde tam olarak borca kaydedilen muhasebe kontra-varlık hesabı."
@@ -21350,6 +21374,9 @@ msgstr "Hesap Eşleştirmesini Aç"
 msgid "Open Actions"
 msgstr "Açık Aksiyonlar"
 
+msgid "Open Amount"
+msgstr "Açık Tutar"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için bir NCR aç"
 
@@ -21803,6 +21830,9 @@ msgstr "Kaynak"
 
 msgid "Original"
 msgstr "Orijinal"
+
+msgid "Original Amount"
+msgstr "Orijinal Tutar"
 
 msgid "Original Count"
 msgstr "Orijinal Sayım"

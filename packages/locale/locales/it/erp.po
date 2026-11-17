@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Ritardato rispetto al target di # giorno} othe
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# articolo fatturabile in attesa di revisione} other {# articoli fatturabili in attesa di revisione}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} giorni"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} giorni"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ giorni"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "Ricarico {categoryLabel} per quantità {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1 documento non registrato"
 
 msgid "1 year"
 msgstr "1 anno"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} giorni"
 
 msgid "12 monthly periods"
 msgstr "12 periodi mensili"
@@ -9810,6 +9822,9 @@ msgstr "Giorni dal momento dell'ordinazione di un componente fino alla sua dispo
 msgid "Days Off"
 msgstr "Giorni liberi"
 
+msgid "Days Past Due"
+msgstr "Giorni di ritardo"
+
 msgid "Days Remaining"
 msgstr "Giorni rimanenti"
 
@@ -10919,6 +10934,9 @@ msgstr "Disattiva"
 msgid "Disabled"
 msgstr "Disabilitato"
 
+msgid "Disbursement"
+msgstr "Esborso"
+
 msgid "Discard"
 msgstr "Scarta"
 
@@ -11169,6 +11187,9 @@ msgstr "Scarica {0} riga(e) da correggere"
 
 msgid "Download CSV"
 msgstr "Scarica CSV"
+
+msgid "Download Excel"
+msgstr "Scarica Excel"
 
 msgid "Download Labels"
 msgstr "Scarica Etichette"
@@ -14498,6 +14519,9 @@ msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato conc
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato ottenuti dai fornitori."
+
+msgid "GL Codes"
+msgstr "Codici contabili"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Conto contabile di contabilità generale a saldo negativo dell'attivo accreditato quando l'ammortamento viene registrato ogni periodo e completamente addebitato quando il cespite viene venduto o rottamato."
@@ -21350,6 +21374,9 @@ msgstr "Apri mappatura account"
 msgid "Open Actions"
 msgstr "Azioni Aperte"
 
+msgid "Open Amount"
+msgstr "Importo residuo"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Apri un NCR per la disposizione MRB"
 
@@ -21803,6 +21830,9 @@ msgstr "Origine"
 
 msgid "Original"
 msgstr "Originale"
+
+msgid "Original Amount"
+msgstr "Importo originale"
 
 msgid "Original Count"
 msgstr "Conteggio Originale"

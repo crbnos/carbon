@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 项计费物料等待评审} other {# 项计费物料等待评审}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2}天"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3}天"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}天以上"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel} 加价，数量 {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1个未过账的文件"
 
 msgid "1 year"
 msgstr "1 年"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1}天"
 
 msgid "12 monthly periods"
 msgstr "12个月度期间"
@@ -9810,6 +9822,9 @@ msgstr "从订购零件到库存可用的天数；计划偏移按此向后推移
 msgid "Days Off"
 msgstr "休息日"
 
+msgid "Days Past Due"
+msgstr "逾期天数"
+
 msgid "Days Remaining"
 msgstr "剩余天数"
 
@@ -10919,6 +10934,9 @@ msgstr "禁用"
 msgid "Disabled"
 msgstr "已禁用"
 
+msgid "Disbursement"
+msgstr "支付"
+
 msgid "Discard"
 msgstr "丢弃"
 
@@ -11169,6 +11187,9 @@ msgstr "下载{0}行进行修复"
 
 msgid "Download CSV"
 msgstr "下载 CSV"
+
+msgid "Download Excel"
+msgstr "下载 Excel"
 
 msgid "Download Labels"
 msgstr "下载标签"
@@ -14498,6 +14519,9 @@ msgstr "记录给予客户的提前付款折扣的GL账户。"
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "记录从供应商那里获取的提前付款折扣的GL账户。"
+
+msgid "GL Codes"
+msgstr "总账科目代码"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "资产对冲类总账科目，在每期折旧过账时贷方记录，当资产出售或报废时整额借方记录。"
@@ -21350,6 +21374,9 @@ msgstr "打开账户映射"
 msgid "Open Actions"
 msgstr "未结操作"
 
+msgid "Open Amount"
+msgstr "未结清金额"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "打开 NCR 进行 MRB 处置"
 
@@ -21803,6 +21830,9 @@ msgstr "来源"
 
 msgid "Original"
 msgstr "原始"
+
+msgid "Original Amount"
+msgstr "原始金额"
 
 msgid "Original Count"
 msgstr "原始盘点"

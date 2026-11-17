@@ -103299,6 +103299,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customerId: string | null
+          customerName: string | null
           customerReference: string | null
           customFields: Json | null
           dateDue: string | null
@@ -103312,6 +103313,7 @@ export type Database = {
           invoiceCustomerContactId: string | null
           invoiceCustomerId: string | null
           invoiceCustomerLocationId: string | null
+          invoiceCustomerName: string | null
           invoiceId: string | null
           invoiceTotal: number | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -108000,6 +108002,18 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_aging_unapplied_payments: {
+        Args: { _as_of_date: string; _company_id: string; _side: string }
+        Returns: {
+          documentId: string
+          documentNumber: string
+          documentType: string
+          openInBase: number
+          originalInBase: number
+          partyId: string
+          transactionDate: string
+        }[]
+      }
       get_ap_aging: {
         Args: {
           _aging_method?: string
@@ -108032,9 +108046,12 @@ export type Database = {
           exchangeRate: number
           openInBase: number
           openInCurrency: number
+          originalInBase: number
           settled: number
           supplierId: string
+          supplierReference: string
           totalAmount: number
+          transactionDate: string
         }[]
       }
       get_ap_tie_out: {
@@ -108083,8 +108100,10 @@ export type Database = {
           exchangeRate: number
           openInBase: number
           openInCurrency: number
+          originalInBase: number
           settled: number
           totalAmount: number
+          transactionDate: string
         }[]
       }
       get_ar_tie_out: {
@@ -108624,6 +108643,17 @@ export type Database = {
           totalValue: number
           unitCost: number
           unitOfMeasureCode: string
+        }[]
+      }
+      get_invoice_line_gl_codes: {
+        Args: {
+          company_id: string
+          invoice_ids: string[]
+          invoice_type: string
+        }
+        Returns: {
+          glCodes: string
+          id: string
         }[]
       }
       get_issue_tracked_entity_stock: {
@@ -109982,6 +110012,14 @@ export type Database = {
           unitPrice: number
         }[]
       }
+      get_sales_invoice_customer_names: {
+        Args: { company_id: string; invoice_ids: string[] }
+        Returns: {
+          customerName: string
+          id: string
+          invoiceCustomerName: string
+        }[]
+      }
       get_sales_order_lines_by_customer_id: {
         Args: { customer_id: string }
         Returns: {
@@ -111004,6 +111042,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customerId: string | null
+          customerName: string | null
           customerReference: string | null
           customFields: Json | null
           dateDue: string | null
@@ -111017,6 +111056,7 @@ export type Database = {
           invoiceCustomerContactId: string | null
           invoiceCustomerId: string | null
           invoiceCustomerLocationId: string | null
+          invoiceCustomerName: string | null
           invoiceId: string | null
           invoiceTotal: number | null
           itemType: Database["public"]["Enums"]["itemType"] | null

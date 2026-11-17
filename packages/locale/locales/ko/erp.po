@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {목표보다 # 일 뒤짐} other {목표보다
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 청구 가능 항목이 검토를 기다리고 있습니다} other {# 청구 가능 항목이 검토를 기다리고 있습니다}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}~{b2}일"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}~{b3}일"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}일 이상"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{quantity} 수량의 {categoryLabel} 마크업"
 
@@ -1525,6 +1534,9 @@ msgstr "1건의 미전기 문서"
 
 msgid "1 year"
 msgstr "1년"
+
+msgid "1-{b1} Days"
+msgstr "1~{b1}일"
 
 msgid "12 monthly periods"
 msgstr "12개월 기간"
@@ -9810,6 +9822,9 @@ msgstr "부품 주문부터 가용까지의 일수이며, 계획 오프셋이 �
 msgid "Days Off"
 msgstr "휴무일"
 
+msgid "Days Past Due"
+msgstr "지급 기한 경과 일수"
+
 msgid "Days Remaining"
 msgstr "남은 일수"
 
@@ -10919,6 +10934,9 @@ msgstr "비활성화"
 msgid "Disabled"
 msgstr "비활성화됨"
 
+msgid "Disbursement"
+msgstr "지급"
+
 msgid "Discard"
 msgstr "폐기"
 
@@ -11169,6 +11187,9 @@ msgstr "수정할 {0}개 행 다운로드"
 
 msgid "Download CSV"
 msgstr "CSV 다운로드"
+
+msgid "Download Excel"
+msgstr "Excel 다운로드"
 
 msgid "Download Labels"
 msgstr "라벨 다운로드"
@@ -14498,6 +14519,9 @@ msgstr "고객에게 제공한 조기결제 할인이 기록되는 총계정원�
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "공급업체로부터 받은 조기결제 할인이 기록되는 총계정원장 계정입니다."
+
+msgid "GL Codes"
+msgstr "총계정원장 코드"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "각 기간에 감가상각이 전기될 때 대변되고 자산이 판매 또는 폐기될 때 전액 차변되는 자산 상계 계정과목입니다."
@@ -21350,6 +21374,9 @@ msgstr "계정 매핑 열기"
 msgid "Open Actions"
 msgstr "미결 조치"
 
+msgid "Open Amount"
+msgstr "미결제 금액"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR 열기"
 
@@ -21803,6 +21830,9 @@ msgstr "출처"
 
 msgid "Original"
 msgstr "원본"
+
+msgid "Original Amount"
+msgstr "원래 금액"
 
 msgid "Original Count"
 msgstr "원본 계산"

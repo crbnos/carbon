@@ -18,8 +18,9 @@ there too. `project-charges.ts` (plain, server-only) is the purchase invoice's p
 their receipt already charged to a project (the invoice then writes only the price
 variance).
 
-`invoicing.reports.ts` is pure calendar/aggregation math (`previousPeriod`, `aggregateSpend`)
-with no route consumer yet — only its own test. `ui/SalesInvoice/` has no `index.ts` and is NOT
+`invoicing.reports.ts` holds pure report helpers (`previousPeriod`, `aggregateSpend`,
+`agingCsvTable`, `daysPastDue`); the aging CSV and Excel routes use its export helper.
+`ui/SalesInvoice/` has no `index.ts` and is NOT
 in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder (`Charge`,
 `Dashboard`, `Memo`, `Payment`, `PurchaseInvoice`, `Reimbursement`, `Workbench`) is barrel-exported.
 
@@ -157,6 +158,14 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 ## Validation Commands
 
+Sales and Purchase Invoice lists offer direct server CSV and Excel downloads
+from `x+/invoicing+/invoice-export.server.ts` and four thin file routes. The
+table sends its active filters, sorts, and saved-view export columns; the
+server reads the list registry page by page and applies its name/GL-code
+enrichment. Purchase exports also resolve Supplier and Invoice Supplier names
+in a company-scoped batch per page. These downloads bypass the generic
+background CSV job.
+
 ```bash
 pnpm --filter erp exec vitest run app/modules/invoicing   # scoped: 9 files / 166 tests
 pnpm exec turbo run typecheck --filter=erp
@@ -204,6 +213,8 @@ guarded by `requireUnlockedBulk`, not validators.
 ## Key Service Functions
 
 - `getPurchaseInvoices` / `getSalesInvoices` — the list reads. A search reads the list through the SQL function `search<List>(company_id, terms)` in place of the view (`searchTerms`, `~/utils/search`), so every word must occur in the document or its lines, case, spaces and punctuation ignored. The function finds the matching ids from the company's headers and lines in one pass; a filter on a per-row text took about 700 ms at 1,800 orders. A search on the table on screen also reads `searchLines` (`withSearchLines`: only with `forScreen` and a search word; an export, a bulk action and the API never do), so the rows with a matching line open to those lines. Every row can be opened, collapsed by default; without a search it loads its lines on open from `api+/document-lines.$list.$id.ts` (`useLineItemRows`, `~/components/LineItemRows`). Each line and party lookup in the SQL functions also matches the document's `companyId`, because these list routes read with `bypassRls`. `searchLines` is a computed field of the list view and `search<List>` matches the same line values (migration `*_deep-list-search.sql`), so a row matched on a line value always has a line to show; `select=*` never reads `searchLines`. The supplier and customer names come through a LEFT JOIN, so an invoicing-only user still sees every invoice.
+- `getSalesInvoiceCustomerNames` — batched invoice-scoped names for the sales-invoice list and CSV; the RPC requires `invoicing_view` without granting customer-table access. The view's appended name columns remain in the `getSalesInvoices` response for API callers; the list overwrites them with the authorized RPC values so invoice-only users receive names without customer-table access.
+- `getInvoiceLineGlCodes` — batched, company-scoped line account numbers for both invoice lists and CSV exports. Ordinary sales lines without an assigned account use `accountDefault.salesAccount`; specialized sales lines and unassigned purchase lines add no code. These are line coding values, not a list of every posted journal account.
 - `insertSalesInvoice` / `insertPurchaseInvoice` — allocate the sequence via
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
@@ -235,9 +246,36 @@ guarded by `requireUnlockedBulk`, not validators.
 - `getOpenSalesInvoicesForCustomer` / `getOpenPurchaseInvoicesForSupplier` /
   `getOpenReimbursementsForEmployee` — payable targets, one per payee kind.
 - `getArAging` / `getApAging` / `getArTieOut` / `getApTieOut` / `getArOpenByCustomer` /
-  `getApOpenBySupplier` — drive `x+/reports+/{ar,ap}-aging.tsx`,
-  `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`) and `_index.tsx`
-  (`InvoicingDashboard`).
+  `getApOpenBySupplier` / `getAgingUnappliedPayments` — drive `x+/reports+/{ar,ap}-aging.tsx`,
+  `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`), `_index.tsx`
+  (`InvoicingDashboard`) and the CSV/Excel aging downloads.
+  `getApOpenBySupplier` also returns `supplierReference` (the supplier's own
+  invoice number, shown as "Supplier Invoice Number"); it is NULL on memo rows
+  even though the generated type says `string`. Both open-document RPCs return
+  `transactionDate` (invoice issued date, falling back to posting date; memo
+  date) and signed `originalInBase` for the aging detail rows and CSV. The
+  workbench and CSV compute days past due from `dateDue` and the selected
+  `asOfDate`; memos have no due date. The final bucket is labeled from the day
+  after `bucket3` (for example, `91+` for a 90-day cutoff).
+- `getAgingParams(client, companyId, request)` — the one parser of the aging
+  query params (`asOfDate`, `agingMethod`, `bucketDays`) for the report,
+  workbench and export routes.
+  The page loaders keep their own permission (`invoicing` for the workbenches,
+  `accounting` + employee for the reports); the CSV and Excel routes share
+  `x+/reports+/aging.server.ts`, which admits a viewer of either module because
+  the download holds exactly what either page shows. The invoicing workbench passes
+  the CSV route URL to the Table's download control; the aging report pages offer
+  CSV and Excel in one Export menu. Each export row is an open document or
+  unapplied payment with its counterparty repeated; the Excel
+  download uses the same rows and adds formulas for document and grand totals.
+  The report pages keep document-only columns in an expanded table with its own
+  header. Exports include open documents even when their counterparty's net
+  aging row is zero, and translate headings from the request locale. The aging,
+  open-document, and payment reads return query
+  builders: the export routes page them with `fetchAllRecords` and stable unique
+  ordering. After the export permission check, they batch party-name lookups
+  with `fetchAllByIds` through a service-role client, scoped to `companyId`;
+  customer and supplier RLS otherwise require sales or purchasing permission.
 - `updateReimbursement` (Draft-scoped UPDATE) / `upsertReimbursementLines` (Kysely,
   delete-then-reinsert; bind dimensions by `sequence`, never by returned row order) /
   `getPaymentCurrencyConfiguration` (base currency + `currency.decimalPlaces`; throws when the

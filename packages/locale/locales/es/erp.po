@@ -854,6 +854,15 @@ msgstr "{behindDays, plural, one {Atraso objetivo de # día} other {Atraso objet
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# artículo facturable espera revisión} other {# artículos facturables esperan revisión}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} días"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} días"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ días"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "Recargo de {categoryLabel} para la cantidad {quantity}"
 
@@ -1525,6 +1534,9 @@ msgstr "1 documento no contabilizado"
 
 msgid "1 year"
 msgstr "1 año"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} días"
 
 msgid "12 monthly periods"
 msgstr "12 períodos mensuales"
@@ -9810,6 +9822,9 @@ msgstr "Días desde ordenar una pieza hasta tenerla disponible; el desfase de pl
 msgid "Days Off"
 msgstr "Días libres"
 
+msgid "Days Past Due"
+msgstr "Días de retraso"
+
 msgid "Days Remaining"
 msgstr "Días Restantes"
 
@@ -10919,6 +10934,9 @@ msgstr "Desactivar"
 msgid "Disabled"
 msgstr "Deshabilitado"
 
+msgid "Disbursement"
+msgstr "Desembolso"
+
 msgid "Discard"
 msgstr "Descartar"
 
@@ -11169,6 +11187,9 @@ msgstr "Descargar {0} fila(s) para corregir"
 
 msgid "Download CSV"
 msgstr "Descargar CSV"
+
+msgid "Download Excel"
+msgstr "Descargar Excel"
 
 msgid "Download Labels"
 msgstr "Descargar Etiquetas"
@@ -14498,6 +14519,9 @@ msgstr "Cuenta GL donde se registran los descuentos por pago anticipado otorgado
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Cuenta GL donde se registran los descuentos por pago anticipado obtenidos de los proveedores."
+
+msgid "GL Codes"
+msgstr "Códigos de cuentas contables"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Cuenta de activo de contrapartida del Libro mayor acreditada cuando se contabilizan depreciaciones cada período y debitada en su totalidad cuando el activo se vende o se desecha."
@@ -21350,6 +21374,9 @@ msgstr "Abrir Mapeo de Cuentas"
 msgid "Open Actions"
 msgstr "Acciones Abiertas"
 
+msgid "Open Amount"
+msgstr "Importe pendiente"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir un NCR para disposición de MRB"
 
@@ -21803,6 +21830,9 @@ msgstr "Origen"
 
 msgid "Original"
 msgstr "Original"
+
+msgid "Original Amount"
+msgstr "Importe original"
 
 msgid "Original Count"
 msgstr "Conteo Original"
