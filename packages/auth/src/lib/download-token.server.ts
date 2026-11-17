@@ -52,7 +52,7 @@ export async function generateDownloadToken(
   const token = new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt();
-  if (options.expiresInSeconds) {
+  if (options.expiresInSeconds !== undefined) {
     token.setExpirationTime(`${options.expiresInSeconds}s`);
   }
   return token.sign(secret);

@@ -10123,7 +10123,8 @@ export const createOpportunityDocumentUploadUrl = defineServiceFn({
  * A signed link to a file on the opportunity's Files tab, valid for an hour
  * (`expiresIn`, in seconds). The response carries the link, never the file.
  * `name` is the file's name as `sales_getOpportunityDocuments` lists it, or the
- * name given to `sales_createOpportunityDocumentUploadUrl`. A file that is not
+ * name given to `sales_createOpportunityDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
  * there is not found.
  *
  * @mcp read
@@ -10169,7 +10170,8 @@ export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
  * A signed link to a file on the line's Files tab, valid for an hour
  * (`expiresIn`, in seconds). The response carries the link, never the file.
  * `name` is the file's name as `sales_getOpportunityLineDocuments` lists it, or
- * the name given to `sales_createOpportunityLineDocumentUploadUrl`. A file that
+ * the name given to `sales_createOpportunityLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that
  * is not there is not found.
  *
  * @mcp read

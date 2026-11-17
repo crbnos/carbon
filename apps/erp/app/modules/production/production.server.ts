@@ -11107,7 +11107,8 @@ export const createJobDocumentUploadUrl = defineServiceFn({
  * A signed link to a file on the job's Files tab, valid for an hour
  * (`expiresIn`, in seconds). The response carries the link, never the file.
  * `name` is the file's name as `production_getJobDocuments` lists it, or the
- * name given to `production_createJobDocumentUploadUrl`. A file that is not
+ * name given to `production_createJobDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
  * there is not found. `production_getJobDocuments` also lists the item's files
  * (`bucket` `parts`) and the sales line's (`opportunity-line`): get those with
  * `items_getItemDocumentDownloadUrl` and

@@ -41,10 +41,10 @@ flowchart LR
 
 1. Read the `document` row as the caller (row-level security), scoped to `ctx.company.id`.
 2. If no row comes back, refuse with `notFound`. If the row has no `path`, refuse with `notFound`.
-3. Mint the token with `generateDownloadToken({ userId: ctx.auditUserId, companyId: ctx.company.id, documentId })`.
-4. Return `{ documentId, name, url }`. `url` is `${ERP_URL}/download/<token>`, the value the documents list CSV export writes.
+3. Mint the token with `generateDownloadToken({ userId: ctx.auditUserId, companyId: ctx.company.id, documentId }, { expiresInSeconds: FILE_LINK_SECONDS })`.
+4. Return `{ documentId, name, url, expiresIn }`. `url` is `${ERP_URL}/download/<token>`, the same form as the link the documents list CSV export writes. `expiresIn` is `FILE_LINK_SECONDS` (3600).
 
-The existing route `download.$token.tsx` serves the link. It reads the document again as the token's user, downloads the file with the service role and writes the "Download" transaction (`recordDocumentDownload`).
+The existing route `download.$token.tsx` serves the link. It reads the document again as the token's user, downloads the file with the service role and writes the "Download" transaction (`recordDocumentDownload`). If the token has expired, `verifyDownloadToken` throws `DownloadTokenExpiredError`, and the route sends the caller to `/download/error?reason=expired`.
 
 ### Record files
 
@@ -114,6 +114,7 @@ None.
 - [x] The document link's token names the caller's company, the document and `ctx.auditUserId`; a token edited to name another company does not verify.
 - [x] The 7 operations are in the generated manifest as READ, each on its module's view permission.
 - [x] `pnpm check:manifest` passes with the new digest.
+- [x] A document link stops working 3600 seconds after the operation mints it, and opens the "expired" error page. A token with no expiry (the documents list's) still verifies.
 
 ## Risks
 
@@ -131,3 +132,4 @@ None.
 ## Changelog
 
 - 2026-11-14: Created and implemented on `feat/document-download-link-api`.
+- 2026-11-18: Document links expire after `FILE_LINK_SECONDS` (3600). The self-test on a local stack showed that a link with no expiry still downloaded after its API key was revoked. `RECORD_FILE_URL_SECONDS` is renamed `FILE_LINK_SECONDS` and serves both link types.

@@ -11,7 +11,7 @@
 ## Decisions
 
 - The document token names `ctx.auditUserId`. For an API key, `auditUserIdOf` (`packages/api/src/service-fn.server.ts`) returns the key's creator.
-- The document link keeps the token's missing expiry, as the documents list does.
+- The document link kept the token's missing expiry, as the documents list does. Changed on 2026-11-18: see the last section.
 - A record file link lasts 3600 seconds. The app's file route streams to a session and has no link, so it has no expiry to copy. The hour copies the supplier quote share page (`signItemFile(…, 3600)`).
 - One operation per record upload operation, 6 in total, the line types included. Each gates on its module's view permission.
 - The service role signs a record file link after the gate, because an API key is no storage user.
@@ -32,7 +32,7 @@
 
 ## Not tested
 
-- No local stack ran for this worktree. These paths were not run for real: the PostgREST read under RLS, the storage signature, and a download through `download.$token.tsx`.
+- On 2026-11-14 no local stack ran for this worktree. The self-test on 2026-11-17 and 2026-11-18 later ran these paths: the PostgREST read under RLS, the storage signature, and a download through `download.$token.tsx`. The results are in the last section.
 
 ## Outcome
 
@@ -43,3 +43,9 @@
 - Self-test on a local stack (2026-11-17): a document link minted with an API key still downloaded after the key was deleted, because the token names the key's creator.
 - Change: `generateDownloadToken` takes `{ expiresInSeconds }`; `verifyDownloadToken` throws `DownloadTokenExpiredError` past it; `download.$token.tsx` sends that to `/download/error?reason=expired`, which has its own message. `documentDownloadUrl` mints with `FILE_LINK_SECONDS` (3600, the record-file constant renamed) and returns `expiresIn`. The documents list's tokens are unchanged (no expiry).
 - Tests: `download-token.server.test.ts` (expires on time; no expiry still verifies years later), `document-download-links.test.ts` (the document link stops working after an hour; red with the expiry removed).
+- Self-test on a local stack (2026-11-17 and 2026-11-18), with API keys over MCP and files that the app uploaded:
+  1. The document link downloads signed out. The bytes match, and the document's history gets a Download row by the key's creator.
+  2. A key without `documents_view` gets a refusal. An unknown id gets `notFound`.
+  3. A token that expired an hour ago opens `/download/error?reason=expired`. A token with no expiry, 400 days old, still downloads.
+  4. The part file link downloads under the file's name for 3600 seconds. A missing name, a key without `parts_view` and a `../` name each get a refusal.
+- Self-review follow-ups: an `expiresInSeconds` of 0 now expires at once. A test covers the folder round trip for all 6 record operations and fails if one download signs a different folder. The 6 descriptions now say that a converted image (HEIC) is listed as `.jpg` or `.webp`.

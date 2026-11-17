@@ -7030,7 +7030,8 @@ export const createItemDocumentUploadUrl = defineServiceFn({
  * A signed link to a file on the item's Files tab, valid for an hour
  * (`expiresIn`, in seconds). The response carries the link, never the file.
  * `name` is the file's name as `items_getItemFiles` lists it, or the name given
- * to `items_createItemDocumentUploadUrl`. A file that is not there is not
+ * to `items_createItemDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not there is not
  * found.
  *
  * @mcp read

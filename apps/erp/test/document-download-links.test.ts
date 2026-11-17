@@ -14,12 +14,19 @@ import {
   createItemDocumentUploadUrl,
   getItemDocumentDownloadUrl
 } from "../app/modules/items/items.server";
-import { getJobDocumentDownloadUrl } from "../app/modules/production/production.server";
 import {
+  createJobDocumentUploadUrl,
+  getJobDocumentDownloadUrl
+} from "../app/modules/production/production.server";
+import {
+  createSupplierInteractionDocumentUploadUrl,
+  createSupplierInteractionLineDocumentUploadUrl,
   getSupplierInteractionDocumentDownloadUrl,
   getSupplierInteractionLineDocumentDownloadUrl
 } from "../app/modules/purchasing/purchasing.server";
 import {
+  createOpportunityDocumentUploadUrl,
+  createOpportunityLineDocumentUploadUrl,
   getOpportunityDocumentDownloadUrl,
   getOpportunityLineDocumentDownloadUrl
 } from "../app/modules/sales/sales.server";
@@ -246,6 +253,28 @@ describe("record file links", () => {
       expiresIn: 3600
     });
     expect(uploaded).toBe("company-1/parts/item-1/Bracket rev B.pdf");
+  });
+
+  // A download that signs another folder than its upload wrote passes every
+  // other case here, since the fake bucket only answers for keys it holds.
+  it.each([
+    ["items", "parts", createItemDocumentUploadUrl, getItemDocumentDownloadUrl, { itemId: "r-1" }],
+    ["production", "production", createJobDocumentUploadUrl, getJobDocumentDownloadUrl, { jobId: "r-1" }],
+    ["sales opportunity", "sales", createOpportunityDocumentUploadUrl, getOpportunityDocumentDownloadUrl, { opportunityId: "r-1" }],
+    ["sales opportunity line", "sales", createOpportunityLineDocumentUploadUrl, getOpportunityLineDocumentDownloadUrl, { lineId: "r-1" }],
+    ["purchasing interaction", "purchasing", createSupplierInteractionDocumentUploadUrl, getSupplierInteractionDocumentDownloadUrl, { interactionId: "r-1" }],
+    ["purchasing interaction line", "purchasing", createSupplierInteractionLineDocumentUploadUrl, getSupplierInteractionLineDocumentDownloadUrl, { lineId: "r-1" }]
+  ] as const)("%s: signs the key its upload URL wrote", async (_name, scope, upload, download, record) => {
+    const objects = new Map([[bucket, new Set<string>()]]);
+    const ctx = contextOf(key([scope]), { objects });
+    const input = { ...record, name: "Spec sheet.pdf" };
+
+    const uploaded = ((await (upload as any)(ctx, input)).data as { path: string }).path;
+    objects.get(bucket)!.add(uploaded);
+
+    const { data, error } = await (download as any)(ctx, input);
+    expect(error).toBeNull();
+    expect(data?.path).toBe(uploaded);
   });
 
   it("refuses a name that climbs out of the record's folder", async () => {

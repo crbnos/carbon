@@ -8074,7 +8074,8 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
  * hour (`expiresIn`, in seconds). The response carries the link, never the
  * file. `name` is the file's name as
  * `purchasing_getSupplierInteractionDocuments` lists it, or the name given to
- * `purchasing_createSupplierInteractionDocumentUploadUrl`. A file that is not
+ * `purchasing_createSupplierInteractionDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
  * there is not found.
  *
  * @mcp read
@@ -8121,7 +8122,8 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
  * (`expiresIn`, in seconds). The response carries the link, never the file.
  * `name` is the file's name as `purchasing_getSupplierInteractionLineDocuments`
  * lists it, or the name given to
- * `purchasing_createSupplierInteractionLineDocumentUploadUrl`. A file that is
+ * `purchasing_createSupplierInteractionLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is
  * not there is not found.
  *
  * @mcp read
