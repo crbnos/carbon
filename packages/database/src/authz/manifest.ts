@@ -459,6 +459,8 @@ export const manifest = {
       portal.customer("customerId", "sales_delete")
     )
   }),
+  // Transit days for one ship-to address and shipping method pair.
+  customerLocationTransitTime: company("sales", { read: "sales_view" }),
   customerPartToItem: policies({
     select: or(
       or(

@@ -1092,6 +1092,7 @@ export const Constants = {
       serviceWorkSite: ["Depot", "Customer Site"],
       shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
       shelfLifeTriggerTiming: ["Before", "After"],
+      shipmentDeliveredSource: ["Manual", "Carrier"],
       shipmentSourceDocument: [
         "Sales Order",
         "Sales Invoice",

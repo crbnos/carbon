@@ -14836,6 +14836,155 @@ export type Database = {
           }
         ]
       }
+      customerLocationTransitTime: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerLocationId: string
+          id: string
+          shippingMethodId: string
+          transitDays: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerLocationId: string
+          id?: string
+          shippingMethodId: string
+          transitDays: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerLocationId?: string
+          id?: string
+          shippingMethodId?: string
+          transitDays?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerLocationTransitTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerLocationTransitTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       customerPartToItem: {
         Row: {
           companyId: string
@@ -31265,6 +31414,7 @@ export type Database = {
           scheduleOutdatedReason: string | null
           scrapQuantity: number
           secondsToComplete: number | null
+          shipByDate: string | null
           startDate: string | null
           status: Database["public"]["Enums"]["jobStatus"]
           storageUnitId: string | null
@@ -31316,6 +31466,7 @@ export type Database = {
           scheduleOutdatedReason?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
+          shipByDate?: string | null
           startDate?: string | null
           status?: Database["public"]["Enums"]["jobStatus"]
           storageUnitId?: string | null
@@ -31367,6 +31518,7 @@ export type Database = {
           scheduleOutdatedReason?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
+          shipByDate?: string | null
           startDate?: string | null
           status?: Database["public"]["Enums"]["jobStatus"]
           storageUnitId?: string | null
@@ -76459,6 +76611,11 @@ export type Database = {
           createdBy: string
           customerId: string | null
           customFields: Json | null
+          deliveredDate: string | null
+          deliveredSource:
+            | Database["public"]["Enums"]["shipmentDeliveredSource"]
+            | null
+          estimatedDeliveryDate: string | null
           externalDocumentId: string | null
           externalNotes: Json | null
           id: string
@@ -76490,6 +76647,11 @@ export type Database = {
           createdBy: string
           customerId?: string | null
           customFields?: Json | null
+          deliveredDate?: string | null
+          deliveredSource?:
+            | Database["public"]["Enums"]["shipmentDeliveredSource"]
+            | null
+          estimatedDeliveryDate?: string | null
           externalDocumentId?: string | null
           externalNotes?: Json | null
           id?: string
@@ -76521,6 +76683,11 @@ export type Database = {
           createdBy?: string
           customerId?: string | null
           customFields?: Json | null
+          deliveredDate?: string | null
+          deliveredSource?:
+            | Database["public"]["Enums"]["shipmentDeliveredSource"]
+            | null
+          estimatedDeliveryDate?: string | null
           externalDocumentId?: string | null
           externalNotes?: Json | null
           id?: string
@@ -77166,6 +77333,7 @@ export type Database = {
           name: string
           tags: string[] | null
           trackingUrl: string | null
+          transitDays: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -77181,6 +77349,7 @@ export type Database = {
           name: string
           tags?: string[] | null
           trackingUrl?: string | null
+          transitDays?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -77196,6 +77365,7 @@ export type Database = {
           name?: string
           tags?: string[] | null
           trackingUrl?: string | null
+          transitDays?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -94607,8 +94777,10 @@ export type Database = {
           companyId: string | null
           completedDate: string | null
           configuration: Json | null
+          consumeToProject: boolean | null
           createdAt: string | null
           createdBy: string | null
+          customerContractLineId: string | null
           customerId: string | null
           customFields: Json | null
           deadlineType: Database["public"]["Enums"]["deadlineType"] | null
@@ -94634,9 +94806,12 @@ export type Database = {
           modelUploadId: string | null
           name: string | null
           notes: Json | null
+          planningGroupId: string | null
           priority: number | null
           productionQuantity: number | null
           projectedCompletionAt: string | null
+          projectElementId: string | null
+          projectId: string | null
           quantity: number | null
           quantityComplete: number | null
           quantityReceivedToInventory: number | null
@@ -94644,6 +94819,7 @@ export type Database = {
           quoteId: string | null
           quoteLineId: string | null
           quoteReadableId: string | null
+          receiveToProjectStock: boolean | null
           releasedDate: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
@@ -94655,6 +94831,7 @@ export type Database = {
           scheduleOutdatedReason: string | null
           scrapQuantity: number | null
           secondsToComplete: number | null
+          shipByDate: string | null
           startDate: string | null
           status: Database["public"]["Enums"]["jobStatus"] | null
           storageUnitId: string | null
@@ -94764,6 +94941,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "job_customerContractLine_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "job_customerId_fkey"
             columns: ["customerId", "companyId"]
             isOneToOne: false
@@ -94853,6 +95037,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "job_projectElement_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "job_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -107964,6 +108169,7 @@ export type Database = {
           jobMakeMethodId: string
           jobOperationBatchId: string
           jobReadableId: string
+          jobShipByDate: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -108102,6 +108308,7 @@ export type Database = {
           jobDueDate: string
           jobId: string
           jobReadableId: string
+          jobShipByDate: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -112689,6 +112896,7 @@ export type Database = {
       serviceWorkSite: "Depot" | "Customer Site"
       shelfLifeMode: "Fixed Duration" | "Calculated" | "Set on Receipt"
       shelfLifeTriggerTiming: "Before" | "After"
+      shipmentDeliveredSource: "Manual" | "Carrier"
       shipmentSourceDocument:
         | "Sales Order"
         | "Sales Invoice"

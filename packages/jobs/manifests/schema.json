@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261117120100",
+  "schemaVersion": "20261117133511",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-17T03:32:19.523Z",
+  "exportedAt": "2026-11-17T07:40:52.384Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -2169,7 +2169,8 @@
         "updatedAt",
         "updatedBy",
         "customFields",
-        "tags"
+        "tags",
+        "transitDays"
       ]
     },
     {
@@ -3471,6 +3472,21 @@
       ]
     },
     {
+      "name": "customerLocationTransitTime",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerLocationId",
+        "shippingMethodId",
+        "transitDays",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "customerPartToItem",
       "rows": 0,
       "columns": [
@@ -4008,6 +4024,7 @@
         "jobMaterialId",
         "jobOperationId",
         "itemId",
+        "trackedEntityId",
         "quantity",
         "scrapReasonId",
         "replacement",
@@ -4015,8 +4032,7 @@
         "notes",
         "idempotencyKey",
         "createdBy",
-        "createdAt",
-        "trackedEntityId"
+        "createdAt"
       ]
     },
     {
@@ -6870,7 +6886,8 @@
         "consumeToProject",
         "receiveToProjectStock",
         "planningGroupId",
-        "customerContractLineId"
+        "customerContractLineId",
+        "shipByDate"
       ]
     },
     {
@@ -8628,7 +8645,10 @@
         "customFields",
         "supplierId",
         "supplierInteractionId",
-        "externalDocumentId"
+        "externalDocumentId",
+        "estimatedDeliveryDate",
+        "deliveredDate",
+        "deliveredSource"
       ]
     },
     {
