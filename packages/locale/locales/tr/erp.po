@@ -31825,6 +31825,9 @@ msgstr "Garanti reddedildi. Satır Hizmet İadesi haline gelir ve hizmet iş emr
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Ekipmanın arıza yapma şekilleri, bakım ve kalite izlemesi için"
 
+msgid "The week is labelled with the calendar year"
+msgstr ""
+
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Depo kaynak Rafının aksine, Toplandı malzemelerin üretime çekilmek üzere hazırlandığı İş merkezinin Göz'ü."
 
@@ -33643,6 +33646,9 @@ msgstr "En fazla {0} {unitOfMeasure}"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "en fazla {0} tasarruf"
+
+msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
+msgstr ""
 
 msgid "Upcoming"
 msgstr "Yaklaşan"

@@ -31825,6 +31825,9 @@ msgstr "Гарантия отклонена. Строка становится �
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Способы отказа оборудования для отслеживания техобслуживания и качества"
 
+msgid "The week is labelled with the calendar year"
+msgstr ""
+
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Собственная ячейка рабочего центра, где отобранный материал подготавливается для производства, в отличие от исходной полки его склада."
 
@@ -33643,6 +33646,9 @@ msgstr "До {0} {unitOfMeasure}"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "сэкономлено до {0}"
+
+msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
+msgstr ""
 
 msgid "Upcoming"
 msgstr "Предстоящее"

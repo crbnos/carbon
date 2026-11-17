@@ -31825,6 +31825,9 @@ msgstr "保証は拒否されます。明細はサービス返品になり、そ
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "設備障害の形式（保全および品質追跡用）"
 
+msgid "The week is labelled with the calendar year"
+msgstr ""
+
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生産で引き出されるようにステージングされる場所です。倉庫の仕入元の棚とは異なります。"
 
@@ -33643,6 +33646,9 @@ msgstr "最大{0} {unitOfMeasure}"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "最大 {0} 削減"
+
+msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
+msgstr ""
 
 msgid "Upcoming"
 msgstr "今後予定"

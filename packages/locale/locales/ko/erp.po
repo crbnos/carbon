@@ -31825,6 +31825,9 @@ msgstr "보증이 거부되었습니다. 라인이 서비스 반품이 되고 �
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "설비 실패 방식으로, 유지보수 및 품질 추적을 위해 사용됩니다."
 
+msgid "The week is labelled with the calendar year"
+msgstr ""
+
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 수 있도록 준비되는 곳이며, 창고 원본 선반과는 다릅니다."
 
@@ -33643,6 +33646,9 @@ msgstr "최대 {0} {unitOfMeasure}"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "최대 {0} 절감"
+
+msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
+msgstr ""
 
 msgid "Upcoming"
 msgstr "예정된"

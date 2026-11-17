@@ -4,52 +4,14 @@
 
 // Document-number allocation lives in one place: duplicate implementations
 // silently diverge and mint duplicate sequence IDs.
-import { CalendarDate, getDayOfWeek, now } from "@internationalized/date";
 import { type Kysely, sql, type Transaction } from "kysely";
 import type { KyselyDatabase } from "./client.ts";
+import { interpolateSequenceDate } from "./sequence-tokens.ts";
 import {
   asSerialNumberTiming,
   type SerialNumberTiming
 } from "./serial-number-timing.ts";
 import { getCompanyTimeZone } from "./timezone.ts";
-
-// ISO 8601 week number (1-53). Week 1 is the week containing the year's first
-// Thursday. en-GB is Monday-first, so getDayOfWeek gives Mon=0…Sun=6 and
-// `3 - dow` lands on the week's Thursday; CalendarDate.compare returns whole days.
-const isoWeekFromYmd = (year: number, month: number, day: number): number => {
-  const date = new CalendarDate(year, month, day);
-  const thursday = date.add({ days: 3 - getDayOfWeek(date, "en-GB") });
-  return (
-    Math.floor(thursday.compare(new CalendarDate(thursday.year, 1, 1)) / 7) + 1
-  );
-};
-
-// Date tokens derive in the company's business timezone so document prefixes
-// roll over at the company's midnight, not the process's. The ERP's live
-// preview (`interpolateSequenceDate` in apps/erp/app/utils/string.ts) mirrors
-// this — keep the two in sync, along with get_next_sequence (SQL),
-// interpolate_serial_segment (SQL, the serial numbers' tokens) and
-// util.document_sequence_pattern (src/event-system/functions), which reads a
-// saved number back to keep the counter ahead of it.
-const interpolateSequenceDate = (value?: string | null, timezone = "UTC") => {
-  if (!value) return "";
-  let result = value;
-
-  if (result.includes("%{")) {
-    const { year, month, day, hour: hours, second: seconds } = now(timezone);
-    const week = isoWeekFromYmd(year, month, day);
-
-    result = result.replace(/%{yyyy}/g, year.toString());
-    result = result.replace(/%{yy}/g, year.toString().slice(-2));
-    result = result.replace(/%{mm}/g, month.toString().padStart(2, "0"));
-    result = result.replace(/%{ww}/g, week.toString().padStart(2, "0"));
-    result = result.replace(/%{dd}/g, day.toString().padStart(2, "0"));
-    result = result.replace(/%{hh}/g, hours.toString().padStart(2, "0"));
-    result = result.replace(/%{ss}/g, seconds.toString().padStart(2, "0"));
-  }
-
-  return result;
-};
 
 export async function getNextSequence(
   trx: Transaction<KyselyDatabase>,
@@ -145,9 +107,9 @@ export async function getNextRevisionSequence(
  * reservation commits — or rolls back — together with the write that consumes
  * the numbers.
  *
- * Each number interpolates the date/week tokens (%{yyyy} %{yy} %{mm} %{ww} %{dd}
- * %{hh} %{ss}) in the company's timezone, plus %{location} (location.code,
- * falling back to the location name).
+ * Each number interpolates the date tokens of `./sequence-tokens` in the
+ * company's timezone, plus %{location} (location.code, falling back to the
+ * location name).
  *
  * Used by `assign-serial-numbers` (the N units that exist at job creation),
  * `issue` (a unit spawned lazily on completion, e.g. after the job quantity was

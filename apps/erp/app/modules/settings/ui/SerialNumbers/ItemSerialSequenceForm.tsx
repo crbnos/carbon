@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { interpolateSequenceDate } from "@carbon/database/sequence-tokens";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -39,7 +40,10 @@ import {
   serialNumberTimings
 } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
-import { interpolateSequenceDate } from "~/utils/string";
+import {
+  SequenceTokenHelp,
+  WeekYearWarning
+} from "../Sequences/SequenceTokens";
 import { useSerialNumberTimingLabels } from "./useSerialNumberTimingLabels";
 
 type ItemSerialSequenceFormProps = {
@@ -126,6 +130,7 @@ const ItemSerialSequenceForm = ({
             <Hidden name="id" />
             <VStack spacing={4}>
               <Heading size="h2">{makePreview()}</Heading>
+              <WeekYearWarning prefix={prefix} suffix={suffix} />
 
               {isEditing ? (
                 <Item name="itemId" label={t`Item`} type="Item" isReadOnly />
@@ -185,14 +190,9 @@ const ItemSerialSequenceForm = ({
                 description={t`Print this item's serial label when its job's last operation completes.`}
                 bordered
               />
-              <VStack spacing={0}>
-                <p className="text-muted-foreground text-sm">{`%{yyyy} = Full Year`}</p>
-                <p className="text-muted-foreground text-sm">{`%{yy} = Year`}</p>
-                <p className="text-muted-foreground text-sm">{`%{mm} = Month`}</p>
-                <p className="text-muted-foreground text-sm">{`%{ww} = Week`}</p>
-                <p className="text-muted-foreground text-sm">{`%{dd} = Day`}</p>
-                <p className="text-muted-foreground text-sm">{`%{location} = Location code`}</p>
-              </VStack>
+              <SequenceTokenHelp
+                extraTokens={[["%{location}", "Location code"]]}
+              />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

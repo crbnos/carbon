@@ -26,6 +26,8 @@ SELECT pg_temp.expect('custom id', NULL::bigint, util.document_sequence_number('
 SELECT pg_temp.expect('text before prefix', NULL::bigint, util.document_sequence_number('XSO000116', 'SO', NULL, 6));
 SELECT pg_temp.expect('date tokens', 123::bigint, util.document_sequence_number('JE-2026-10-000123', 'JE-%{yyyy}-%{mm}-', NULL, 6));
 SELECT pg_temp.expect('week, hour and second tokens', 7::bigint, util.document_sequence_number('W41-13-05-000007', 'W%{ww}-%{hh}-%{ss}-', NULL, 6));
+SELECT pg_temp.expect('week year tokens', 413::bigint, util.document_sequence_number('SN2653-00413', 'SN%{wyy}%{ww}-', NULL, 5));
+SELECT pg_temp.expect('full week year token', 413::bigint, util.document_sequence_number('2026-W53-00413', '%{wyyyy}-W%{ww}-', NULL, 5));
 SELECT pg_temp.expect('wrong date width', NULL::bigint, util.document_sequence_number('JE-26-10-000123', 'JE-%{yyyy}-%{mm}-', NULL, 6));
 SELECT pg_temp.expect('regex characters in prefix and suffix', 42::bigint, util.document_sequence_number('Q.(0042)-26', 'Q.(', ')-%{yy}', 4));
 SELECT pg_temp.expect('regex character is literal', NULL::bigint, util.document_sequence_number('QX(0042)-26', 'Q.(', ')-%{yy}', 4));
@@ -67,6 +69,24 @@ SELECT pg_temp.expect(
   get_next_sequence('salesOrder', (SELECT "companyId" FROM picked))
 );
 UPDATE "sequence" SET "next" = 501
+WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
+
+-- The week year comes from the ISO week, the year from the calendar: on
+-- Friday 1 January 2027 the first is 2026 and the second 2027.
+SELECT pg_temp.expect('week year at a new year', 'W2026-53/2027', interpolate_sequence_date('W%{wyyyy}-%{ww}/%{yyyy}', '2027-01-01 13:05:09'));
+SELECT pg_temp.expect('serial segment keeps its location', 'HQ-2653-', interpolate_serial_segment('%{location}-%{wyy}%{ww}-', '2027-01-03 23:59:59', 'HQ'));
+
+-- A document number takes the week year in the company's timezone.
+UPDATE "sequence" SET "prefix" = 'WK%{wyy}%{ww}-', "suffix" = '/%{wyyyy}', "size" = 4, "next" = 501
+WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
+SELECT pg_temp.expect(
+  'a document number with week year tokens',
+  (SELECT 'WK' || to_char(v, 'IY') || to_char(v, 'IW') || '-0502/' || to_char(v, 'IYYY')
+   FROM (SELECT now() AT TIME ZONE COALESCE(
+     (SELECT "timezone" FROM "company" WHERE "id" = (SELECT "companyId" FROM picked)), 'UTC') AS v) t),
+  get_next_sequence('salesOrder', (SELECT "companyId" FROM picked))
+);
+UPDATE "sequence" SET "prefix" = 'SO', "suffix" = NULL, "size" = 6, "next" = 501
 WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
 
 -- A memo's direction picks its sequence.

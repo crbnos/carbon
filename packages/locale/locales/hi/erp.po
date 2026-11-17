@@ -31825,6 +31825,9 @@ msgstr "वारंटी को अस्वीकार कर दिया �
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "उपकरण की विफलता के तरीके, रखरखाव और गुणवत्ता ट्रैकिंग के लिए"
 
+msgid "The week is labelled with the calendar year"
+msgstr ""
+
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "वर्क सेंटर की अपनी बिन जहां पिक की गई सामग्री उत्पादन के लिए रखी जाती है, इसके गोदाम स्रोत शेल्फ के विपरीत।"
 
@@ -33643,6 +33646,9 @@ msgstr "अधिकतम {0} {unitOfMeasure}"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "{0} तक की बचत"
+
+msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
+msgstr ""
 
 msgid "Upcoming"
 msgstr "आने वाला"

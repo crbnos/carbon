@@ -13,6 +13,8 @@ BEGIN
   -- does not reset per period. get_next_sequence pads to p_size, so a shorter
   -- number is never one it issues.
   v_prefix := regexp_replace(COALESCE(p_prefix, ''), '([.^$*+?()\[\]{}|\\])', '\\\1', 'g');
+  v_prefix := replace(v_prefix, '%\{wyyyy\}', '[0-9]{4}');
+  v_prefix := replace(v_prefix, '%\{wyy\}', '[0-9]{2}');
   v_prefix := replace(v_prefix, '%\{yyyy\}', '[0-9]{4}');
   v_prefix := replace(v_prefix, '%\{yy\}', '[0-9]{2}');
   v_prefix := replace(v_prefix, '%\{mm\}', '[0-9]{2}');
@@ -22,6 +24,8 @@ BEGIN
   v_prefix := replace(v_prefix, '%\{ss\}', '[0-9]{2}');
 
   v_suffix := regexp_replace(COALESCE(p_suffix, ''), '([.^$*+?()\[\]{}|\\])', '\\\1', 'g');
+  v_suffix := replace(v_suffix, '%\{wyyyy\}', '[0-9]{4}');
+  v_suffix := replace(v_suffix, '%\{wyy\}', '[0-9]{2}');
   v_suffix := replace(v_suffix, '%\{yyyy\}', '[0-9]{4}');
   v_suffix := replace(v_suffix, '%\{yy\}', '[0-9]{2}');
   v_suffix := replace(v_suffix, '%\{mm\}', '[0-9]{2}');

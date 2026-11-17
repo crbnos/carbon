@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { interpolateSequenceDate } from "@carbon/database/sequence-tokens";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -23,7 +24,7 @@ import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { useCompanyTimeZone, usePermissions } from "~/hooks";
 import { sequenceValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
-import { interpolateSequenceDate } from "~/utils/string";
+import { SequenceTokenHelp, WeekYearWarning } from "./SequenceTokens";
 
 type SequenceFormProps = {
   initialValues: z.infer<typeof sequenceValidator> & {
@@ -76,6 +77,7 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
             <Hidden name="table" />
             <VStack spacing={4}>
               <Heading size="h2">{makePreview()}</Heading>
+              <WeekYearWarning prefix={prefix} suffix={suffix} />
 
               <Input
                 name="prefix"
@@ -106,14 +108,7 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
                 label={t`Suffix`}
                 onChange={(e) => setSuffix(e.target.value)}
               />
-              <VStack spacing={0}>
-                <p className="text-muted-foreground text-sm">{`%{yyyy} = Full Year`}</p>
-                <p className="text-muted-foreground text-sm">{`%{yy} = Year`}</p>
-                <p className="text-muted-foreground text-sm">{`%{mm} = Month`}</p>
-                <p className="text-muted-foreground text-sm">{`%{dd} = Day`}</p>
-                <p className="text-muted-foreground text-sm">{`%{hh} = Hour`}</p>
-                <p className="text-muted-foreground text-sm">{`%{ss} = Second`}</p>
-              </VStack>
+              <SequenceTokenHelp />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

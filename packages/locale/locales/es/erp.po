@@ -31825,6 +31825,9 @@ msgstr "La garantía se deniega. La línea se convierte en una Devolución por S
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Las formas en que el equipo falla, para el seguimiento de mantenimiento y calidad"
 
+msgid "The week is labelled with the calendar year"
+msgstr ""
+
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "El contenedor propio del centro de trabajo donde el material recogido se prepara para que la producción lo consuma, a diferencia de su estante fuente del almacén."
 
@@ -33643,6 +33646,9 @@ msgstr "Hasta {0} {unitOfMeasure}"
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
 msgstr "hasta {0} ahorrado"
+
+msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
+msgstr ""
 
 msgid "Upcoming"
 msgstr "Próximo"

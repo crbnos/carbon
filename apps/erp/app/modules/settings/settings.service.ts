@@ -56,6 +56,7 @@ import {
   sequences,
   supplierStages
 } from "@carbon/database/seed-data";
+import { interpolateSequenceDate } from "@carbon/database/sequence-tokens";
 import {
   getPullFromLocations,
   missingPullFromLocations,
@@ -320,7 +321,6 @@ import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
-import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   type CompanyBackupSummary,
