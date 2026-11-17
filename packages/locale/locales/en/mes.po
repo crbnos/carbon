@@ -75,6 +75,11 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 
+#. placeholder {0}: serial.readableId
+#. placeholder {1}: serial.kitReadableId
+msgid "{0} in kit {1}"
+msgstr "{0} in kit {1}"
+
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
@@ -116,11 +121,6 @@ msgstr "{0} of {1} complete"
 #. placeholder {1}: attributes.length
 msgid "{0} of {1} completed"
 msgstr "{0} of {1} completed"
-
-#. placeholder {0}: part.perKit
-#. placeholder {1}: part.name
-msgid "{0} per kit · {1}"
-msgstr "{0} per kit · {1}"
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
@@ -224,6 +224,12 @@ msgstr "{onHand} of {need}"
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr "{onHand} on hand · covers {covers} of {demand}"
+
+msgid "{quantity} in this operation"
+msgstr "{quantity} in this operation"
+
+msgid "{quantity} used in this operation"
+msgstr "{quantity} used in this operation"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -529,10 +535,11 @@ msgstr "Batch"
 msgid "Batch {0}"
 msgstr "Batch {0}"
 
-#. placeholder {0}: entity.readableId
-#. placeholder {1}: entity.quantity
-msgid "Batch {0} · {1} used · {where}"
-msgstr "Batch {0} · {1} used · {where}"
+msgid "Batch {readableId} · {used} used"
+msgstr "Batch {readableId} · {used} used"
+
+msgid "Batch {readableId} · {used} used · in kit {kitReadableId}"
+msgstr "Batch {readableId} · {used} used · in kit {kitReadableId}"
 
 msgid "Batch Details"
 msgstr "Batch Details"
@@ -1390,10 +1397,6 @@ msgstr "in {0}"
 
 msgid "In an open menu"
 msgstr "In an open menu"
-
-#. placeholder {0}: entity.kitReadableId
-msgid "in kit {0}"
-msgstr "in kit {0}"
 
 msgid "In Progress"
 msgstr "In Progress"
@@ -2901,6 +2904,9 @@ msgstr "Search operators..."
 
 msgid "Search projects and tasks"
 msgstr "Search projects and tasks"
+
+msgid "Search reasons"
+msgstr "Search reasons"
 
 msgid "Search recent operations"
 msgstr "Search recent operations"

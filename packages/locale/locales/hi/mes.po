@@ -75,6 +75,11 @@ msgstr "{0} घंटे"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} के पास लॉट संख्या नहीं है। इसे Carbon में बैच या जॉब पर सेट करें, फिर पूर्ण करें।"
 
+#. placeholder {0}: serial.readableId
+#. placeholder {1}: serial.kitReadableId
+msgid "{0} in kit {1}"
+msgstr ""
+
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
@@ -116,11 +121,6 @@ msgstr "{0} में से {1} पूर्ण"
 #. placeholder {1}: attributes.length
 msgid "{0} of {1} completed"
 msgstr "{0} में से {1} पूर्ण"
-
-#. placeholder {0}: part.perKit
-#. placeholder {1}: part.name
-msgid "{0} per kit · {1}"
-msgstr ""
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
@@ -223,6 +223,12 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{quantity} in this operation"
+msgstr ""
+
+msgid "{quantity} used in this operation"
 msgstr ""
 
 #. placeholder {0}: step.perMember.length
@@ -529,9 +535,10 @@ msgstr "बैच"
 msgid "Batch {0}"
 msgstr "बैच {0}"
 
-#. placeholder {0}: entity.readableId
-#. placeholder {1}: entity.quantity
-msgid "Batch {0} · {1} used · {where}"
+msgid "Batch {readableId} · {used} used"
+msgstr ""
+
+msgid "Batch {readableId} · {used} used · in kit {kitReadableId}"
 msgstr ""
 
 msgid "Batch Details"
@@ -1390,10 +1397,6 @@ msgstr "{0} में"
 
 msgid "In an open menu"
 msgstr "खुले मेनू में"
-
-#. placeholder {0}: entity.kitReadableId
-msgid "in kit {0}"
-msgstr ""
 
 msgid "In Progress"
 msgstr "प्रगति में"
@@ -2901,6 +2904,9 @@ msgstr "ऑपरेटर खोजें..."
 
 msgid "Search projects and tasks"
 msgstr "परियोजनाओं और कार्यों को खोजें"
+
+msgid "Search reasons"
+msgstr ""
 
 msgid "Search recent operations"
 msgstr "हाल के ऑपरेशन खोजें"

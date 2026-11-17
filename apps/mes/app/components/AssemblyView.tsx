@@ -3546,6 +3546,7 @@ function MaterialRow({
 
   // One card, two targets: the body opens the scan/issue flow and a trailing
   // segment scraps. They are siblings because a button can't nest in a button.
+  const compactBadge = "min-h-5 px-2 text-xs";
   const segmentFocus =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
   return (
@@ -3586,14 +3587,35 @@ function MaterialRow({
           <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
             {material.itemReadableId}
           </span>
-          {/* Where to pull it from, or that it is made on this job. */}
+          {/* Everything else stacks under the name and wraps, so a narrow
+              card never squeezes "Requires Scan" beside the count. */}
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <MaterialSource material={material} compact />
-            <ShortStockBadge material={material} />
+            <ShortStockBadge material={material} className={compactBadge} />
+            {/* An unplanned part (issued from the floor, not on the BOM). */}
+            {isExtra && (
+              <Badge variant="outline" className={compactBadge}>
+                Added
+              </Badge>
+            )}
+            {material.requiresSerialTracking && (
+              <Badge variant="secondary" className={compactBadge}>
+                <TrackingTypeIcon type="Serial" className="shrink-0" />
+              </Badge>
+            )}
+            {material.requiresBatchTracking && (
+              <Badge variant="secondary" className={compactBadge}>
+                <TrackingTypeIcon type="Batch" className="shrink-0" />
+              </Badge>
+            )}
+            {isTracked && !fullyIssued && (
+              <Badge variant="orange" className={compactBadge}>
+                Requires Scan
+              </Badge>
+            )}
           </div>
         </div>
-        {/* Count hard-right, with the tracking badges tucked beneath it. */}
-        <div className="flex shrink-0 flex-col items-end gap-1">
+        <div className="flex h-5 shrink-0 items-center">
           {fullyIssued || extraIssued ? (
             <span className="flex items-center gap-1 text-[0.6875rem] font-medium tabular-nums text-emerald-500">
               {issued}/{required}
@@ -3607,23 +3629,6 @@ function MaterialRow({
             <span className="text-xs tabular-nums text-muted-foreground">
               ×{required}
             </span>
-          )}
-          {/* Distinguish an unplanned part (issued from the floor, not on the BOM). */}
-          {isExtra && <Badge variant="outline">Added</Badge>}
-          {isTracked && (
-            <div className="flex flex-wrap items-center justify-end gap-1">
-              {material.requiresSerialTracking && (
-                <Badge variant="secondary">
-                  <TrackingTypeIcon type="Serial" className="shrink-0" />
-                </Badge>
-              )}
-              {material.requiresBatchTracking && (
-                <Badge variant="secondary">
-                  <TrackingTypeIcon type="Batch" className="shrink-0" />
-                </Badge>
-              )}
-              {!fullyIssued && <Badge variant="orange">Requires Scan</Badge>}
-            </div>
           )}
         </div>
       </Wrapper>

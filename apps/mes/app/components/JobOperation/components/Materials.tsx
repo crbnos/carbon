@@ -304,7 +304,13 @@ function PickedBreakdown({
  * The stock the job can draw does not cover what it still needs of the part.
  * `available of needed`, so the operator sees how much to expect.
  */
-export function ShortStockBadge({ material }: { material: JobMaterial }) {
+export function ShortStockBadge({
+  material,
+  className
+}: {
+  material: JobMaterial;
+  className?: string;
+}) {
   const { t } = useLingui();
   const shortage = material.stockShortage;
   if (!shortage) return null;
@@ -312,7 +318,7 @@ export function ShortStockBadge({ material }: { material: JobMaterial }) {
   return (
     <Badge
       variant="red"
-      className="w-fit gap-1 shrink-0 tabular-nums"
+      className={cn("w-fit gap-1 shrink-0 tabular-nums", className)}
       title={t`In stock: ${available}. Still needed: ${needed}.`}
     >
       <LuTriangleAlert className="size-3" />
@@ -379,7 +385,8 @@ export function MaterialSource({
       : [material.storageUnitName ?? t`Location not known`];
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    // Compact: the badges join the caller's own wrapping row.
+    <div className={compact ? "contents" : "flex flex-wrap items-center gap-1"}>
       {material.methodType !== "Pull from Inventory" && (
         <Badge variant="secondary" className={badgeClass}>
           <MethodIcon
