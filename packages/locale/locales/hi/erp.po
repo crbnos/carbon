@@ -20638,6 +20638,9 @@ msgstr "गैर-कार्य दिन जिन्हें शेड्�
 msgid "None"
 msgstr "कोई नहीं"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "कोई उपलब्ध नहीं"
 
@@ -27225,6 +27228,9 @@ msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
 
 msgid "Select a document"
 msgstr "एक दस्तावेज़ चुनें"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "एक नया स्वामी चुनें"

@@ -20638,6 +20638,9 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 msgid "None"
 msgstr "없음"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "사용 가능한 항목 없음"
 
@@ -27225,6 +27228,9 @@ msgstr "기본 승인자 선택"
 
 msgid "Select a document"
 msgstr "문서 선택"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "새 책임자 선택"

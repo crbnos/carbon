@@ -338,6 +338,33 @@ describe("saving a printer route", () => {
     expect(writes[1]?.values).toMatchObject({ p_api_key: "" });
   });
 
+  it("saves a document printer with no media size", async () => {
+    const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
+
+    const result = await savePrinterRoute(ctx, {
+      ...route,
+      id: "route-1",
+      format: "pdf",
+      mediaSizeId: ""
+    });
+
+    expect(result.error).toBeNull();
+    expect(writes[0]?.values).toMatchObject({ mediaSizeId: null });
+  });
+
+  it("refuses a label printer with no media size", async () => {
+    const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
+
+    const result = await savePrinterRoute(ctx, {
+      ...route,
+      id: "route-1",
+      mediaSizeId: ""
+    });
+
+    expect(result.error).not.toBeNull();
+    expect(writes).toEqual([]);
+  });
+
   it("deletes a route it created when the key cannot be stored", async () => {
     const { ctx, writes } = contextWith(
       { printerRoute: { id: "route-new" } },

@@ -20638,6 +20638,9 @@ msgstr "Jours non ouvrables que la planification et la capacité respectent"
 msgid "None"
 msgstr "Aucun"
 
+msgid "None (full page)"
+msgstr ""
+
 msgid "None available"
 msgstr "Aucune disponible"
 
@@ -27225,6 +27228,9 @@ msgstr "Sélectionner un approbateur par défaut"
 
 msgid "Select a document"
 msgstr "Sélectionner un document"
+
+msgid "Select a label size"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Sélectionner un nouveau propriétaire"

@@ -279,6 +279,12 @@ export function PrintersCard({
                     name="mediaSizeId"
                     label={t`Media Size`}
                     options={mediaSizeOptions}
+                    isOptional={selectedFormat === "pdf"}
+                    placeholder={
+                      selectedFormat === "pdf"
+                        ? t`None (full page)`
+                        : t`Select a label size`
+                    }
                   />
                   <Input
                     name="printerUrl"
