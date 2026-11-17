@@ -690,6 +690,24 @@ export type Events = {
     data: { companyId: string; kanbanIds: string[] };
   };
 
+  // A sales order line's delivery date check that needs the capacity
+  // simulation, after a line save (`save` set) or a quote conversion. The
+  // posting `check-sales-order-delivery-dates` runs it and writes the result.
+  "carbon/sales-order.delivery-date-check": {
+    data: {
+      companyId: string;
+      salesOrderId: string;
+      lineIds: string[];
+      userId: string;
+      save?: {
+        changedLineIds: string[];
+        /** what the save wrote, so a later save supersedes this one */
+        promisedDate?: string | null;
+        saleQuantity?: number;
+      };
+    };
+  };
+
   // Weekly tasks
   "carbon/weekly": {
     data: Record<string, never>;

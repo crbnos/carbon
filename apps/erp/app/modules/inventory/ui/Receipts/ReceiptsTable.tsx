@@ -19,6 +19,7 @@ import {
   LuCheck,
   LuCirclePlus,
   LuClipboardCheck,
+  LuClipboardX,
   LuClock,
   LuFileText,
   LuHash,
@@ -221,6 +222,26 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           },
           pluralHeader: t`Inspection Statuses`,
           icon: <LuClipboardCheck />
+        }
+      },
+      {
+        accessorKey: "rejectedAtInspection",
+        header: t`Rejected at Inspection`,
+        cell: (item) => (
+          <Checkbox
+            aria-label={t`Rejected at Inspection`}
+            isChecked={item.getValue<boolean>()}
+          />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: t`Yes` },
+              { value: "false", label: t`No` }
+            ]
+          },
+          icon: <LuClipboardX />
         }
       },
       {
@@ -438,6 +459,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
         }}
         defaultColumnVisibility={{
           createdAt: false,
+          rejectedAtInspection: false,
           createdBy: false,
           updatedAt: false,
           updatedBy: false

@@ -1331,6 +1331,11 @@ export const terms = {
     term: msg`Planning Horizon (Days)`,
     definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
   },
+  "delivery-date-check": {
+    term: msg`Delivery Date Check`,
+    definition: msg`Warns when a sales order line's promised date can't be met, and suggests the earliest date that can.`,
+    href: "/docs/reference/sales-orders#delivery-date-check"
+  },
   "planning-action": {
     term: msg`Planning action`,
     definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,

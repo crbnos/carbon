@@ -37,19 +37,6 @@ function callerService(f: Fixture) {
   });
 }
 
-async function addEachUnit(f: Fixture) {
-  await f.db
-    .insertInto("unitOfMeasure")
-    .values({
-      code: "EA",
-      name: "Each",
-      companyId: f.companyId,
-      createdBy: USER
-    })
-    .onConflict((oc) => oc.doNothing())
-    .execute();
-}
-
 async function addLine(
   f: Fixture,
   supplierId: string,
@@ -177,7 +164,6 @@ databaseTest(
       });
       const part = await f.addItem("part", { itemTrackingType: "Inventory" });
       await addPurchaseOrderSequence(f);
-      await addEachUnit(f);
       const result = await addLine(f, supplierId, {
         lineType: "Item",
         itemId: part.itemId,
@@ -350,7 +336,6 @@ databaseTest(
       });
       const part = await f.addItem("part", { itemTrackingType: "Inventory" });
       await addPurchaseOrderSequence(f);
-      await addEachUnit(f);
       await f.db
         .updateTable("itemCost")
         .set({ unitCost: 12 })

@@ -13,6 +13,7 @@ import {
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
+  getOnshapePanelIntegration,
   loadPartCustomFieldDefinitions,
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
@@ -184,12 +185,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const reads = await Promise.all([
-    client
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("companyId", companyId)
-      .maybeSingle(),
+    getOnshapePanelIntegration(client, companyId),
     loadPartCustomFieldDefinitions(client, companyId),
     loadPlanOptions(client, companyId),
     // Changing where part numbers come from re-matches these on the next push.

@@ -31,6 +31,7 @@ import {
 import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items/types";
 import { PickMethodForm } from "~/modules/items/ui/Item";
+import ItemBuildable from "~/modules/items/ui/Item/ItemBuildable";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -297,6 +298,9 @@ export default function PartInventoryRoute() {
         quantities={quantities}
         storageUnits={storageUnits.options}
       />
+      {replenishmentSystem !== "Buy" && (
+        <ItemBuildable itemId={itemId} locationId={partInventory.locationId} />
+      )}
       <RuleAssignmentsList
         targetType="item"
         targetId={itemId}

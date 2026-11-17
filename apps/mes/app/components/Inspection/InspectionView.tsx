@@ -40,6 +40,7 @@ import {
   LuEllipsisVertical,
   LuFlag,
   LuGitPullRequest,
+  LuPackageX,
   LuPause,
   LuPlay,
   LuScan,
@@ -51,6 +52,7 @@ import { AbilityWarning } from "~/components/AbilityWarning";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
+import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsModal";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
@@ -207,6 +209,7 @@ export function InspectionView({
   const partialDisclosure = useDisclosure();
   const acceptDisclosure = useDisclosure();
   const actionsSheet = useDisclosure();
+  const scrapParts = useScrapParts(operationId);
   const qualityModal = useDisclosure();
   const scrapModal = useDisclosure();
   const finishModal = useDisclosure();
@@ -747,6 +750,15 @@ export function InspectionView({
                 }}
               />
               <ActionSheetButton
+                icon={<LuPackageX className="size-4 shrink-0" />}
+                label={t`Scrap parts`}
+                disabled={abilityBlocked}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  scrapParts.open();
+                }}
+              />
+              <ActionSheetButton
                 icon={<LuFlag className="size-4 shrink-0" />}
                 label={t`Quality Issue`}
                 onClick={() => {
@@ -768,6 +780,7 @@ export function InspectionView({
           </BottomSheetBody>
         </BottomSheetContent>
       </BottomSheet>
+      {scrapParts.modal}
 
       {/* Inspecting is work: start the labor clock on open whenever no clock
           is running (any work type — the exclusive start would end it).

@@ -56,11 +56,6 @@ export async function serviceReturnFixture() {
       .onConflict((oc) => oc.doNothing())
       .execute();
     await trx
-      .insertInto("unitOfMeasure")
-      .values({ code: "EA", name: "Each", companyId, createdBy: USER })
-      .onConflict((oc) => oc.doNothing())
-      .execute();
-    await trx
       .insertInto("item")
       .values([
         {

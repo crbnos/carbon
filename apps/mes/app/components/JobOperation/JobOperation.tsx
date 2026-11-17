@@ -109,6 +109,7 @@ import {
   LuLayers,
   LuPackageCheck,
   LuPackageSearch,
+  LuPackageX,
   LuPrinter,
   LuQrCode,
   LuSquareChartGantt,
@@ -183,6 +184,7 @@ import { ParametersListItem } from "./components/Parameter";
 import { QualityIssueModal } from "./components/QualityIssueModal";
 import { QuantityModal } from "./components/QuantityModal";
 import { ReworkModal } from "./components/ReworkModal";
+import { useScrapParts } from "./components/ScrapPartsModal";
 import { SerialSelectorModal } from "./components/SerialSelectorModal";
 import {
   DeleteStepRecordModal,
@@ -191,6 +193,7 @@ import {
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
+import { useItemScan } from "./hooks/useItemScan";
 import { useOperation } from "./hooks/useOperation";
 import { useTravelerScan } from "./hooks/useTravelerScan";
 
@@ -761,12 +764,13 @@ export const JobOperation = ({
   // already sits in, or goes to its traveler.
   useTravelerScan({
     operationId: operation.id,
-    jobMakeMethodId: operation.jobMakeMethodId,
     parentTrackedEntityId: trackedEntityId,
     active: !issueModal.isOpen && !isBatched && !abilityBlocked
   });
 
   const item = items.find((it) => it.id === operation.itemId);
+
+  const scrapParts = useScrapParts(operation.id);
 
   const openIssueModal = (material: JobMaterial | null) => {
     flushSync(() => {
@@ -774,6 +778,24 @@ export const JobOperation = ({
     });
     issueModal.onOpen();
   };
+
+  // An item sticker scan issues what the job still needs of that item. When
+  // the operator must choose (a serial part, a short lot), the Issue dialog
+  // opens on the material. With the dialog already open the scan still
+  // issues, and the dialog closes: its item link is no lot number.
+  useItemScan({
+    operationId: operation.id,
+    parentTrackedEntityId: trackedEntityId,
+    active: !isBatched && !abilityBlocked,
+    onIssued: issueModal.onClose,
+    onChoose: (materialId) =>
+      materials.then((resolved) =>
+        openIssueModal(
+          resolved.materials.find((material) => material.id === materialId) ??
+            null
+        )
+      )
+  });
 
   // Mounted by BOTH the per-job materials table and the batch overview —
   // the batch scope's Pick opens the same shared-pick modal.
@@ -2012,6 +2034,9 @@ export const JobOperation = ({
                                 isBatched ? batchMaterialTotals : undefined
                               }
                               onIssue={openIssueModal}
+                              onScrap={(material) =>
+                                scrapParts.open(material.id ?? undefined)
+                              }
                               disabled={abilityBlocked}
                             />
                             {renderIssueModal(resolvedMaterials)}
@@ -2728,7 +2753,7 @@ export const JobOperation = ({
                       <Await resolve={workCenter}>
                         {(resolvedWorkCenter) =>
                           resolvedWorkCenter.data && (
-                            <span className="line-clamp-1 text-sm font-medium">
+                            <span className="text-sm break-words font-medium">
                               {resolvedWorkCenter.data?.name}
                             </span>
                           )
@@ -2741,7 +2766,7 @@ export const JobOperation = ({
                   <dt className="text-xs text-muted-foreground">
                     <Trans>Item</Trans>
                   </dt>
-                  <dd className="line-clamp-1 text-sm font-medium">
+                  <dd className="text-sm break-words font-medium">
                     {scope === "batch" && batchFacts
                       ? batchFacts.items.length === 1
                         ? batchFacts.items[0]
@@ -3011,6 +3036,20 @@ export const JobOperation = ({
               </Suspense>
               <button
                 type="button"
+                disabled={abilityBlocked}
+                className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
+                onClick={() => {
+                  actionsSheet.onClose();
+                  scrapParts.open();
+                }}
+              >
+                <LuPackageX className="size-4 shrink-0 stroke-muted-foreground" />
+                <span className="text-base/6 font-medium">
+                  <Trans>Scrap parts</Trans>
+                </span>
+              </button>
+              <button
+                type="button"
                 className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
                 onClick={() => {
                   actionsSheet.onClose();
@@ -3039,6 +3078,7 @@ export const JobOperation = ({
           </BottomSheetBody>
         </BottomSheetContent>
       </BottomSheet>
+      {scrapParts.modal}
       {reworkModal.openCount > 0 && (
         <ReworkModal
           key={`rework-${reworkModal.openCount}`}

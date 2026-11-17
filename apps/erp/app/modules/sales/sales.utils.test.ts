@@ -18,6 +18,7 @@ import {
   getEffectiveDefaultMarkups,
   leaseCommencementPreview,
   leaseTermMonths,
+  nextDeliveryDateRecord,
   previewLeaseClassification,
   priceListOverrideScopes,
   priceOverrideScopeError,
@@ -28,6 +29,7 @@ import {
   repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
+  saveIsCurrent,
   toMatchedRule,
   withBasePriceSource
 } from "./sales.utils";
@@ -949,5 +951,184 @@ describe("customerPortalEarliestExpiry", () => {
     ["2026-11-05", "2026-10-01", "2026-10-01"]
   ])("today %s, stored %s → %s", (today, stored, earliest) => {
     expect(customerPortalEarliestExpiry(today, stored)).toBe(earliest);
+  });
+});
+
+describe("nextDeliveryDateRecord", () => {
+  const NOW = "2026-11-16T10:00:00Z";
+  const kept = {
+    deliveryDateStatus: "Missed" as const,
+    deliveryDateOverriddenBy: "user_a"
+  };
+  const missed = {
+    status: "Missed" as const,
+    constraint: "Lead Time" as const,
+    earliestDate: "2026-12-08"
+  };
+
+  it("writes nothing for a line that was never checked and still is not", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: null,
+        result: null,
+        save: null,
+        now: NOW
+      })
+    ).toEqual({ columns: {}, keptNow: false });
+  });
+
+  it("clears the result but keeps who kept the date when the line stops being checked", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: null,
+        save: { userId: "user_b", changed: false },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: null,
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    });
+  });
+
+  it("records the first user who keeps a failing date", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: null,
+        result: missed,
+        save: { userId: "user_a", changed: true },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: "Missed",
+        deliveryDateConstraint: "Lead Time",
+        earliestDeliveryDate: "2026-12-08",
+        deliveryDateCheckedAt: NOW,
+        deliveryDateOverriddenBy: "user_a",
+        deliveryDateOverriddenAt: NOW
+      },
+      keptNow: true
+    });
+  });
+
+  it("keeps the record when another user saves the line without changing date or quantity", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: missed,
+        save: { userId: "user_b", changed: false },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: "Missed",
+        deliveryDateConstraint: "Lead Time",
+        earliestDeliveryDate: "2026-12-08",
+        deliveryDateCheckedAt: NOW
+      },
+      keptNow: false
+    });
+  });
+
+  it("records a new keep when the promised date or quantity changed", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: missed,
+        save: { userId: "user_b", changed: true },
+        now: NOW
+      })
+    ).toMatchObject({
+      columns: { deliveryDateOverriddenBy: "user_b" },
+      keptNow: true
+    });
+  });
+
+  it("clears who kept the date once a save passes", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: { status: "Met", constraint: null, earliestDate: null },
+        save: { userId: "user_b", changed: true },
+        now: NOW
+      }).columns
+    ).toMatchObject({
+      deliveryDateStatus: "Met",
+      deliveryDateOverriddenBy: null,
+      deliveryDateOverriddenAt: null
+    });
+  });
+
+  it("never records a keep without a user's save, as on a quote conversion", () => {
+    const next = nextDeliveryDateRecord({
+      stored: null,
+      result: missed,
+      save: null,
+      now: NOW
+    });
+    expect(next.keptNow).toBe(false);
+    expect(next.columns).not.toHaveProperty("deliveryDateOverriddenBy");
+  });
+
+  it("marks a line whose capacity check still runs as pending, keeping the record", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: { status: "Pending", constraint: null, earliestDate: null },
+        save: { userId: "user_b", changed: true },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: "Pending",
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    });
+  });
+});
+
+describe("saveIsCurrent", () => {
+  // The line as the background check reads it (Kysely: DATE as a string,
+  // NUMERIC as a string).
+  const row = { promisedDate: "2026-11-25", saleQuantity: "2" };
+
+  it("applies a save the line still holds", () => {
+    expect(
+      saveIsCurrent(row, { promisedDate: "2026-11-25", saleQuantity: 2 })
+    ).toBe(true);
+  });
+
+  it("drops a save whose date a later save changed", () => {
+    expect(
+      saveIsCurrent(row, { promisedDate: "2026-11-20", saleQuantity: 2 })
+    ).toBe(false);
+  });
+
+  it("drops a save whose quantity a later save changed", () => {
+    expect(
+      saveIsCurrent(row, { promisedDate: "2026-11-25", saleQuantity: 100 })
+    ).toBe(false);
+  });
+
+  it("matches a line with no promised date", () => {
+    expect(
+      saveIsCurrent(
+        { promisedDate: null, saleQuantity: "2" },
+        { promisedDate: null, saleQuantity: 2 }
+      )
+    ).toBe(true);
+  });
+
+  it("applies an event sent without the saved values", () => {
+    expect(saveIsCurrent(row, {})).toBe(true);
   });
 });
