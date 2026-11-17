@@ -276,7 +276,7 @@ msgstr "{0, plural, one {该文件没有 {columns} 列。} other {该文件没�
 
 #. placeholder {0}: check.leadTimeDays
 msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
-msgstr ""
+msgstr "{0, plural, one {提前期为 # 天。} other {提前期为 # 天。}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -591,7 +591,7 @@ msgstr "{0} / {whole} 已完成"
 #. placeholder {2}: m.lineUnitOfMeasureCode
 #. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
 msgid "{0} on {1}: line in {2}, stocked in {3}"
-msgstr ""
+msgstr "{0}，属于 {1}：行单位 {2}，库存单位 {3}"
 
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
@@ -677,7 +677,7 @@ msgstr "{0} 已选择"
 #. placeholder {0}: short.length
 #. placeholder {1}: formatQuantity(data.targetQuantity)
 msgid "{0} short for {1}"
-msgstr ""
+msgstr "短缺 {0}，目标数量 {1}"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -861,7 +861,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
 msgid "{changes, plural, one {Recalculate the ship date on # line from the promised date and the transit days?} other {Recalculate the ship date on # lines from the promised date and the transit days?}}"
-msgstr ""
+msgstr "{changes, plural, one {要根据承诺日期和运输天数重新计算 # 行的发货日期吗？} other {要根据承诺日期和运输天数重新计算 # 行的发货日期吗？}}"
 
 msgid "{code} counted"
 msgstr "{code} 已计数"
@@ -2490,7 +2490,7 @@ msgid "A unit is treated as a sale when any of these is true, and as a rental ot
 msgstr "当以下任何条件为真时，件作为销售处理，否则作为租赁处理。"
 
 msgid "a user"
-msgstr ""
+msgstr "某用户"
 
 msgid "A user keeps a sales order date that can't be met"
 msgstr "用户保留了无法满足的销售订单日期"
@@ -4816,7 +4816,7 @@ msgid "Are you sure you want to delete these rental rates? Rental lines already 
 msgstr "您确定要删除这些租赁费率吗？已添加的租赁行保持其费率。此操作无法撤消。"
 
 msgid "Are you sure you want to delete these transit days?"
-msgstr ""
+msgstr "确定要删除这些运输天数吗？"
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "你确定要删除此审批规则吗？此操作无法撤销。"
@@ -5023,7 +5023,7 @@ msgid "Arrears"
 msgstr "逾期"
 
 msgid "Arrives <0/> (estimated)"
-msgstr ""
+msgstr "预计 <0/> 到达"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "就像它跳到了车间队列的最前面。"
@@ -5649,10 +5649,10 @@ msgid "Batch number is required"
 msgstr "需要生产批次号"
 
 msgid "Batch numbers are entered by hand"
-msgstr ""
+msgstr "批次号手动输入"
 
 msgid "Batch numbers are generated"
-msgstr ""
+msgstr "批次号自动生成"
 
 msgid "Batch or Serial Number"
 msgstr "批号或序列号"
@@ -6163,7 +6163,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "构建定制的、基于角色的培训材料"
 
 msgid "Buildable Quantity"
-msgstr ""
+msgstr "可组装数量"
 
 msgid "Builds"
 msgstr "构建"
@@ -6230,7 +6230,7 @@ msgid "Business component (R&D)"
 msgstr "业务组件（研发）"
 
 msgid "Business days a shipment to a ship-to address takes with a shipping method. They replace the shipping method's transit days."
-msgstr ""
+msgstr "使用该发货方式发往收货地址的发货所需工作日数。这些天数将替代发货方式的运输天数。"
 
 msgid "Business moment"
 msgstr "业务时刻"
@@ -6378,7 +6378,7 @@ msgid "Camera"
 msgstr "摄像头"
 
 msgid "Can Make Now"
-msgstr ""
+msgstr "现可自制"
 
 msgid "Can't be restored"
 msgstr "无法恢复"
@@ -6971,7 +6971,7 @@ msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
 
 msgid "Check Quantity"
-msgstr ""
+msgstr "检查数量"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
@@ -6992,13 +6992,13 @@ msgid "Checking the batch's jobs..."
 msgstr "正在检查生产批次的工单..."
 
 msgid "Checking the delivery date"
-msgstr ""
+msgstr "正在检查交货日期"
 
 msgid "Checking the delivery date…"
 msgstr "正在检查交货日期…"
 
 msgid "Checking the shop's schedule…"
-msgstr ""
+msgstr "正在检查车间排程…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "正在检查 Stripe 客户链接…"
@@ -7686,7 +7686,7 @@ msgid "Completion time by job"
 msgstr "按工单统计的完成时间"
 
 msgid "Component"
-msgstr ""
+msgstr "组件"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8740,10 +8740,10 @@ msgid "Could not save"
 msgstr "无法保存"
 
 msgid "Couldn't calculate the buildable quantity"
-msgstr ""
+msgstr "无法计算可组装数量"
 
 msgid "Couldn't check the delivery date. You can still save."
-msgstr ""
+msgstr "无法检查交货日期。您仍可保存。"
 
 msgid "Couldn't check whether {appName} is connected."
 msgstr "无法检查 {appName} 是否已连接。"
@@ -10610,13 +10610,13 @@ msgid "Delivered"
 msgstr "已交付"
 
 msgid "Delivered <0/>"
-msgstr ""
+msgstr "已送达 <0/>"
 
 msgid "Delivered on"
 msgstr "交付于"
 
 msgid "Delivered On"
-msgstr ""
+msgstr "送达日期"
 
 msgid "Deliveries"
 msgstr "交付"
@@ -11754,7 +11754,7 @@ msgid "Edit Customer Type"
 msgstr "编辑客户类型"
 
 msgid "Edit Delivery"
-msgstr ""
+msgstr "编辑交货"
 
 msgid "Edit Demand Forecast"
 msgstr "编辑需求预测"
@@ -12051,7 +12051,7 @@ msgid "Edit Transfer Line"
 msgstr "编辑 调拨行"
 
 msgid "Edit Transit Time"
-msgstr ""
+msgstr "编辑运输时间"
 
 msgid "Edit Type"
 msgstr "编辑类型"
@@ -12274,7 +12274,7 @@ msgid "Enable to configure tax-specific depreciation methods on asset classes (e
 msgstr "启用以在资产类别上配置特定于税收的折旧方法（例如，MACRS、加速）。"
 
 msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
-msgstr ""
+msgstr "启用后，采购收货的批次号将自动填入，无需手动输入。"
 
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "启用以为原材料生成ID和描述。"
@@ -12657,7 +12657,7 @@ msgid "Estimated cost to complete"
 msgstr "完成的估计成本"
 
 msgid "Estimated Delivery"
-msgstr ""
+msgstr "预计交货"
 
 msgid "Estimated Duration"
 msgstr "预计时长"
@@ -13833,7 +13833,7 @@ msgid "Finished Goods (default)"
 msgstr "成品（默认）"
 
 msgid "Finished Goods Available"
-msgstr ""
+msgstr "可用成品"
 
 msgid "finishes"
 msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
@@ -14166,7 +14166,7 @@ msgid "From and To can't be the same storage unit"
 msgstr "来源和目标存储单元不能相同"
 
 msgid "From available component stock"
-msgstr ""
+msgstr "来自可用组件库存"
 
 msgid "From customer"
 msgstr "来自客户"
@@ -14359,7 +14359,7 @@ msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
 
 msgid "Generate Batch Numbers from the Purchase Order"
-msgstr ""
+msgstr "根据采购订单生成批次号"
 
 msgid "Generate Billable Items"
 msgstr "生成计费物料"
@@ -14876,7 +14876,7 @@ msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0
 msgstr "在 <0>项目 → 审批</0>的计费选项卡上暂停、下达、注销或重新定价物料。"
 
 msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
-msgstr ""
+msgstr "存放已组装的套件。默认存储单元为套件架的物料，即线边供料中的套件。套件架不能设为线边。"
 
 msgid "Holiday"
 msgstr "假期"
@@ -15256,7 +15256,7 @@ msgid "If something is off track"
 msgstr "如果有什么偏离轨道"
 
 msgid "If stock committed to open orders were used"
-msgstr ""
+msgstr "若已分配给未结订单的库存被使用"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
@@ -16593,7 +16593,7 @@ msgid "Keep Current"
 msgstr "保持当前"
 
 msgid "Keep dates"
-msgstr ""
+msgstr "保留日期"
 
 msgid "Keep demo data"
 msgstr "保留演示数据"
@@ -16659,7 +16659,7 @@ msgid "Kit"
 msgstr "套件"
 
 msgid "Kit rack"
-msgstr ""
+msgstr "套件架"
 
 msgid "label"
 msgstr "标签"
@@ -16809,7 +16809,7 @@ msgid "Last 6 Months"
 msgstr "最近6个月"
 
 msgid "Last 90 days: {count} shipments, average {average} business days.{byEstimate} by the estimate, {byPromise} by the promised date."
-msgstr ""
+msgstr "近 90 天：{count} 次发货，平均 {average} 个工作日。按预估 {byEstimate}，按承诺日期 {byPromise}。"
 
 msgid "Last Activity"
 msgstr "最近活动"
@@ -16894,10 +16894,10 @@ msgid "Late Reason"
 msgstr "迟到原因"
 
 msgid "Late to arrive"
-msgstr ""
+msgstr "预计晚到"
 
 msgid "Late to arrive: estimated {estimated}, promised {promised}."
-msgstr ""
+msgstr "预计晚到：预估 {estimated}，承诺 {promised}。"
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "一旦较早的周次用完，较晚的周次将被消耗。"
@@ -17199,7 +17199,7 @@ msgid "Likelihood"
 msgstr "可能性"
 
 msgid "Limits To"
-msgstr ""
+msgstr "限定为"
 
 msgid "Line"
 msgstr "行"
@@ -17726,7 +17726,7 @@ msgid "MACRS Property Class"
 msgstr "MACRS资产类别"
 
 msgid "Made"
-msgstr ""
+msgstr "自制"
 
 msgid "Magic link"
 msgstr "魔法链接"
@@ -17983,7 +17983,7 @@ msgid "Mark Dark Mode"
 msgstr "标记深色模式"
 
 msgid "Mark Delivered"
-msgstr ""
+msgstr "标记为已送达"
 
 msgid "Mark done"
 msgstr "标记为完成"
@@ -19269,7 +19269,7 @@ msgid "New purchase order"
 msgstr "新采购订单"
 
 msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
-msgstr ""
+msgstr "新建采购收货时会自动填入批次号。过账前，收货人员仍可修改。"
 
 msgid "New Quality Document"
 msgstr "新质量文件"
@@ -19389,7 +19389,7 @@ msgid "New Transfer Line"
 msgstr "新建调拨行"
 
 msgid "New Transit Time"
-msgstr ""
+msgstr "新运输时间"
 
 msgid "New Unit of Measure"
 msgstr "新计量单位"
@@ -20536,7 +20536,7 @@ msgid "No transfers"
 msgstr "没有调拨"
 
 msgid "No transit times yet. Orders use the shipping method's transit days."
-msgstr ""
+msgstr "尚无运输时间。订单使用发货方式的运输天数。"
 
 msgid "No unassigned jobs"
 msgstr "没有未分配的工单"
@@ -20687,7 +20687,7 @@ msgid "None"
 msgstr "无"
 
 msgid "None (full page)"
-msgstr ""
+msgstr "无（整页）"
 
 msgid "None available"
 msgstr "无可用项"
@@ -20718,7 +20718,7 @@ msgid "Not delivered"
 msgstr "未交付"
 
 msgid "Not enough deliveries yet to measure the transit time."
-msgstr ""
+msgstr "交付记录不足，无法计算运输时间。"
 
 msgid "not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
@@ -20875,7 +20875,7 @@ msgstr "当前没有应付款项。当到期期间来临时，发票会自动生
 
 #. placeholder {0}: formatQuantity(data.targetQuantity)
 msgid "Nothing is short for {0}"
-msgstr ""
+msgstr "{0} 无缺料"
 
 msgid "Nothing is synced until you turn sync on."
 msgstr "在启用同步前，没有任何内容会被同步。"
@@ -20966,7 +20966,7 @@ msgid "Number"
 msgstr "数字"
 
 msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
-msgstr ""
+msgstr "按采购订单为每个收货生产批次编号，编号由采购订单号和收货日期组成，例如 PO000123-20261116。同一天的第二次交货编号后加 -2。"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "每个采购件的库存件数"
@@ -21088,7 +21088,7 @@ msgstr "现有"
 #. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
 #. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
 msgid "On hand {0}, committed {1}"
-msgstr ""
+msgstr "现有库存 {0}，已承诺 {1}"
 
 msgid "On hand {before} to {after}"
 msgstr "现有：从 {before} 到 {after}"
@@ -21113,7 +21113,7 @@ msgid "On order"
 msgstr "已订购"
 
 msgid "On Order"
-msgstr ""
+msgstr "已订购"
 
 msgid "On Production Demand"
 msgstr "生产需求上"
@@ -24197,7 +24197,7 @@ msgid "Quantity shipped"
 msgstr "发运数量"
 
 msgid "Quantity to check"
-msgstr ""
+msgstr "待检数量"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "第 {lineNumber} 行的贷记数量"
@@ -24548,13 +24548,13 @@ msgid "Recalculate Run"
 msgstr "重新运行计算"
 
 msgid "Recalculate ship dates"
-msgstr ""
+msgstr "重新计算发货日期"
 
 msgid "Recalculate Unit Cost"
 msgstr "重新计算单位成本"
 
 msgid "Recalculated the ship dates"
-msgstr ""
+msgstr "已重新计算发货日期"
 
 msgid "Recalculating…"
 msgstr "重新计算中…"
@@ -24563,10 +24563,10 @@ msgid "Receipt"
 msgstr "收据"
 
 msgid "Receipt batch numbers are now entered by hand"
-msgstr ""
+msgstr "收货生产批次号现改为手动输入"
 
 msgid "Receipt batch numbers are now generated"
-msgstr ""
+msgstr "收货生产批次号现改为自动生成"
 
 msgid "Receipt ID"
 msgstr "收据ID"
@@ -25092,7 +25092,7 @@ msgid "Reload the page to try again."
 msgstr "重新加载页面以重试。"
 
 msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
-msgstr ""
+msgstr "请重新加载页面后重试。如果仍然失败，请检查该物料的物料清单。"
 
 msgid "Remaining"
 msgstr "剩余"
@@ -25163,7 +25163,7 @@ msgid "Remove {name}"
 msgstr "移除{name}"
 
 msgid "Remove API key"
-msgstr ""
+msgstr "移除API密钥"
 
 msgid "Remove Asset"
 msgstr "移除资产"
@@ -26804,7 +26804,7 @@ msgid "Saved signature"
 msgstr "已保存签名"
 
 msgid "Saved the delivery date"
-msgstr ""
+msgstr "已保存交货日期"
 
 msgid "Saved this document"
 msgstr "已保存此文档"
@@ -26822,7 +26822,7 @@ msgid "Saved Views"
 msgstr "已保存的视图"
 
 msgid "Saved. Leave blank to keep it"
-msgstr ""
+msgstr "已保存。留空则保持不变"
 
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total
@@ -27290,7 +27290,7 @@ msgid "Select a document"
 msgstr "选择文件"
 
 msgid "Select a label size"
-msgstr ""
+msgstr "选择标签尺寸"
 
 msgid "Select a new owner"
 msgstr "选择新的负责人"
@@ -28108,7 +28108,7 @@ msgid "Ship Back"
 msgstr "退回"
 
 msgid "Ship By (job)"
-msgstr ""
+msgstr "发货截止日期（工单）"
 
 msgid "Ship Date"
 msgstr "发货日期"
@@ -28210,7 +28210,7 @@ msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "该客户已发货行项中剩余待退货的数量"
 
 msgid "Shipped on this date, the line arrives about {estimated}. The order is promised to arrive by {promised}."
-msgstr ""
+msgstr "按此日期发货，该行预计约 {estimated} 到达。订单承诺到达日期为 {promised}。"
 
 msgid "Shipped Qty"
 msgstr "已发货数量"
@@ -30450,7 +30450,7 @@ msgid "The batch runs at its most urgent member's time — the others are pulled
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
 msgid "The bill of materials contains itself"
-msgstr ""
+msgstr "物料清单包含其自身"
 
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "账单费率已锁定：估价已发送给客户。"
@@ -30483,10 +30483,10 @@ msgid "The burden run burdens project cost with this pool"
 msgstr "成本分配运行将此池的成本分配给项目成本"
 
 msgid "The business days (Monday to Friday, without company holidays) a shipment with this method takes to arrive. Carbon subtracts them from an order's promised arrival date to get each line's ship-by date. Empty means not known: Carbon then calculates no date."
-msgstr ""
+msgstr "采用此方式发货时，货物送达所需的工作日数（周一至周五，不含公司假期）。Carbon 会从订单的承诺到达日期中扣除这些工作日，得出每行的发货截止日期。留空表示未知，此时 Carbon 不计算日期。"
 
 msgid "The business days a shipment to this ship-to address takes with this shipping method. It replaces the shipping method's own transit days for orders to the address."
-msgstr ""
+msgstr "使用此发货方式运往该收货地址时所需的工作日数。对发往该地址的订单，它将替代发货方式本身的运输天数。"
 
 msgid "The capital assets you own and depreciate"
 msgstr "您拥有并折旧的固定资产"
@@ -30703,7 +30703,7 @@ msgid "The date the customer expects to receive the goods"
 msgstr "客户期望收到货物的日期"
 
 msgid "The date the customer received the goods. A user records it with Mark Delivered; a carrier integration can record it from tracking. It cannot be in the future or before the shipment posted."
-msgstr ""
+msgstr "客户收到货物的日期。用户可通过“标记已交付”记录；承运商集成可根据物流跟踪记录。该日期不能是未来日期，也不能早于发货过账日期。"
 
 msgid "The date the goods actually leave the warehouse; recorded on the shipment posting and used for on-time-shipping scoring."
 msgstr "商品实际离开仓库的日期；记录在出货过账中，用于按时发货评分。"
@@ -30712,7 +30712,7 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "该项目需要在现场到达的日期，以满足该期间的预计需求。"
 
 msgid "The date the job's sales order line must ship: a read-only copy of the line's promised date that follows the line when it changes. The shop floor counts down to it; the scheduler still uses the due date."
-msgstr ""
+msgstr "工单对应的销售订单行必须发货的日期：这是该行承诺日期的只读副本，行的承诺日期变更时随之更新。车间据此倒计时；排程仍使用到期日。"
 
 msgid "The date the return authorization expires"
 msgstr "退货授权的到期日期"
@@ -30769,7 +30769,7 @@ msgid "The document could not be opened."
 msgstr "无法打开文件。"
 
 msgid "The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "最早交货日期为 {earliest}。"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -31342,7 +31342,7 @@ msgid "The posted hours are reversed and these hours are charged instead"
 msgstr "已过账的小时数被冲销，改为计费这些小时数"
 
 msgid "The posting date of a sales shipment plus the transit days of its shipping method, in business days. Carbon sets it when the shipment posts."
-msgstr ""
+msgstr "销售发货的过账日期加上发货方式的运输天数（按工作日计）。发货过账时由 Carbon 设置。"
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖问题类型的默认工作流。"
@@ -31554,7 +31554,7 @@ msgid "The shelves and bins where stock physically sits"
 msgstr "库存实际存放的货架和料箱"
 
 msgid "The shop cannot finish this by {promised}."
-msgstr ""
+msgstr "车间无法在 {promised} 前完成。"
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "你随时拥有的耗材和消耗品"
@@ -31887,7 +31887,7 @@ msgid "These are the record's own notes. Changing them here changes them on the 
 msgstr "这些是记录本身的备注。在此处更改也会同时更改记录上的备注。"
 
 msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
-msgstr ""
+msgstr "这些物料清单行使用的单位与其物料的库存单位不同，因此无法与库存比较。请修正该行或物料的计量单位。"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
@@ -31908,7 +31908,7 @@ msgid "These have no serial number, so a transfer can't pick them. Give each one
 msgstr "这些物料没有序列号，因此调拨无法拣货。为每件物料分配序列号后即可移动。"
 
 msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
-msgstr ""
+msgstr "这些物料位于物料清单循环之中或其下级，因此无法展开。请移除使某物料成为自身组件的行。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
@@ -32463,7 +32463,7 @@ msgid "Through {0}"
 msgstr "至 {0}"
 
 msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
+msgstr "贯穿此地点物料清单的每一层级。库存中的子件优先使用，再安排生产，按订单生产行除外；需求数量包含各物料的报废量。"
 
 msgid "Thumbnail"
 msgstr "缩略图"
@@ -33074,13 +33074,13 @@ msgid "Transit & Institution"
 msgstr "中转与机构"
 
 msgid "Transit Days"
-msgstr ""
+msgstr "运输天数"
 
 msgid "Transit Days (ship-to)"
-msgstr ""
+msgstr "运输天数（收货地址）"
 
 msgid "Transit Times"
-msgstr ""
+msgstr "运输时间"
 
 msgid "Trash"
 msgstr "垃圾桶"
@@ -33453,7 +33453,7 @@ msgid "Units"
 msgstr "单位"
 
 msgid "Units don't match"
-msgstr ""
+msgstr "单位不一致"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
@@ -33757,10 +33757,10 @@ msgid "Updated task status"
 msgstr "任务状态已更新"
 
 msgid "Updated transit days"
-msgstr ""
+msgstr "已更新运输天数"
 
 msgid "Updating…"
-msgstr ""
+msgstr "更新中…"
 
 msgid "Upgrade"
 msgstr "升级"
@@ -33895,7 +33895,7 @@ msgid "Use ... to get the next tool ID"
 msgstr "使用 ... 获取下一个工具 ID"
 
 msgid "Use {days} days"
-msgstr ""
+msgstr "使用 {days} 天"
 
 msgid "Use {earliest}"
 msgstr "使用{earliest}"
@@ -34027,7 +34027,7 @@ msgid "Uses sub-assembly {0} · {1}"
 msgstr "使用子装配体{0} · {1}"
 
 msgid "Using All On Hand"
-msgstr ""
+msgstr "使用全部现有库存"
 
 msgid "VAC"
 msgstr "VAC"
@@ -34945,7 +34945,7 @@ msgid "When the goods actually arrived; recorded on the receipt and used for sup
 msgstr "货物实际到达时;在收据上记录,用于供应商准时交货评分。"
 
 msgid "When the goods must reach the customer. Carbon subtracts the transit days of the shipping method (in business days) to get each line's ship-by date."
-msgstr ""
+msgstr "货物必须送达客户的日期。Carbon 从中扣除发货方式的运输天数（按工作日计）以得出每行的发货截止日期。"
 
 msgid "When the job is created"
 msgstr "工单创建时"
@@ -34999,7 +34999,7 @@ msgid "When this item's units draw their serial numbers. Leave empty to follow S
 msgstr "此物料的件何时生成序列号。留空以遵循设置 → 生产。"
 
 msgid "When this line is promised to ship: its ship-by date. A new line defaults to the order's promised arrival date minus the shipping method's transit days."
-msgstr ""
+msgstr "该行承诺发货的日期，即其发货截止日期。新增行默认为订单的承诺到达日期减去发货方式的运输天数。"
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "当这看起来正确时，将其标记为已同意。这将完成您的指挥中心上的发现步骤。"
