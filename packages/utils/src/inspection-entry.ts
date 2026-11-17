@@ -260,10 +260,15 @@ export function compareSamplesByCreation(
 // `dropMissing` is for serial lots: a serial sample is made only by a scan,
 // which reloads the page, so an id the loader no longer returns was deleted.
 // Its position is freed; every other sample keeps its own.
+// `stored` is the position saved with each sample: an unplaced sample takes it
+// when it is free, before the lowest-free rule, so every reload agrees.
 export function placeSamples(
   previous: Readonly<Record<number, string>>,
   sampleIds: readonly string[],
-  options: { dropMissing?: boolean } = {}
+  options: {
+    dropMissing?: boolean;
+    stored?: ReadonlyMap<string, number>;
+  } = {}
 ): Record<number, string> {
   const next: Record<number, string> = {};
   const placed = new Set<string>();
@@ -272,6 +277,12 @@ export function placeSamples(
     if (placed.has(id)) continue;
     if (loaded && !loaded.has(id)) continue;
     next[Number(position)] = id;
+    placed.add(id);
+  }
+  for (const id of sampleIds) {
+    const position = options.stored?.get(id);
+    if (position == null || placed.has(id) || position in next) continue;
+    next[position] = id;
     placed.add(id);
   }
   let slot = 0;

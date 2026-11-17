@@ -243,7 +243,7 @@ export async function action(args: ActionFunctionArgs) {
 | One call | `api.<module>.<name>(input)`. No write in the route itself (a `.from(...)` write, Kysely, `invokePosting`): the `route-action-shape` check fails it |
 | Custom fields | `setCustomFields(input.formData)` (`~/utils/form`) when the body is form data |
 | Fetcher form | `return result` |
-| Navigating form | `return respond(args.request, result).redirect(to, { message, onError })` |
+| Navigating form | `return respond(args.request, result).redirect(to, { message, onError })`. A refused save posted from the action's own page stays on the form with `{ formError }`, which `ValidatedForm` shows inline; one posted from another page (a button to an action-only route) redirects to `onError ?? to` (`staysOnForm`, `@carbon/api`) |
 
 Actions return **plain objects** or `data(value, init)`. Do NOT use `json(...)` -
 that is the old Remix helper and is not used here.

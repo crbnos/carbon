@@ -90,6 +90,8 @@ export type InspectionSampleInput = {
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId?: string;
+  // Grid position of a new anonymous sample; ignored on update and for serial samples.
+  position?: number;
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: "Pending" | "Passed" | "Failed";
@@ -109,6 +111,8 @@ export type InspectionMeasurementInput = {
   inspectionId: string;
   // Absent = create an anonymous sample (non-serial grid columns).
   sampleId?: string;
+  // Grid position of the anonymous sample this call creates; ignored otherwise.
+  position?: number;
   inspectionFeatureId: string;
   // Numeric string for Measurement features; empty clears the reading.
   value?: string;
@@ -118,6 +122,15 @@ export type InspectionMeasurementInput = {
   companyId: string;
   userId: string;
 };
+
+// A grid column the lot draws (it draws at most `lotSize`), else none, so a
+// sample never lands in a column that is not shown.
+function gridPosition(
+  position: number | undefined,
+  lotSize: number
+): number | null {
+  return position !== undefined && position < lotSize ? position : null;
+}
 
 async function lockOpenLot(
   trx: Transaction<KyselyDatabase>,
@@ -319,7 +332,8 @@ export async function upsertInspectionSample(
           "status",
           "sourceDocument",
           "sourceDocumentId",
-          "sourceDocumentLineId"
+          "sourceDocumentLineId",
+          "lotSize"
         ])
         .where("id", "=", sample.inspectionId)
         .where("companyId", "=", sample.companyId)
@@ -398,7 +412,13 @@ export async function upsertInspectionSample(
       } else {
         const inserted = await trx
           .insertInto("inspectionSample")
-          .values({ ...samplePayload, createdBy: sample.inspectedBy })
+          .values({
+            ...samplePayload,
+            position: trackedEntityId
+              ? null
+              : gridPosition(sample.position, inspection.lotSize),
+            createdBy: sample.inspectedBy
+          })
           .returning(["id"])
           .executeTakeFirstOrThrow();
         sampleId = inserted.id;
@@ -477,7 +497,13 @@ export async function upsertInspectionMeasurement(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
+        .select([
+          "id",
+          "status",
+          "sourceDocument",
+          "sourceDocumentId",
+          "lotSize"
+        ])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -534,6 +560,7 @@ export async function upsertInspectionMeasurement(
             inspectionId: args.inspectionId,
             trackedEntityId: null,
             status: "Pending",
+            position: gridPosition(args.position, inspection.lotSize),
             companyId: args.companyId,
             createdBy: args.userId
           })

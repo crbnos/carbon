@@ -5640,14 +5640,16 @@ export async function upsertJobMethod(
     { as: getMethodPermission }
   );
   if (getMethodResult.error) {
+    // `cause` keeps the database error, so the caller can say why it failed.
     return {
       data: null,
       error: {
         message: getErrorMessage(
           getMethodResult.error,
           "Failed to get job method"
-        )
-      } as PostgrestError
+        ),
+        cause: getMethodResult.error.cause ?? getMethodResult.error
+      } as PostgrestError & { cause?: unknown }
     };
   }
   return recalculateJobRequirements(client, db, {
@@ -13850,6 +13852,214 @@ export async function requireJob(ctx: ServiceContext, jobId: string) {
   return job.data;
 }
 
+type ReplacedRows = "all" | string[];
+
+/**
+ * The make methods whose operations and materials Get Method deletes. A
+ * replaced bill of process deletes the operations of the target (every
+ * operation of a job); a replaced bill of material deletes the materials and,
+ * through them, every sub-assembly method below with its operations.
+ */
+function rowsReplacedByGetMethod(
+  methods: { id: string; parentId: string | null }[],
+  jobMakeMethodId: string | undefined,
+  parts: { billOfMaterial: boolean; billOfProcess: boolean }
+): { operations: ReplacedRows; materials: ReplacedRows } {
+  const below = (roots: string[]) => {
+    const found = new Set<string>();
+    let level = roots;
+    while (level.length > 0) {
+      const parents = new Set(level);
+      level = methods
+        .filter(
+          (m) => m.parentId && parents.has(m.parentId) && !found.has(m.id)
+        )
+        .map((m) => m.id);
+      for (const id of level) found.add(id);
+    }
+    return [...found];
+  };
+
+  if (!jobMakeMethodId) {
+    const subAssemblies = methods.filter((m) => m.parentId).map((m) => m.id);
+    return {
+      operations: parts.billOfProcess
+        ? "all"
+        : parts.billOfMaterial
+          ? subAssemblies
+          : [],
+      materials: parts.billOfMaterial ? "all" : []
+    };
+  }
+  const descendants = parts.billOfMaterial ? below([jobMakeMethodId]) : [];
+  return {
+    operations: [
+      ...(parts.billOfProcess ? [jobMakeMethodId] : []),
+      ...descendants
+    ],
+    materials: parts.billOfMaterial ? [jobMakeMethodId, ...descendants] : []
+  };
+}
+
+type MethodReplacementScope = { jobIds: string[]; jobMakeMethodId?: string };
+type ReplacedParts = { billOfMaterial: boolean; billOfProcess: boolean };
+
+/**
+ * Why Get Method cannot replace a job's method, or null: the operations it
+ * would delete have production or a supplier invoice recorded against them,
+ * or the materials it would delete are on a picking list or already issued.
+ * `jobMakeMethodId` narrows the check to that method and the sub-assemblies
+ * below it. With `lock`, inside the replace's own transaction, the rows it
+ * deletes are locked first: recording production on an operation takes a lock
+ * on its row, so nothing recorded after the check can be deleted with it.
+ */
+async function methodReplacementBlocker(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts,
+  { lock = false }: { lock?: boolean } = {}
+): Promise<string | null> {
+  if (scope.jobIds.length === 0) return null;
+  if (!parts.billOfMaterial && !parts.billOfProcess) return null;
+
+  const methods = await db
+    .selectFrom("jobMakeMethod")
+    .leftJoin("jobMaterial", (join) =>
+      join
+        .onRef("jobMaterial.id", "=", "jobMakeMethod.parentMaterialId")
+        .on("jobMaterial.companyId", "=", companyId)
+    )
+    .select(["jobMakeMethod.id", "jobMaterial.jobMakeMethodId as parentId"])
+    .where("jobMakeMethod.jobId", "in", scope.jobIds)
+    .where("jobMakeMethod.companyId", "=", companyId)
+    .execute();
+  const { operations, materials } = rowsReplacedByGetMethod(
+    methods,
+    scope.jobMakeMethodId,
+    parts
+  );
+
+  const replacedOperations = () => {
+    const query = db
+      .selectFrom("jobOperation")
+      .select("jobOperation.id")
+      .where("jobOperation.companyId", "=", companyId)
+      .where("jobOperation.jobId", "in", scope.jobIds);
+    return operations === "all"
+      ? query
+      : query.where("jobOperation.jobMakeMethodId", "in", operations);
+  };
+  const replacedMaterials = () => {
+    const query = db
+      .selectFrom("jobMaterial")
+      .select("jobMaterial.id")
+      .where("jobMaterial.companyId", "=", companyId)
+      .where("jobMaterial.jobId", "in", scope.jobIds);
+    return materials === "all"
+      ? query
+      : query.where("jobMaterial.jobMakeMethodId", "in", materials);
+  };
+  const checksOperations = operations === "all" || operations.length > 0;
+  const checksMaterials = materials === "all" || materials.length > 0;
+  if (lock) {
+    if (checksOperations) await replacedOperations().forUpdate().execute();
+    if (checksMaterials) await replacedMaterials().forUpdate().execute();
+  }
+
+  const [events, quantities, invoiceLines, pickLines, issued] =
+    await Promise.all([
+      checksOperations
+        ? db
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobOperationId", "in", replacedOperations())
+            .limit(1)
+            .execute()
+        : [],
+      checksOperations
+        ? db
+            .selectFrom("productionQuantity")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobOperationId", "in", replacedOperations())
+            .limit(1)
+            .execute()
+        : [],
+      checksOperations
+        ? db
+            .selectFrom("purchaseInvoiceLine")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobOperationId", "in", replacedOperations())
+            .limit(1)
+            .execute()
+        : [],
+      checksMaterials
+        ? db
+            .selectFrom("pickingListLine")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobMaterialId", "in", replacedMaterials())
+            .limit(1)
+            .execute()
+        : [],
+      checksMaterials
+        ? db
+            .selectFrom("jobMaterial")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("id", "in", replacedMaterials())
+            .where("quantityIssued", ">", 0)
+            .limit(1)
+            .execute()
+        : []
+    ]);
+
+  if (events.length > 0 || quantities.length > 0) {
+    return "Production has been recorded on this job, so its method cannot be replaced";
+  }
+  if (invoiceLines.length > 0) {
+    return "A supplier has invoiced an operation on this job, so its method cannot be replaced";
+  }
+  if (pickLines.length > 0) {
+    return "This job has a picking list, so its bill of material cannot be replaced";
+  }
+  if (issued.length > 0) {
+    return "Material has been issued to this job, so its bill of material cannot be replaced";
+  }
+  return null;
+}
+
+/** The check before Get Method runs, as a refusal the caller can show. */
+export async function jobMethodReplacementRefusal(
+  ctx: ServiceContext,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts
+): Promise<CarbonError | null> {
+  const message = await methodReplacementBlocker(
+    ctx.asSystem.pg,
+    ctx.company.id,
+    scope,
+    parts
+  );
+  return message ? ctx.error("rule", message) : null;
+}
+
+/** The same check inside Get Method's transaction, under its row locks. */
+async function refuseMethodReplacement(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts
+): Promise<void> {
+  const message = await methodReplacementBlocker(trx, companyId, scope, parts, {
+    lock: true
+  });
+  if (message) throw new InvalidInputError(message);
+}
+
 /**
  * Recalculate a job's requirements and operation dependencies (which also
  * reschedules its location). The first failure is returned.
@@ -16520,6 +16730,12 @@ export async function getMethod(
             .execute();
         }
 
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobId] },
+          parts
+        );
         // Delete existing jobMakeMethod, jobMakeMethodOperation, jobMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -17613,6 +17829,12 @@ export async function getMethod(
           treeItemIds(methodTree, supersessionRedirect)
         );
         const insertedJobMaterialIds: string[] = [];
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobMakeMethod.data.jobId], jobMakeMethodId },
+          parts
+        );
         // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -20390,6 +20612,12 @@ export async function getMethod(
           trx,
           treeItemIds(jobMethodTree, supersessionRedirect)
         );
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [targetJobId] },
+          parts
+        );
         // Delete existing jobMakeMethods, jobMaterials, and jobOperations for the target job
         await Promise.all([
           parts.billOfMaterial
@@ -22207,6 +22435,12 @@ export async function getMethod(
         await itemDefaults.load(
           trx,
           treeItemIds(quoteMethodTree, supersessionRedirect)
+        );
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobId] },
+          parts
         );
         // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
         await Promise.all([

@@ -484,6 +484,10 @@ in its unit (on-hand less what open lots hold).
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
+- **Outside-processing PO lines are not supply for planning.** `openPurchaseOrderLines`
+  (`20261117123417`) leaves out lines of an `Outside Processing` PO: the line carries the job's
+  item, but receiving it stocks nothing (the job is the supply), so MRP counted the job twice.
+  `get_inventory_quantities`' `quantityOnPurchaseOrder` still counts them.
 - **`get_inventory_quantities` has many revisions.** Always read the newest (`20261021004300`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
