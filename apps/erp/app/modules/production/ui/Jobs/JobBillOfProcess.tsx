@@ -1876,22 +1876,13 @@ function JobStepTools({
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
-      (
-        tl.jobOperationStepIds ??
-        (
-          (tl as { jobOperationToolStep?: { jobOperationStepId: string }[] })
-            .jobOperationToolStep ?? []
-        ).map((s) => s.jobOperationStepId)
-      ).some((stepId) => stepId === step.id)
+      (tl.jobOperationToolStep ?? []).some(
+        (s) => s.jobOperationStepId === step.id
+      )
     )
     .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
   const everyStepCount = (tools ?? []).filter(
-    (tl) =>
-      (
-        tl.jobOperationStepIds ??
-        (tl as { jobOperationToolStep?: unknown[] }).jobOperationToolStep ??
-        []
-      ).length === 0
+    (tl) => !tl.jobOperationToolStep?.length
   ).length;
 
   const toggle = (toolId: string, linked: boolean) => {
