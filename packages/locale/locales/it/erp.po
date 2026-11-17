@@ -25007,6 +25007,9 @@ msgstr "Rilasciare il lotto di produzione rilascia i suoi ordini di produzione, 
 msgid "Reload the page to try again."
 msgstr "Ricarica la pagina per riprovare."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "Rimanente"
 

@@ -25007,6 +25007,9 @@ msgstr "下达生产批次会下达其工单，每个工单都必须为车间做
 msgid "Reload the page to try again."
 msgstr "重新加载页面以重试。"
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "剩余"
 

@@ -25007,6 +25007,9 @@ msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birini
 msgid "Reload the page to try again."
 msgstr "Sayfayı yeniden yükleyin ve tekrar deneyin."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "Kalan"
 

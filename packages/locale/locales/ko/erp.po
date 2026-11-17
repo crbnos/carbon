@@ -25007,6 +25007,9 @@ msgstr "배치를 릴리스하면 포함된 작업 지시들도 릴리스되고,
 msgid "Reload the page to try again."
 msgstr "페이지를 새로고침하여 다시 시도하세요."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "남음"
 

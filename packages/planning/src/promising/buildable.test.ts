@@ -252,8 +252,9 @@ describe("computeBuildable", () => {
     ]);
   });
 
-  it("adds scrap as a job does: whole units up, children exploded from the total", () => {
-    // 10% scrap on SUB: 10 SUB need ceil(1) = 11 built, so 22 RAW.
+  it("adds a pulled subassembly's scrap, then its own job's scrap to build the shortfall", () => {
+    // 10% scrap on SUB, none in stock. 10 FG consume 10 + ceil(1) = 11 SUB;
+    // the job that makes them starts 11 + ceil(1.1) = 13, so 26 RAW.
     const result = run(
       [
         ["FG", "SUB", 1],
@@ -263,17 +264,34 @@ describe("computeBuildable", () => {
       10,
       { SUB: 0.1 }
     );
-    expect(result.quantityBuildable).toBe(10);
-    const sub = result.components.find((c) => c.itemId === "SUB");
-    expect(sub).toMatchObject({
+    expect(result.quantityBuildable).toBe(9);
+    expect(result.components.find((c) => c.itemId === "SUB")).toMatchObject({
       quantityPerAssembly: 1,
-      quantityScrap: 1,
-      quantityRequired: 11,
-      quantityToBuild: 11
+      quantityScrap: 3,
+      quantityRequired: 13,
+      quantityToBuild: 13
     });
     expect(result.components.find((c) => c.itemId === "RAW")).toMatchObject({
-      quantityRequired: 22,
-      quantityShort: 0
+      quantityRequired: 26,
+      quantityShort: 4
+    });
+  });
+
+  it("adds a Make to Order subassembly's scrap once, as the job builds it", () => {
+    // 10 FG build 10 + ceil(1) = 11 SUB inside the job, so 22 RAW.
+    const result = run(
+      [
+        ["FG", "SUB", 1, { makeToOrder: true }],
+        ["SUB", "RAW", 2]
+      ],
+      { RAW: 22 },
+      10,
+      { SUB: 0.1 }
+    );
+    expect(result.quantityBuildable).toBe(10);
+    expect(result.components.find((c) => c.itemId === "SUB")).toMatchObject({
+      quantityScrap: 1,
+      quantityToBuild: 11
     });
   });
 

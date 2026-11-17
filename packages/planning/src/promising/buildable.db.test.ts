@@ -121,7 +121,9 @@ describe.skipIf(!url)("loadBuildable against a migrated database", () => {
    * FG (Make, 10% scrap) has an Active v1 and a newer Draft v2: v1 is used.
    * v1: 1 SUB, 2 RAW, a quantity-0 line and a correction line (both ignored).
    * SUB (Make) has only a Draft method: 1 RAW. BUY (Buy) has a method of its
-   * own that is never exploded. Stock: 20 RAW, 2 of them non-nettable; 1 SUB.
+   * own that is never exploded. Stock: 20 RAW, 2 of them non-nettable, and
+   * 100 more held by a project that keeps its own stock; 1 SUB. An open sales
+   * order line commits 3 RAW and an open purchase order line brings 7.
    */
   async function begin() {
     await client.query("BEGIN");
@@ -161,6 +163,63 @@ describe.skipIf(!url)("loadBuildable against a migrated database", () => {
     await stock("RAW", 20, 2);
     await stock("SUB", 1);
     await stock("BUY", 100);
+    await insert("project", {
+      id: id("project"),
+      companyId,
+      name: "Stocked project",
+      projectStock: true,
+      createdBy: "system"
+    });
+    await insert("itemStockQuantities", {
+      itemId: id("RAW"),
+      companyId,
+      locationId,
+      projectId: id("project"),
+      quantityOnHand: 100,
+      quantityNonNettable: 0
+    });
+    await insert("salesOrder", {
+      id: id("so"),
+      salesOrderId: "SO-TEST",
+      status: "To Ship",
+      currencyCode: "USD",
+      customerId: id("customer"),
+      locationId,
+      companyId,
+      createdBy: "system"
+    });
+    await insert("salesOrderLine", {
+      salesOrderId: id("so"),
+      salesOrderLineType: "Part",
+      itemId: id("RAW"),
+      saleQuantity: 3,
+      locationId,
+      companyId,
+      createdBy: "system"
+    });
+    await insert("purchaseOrder", {
+      id: id("po"),
+      purchaseOrderId: "PO-TEST",
+      status: "To Receive",
+      supplierId: id("supplier"),
+      supplierInteractionId: id("interaction"),
+      companyId,
+      createdBy: "system"
+    });
+    await insert("purchaseOrderDelivery", {
+      id: id("po"),
+      locationId,
+      companyId
+    });
+    await insert("purchaseOrderLine", {
+      purchaseOrderId: id("po"),
+      purchaseOrderLineType: "Part",
+      itemId: id("RAW"),
+      purchaseQuantity: 7,
+      locationId,
+      companyId,
+      createdBy: "system"
+    });
     await client.query("SET LOCAL session_replication_role = origin");
   }
 
@@ -173,10 +232,10 @@ describe.skipIf(!url)("loadBuildable against a migrated database", () => {
     });
     expect(result).not.toBeNull();
     // N FG builds N + ceil(0.1N): 2 RAW each, plus 1 RAW per SUB not in
-    // stock. 18 nettable RAW: N = 5 builds 6, needing 12 + 5 = 17; N = 6
-    // builds 7, needing 14 + 6 = 20. Nothing is committed, so on hand gives
-    // the same answer.
-    expect(result?.quantityBuildable).toBe(5);
+    // stock. 18 nettable common RAW, 3 committed, so 15 available: N = 4
+    // builds 5, needing 10 + 4 = 14; N = 5 builds 6, needing 12 + 5 = 17,
+    // which the 18 on hand covers. The project's 100 count for neither.
+    expect(result?.quantityBuildable).toBe(4);
     expect(result?.quantityBuildableFromOnHand).toBe(5);
     expect(result?.components.map((c) => c.readableId).sort()).toEqual([
       "BUY",
@@ -187,7 +246,9 @@ describe.skipIf(!url)("loadBuildable against a migrated database", () => {
       result?.components.find((c) => c.readableId === "RAW")
     ).toMatchObject({
       quantityOnHand: 18,
-      quantityAvailable: 18,
+      quantityCommitted: 3,
+      quantityAvailable: 15,
+      quantityOnOrder: 7,
       quantityPerAssembly: 3,
       level: 2
     });

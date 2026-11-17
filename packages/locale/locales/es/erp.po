@@ -25007,6 +25007,9 @@ msgstr "Liberar el lote de producción libera sus órdenes de trabajo, y cada un
 msgid "Reload the page to try again."
 msgstr "Recargue la página para intentar de nuevo."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "Restante"
 

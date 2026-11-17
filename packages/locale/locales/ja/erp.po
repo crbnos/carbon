@@ -25007,6 +25007,9 @@ msgstr "バッチをリリースするとその製造指図がリリースされ
 msgid "Reload the page to try again."
 msgstr "ページを再度読み込んで、もう一度試してください。"
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "残高"
 

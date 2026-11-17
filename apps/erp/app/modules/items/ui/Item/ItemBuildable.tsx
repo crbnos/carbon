@@ -119,7 +119,12 @@ export default function ItemBuildable({
             <AlertTitle>
               <Trans>Couldn't calculate the buildable quantity</Trans>
             </AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
+            <AlertDescription>
+              <Trans>
+                Reload the page to try again. If it keeps failing, check this
+                item's bill of materials.
+              </Trans>
+            </AlertDescription>
           </Alert>
         )}
 

@@ -25007,6 +25007,9 @@ msgstr "बैच जारी करने से इसकी जॉब्स 
 msgid "Reload the page to try again."
 msgstr "फिर से कोशिश करने के लिए पृष्ठ पुनः लोड करें।"
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "शेष"
 

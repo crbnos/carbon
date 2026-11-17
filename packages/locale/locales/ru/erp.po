@@ -25007,6 +25007,9 @@ msgstr "Запуск серии запускает её производстве
 msgid "Reload the page to try again."
 msgstr "Перезагрузите страницу и попробуйте снова."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "Остаток"
 

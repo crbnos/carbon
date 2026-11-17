@@ -7192,22 +7192,22 @@ export const getBuildableQuantity = defineServiceFn({
   async run(ctx, { itemId, locationId, targetQuantity }) {
     try {
       // The calculation reads by company, so another company's location (or
-      // a mistyped one) would answer with no stock rather than refuse.
-      const [location, result] = await Promise.all([
-        ctx.asSystem.pg
-          .selectFrom("location")
-          .select("id")
-          .where("id", "=", locationId)
-          .where("companyId", "=", ctx.company.id)
-          .executeTakeFirst(),
-        loadBuildable(ctx.asSystem.pg, {
-          companyId: ctx.company.id,
-          itemId,
-          locationId,
-          targetQuantity
-        })
-      ]);
+      // a mistyped one) would answer with no stock rather than refuse. Checked
+      // first: the lookup is one primary-key read, the calculation is not.
+      const location = await ctx.asSystem.pg
+        .selectFrom("location")
+        .select("id")
+        .where("id", "=", locationId)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst();
       if (!location) return ctx.error("notFound", "Location not found");
+
+      const result = await loadBuildable(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        itemId,
+        locationId,
+        targetQuantity
+      });
       return result ?? ctx.error("notFound", "Item not found");
     } catch (error) {
       return ctx.error(

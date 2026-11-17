@@ -74,12 +74,14 @@ export function netOrder(bom: BuildableBom) {
  * Explode `quantity` of the root through the BOM, netting every item below
  * the root against its available stock once, in low-level-code order.
  *
- * Scrap is added as a job adds it (`computeJobQuantities`): on each line, in
- * whole units up, and a made item's children are exploded from its total with
- * scrap. A Make to Order line's quantity is built, never drawn from stock, as
- * a job builds that child itself; every other line draws stock first. A made
- * item builds what stock does not cover; a bought item is short of it. The
- * root's own stock is not used: the question is how many more can be made.
+ * Scrap is added as jobs add it, in whole units up: each line carries its
+ * item's scrap (`computeJobQuantities`), a Make to Order line's quantity is
+ * built inside the job and never drawn from stock, and what pulled lines lack
+ * in stock is made by a job of its own that starts its scrap on top
+ * (productionQuantity + scrapQuantity). A made item's children are exploded
+ * from everything it builds. A bought item is short of what stock does not
+ * cover. The root's own stock is not used: the question is how many more can
+ * be made.
  */
 export function explodeBuildable(
   args: Plan & { available: (itemId: string) => number; quantity: number }
@@ -99,21 +101,36 @@ export function explodeBuildable(
   const needs = new Map<string, BuildableNeed>();
   for (const itemId of order) {
     const stockable = fromStockable.get(itemId) ?? 0;
-    const total = stockable + (toMake.get(itemId) ?? 0);
-    if (total <= EPSILON) continue;
+    const madeToOrder = toMake.get(itemId) ?? 0;
+    if (stockable + madeToOrder <= EPSILON) continue;
     const fromStock = Math.min(stockable, Math.max(available(itemId), 0));
-    const net = total - fromStock;
+    const pulledShort = stockable - fromStock;
     const makes = isMade(bom, itemId);
+    if (!makes) {
+      needs.set(itemId, {
+        required: stockable + madeToOrder,
+        scrap: scraps.get(itemId) ?? 0,
+        fromStock,
+        toBuild: 0,
+        short: Math.max(stockable + madeToOrder - fromStock, 0)
+      });
+      continue;
+    }
+    // Pulled lines draw stock; what stock lacks is made by a job of its own,
+    // which starts its own scrap on top (a Make to Order quantity already
+    // carries it).
+    const buildScrap = scrapAllowance(pulledShort, scrapRate(itemId));
+    const toBuild = madeToOrder + pulledShort + buildScrap;
     needs.set(itemId, {
-      required: total,
-      scrap: scraps.get(itemId) ?? 0,
+      required: stockable + madeToOrder + buildScrap,
+      scrap: (scraps.get(itemId) ?? 0) + buildScrap,
       fromStock,
-      toBuild: makes ? net : 0,
-      short: makes || net <= EPSILON ? 0 : net
+      toBuild,
+      short: 0
     });
-    if (!makes || net <= EPSILON) continue;
+    if (toBuild <= EPSILON) continue;
     for (const line of bom.get(itemId) ?? []) {
-      const target = line.quantity * net;
+      const target = line.quantity * toBuild;
       const scrap = scrapAllowance(target, scrapRate(line.itemId));
       add(
         line.makeToOrder && isMade(bom, line.itemId) ? toMake : fromStockable,

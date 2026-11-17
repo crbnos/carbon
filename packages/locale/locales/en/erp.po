@@ -25007,6 +25007,9 @@ msgstr "Releasing the batch releases its jobs, and each one must be ready for th
 msgid "Reload the page to try again."
 msgstr "Reload the page to try again."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+
 msgid "Remaining"
 msgstr "Remaining"
 

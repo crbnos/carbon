@@ -25007,6 +25007,9 @@ msgstr "Lancer le lot de production lance ses ordres de fabrication, et chacun d
 msgid "Reload the page to try again."
 msgstr "Rechargez la page pour réessayer."
 
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr ""
+
 msgid "Remaining"
 msgstr "Restant"
 
