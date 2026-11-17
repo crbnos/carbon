@@ -24935,6 +24935,9 @@ msgstr "Odrzuć czas"
 msgid "Rejected"
 msgstr "Odrzucone"
 
+msgid "Rejected at Inspection"
+msgstr "Odrzucone przy kontroli"
+
 msgid "Rejected By"
 msgstr "Odrzucono przez"
 

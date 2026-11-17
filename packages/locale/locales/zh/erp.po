@@ -24935,6 +24935,9 @@ msgstr "拒绝时间"
 msgid "Rejected"
 msgstr "已拒绝"
 
+msgid "Rejected at Inspection"
+msgstr "检验时拒收"
+
 msgid "Rejected By"
 msgstr "拒绝人"
 

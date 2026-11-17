@@ -24935,6 +24935,9 @@ msgstr "समय को अस्वीकार करें"
 msgid "Rejected"
 msgstr "अस्वीकृत"
 
+msgid "Rejected at Inspection"
+msgstr "निरीक्षण में अस्वीकृत"
+
 msgid "Rejected By"
 msgstr "द्वारा अस्वीकृत"
 

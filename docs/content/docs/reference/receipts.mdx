@@ -76,13 +76,15 @@ The receipt stays **"Posted"** after it posts. A separate inspection status foll
   <Status name="Inspection Failed" terminal>Every lot failed. Nothing is put away.</Status>
 </StatusFlow>
 
-The receipts list has an **Inspection** column with a filter. The **Inventory** sidebar has three links to the list with the filter already set:
+The receipts list has an **Inspection** column with a filter, and a **Rejected at Inspection** column (hidden at first) that is ticked while any lot of the receipt is Failed or Partial. The **Inventory** sidebar has three links to the list with a filter already set:
 
-| Link | Shows receipts at |
+| Link | Shows receipts |
 |---|---|
-| **Pending inspection** | "Pending Inspection", "Inspection In Progress" |
-| **Ready for putaway** | "Inspection Passed", "Partially Passed" |
-| **Inspection failed** | "Inspection Failed" |
+| **Pending inspection** | at "Pending Inspection" or "Inspection In Progress" |
+| **Ready for putaway** | at "Inspection Passed" or "Partially Passed" |
+| **Inspection failed** | rejected at inspection: a lot failed or was marked Partial |
+
+A receipt with a Partial lot shows in **Ready for putaway** and in **Inspection failed**. After its passed stock is put away it reads "Put Away" and leaves **Ready for putaway**, but it stays in **Inspection failed**.
 
 ### What the hold blocks
 
