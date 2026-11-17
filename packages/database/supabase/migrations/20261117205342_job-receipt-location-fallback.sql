@@ -150,11 +150,14 @@ BEGIN
     RAISE EXCEPTION 'Job % does not belong to company %', p_job_id, COALESCE(p_company_id, '<null>');
   END IF;
 
-  -- A caller that names no location receives into the job's own location, and
-  -- into the job's own storage unit when it names none. A storage unit must be
-  -- at that location: a bin of another location would split the units between
-  -- two counts. A caller that names a location keeps its own storage unit
-  -- choice: the job's storage unit belongs to the job's location.
+  -- A caller that names no location receives into the job's own location. A
+  -- bin of another location would split the units between two counts, so:
+  --   * a storage unit the caller names must be at that location, else refused;
+  --   * with none named, the job's own storage unit is used when it is at that
+  --     location, and skipped when it is not (a stale default must not block
+  --     the completion).
+  -- A caller that names a location keeps its own storage unit choice: the job's
+  -- storage unit belongs to the job's location.
   IF p_location_id IS NULL THEN
     p_location_id := v_job_location_id;
     IF p_storage_unit_id IS NULL THEN

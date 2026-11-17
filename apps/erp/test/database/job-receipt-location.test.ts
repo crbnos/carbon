@@ -102,6 +102,45 @@ databaseTest(
 );
 
 databaseTest(
+  "a completion with no location skips the job's own storage unit when it is at another location",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      // The job's default storage unit is stale: it belongs to another location.
+      // Refusing would block every completion that names no location, so the
+      // receipt lands at the job's location with no storage unit instead.
+      const job = await jobFixture(f, "stale-unit");
+      const staleShelf = `${f.prefix}-shelf-stale`;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("storageUnit")
+          .values({
+            id: staleShelf,
+            name: staleShelf,
+            locationId: f.otherLocationId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("job")
+          .set({ storageUnitId: staleShelf })
+          .where("id", "=", job.jobId)
+          .execute();
+      });
+      await sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, ${null}, ${null}, ${f.companyId}, ${USER})`.execute(
+        f.db
+      );
+      expect(await jobReceipts(f, job.jobId)).toEqual([
+        { locationId: f.locationId, storageUnitId: null, quantity: 1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "a completion to another location keeps it and does not take the job's storage unit",
   async () => {
     const f = await alwaysPostFixture();
