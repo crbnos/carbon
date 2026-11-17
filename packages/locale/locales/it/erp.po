@@ -1947,6 +1947,9 @@ msgstr "La data di inizio del lavoro cambia"
 msgid "A job's status changes"
 msgstr "Lo stato del lavoro cambia"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "Una categoria di manodopera imposta il costo e i tassi di fatturazione delle persone in essa."
 
@@ -2628,6 +2631,9 @@ msgstr "Conto e dettagli"
 
 msgid "Account balances with debits and credits"
 msgstr "Saldi dei conti con dare e avere"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Contabilizzate i pagamenti anticipati effettuati prima della ricezione di beni o servizi."
@@ -6757,6 +6763,9 @@ msgstr "Campioni"
 msgid "Change"
 msgstr "Cambia"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "Modifica annullata"
 
@@ -6765,6 +6774,9 @@ msgstr "Cambia data"
 
 msgid "Change Document"
 msgstr "Modifica Documento"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "Modifica Piano di controllo"
@@ -7340,6 +7352,9 @@ msgstr "Stato Chiusura"
 
 msgid "Closed"
 msgstr "Chiuso"
+
+msgid "Closed {periodLabel}"
+msgstr ""
 
 msgid "Closed at"
 msgstr "Chiuso in"
@@ -9355,6 +9370,9 @@ msgstr "attuale"
 
 msgid "Current"
 msgstr "Attuale"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Valore Netto Contabile Corrente:"
@@ -19134,6 +19152,9 @@ msgstr "Nuovo Registro di taratura dello strumento di misura"
 msgid "New Gauge Type"
 msgstr "Nuovo Tipo di strumento"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "Nuovo Gruppo"
 
@@ -25382,6 +25403,9 @@ msgstr "Riapri"
 msgid "Reopen as Revision"
 msgstr "Riapri come Revisione"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "Riapri Formazione"
 
@@ -27351,6 +27375,9 @@ msgstr "Seleziona tutte le righe"
 
 msgid "Select all service lines"
 msgstr "Seleziona tutte le righe di servizio"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "Seleziona un'azione…"
@@ -30619,6 +30646,9 @@ msgstr "Il CSV non è stato importato"
 msgid "The currencies you trade in and their rates"
 msgstr "Le valute in cui fai trading e i loro tassi"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "Il piano attuale è cambiato secondo questa richiesta di modifica"
 
@@ -32204,6 +32234,9 @@ msgstr "Questo percorso decide solo cosa viene eseguito dopo"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Questo periodo non ha voci di prima nota registrate e può essere eliminato permanentemente. Questa azione non può essere annullata."
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "Questo PIN non verrà più visualizzato."

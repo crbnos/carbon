@@ -1947,6 +1947,9 @@ msgstr "ジョブの開始日が変更されました"
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "労務カテゴリは、その中にいる人々の原価および請求率を設定します。"
 
@@ -2628,6 +2631,9 @@ msgstr "アカウントと詳細"
 
 msgid "Account balances with debits and credits"
 msgstr "借方貸方を含む勘定残高"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "商品またはサービスの受領前に行われた前払金を記録します。"
@@ -6757,6 +6763,9 @@ msgstr "チャンピオン"
 msgid "Change"
 msgstr "変更"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "変更がキャンセルされました"
 
@@ -6765,6 +6774,9 @@ msgstr "変更日"
 
 msgid "Change Document"
 msgstr "変更文書"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "検査計画を変更"
@@ -7340,6 +7352,9 @@ msgstr "閉鎖ステータス"
 
 msgid "Closed"
 msgstr "クローズ"
+
+msgid "Closed {periodLabel}"
+msgstr ""
 
 msgid "Closed at"
 msgstr "完了時刻"
@@ -9355,6 +9370,9 @@ msgstr "現在"
 
 msgid "Current"
 msgstr "現在"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "現在の未償却残高:"
@@ -19134,6 +19152,9 @@ msgstr "新規測定器校正記録"
 msgid "New Gauge Type"
 msgstr "新規測定器タイプ"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "新しいグループ"
 
@@ -25382,6 +25403,9 @@ msgstr "再オープン"
 msgid "Reopen as Revision"
 msgstr "リビジョンとして再オープン"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "教育訓練を再オープン"
 
@@ -27351,6 +27375,9 @@ msgstr "すべての行を選択"
 
 msgid "Select all service lines"
 msgstr "すべての外注サービス明細を選択"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "アクションを選択…"
@@ -30619,6 +30646,9 @@ msgstr "CSVはインポートされませんでした。"
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "この変更要求の下で現在の計画が変更されました"
 
@@ -32204,6 +32234,9 @@ msgstr "このパスは次に何が実行されるかだけを決定します"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "この期間には転記された仕訳がなく、永久に削除できます。この処理は取り消せません。"
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "このPINは再度表示されません。"

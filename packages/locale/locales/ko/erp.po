@@ -1947,6 +1947,9 @@ msgstr "작업 지시의 시작일이 변경됨"
 msgid "A job's status changes"
 msgstr "작업의 상태가 변경됨"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "노무 범주는 그 안의 사람들의 비용과 청구 요금을 설정합니다."
 
@@ -2628,6 +2631,9 @@ msgstr "계정 및 세부정보"
 
 msgid "Account balances with debits and credits"
 msgstr "차변과 대변이 포함된 계정 잔액"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "재화 또는 서비스가 수령되기 전에 지불된 선급금을 계정화함"
@@ -6757,6 +6763,9 @@ msgstr "챔피언"
 msgid "Change"
 msgstr "변경"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "변경 취소됨"
 
@@ -6765,6 +6774,9 @@ msgstr "날짜 변경"
 
 msgid "Change Document"
 msgstr "문서 변경"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "검사 계획 변경"
@@ -7340,6 +7352,9 @@ msgstr "종료 상태"
 
 msgid "Closed"
 msgstr "종료됨"
+
+msgid "Closed {periodLabel}"
+msgstr ""
 
 msgid "Closed at"
 msgstr "종료 시간"
@@ -9355,6 +9370,9 @@ msgstr "현재"
 
 msgid "Current"
 msgstr "현재"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "현재 순장부가액:"
@@ -19134,6 +19152,9 @@ msgstr "신규 계측기 교정 기록"
 msgid "New Gauge Type"
 msgstr "신규 계측기 유형"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "신규 그룹"
 
@@ -25382,6 +25403,9 @@ msgstr "다시 열기"
 msgid "Reopen as Revision"
 msgstr "리비전으로 다시 열기"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "교육 다시 열기"
 
@@ -27351,6 +27375,9 @@ msgstr "모든 행 선택"
 
 msgid "Select all service lines"
 msgstr "모든 서비스 라인 선택"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "작업 선택…"
@@ -30619,6 +30646,9 @@ msgstr "CSV를 가져오지 못했습니다."
 msgid "The currencies you trade in and their rates"
 msgstr "거래에 사용하는 통화와 환율"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "현재 계획이 이 변경 요청에서 변경되었습니다"
 
@@ -32204,6 +32234,9 @@ msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간은 전기된 전표 항목이 없으며 영구적으로 삭제할 수 있습니다. 이를 취소할 수 없습니다."
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "이 PIN은 다시 표시되지 않습니다."

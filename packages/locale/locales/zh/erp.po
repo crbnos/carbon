@@ -1947,6 +1947,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "人工类别为其中的员工设置成本费率和计费费率。"
 
@@ -2628,6 +2631,9 @@ msgstr "账户和详细信息"
 
 msgid "Account balances with debits and credits"
 msgstr "账户余额包含借方和贷方"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "收到商品或服务前支付的预付款的计账。"
@@ -6757,6 +6763,9 @@ msgstr "冠军"
 msgid "Change"
 msgstr "更改"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "变更已取消"
 
@@ -6765,6 +6774,9 @@ msgstr "更改日期"
 
 msgid "Change Document"
 msgstr "变更文件"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "更改检验计划"
@@ -7340,6 +7352,9 @@ msgstr "关闭状态"
 
 msgid "Closed"
 msgstr "已关闭"
+
+msgid "Closed {periodLabel}"
+msgstr ""
 
 msgid "Closed at"
 msgstr "关闭时间"
@@ -9355,6 +9370,9 @@ msgstr "当前"
 
 msgid "Current"
 msgstr "当前"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "当前账面净值："
@@ -19134,6 +19152,9 @@ msgstr "新建量具校准记录"
 msgid "New Gauge Type"
 msgstr "新建量具类型"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "新建群组"
 
@@ -25382,6 +25403,9 @@ msgstr "重新打开"
 msgid "Reopen as Revision"
 msgstr "作为修订版重新打开"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "重新打开培训"
 
@@ -27351,6 +27375,9 @@ msgstr "选择所有行"
 
 msgid "Select all service lines"
 msgstr "选择所有服务行"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "选择一个操作…"
@@ -30619,6 +30646,9 @@ msgstr "CSV 未被导入"
 msgid "The currencies you trade in and their rates"
 msgstr "您交易的货币及其汇率"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "此更改请求下的当前计划已更改"
 
@@ -32204,6 +32234,9 @@ msgstr "此路径仅决定接下来运行什么"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "此期间没有已过账的凭证，可以永久删除。此操作无法撤销。"
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "此PIN将不再显示。"

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1811,
+  "totalTools": 1814,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -109,6 +109,7 @@
     {"name":"accounting_recalculateDepreciationRun","classification":"WRITE","schema":"61629987cfb1","response":"d325c86b5677","permission":"accounting:update","paginates":false},
     {"name":"accounting_recalculateRevenueRecognitionRun","classification":"WRITE","schema":"8245d2d4cee4","response":"1be43fc6832f","permission":"accounting:update","paginates":false},
     {"name":"accounting_registerFixedAsset","classification":"WRITE","schema":"8d1eb4c6a8d5","response":"91f483e6fee8","permission":"accounting:update","paginates":false},
+    {"name":"accounting_reopenPeriod","classification":"DESTRUCTIVE","schema":"7e5905ac5974","response":"be1ed439f12a","permission":"accounting:delete+update","paginates":false},
     {"name":"accounting_repeatDepreciationRun","classification":"WRITE","schema":"61629987cfb1","response":"20eda0d52ae4","permission":"accounting:create","paginates":false},
     {"name":"accounting_repeatRevenueRecognitionRun","classification":"WRITE","schema":"8245d2d4cee4","response":"8de1454829be","permission":"accounting:create","paginates":false},
     {"name":"accounting_resetExchangeRate","classification":"DESTRUCTIVE","schema":"cc2bce783cc5","response":"cc2bce783cc5","permission":"accounting:update","paginates":false},
@@ -313,6 +314,8 @@
     {"name":"invoicing_adjustPayables","classification":"WRITE","schema":"783894538b85","response":"7e2279b19577","permission":"accounting:create","paginates":false},
     {"name":"invoicing_adjustReceivables","classification":"WRITE","schema":"783894538b85","response":"7e2279b19577","permission":"accounting:create","paginates":false},
     {"name":"invoicing_applyCreditsToInvoices","classification":"DESTRUCTIVE","schema":"5015b8187c1a","response":"none","permission":"invoicing:update","paginates":false},
+    {"name":"invoicing_changePurchaseInvoiceLineAccount","classification":"WRITE","schema":"aaf592fb9b96","response":"c788b0362de1","permission":"none","paginates":false},
+    {"name":"invoicing_changeSalesInvoiceLineAccount","classification":"WRITE","schema":"2fdaf17271fa","response":"c788b0362de1","permission":"none","paginates":false},
     {"name":"invoicing_createMemo","classification":"WRITE","schema":"34c9dc9b6a1f","response":"1e0d0fa1a854","permission":"invoicing:create","paginates":false},
     {"name":"invoicing_createPayment","classification":"WRITE","schema":"3946622e4b9f","response":"9afa42aa85f3","permission":"invoicing:create","paginates":false},
     {"name":"invoicing_createPurchaseInvoice","classification":"WRITE","schema":"b0ba9e08e7ac","response":"24b4b1602470","permission":"invoicing:create","paginates":false},
