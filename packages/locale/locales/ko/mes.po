@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,6 +206,9 @@ msgstr "{hours} 시간"
 msgid "{issued} of {required}"
 msgstr "{required} 중 {issued}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
@@ -219,6 +228,9 @@ msgstr "{name}, {0}, {percent}% 완료"
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
 
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} 중 {numerator}"
 
@@ -237,6 +249,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel} 타이머 시작됨"
@@ -598,6 +613,13 @@ msgstr "보드 보기"
 
 msgid "Bold"
 msgstr "굵게"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "{quantity} 가져오기"
@@ -1328,6 +1350,12 @@ msgstr "{0}단계로 이동: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "{0}단계로 이동: {1} (완료)"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1560,6 +1588,9 @@ msgstr ""
 msgid "Kitter"
 msgstr ""
 
+msgid "Kitting and preparation"
+msgstr ""
+
 msgid "Labor"
 msgstr "노무"
 
@@ -1704,6 +1735,9 @@ msgstr "로트 추적됨"
 msgid "Low"
 msgstr "낮음"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "기계"
 
@@ -1712,6 +1746,9 @@ msgstr "기계가 지금 유지보수 중인가요?"
 
 msgid "Machine, timer running"
 msgstr "기계, 타이머 실행 중"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "메인"
@@ -1842,6 +1879,9 @@ msgstr "이름"
 msgid "Navigation"
 msgstr "탐색"
 
+msgid "Need {quantity}"
+msgstr ""
+
 msgid "Need material"
 msgstr "자재 필요"
 
@@ -1951,9 +1991,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "아직 휴가가 설정되지 않았습니다. 관리자에게 ERP에서 설정하도록 요청하세요."
 
-msgid "No lineside storage"
-msgstr "라인사이드 보관 위치 없음"
-
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
@@ -1986,6 +2023,9 @@ msgstr "이 사업장에서 미결 서비스 작업이 없습니다"
 
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "작업자 없음"
@@ -2062,6 +2102,9 @@ msgstr "스테이션 없음"
 msgid "No stations at this location"
 msgstr "이 사업장에는 스테이션이 없습니다"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "재고 없음"
 
@@ -2091,6 +2134,12 @@ msgstr "MRP 제외"
 
 msgid "None"
 msgstr "없음"
+
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
 
 msgid "None on the shelf"
 msgstr ""
@@ -2260,6 +2309,9 @@ msgstr "또는 이 비밀을 수동으로 입력하세요:"
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2544,6 +2596,9 @@ msgstr "수량 {0}"
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "수량:"
 
@@ -2567,6 +2622,9 @@ msgstr ""
 
 msgid "Re"
 msgstr "Re"
+
+msgid "Ready"
+msgstr ""
 
 msgid "Reason"
 msgstr "사유"
@@ -2742,9 +2800,6 @@ msgstr "리치 텍스트"
 
 msgid "Running"
 msgstr "실행 중"
-
-msgid "Running low"
-msgstr "재고 부족 임박"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2926,6 +2981,9 @@ msgstr ""
 msgid "Search recent operations"
 msgstr "최근 공정 검색"
 
+msgid "Search stations"
+msgstr ""
+
 msgid "Search..."
 msgstr "검색..."
 
@@ -3071,6 +3129,9 @@ msgstr "부족"
 msgid "Short"
 msgstr "짧게"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
@@ -3158,12 +3219,6 @@ msgstr "목표 기한"
 msgid "Solid"
 msgstr "단색"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
-msgstr ""
-
 msgid "Source"
 msgstr "소스"
 
@@ -3221,7 +3276,7 @@ msgstr "스테이션 사용자"
 msgid "Station: {stationName}"
 msgstr "스테이션: {stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3496,6 +3551,9 @@ msgstr "시간 유형"
 msgid "Time Worked"
 msgstr "작업 시간"
 
+msgid "to bring lineside"
+msgstr ""
+
 msgid "To pick"
 msgstr "피킹할"
 
@@ -3730,6 +3788,9 @@ msgstr "보기 또는 열기"
 msgid "View Traceability"
 msgstr "추적성 보기"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "보증"
 
@@ -3738,9 +3799,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "로그인 링크와 6자리 코드를 이메일로 보냈습니다. 링크를 따르거나 여기에 코드를 입력하세요."
-
-msgid "Wet"
-msgstr "습식"
 
 msgid "What do you need?"
 msgstr "무엇이 필요하신가요?"
