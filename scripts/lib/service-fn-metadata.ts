@@ -371,13 +371,15 @@ function classify(
 /**
  * The checker orders a union's members by its own type ids, which move when
  * the program's files change, so an unrelated edit reordered an enum and
- * changed the schema's digest. JSON Schema gives `enum` no order: sort it.
+ * changed the schema's digest. JSON Schema gives `enum` no order: sort it,
+ * with a nullable enum's `null` last.
  */
 function sortEnums(schema: JsonSchema): JsonSchema {
   const out: JsonSchema = {};
   for (const [key, value] of Object.entries(schema)) {
     if (key === "enum" && Array.isArray(value)) {
-      out[key] = [...value].sort();
+      const values = value.filter((item) => item !== null).sort();
+      out[key] = values.length < value.length ? [...values, null] : values;
     } else if (Array.isArray(value)) {
       out[key] = value.map((item) =>
         item && typeof item === "object" ? sortEnums(item as JsonSchema) : item

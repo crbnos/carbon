@@ -112,6 +112,41 @@ describe("buildServiceFnTools", () => {
     });
   });
 
+  // The API validates each field's `enum` beside its `type`, so a nullable
+  // enum without `null` in it refuses the null its type allows.
+  it("publishes null among the values of a nullable enum", () => {
+    const [update] = toolsFor({
+      "/m/production.ts": `
+        import { defineServiceFn } from "./helper";
+        /**
+         * Update a job.
+         *
+         * @mcp
+         */
+        export const updateJob = defineServiceFn({
+          input: null,
+          permission: { update: "production" },
+          async run(_ctx, input: {
+            status?: "Ready" | "Draft" | null;
+            priority?: 1 | null;
+            replenishment?: "Make" | "Buy";
+          }) {
+            return null;
+          }
+        });
+      `,
+      "/m/router.ts": ROUTER
+    });
+    expect(update?.schema).toEqual({
+      type: "object",
+      properties: {
+        status: { type: ["string", "null"], enum: ["Draft", "Ready", null] },
+        priority: { type: ["number", "null"], enum: [1, null] },
+        replenishment: { type: "string", enum: ["Buy", "Make"] }
+      }
+    });
+  });
+
   it("gates one module on the API and leaves several to the function", () => {
     expect(cancel?.permission).toEqual({ module: "production", actions: ["update"] });
     expect(cancel?.classification).toBe("WRITE");
