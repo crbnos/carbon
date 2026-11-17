@@ -30,7 +30,7 @@ export function getInstallId(): Promise<string> {
       .limit(1)
       .maybeSingle();
     if (error || !data) {
-      logger.warn("licence: no company to derive the install id from", {
+      logger.warning("licence: no company to derive the install id from", {
         error
       });
       installId = null; // try again on the next call

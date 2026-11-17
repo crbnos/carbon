@@ -151,7 +151,7 @@ export class LicenceCheckIn {
       nextCheckInAt: at.add({ hours: waitHours }).toAbsoluteString()
     });
     this.deps.resolver.clearCache();
-    if (error) logger.warn("licence: check-in failed", { error, failures });
+    if (error) logger.warning("licence: check-in failed", { error, failures });
     return { status, error };
   }
 
