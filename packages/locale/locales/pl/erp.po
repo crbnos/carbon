@@ -20447,9 +20447,6 @@ msgstr "Żadna otrzymana ilość nie pozostaje kredytowana"
 msgid "No records found"
 msgstr "Nie znaleziono rekordów"
 
-msgid "No reference image"
-msgstr "Brak obrazu referencyjnego"
-
 msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych jednostek do sprawdzenia."
 

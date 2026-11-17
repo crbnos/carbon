@@ -20447,9 +20447,6 @@ msgstr "कोई प्राप्त मात्रा क्रेडिट
 msgid "No records found"
 msgstr "कोई रिकॉर्ड नहीं मिला"
 
-msgid "No reference image"
-msgstr "कोई संदर्भ छवि नहीं"
-
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
 

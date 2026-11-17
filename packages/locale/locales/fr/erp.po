@@ -20447,9 +20447,6 @@ msgstr "Aucune quantité reçue ne reste facturisable"
 msgid "No records found"
 msgstr "Aucun enregistrement trouvé"
 
-msgid "No reference image"
-msgstr "Pas d'image de référence"
-
 msgid "No remaining entities to inspect."
 msgstr "Aucune entité restante à inspecter."
 

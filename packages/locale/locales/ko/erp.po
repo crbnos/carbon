@@ -20447,9 +20447,6 @@ msgstr "받은 수량 중 신용권을 받을 수 있는 수량이 없습니다"
 msgid "No records found"
 msgstr "기록을 찾을 수 없습니다"
 
-msgid "No reference image"
-msgstr "참조 이미지 없음"
-
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
 

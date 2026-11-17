@@ -20447,9 +20447,6 @@ msgstr "Нет полученного количества, оставшегос
 msgid "No records found"
 msgstr "Записи не найдены"
 
-msgid "No reference image"
-msgstr "Нет эталонного изображения"
-
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
 

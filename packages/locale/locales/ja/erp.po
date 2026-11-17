@@ -20447,9 +20447,6 @@ msgstr "受領数量でクレジット対象が残っていません"
 msgid "No records found"
 msgstr "レコードが見つかりません"
 
-msgid "No reference image"
-msgstr "参照画像がありません"
-
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
 

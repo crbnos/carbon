@@ -20447,9 +20447,6 @@ msgstr "Alınan miktardan kredilendirilecek bir miktar kalmadı"
 msgid "No records found"
 msgstr "Kayıt bulunamadı"
 
-msgid "No reference image"
-msgstr "Referans resim yok"
-
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
 

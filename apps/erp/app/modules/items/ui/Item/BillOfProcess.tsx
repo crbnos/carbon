@@ -3661,7 +3661,7 @@ function OperationPreview({
       : "";
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-card p-4">
+    <div className="@container flex flex-col gap-4 rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {t`Step`} {idx + 1} / {sorted.length}
@@ -3690,168 +3690,181 @@ function OperationPreview({
         </div>
       </div>
 
-      {/* Center content in a bounded frame. The image slide wraps the picture in
+      {/* Wide panels put the instructions to the left of the reference slide; a
+          step with no slide gives the instructions the whole panel. */}
+      <div className="flex flex-col gap-4 @min-[42rem]:flex-row-reverse @min-[42rem]:items-start">
+        {slide ? (
+          <div className="flex flex-col gap-4 @min-[42rem]:min-w-0 @min-[42rem]:flex-1">
+            {/* Center content in a bounded frame. The image slide wraps the picture in
           an inline-block sized to the RENDERED image so the pin overlay maps to the
           image box, not a letterboxed aspect-video frame (which drifted the pins). */}
-      <div className="relative flex min-h-[240px] items-center justify-center rounded-md border bg-muted/40 p-2">
-        {!slide ? (
-          <span className="text-xs text-muted-foreground">
-            <Trans>No reference image</Trans>
-          </span>
-        ) : slide.modelUploadId ? (
-          <>
-            {slideModelThumb ? (
-              <img
-                src={slideModelThumb}
-                alt={slide.caption ?? slideModel?.name ?? "3D model"}
-                className="max-h-[520px] max-w-full object-contain"
-              />
-            ) : (
-              <LuBox className="size-10 text-muted-foreground" />
-            )}
-            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[0.625rem] font-semibold text-muted-foreground">
-              3D
-            </span>
-          </>
-        ) : slideImage ? (
-          <div className="relative inline-block">
-            <button
-              type="button"
-              aria-label={t`View full size`}
-              title={t`View full size`}
-              className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() => setIsViewingSlide(true)}
-            >
-              <img
-                src={slideImage}
-                alt={slide.caption ?? ""}
-                className="block max-h-[520px] w-auto max-w-full rounded-md"
-              />
-            </button>
-            <SlidePinOverlay pins={slide.annotations ?? []} />
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">
-            <Trans>No reference image</Trans>
-          </span>
-        )}
-      </div>
-
-      {slide?.caption ? (
-        <p className="text-xs text-muted-foreground">{slide.caption}</p>
-      ) : null}
-
-      <ImageZoomViewer
-        open={isViewingSlide && !!slideImage && !slide?.modelUploadId}
-        src={slideImage}
-        caption={slide?.caption}
-        annotations={slide?.annotations ?? []}
-        toolNameById={
-          isViewingSlide
-            ? new Map(
-                pinLegend.flatMap(({ pin, toolName }) =>
-                  pin.toolId && toolName
-                    ? [[pin.toolId, toolName] as const]
-                    : []
-                )
-              )
-            : undefined
-        }
-        onClose={() => setIsViewingSlide(false)}
-      />
-
-      {pinLegend.length > 0 && (
-        <div className="flex flex-col gap-1">
-          {pinLegend.map(({ pin, index, toolId, toolName }) => (
-            <div key={pin.id} className="flex items-start gap-2">
-              <span
-                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[0.5625rem] font-semibold text-white"
-                style={{ backgroundColor: pin.color ?? "#ef4444" }}
-              >
-                {index + 1}
-              </span>
-              <span className="min-w-0 flex-1 text-xs">
-                {toolId ? <span className="font-medium">{toolId}</span> : null}
-                {toolName ? (
-                  <span className="text-muted-foreground">
-                    {toolId ? " " : null}
-                    {toolName}
-                  </span>
-                ) : null}
-                {(toolId || toolName) && pin.label ? " · " : null}
-                {pin.label ? (
-                  <span className="text-muted-foreground">{pin.label}</span>
-                ) : null}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {slides.length > 1 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {slides.map((s, i) => {
-            const model = s.modelUploadId
-              ? slideModels[s.modelUploadId]
-              : undefined;
-            const thumb = s.modelUploadId
-              ? model?.thumbnailPath
-                ? getPrivateUrl(model.thumbnailPath)
-                : null
-              : s.imagePath
-                ? getPrivateUrl(s.imagePath)
-                : null;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                aria-label={s.caption || t`Slide ${i + 1}`}
-                title={s.caption ?? undefined}
-                onClick={() => setSlideIdx(i)}
-                className={cn(
-                  "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
-                  i === sIdx ? "border-foreground" : "border-transparent"
-                )}
-              >
-                {thumb ? (
-                  <img
-                    src={thumb}
-                    alt=""
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <LuBox className="size-5 text-muted-foreground" />
-                )}
-                {s.modelUploadId && (
-                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
+            <div className="relative flex min-h-[240px] items-center justify-center rounded-md border bg-muted/40 p-2">
+              {slide.modelUploadId ? (
+                <>
+                  {slideModelThumb ? (
+                    <img
+                      src={slideModelThumb}
+                      alt={slide.caption ?? slideModel?.name ?? "3D model"}
+                      className="max-h-[520px] max-w-full object-contain"
+                    />
+                  ) : (
+                    <LuBox className="size-10 text-muted-foreground" />
+                  )}
+                  <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[0.625rem] font-semibold text-muted-foreground">
                     3D
                   </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+                </>
+              ) : slideImage ? (
+                <div className="relative inline-block">
+                  <button
+                    type="button"
+                    aria-label={t`View full size`}
+                    title={t`View full size`}
+                    className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setIsViewingSlide(true)}
+                  >
+                    <img
+                      src={slideImage}
+                      alt={slide.caption ?? ""}
+                      className="block max-h-[520px] w-auto max-w-full rounded-md"
+                    />
+                  </button>
+                  <SlidePinOverlay pins={slide.annotations ?? []} />
+                </div>
+              ) : null}
+            </div>
 
-      <div className="flex items-center gap-2">
-        <span className="flex size-6 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
-          {idx + 1}
-        </span>
-        {step.type ? <Badge variant="secondary">{step.type}</Badge> : null}
-      </div>
-      <p className="text-sm font-medium">{step.name ?? t`Step`}</p>
-      {/* generateHTML returns nothing on the server, so the server never
-          renders this block: rendering it during hydration would not match. */}
-      <ClientOnly>
-        {() =>
-          descriptionHtml ? (
-            <div
-              className="prose prose-sm max-w-none text-sm dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            {slide?.caption ? (
+              <p className="text-xs text-muted-foreground">{slide.caption}</p>
+            ) : null}
+
+            <ImageZoomViewer
+              open={isViewingSlide && !!slideImage && !slide?.modelUploadId}
+              src={slideImage}
+              caption={slide?.caption}
+              annotations={slide?.annotations ?? []}
+              toolNameById={
+                isViewingSlide
+                  ? new Map(
+                      pinLegend.flatMap(({ pin, toolName }) =>
+                        pin.toolId && toolName
+                          ? [[pin.toolId, toolName] as const]
+                          : []
+                      )
+                    )
+                  : undefined
+              }
+              onClose={() => setIsViewingSlide(false)}
             />
-          ) : null
-        }
-      </ClientOnly>
+
+            {pinLegend.length > 0 && (
+              <div className="flex flex-col gap-1">
+                {pinLegend.map(({ pin, index, toolId, toolName }) => (
+                  <div key={pin.id} className="flex items-start gap-2">
+                    <span
+                      className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[0.5625rem] font-semibold text-white"
+                      style={{ backgroundColor: pin.color ?? "#ef4444" }}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 text-xs">
+                      {toolId ? (
+                        <span className="font-medium">{toolId}</span>
+                      ) : null}
+                      {toolName ? (
+                        <span className="text-muted-foreground">
+                          {toolId ? " " : null}
+                          {toolName}
+                        </span>
+                      ) : null}
+                      {(toolId || toolName) && pin.label ? " · " : null}
+                      {pin.label ? (
+                        <span className="text-muted-foreground">
+                          {pin.label}
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {slides.length > 1 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {slides.map((s, i) => {
+                  const model = s.modelUploadId
+                    ? slideModels[s.modelUploadId]
+                    : undefined;
+                  const thumb = s.modelUploadId
+                    ? model?.thumbnailPath
+                      ? getPrivateUrl(model.thumbnailPath)
+                      : null
+                    : s.imagePath
+                      ? getPrivateUrl(s.imagePath)
+                      : null;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      aria-label={s.caption || t`Slide ${i + 1}`}
+                      title={s.caption ?? undefined}
+                      onClick={() => setSlideIdx(i)}
+                      className={cn(
+                        "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
+                        i === sIdx ? "border-foreground" : "border-transparent"
+                      )}
+                    >
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt=""
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <LuBox className="size-5 text-muted-foreground" />
+                      )}
+                      {s.modelUploadId && (
+                        <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
+                          3D
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        <div
+          className={cn(
+            "flex flex-col gap-4",
+            slide
+              ? "@min-[42rem]:w-2/5 @min-[42rem]:max-w-md"
+              : "@min-[42rem]:flex-1"
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
+              {idx + 1}
+            </span>
+            {step.type ? <Badge variant="secondary">{step.type}</Badge> : null}
+          </div>
+          <p className="text-sm font-medium">{step.name ?? t`Step`}</p>
+          {/* generateHTML returns nothing on the server, so the server never
+          renders this block: rendering it during hydration would not match. */}
+          <ClientOnly>
+            {() =>
+              descriptionHtml ? (
+                <div
+                  className="prose prose-sm max-w-none text-sm dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                />
+              ) : null
+            }
+          </ClientOnly>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-1 border-t pt-3">
         <Subheading variant="heavy">

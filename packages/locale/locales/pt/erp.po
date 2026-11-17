@@ -20447,9 +20447,6 @@ msgstr "Nenhuma quantidade recebida permanece credível"
 msgid "No records found"
 msgstr "Nenhum registro encontrado"
 
-msgid "No reference image"
-msgstr "Nenhuma imagem de referência"
-
 msgid "No remaining entities to inspect."
 msgstr "Nenhuma entidade restante para inspecionar."
 

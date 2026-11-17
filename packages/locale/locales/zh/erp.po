@@ -20447,9 +20447,6 @@ msgstr "未收到的数量已不可计入信用"
 msgid "No records found"
 msgstr "未找到记录"
 
-msgid "No reference image"
-msgstr "没有参考图像"
-
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
 

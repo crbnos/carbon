@@ -20447,9 +20447,6 @@ msgstr "No received quantity remains creditable"
 msgid "No records found"
 msgstr "No records found"
 
-msgid "No reference image"
-msgstr "No reference image"
-
 msgid "No remaining entities to inspect."
 msgstr "No remaining entities to inspect."
 

@@ -20447,9 +20447,6 @@ msgstr "Keine empfangene Menge bleibt kreditfähig"
 msgid "No records found"
 msgstr "Keine Datensätze gefunden"
 
-msgid "No reference image"
-msgstr "Kein Referenzbild"
-
 msgid "No remaining entities to inspect."
 msgstr "Keine verbleibenden Entitäten zur Überprüfung."
 
