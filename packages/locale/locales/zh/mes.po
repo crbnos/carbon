@@ -117,6 +117,11 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 已完成"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 排队中"
@@ -447,6 +452,9 @@ msgstr "您确定要将此工序标记为完成吗？这会结束此工序的所
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "要求主管将 {processName} 技能添加到您的档案。"
+
+msgid "Ask the water spider"
+msgstr ""
 
 msgid "Asked"
 msgstr "已请求"
@@ -1341,6 +1349,9 @@ msgstr "我认证此声明"
 msgid "I understand and want to complete without issuing"
 msgstr "我理解并希望在不发放物料的情况下完成"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "我还在工作"
 
@@ -1596,6 +1607,9 @@ msgstr "已加载: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "正在加载，无需再次扫码。"
@@ -2072,6 +2086,9 @@ msgstr "备注"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "尚无失败项，因此请说明这些件被拒绝的原因。全部 {0} 件将被标记为已拒绝。"
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing matches your search."
 msgstr "没有匹配您搜索的内容。"
@@ -2633,6 +2650,9 @@ msgstr "重新打开子装配件并创建替代件"
 msgid "Repairable"
 msgstr "可修复"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "申请物料"
 
@@ -2774,11 +2794,20 @@ msgstr "排程冲突"
 msgid "Scrap"
 msgstr "报废"
 
+msgid "Scrap {quantity}"
+msgstr ""
+
 msgid "Scrap {readableId}"
 msgstr "报废 {readableId}"
 
 msgid "Scrap material"
 msgstr "报废原材料"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "报废数量"
@@ -2791,6 +2820,12 @@ msgstr "报废该件"
 
 msgid "Scrapped"
 msgstr "已报废"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "报废序列号 {trackedEntityReadableId}"

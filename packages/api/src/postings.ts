@@ -111,6 +111,20 @@ export const issueInput = z.discriminatedUnion("type", [
     scrapReasonId: z.string(),
     makeReplacement: z.boolean().optional()
   }),
+  // Scrap untracked parts of a job material (its own part, or parts inside a
+  // kit) and replace them from the shelf. Retried with the same key, it books
+  // once.
+  z.object({
+    type: z.literal("scrapJobPart"),
+    jobOperationId: z.string(),
+    materialId: z.string(),
+    itemId: z.string(),
+    quantity: z.number().positive(),
+    scrapReasonId: z.string(),
+    replacement: z.enum(["Shelf", "Water Spider"]),
+    notes: z.string().optional(),
+    idempotencyKey: z.string().min(1)
+  }),
   z.object({
     type: z.literal("mergeTrackedEntities"),
     trackedEntityIds: z.array(z.string()).min(2),
@@ -773,6 +787,7 @@ export const MES_POSTINGS = {
     "maintenanceDispatchUnissue",
     "mergeTrackedEntities",
     "partToOperation",
+    "scrapJobPart",
     "scrapTrackedEntity",
     "serviceJobInventory",
     "serviceJobTrackedEntities",

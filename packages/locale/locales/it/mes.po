@@ -117,6 +117,11 @@ msgstr "{0} di {1} completati"
 msgid "{0} of {1} completed"
 msgstr "{0} di {1} completati"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} in coda"
@@ -447,6 +452,9 @@ msgstr "Sei sicuro di voler segnare questa operazione come completata? Questo te
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Chiedi a un supervisore di aggiungere la competenza {processName} al tuo profilo."
+
+msgid "Ask the water spider"
+msgstr ""
 
 msgid "Asked"
 msgstr "Richiesto"
@@ -1341,6 +1349,9 @@ msgstr "Certifico questa dichiarazione"
 msgid "I understand and want to complete without issuing"
 msgstr "Comprendo e desidero completare senza prelevare"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Sto Ancora Lavorando"
 
@@ -1596,6 +1607,9 @@ msgstr "Caricato: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Caricamento in corso. Non è necessario scansionare di nuovo."
@@ -2072,6 +2086,9 @@ msgstr "Note"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Nulla è ancora fallito, quindi spiega perché le unità sono rifiutate. Tutte le {0} unità saranno Rifiutate."
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing matches your search."
 msgstr "Niente corrisponde alla tua ricerca."
@@ -2633,6 +2650,9 @@ msgstr "Riaprire il sottoassieme e creare un'unità di ricambio"
 msgid "Repairable"
 msgstr "Riparabile"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Richiedi materiale"
 
@@ -2774,11 +2794,20 @@ msgstr "Conflitto di pianificazione"
 msgid "Scrap"
 msgstr "Scarto"
 
+msgid "Scrap {quantity}"
+msgstr ""
+
 msgid "Scrap {readableId}"
 msgstr "Scarta {readableId}"
 
 msgid "Scrap material"
 msgstr "Scarta materiale"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Quantità di scarto"
@@ -2791,6 +2820,12 @@ msgstr "Scarta unità"
 
 msgid "Scrapped"
 msgstr "Scartato"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Scarto numero seriale {trackedEntityReadableId}"

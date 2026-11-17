@@ -117,6 +117,11 @@ msgstr "{1} 중 {0} 완료"
 msgid "{0} of {1} completed"
 msgstr "{1} 중 {0} 완료됨"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 대기열"
@@ -447,6 +452,9 @@ msgstr "이 공정작업을 완료로 표시하시겠습니까? 이 작업은 �
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "감독자에게 프로필에 {processName} 역량을 추가하도록 요청하세요."
+
+msgid "Ask the water spider"
+msgstr ""
 
 msgid "Asked"
 msgstr "요청됨"
@@ -1341,6 +1349,9 @@ msgstr "이 진술을 인증합니다"
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
 
@@ -1596,6 +1607,9 @@ msgstr "로드됨: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "로드 중입니다. 다시 스캔할 필요가 없습니다."
@@ -2072,6 +2086,9 @@ msgstr "메모"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "아직 실패한 항목이 없으므로 단위를 거부하는 사유를 입력하세요. 모든 {0}개 단위가 거부됨 상태로 처리됩니다."
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing matches your search."
 msgstr "검색과 일치하는 항목이 없습니다."
@@ -2633,6 +2650,9 @@ msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 msgid "Repairable"
 msgstr "수리 가능"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "자재 요청"
 
@@ -2774,11 +2794,20 @@ msgstr "일정 충돌"
 msgid "Scrap"
 msgstr "스크랩"
 
+msgid "Scrap {quantity}"
+msgstr ""
+
 msgid "Scrap {readableId}"
 msgstr "{readableId} 스크랩"
 
 msgid "Scrap material"
 msgstr "자재 스크랩"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "스크랩 수량"
@@ -2791,6 +2820,12 @@ msgstr "개 스크랩"
 
 msgid "Scrapped"
 msgstr "스크랩됨"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "일련번호 {trackedEntityReadableId} 폐기"

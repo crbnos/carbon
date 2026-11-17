@@ -183,6 +183,7 @@ import { ParametersListItem } from "./components/Parameter";
 import { QualityIssueModal } from "./components/QualityIssueModal";
 import { QuantityModal } from "./components/QuantityModal";
 import { ReworkModal } from "./components/ReworkModal";
+import { ScrapPartModal } from "./components/ScrapPartModal";
 import { SerialSelectorModal } from "./components/SerialSelectorModal";
 import {
   DeleteStepRecordModal,
@@ -767,6 +768,8 @@ export const JobOperation = ({
   });
 
   const item = items.find((it) => it.id === operation.itemId);
+
+  const [scrapMaterial, setScrapMaterial] = useState<JobMaterial | null>(null);
 
   const openIssueModal = (material: JobMaterial | null) => {
     flushSync(() => {
@@ -2030,9 +2033,17 @@ export const JobOperation = ({
                                 isBatched ? batchMaterialTotals : undefined
                               }
                               onIssue={openIssueModal}
+                              onScrap={setScrapMaterial}
                               disabled={abilityBlocked}
                             />
                             {renderIssueModal(resolvedMaterials)}
+                            {scrapMaterial && (
+                              <ScrapPartModal
+                                material={scrapMaterial}
+                                operationId={operation.id}
+                                onClose={() => setScrapMaterial(null)}
+                              />
+                            )}
                           </>
                         )}
                       </Await>

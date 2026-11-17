@@ -417,6 +417,16 @@ export const qualityIssueValidator = z.object({
   trackedEntityId: zfd.text(z.string().optional())
 });
 
+export const scrapJobPartValidator = z.object({
+  jobOperationId: z.string().min(1),
+  itemId: z.string().min(1, { message: "Pick a part" }),
+  quantity: zfd.numeric(z.number().positive()),
+  scrapReasonId: z.string().min(1, { message: "Pick a reason" }),
+  replacement: z.enum(["Shelf", "Water Spider"]),
+  notes: zfd.text(z.string().optional()),
+  idempotencyKey: z.string().min(1)
+});
+
 export const materialRequestValidator = z.object({
   jobOperationId: z.string().min(1),
   itemId: zfd.text(z.string().optional()),

@@ -117,6 +117,11 @@ msgstr "{0} adet / {1} adet tamamlandı"
 msgid "{0} of {1} completed"
 msgstr "{0} adet tamamlandı"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} kuyrukta"
@@ -447,6 +452,9 @@ msgstr "Bu işlemi tamamlandı olarak işaretlemek istediğinizden emin misiniz?
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Yöneticinizden profilinize {processName} yetkinliğini eklemesini isteyin."
+
+msgid "Ask the water spider"
+msgstr ""
 
 msgid "Asked"
 msgstr "Talep edildi"
@@ -1341,6 +1349,9 @@ msgstr "Bu beyanı onaylarım"
 msgid "I understand and want to complete without issuing"
 msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
 
@@ -1596,6 +1607,9 @@ msgstr "Yüklendi: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Yükleniyor. Tekrar taramanıza gerek yok."
@@ -2072,6 +2086,9 @@ msgstr "Notlar"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Henüz hiçbir numune kalmadı, bu yüzden birimlerin neden reddedildiğini belirtin. Tüm {0} adet Reddedildi durumuna geçecek."
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing matches your search."
 msgstr "Aramanızla eşleşen hiçbir şey yok."
@@ -2633,6 +2650,9 @@ msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 msgid "Repairable"
 msgstr "Onarılabilir"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Malzeme talep et"
 
@@ -2774,11 +2794,20 @@ msgstr "Zamanlama çakışması"
 msgid "Scrap"
 msgstr "Fire"
 
+msgid "Scrap {quantity}"
+msgstr ""
+
 msgid "Scrap {readableId}"
 msgstr "Fire {readableId}"
 
 msgid "Scrap material"
 msgstr "Fire malzemesi"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Fire miktarı"
@@ -2791,6 +2820,12 @@ msgstr "Adedi fireye ayır"
 
 msgid "Scrapped"
 msgstr "Hurdaya Ayrılan"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Seri hurdası {trackedEntityReadableId}"

@@ -117,6 +117,11 @@ msgstr "{0} में से {1} पूर्ण"
 msgid "{0} of {1} completed"
 msgstr "{0} में से {1} पूर्ण"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} कतार में"
@@ -447,6 +452,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "एक पर्यवेक्षक से कहें कि वे आपकी प्रोफ़ाइल में {processName} कौशल जोड़ें।"
+
+msgid "Ask the water spider"
+msgstr ""
 
 msgid "Asked"
 msgstr "माँगा गया"
@@ -1341,6 +1349,9 @@ msgstr "मैं इस विवरण को प्रमाणित कर�
 msgid "I understand and want to complete without issuing"
 msgstr "मैं समझता हूँ और बिना जारी किए पूरा करना चाहता हूँ"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
@@ -1596,6 +1607,9 @@ msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "लोड हो रहा है। दोबारा स्कैन करने की ज़रूरत नहीं है।"
@@ -2072,6 +2086,9 @@ msgstr "नोट्स"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "अभी तक कुछ भी विफल नहीं हुआ है, इसलिए बताएँ कि इकाइयाँ अस्वीकृत क्यों हैं। सभी {0} इकाई(याँ) अस्वीकृत कर दी जाएँगी।"
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing matches your search."
 msgstr "आपकी खोज से कुछ नहीं मिला।"
@@ -2633,6 +2650,9 @@ msgstr "सब-असेंबली को फिर से खोलें औ
 msgid "Repairable"
 msgstr "मरम्मत योग्य"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "सामग्री का अनुरोध करें"
 
@@ -2774,11 +2794,20 @@ msgstr "शेड्यूलिंग संघर्ष"
 msgid "Scrap"
 msgstr "स्क्रैप"
 
+msgid "Scrap {quantity}"
+msgstr ""
+
 msgid "Scrap {readableId}"
 msgstr "स्क्रैप {readableId}"
 
 msgid "Scrap material"
 msgstr "स्क्रैप सामग्री"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "स्क्रैप मात्रा"
@@ -2791,6 +2820,12 @@ msgstr "इकाई स्क्रैप करें"
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "सीरीयल को स्क्रैप किया जा रहा है {trackedEntityReadableId}"

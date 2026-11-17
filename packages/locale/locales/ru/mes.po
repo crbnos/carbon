@@ -117,6 +117,11 @@ msgstr "{0} из {1} завершено"
 msgid "{0} of {1} completed"
 msgstr "{0} из {1} завершено"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} в очереди"
@@ -447,6 +452,9 @@ msgstr "Вы уверены, что хотите отметить эту опе�
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Попросите руководителя добавить навык «{processName}» в ваш профиль."
+
+msgid "Ask the water spider"
+msgstr ""
 
 msgid "Asked"
 msgstr "Запрошено"
@@ -1341,6 +1349,9 @@ msgstr "Я удостоверяю это заявление"
 msgid "I understand and want to complete without issuing"
 msgstr "Я понимаю и хочу завершить без выдачи"
 
+msgid "I'll grab it from the shelf"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Я ещё работаю"
 
@@ -1596,6 +1607,9 @@ msgstr "Загружена: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
+
+msgid "Loading parts..."
+msgstr ""
 
 msgid "Loading. There's no need to scan again."
 msgstr "Загрузка. Повторно сканировать не нужно."
@@ -2072,6 +2086,9 @@ msgstr "Примечания"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Отказов пока нет, поэтому укажите причину, по которой единицы отклонены. Все единицы ({0}) будут отклонены."
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr ""
 
 msgid "Nothing matches your search."
 msgstr "Ничего не совпадает с вашим поиском."
@@ -2633,6 +2650,9 @@ msgstr "Открыть заново узел и создать единицу д
 msgid "Repairable"
 msgstr "Подлежит ремонту"
 
+msgid "Replacement"
+msgstr ""
+
 msgid "Request material"
 msgstr "Запросить материал"
 
@@ -2774,11 +2794,20 @@ msgstr "Конфликт расписания"
 msgid "Scrap"
 msgstr "Брак"
 
+msgid "Scrap {quantity}"
+msgstr ""
+
 msgid "Scrap {readableId}"
 msgstr "Браковать {readableId}"
 
 msgid "Scrap material"
 msgstr "Браковка материала"
+
+msgid "Scrap parts"
+msgstr ""
+
+msgid "Scrap parts of {label}"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "Количество брака"
@@ -2791,6 +2820,12 @@ msgstr "Отправить единицу в брак"
 
 msgid "Scrapped"
 msgstr "Списано в брак"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr ""
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Списание серийного номера {trackedEntityReadableId}"

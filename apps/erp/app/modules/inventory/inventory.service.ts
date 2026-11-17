@@ -102,6 +102,7 @@ import {
   resolveSamplingPlan,
   type SamplingStandard
 } from "@carbon/database/sampling";
+import { getScrappableParts } from "@carbon/database/scrappable-parts";
 import * as sequence from "@carbon/database/sequence";
 import {
   expandSerialTrackedLines,
@@ -30495,6 +30496,7 @@ export const issueMaterialPermission = {
     jobOperationSerialComplete: { update: "production" },
     jobOperationScrap: { update: "production" },
     partToOperation: { update: "production" },
+    scrapJobPart: { update: "production" },
     scrapTrackedEntity: { update: "production" },
     mergeTrackedEntities: { update: "inventory" },
     trackedEntitiesToBatch: { update: "production" },
@@ -30567,6 +30569,73 @@ export async function dryRunJobOperationIssues(
   } catch (err) {
     if (!(err instanceof DryRunRollback)) throw err;
   }
+}
+
+/**
+ * The accounting a scrap posts with: the posting status, the default accounts,
+ * the active dimensions, today and its period, and the scrap account. Read
+ * before the transaction parks the (size 1) pool.
+ */
+async function loadScrapAccountingContext(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+) {
+  const [company, postingStatus, accountDefaults, timeZone] = await Promise.all(
+    [
+      single(db, "company", { id: companyId }, { columns: ["companyGroupId"] }),
+      // Provisional before the company's accounting cutover, Posted after it.
+      journalPostingStatus(db, companyId),
+      getDefaultPostingGroup(db, companyId),
+      getCompanyTimeZone(db, companyId)
+    ]
+  );
+  if (company.error) throw new Error("Failed to fetch company");
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: company.data.companyGroupId!,
+      active: true,
+      entityType: [
+        "ItemPostingGroup",
+        "Item",
+        "Location",
+        "ScrapReason",
+        "WorkCenter",
+        "Employee",
+        "Project",
+        "ProjectElement"
+      ]
+    },
+    { columns: ["id", "entityType"] }
+  );
+  const dimensionMap = new Map<string, string>();
+  for (const dim of dimensions.data ?? []) {
+    if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+  }
+
+  const today = datetime.today(timeZone).toString();
+  return {
+    postingStatus,
+    accountDefaults: accountDefaults.data,
+    dimensionMap,
+    today,
+    // A Provisional journal has no accounting period.
+    accountingPeriodId:
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, today)
+        : null,
+    // An empty scrapAccount falls back to the variance account.
+    scrapAccountId: resolveDefaultAccount(
+      accountDefaults.data,
+      "scrapAccount",
+      postingStatus
+    ).accountId
+  };
 }
 
 export async function issueMaterial(
@@ -32252,6 +32321,217 @@ export async function issueMaterial(
       });
       break;
     }
+    case "scrapJobPart": {
+      const {
+        jobOperationId,
+        materialId,
+        itemId,
+        quantity: rawQuantity,
+        scrapReasonId,
+        replacement,
+        notes,
+        idempotencyKey,
+        companyId,
+        userId
+      } = validatedPayload;
+      const quantity = round(rawQuantity);
+
+      await assertCompanyRecords(
+        db,
+        "scrapReason",
+        [scrapReasonId],
+        companyId,
+        "Scrap reason"
+      );
+      const [material, operation] = await Promise.all([
+        getScrappableParts(db, { companyId, jobMaterialId: materialId }),
+        db
+          .selectFrom("jobOperation")
+          .select(["jobId", "workCenterId"])
+          .where("id", "=", jobOperationId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      ]);
+      if (!material) throw new NotFoundError("Job material not found");
+      if (!operation) throw new NotFoundError("Job operation not found");
+      if (operation.jobId !== material.jobId) {
+        throw new InvalidInputError(
+          "The material is not on this operation's job"
+        );
+      }
+      const part = material.parts.find((p) => p.itemId === itemId);
+      if (!part) {
+        throw new InvalidInputError(
+          "This part cannot be scrapped from this material"
+        );
+      }
+
+      const scrapAccounting = await loadScrapAccountingContext(db, companyId);
+
+      await db.transaction().execute(async (trx) => {
+        await assertPostingStatusUnchanged(
+          trx,
+          companyId,
+          scrapAccounting.postingStatus
+        );
+
+        // The retry guard: a replay finds its key taken and books nothing.
+        const scrap = await trx
+          .insertInto("jobMaterialScrap")
+          .values({
+            companyId,
+            jobMaterialId: materialId,
+            jobOperationId,
+            itemId,
+            quantity,
+            scrapReasonId,
+            replacement,
+            notes: notes || null,
+            idempotencyKey,
+            createdBy: userId
+          })
+          .onConflict((oc) =>
+            oc.columns(["companyId", "idempotencyKey"]).doNothing()
+          )
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!scrap) return;
+
+        // The bad parts go to scrap and good ones come off the shelf, so the
+        // material stays whole: the movement is a scrap from the shelf bin.
+        const [item, itemCost, stripes] = await Promise.all([
+          trx
+            .selectFrom("item")
+            .select([
+              "itemTrackingType",
+              "replenishmentSystem",
+              "readableIdWithRevision"
+            ])
+            .where("id", "=", itemId)
+            .executeTakeFirstOrThrow(),
+          trx
+            .selectFrom("itemCost")
+            .select([
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ])
+            .where("itemId", "=", itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst(),
+          loadDemandStripes(trx, companyId, material.projectId)
+        ]);
+        const storageUnitId =
+          (await getNettableDefaultStorageUnitId(
+            trx,
+            itemId,
+            material.locationId,
+            companyId
+          )) ??
+          (
+            await getStorageUnitWithHighestQuantity(trx, {
+              companyId,
+              itemId,
+              locationId: material.locationId,
+              stripes
+            })
+          )?.storageUnitId ??
+          null;
+        const draws = await drawUntrackedAtBin(trx, {
+          companyId,
+          itemId,
+          locationId: material.locationId,
+          storageUnitId,
+          stripes,
+          quantity
+        });
+
+        for (const draw of draws) {
+          await bookAdjustment(trx, {
+            ledger: {
+              postingDate: scrapAccounting.today,
+              itemId,
+              quantity: -draw.quantity,
+              locationId: material.locationId,
+              storageUnitId,
+              trackedEntityId: null,
+              entryType: "Negative Adjmt.",
+              documentType: "Scrap",
+              documentId: material.jobId,
+              documentLineId: scrap.id,
+              scrapReasonId,
+              projectId: draw.stripe,
+              companyId,
+              createdBy: userId
+            },
+            item: {
+              itemTrackingType: item.itemTrackingType,
+              replenishmentSystem: item.replenishmentSystem,
+              itemPostingGroupId: itemCost?.itemPostingGroupId ?? null
+            },
+            itemCost: {
+              costingMethod: itemCost?.costingMethod ?? "Average",
+              unitCost: Number(itemCost?.unitCost ?? 0),
+              standardCost: Number(itemCost?.standardCost ?? 0)
+            },
+            accounting: {
+              postingStatus: scrapAccounting.postingStatus,
+              accountingPeriodId: scrapAccounting.accountingPeriodId,
+              accountDefaults: {
+                rawMaterialsAccount:
+                  scrapAccounting.accountDefaults.rawMaterialsAccount,
+                finishedGoodsAccount:
+                  scrapAccounting.accountDefaults.finishedGoodsAccount,
+                inventoryAdjustmentVarianceAccount:
+                  scrapAccounting.accountDefaults
+                    .inventoryAdjustmentVarianceAccount
+              },
+              offsetAccount: scrapAccounting.scrapAccountId,
+              offsetDescription: "Scrap Account",
+              description: `Scrap — ${item.readableIdWithRevision ?? ""}`,
+              userId,
+              dimensions: Object.fromEntries(scrapAccounting.dimensionMap),
+              extraDimensions: [
+                { entityType: "ScrapReason", valueId: scrapReasonId },
+                ...(operation.workCenterId
+                  ? [
+                      {
+                        entityType: "WorkCenter",
+                        valueId: operation.workCenterId
+                      }
+                    ]
+                  : []),
+                { entityType: "Employee", valueId: userId }
+              ]
+            }
+          });
+        }
+
+        if (replacement === "Water Spider") {
+          const request = await trx
+            .insertInto("materialRequest")
+            .values({
+              companyId,
+              locationId: material.locationId,
+              workCenterId: operation.workCenterId,
+              jobOperationId,
+              itemId,
+              note: `${quantity} to replace scrap`,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+          await trx
+            .updateTable("jobMaterialScrap")
+            .set({ materialRequestId: request.id })
+            .where("id", "=", scrap.id)
+            .execute();
+        }
+      });
+
+      break;
+    }
     case "scrapTrackedEntity": {
       const {
         trackedEntityId,
@@ -32295,63 +32575,14 @@ export async function issueMaterial(
         throw new Error("Tracked entity has already been scrapped");
       }
 
-      const companyRecordScrap = await single(
-        db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
-      );
-      if (companyRecordScrap.error) throw new Error("Failed to fetch company");
-      // Provisional before the company's accounting cutover, Posted after it.
-      const postingStatusScrap = await journalPostingStatus(db, companyId);
-
-      const accountDefaultsScrap = await getDefaultPostingGroup(db, companyId);
-      if (accountDefaultsScrap.error || !accountDefaultsScrap.data) {
-        throw new Error("Error getting account defaults");
-      }
-
-      const dimensionsScrap = await many(
-        db,
-        "dimension",
-        {
-          companyGroupId: companyRecordScrap.data.companyGroupId!,
-          active: true,
-          entityType: [
-            "ItemPostingGroup",
-            "Item",
-            "Location",
-            "ScrapReason",
-            "WorkCenter",
-            "Employee",
-            "Project",
-            "ProjectElement"
-          ]
-        },
-        { columns: ["id", "entityType"] }
-      );
-
-      const dimensionMapScrap = new Map<string, string>();
-      if (dimensionsScrap.data) {
-        for (const dim of dimensionsScrap.data) {
-          if (dim.entityType) dimensionMapScrap.set(dim.entityType, dim.id);
-        }
-      }
-
-      const todayScrap = datetime
-        .today(await getCompanyTimeZone(db, companyId))
-        .toString();
-      // Resolve the period BEFORE the transaction parks the (size 1) pool.
-      // A Provisional journal has no accounting period.
-      const accountingPeriodIdScrap =
-        postingStatusScrap === "Posted"
-          ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
-          : null;
-      // An empty scrapAccount falls back to the variance account.
-      const scrapAccountIdScrap = resolveDefaultAccount(
-        accountDefaultsScrap.data,
-        "scrapAccount",
-        postingStatusScrap
-      ).accountId;
+      const {
+        postingStatus: postingStatusScrap,
+        accountDefaults: accountDefaultsScrap,
+        dimensionMap: dimensionMapScrap,
+        today: todayScrap,
+        accountingPeriodId: accountingPeriodIdScrap,
+        scrapAccountId: scrapAccountIdScrap
+      } = await loadScrapAccountingContext(db, companyId);
 
       let didReplace = false;
       await db.transaction().execute(async (trx) => {
@@ -32528,12 +32759,10 @@ export async function issueMaterial(
               postingStatus: postingStatusScrap,
               accountingPeriodId: accountingPeriodIdScrap,
               accountDefaults: {
-                rawMaterialsAccount:
-                  accountDefaultsScrap.data.rawMaterialsAccount,
-                finishedGoodsAccount:
-                  accountDefaultsScrap.data.finishedGoodsAccount,
+                rawMaterialsAccount: accountDefaultsScrap.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsScrap.finishedGoodsAccount,
                 inventoryAdjustmentVarianceAccount:
-                  accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount
+                  accountDefaultsScrap.inventoryAdjustmentVarianceAccount
               },
               offsetAccount: scrapAccountIdScrap,
               offsetDescription: "Scrap Account",
@@ -32597,7 +32826,7 @@ export async function issueMaterial(
                   journalId: journalResult.id,
                   accountId:
                     scrapProjectCharge?.accountId ??
-                    accountDefaultsScrap.data.workInProgressAccount,
+                    accountDefaultsScrap.workInProgressAccount,
                   description:
                     scrapProjectCharge && !scrapProjectCharge.keepsWip
                       ? "Project Material"

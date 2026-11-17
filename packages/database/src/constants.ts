@@ -488,6 +488,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
+      jobMaterialScrapReplacement: ["Shelf", "Water Spider"],
       jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",

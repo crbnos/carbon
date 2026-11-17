@@ -117,6 +117,11 @@ msgstr "{0} of {1} complete"
 msgid "{0} of {1} completed"
 msgstr "{0} of {1} completed"
 
+#. placeholder {0}: part.perKit
+#. placeholder {1}: part.name
+msgid "{0} per kit · {1}"
+msgstr "{0} per kit · {1}"
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} queued"
@@ -447,6 +452,9 @@ msgstr "Are you sure you want to mark this operation as done? This will end all 
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Ask a supervisor to add the {processName} ability to your profile."
+
+msgid "Ask the water spider"
+msgstr "Ask the water spider"
 
 msgid "Asked"
 msgstr "Asked"
@@ -1341,6 +1349,9 @@ msgstr "I certify this statement"
 msgid "I understand and want to complete without issuing"
 msgstr "I understand and want to complete without issuing"
 
+msgid "I'll grab it from the shelf"
+msgstr "I'll grab it from the shelf"
+
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
 
@@ -1596,6 +1607,9 @@ msgstr "Loaded: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
+
+msgid "Loading parts..."
+msgstr "Loading parts..."
 
 msgid "Loading. There's no need to scan again."
 msgstr "Loading. There's no need to scan again."
@@ -2072,6 +2086,9 @@ msgstr "Notes"
 #. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+
+msgid "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
+msgstr "Nothing here can be scrapped by quantity. Scrap a serial or batch from Issue."
 
 msgid "Nothing matches your search."
 msgstr "Nothing matches your search."
@@ -2633,6 +2650,9 @@ msgstr "Reopen the subassembly and create a replacement unit"
 msgid "Repairable"
 msgstr "Repairable"
 
+msgid "Replacement"
+msgstr "Replacement"
+
 msgid "Request material"
 msgstr "Request material"
 
@@ -2774,11 +2794,20 @@ msgstr "Scheduling conflict"
 msgid "Scrap"
 msgstr "Scrap"
 
+msgid "Scrap {quantity}"
+msgstr "Scrap {quantity}"
+
 msgid "Scrap {readableId}"
 msgstr "Scrap {readableId}"
 
 msgid "Scrap material"
 msgstr "Scrap material"
+
+msgid "Scrap parts"
+msgstr "Scrap parts"
+
+msgid "Scrap parts of {label}"
+msgstr "Scrap parts of {label}"
 
 msgid "Scrap quantity"
 msgstr "Scrap quantity"
@@ -2791,6 +2820,12 @@ msgstr "Scrap unit"
 
 msgid "Scrapped"
 msgstr "Scrapped"
+
+msgid "Scrapped. Grab replacements from the shelf."
+msgstr "Scrapped. Grab replacements from the shelf."
+
+msgid "Scrapped. The water spider is bringing replacements."
+msgstr "Scrapped. The water spider is bringing replacements."
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "Scrapping serial {trackedEntityReadableId}"

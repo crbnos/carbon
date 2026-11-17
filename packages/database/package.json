@@ -27,6 +27,7 @@
     "./json": "./src/json.ts",
     "./price-trace": "./src/price-trace.ts",
     "./rows": "./src/rows.ts",
+    "./scrappable-parts": "./src/scrappable-parts.ts",
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
     "./mrp-netting-sequence": "./src/mrp-netting-sequence.ts",
