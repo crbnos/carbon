@@ -16053,10 +16053,8 @@ export function buildPurchaseInvoicePostingLines(
               ? "Project Account"
               : line.account.name,
             amount: round(
-              debit(
-                glProjectCharge || !line.account.class
-                  ? "expense"
-                  : accountTypeFromClass(line.account.class),
+              debitSigned(
+                glProjectCharge ? "Expense" : (line.account.class ?? "Expense"),
                 total
               )
             ),
@@ -21337,7 +21335,7 @@ export async function changeInvoiceLineAccount(
     const toClass = accountClasses.find((c) => c === to?.class);
     if (!to || !to.active || to.isGroup || !toClass) {
       throw new InvalidInputError(
-        `Choose an active ${accountClasses.join(", ")} account that is not a group.`
+        `Choose an active ${new Intl.ListFormat("en", { type: "disjunction" }).format(accountClasses)} account that is not a group.`
       );
     }
     if (position.leg.accountId === to.id) {

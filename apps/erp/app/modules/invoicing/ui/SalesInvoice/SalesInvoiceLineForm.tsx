@@ -102,6 +102,8 @@ function netUnitPrice(unitPrice: number, discountPoints: number) {
   return unitPrice * (1 - discount / 100);
 }
 
+const SALES_LINE_ACCOUNT_CLASSES = ["Revenue"] as const;
+
 type SalesInvoiceLineFormProps = {
   initialValues: z.infer<typeof salesInvoiceLineValidator> & {
     taxPercent?: number;
@@ -603,7 +605,7 @@ const SalesInvoiceItemLineForm = ({
                         invoiceId,
                         initialValues.id!
                       )}
-                      accountClasses={["Revenue"]}
+                      accountClasses={SALES_LINE_ACCOUNT_CLASSES}
                     />
                   </CardAction>
                 )}
