@@ -5,6 +5,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
+import { isTest } from "./typescript";
 
 /**
  * Server-side TypeScript that must derive calendar days through the `datetime`
@@ -58,8 +59,7 @@ function walk(dir: string, out: string[], extensions: string[]): void {
       walk(path, out, extensions);
     } else if (
       extensions.some((ext) => entry.endsWith(ext)) &&
-      !entry.endsWith(".test.ts") &&
-      !entry.endsWith(".test.tsx")
+      !isTest(entry)
     ) {
       out.push(path);
     }

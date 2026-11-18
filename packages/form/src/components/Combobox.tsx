@@ -20,6 +20,8 @@ import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
+  /** Fill the field when it is empty and there is exactly one option. */
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   termId?: TermId;
@@ -42,6 +44,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
 };
 
 const Combobox = ({
+  autoSelectSingleOption = false,
   name,
   label,
   termId,
@@ -70,6 +73,14 @@ const Combobox = ({
     if (props.value !== null && props.value !== undefined)
       setValue(props.value ?? "");
   }, [props.value, setValue]);
+
+  const soleOption =
+    autoSelectSingleOption && props.options.length === 1
+      ? props.options[0]!.value
+      : undefined;
+  useEffect(() => {
+    if (soleOption && !value) setValue(soleOption);
+  }, [soleOption, value, setValue]);
 
   const onChange = (value: string) => {
     if (value) {

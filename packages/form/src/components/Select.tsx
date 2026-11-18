@@ -22,13 +22,15 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
+  /** Fill the field when it is empty and there is exactly one option. */
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   termId?: TermId;
@@ -48,6 +50,7 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
 };
 
 const Select = ({
+  autoSelectSingleOption = false,
   name,
   label,
   termId,
@@ -74,6 +77,14 @@ const Select = ({
     isEmpty: !value,
     isReadOnly: isReadOnly || isDisabled
   });
+
+  const soleOption =
+    autoSelectSingleOption && options.length === 1
+      ? options[0]!.value
+      : undefined;
+  useEffect(() => {
+    if (soleOption && !value) setValue(soleOption);
+  }, [soleOption, value, setValue]);
 
   const onChange = (value: string) => {
     if (value) {

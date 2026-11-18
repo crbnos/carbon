@@ -447,6 +447,7 @@ const DispositionBody = ({
             <>
               <Select
                 name="targetOperationId"
+                autoSelectSingleOption
                 label={
                   corrections.length > 0
                     ? t`Go back to operation, or run a correction`

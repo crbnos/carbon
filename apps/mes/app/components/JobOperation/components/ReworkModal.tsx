@@ -224,6 +224,7 @@ export function ReworkModal({
                 name="targetJobOperationId"
                 label={t`Go back to operation`}
                 size="lg"
+                autoSelectSingleOption
                 options={targets.map((op) => ({
                   value: op.id,
                   label: op.jobMakeMethod?.item?.name ? (
@@ -303,6 +304,7 @@ export function ReworkModal({
                     name="_batchSelect"
                     label={t`Batch`}
                     size="lg"
+                    autoSelectSingleOption
                     options={trackedEntities.map((entity) => ({
                       value: entity.id,
                       label: `${entity.readableId || entity.id} (qty: ${entity.quantity})`

@@ -35,10 +35,10 @@ import {
   getToolsByOperationId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
-  isFirstOpenOperationOfMakeMethod,
-  isFirstOperationOfMakeMethod
+  isFirstOpenOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
@@ -229,7 +229,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // label when completed at its first operation, so the first op flows unit-by-unit
     // (auto-select), and later ops scan/select (labels exist).
     jobMakeMethodId
-      ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
       : false,
     jobMakeMethodId
       ? isFirstOpenOperationOfMakeMethod(
@@ -416,6 +416,12 @@ export default function AssemblyRoute() {
     typeof AssemblyView
   >["procedure"];
   return (
-    <AssemblyView {...data} procedure={procedure} operationId={operationId} />
+    // Keyed by operation: the unit the operator holds belongs to one operation.
+    <AssemblyView
+      key={operationId}
+      {...data}
+      procedure={procedure}
+      operationId={operationId}
+    />
   );
 }
