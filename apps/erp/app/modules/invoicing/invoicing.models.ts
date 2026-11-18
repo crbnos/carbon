@@ -13,6 +13,16 @@ import { zfd } from "zod-form-data";
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
 import { incoterms, itemType, methodType } from "../shared/shared.models";
 
+/** The classes a purchase or purchase order G/L Account line may be coded to.
+ *  Revenue is left out: a supplier's credit belongs on a credit memo, not a
+ *  debit to sales. */
+export const purchaseLineAccountClasses = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Expense"
+] as const;
+
 export const purchaseInvoiceLineType = [
   "Part",
   "Service",

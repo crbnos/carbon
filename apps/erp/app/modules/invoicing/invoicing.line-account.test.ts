@@ -30,7 +30,8 @@ const CLASSES: Record<string, InvoiceLineLeg["accountClass"]> = {
   [TAX]: "Liability",
   "acc-6000": "Expense",
   "acc-6100": "Expense",
-  "acc-2000": "Liability"
+  "acc-2000": "Liability",
+  "acc-3100": "Equity"
 };
 
 let nextId = 0;
@@ -235,6 +236,36 @@ describe("changing a posted line's account", () => {
       "acc-6000": 0,
       "acc-6100": 250,
       "acc-2000": -250
+    });
+  });
+
+  it("moves a G/L Account line's cost from an expense to an equity account", () => {
+    const posted = [
+      leg("acc-6000", 11895.2, { description: "Office Supplies" }),
+      leg("acc-2000", 11895.2, { description: "Accounts Payable" })
+    ];
+    const { lines, legs } = apply(
+      posted,
+      {
+        accountId: "acc-6000",
+        quantity: 1,
+        documentLineReference: null,
+        amount: 11895.2,
+        dimensions: {}
+      },
+      "acc-3100"
+    );
+    // An equity debit stores negative.
+    expect(
+      lines.map(({ accountId, amount }) => ({ accountId, amount }))
+    ).toEqual([
+      { accountId: "acc-6000", amount: -11895.2 },
+      { accountId: "acc-3100", amount: -11895.2 }
+    ]);
+    expect(balances(legs)).toEqual({
+      "acc-6000": 0,
+      "acc-3100": 11895.2,
+      "acc-2000": -11895.2
     });
   });
 

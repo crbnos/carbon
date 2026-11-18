@@ -21,7 +21,7 @@ type AccountData = {
 
 const NO_ACCOUNTS: AccountData[] = [];
 
-export function useAccounts(classes?: AccountClass[]): AccountData[] {
+export function useAccounts(classes?: readonly AccountClass[]): AccountData[] {
   const { data } = useLoaderQuery<Awaited<ReturnType<typeof getAccountsList>>>(
     `${path.to.api.accounts}?isGroup=false`
   );
@@ -46,7 +46,7 @@ const badgeColors: Record<
   Expense: "orange"
 };
 
-function useAccountOptions(classes?: AccountClass[]) {
+function useAccountOptions(classes?: readonly AccountClass[]) {
   const accounts = useAccounts(classes);
 
   return useMemo(
@@ -67,7 +67,7 @@ function useAccountOptions(classes?: AccountClass[]) {
 }
 
 type AccountSelectProps = Omit<ComboboxProps, "options"> & {
-  classes?: AccountClass[];
+  classes?: readonly AccountClass[];
 };
 
 const Account = ({ classes, ...props }: AccountSelectProps) => {
@@ -83,7 +83,7 @@ Account.displayName = "Account";
 export default Account;
 
 type AccountControlledProps = {
-  classes?: AccountClass[];
+  classes?: readonly AccountClass[];
   value?: string;
   onChange?: (selected: string) => void;
   size?: "sm" | "md" | "lg";
