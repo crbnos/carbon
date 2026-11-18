@@ -3,6 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { existsSync, readFileSync } from "node:fs";
+import {
+  createServiceContext,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { it } from "vitest";
@@ -69,4 +73,26 @@ export function postgrestTest(
 ): void {
   const client = hasLocalDatabase ? localServiceRoleClient() : null;
   it.skipIf(!client)(name, () => fn(client!), 60_000);
+}
+
+/**
+ * A system service context whose caller and service-role clients are the
+ * local PostgREST and whose `pg` is the fixture's connection, so a test can
+ * run an operation (`production.server.ts`, …) as a route does.
+ */
+export function operationContext(
+  f: { db: unknown; companyId: string; groupId: string },
+  client: SupabaseClient<Database>,
+  onBehalfOf: string
+): ServiceContext {
+  return createServiceContext({
+    actor: { type: "system", onBehalfOf },
+    company: { id: f.companyId, groupId: f.groupId },
+    caller: client as never,
+    system: () => client as never,
+    pg: () => f.db as never,
+    kv: () => {
+      throw new Error("No kv in a database test");
+    }
+  });
 }

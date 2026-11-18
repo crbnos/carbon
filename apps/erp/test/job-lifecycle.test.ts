@@ -18,7 +18,6 @@ vi.mock("@carbon/planning", () => ({
 }));
 
 import {
-  closeJob,
   completeJob,
   createProductionQuantity,
   pauseJob,
@@ -68,26 +67,6 @@ function callerWith(
   };
 }
 
-/** A Kysely select whose `execute` finds no rows; any other run fails. */
-function noRows(): unknown {
-  const query: unknown = new Proxy(
-    {},
-    {
-      get: (_, key) => {
-        if (key === "then") return undefined;
-        if (key === "execute") return async () => [];
-        if (String(key).startsWith("execute")) {
-          return async () => {
-            throw new Error("No database in this test");
-          };
-        }
-        return () => query;
-      }
-    }
-  );
-  return query;
-}
-
 const contextWith = (caller: unknown) =>
   createServiceContext({
     actor: {
@@ -100,9 +79,7 @@ const contextWith = (caller: unknown) =>
     company: { id: "c1", groupId: "g1" },
     caller: caller as never,
     system: () => ({}) as never,
-    // Reads find nothing (closeJob's outside processing check); anything
-    // else on `pg`, such as a transaction, fails.
-    pg: () => ({ selectFrom: noRows }) as never,
+    pg: () => ({}) as never,
     kv: () => ({}) as never
   });
 
@@ -213,28 +190,6 @@ describe("reopenJob", () => {
       { jobId: "j1" }
     );
     expect(result.error?.category).toBe("rule");
-  });
-});
-
-describe("closeJob", () => {
-  it("refuses a job that is not Completed, before any write-off", async () => {
-    const result = await closeJob(
-      contextWith(callerWith({ status: "In Progress" })),
-      { jobId: "j1" }
-    );
-    expect(result.error?.category).toBe("rule");
-    expect(flips()).toEqual([]);
-  });
-
-  it("keeps the job Closed and warns when the WIP write-off fails", async () => {
-    // The write-off runs a transaction on `pg`, which this context lacks.
-    const result = await closeJob(
-      contextWith(callerWith({ status: "Completed" })),
-      { jobId: "j1" }
-    );
-    expect(result.error).toBeNull();
-    expect(result.data?.warning).toBeTruthy();
-    expect(flips()).toEqual([{ status: "Closed", fromStatuses: ["Completed"] }]);
   });
 });
 
