@@ -42,7 +42,6 @@ export const handle: Handle = {
   to: path.to.company
 };
 
-// One form per card, told apart by its intent.
 const companySettingsForm = z.discriminatedUnion("intent", [
   companyValidator.extend({ intent: z.literal("about") }),
   sequenceWeekNumberingValidator.extend({ intent: z.literal("weekNumbering") })

@@ -118,7 +118,6 @@ export function interpolateSequenceDate(
     .replaceAll("%{ss}", twoDigits(second));
 }
 
-/** A sequence's prefix and suffix with their date tokens filled in. */
 export function interpolateSequenceFormat(
   prefix: string | null | undefined,
   suffix: string | null | undefined,

@@ -510,7 +510,6 @@ export const serialNumberTimingValidator = z.object({
   serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
 });
 
-// How %{ww} counts weeks in document, serial and batch numbers.
 export {
   type WeekNumbering,
   weekNumberings

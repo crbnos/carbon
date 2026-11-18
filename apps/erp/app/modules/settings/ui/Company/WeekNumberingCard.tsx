@@ -25,9 +25,6 @@ import { sequenceWeekNumberingValidator } from "~/modules/settings/settings.mode
 import { path } from "~/utils/path";
 import { useWeekNumberingLabels } from "../Sequences/SequenceTokens";
 
-// One settings card = one saved concern: how %{ww} counts weeks in document,
-// serial and batch numbers.
-
 export function WeekNumberingCard({
   weekNumbering
 }: {
