@@ -7,6 +7,7 @@ import {
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
   getMESUrl,
+  hasPermission,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
@@ -24,7 +25,11 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import { withEmailDelivery } from "@carbon/ee";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
-import { getPlan } from "@carbon/ee/plan.server";
+import {
+  getEntitledFeatures,
+  getLicenceNotice,
+  getPlan
+} from "@carbon/ee/plan.server";
 import { evaluateBrowserFlags } from "@carbon/env/flags.server";
 import { getVapidDetails } from "@carbon/env/push.server";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
@@ -81,6 +86,7 @@ import {
   MobileBottomChrome,
   MobileDock
 } from "~/components/Layout/Mobile";
+import { LicenceBanner } from "~/components/LicenceBanner";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
@@ -221,16 +227,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return null;
   });
 
+  // Started with the other reads; it shares the cached licence resolution.
+  // Who may see it is known only once the claims arrive.
+  const licenceNoticePromise = getLicenceNotice().catch(() => null);
+
   // Parallelize all requests
-  const [shell, stripeCustomer, plan, customFields, claims, itarCertification] =
-    await Promise.all([
-      shellPromise,
-      getStripeCustomerByCompanyId(companyId, userId),
-      getPlan(client, companyId),
-      getCustomFieldsSchemas(client, { companyId }),
-      getUserClaims(userId, companyId),
-      itarCertificationPromise
-    ]);
+  const [
+    shell,
+    stripeCustomer,
+    plan,
+    features,
+    customFields,
+    claims,
+    itarCertification
+  ] = await Promise.all([
+    shellPromise,
+    getStripeCustomerByCompanyId(companyId, userId),
+    getPlan(client, companyId),
+    getEntitledFeatures(client, companyId),
+    getCustomFieldsSchemas(client, { companyId }),
+    getUserClaims(userId, companyId),
+    itarCertificationPromise
+  ]);
 
   // The same shapes the nine separate reads returned, so what follows reads as
   // it did. A failed shell read fails each of them, as each could before.
@@ -356,6 +374,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? await userHasVerifiedTotpFactor(userId)
       : true;
 
+  // Enterprise only, and only for employees who can open Settings.
+  const licenceNotice =
+    claims?.role === "employee" &&
+    hasPermission(claims.permissions, "settings", "view", companyId)
+      ? await licenceNoticePromise
+      : null;
+
   return data({
     session: {
       accessToken,
@@ -374,6 +399,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,
+    features,
+    licenceNotice,
     // Null hides the bell's "Enable browser notifications" row: the
     // deployment has no push keys (no SESSION_SECRET).
     pushPublicKey: getVapidDetails()?.publicKey ?? null,
@@ -602,6 +629,7 @@ export default function AuthenticatedRoute() {
                           (notifications, sheets) never run on desktop. */}
                       {isPhone && <MobileAppBar />}
                       <Topbar />
+                      <LicenceBanner notice={loaderData.licenceNotice} />
                       <AnnouncementBar
                         announcement={announcement}
                         userId={user?.id ?? ""}

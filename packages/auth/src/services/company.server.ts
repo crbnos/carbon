@@ -58,8 +58,9 @@ const carbonOwnedCacheKey = (companyId: string) => `carbonOwned:${companyId}`;
  * `auth.uid()`, which the anon `carbon-key` API-key client does not have, so a
  * read through the caller's client returns no row for a paying company.
  *
- * A failed read returns null without being cached. Callers treat null as the
- * lowest plan, so a transient failure must not stick for the whole TTL.
+ * A failed read is not cached. It returns the last plan id this process read
+ * for the company, else null; callers treat null as the lowest plan, so a
+ * transient failure must not downgrade a paying company.
  */
 export function getCompanyPlanId(companyId: string): Promise<string | null> {
   return oncePerRead(`companyPlan:${companyId}`, () =>
@@ -78,6 +79,8 @@ export function planIdFromCache(
   return cached || null;
 }
 
+const lastKnownPlanId = new Map<string, string | null>();
+
 async function loadCompanyPlanId(companyId: string): Promise<string | null> {
   const cacheKey = companyPlanCacheKey(companyId);
   const cached = planIdFromCache(await redis.get(cacheKey));
@@ -91,10 +94,11 @@ async function loadCompanyPlanId(companyId: string): Promise<string | null> {
 
   if (error) {
     logger.error("Failed to read company plan", { companyId, error });
-    return null;
+    return lastKnownPlanId.get(companyId) ?? null;
   }
 
   const planId = data?.planId ?? null;
+  lastKnownPlanId.set(companyId, planId);
   await redis.set(cacheKey, planId ?? "", "EX", PLAN_CACHE_TTL_SECONDS);
   return planId;
 }

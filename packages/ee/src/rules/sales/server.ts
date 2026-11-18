@@ -49,7 +49,7 @@ export const isSalesRulesEnabledForCompany = (
   client: Client,
   companyId: string
 ): Promise<boolean> =>
-  companyHasFeature(client, companyId, { feature: "SALES_RULES" });
+  companyHasFeature(client, companyId, { feature: "SALES_RULES" }, "enforce");
 
 // ---------------------------------------------------------------------------
 // Per-line evaluator — single entry point the sales line actions call

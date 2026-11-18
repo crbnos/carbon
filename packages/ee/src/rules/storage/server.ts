@@ -51,7 +51,7 @@ export const isStorageRulesEnabledForCompany = (
   client: Client,
   companyId: string
 ): Promise<boolean> =>
-  companyHasFeature(client, companyId, { feature: "STORAGE_RULES" });
+  companyHasFeature(client, companyId, { feature: "STORAGE_RULES" }, "enforce");
 
 // ---------------------------------------------------------------------------
 // Block decision

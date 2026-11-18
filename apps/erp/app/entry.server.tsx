@@ -10,11 +10,14 @@ import {
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
 import { getProcessPool } from "@carbon/database/client";
+import { loadVerifier } from "@carbon/ee/license.server";
+import { CarbonEdition } from "@carbon/env";
 import { initFlags } from "@carbon/env/flags.server";
 import { redisFlagsStore } from "@carbon/kv";
 import { inngest } from "@carbon/lib/inngest";
+import { getLogger } from "@carbon/logger";
 import { createTracing } from "@carbon/logger/tracing.server";
-import { async } from "@carbon/utils";
+import { async, Edition } from "@carbon/utils";
 import { attachDatabasePool, waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import { InngestSpanProcessor } from "inngest/experimental";
@@ -50,6 +53,12 @@ void initFlags({
   store: redisFlagsStore,
   waitUntil: process.env.VERCEL ? waitUntil : undefined
 });
+
+if (CarbonEdition === Edition.Enterprise) {
+  loadVerifier().catch((error) =>
+    getLogger("erp").error("licence verifier failed to load", { error })
+  );
+}
 
 export const streamTimeout = 60_000;
 

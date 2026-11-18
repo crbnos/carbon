@@ -55,7 +55,12 @@ export async function isConsoleModeEnabledForCompany(
   }
 
   if (!consoleEnabled) return false;
-  return companyHasFeature(client, companyId, { feature: "PERMISSIONS" });
+  return companyHasFeature(
+    client,
+    companyId,
+    { feature: "PERMISSIONS" },
+    "enforce"
+  );
 }
 
 /**

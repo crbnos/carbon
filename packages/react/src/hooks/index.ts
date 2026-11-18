@@ -8,6 +8,7 @@ import useDisclosure from "./useDisclosure";
 import { useEdition } from "./useEdition";
 import useEscape from "./useEscape";
 import { useFeatureFlags } from "./useFeatureFlags";
+import { useFeatures } from "./useFeatures";
 import useHydrated from "./useHydrated";
 import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
@@ -60,6 +61,7 @@ export {
   useEdition,
   useEscape,
   useFeatureFlags,
+  useFeatures,
   useHydrated,
   useIdle,
   useInitialDimensions,

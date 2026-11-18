@@ -24,6 +24,7 @@ import {
   LuHistory,
   LuImage,
   LuKey,
+  LuKeyRound,
   LuLandmark,
   LuLayoutDashboard,
   LuNetwork,
@@ -46,8 +47,13 @@ import { path } from "~/utils/path";
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { isCloud, isControlledEnvironment, isInternal, isLocalDev } =
-    useFlags();
+  const {
+    isCloud,
+    isControlledEnvironment,
+    isEnterprise,
+    isInternal,
+    isLocalDev
+  } = useFlags();
   const { feature } = useFeatureFlags();
   const canManageCompanies = isInternal || feature("multi-company-management");
   // Enterprise: backups are a Business plan feature, but internal staff and
@@ -57,6 +63,7 @@ export default function useSettingsSubmodules() {
   const settingsRoutes: AuthenticatedRouteGroup<{
     requiresOwnership?: boolean;
     requiresCloudEnvironment?: boolean;
+    requiresEnterpriseEdition?: boolean;
     requiresControlledEnvironment?: boolean;
   }>[] = useMemo(
     () => [
@@ -70,6 +77,13 @@ export default function useSettingsSubmodules() {
             icon: <LuCreditCard />,
             requiresOwnership: true,
             requiresCloudEnvironment: true
+          },
+          {
+            name: t`License`,
+            to: path.to.license,
+            role: "employee",
+            icon: <LuKeyRound />,
+            requiresEnterpriseEdition: true
           },
           {
             name: t`Company`,
@@ -279,11 +293,13 @@ export default function useSettingsSubmodules() {
     role?: string;
     requiresOwnership?: boolean;
     requiresCloudEnvironment?: boolean;
+    requiresEnterpriseEdition?: boolean;
     requiresControlledEnvironment?: boolean;
   }) => {
     if (route.role && !permissions.is(route.role as Role)) return false;
     if (route.requiresOwnership && !permissions.isOwner()) return false;
     if (route.requiresCloudEnvironment && !isCloud) return false;
+    if (route.requiresEnterpriseEdition && !isEnterprise) return false;
     if (route.requiresControlledEnvironment && !isControlledEnvironment)
       return false;
     if (route.to === path.to.companies && !canManageCompanies) return false;

@@ -85,10 +85,15 @@ export const inviteEmployee = defineServiceFn({
     const client = ctx.asCaller.supabase;
 
     let employeeType = input.employeeType;
-    const canAuthorRoles = await companyHasFeature(client, companyId, {
-      feature: "PERMISSIONS"
-    });
-    if (!canAuthorRoles) {
+    // "enforce": an ended Enterprise licence must not turn new employees
+    // into Admins.
+    const rolesInForce = await companyHasFeature(
+      client,
+      companyId,
+      { feature: "PERMISSIONS" },
+      "enforce"
+    );
+    if (!rolesInForce) {
       const adminType = await client
         .from("employeeType")
         .select("id")
