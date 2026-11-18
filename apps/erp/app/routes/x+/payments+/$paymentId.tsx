@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -44,7 +44,8 @@ import {
   PaymentApplyTable,
   PaymentDocuments,
   PaymentForm,
-  PaymentHeader
+  PaymentHeader,
+  PaymentPostingNotice
 } from "~/modules/invoicing/ui";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -339,6 +340,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (formData.get("intent") === "post") {
+    const api = await carbon(request);
+    const posted = await api.invoicing.postPayment({ paymentId });
+    return respond(request, posted).redirect(path.to.payment(paymentId), {
+      message: "Payment saved and posted",
+      onError: path.to.payment(paymentId)
+    });
+  }
+
   throw redirect(
     path.to.payment(paymentId),
     await flash(request, success("Payment updated"))
@@ -419,6 +429,11 @@ export default function PaymentDetailRoute() {
         readableId={payment.paymentId ?? payment.id}
         status={payment.status ?? "Draft"}
         forceDelete={{ isAdmin, forceDeleteRequest }}
+      />
+      <PaymentPostingNotice
+        status={payment.status}
+        postError={payment.postError}
+        hasApplications={applications.length > 0}
       />
       <PaymentForm
         key={payment.id}

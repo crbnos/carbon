@@ -30,6 +30,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import type { AccountClass } from "~/modules/accounting/types";
 import {
   type DepositDocument,
   isPaymentLocked,
@@ -41,6 +42,11 @@ import {
   paymentDocumentCurrency,
   paymentKindFields
 } from "./payment-logic";
+
+// A supplier can also be paid by credit card. Module constants keep the
+// picker's filter stable across renders.
+const ASSET_CLASSES: AccountClass[] = ["Asset"];
+const CARD_TYPES = ["Credit Card"];
 
 // Builds the "new payment" URL pre-filled from an invoice. side "ar" seeds the
 // customer (→ Receipt); "ap" seeds the supplier (→ Disbursement). Lives with the
@@ -390,15 +396,19 @@ const PaymentForm = ({
         />
         <Account
           name="bankAccount"
-          label={t`Bank / Cash Account`}
-          classes={["Asset"]}
+          label={
+            isSupplier ? t`Bank, Cash or Card Account` : t`Bank / Cash Account`
+          }
+          classes={ASSET_CLASSES}
+          includeTypes={isSupplier ? CARD_TYPES : undefined}
         />
         <Input name="reference" label={t`Reference`} />
         <CustomFormFields table="payment" />
       </div>
       <TextArea name="memo" label={t`Memo`} />
-      <div>
+      <div className="flex gap-2">
         <Submit
+          variant={isEditing && !isLocked ? "secondary" : undefined}
           isDisabled={
             isEditing
               ? isLocked || !canMutate
@@ -407,6 +417,16 @@ const PaymentForm = ({
         >
           <Trans>Save</Trans>
         </Submit>
+        {isEditing && !isLocked && (
+          <Submit
+            name="intent"
+            value="post"
+            shortcut={false}
+            isDisabled={!canMutate}
+          >
+            <Trans>Save and Post</Trans>
+          </Submit>
+        )}
       </div>
     </ValidatedForm>
   );

@@ -5627,6 +5627,9 @@ msgstr "Codice bancario"
 msgid "Bank Name"
 msgstr "Nome della banca"
 
+msgid "Bank, Cash or Card Account"
+msgstr ""
+
 msgid "Banner content (optional)"
 msgstr "Contenuto banner (facoltativo)"
 
@@ -20838,6 +20841,9 @@ msgstr "Non ora"
 msgid "Not on the page"
 msgstr "Non presente nella pagina"
 
+msgid "Not posted"
+msgstr ""
+
 msgid "Not Qualified"
 msgstr "Non qualificato"
 
@@ -22523,8 +22529,8 @@ msgstr "Pagamento a Fornitore"
 msgid "Payments"
 msgstr "Pagamenti"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Pagamenti e crediti applicati a questa fattura. Gli importi applicati e le differenze di cambio sono espressi nella valuta di base dell'azienda. Fai clic su una riga per aprire il documento di origine."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "I pagamenti e le note di credito applicati ad esso vengono prima disapplicati: ogni pagamento resta registrato, come credito non applicato che puoi applicare altrove o eliminare forzatamente. I ricavi già riconosciuti da esso vengono stornati."
@@ -22592,6 +22598,9 @@ msgstr "Controllo in attesa"
 
 msgid "Pending Inspection"
 msgstr "Controllo In Attesa"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "personale"
@@ -26851,6 +26860,9 @@ msgstr "Salva e Sovrascrivi"
 
 msgid "Save and post"
 msgstr "Salva e registra"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "Salva applicazioni"
@@ -32333,6 +32345,12 @@ msgstr "Solo questo componente"
 
 msgid "This path only decides what runs next"
 msgstr "Questo percorso decide solo cosa viene eseguito dopo"
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Questo periodo non ha voci di prima nota registrate e può essere eliminato permanentemente. Questa azione non può essere annullata."

@@ -3,11 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Badge,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  HStack,
   Table,
   Tbody,
   Td,
@@ -41,8 +43,9 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
         </CardTitle>
         <CardDescription>
           <Trans>
-            Payments and credits applied to this invoice. Applied amounts and FX
-            are in company base currency. Click a row to open the source
+            Payments and credits applied to this invoice. A pending row is from
+            a Draft payment and pays nothing until it is posted. Applied amounts
+            and FX are in company base currency. Click a row to open the source
             document.
           </Trans>
         </CardDescription>
@@ -79,18 +82,28 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
             </Thead>
             <Tbody>
               {rows.map((r) => (
-                <Tr key={r.id}>
+                <Tr
+                  key={r.id}
+                  className={r.pending ? "text-muted-foreground" : undefined}
+                >
                   <Td>
                     <DateTime value={r.appliedDate} variant="date" />
                   </Td>
                   <Td>
-                    <Enumerable
-                      value={
-                        r.source.type === "payment"
-                          ? "Payment"
-                          : r.source.direction
-                      }
-                    />
+                    <HStack spacing={1}>
+                      <Enumerable
+                        value={
+                          r.source.type === "payment"
+                            ? "Payment"
+                            : r.source.direction
+                        }
+                      />
+                      {r.pending && (
+                        <Badge variant="yellow">
+                          <Trans>Pending payment, not posted</Trans>
+                        </Badge>
+                      )}
+                    </HStack>
                   </Td>
                   <Td>
                     <Link

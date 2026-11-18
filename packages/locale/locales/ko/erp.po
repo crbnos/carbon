@@ -5627,6 +5627,9 @@ msgstr "은행 코드"
 msgid "Bank Name"
 msgstr "은행명"
 
+msgid "Bank, Cash or Card Account"
+msgstr ""
+
 msgid "Banner content (optional)"
 msgstr "배너 내용(선택)"
 
@@ -20838,6 +20841,9 @@ msgstr "나중에"
 msgid "Not on the page"
 msgstr "페이지에 없음"
 
+msgid "Not posted"
+msgstr ""
+
 msgid "Not Qualified"
 msgstr "부적격"
 
@@ -22523,8 +22529,8 @@ msgstr "공급업체 지불"
 msgid "Payments"
 msgstr "지불"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "이 건에 적용된 지불과 메모는 먼저 적용이 해제됩니다. 각 지불은 전기된 상태로 남아, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 남습니다. 이 건에서 이미 인식된 매출은 역분개됩니다."
@@ -22592,6 +22598,9 @@ msgstr "검사 대기"
 
 msgid "Pending Inspection"
 msgstr "검사 대기"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "인원"
@@ -26851,6 +26860,9 @@ msgstr "저장 및 덮어쓰기"
 
 msgid "Save and post"
 msgstr "저장 및 전기"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "애플리케이션 저장"
@@ -32333,6 +32345,12 @@ msgstr "이 부품에만"
 
 msgid "This path only decides what runs next"
 msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간은 전기된 전표 항목이 없으며 영구적으로 삭제할 수 있습니다. 이를 취소할 수 없습니다."

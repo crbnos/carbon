@@ -29,6 +29,7 @@ export const Constants = {
         "Other Current Asset",
         "Other Asset",
         "Other Current Liability",
+        "Credit Card",
         "Long Term Liability",
         "Equity - No Close",
         "Equity - Close",

@@ -160,6 +160,7 @@ import {
   invoiceRemainingAmounts,
   isBillableLeaseStatus,
   isEffectiveSettlement,
+  isPendingSettlement,
   type LegacyDepositRefund,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
@@ -2078,9 +2079,11 @@ export type InvoiceSettlementForInvoice = {
   sourceExchangeRate: number | null;
   appliedDate: string;
   source: InvoiceSettlementSource;
+  /** Applied by a Draft payment: it takes effect when the payment posts. */
+  pending: boolean;
 };
 
-// Posted settlements against a specific invoice — BOTH cash payments and applied
+// Posted settlements, and those pending a Draft payment's post, against a specific invoice — BOTH cash payments and applied
 // credit/debit memos. Used by the "Applied" panel on the sales/purchase invoice
 // detail page. Page the embedded parents with their applications so large histories
 // retain every source without oversized ID lookups.
@@ -2141,17 +2144,16 @@ export async function getInvoiceSettlementsForInvoice(
 
   const merged: InvoiceSettlementForInvoice[] = [];
   for (const a of apps.data ?? []) {
-    if (
-      !isEffectiveSettlement({
-        paymentId: a.paymentId,
-        memoId: a.memoId,
-        appliedViaPaymentId: a.appliedViaPaymentId,
-        paymentStatus: a.payment?.status ?? null,
-        memoStatus: a.memo?.status ?? null,
-        viaStatus: a.appliedViaPayment?.status ?? null
-      })
-    )
-      continue;
+    const effectiveness = {
+      paymentId: a.paymentId,
+      memoId: a.memoId,
+      appliedViaPaymentId: a.appliedViaPaymentId,
+      paymentStatus: a.payment?.status ?? null,
+      memoStatus: a.memo?.status ?? null,
+      viaStatus: a.appliedViaPayment?.status ?? null
+    };
+    const pending = isPendingSettlement(effectiveness);
+    if (!pending && !isEffectiveSettlement(effectiveness)) continue;
     let source: InvoiceSettlementSource | null = null;
     if (a.paymentId && a.payment) {
       const p = a.payment;
@@ -2187,13 +2189,14 @@ export async function getInvoiceSettlementsForInvoice(
       targetExchangeRate: Number(a.targetExchangeRate),
       sourceExchangeRate: Number(a.sourceExchangeRate),
       appliedDate: a.appliedDate,
-      source
+      source,
+      pending
     });
   }
 
   const bySource = new Map<string, InvoiceSettlementForInvoice>();
   for (const row of merged) {
-    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}`;
+    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}:${row.pending}`;
     const previous = bySource.get(key);
     if (!previous) {
       bySource.set(key, { ...row });
@@ -5422,6 +5425,51 @@ export function getApAging(
     _bucket2: b2,
     _bucket3: b3
   });
+}
+
+/**
+ * What Draft payments apply to each purchase invoice, in base: the invoice is
+ * paid by it only once the payment posts. A memo counts when it is Posted and
+ * applied through a Draft payment.
+ */
+export async function getApPendingPayments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<Map<string, number>> {
+  const drafts = db
+    .selectFrom("payment")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Draft");
+  const rows = await db
+    .selectFrom("invoiceSettlement as s")
+    .leftJoin("memo as m", (join) =>
+      join
+        .onRef("m.id", "=", "s.memoId")
+        .onRef("m.companyId", "=", "s.companyId")
+    )
+    .select([
+      "s.targetPurchaseInvoiceId as invoiceId",
+      sql<number>`SUM(s."appliedAmount" + s."discountAmount" + s."writeOffAmount")`.as(
+        "pendingInBase"
+      )
+    ])
+    .where("s.companyId", "=", companyId)
+    .where("s.targetPurchaseInvoiceId", "is not", null)
+    .where((eb) =>
+      eb.or([
+        eb("s.paymentId", "in", drafts),
+        eb.and([
+          eb("s.appliedViaPaymentId", "in", drafts),
+          eb("m.status", "=", "Posted")
+        ])
+      ])
+    )
+    .groupBy("s.targetPurchaseInvoiceId")
+    .execute();
+  return new Map(
+    rows.map((row) => [row.invoiceId!, Number(row.pendingInBase)])
+  );
 }
 
 export function getAgingUnappliedPayments(
@@ -12795,6 +12843,30 @@ export function paymentKind(
 
 export type PaymentKind = ReturnType<typeof paymentKind>;
 
+/** Card accounts a supplier payment may be paid from. */
+export const CARD_ACCOUNT_TYPE = "Credit Card";
+
+/**
+ * The class of the account a payment moves its money through, or null when
+ * the payment cannot use it. Any Asset account can; a supplier payment can
+ * also use a Credit Card account, which is a liability.
+ */
+export function paymentAccountClass(
+  account: { class: string | null; accountType: string | null },
+  kind: Pick<PaymentKind, "isAR" | "isReimbursement">
+): "Asset" | "Liability" | null {
+  if (account.class === "Asset") return "Asset";
+  if (
+    account.class === "Liability" &&
+    account.accountType === CARD_ACCOUNT_TYPE &&
+    !kind.isAR &&
+    !kind.isReimbursement
+  ) {
+    return "Liability";
+  }
+  return null;
+}
+
 const TARGET_DESCRIPTIONS = [
   ...new Set<string>([
     REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
@@ -13172,6 +13244,8 @@ export function assemblePaymentJournal(args: {
   fee?: PaymentJournalFeeInput;
   legacyCustomerDepositRefund?: boolean;
   journalLineReference: string;
+  /** The class of `payment.bankAccount` (`paymentAccountClass`). */
+  bankAccountClass: "Asset" | "Liability";
 }): {
   lines: PaymentJournalLineWithRole[];
   input: BuildPaymentJournalInput;
@@ -13223,6 +13297,7 @@ export function assemblePaymentJournal(args: {
     totalAmount: Number(payment.totalAmount),
     exchangeRate: Number(payment.exchangeRate),
     bankAccount: payment.bankAccount,
+    bankAccountClass: args.bankAccountClass,
     journalLineReference: args.journalLineReference,
     applications,
     newOnAccountBase: args.newOnAccountBase,
@@ -13353,6 +13428,46 @@ function principal(value: number | null, label: string): number {
   return Number(value);
 }
 
+/**
+ * Locks the accounting period that holds `date` and returns its id. A closed
+ * or locked period is refused by name, with `remedy` appended.
+ */
+async function lockOpenPeriodFor(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  date: string,
+  remedy: string
+): Promise<string> {
+  const period = await trx
+    .selectFrom("accountingPeriod")
+    .select([
+      sql<string>`"startDate"::text`.as("startDate"),
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId)
+    .where("startDate", "<=", date)
+    .where("endDate", ">=", date)
+    .orderBy("startDate")
+    .forUpdate()
+    .executeTakeFirst();
+  if (period && (period.closeStatus !== "Open" || period.closedAt !== null)) {
+    const name = new Date(`${period.startDate}T00:00:00Z`).toLocaleString(
+      "en-US",
+      { month: "long", year: "numeric", timeZone: "UTC" }
+    );
+    const state =
+      period.closeStatus === "Locked" && period.closedAt === null
+        ? "locked"
+        : "closed";
+    throw new InvalidInputError(
+      `${date} is in the ${name} accounting period, which is ${state}. ${remedy}`
+    );
+  }
+  // Creates the period when none holds the date yet.
+  return getCurrentAccountingPeriod(companyId, trx, date);
+}
+
 /** The endpoint's single commit boundary; every monetary snapshot is read under locks. */
 export function postPaymentTransaction(
   db: Kysely<KyselyDatabase>,
@@ -13402,33 +13517,30 @@ export function postPaymentTransaction(
       throw new Error(`Cannot ${type} payment in status ${payment.status}`);
     }
 
+    // A payment posts on its payment date; a void reverses it on the day it
+    // is voided.
+    const postingDate = type === "post" ? payment.paymentDate : today;
+    if (type === "post" && isBeforeCutover(postingDate, cutoverDate)) {
+      throw new InvalidInputError(
+        `The payment date ${postingDate} is before your accounting cutover on ${cutoverDate}. Change the payment date to ${cutoverDate} or later.`
+      );
+    }
+
     // Every payment posts a journal: Provisional before the company's
     // accounting cutover, Posted after it. FOR SHARE holds the cutover until
     // commit. A Provisional journal has no accounting period.
     const timestamp = datetime.timestamp();
-    let accountingPeriodId: string | null = null;
-    if (postingStatus === "Posted") {
-      accountingPeriodId = await getCurrentAccountingPeriod(
-        companyId,
-        trx,
-        today
-      );
-      // The reader also checks period status, but the row lock protects the
-      // posting against a concurrent close/lock after that read.
-      const period = await trx
-        .selectFrom("accountingPeriod")
-        .select(["id", "closeStatus"])
-        .where("id", "=", accountingPeriodId)
-        .where("companyId", "=", companyId)
-        .forShare()
-        .executeTakeFirst();
-      if (
-        !period ||
-        period.closeStatus === "Closed" ||
-        period.closeStatus === "Locked"
-      )
-        throw new Error("Accounting period is closed or locked");
-    }
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await lockOpenPeriodFor(
+            trx,
+            companyId,
+            postingDate,
+            type === "post"
+              ? "Reopen it or change the payment date."
+              : "Reopen it before voiding."
+          )
+        : null;
 
     if (type === "void") {
       const scope = fundingScopeOf(payment);
@@ -13490,7 +13602,7 @@ export function postPaymentTransaction(
               ),
               accountingPeriodId,
               description: `VOID Payment ${payment.paymentId}`,
-              postingDate: today,
+              postingDate,
               companyId,
               sourceType: "Payment",
               status: postingStatus,
@@ -14196,7 +14308,7 @@ export function postPaymentTransaction(
     const allocation = allocatePaymentFunding({
       currentPayment: {
         paymentId,
-        postingDate: today,
+        postingDate,
         exchangeRate: Number(payment.exchangeRate),
         remainingDocument: Number(payment.totalAmount),
         remainingBase: toBaseAmount(
@@ -14266,7 +14378,26 @@ export function postPaymentTransaction(
         };
       });
     }
+    const paidThrough = await trx
+      .selectFrom("account")
+      .select(["class", "accountType"])
+      .where("id", "=", payment.bankAccount)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .executeTakeFirst();
+    const bankAccountClass = paidThrough
+      ? paymentAccountClass(paidThrough, kind)
+      : null;
+    if (!bankAccountClass) {
+      throw new InvalidInputError(
+        isAR || isReimbursement
+          ? "Pay from an active Asset account, such as a bank or cash account"
+          : "Pay from an active Asset account, such as a bank or cash account, or a Credit Card account"
+      );
+    }
     const assembled = assemblePaymentJournal({
+      bankAccountClass,
       payment,
       kind,
       companyId,
@@ -14289,7 +14420,7 @@ export function postPaymentTransaction(
     const { accounts } = assembled.input;
     const journalLines = assembled.lines;
     const expectedAccountClasses: Array<[string | null | undefined, string]> = [
-      [payment.bankAccount, "Asset"],
+      [payment.bankAccount, bankAccountClass],
       [accounts.controlAccountId, isAR ? "Asset" : "Liability"],
       [accounts.discountAccountId, isAR ? "Revenue" : "Expense"],
       [accounts.writeOffAccountId, isAR ? "Expense" : "Revenue"],
@@ -14344,13 +14475,9 @@ export function postPaymentTransaction(
       .where("active", "=", true)
       .where("isGroup", "=", false)
       .execute();
-    if (
-      postingAccounts.length !== accountIds.length ||
-      postingAccounts.find((account) => account.id === payment.bankAccount)
-        ?.class !== "Asset"
-    ) {
+    if (postingAccounts.length !== accountIds.length) {
       throw new Error(
-        "Payment accounts must be active posting accounts in this company group, with an Asset bank account"
+        "Payment accounts must be active posting accounts in this company group"
       );
     }
     const classById = new Map(
@@ -14389,7 +14516,7 @@ export function postPaymentTransaction(
             ...application,
             paymentId,
             companyId,
-            appliedDate: today,
+            appliedDate: postingDate,
             createdBy: userId
           }))
         )
@@ -14398,7 +14525,7 @@ export function postPaymentTransaction(
     // One set-based UPDATE preserves memo row identities and avoids query-per-row writes.
     if (normalizedMemos.length) {
       await sql`UPDATE "invoiceSettlement" s SET "appliedAmount"=v."appliedAmount", "sourceAmount"=v."sourceAmount",
-        "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${today}::date, "updatedBy"=${userId}
+        "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${postingDate}::date, "updatedBy"=${userId}
         FROM jsonb_to_recordset(${JSON.stringify(
           normalizedMemos
         )}::jsonb) AS v(id text,"appliedAmount" numeric,"sourceAmount" numeric,"sourceExchangeRate" numeric,"targetExchangeRate" numeric)
@@ -14412,7 +14539,7 @@ export function postPaymentTransaction(
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
         accountingPeriodId,
         description: `Payment ${payment.paymentId}`,
-        postingDate: today,
+        postingDate,
         companyId,
         sourceType: "Payment",
         status: postingStatus,
@@ -14460,7 +14587,8 @@ export function postPaymentTransaction(
       .updateTable("payment")
       .set({
         status: "Posted",
-        postingDate: today,
+        postingDate,
+        postError: null,
         journalId,
         postedAt: timestamp,
         postedBy: userId,
@@ -14561,6 +14689,20 @@ export async function rebuildPaymentJournals(
     trx,
     companyGroupId,
     defaults
+  );
+  // A card account is a liability; every other payment account an asset.
+  const cardAccountIds = new Set(
+    (
+      await trx
+        .selectFrom("account")
+        .select("id")
+        .where("companyGroupId", "=", companyGroupId)
+        .where("id", "in", [
+          ...new Set(payments.map((payment) => payment.bankAccount))
+        ])
+        .where("class", "=", "Liability")
+        .execute()
+    ).map((account) => account.id)
   );
 
   const settlements = await trx
@@ -14674,6 +14816,9 @@ export async function rebuildPaymentJournals(
     }));
 
     const { lines } = assemblePaymentJournal({
+      bankAccountClass: cardAccountIds.has(payment.bankAccount)
+        ? "Liability"
+        : "Asset",
       payment,
       kind,
       companyId,
@@ -14855,15 +15000,33 @@ export async function postPayment(
     .today(await getCompanyTimeZone(db, companyId))
     .toString();
 
-  const result = await postPaymentTransaction(db, {
-    type,
-    paymentId,
-    companyId,
-    userId,
-    today,
-    fee
-  });
-  return { success: true, ...result };
+  try {
+    const result = await postPaymentTransaction(db, {
+      type,
+      paymentId,
+      companyId,
+      userId,
+      today,
+      fee
+    });
+    return { success: true, ...result };
+  } catch (error) {
+    // The transaction rolled back, so the reason is kept on the Draft outside
+    // it, for the payment page to show until a post succeeds.
+    if (type === "post") {
+      await db
+        .updateTable("payment")
+        .set({
+          postError:
+            error instanceof Error ? error.message : "The payment did not post"
+        })
+        .where("id", "=", paymentId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .execute();
+    }
+    throw error;
+  }
 }
 type Enums = Database["public"]["Enums"];
 
