@@ -164,8 +164,15 @@ const SalesInvoicePostSummary = ({ invoiceId }: { invoiceId: string }) => {
           ? line.description || t`Service`
           : (getItemReadableId(items, line.itemId) ?? line.description ?? "");
 
-  const unpricedLines = lines.filter((line) => lineAmount(line) === 0).length;
-  const noShipping = totals.shippingCost === 0;
+  // A Comment line carries no charge, so it is never "unpriced". The check is
+  // on the unit price: an add-on or line freight can hide a missing price.
+  const isUnpriced = (line: SalesInvoiceLine) =>
+    line.invoiceLineType !== "Comment" && (line.unitPrice ?? 0) === 0;
+  const unpricedLines = lines.filter(isUnpriced).length;
+  // Shipping is charged on the invoice's Shipping section or on its lines.
+  const noShipping =
+    totals.shippingCost === 0 &&
+    lines.every((line) => (line.shippingCost ?? 0) === 0);
   const hasChecks = noShipping || unpricedLines > 0;
   const billsAnotherCustomer =
     !!salesInvoice.invoiceCustomerId &&
@@ -234,14 +241,30 @@ const SalesInvoicePostSummary = ({ invoiceId }: { invoiceId: string }) => {
         </div>
         <div className="border-t max-h-48 overflow-y-auto">
           {lines.map((line) => {
-            const amount = lineAmount(line);
+            if (line.invoiceLineType === "Comment") {
+              return (
+                <div
+                  key={line.id}
+                  className="px-3 py-2 text-muted-foreground line-clamp-2"
+                >
+                  {line.description}
+                </div>
+              );
+            }
+            const name = lineName(line);
+            const description = distinctItemText(name, line.description);
             return (
               <div
                 key={line.id}
                 className="flex items-center justify-between gap-4 px-3 py-2"
               >
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-medium">{lineName(line)}</span>
+                  <span className="truncate font-medium">{name}</span>
+                  {description && (
+                    <span className="truncate text-xs text-muted-foreground">
+                      {description}
+                    </span>
+                  )}
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {line.quantity} × {formatter.format(line.netUnitPrice ?? 0)}
                   </span>
@@ -249,11 +272,11 @@ const SalesInvoicePostSummary = ({ invoiceId }: { invoiceId: string }) => {
                 <span
                   className={cn(
                     "shrink-0 tabular-nums",
-                    amount === 0 &&
+                    isUnpriced(line) &&
                       "font-medium text-amber-600 dark:text-amber-400"
                   )}
                 >
-                  {formatter.format(amount)}
+                  {formatter.format(lineAmount(line))}
                 </span>
               </div>
             );
