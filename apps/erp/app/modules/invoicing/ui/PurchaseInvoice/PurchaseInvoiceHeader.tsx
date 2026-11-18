@@ -21,6 +21,7 @@ import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
+  LuCoins,
   LuHandCoins,
   LuShoppingCart,
   LuTicketX,
@@ -54,6 +55,7 @@ import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
 import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
+import PurchaseInvoiceRoundingModal from "./PurchaseInvoiceRoundingModal";
 import PurchaseInvoiceVoidModal from "./PurchaseInvoiceVoidModal";
 
 const PurchaseInvoiceHeader = () => {
@@ -64,6 +66,7 @@ const PurchaseInvoiceHeader = () => {
   const { company } = useUser();
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
+  const roundingModal = useDisclosure();
   const deleteModal = useDisclosure();
   const forceDeleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
@@ -218,6 +221,18 @@ const PurchaseInvoiceHeader = () => {
   const menuItems = (
     <>
       {auditLogTrigger}
+      {isDraft && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={!permissions.can("update", "invoicing")}
+            onClick={roundingModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuCoins />} />
+            <Trans>Adjust for Rounding</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
       {isPosted && (
         <>
           <DropdownMenuSeparator />
@@ -401,6 +416,21 @@ const PurchaseInvoiceHeader = () => {
         open={voidModal.isOpen}
         onClose={voidModal.onClose}
       />
+      {roundingModal.isOpen && (
+        <PurchaseInvoiceRoundingModal
+          open
+          invoiceId={invoiceId}
+          currencyCode={
+            purchaseInvoice.currencyCode ?? company.baseCurrencyCode
+          }
+          // The view's total is in base currency; the invoice is matched in its own.
+          total={
+            (purchaseInvoice.totalAmount ?? 0) *
+            (purchaseInvoice.exchangeRate ?? 1)
+          }
+          onClose={roundingModal.onClose}
+        />
+      )}
       <ConfirmDelete
         isOpen={deleteModal.isOpen}
         action={path.to.deletePurchaseInvoice(invoiceId)}

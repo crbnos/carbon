@@ -318,6 +318,7 @@ import {
   isPurchaseInvoiceLocked,
   isSalesInvoiceLocked,
   paymentJournalDifference,
+  purchaseInvoiceRoundingAmount,
   purchaseLineAccountClasses,
   type stripeCustomerActions
 } from "./invoicing.models";
@@ -21459,5 +21460,173 @@ export async function changeInvoiceLineAccount(
       amount: Math.abs(position.amount),
       postingDate
     };
+  });
+}
+
+export const ROUNDING_LINE_DESCRIPTION = "Rounding";
+
+export const adjustPurchaseInvoiceRoundingInput = z.object({
+  invoiceId: z.string().min(1),
+  targetTotal: z.number().finite()
+});
+
+/**
+ * Brings a Draft purchase invoice's total to `targetTotal` (the amount the
+ * supplier actually charged) with one G/L line on the company's default
+ * rounding account. The invoice's other lines, inventory lines included, keep
+ * their prices, so receipts and purchase orders are untouched. Setting the
+ * same total again changes nothing; a total the other lines already match
+ * removes the rounding line.
+ */
+export async function adjustPurchaseInvoiceRounding(
+  ctx: ServiceContext,
+  raw: z.input<typeof adjustPurchaseInvoiceRoundingInput>
+) {
+  const { invoiceId, targetTotal } =
+    adjustPurchaseInvoiceRoundingInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  return withTransaction(db, async (trx) => {
+    const invoice = await trx
+      .selectFrom("purchaseInvoice")
+      .select(["id", "status", "currencyCode", "exchangeRate"])
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!invoice) throw new NotFoundError("Purchase invoice not found");
+    if (invoice.status !== "Draft") {
+      throw new InvalidInputError(
+        "Only a Draft purchase invoice can be adjusted for rounding."
+      );
+    }
+
+    const [defaults, decimals, lines, delivery] = await Promise.all([
+      trx
+        .selectFrom("accountDefault")
+        .select("roundingAccount")
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      sharedPostings.currencyDecimals(trx, companyId, invoice.currencyCode),
+      trx
+        .selectFrom("purchaseInvoiceLine")
+        .select([
+          "id",
+          "invoiceLineType",
+          "accountId",
+          "description",
+          "purchaseOrderLineId",
+          "quantity",
+          "unitPrice",
+          "shippingCost",
+          "taxAmount",
+          "sortOrder"
+        ])
+        .where("invoiceId", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("purchaseInvoiceDelivery")
+        .select("supplierShippingCost")
+        .where("id", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+    ]);
+
+    const roundingAccountId = defaults?.roundingAccount;
+    if (!roundingAccountId) {
+      throw new InvalidInputError(
+        "Set a Rounding Account in the account defaults first."
+      );
+    }
+
+    // The account alone is not enough: a company may use its rounding
+    // account for ordinary expense lines, which this must never rewrite.
+    const isRoundingLine = (line: (typeof lines)[number]) =>
+      line.invoiceLineType === "G/L Account" &&
+      line.accountId === roundingAccountId &&
+      line.description === ROUNDING_LINE_DESCRIPTION &&
+      !line.purchaseOrderLineId;
+    const roundingLines = lines.filter(isRoundingLine);
+    if (roundingLines.length > 1) {
+      throw new InvalidInputError(
+        "The invoice has more than one line on the rounding account. Remove all but one first."
+      );
+    }
+    const roundingLine = roundingLines[0];
+
+    // The same arithmetic as the `purchaseInvoices` view's document total,
+    // which balances and settlements read: base line amounts (each at its own
+    // rate) plus header freight, converted back at the invoice's rate.
+    const rate = Number(invoice.exchangeRate);
+    let baseWithoutRounding =
+      Number(delivery?.supplierShippingCost ?? 0) / (rate === 0 ? 1 : rate);
+    for (const line of lines) {
+      if (line === roundingLine) continue;
+      baseWithoutRounding +=
+        Number(line.quantity) * Number(line.unitPrice ?? 0) +
+        Number(line.shippingCost ?? 0) +
+        Number(line.taxAmount ?? 0);
+    }
+    const totalWithoutRounding = baseWithoutRounding * rate;
+
+    const result = purchaseInvoiceRoundingAmount(
+      totalWithoutRounding,
+      targetTotal,
+      decimals
+    );
+    if ("refusal" in result) throw new InvalidInputError(result.refusal);
+    const { amount } = result;
+
+    if (amount === 0) {
+      if (roundingLine) {
+        await trx
+          .deleteFrom("purchaseInvoiceLine")
+          .where("id", "=", roundingLine.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    } else if (roundingLine) {
+      await trx
+        .updateTable("purchaseInvoiceLine")
+        .set({
+          quantity: 1,
+          supplierUnitPrice: amount,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", roundingLine.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      const sortOrder =
+        lines.reduce((max, line) => Math.max(max, line.sortOrder ?? 0), 0) + 1;
+      await trx
+        .insertInto("purchaseInvoiceLine")
+        .values({
+          invoiceId,
+          companyId,
+          invoiceLineType: "G/L Account",
+          accountId: roundingAccountId,
+          description: ROUNDING_LINE_DESCRIPTION,
+          quantity: 1,
+          supplierUnitPrice: amount,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
+          sortOrder,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    return { amount };
   });
 }

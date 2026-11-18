@@ -4442,6 +4442,38 @@ export const changePurchaseInvoiceLineAccount = defineServiceFn({
   }
 });
 
+/**
+ * Adjust a Draft purchase invoice's total for rounding.
+ *
+ * @remarks
+ * Brings the invoice total to `targetTotal`, the amount the supplier actually
+ * charged (for example a card charge a cent off the computed total), with a
+ * single G/L Account line described "Rounding" on the company's default
+ * Rounding Account; other lines on that account are left alone. The other
+ * lines, inventory lines included, keep their prices, so receipts and
+ * purchase orders are untouched. Calling again with another total replaces
+ * the adjustment; a total the other lines already match removes it. Refused
+ * for an invoice that is not Draft, when no Rounding Account is set, and when
+ * the difference is more than 100 minor units of the invoice's currency
+ * (1.00 USD). Returns the rounding line's amount in the invoice's currency.
+ *
+ * @param targetTotal - The invoice total to reach, in the invoice's currency.
+ *
+ * @mcp
+ */
+export const adjustPurchaseInvoiceRounding = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    targetTotal: z.number().finite()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return run(ctx, "adjust-purchase-invoice-rounding", () =>
+      service.adjustPurchaseInvoiceRounding(ctx, input)
+    );
+  }
+});
+
 /** Get the account a posted sales invoice line's revenue is on now (not the
  *  line's own account, which sales posting does not read). */
 export const getSalesInvoiceLinePostedAccount = defineServiceFn({
