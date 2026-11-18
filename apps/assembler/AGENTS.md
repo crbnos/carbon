@@ -122,7 +122,8 @@ Env: `REDIS_URL` (required — the job store; boot fails without it),
 unauth + http + skip TLS verify, local only), `PORT` (8000). Every other limit is
 a constant or derived in `config.rs` (max parts 5000, shutdown grace 600 s, job
 and result TTLs 24 h, pending TTL 5 min, long-poll cap 25 s) — deliberately not
-env-tunable.
+env-tunable. The meshing switches under Memory (`ASSEMBLER_LEAN_PLANES`,
+`ASSEMBLER_FLAT_TORI`, `ASSEMBLER_PART_MESH_SECONDS`) exist for tests.
 
 ## Tracing
 
@@ -311,27 +312,33 @@ Built to sit as a small always-on pod beside other workloads.
   was admitted for, and geometry can be far heavier than its file size: a
   5 MB plate with 1,200 drilled holes still peaks at 840 MB, thirteen times its
   estimate. Such a job can still get the pod OOM-killed.
-- **Flat faces with many holes are meshed lean** (`mesh()` in
+- **Flat faces with many holes are meshed lean** (`CarbonAlgoFactory` in
   `crates/occt-bridge/src/occt.cc`). BRepMesh's default algorithm for a plane
   runs an interior-node pass whose memory grows with the square of the hole
-  count; that 1,200-hole plate peaked at 6.2 GB. A part with more than 64 wires
-  on one face is meshed with that pass off for planes only: 840 MB, and faster.
+  count; that 1,200-hole plate peaked at 6.2 GB. A plane with more than 64
+  wires is meshed with that pass off: 840 MB, and faster.
   The vertices are the same, so graph.json, nodeIds and geometry hashes do not
   change; the triangle wiring in the GLB can (co-circular ties on a regular hole
   pattern), and with it the contact-derived details of a plan for parts that
   touch such a face (one `needsSupport` flag flipped on a test assembly; the
-  sequence, motions and contact graph did not). That is why parts under the
-  threshold keep the default path and stay byte-identical. `ASSEMBLER_LEAN_PLANES=0` turns it off. OCCT's other
+  sequence, motions and contact graph did not). That is why every other plane
+  keeps the default path and stays byte-identical. Until 2026-11 the rule
+  covered every plane of a part with one such face; narrowing it to the face
+  left graph.json identical on the Voron models and changed only GLB wiring.
+  `ASSEMBLER_LEAN_PLANES=0` turns it off. OCCT's other
   mesher (Delabella) is not an answer: lean on memory, but minutes on the same
   plates.
-- **A sliver torus is meshed from its boundary** (`has_sliver_torus` in
+- **A sliver torus is meshed from its boundary** (`CarbonAlgoFactory` in
   `occt.cc`). An exporter can write a near-flat face as a sliver of a huge
   torus (one seen in an Onshape export: radius 58 m, a 0.1 mm strip of a
   150 mm part). BRepMesh's torus algorithm places interior nodes from the
   whole surface, so its Delaunay pass did not finish that one face in an hour.
-  A part with a torus more than 10× its own bounding-box diagonal meshes every
-  torus with the plane algorithm and no interior nodes; other parts are
-  untouched. `ASSEMBLER_FLAT_TORI=0` turns it off.
+  A torus face whose radius is more than 10× its part's bounding-box diagonal
+  is meshed with the plane algorithm and no interior nodes; every other face,
+  other tori of the same part included, keeps OCCT's algorithm. The factory
+  sees only the surface type, so `BoundaryOnlyWhen` checks each face as
+  BRepMesh reaches it (the plane rule above works the same way).
+  `ASSEMBLER_FLAT_TORI=0` turns it off.
 - **Every part has a mesh deadline** (120 s, `part_mesh_seconds`): a
   progress indicator stops BRepMesh, which checks it before every node it
   inserts, and the part becomes its bounding-box proxy (`mesh_for`). The
