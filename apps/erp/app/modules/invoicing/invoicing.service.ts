@@ -3713,18 +3713,51 @@ export async function upsertPayment(
 
 // RLS DELETE policy on payment restricts to status='Draft'.
 export async function deletePayment(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
 ) {
   return requireAffected(
-    client
-      .from("payment")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .select("id")
+    db
+      .transaction()
+      .execute(async (trx) => {
+        // Only a Draft is deleted (as the RLS policy has it); its own
+        // settlements cascade.
+        const data = await trx
+          .deleteFrom("payment")
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Draft")
+          .returning("id")
+          .execute();
+        if (data.length > 0) await releasePaymentMappings(trx, companyId, id);
+        return { data, error: null as unknown };
+      })
+      .catch((error: unknown) => ({ data: null, error }))
   );
+}
+
+/**
+ * Removes the integration mappings that name a payment being deleted: its
+ * provider payment, alone or as `<id>:<settlement key>`, and the Ramp card
+ * transactions it claimed (`<id>:<transaction id>`). A mapping left behind
+ * blocks the provider from restaging it, and keeps a claimed card
+ * transaction from ever being booked.
+ */
+export async function releasePaymentMappings(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  paymentId: string
+): Promise<void> {
+  const prefix = `${paymentId.replace(/[\\%_]/g, "\\$&")}:%`;
+  await trx
+    .deleteFrom("externalIntegrationMapping")
+    .where("companyId", "=", companyId)
+    .where("entityType", "in", ["payment", "cardBillPayment"])
+    .where((eb) =>
+      eb.or([eb("entityId", "=", paymentId), eb("entityId", "like", prefix)])
+    )
+    .execute();
 }
 
 export async function upsertInvoiceSettlement(
@@ -13485,6 +13518,64 @@ async function lockOpenPeriodFor(
 }
 
 /**
+ * Prior credit is counted as it stands today. A void or a force delete
+ * releases the credit a payment consumed, with a journal dated the day it
+ * ran, so on an earlier date that credit was still spent. A payment dated
+ * before such a release cannot draw on the party's prior credit.
+ */
+async function refuseCreditReleasedAfter(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    paymentId: string;
+    party: { customerId: string } | { supplierId: string };
+    currencyCode: string;
+    postingDate: string;
+  }
+): Promise<void> {
+  const { companyId, postingDate } = args;
+  const release = await trx
+    .selectFrom("payment as p")
+    .innerJoin("journalLine as l", (join) =>
+      join
+        .onRef("l.documentId", "=", "p.id")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .innerJoin("journal as j", (join) =>
+      join
+        .onRef("j.id", "=", "l.journalId")
+        .onRef("j.companyId", "=", "l.companyId")
+    )
+    .select(sql<string | null>`max(j."postingDate")::text`.as("releasedOn"))
+    .where("p.companyId", "=", companyId)
+    .where((eb) =>
+      "customerId" in args.party
+        ? eb("p.customerId", "=", args.party.customerId)
+        : eb("p.supplierId", "=", args.party.supplierId)
+    )
+    .where("p.currencyCode", "=", args.currencyCode)
+    .where("p.id", "!=", args.paymentId)
+    .where("l.documentType", "=", "Payment")
+    .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .where("j.postingDate", ">", postingDate)
+    // A payment's own journals are its posting, a void and a force delete's
+    // unapply; an invoice that spends a prepayment writes its own source.
+    .where("j.sourceType", "=", "Payment")
+    .where((eb) =>
+      eb.or([
+        eb("p.journalId", "is", null),
+        eb("j.id", "!=", eb.ref("p.journalId"))
+      ])
+    )
+    .executeTakeFirst();
+  if (release?.releasedOn) {
+    throw new InvalidInputError(
+      `Prior credit was released on ${release.releasedOn} by a voided or unapplied payment, after the payment date ${postingDate}. Date the payment on or after ${release.releasedOn} to use it.`
+    );
+  }
+}
+
+/**
  * A payment cannot settle a document that posted after its payment date: the
  * settlement and its journal would predate what they settle.
  */
@@ -14417,6 +14508,15 @@ export function postPaymentTransaction(
           writeOffAmount: 0,
           fxGainLossAmount: 0
         };
+      });
+    }
+    if (normalized.some((application) => application.sourcePaymentId)) {
+      await refuseCreditReleasedAfter(trx, {
+        companyId,
+        paymentId,
+        party: isAR ? { customerId: partyId } : { supplierId: partyId },
+        currencyCode: payment.currencyCode,
+        postingDate
       });
     }
     const paidThrough = await trx
@@ -19318,6 +19418,7 @@ export async function deleteForceDeleteDocument(
         .where("id", "=", document.id)
         .where("companyId", "=", companyId)
         .execute();
+      await releasePaymentMappings(trx, companyId, document.id);
       return;
     }
     case "receipt": {

@@ -548,17 +548,28 @@ async function resolveRampCardPaymentAccount(
   return { accountId };
 }
 
+/**
+ * `cardTransactionIds` are the card transactions of every card-paid bill this
+ * run listed, which the charge sync must leave to the bill payment even when
+ * its staging failed. Null when the listing failed, so they are unknown.
+ */
+export type RampBillPaymentsResult = FamilyResult & {
+  cardTransactionIds: string[] | null;
+};
+
 export async function syncRampBillPayments(
   ctx: RampSyncContext,
   ramp: RampClient,
   entityId: string | undefined
-): Promise<FamilyResult> {
+): Promise<RampBillPaymentsResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  // Bill payments ride the same gate as bills (no separate flag).
+  // Bill payments ride the same gate as bills (no separate flag). With them
+  // off, a card-paid bill's transaction is booked as a charge.
   if (!isRampInboundFamilyEnabled("billPayments", metadata)) {
-    return result;
+    return { ...result, cardTransactionIds: [] };
   }
+  const cardTransactionIds = new Set<string>();
   const card = await resolveRampCardPaymentAccount(
     ctx,
     metadata.cardLiabilityAccountId
@@ -577,6 +588,11 @@ export async function syncRampBillPayments(
     })) {
       for (const bill of page as RampBill[]) {
         if (!isRampEntityInScope(entityId, bill.entity_id)) continue;
+        if (rampBillPaymentRoute(bill.payment?.payment_method) === "card") {
+          for (const id of bill.payment?.details?.transaction_ids ?? []) {
+            cardTransactionIds.add(id);
+          }
+        }
         // TODO(task-1): confirm bill.status vs payment.status for PAID.
         if (bill.status !== BILL_PAID_STATUS) continue;
         const payment = bill.payment;
@@ -670,5 +686,8 @@ export async function syncRampBillPayments(
     direction: "pull-from-accounting",
     entityIds: successful.map((item) => item.id)
   });
-  return result;
+  return {
+    ...result,
+    cardTransactionIds: result.error ? null : [...cardTransactionIds]
+  };
 }

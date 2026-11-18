@@ -6,7 +6,10 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
-import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
+import {
+  deletePayment,
+  postPaymentTransaction
+} from "../../../app/modules/invoicing/invoicing.service";
 
 // The fixture's payment is dated 2026-09-01 and posted on 2026-09-07.
 databaseTest("a payment posts on its payment date", async () => {
@@ -246,6 +249,91 @@ databaseTest(
         .where("paymentId", "=", paymentId)
         .executeTakeFirstOrThrow();
       expect(settlement.sourcePaymentId).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "credit a later void released cannot fund a payment dated before the void",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const sourceId = await f.payment({ noApplication: true, rate: 1 });
+      await postPaymentTransaction(f.db, { ...f.args, paymentId: sourceId });
+      // Spends the credit on the invoice on 2026-09-01, then is voided on
+      // 2026-09-07, which releases it.
+      const spender = await f.payment({ amount: 0, rate: 1.5 });
+      await postPaymentTransaction(f.db, { ...f.args, paymentId: spender });
+      await postPaymentTransaction(f.db, {
+        ...f.args,
+        type: "void",
+        paymentId: spender
+      });
+
+      const early = await f.payment({ amount: 0, rate: 1.5 });
+      await expect(
+        postPaymentTransaction(f.db, { ...f.args, paymentId: early })
+      ).rejects.toThrow(
+        "Prior credit was released on 2026-09-07 by a voided or unapplied payment, after the payment date 2026-09-01."
+      );
+
+      const onTime = await f.payment({
+        amount: 0,
+        rate: 1.5,
+        paymentDate: "2026-09-07"
+      });
+      await expect(
+        postPaymentTransaction(f.db, { ...f.args, paymentId: onTime })
+      ).resolves.toMatchObject({ journalId: expect.any(String) });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "deleting a Draft payment releases its integration mappings",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const paymentId = await f.payment();
+      const mappings = [
+        ["payment", paymentId, "remote-payment"],
+        ["payment", `${paymentId}:settlement`, "remote-settlement"],
+        ["cardBillPayment", `${paymentId}:tx-a`, "tx-a"],
+        // Another payment's claim stays.
+        ["cardBillPayment", `${paymentId}x:tx-b`, "tx-b"]
+      ];
+      await f.db
+        .insertInto("externalIntegrationMapping")
+        .values(
+          mappings.map(([entityType, entityId, externalId]) => ({
+            entityType: entityType!,
+            entityId: entityId!,
+            integration: "ramp",
+            externalId: externalId!,
+            companyId: f.companyId
+          }))
+        )
+        .execute();
+
+      const removed = await deletePayment(f.db, paymentId, f.companyId);
+
+      expect(removed.error).toBeNull();
+      const left = await f.db
+        .selectFrom("externalIntegrationMapping")
+        .select("externalId")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(left).toEqual([{ externalId: "tx-b" }]);
+      // A Posted payment is never deleted, and keeps its mappings.
+      const postedId = await f.payment();
+      await postPaymentTransaction(f.db, { ...f.args, paymentId: postedId });
+      expect(
+        (await deletePayment(f.db, postedId, f.companyId)).error
+      ).not.toBeNull();
     } finally {
       await f.cleanup();
     }

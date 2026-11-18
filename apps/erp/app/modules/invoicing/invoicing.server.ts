@@ -3394,7 +3394,7 @@ export const deletePayment = defineServiceFn({
     return unwrap(
       ctx,
       await service.deletePayment(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         input.id as never,
         ctx.company.id
       )

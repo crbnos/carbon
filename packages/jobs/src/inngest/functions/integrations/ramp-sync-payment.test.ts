@@ -8,6 +8,7 @@ import {
   ensureRampPaymentPosted,
   preserveStagedPaymentExchangeRate,
   type RampBillPaymentDependencies,
+  rampPaymentDate,
   syncRampBillPayment
 } from "./ramp-sync-payment";
 
@@ -156,5 +157,21 @@ describe("card-paid Ramp bills", () => {
         message: "Set the Ramp statement bank account to sync bank-paid bills"
       }
     });
+  });
+});
+
+describe("rampPaymentDate", () => {
+  it("keeps Ramp's paid date on or after the invoice's posting", () => {
+    expect(rampPaymentDate("2026-11-10", "2026-11-01")).toBe("2026-11-10");
+    expect(rampPaymentDate("2026-11-10", "2026-11-10")).toBe("2026-11-10");
+    expect(rampPaymentDate("2026-11-10", null)).toBe("2026-11-10");
+  });
+
+  it("moves a payment Ramp made before the bill synced to the invoice's posting", () => {
+    expect(rampPaymentDate("2026-11-10", "2026-11-18")).toBe("2026-11-18");
+  });
+
+  it("has no date without Ramp's", () => {
+    expect(rampPaymentDate(null, "2026-11-18")).toBeNull();
   });
 });

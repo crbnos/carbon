@@ -277,7 +277,13 @@ export const rampSyncFunction = inngest.createFunction(
       syncRampBillPayments(ctx, ramp, entityId)
     );
     const cardResult = await step.run("ramp-charges", () =>
-      syncRampCharges(ctx, ramp, entityId, cardLiabilityAccountId)
+      syncRampCharges(
+        ctx,
+        ramp,
+        entityId,
+        cardLiabilityAccountId,
+        billPaymentResult.cardTransactionIds
+      )
     );
     const transferResult = await step.run("ramp-transfers", () =>
       syncRampTransfers(ctx, ramp, entityId, cardLiabilityAccountId)

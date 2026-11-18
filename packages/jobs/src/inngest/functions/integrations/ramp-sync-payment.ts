@@ -337,6 +337,22 @@ export async function createOrResumeRampPayment(
   });
 }
 
+/**
+ * The date a Ramp bill payment posts on. A payment cannot predate the invoice
+ * it settles, and a Ramp bill posts in Carbon on the day it syncs, which can
+ * be after Ramp paid it. So it is the later of the two, and a retry sends the
+ * same date.
+ */
+export function rampPaymentDate(
+  paidDate: string | null | undefined,
+  invoicePostingDate: string | null
+): string | null {
+  if (!paidDate) return null;
+  return invoicePostingDate && invoicePostingDate > paidDate
+    ? invoicePostingDate
+    : paidDate;
+}
+
 /** Sync one Ramp bill payment through the resumable payment stager. */
 export async function syncRampBillPayment(
   deps: RampBillPaymentDependencies,
@@ -400,7 +416,7 @@ export async function syncRampBillPayment(
 
   const invoice = await deps.client
     .from("purchaseInvoice")
-    .select("id, currencyCode, exchangeRate")
+    .select("id, currencyCode, exchangeRate, postingDate")
     .eq("id", invoiceId)
     .eq("companyId", deps.companyId)
     .maybeSingle();
@@ -426,9 +442,13 @@ export async function syncRampBillPayment(
   if (!normalizedAmount.ok) {
     return { fail: { id: paymentRampId, message: normalizedAmount.error } };
   }
-  const paymentDate = (payment.effective_date ?? payment.payment_date)?.slice(
+  const paidDate = (payment.effective_date ?? payment.payment_date)?.slice(
     0,
     10
+  );
+  const paymentDate = rampPaymentDate(
+    paidDate,
+    invoice.data.postingDate?.slice(0, 10) ?? null
   );
   if (!paymentDate) {
     return {

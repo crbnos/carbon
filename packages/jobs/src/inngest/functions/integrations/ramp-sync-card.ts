@@ -502,6 +502,9 @@ type CardFamilyConfig<TItem extends RampCardListItem> = {
   ) => AsyncIterable<unknown[]>;
   /** Whether a card-paid bill's payment can claim this family's rows. */
   claimable?: boolean;
+  /** Rows a card-paid bill lists, left to its bill payment until it claims
+   *  them: neither booked nor confirmed. */
+  reserved?: ReadonlySet<string>;
   /** Build (and post) one row into a `charge`. */
   buildOutcome: (
     ctx: RampSyncContext,
@@ -565,6 +568,7 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
           }
           continue;
         }
+        if (config.reserved?.has(item.id)) continue;
         const existing = mappings.get(item.id);
         if (existing && existing.status !== "Draft") {
           mapped.push({ rampId: item.id, entityId: existing.entityId });
@@ -800,12 +804,26 @@ function buildSimpleCardOutcome(family: {
   };
 }
 
+/**
+ * `billCardTransactionIds` are the card-paid bills' transactions this run's
+ * bill payments listed (`RampBillPaymentsResult`); null, when that listing
+ * failed, defers the whole family to the next run rather than risk booking a
+ * bill's card transaction as a charge.
+ */
 export async function syncRampCharges(
   ctx: RampSyncContext,
   ramp: RampClient,
   entityId: string | undefined,
-  cardLiabilityAccountId: string | undefined
+  cardLiabilityAccountId: string | undefined,
+  billCardTransactionIds: readonly string[] | null = []
 ): Promise<FamilyResult> {
+  if (billCardTransactionIds === null) {
+    logger.warning(
+      "Ramp bill payments could not be listed; deferring Ramp charges",
+      { companyId: ctx.companyId }
+    );
+    return { created: 0, reconfirmed: 0, failed: 0 };
+  }
   return syncRampCardFamily<RampTransaction>(
     ctx,
     ramp,
@@ -817,6 +835,7 @@ export async function syncRampCharges(
       label: "charges",
       syncType: "TRANSACTION_SYNC",
       claimable: true,
+      reserved: new Set(billCardTransactionIds),
       gate: (ctx, cardLiabilityAccountId) => {
         if (!cardLiabilityAccountId) {
           logger.warning(

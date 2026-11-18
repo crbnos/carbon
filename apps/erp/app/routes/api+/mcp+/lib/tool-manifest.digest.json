@@ -329,7 +329,7 @@
     {"name":"invoicing_deleteDraftPurchaseInvoiceLine","classification":"DESTRUCTIVE","schema":"97778f2244c8","response":"97778f2244c8","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_deleteDraftSalesInvoice","classification":"DESTRUCTIVE","schema":"79cd487d4e95","response":"79cd487d4e95","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_deleteDraftSalesInvoiceLine","classification":"DESTRUCTIVE","schema":"97778f2244c8","response":"97778f2244c8","permission":"invoicing:delete","paginates":false},
-    {"name":"invoicing_deletePayment","classification":"DESTRUCTIVE","schema":"671e893ba5f6","response":"8394fbabd845","permission":"invoicing:delete","paginates":false},
+    {"name":"invoicing_deletePayment","classification":"DESTRUCTIVE","schema":"7f8214d1083f","response":"8394fbabd845","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_getApAging","classification":"READ","schema":"022511e83f02","response":"eca97da3238d","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getApOpenBySupplier","classification":"READ","schema":"0f10306ad40d","response":"0efd6de45264","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getApTieOut","classification":"READ","schema":"0f10306ad40d","response":"194f80599d96","permission":"invoicing:view","paginates":false},

@@ -500,6 +500,74 @@ describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
     }
   });
 
+  it("leaves a card-paid bill's transactions to its bill payment", async () => {
+    const { syncRampCharges } = await import("./ramp-sync-card");
+    const { confirmSyncs } = await import("@carbon/ee/ramp.server");
+    const reservedId = `ramp-card-${crypto.randomUUID()}`;
+    rampIds.push(reservedId);
+    post.mockReset();
+    vi.mocked(confirmSyncs).mockClear();
+    const ctx = {
+      client: {},
+      db,
+      mapping: createMappingService(db, fixture.companyId),
+      companyId: fixture.companyId,
+      metadata: { sync: { pullTransactions: true } },
+      baseCurrency: fixture.baseCurrency,
+      companyGroupId: fixture.companyGroupId,
+      decimalsCache: new Map([[fixture.baseCurrency, 2]]),
+      exchangeRateCache: new Map(),
+      createdBy: "system",
+      trigger: "event"
+    } as unknown as RampSyncContext;
+    const listTransactions = vi.fn(async function* () {
+      yield [
+        {
+          id: reservedId,
+          entity_amount: { value: 2500, currency: fixture.baseCurrency },
+          accounting_date: "2026-09-11"
+        }
+      ];
+    });
+    const ramp = { listTransactions } as unknown as RampClient;
+
+    // Its bill payment did not stage (yet): neither booked nor confirmed.
+    const reserved = await syncRampCharges(
+      ctx,
+      ramp,
+      undefined,
+      fixture.liabilityAccountId,
+      [reservedId]
+    );
+    expect(reserved).toMatchObject({ failed: 0, created: 0, reconfirmed: 0 });
+    expect(post).not.toHaveBeenCalled();
+    expect(vi.mocked(confirmSyncs).mock.calls[0]?.[2]).toMatchObject({
+      successful: [],
+      failed: []
+    });
+
+    // The bill payments could not be listed: the family waits a run.
+    listTransactions.mockClear();
+    const deferred = await syncRampCharges(
+      ctx,
+      ramp,
+      undefined,
+      fixture.liabilityAccountId,
+      null
+    );
+    expect(deferred).toEqual({ created: 0, reconfirmed: 0, failed: 0 });
+    expect(listTransactions).not.toHaveBeenCalled();
+
+    const charges = await db
+      .selectFrom("externalIntegrationMapping")
+      .select("externalId")
+      .where("companyId", "=", fixture.companyId)
+      .where("entityType", "=", "charge")
+      .where("externalId", "=", reservedId)
+      .execute();
+    expect(charges).toEqual([]);
+  });
+
   it("anchors the Ramp source id before an ambiguous post response", async () => {
     const { createAndPostTransaction } = await import("./ramp-sync-card");
     const rampId = `ramp-card-${crypto.randomUUID()}`;
