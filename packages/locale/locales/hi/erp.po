@@ -1367,6 +1367,9 @@ msgstr "{unmapped} घटकों के पास कोई BOM मेल न�
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {पहले # शेष आवश्यक खाता मैप करें।} other {पहले # शेष आवश्यक खातों को मैप करें।}}"
 
+msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} अपठित"
 
@@ -5794,6 +5797,9 @@ msgstr "बिल दर"
 msgid "Bill Rate (per hour)"
 msgstr "बिल दर (प्रति घंटे)"
 
+msgid "Bill to"
+msgstr ""
+
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
 
@@ -6967,10 +6973,16 @@ msgstr "चैट"
 msgid "Check"
 msgstr "जाँच"
 
+msgid "Check before posting"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
 
 msgid "Check Quantity"
+msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
 msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -20421,6 +20433,9 @@ msgstr "कोई शिपमेंट नहीं मिला"
 msgid "No shipments yet"
 msgstr "अभी कोई शिपमेंट नहीं"
 
+msgid "No shipping is charged on this invoice"
+msgstr ""
+
 msgid "No shortcuts available on this page."
 msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं है।"
 
@@ -20663,6 +20678,9 @@ msgid "None"
 msgstr "कोई नहीं"
 
 msgid "None (full page)"
+msgstr ""
+
+msgid "None (Net 30)"
 msgstr ""
 
 msgid "None available"

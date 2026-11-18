@@ -1367,6 +1367,9 @@ msgstr "{unmapped}개 구성품이 BOM과 일치하지 않습니다 — Match BO
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 매핑하세요.} other {먼저 # 남은 필수 계정을 매핑하세요.}}"
 
+msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} 미읽음"
 
@@ -5794,6 +5797,9 @@ msgstr "청구 요율"
 msgid "Bill Rate (per hour)"
 msgstr "청구 요금 (시간당)"
 
+msgid "Bill to"
+msgstr ""
+
 msgid "Bill To"
 msgstr "청구 대상"
 
@@ -6967,10 +6973,16 @@ msgstr "채팅"
 msgid "Check"
 msgstr "점검"
 
+msgid "Check before posting"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
 
 msgid "Check Quantity"
+msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
 msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -20421,6 +20433,9 @@ msgstr "출하 내역이 없습니다"
 msgid "No shipments yet"
 msgstr "아직 출하가 없습니다"
 
+msgid "No shipping is charged on this invoice"
+msgstr ""
+
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서 사용할 수 있는 단축키가 없습니다."
 
@@ -20663,6 +20678,9 @@ msgid "None"
 msgstr "없음"
 
 msgid "None (full page)"
+msgstr ""
+
+msgid "None (Net 30)"
 msgstr ""
 
 msgid "None available"

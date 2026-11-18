@@ -1367,6 +1367,9 @@ msgstr "{unmapped} components have no BOM match — use Match BOM to link their 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 
+msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
+
 msgid "{unread} unread"
 msgstr "{unread} unread"
 
@@ -5794,6 +5797,9 @@ msgstr "Bill Rate"
 msgid "Bill Rate (per hour)"
 msgstr "Bill Rate (per hour)"
 
+msgid "Bill to"
+msgstr "Bill to"
+
 msgid "Bill To"
 msgstr "Bill To"
 
@@ -6967,11 +6973,17 @@ msgstr "Chat"
 msgid "Check"
 msgstr "Check"
 
+msgid "Check before posting"
+msgstr "Check before posting"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
 
 msgid "Check Quantity"
 msgstr "Check Quantity"
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "Check the details below. A posted invoice can't be edited."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -20421,6 +20433,9 @@ msgstr "No shipments found"
 msgid "No shipments yet"
 msgstr "No shipments yet"
 
+msgid "No shipping is charged on this invoice"
+msgstr "No shipping is charged on this invoice"
+
 msgid "No shortcuts available on this page."
 msgstr "No shortcuts available on this page."
 
@@ -20664,6 +20679,9 @@ msgstr "None"
 
 msgid "None (full page)"
 msgstr "None (full page)"
+
+msgid "None (Net 30)"
+msgstr "None (Net 30)"
 
 msgid "None available"
 msgstr "None available"

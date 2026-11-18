@@ -47,6 +47,7 @@ import type {
   SalesInvoiceShipment
 } from "../../types";
 import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
+import { useSalesInvoiceTotals } from "./useSalesInvoiceTotals";
 
 const LineItems = ({
   currencyCode,
@@ -435,9 +436,6 @@ const SalesInvoiceSummary = ({
   const { locale } = useLocale();
   const { company } = useUser();
 
-  const shouldConvertCurrency =
-    routeData?.salesInvoice?.currencyCode !== company?.baseCurrencyCode;
-
   const formatter = useCurrencyFormatter({
     currency: company?.baseCurrencyCode ?? "USD"
   });
@@ -447,61 +445,17 @@ const SalesInvoiceSummary = ({
 
   const isEditable = !isSalesInvoiceLocked(routeData?.salesInvoice?.status);
 
-  // Calculate totals. Merchandise is NET of the line discount, as in the
-  // `salesInvoices` view.
-  const subtotal =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineSubtotal =
-        (line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
-        (line.shippingCost ?? 0) +
-        (line.addOnCost ?? 0) +
-        (line.nonTaxableAddOnCost ?? 0);
-      return acc + lineSubtotal;
-    }, 0) ?? 0;
-
-  const customerSubtotal =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineSubtotal =
-        (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
-        (line.convertedShippingCost ?? 0) +
-        (line.convertedAddOnCost ?? 0) +
-        (line.convertedNonTaxableAddOnCost ?? 0);
-
-      return acc + lineSubtotal;
-    }, 0) ?? 0;
-
-  const tax =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineTaxAmount =
-        (line.taxPercent ?? 0) *
-        ((line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
-          (line.shippingCost ?? 0) +
-          (line.addOnCost ?? 0));
-      return acc + lineTaxAmount;
-    }, 0) ?? 0;
-
-  const customerTax =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineTaxAmount =
-        (line.taxPercent ?? 0) *
-        ((line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
-          (line.convertedShippingCost ?? 0) +
-          (line.convertedAddOnCost ?? 0));
-      return acc + lineTaxAmount;
-    }, 0) ?? 0;
-
-  // `salesInvoiceShipment.shippingCost` is stored in BASE currency, like every
-  // other raw column on this side -- the `salesInvoices` view adds it straight
-  // onto a base subtotal built from `unitPrice`. So the base figure is the
-  // stored value and only the customer-facing one converts.
-  const shippingCost = routeData?.salesInvoiceShipment?.shippingCost ?? 0;
-
-  const customerShippingCost =
-    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
-    (routeData?.salesInvoice?.exchangeRate ?? 1);
-
-  const total = subtotal + tax + shippingCost;
-  const customerTotal = customerSubtotal + customerTax + customerShippingCost;
+  const {
+    subtotal,
+    customerSubtotal,
+    tax,
+    customerTax,
+    shippingCost,
+    customerShippingCost,
+    total,
+    customerTotal,
+    shouldConvertCurrency
+  } = useSalesInvoiceTotals(invoiceId);
 
   return (
     <Card>

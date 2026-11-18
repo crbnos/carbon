@@ -4,7 +4,11 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
+  cn,
   HStack,
   Modal,
   ModalBody,
@@ -22,12 +26,15 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { distinctItemText } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
 import { useFetcher } from "react-router";
+import { CustomerAvatar } from "~/components";
 import {
   CustomerContact,
   DatePicker,
@@ -35,12 +42,24 @@ import {
   Hidden,
   SelectControlled
 } from "~/components/Form";
-import { useCompanyToday } from "~/hooks";
+import {
+  useCompanyToday,
+  useCurrencyFormatter,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { salesInvoicePostValidator } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  salesInvoicePostValidator
+} from "../../invoicing.models";
+import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import StripeCustomerPanel from "./StripeCustomerPanel";
+import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
+import { useSalesInvoiceTotals } from "./useSalesInvoiceTotals";
 
 /** What the post action answers: the operation's result, or the violations. */
 export type SalesInvoicePostResult = {
@@ -85,6 +104,213 @@ const SalesInvoicePostModal = ({
     </ModalContent>
   </Modal>
 );
+
+/** A line's amount before tax: what it adds to the subtotal. */
+const lineAmount = (line: SalesInvoiceLine) =>
+  (line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
+  (line.shippingCost ?? 0) +
+  (line.addOnCost ?? 0) +
+  (line.nonTaxableAddOnCost ?? 0);
+
+/** One labelled fact in the post summary: label left, value right. */
+const SummaryFact = ({
+  label,
+  children
+}: {
+  label: string;
+  children: ReactNode;
+}) => (
+  <div className="flex items-center justify-between gap-4">
+    <span className="shrink-0 text-muted-foreground">{label}</span>
+    <div className="min-w-0 truncate text-right">{children}</div>
+  </div>
+);
+
+/**
+ * What the invoice will say once posted, so a wrong or missing figure is
+ * caught while it can still be changed. Values that are often a mistake —
+ * no shipping, a line with no price — are flagged in amber. They are nudges,
+ * not blocks: each can be right. The due date is not shown: posting sets it
+ * from the payment term.
+ */
+const SalesInvoicePostSummary = ({ invoiceId }: { invoiceId: string }) => {
+  const { t } = useLingui();
+  const [items] = useItems();
+  const rentalLineTypeLabel = useRentalLineTypeLabel();
+  const { company } = useUser();
+  const routeData = useRouteData<{
+    salesInvoice: SalesInvoice;
+    salesInvoiceLines: SalesInvoiceLine[];
+  }>(path.to.salesInvoice(invoiceId));
+  const totals = useSalesInvoiceTotals(invoiceId);
+
+  const formatter = useCurrencyFormatter({
+    currency: company?.baseCurrencyCode ?? "USD"
+  });
+  const presentationCurrencyFormatter = useCurrencyFormatter({
+    currency: routeData?.salesInvoice?.currencyCode ?? "USD"
+  });
+
+  const salesInvoice = routeData?.salesInvoice;
+  const lines = routeData?.salesInvoiceLines ?? [];
+  if (!salesInvoice) return null;
+
+  const lineName = (line: SalesInvoiceLine) =>
+    line.invoiceLineType === "Rental"
+      ? rentalLineTypeLabel(line.rentalLineType)
+      : line.invoiceLineType === "Fixed Asset"
+        ? (line as any).assetReadableId || t`Fixed Asset`
+        : isItemlessServiceLine(line)
+          ? line.description || t`Service`
+          : (getItemReadableId(items, line.itemId) ?? line.description ?? "");
+
+  const unpricedLines = lines.filter((line) => lineAmount(line) === 0).length;
+  const noShipping = totals.shippingCost === 0;
+  const hasChecks = noShipping || unpricedLines > 0;
+  const billsAnotherCustomer =
+    !!salesInvoice.invoiceCustomerId &&
+    salesInvoice.invoiceCustomerId !== salesInvoice.customerId;
+
+  return (
+    <VStack spacing={3} className="w-full">
+      {hasChecks && (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>
+            <Trans>Check before posting</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-4 space-y-0.5">
+              {noShipping && (
+                <li>
+                  <Trans>No shipping is charged on this invoice</Trans>
+                </li>
+              )}
+              {unpricedLines > 0 && (
+                <li>
+                  <Plural
+                    value={unpricedLines}
+                    one="# line has no price"
+                    other="# lines have no price"
+                  />
+                </li>
+              )}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="w-full rounded-lg border text-sm">
+        <div className="space-y-1 px-3 py-2">
+          <SummaryFact label={t`Customer`}>
+            <CustomerAvatar customerId={salesInvoice.customerId ?? null} />
+          </SummaryFact>
+          {billsAnotherCustomer && (
+            <SummaryFact label={t`Bill to`}>
+              <CustomerAvatar customerId={salesInvoice.invoiceCustomerId} />
+            </SummaryFact>
+          )}
+          <SummaryFact label={t`Customer PO`}>
+            {salesInvoice.customerReference || (
+              <span className="text-muted-foreground">
+                <Trans>None</Trans>
+              </span>
+            )}
+          </SummaryFact>
+          <SummaryFact label={t`Payment term`}>
+            {salesInvoice.paymentTermName || (
+              <span className="text-muted-foreground">
+                <Trans>None (Net 30)</Trans>
+              </span>
+            )}
+          </SummaryFact>
+          {totals.shouldConvertCurrency && (
+            <SummaryFact label={t`Currency`}>
+              <span className="tabular-nums">
+                {salesInvoice.currencyCode} @ {salesInvoice.exchangeRate}
+              </span>
+            </SummaryFact>
+          )}
+        </div>
+        <div className="border-t max-h-48 overflow-y-auto">
+          {lines.map((line) => {
+            const amount = lineAmount(line);
+            return (
+              <div
+                key={line.id}
+                className="flex items-center justify-between gap-4 px-3 py-2"
+              >
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-medium">{lineName(line)}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {line.quantity} × {formatter.format(line.netUnitPrice ?? 0)}
+                  </span>
+                </div>
+                <span
+                  className={cn(
+                    "shrink-0 tabular-nums",
+                    amount === 0 &&
+                      "font-medium text-amber-600 dark:text-amber-400"
+                  )}
+                >
+                  {formatter.format(amount)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="border-t px-3 py-2 space-y-1">
+          <div className="flex justify-between text-muted-foreground">
+            <span>
+              <Trans>Subtotal</Trans>
+            </span>
+            <span className="tabular-nums">
+              {formatter.format(totals.subtotal)}
+            </span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>
+              <Trans>Tax</Trans>
+            </span>
+            <span className="tabular-nums">{formatter.format(totals.tax)}</span>
+          </div>
+          <div
+            className={cn(
+              "flex justify-between",
+              noShipping
+                ? "font-medium text-amber-600 dark:text-amber-400"
+                : "text-muted-foreground"
+            )}
+          >
+            <span>
+              <Trans>Shipping</Trans>
+            </span>
+            <span className="tabular-nums">
+              {formatter.format(totals.shippingCost)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-start justify-between border-t px-3 py-2.5">
+          <span className="text-base font-semibold">
+            <Trans>Total</Trans>
+          </span>
+          <div className="flex flex-col items-end">
+            <span className="text-base font-semibold tabular-nums">
+              {formatter.format(totals.total)}
+            </span>
+            {totals.shouldConvertCurrency && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {presentationCurrencyFormatter.format(totals.customerTotal)}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </VStack>
+  );
+};
 
 const SalesInvoicePostBody = ({
   fetcher,
@@ -206,12 +432,15 @@ const SalesInvoicePostBody = ({
               below.
             </>
           ) : (
-            <>Are you sure you want to post this invoice?</>
+            <Trans>
+              Check the details below. A posted invoice can't be edited.
+            </Trans>
           )}
         </ModalDescription>
       </ModalHeader>
       <ModalBody>
         <VStack spacing={4}>
+          <SalesInvoicePostSummary invoiceId={invoiceId} />
           {hasLinesToShip && (
             <div className="w-full">
               <Table>

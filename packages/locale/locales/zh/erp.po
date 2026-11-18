@@ -1367,6 +1367,9 @@ msgstr "没有 BOM 匹配的 {unmapped} 个组件 — 使用\"匹配 BOM\"链接
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {先映射剩余的 # 个必需账户。} other {先映射剩余的 # 个必需账户。}}"
 
+msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} 条未读"
 
@@ -5794,6 +5797,9 @@ msgstr "计费费率"
 msgid "Bill Rate (per hour)"
 msgstr "账单费率（每小时）"
 
+msgid "Bill to"
+msgstr ""
+
 msgid "Bill To"
 msgstr "账单收款人"
 
@@ -6967,10 +6973,16 @@ msgstr "聊天"
 msgid "Check"
 msgstr "检查"
 
+msgid "Check before posting"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
 
 msgid "Check Quantity"
+msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
 msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -20421,6 +20433,9 @@ msgstr "未找到发货单"
 msgid "No shipments yet"
 msgstr "尚无发货"
 
+msgid "No shipping is charged on this invoice"
+msgstr ""
+
 msgid "No shortcuts available on this page."
 msgstr "此页面没有可用的快捷键。"
 
@@ -20663,6 +20678,9 @@ msgid "None"
 msgstr "无"
 
 msgid "None (full page)"
+msgstr ""
+
+msgid "None (Net 30)"
 msgstr ""
 
 msgid "None available"

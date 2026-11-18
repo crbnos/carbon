@@ -1367,6 +1367,9 @@ msgstr "{unmapped} Komponenten haben keine BOM-Entsprechung — verwenden Sie BO
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Ordnen Sie zunächst das # verbleibende erforderliche Konto zu.} other {Ordnen Sie zunächst die # verbleibenden erforderlichen Konten zu.}}"
 
+msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} ungelesen"
 
@@ -5794,6 +5797,9 @@ msgstr "Abrechnungssatz"
 msgid "Bill Rate (per hour)"
 msgstr "Abrechnungssatz (pro Stunde)"
 
+msgid "Bill to"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Rechnung an"
 
@@ -6967,10 +6973,16 @@ msgstr "Chat"
 msgid "Check"
 msgstr "Prüfung"
 
+msgid "Check before posting"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Wählen Sie Arbeitsgänge auf der linken Seite, um das Los zu erstellen."
 
 msgid "Check Quantity"
+msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
 msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -20421,6 +20433,9 @@ msgstr "Keine Lieferungen gefunden"
 msgid "No shipments yet"
 msgstr "Noch keine Lieferungen"
 
+msgid "No shipping is charged on this invoice"
+msgstr ""
+
 msgid "No shortcuts available on this page."
 msgstr "Auf dieser Seite sind keine Tastenkombinationen verfügbar."
 
@@ -20663,6 +20678,9 @@ msgid "None"
 msgstr "Keine"
 
 msgid "None (full page)"
+msgstr ""
+
+msgid "None (Net 30)"
 msgstr ""
 
 msgid "None available"
