@@ -51,6 +51,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { purchaseLineAccountClasses } from "~/modules/invoicing/invoicing.models";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
@@ -429,7 +430,7 @@ const SupplierQuoteLineForm = ({
                             name="accountId"
                             label={t`GL Account`}
                             termId="purchase-indirect-gl-account"
-                            classes={["Asset", "Expense"]}
+                            classes={purchaseLineAccountClasses}
                             isOptional={false}
                           />
 
