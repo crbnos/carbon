@@ -233,7 +233,11 @@ export async function createOrResumeRampPayment(
   });
 }
 
-/** Sync one non-card Ramp bill payment through the resumable payment stager. */
+/**
+ * Sync one non-card Ramp bill payment through the resumable payment stager.
+ * Confirm items carry the bill's id: Ramp tracks payment sync per bill, and a
+ * batch payment shares one payment id across its bills.
+ */
 export async function syncRampBillPayment(
   deps: RampBillPaymentDependencies,
   bill: RampBill,
@@ -247,12 +251,12 @@ export async function syncRampBillPayment(
   const method = payment.payment_method ?? "";
   const route = rampBillPaymentRoute(method);
   if (route === "card") {
-    return { skip: { id: paymentRampId, referenceId: paymentRampId } };
+    return { skip: { id: bill.id, referenceId: paymentRampId } };
   }
   if (route === "unsupported") {
     return {
       fail: {
-        id: paymentRampId,
+        id: bill.id,
         message: `Unsupported Ramp bill payment method: ${method || "missing"}`
       }
     };
@@ -262,7 +266,7 @@ export async function syncRampBillPayment(
   if (!invoiceId) {
     return {
       fail: {
-        id: paymentRampId,
+        id: bill.id,
         message: "Bill was never synced to Carbon — sync the bill first"
       }
     };
@@ -275,12 +279,12 @@ export async function syncRampBillPayment(
     .eq("companyId", deps.companyId)
     .maybeSingle();
   if (invoice.error) {
-    return { fail: { id: paymentRampId, message: invoice.error.message } };
+    return { fail: { id: bill.id, message: invoice.error.message } };
   }
   if (!invoice.data) {
     return {
       fail: {
-        id: paymentRampId,
+        id: bill.id,
         message: "The bill's Carbon invoice no longer exists"
       }
     };
@@ -294,7 +298,7 @@ export async function syncRampBillPayment(
     "Bill payment amount"
   );
   if (!normalizedAmount.ok) {
-    return { fail: { id: paymentRampId, message: normalizedAmount.error } };
+    return { fail: { id: bill.id, message: normalizedAmount.error } };
   }
   const paymentDate = (payment.effective_date ?? payment.payment_date)?.slice(
     0,
@@ -302,13 +306,13 @@ export async function syncRampBillPayment(
   );
   if (!paymentDate) {
     return {
-      fail: { id: paymentRampId, message: "Bill payment has no usable date" }
+      fail: { id: bill.id, message: "Bill payment has no usable date" }
     };
   }
   if (invoice.data.exchangeRate === null) {
     return {
       fail: {
-        id: paymentRampId,
+        id: bill.id,
         message: "Bill invoice has no authoritative exchange-rate snapshot"
       }
     };
@@ -336,7 +340,7 @@ export async function syncRampBillPayment(
     });
     return {
       ok: {
-        id: paymentRampId,
+        id: bill.id,
         referenceId: outcome.paymentRowId,
         deepLinkUrl: deps.invoiceDeepLinkUrl(invoiceId)
       }
@@ -344,7 +348,7 @@ export async function syncRampBillPayment(
   } catch (error) {
     return {
       fail: {
-        id: paymentRampId,
+        id: bill.id,
         message: error instanceof Error ? error.message : String(error)
       }
     };
