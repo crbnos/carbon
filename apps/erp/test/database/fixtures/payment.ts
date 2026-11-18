@@ -252,6 +252,8 @@ export async function paymentFixture() {
         noApplication?: boolean;
         sourcePaymentId?: string;
         invoiceId?: string;
+        /** Defaults to 2026-09-01; a payment posts on it. */
+        paymentDate?: string;
       } = {}
     ) {
       const id = `${prefix}-payment-${crypto.randomUUID()}`;
@@ -264,7 +266,7 @@ export async function paymentFixture() {
             paymentId: id,
             paymentType: "Receipt",
             customerId,
-            paymentDate: "2026-09-01",
+            paymentDate: input.paymentDate ?? "2026-09-01",
             postingDate: "2026-09-01",
             currencyCode: "EUR",
             totalAmount: input.amount ?? 110,

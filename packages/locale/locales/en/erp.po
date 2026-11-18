@@ -5636,6 +5636,9 @@ msgstr "Bank Code"
 msgid "Bank Name"
 msgstr "Bank Name"
 
+msgid "Bank, Cash or Card Account"
+msgstr "Bank, Cash or Card Account"
+
 msgid "Banner content (optional)"
 msgstr "Banner content (optional)"
 
@@ -20855,6 +20858,9 @@ msgstr "Not now"
 msgid "Not on the page"
 msgstr "Not on the page"
 
+msgid "Not posted"
+msgstr "Not posted"
+
 msgid "Not Qualified"
 msgstr "Not Qualified"
 
@@ -22540,8 +22546,8 @@ msgstr "Payment to Supplier"
 msgid "Payments"
 msgstr "Payments"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
@@ -22609,6 +22615,9 @@ msgstr "Pending inspection"
 
 msgid "Pending Inspection"
 msgstr "Pending Inspection"
+
+msgid "Pending payment, not posted"
+msgstr "Pending payment, not posted"
 
 msgid "people"
 msgstr "people"
@@ -26871,6 +26880,9 @@ msgstr "Save and Overwrite"
 
 msgid "Save and post"
 msgstr "Save and post"
+
+msgid "Save and Post"
+msgstr "Save and Post"
 
 msgid "Save applications"
 msgstr "Save applications"
@@ -32356,6 +32368,12 @@ msgstr "This part only"
 
 msgid "This path only decides what runs next"
 msgstr "This path only decides what runs next"
+
+msgid "This payment did not post"
+msgstr "This payment did not post"
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr "This payment is a Draft. Its applications do not pay the invoices until it is posted."
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."

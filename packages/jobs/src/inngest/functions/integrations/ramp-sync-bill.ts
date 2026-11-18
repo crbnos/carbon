@@ -19,7 +19,11 @@ import {
   stageOrResumeRampBill
 } from "./ramp-sync-bill-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
-import { syncRampBillPayment } from "./ramp-sync-payment";
+import {
+  type RampCardPaymentAccount,
+  rampBillPaymentRoute,
+  syncRampBillPayment
+} from "./ramp-sync-payment";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled
@@ -517,28 +521,64 @@ export async function syncRampBills(
   return result;
 }
 
+/**
+ * The account a card-paid bill is paid from: the card liability account the
+ * card charges post to. A supplier payment can only come from a Credit Card
+ * account, so anything else is a setup error the bill payment reports.
+ */
+async function resolveRampCardPaymentAccount(
+  ctx: RampSyncContext,
+  accountId: string | undefined
+): Promise<RampCardPaymentAccount> {
+  // Card bill payments are skipped while no card account is named.
+  if (!accountId) return { error: "No Ramp card liability account is set" };
+  const account = await ctx.db
+    .selectFrom("account")
+    .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
+    .select("account.accountType")
+    .where("company.id", "=", ctx.companyId)
+    .where("account.id", "=", accountId)
+    .executeTakeFirst();
+  if (account?.accountType !== "Credit Card") {
+    return {
+      error:
+        "The Ramp card liability account must be a Credit Card account. Move it into the Credit Cards group in the chart of accounts."
+    };
+  }
+  return { accountId };
+}
+
+/**
+ * `cardTransactionIds` are the card transactions of every card-paid bill this
+ * run listed, which the charge sync must leave to the bill payment even when
+ * its staging failed. Null when the listing failed, so they are unknown.
+ */
+export type RampBillPaymentsResult = FamilyResult & {
+  cardTransactionIds: string[] | null;
+};
+
 export async function syncRampBillPayments(
   ctx: RampSyncContext,
   ramp: RampClient,
   entityId: string | undefined
-): Promise<FamilyResult> {
+): Promise<RampBillPaymentsResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  // Bill payments ride the same gate as bills (no separate flag).
+  // Bill payments ride the same gate as bills (no separate flag). With them
+  // off, a card-paid bill's transaction is booked as a charge.
   if (!isRampInboundFamilyEnabled("billPayments", metadata)) {
-    return result;
+    return { ...result, cardTransactionIds: [] };
   }
-  if (!metadata.statementBankAccountId) {
-    logger.warning(
-      "No statement bank account configured; skipping Ramp bill payments",
-      { companyId }
-    );
-    return result;
-  }
+  const cardTransactionIds = new Set<string>();
+  const card = await resolveRampCardPaymentAccount(
+    ctx,
+    metadata.cardLiabilityAccountId
+  );
 
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
   let reconfirmed = 0;
+  const unconfigured = new Set<"bank" | "card">();
 
   try {
     for await (const page of ramp.listBills({
@@ -548,16 +588,32 @@ export async function syncRampBillPayments(
     })) {
       for (const bill of page as RampBill[]) {
         if (!isRampEntityInScope(entityId, bill.entity_id)) continue;
+        if (rampBillPaymentRoute(bill.payment?.payment_method) === "card") {
+          for (const id of bill.payment?.details?.transaction_ids ?? []) {
+            cardTransactionIds.add(id);
+          }
+        }
         // TODO(task-1): confirm bill.status vs payment.status for PAID.
         if (bill.status !== BILL_PAID_STATUS) continue;
         const payment = bill.payment;
         if (!payment) continue;
+        // A rail whose account the integration does not name is left for a
+        // later run, as before: neither confirmed nor failed to Ramp.
+        const route = rampBillPaymentRoute(payment.payment_method);
+        if (
+          (route === "bank" && !metadata.statementBankAccountId) ||
+          (route === "card" && !metadata.cardLiabilityAccountId)
+        ) {
+          unconfigured.add(route);
+          continue;
+        }
 
         const outcome = await syncRampBillPayment(
           {
             companyId: ctx.companyId,
             baseCurrency: ctx.baseCurrency,
-            statementBankAccountId: metadata.statementBankAccountId,
+            statementBankAccountId: metadata.statementBankAccountId ?? null,
+            card,
             db: ctx.db,
             client: ctx.client,
             getMappedInvoiceId: (billRemoteId) =>
@@ -587,6 +643,15 @@ export async function syncRampBillPayments(
       error: familyError
     });
     recordRampFamilyError(result, familyError);
+  }
+
+  for (const route of unconfigured) {
+    logger.warning(
+      route === "bank"
+        ? "No statement bank account configured; skipping Ramp bank bill payments"
+        : "No card liability account configured; skipping Ramp card bill payments",
+      { companyId }
+    );
   }
 
   try {
@@ -621,5 +686,8 @@ export async function syncRampBillPayments(
     direction: "pull-from-accounting",
     entityIds: successful.map((item) => item.id)
   });
-  return result;
+  return {
+    ...result,
+    cardTransactionIds: result.error ? null : [...cardTransactionIds]
+  };
 }

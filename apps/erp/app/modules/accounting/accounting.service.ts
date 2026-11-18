@@ -2868,7 +2868,7 @@ export async function getAccountsList(
 ) {
   let query = client
     .from("account")
-    .select("id, number, name, incomeBalance, class")
+    .select("id, number, name, incomeBalance, class, accountType")
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
 

@@ -2029,7 +2029,8 @@ export const updateCurrency = defineServiceFn({
  * @remarks
  * `parentId` is the group account it moves under; without it the account
  * moves to the top of the chart. It takes the new group's class and balance
- * type (Balance Sheet or Income Statement). The parent must be a group of
+ * type (Balance Sheet or Income Statement), and a ledger account also takes
+ * the group's account type. The parent must be a group of
  * the company group's chart, and not the account itself or one of its own
  * accounts.
  *
@@ -2045,12 +2046,13 @@ export const moveAccount = defineServiceFn({
       updatedBy: string;
       class?: Database["public"]["Enums"]["glAccountClass"];
       incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"];
+      accountType?: Database["public"]["Enums"]["accountType"];
     } = { parentId: parentId || null, updatedBy: ctx.auditUserId };
 
     if (parentId) {
       const accounts = await client
         .from("account")
-        .select("id, parentId, isGroup, class, incomeBalance")
+        .select("id, parentId, isGroup, class, incomeBalance, accountType")
         .eq("companyGroupId", ctx.company.groupId);
       if (accounts.error) {
         return ctx.error(
@@ -2062,10 +2064,16 @@ export const moveAccount = defineServiceFn({
       const refused = accountMoveRefusal(accounts.data, accountId, parentId);
       if (refused) return ctx.error("rule", refused);
       const parent = accounts.data.find((a) => a.id === parentId);
+      const moved = accounts.data.find((a) => a.id === accountId);
       update = {
         ...update,
         class: parent?.class ?? undefined,
-        incomeBalance: parent?.incomeBalance ?? undefined
+        incomeBalance: parent?.incomeBalance ?? undefined,
+        // A ledger account takes its group's type, as the account form does.
+        accountType:
+          moved && !moved.isGroup
+            ? (parent?.accountType ?? undefined)
+            : undefined
       };
     }
 
@@ -2322,6 +2330,7 @@ export const getAccountsInScope = defineServiceFn({
             "Other Current Asset",
             "Other Asset",
             "Other Current Liability",
+            "Credit Card",
             "Long Term Liability",
             "Equity - No Close",
             "Equity - Close",
@@ -2388,6 +2397,7 @@ export const getDimensionPivot = defineServiceFn({
               "Other Current Asset",
               "Other Asset",
               "Other Current Liability",
+              "Credit Card",
               "Long Term Liability",
               "Equity - No Close",
               "Equity - Close",
@@ -2490,6 +2500,7 @@ export const getDimensionPivotLines = defineServiceFn({
               "Other Current Asset",
               "Other Asset",
               "Other Current Liability",
+              "Credit Card",
               "Long Term Liability",
               "Equity - No Close",
               "Equity - Close",
@@ -3377,6 +3388,7 @@ export const createAccount = defineServiceFn({
           "Other Current Asset",
           "Other Asset",
           "Other Current Liability",
+          "Credit Card",
           "Long Term Liability",
           "Equity - No Close",
           "Equity - Close",
@@ -3443,6 +3455,7 @@ export const updateAccount = defineServiceFn({
           "Other Current Asset",
           "Other Asset",
           "Other Current Liability",
+          "Credit Card",
           "Long Term Liability",
           "Equity - No Close",
           "Equity - Close",
