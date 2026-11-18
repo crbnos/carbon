@@ -240,6 +240,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{open} open"
+msgstr ""
+
 msgid "{quantity} in this operation"
 msgstr ""
 
@@ -988,6 +991,9 @@ msgstr "密度"
 msgid "Depot"
 msgstr "倉庫"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "問題を説明してください..."
 
@@ -1216,6 +1222,9 @@ msgstr "storageUnitsの取得に失敗しました"
 msgid "Failed to get options"
 msgstr "オプションの取得に失敗しました"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "画像の処理に失敗"
 
@@ -1388,6 +1397,9 @@ msgstr "このブラウザでのCarbonの表示方法。"
 
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "いくつ?"
@@ -1802,6 +1814,9 @@ msgstr "が一致"
 msgid "Material requested"
 msgstr "資材を依頼済み"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "材料"
 
@@ -2018,6 +2033,9 @@ msgstr "オープン中の検査はありません"
 msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "この拠点にオープンな外注サービスがありません"
 
@@ -2149,6 +2167,9 @@ msgstr "通常検査"
 
 msgid "Not in this operation"
 msgstr "この工程にはありません"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "スケジュール未設定"
@@ -2972,6 +2993,9 @@ msgstr "作業者を検索"
 msgid "Search operators..."
 msgstr "作業者を検索..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "プロジェクトとタスクを検索"
 
@@ -3001,6 +3025,9 @@ msgstr "完了数量を選択"
 
 msgid "Select a customer"
 msgstr "得意先を選択"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "拠点を選択すると、そのステーションが表示されます"
@@ -3219,6 +3246,9 @@ msgstr "目安納期"
 msgid "Solid"
 msgstr "単色"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "ソース"
 
@@ -3420,6 +3450,9 @@ msgstr "製造指図は異なる品目を製造します — 各製造指図の�
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
 
@@ -3477,6 +3510,9 @@ msgstr "この検査計画には作業手順書がありません。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "この製造指図では、その部品は使用されません"

@@ -240,6 +240,9 @@ msgstr "{onHand} of {need}"
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr "{onHand} on hand · covers {covers} of {demand}"
 
+msgid "{open} open"
+msgstr "{open} open"
+
 msgid "{quantity} in this operation"
 msgstr "{quantity} in this operation"
 
@@ -988,6 +991,9 @@ msgstr "Density"
 msgid "Depot"
 msgstr "Depot"
 
+msgid "Describe it: what, how many, where"
+msgstr "Describe it: what, how many, where"
+
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
 
@@ -1216,6 +1222,9 @@ msgstr "Failed to fetch storageUnits"
 msgid "Failed to get options"
 msgstr "Failed to get options"
 
+msgid "Failed to load material requests"
+msgstr "Failed to load material requests"
+
 msgid "Failed to process image"
 msgstr "Failed to process image"
 
@@ -1388,6 +1397,9 @@ msgstr "How Carbon looks in this browser."
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr "How many, where, anything the feeder should know"
 
 msgid "How many?"
 msgstr "How many?"
@@ -1802,6 +1814,9 @@ msgstr "matches"
 msgid "Material requested"
 msgstr "Material requested"
 
+msgid "Material requests"
+msgstr "Material requests"
+
 msgid "Materials"
 msgstr "Materials"
 
@@ -2018,6 +2033,9 @@ msgstr "No open inspections"
 msgid "No open jobs"
 msgstr "No open jobs"
 
+msgid "No open material requests"
+msgstr "No open material requests"
+
 msgid "No open service jobs at this location"
 msgstr "No open service jobs at this location"
 
@@ -2149,6 +2167,9 @@ msgstr "Normal"
 
 msgid "Not in this operation"
 msgstr "Not in this operation"
+
+msgid "Not on the list: describe it below"
+msgstr "Not on the list: describe it below"
 
 msgid "Not scheduled"
 msgstr "Not scheduled"
@@ -2972,6 +2993,9 @@ msgstr "Search operators"
 msgid "Search operators..."
 msgstr "Search operators..."
 
+msgid "Search parts, consumables and tools"
+msgstr "Search parts, consumables and tools"
+
 msgid "Search projects and tasks"
 msgstr "Search projects and tasks"
 
@@ -3001,6 +3025,9 @@ msgstr "Select a completion quantity"
 
 msgid "Select a customer"
 msgstr "Select a customer"
+
+msgid "Select a location to see its material requests"
+msgstr "Select a location to see its material requests"
 
 msgid "Select a location to see its stations"
 msgstr "Select a location to see its stations"
@@ -3219,6 +3246,9 @@ msgstr "Soft deadline"
 msgid "Solid"
 msgstr "Solid"
 
+msgid "Something else"
+msgstr "Something else"
+
 msgid "Source"
 msgstr "Source"
 
@@ -3420,6 +3450,9 @@ msgstr "The jobs make different items — keep each job's parts apart."
 msgid "the kit"
 msgstr "the kit"
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr "The list failed to load. You can still describe what you need."
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 
@@ -3477,6 +3510,9 @@ msgstr "This inspection plan has no work instructions."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "This is a pass / fail check. Press P or F."
+
+msgid "This job"
+msgstr "This job"
 
 msgid "This job does not use that part"
 msgstr "This job does not use that part"

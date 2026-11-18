@@ -240,6 +240,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{open} open"
+msgstr ""
+
 msgid "{quantity} in this operation"
 msgstr ""
 
@@ -988,6 +991,9 @@ msgstr "밀도"
 msgid "Depot"
 msgstr "센터"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
 
@@ -1216,6 +1222,9 @@ msgstr "저장 단위를 불러오지 못했습니다"
 msgid "Failed to get options"
 msgstr "옵션을 불러올 수 없습니다."
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "이미지 처리 실패"
 
@@ -1388,6 +1397,9 @@ msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "몇 개?"
@@ -1802,6 +1814,9 @@ msgstr "일치"
 msgid "Material requested"
 msgstr "자재 요청됨"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "자재"
 
@@ -2018,6 +2033,9 @@ msgstr "미결 검사가 없습니다"
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "이 사업장에서 미결 서비스 작업이 없습니다"
 
@@ -2149,6 +2167,9 @@ msgstr "보통 검사"
 
 msgid "Not in this operation"
 msgstr "이 공정에 없음"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "예약되지 않음"
@@ -2972,6 +2993,9 @@ msgstr "작업자 검색"
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "프로젝트 및 작업 검색"
 
@@ -3001,6 +3025,9 @@ msgstr "완료 수량을 선택하세요"
 
 msgid "Select a customer"
 msgstr "고객 선택"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "사업장을 선택하면 스테이션을 볼 수 있습니다"
@@ -3219,6 +3246,9 @@ msgstr "목표 기한"
 msgid "Solid"
 msgstr "단색"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "소스"
 
@@ -3420,6 +3450,9 @@ msgstr "작업 지시가 서로 다른 품목을 생성합니다 — 각 작업 
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개가 완료됩니다."
 
@@ -3477,6 +3510,9 @@ msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "이 작업 지시에서는 해당 부품을 사용하지 않습니다"

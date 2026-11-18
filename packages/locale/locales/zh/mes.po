@@ -240,6 +240,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{open} open"
+msgstr ""
+
 msgid "{quantity} in this operation"
 msgstr ""
 
@@ -988,6 +991,9 @@ msgstr "密度"
 msgid "Depot"
 msgstr "仓库"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "描述问题..."
 
@@ -1216,6 +1222,9 @@ msgstr "获取存储单位失败"
 msgid "Failed to get options"
 msgstr "获取选项失败"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "处理图像失败"
 
@@ -1388,6 +1397,9 @@ msgstr "Carbon 在此浏览器中的外观。"
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "多少个？"
@@ -1802,6 +1814,9 @@ msgstr "匹配"
 msgid "Material requested"
 msgstr "已申请物料"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "原材料"
 
@@ -2018,6 +2033,9 @@ msgstr "没有未结的检验"
 msgid "No open jobs"
 msgstr "没有未结的工单"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "此地点没有打开的服务工单"
 
@@ -2149,6 +2167,9 @@ msgstr "正常检验"
 
 msgid "Not in this operation"
 msgstr "不在此工序中"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "未安排"
@@ -2972,6 +2993,9 @@ msgstr "搜索操作员"
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "搜索项目和任务"
 
@@ -3001,6 +3025,9 @@ msgstr "选择完成数量"
 
 msgid "Select a customer"
 msgstr "选择客户"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "选择地点以查看其工位"
@@ -3219,6 +3246,9 @@ msgstr "软性截止日期"
 msgid "Solid"
 msgstr "纯色"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "来源"
 
@@ -3420,6 +3450,9 @@ msgstr "各工单生产不同的物料 — 保持每个工单的零件分开。"
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
 
@@ -3477,6 +3510,9 @@ msgstr "此检验计划没有作业指导书。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "此工单不使用该零件"
