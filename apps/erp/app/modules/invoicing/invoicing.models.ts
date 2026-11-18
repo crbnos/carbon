@@ -4,6 +4,7 @@
 
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { round } from "@carbon/database/precision";
+import { moneyFormatOptions } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -881,8 +882,10 @@ export function purchaseInvoiceRoundingAmount(
   const amount = round(targetTotal - totalWithoutRounding, decimals);
   const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
   if (Math.abs(amount) > max) {
+    const format = new Intl.NumberFormat("en-US", moneyFormatOptions(decimals))
+      .format;
     return {
-      refusal: `The difference of ${amount.toFixed(decimals)} is more than ${max.toFixed(decimals)}, too large for a rounding adjustment. Correct the invoice lines instead.`
+      refusal: `The difference of ${format(amount)} is more than ${format(max)}, too large for a rounding adjustment. Correct the invoice lines instead.`
     };
   }
   return { amount };
