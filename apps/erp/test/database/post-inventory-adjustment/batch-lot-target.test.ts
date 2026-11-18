@@ -24,16 +24,18 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
   let f: Fixture;
   let binA: string;
   let binB: string;
+  let binC: string;
 
   beforeAll(async () => {
     f = await alwaysPostFixture();
     binA = `${f.prefix}-bin-a`;
     binB = `${f.prefix}-bin-b`;
+    binC = `${f.prefix}-bin-c`;
     await seed(f, (trx) =>
       trx
         .insertInto("storageUnit")
         .values(
-          [binA, binB].map((id) => ({
+          [binA, binB, binC].map((id) => ({
             id,
             name: id,
             locationId: f.locationId,
@@ -97,7 +99,10 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
         .values({
           id,
           readableId,
-          quantity: stock.reduce((sum, [, quantity]) => sum + quantity, 0),
+          quantity: Math.max(
+            0,
+            stock.reduce((sum, [, quantity]) => sum + quantity, 0)
+          ),
           status: "Available",
           sourceDocument: "Item",
           sourceDocumentId: itemId,
@@ -140,6 +145,20 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
         Number(row.quantity)
       ])
       .sort();
+  }
+
+  /** The item's on-hand per bin, over every lot. */
+  async function onHandByBin(itemId: string) {
+    const rows = await f.db
+      .selectFrom("itemLedger")
+      .select(["storageUnitId", (eb) => eb.fn.sum<number>("quantity").as("q")])
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", f.companyId)
+      .groupBy("storageUnitId")
+      .execute();
+    return Object.fromEntries(
+      rows.map((row) => [row.storageUnitId, Number(row.q)])
+    );
   }
 
   async function entity(id: string) {
@@ -325,6 +344,117 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
         [first, binA, 20],
         [second, binA, 30]
       ]);
+    }
+  );
+
+  // Each bin is emptied in turn: taking the first row found for the lot moves
+  // one bin's quantity out of both.
+  databaseTest(
+    "a transfer moves what the lot holds in the bin it leaves",
+    async () => {
+      const itemId = await item("transfer", "Batch");
+      const id = await lot(itemId, "1", "B-4", [
+        [binA, 10],
+        [binB, 5]
+      ]);
+
+      for (const originalStorageUnitId of [binB, binA]) {
+        const result = await adjust({
+          adjustmentType: "Set Quantity",
+          itemId,
+          locationId: f.locationId,
+          storageUnitId: binC,
+          originalStorageUnitId,
+          trackedEntityId: id,
+          readableId: "B-4",
+          quantity: 0
+        });
+        expect(result.error).toBeNull();
+      }
+
+      expect(await onHandByBin(itemId)).toEqual({
+        [binA]: 0,
+        [binB]: 0,
+        [binC]: 15
+      });
+      expect(await entity(id)).toEqual({ quantity: 15, status: "Available" });
+    }
+  );
+
+  databaseTest("a scrap leaves the bin named", async () => {
+    const itemId = await item("scrap", "Batch");
+    const id = await lot(itemId, "1", "B-5", [
+      [binA, 10],
+      [binB, 5]
+    ]);
+    const scrapReason = await f.db
+      .insertInto("scrapReason")
+      .values({ name: "Damaged", companyId: f.companyId, createdBy: USER })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    for (const [storageUnitId, quantity] of [
+      [binB, 2],
+      [binA, 3]
+    ] as const) {
+      const result = await adjust({
+        adjustmentType: "Scrap",
+        itemId,
+        locationId: f.locationId,
+        storageUnitId,
+        trackedEntityId: id,
+        scrapReasonId: scrapReason.id,
+        quantity
+      });
+      expect(result.error).toBeNull();
+    }
+
+    expect(await onHandByBin(itemId)).toEqual({ [binA]: 7, [binB]: 3 });
+    expect(await entity(id)).toEqual({ quantity: 10, status: "Available" });
+  });
+
+  // The state the batch-number lookup left behind: stock in one bin, a
+  // negative balance in a bin the lot was never in.
+  databaseTest(
+    "a lot with a negative balance elsewhere is refused until that row is corrected",
+    async () => {
+      const itemId = await item("corrupt", "Batch");
+      const id = await lot(itemId, "1", "B-6", [
+        [binA, 55],
+        [binB, -220]
+      ]);
+      const reduce = () =>
+        adjust({
+          adjustmentType: "Negative Adjmt.",
+          itemId,
+          locationId: f.locationId,
+          storageUnitId: binA,
+          trackedEntityId: id,
+          readableId: "B-6",
+          quantity: 10
+        });
+
+      const refused = await reduce();
+      expect(refused.error?.status).toBe(400);
+      expect(refused.error?.message).toBe(
+        "This tracked entity has a negative quantity in another storage unit — correct that row first"
+      );
+      expect(await onHandByBin(itemId)).toEqual({ [binA]: 55, [binB]: -220 });
+
+      const corrected = await adjust({
+        adjustmentType: "Set Quantity",
+        itemId,
+        locationId: f.locationId,
+        storageUnitId: binB,
+        trackedEntityId: id,
+        readableId: "B-6",
+        quantity: 0
+      });
+      expect(corrected.error).toBeNull();
+      expect((await reduce()).error).toBeNull();
+
+      expect(await onHandByBin(itemId)).toEqual({ [binA]: 45, [binB]: 0 });
+      expect(await entity(id)).toEqual({ quantity: 45, status: "Available" });
     }
   );
 });
