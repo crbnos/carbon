@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { requireEntitlement } from "./entitlements.server";
-import { companyEnforcesFeature } from "./plan.server";
+import { companyHasFeature } from "./plan.server";
 
 const logger = getLogger("ee", "console");
 
@@ -55,7 +55,12 @@ export async function isConsoleModeEnabledForCompany(
   }
 
   if (!consoleEnabled) return false;
-  return companyEnforcesFeature(client, companyId, { feature: "PERMISSIONS" });
+  return companyHasFeature(
+    client,
+    companyId,
+    { feature: "PERMISSIONS" },
+    "enforce"
+  );
 }
 
 /**

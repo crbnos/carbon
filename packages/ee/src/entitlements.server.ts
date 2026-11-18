@@ -3,11 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import { CarbonEdition } from "@carbon/env";
-import { Edition } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Feature } from "./plan";
-import { companyHasFeature, licenceAllowsAuthoring } from "./plan.server";
+import { companyHasFeature } from "./plan.server";
 
 /**
  * The commercial-feature LOCK. Call `requireEntitlement` at the top of every
@@ -50,10 +48,6 @@ export async function requireEntitlement(
   companyId: string,
   feature: Feature
 ): Promise<void> {
-  const allowed =
-    CarbonEdition === Edition.Enterprise
-      ? await licenceAllowsAuthoring({ feature })
-      : await companyHasFeature(client, companyId, { feature });
-  if (allowed) return;
+  if (await companyHasFeature(client, companyId, { feature }, "author")) return;
   throw new EntitlementError(feature);
 }

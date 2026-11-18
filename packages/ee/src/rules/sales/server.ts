@@ -21,7 +21,7 @@ import {
   type Violation
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { companyEnforcesFeature } from "../../plan.server";
+import { companyHasFeature } from "../../plan.server";
 import { itemPostingGroupIdFromEmbed } from "../storage/context";
 import {
   buildConditionValueResolver,
@@ -49,7 +49,7 @@ export const isSalesRulesEnabledForCompany = (
   client: Client,
   companyId: string
 ): Promise<boolean> =>
-  companyEnforcesFeature(client, companyId, { feature: "SALES_RULES" });
+  companyHasFeature(client, companyId, { feature: "SALES_RULES" }, "enforce");
 
 // ---------------------------------------------------------------------------
 // Per-line evaluator — single entry point the sales line actions call

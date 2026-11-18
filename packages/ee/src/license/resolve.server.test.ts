@@ -218,6 +218,39 @@ describe("LicenceResolver", () => {
     expect((await t.resolver.resolve()).plan).toBe("BUSINESS");
   });
 
+  it("picks up a renewal that arrives after startup", async () => {
+    t.outputs.set("config", ok("active"));
+    await t.resolver.resolve();
+    t.outputs.set(
+      "renewal",
+      ok(
+        "active",
+        view({ plan_id: "PARTNER", issued_at: "2026-11-02T00:00:00Z" })
+      )
+    );
+    t.store({
+      sealed: "crbn.v1.renewal",
+      licenseId: "lic_1",
+      issuedAt: "2026-11-02T00:00:00Z"
+    });
+    t.advance(61_000);
+    expect((await t.resolver.resolve()).plan).toBe("PARTNER");
+  });
+
+  it("ignores a stored renewal that is older than its stored date claims", async () => {
+    t.outputs.set("config", ok("active"));
+    await t.resolver.resolve();
+    // The same issue date as the licence in use, stored as a later one.
+    t.outputs.set("renewal", ok("active", view({ plan_id: "PARTNER" })));
+    t.store({
+      sealed: "crbn.v1.renewal",
+      licenseId: "lic_1",
+      issuedAt: "2026-11-02T00:00:00Z"
+    });
+    t.advance(61_000);
+    expect((await t.resolver.resolve()).plan).toBe("BUSINESS");
+  });
+
   it("shares one resolution between concurrent callers", async () => {
     t.outputs.set("config", ok("active"));
     await Promise.all(Array.from({ length: 16 }, () => t.resolver.resolve()));

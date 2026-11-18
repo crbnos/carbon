@@ -19,7 +19,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../plan.server", () => ({
-  companyEnforcesFeature: async () => true
+  companyHasFeature: async () => true
 }));
 
 import { evaluateSalesRulesForSalesDocument } from "./server";

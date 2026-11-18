@@ -45,6 +45,14 @@ import {
   resolveRequirement
 } from "./plan";
 
+/**
+ * What a gate is asked for. "run": may the feature run. "author": may it be
+ * set up or changed, which on Enterprise needs an active licence, not one in
+ * its grace period. "enforce": is an access-control rule in force, which on
+ * Enterprise and Test is always, so a lapse never lifts a restriction.
+ */
+export type GatePurpose = "run" | "author" | "enforce";
+
 const logger = getLogger("ee", "licence");
 const loggedPreview = new Set<string>();
 
@@ -78,10 +86,6 @@ async function enterpriseAllows(
 export async function getLicenceNotice(): Promise<LicenceNotice | null> {
   if (CarbonEdition !== Edition.Enterprise) return null;
   return pickLicenceNotice(await resolveLicence(), datetime.now("UTC"));
-}
-
-export function licenceAllowsAuthoring(spec: GateSpec): Promise<boolean> {
-  return enterpriseAllows(spec, "author");
 }
 
 function isBypassCompany(companyId: string): boolean {
@@ -170,10 +174,11 @@ export async function getPlan(
 export async function companyHasPlan(
   client: SupabaseClient<Database>,
   companyId: string,
-  spec: GateSpec
+  spec: GateSpec,
+  purpose: "run" | "author" = "run"
 ): Promise<boolean> {
   if (CarbonEdition === Edition.Enterprise) {
-    return enterpriseAllows(spec, "run");
+    return enterpriseAllows(spec, purpose);
   }
   if (CarbonEdition !== Edition.Cloud) return true;
   if (isBypassCompany(companyId)) return true;
@@ -214,33 +219,34 @@ export async function requirePlan({
 }
 
 /**
- * The runtime entitlement check. Community is ALWAYS gated (it has no
- * licence); Enterprise reads its verified licence (`CARBON_LICENSE`);
- * Test passes; Cloud is plan-based, with bypass/carbon-owned as in
- * `companyHasPlan`. Expired licences still pass here during the grace period.
+ * The entitlement check. Community is ALWAYS gated (it has no licence);
+ * Enterprise reads its verified licence (`CARBON_LICENSE`); Test passes;
+ * Cloud is plan-based, with bypass/carbon-owned as in `companyHasPlan`.
+ *
+ * `purpose` (see `GatePurpose`) defaults to "run", which an expired licence
+ * still passes during its grace period. Pass "enforce" wherever a `false`
+ * would lift a restriction, and "author" where the feature is set up.
  */
 export async function companyHasFeature(
   client: SupabaseClient<Database>,
   companyId: string,
-  spec: GateSpec
+  spec: GateSpec,
+  purpose: GatePurpose = "run"
 ): Promise<boolean> {
+  if (
+    purpose === "enforce" &&
+    spec.feature &&
+    enforcesWithoutLicence(CarbonEdition, spec.feature)
+  ) {
+    return true;
+  }
   if (CarbonEdition === Edition.Community) return false;
-  return companyHasPlan(client, companyId, spec);
-}
-
-/**
- * Whether an access-control rule is ENFORCED at runtime. On Enterprise and
- * Test an access-control feature always enforces, licence or not; every
- * other case is `companyHasFeature`. Use it where a `false` lifts a
- * restriction, never to decide whether a feature may be authored.
- */
-export async function companyEnforcesFeature(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  spec: { feature: Feature }
-): Promise<boolean> {
-  if (enforcesWithoutLicence(CarbonEdition, spec.feature)) return true;
-  return companyHasFeature(client, companyId, spec);
+  return companyHasPlan(
+    client,
+    companyId,
+    spec,
+    purpose === "author" ? "author" : "run"
+  );
 }
 
 /**

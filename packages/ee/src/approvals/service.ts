@@ -17,7 +17,7 @@ import {
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
-import { companyEnforcesFeature } from "../plan.server";
+import { companyHasFeature } from "../plan.server";
 import {
   adminApprovedDocumentTypes,
   type approvalDocumentType
@@ -556,9 +556,12 @@ export async function getApprovalRuleByAmount(
   amount?: number
 ) {
   if (
-    !(await companyEnforcesFeature(client, companyId, {
-      feature: "APPROVAL_RULES"
-    }))
+    !(await companyHasFeature(
+      client,
+      companyId,
+      { feature: "APPROVAL_RULES" },
+      "enforce"
+    ))
   ) {
     return { data: null, error: null };
   }
@@ -944,9 +947,12 @@ export async function getPendingApprovalsForApprover(
   // route (canApproveRequest, which does not degrade) can still approve them.
   // Fall back to canApproveRequest when the feature is unavailable so existing
   // approvals stay discoverable; entitled companies keep the exact window check.
-  const approvalRulesEnabled = await companyEnforcesFeature(client, companyId, {
-    feature: "APPROVAL_RULES"
-  });
+  const approvalRulesEnabled = await companyHasFeature(
+    client,
+    companyId,
+    { feature: "APPROVAL_RULES" },
+    "enforce"
+  );
   const canApprovePromises = pendingWithReadableFields.map(async (approval) => {
     // An Admin-approved request needs an Admin other than the one who asked.
     if (

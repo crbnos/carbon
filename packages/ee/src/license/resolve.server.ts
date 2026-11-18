@@ -243,11 +243,35 @@ export class LicenceResolver {
   }
 
   /**
+   * The stored renewal, when it is a later issue of `base` and verifies.
+   * With no base (CARBON_LICENSE no longer verifies) any stored renewal is
+   * tried. It must open with the CARBON_LICENSE key, which belongs to one
+   * grant. Stored, so it was install-verified when it arrived.
+   */
+  private async newerRenewal(
+    key: string,
+    baseSealed: string,
+    base: LicenceView | null,
+    stored: StoredLicence
+  ): Promise<Verified | null> {
+    const sealed = stored.sealed;
+    if (!sealed || sealed === baseSealed) return null;
+    if (base && !supersedes(stored.licenseId, stored.issuedAt, base)) {
+      return null;
+    }
+    const out = await this.run({ sealed, key }, stored, "resolve");
+    if (!out.ok) return null;
+    const { license_id, issued_at } = out.license;
+    if (base && !supersedes(license_id, issued_at, base)) return null;
+    this.remember(out, key, sealed);
+    return out;
+  }
+
+  /**
    * Startup: CARBON_LICENSE seeds an empty store and never overrides a
-   * newer renewal. A connected licence's original token
-   * ends three weeks after issue while its renewals live on, so a stored
-   * renewal is tried even when CARBON_LICENSE itself no longer verifies.
-   * It must open with the CARBON_LICENSE key, which belongs to one grant.
+   * newer renewal. A connected licence's original token ends three weeks
+   * after issue while its renewals live on, so a stored renewal is tried
+   * even when CARBON_LICENSE itself no longer verifies.
    */
   private async install(
     licence: string,
@@ -255,34 +279,13 @@ export class LicenceResolver {
     stored: StoredLicence
   ): Promise<VerifyOutput> {
     const fromConfig = await this.run({ license: licence }, stored, "install");
-    const config = fromConfig.ok ? fromConfig.license : null;
-
-    const sealed =
-      stored.sealed &&
-      stored.sealed !== parts.sealed &&
-      (!config || supersedes(stored.licenseId, stored.issuedAt, config))
-        ? stored.sealed
-        : null;
-    if (sealed) {
-      // Stored, so already install-verified when it arrived.
-      const renewal = await this.run(
-        { sealed, key: parts.key },
-        stored,
-        "resolve"
-      );
-      if (
-        renewal.ok &&
-        (!config ||
-          supersedes(
-            renewal.license.license_id,
-            renewal.license.issued_at,
-            config
-          ))
-      ) {
-        this.remember(renewal, parts.key, sealed);
-        return renewal;
-      }
-    }
+    const renewal = await this.newerRenewal(
+      parts.key,
+      parts.sealed,
+      fromConfig.ok ? fromConfig.license : null,
+      stored
+    );
+    if (renewal) return renewal;
 
     if (!fromConfig.ok) return fromConfig;
     await this.deps.updateStored({
@@ -299,24 +302,14 @@ export class LicenceResolver {
     current: LicenceInUse,
     stored: StoredLicence
   ): Promise<VerifyOutput> {
-    const renewal =
-      stored.sealed &&
-      stored.sealed !== current.sealed &&
-      supersedes(stored.licenseId, stored.issuedAt, current.view)
-        ? stored.sealed
-        : null;
+    const renewal = await this.newerRenewal(
+      current.key,
+      current.sealed,
+      current.view,
+      stored
+    );
+    if (renewal) return renewal;
 
-    if (renewal) {
-      const out = await this.run(
-        { sealed: renewal, key: current.key },
-        stored,
-        "resolve"
-      );
-      if (out.ok && out.license.license_id === current.view.license_id) {
-        this.remember(out, current.key, renewal);
-        return out;
-      }
-    }
     const out = await this.run(
       { sealed: current.sealed, key: current.key },
       stored,
