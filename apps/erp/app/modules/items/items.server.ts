@@ -584,7 +584,15 @@ export const setMaterialProperties = defineServiceFn({
 // ── Part and tool details, manufacturing and planning ───────────────────────
 
 const partInput = applyStorageAndShelfLifeRefines(
-  partFields.extend({ customFields: customFieldsInput })
+  partFields.extend({
+    name: partFields.shape.name.describe(
+      "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+    ),
+    description: partFields.shape.description.describe(
+      "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+    ),
+    customFields: customFieldsInput
+  })
 );
 
 /**
@@ -654,7 +662,15 @@ export const updatePart = defineServiceFn({
  */
 export const updateTool = defineServiceFn({
   input: applyStorageAndShelfLifeRefines(
-    toolFields.extend({ customFields: customFieldsInput })
+    toolFields.extend({
+      name: toolFields.shape.name.describe(
+        "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+      ),
+      description: toolFields.shape.description.describe(
+        "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+      ),
+      customFields: customFieldsInput
+    })
   ),
   permission: { update: "parts" },
 
@@ -4189,8 +4205,19 @@ export const createConsumable = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+      ),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -4240,8 +4267,19 @@ export const updateConsumable = defineServiceFn({
           "Updates the existing record with this key; creates one when there is none."
         ),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(255),
-      description: z.string().optional(),
+      name: z
+        .string()
+        .min(1)
+        .max(255)
+        .describe(
+          "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+        ),
+      description: z
+        .string()
+        .optional()
+        .describe(
+          "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+        ),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
       defaultMethodType: z.enum([
@@ -4324,8 +4362,19 @@ export const updateItem = defineServiceFn({
   input: z.looseObject({
     id: z.string().min(1).max(255),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+      ),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -5549,8 +5598,19 @@ export const createMaterial = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+      ),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -5608,8 +5668,19 @@ export const updateMaterial = defineServiceFn({
           "Updates the existing record with this key; creates one when there is none."
         ),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(255),
-      description: z.string().optional(),
+      name: z
+        .string()
+        .min(1)
+        .max(255)
+        .describe(
+          "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+        ),
+      description: z
+        .string()
+        .optional()
+        .describe(
+          "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+        ),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
       defaultMethodType: z.enum([
@@ -5995,8 +6066,19 @@ export const createService = defineServiceFn({
       )
       .optional(),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(100),
-    description: z.string().optional(),
+    name: z
+      .string()
+      .min(1)
+      .max(100)
+      .describe(
+        "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+      ),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make"]),
     defaultMethodType: z.enum([
@@ -6051,8 +6133,19 @@ export const updateService = defineServiceFn({
         )
         .optional(),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(100),
-      description: z.string().optional(),
+      name: z
+        .string()
+        .min(1)
+        .max(100)
+        .describe(
+          "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+        ),
+      description: z
+        .string()
+        .optional()
+        .describe(
+          "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+        ),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make"]),
       defaultMethodType: z.enum([
@@ -6221,8 +6314,19 @@ export const createTool = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Short description. Copied onto new purchase order and RFQ lines, which suppliers see: keep internal notes out."
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out."
+      ),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([

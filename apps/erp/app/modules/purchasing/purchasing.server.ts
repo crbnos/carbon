@@ -6652,7 +6652,12 @@ export const createPurchaseOrderLine = defineServiceFn({
     costCenterId: z.string().optional(),
     assetId: z.string().optional(),
     conversionFactor: z.number().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        "Printed on the purchase order the supplier receives: keep internal notes out."
+      ),
     exchangeRate: z.number().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     jobId: z.string().optional(),
@@ -6730,7 +6735,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
       costCenterId: z.string().optional(),
       assetId: z.string().optional(),
       conversionFactor: z.number().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(
+          "Printed on the purchase order the supplier receives: keep internal notes out."
+        ),
       exchangeRate: z.number().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       jobId: z.string().optional(),
