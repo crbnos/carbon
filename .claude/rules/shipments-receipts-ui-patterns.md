@@ -102,6 +102,11 @@ run the same checks. The route only parses the form, and takes the document id f
   A serial `receiptLineSplit` drops the line's serials, deleting only entities with no
   `itemLedger` history; a unit with history (a sales return) only loses its receipt link.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
+  **A unit's `Shipment` tag must name a live line of its shipment.** So every write that
+  deletes or rebuilds shipment lines clears their units' tags (`clearShipmentTags`,
+  `shared.service.ts`): `deleteShipmentLine` (that line), `deleteShipment`, and a `create`
+  that re-sources a Draft (every line). Posting reads only tags whose `Shipment Line` is a
+  live line (`liveShipmentTags`, `inventory.utils.ts`) and clears the rest (`orphansOnly`).
 - `fixed-asset-lines.update.tsx` (`updateShipmentFixedAssetLine` / `updateReceiptFixedAssetLine`) — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
   parsed by `shipmentFixedAssetLineUpdateValidator` / `receiptFixedAssetLineUpdateValidator`
   (`inventory.models.ts`): `shipped`/`received`, `serialNumber`, `meter`; the receipt also takes
@@ -199,6 +204,10 @@ shipment, which write no item ledger row); then it optimistically sets
 `invokePosting(ctx, "post-shipment", { type: "post", shipmentId, postingDate }, service.postShipment)`
 (receipt: `invokePosting(ctx, "post-receipt", { receiptId, postingDate }, service.postReceipt)`,
 whose `type` defaults to `"post"`).
+Before `Pending`, a serial line whose shipped quantity is not its count of tagged
+live units is refused (`serialLineShortfalls` / `serialShortfallMessage`,
+`inventory.utils.ts`; category `rule`, 422), and the posting refuses it again with the same
+message (`ServerFnError`, 422) for its other callers.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
 save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.pdf.tsx`, the
 same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call

@@ -179,6 +179,7 @@ import {
   getCurrencyByCode,
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
+import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
 import {
   loadReturnLineJobs,
   SHIP_BACK_JOB_STATUSES
@@ -11641,6 +11642,218 @@ export const createDocumentPermission = {
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
 
+/**
+ * A job's serial units a sales shipment can post, oldest first, at most `limit`:
+ * a shippable status, and common stock at the shipment's location (what
+ * `postShipment` checks: `getTrackedEntityBins`, `assertEntitiesInCommonStock`).
+ */
+async function shippableJobSerials(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    jobMakeMethodId: string;
+    locationId: string;
+    limit: number;
+  }
+) {
+  return trx
+    .selectFrom("trackedEntity as te")
+    .select(["te.id"])
+    .where("te.companyId", "=", args.companyId)
+    .where(sql`te.attributes->>'Job Make Method'`, "=", args.jobMakeMethodId)
+    .where("te.status", "in", shippableEntityStatuses("Sales Order"))
+    .where(
+      sql<boolean>`(SELECT COALESCE(SUM(il.quantity), 0) FROM "itemLedger" il WHERE il."trackedEntityId" = te.id AND il."companyId" = ${args.companyId} AND il."locationId" = ${args.locationId} AND il."projectId" IS NULL) > 0`
+    )
+    .orderBy("te.createdAt")
+    .orderBy("te.readableId")
+    .orderBy("te.id")
+    .limit(args.limit)
+    .execute();
+}
+
+/** The units a shipment line filled from a job carries: a serial line the units it can post, a batch line every lot of the job. */
+async function jobUnitsForShipment(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    jobId: string;
+    tracking: "Serial" | "Batch";
+    quantity: number;
+    locationId: string;
+  }
+): Promise<string[]> {
+  const jobMakeMethod = await trx
+    .selectFrom("jobMakeMethod")
+    .select(["id"])
+    .where("jobId", "=", args.jobId)
+    .where("companyId", "=", args.companyId)
+    .where("parentMaterialId", "is", null)
+    .executeTakeFirst();
+  if (!jobMakeMethod?.id) return [];
+
+  if (args.tracking === "Serial") {
+    if (args.quantity <= 0) return [];
+    const serials = await shippableJobSerials(trx, {
+      companyId: args.companyId,
+      jobMakeMethodId: jobMakeMethod.id,
+      locationId: args.locationId,
+      limit: args.quantity
+    });
+    return serials.map((unit) => unit.id);
+  }
+
+  const lots = await many(
+    trx,
+    "trackedEntity",
+    {
+      companyId: args.companyId,
+      attributes: contains({ "Job Make Method": jobMakeMethod.id })
+    },
+    { columns: ["id"], orderBy: ["createdAt", "readableId", "id"] }
+  );
+  return (lots.data ?? []).map((lot) => lot.id);
+}
+
+/**
+ * Adds a sales order line's shipment line filled from one of its jobs, with
+ * its fulfillment, and tags the job's units on it. The units are picked first:
+ * a serial line ships exactly the units it tagged, and is skipped when it
+ * tagged none.
+ */
+async function addJobShipmentLine(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    locationId: string;
+    shipmentId: string;
+    job: {
+      id: string;
+      quantityComplete: number | null;
+      quantityShipped: number | null;
+    };
+    tracking: "Serial" | "Batch" | null;
+    salesOrderLine: {
+      id: string;
+      itemId: string;
+      shippingCost: number;
+      unitPrice: number | null;
+      taxPercent: number;
+      unitOfMeasureCode: string | null;
+    };
+    orderQuantity: number;
+    outstandingQuantity: number;
+  }
+) {
+  const { companyId, userId, salesOrderLine } = args;
+  const quantityToShip = Math.max(
+    0,
+    (args.job.quantityComplete ?? 0) - (args.job.quantityShipped ?? 0)
+  );
+  const unitIds = args.tracking
+    ? await jobUnitsForShipment(trx, {
+        companyId,
+        jobId: args.job.id,
+        tracking: args.tracking,
+        quantity: quantityToShip,
+        locationId: args.locationId
+      })
+    : [];
+  const shippedQuantity =
+    args.tracking === "Serial" ? unitIds.length : quantityToShip;
+  if (args.tracking === "Serial" && shippedQuantity === 0) return;
+
+  const fulfillment = await trx
+    .insertInto("fulfillment")
+    .values({
+      salesOrderLineId: salesOrderLine.id,
+      type: "Job",
+      jobId: args.job.id,
+      quantity: shippedQuantity,
+      companyId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirst();
+
+  const shippingUnitCost =
+    shippedQuantity > 0 ? salesOrderLine.shippingCost / shippedQuantity : 0;
+
+  const shipmentLine = await trx
+    .insertInto("shipmentLine")
+    .values({
+      shipmentId: args.shipmentId,
+      lineId: salesOrderLine.id,
+      companyId,
+      fulfillmentId: fulfillment?.id,
+      itemId: salesOrderLine.itemId,
+      orderQuantity: args.orderQuantity,
+      outstandingQuantity: args.outstandingQuantity,
+      shippedQuantity,
+      requiresSerialTracking: args.tracking === "Serial",
+      requiresBatchTracking: args.tracking === "Batch",
+      unitPrice:
+        (shippingUnitCost + (salesOrderLine.unitPrice ?? 0)) *
+        (1 + salesOrderLine.taxPercent),
+      unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
+      createdBy: userId ?? ""
+    })
+    .returning(["id"])
+    .executeTakeFirst();
+  if (!shipmentLine?.id) throw new NotFoundError("Shipment line not found");
+  if (unitIds.length === 0) return;
+
+  // Merged into the stored attributes, so a concurrent attribute write is kept.
+  await trx
+    .updateTable("trackedEntity")
+    .set({
+      attributes: sql`"attributes" || jsonb_build_object('Shipment', ${args.shipmentId}::text, 'Shipment Line', ${shipmentLine.id}::text, 'Shipment Line Index', array_position(${unitIds}::text[], "id") - 1)`
+    })
+    .where("companyId", "=", companyId)
+    .where("id", "in", unitIds)
+    .execute();
+}
+
+/**
+ * Takes a shipment's tags (`Shipment`, `Shipment Line`, `Shipment Line Index`)
+ * off its units. A tag must name a live line of its shipment, so whatever
+ * deletes lines clears theirs: one line (`shipmentLineId`), every line, or
+ * with `orphansOnly` the tags whose line is gone.
+ */
+export async function clearShipmentTags(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    shipmentId: string;
+    shipmentLineId?: string;
+    orphansOnly?: boolean;
+  }
+) {
+  let query = db
+    .updateTable("trackedEntity")
+    .set({
+      attributes: sql`"attributes" - 'Shipment' - 'Shipment Line' - 'Shipment Line Index'`
+    })
+    .where("companyId", "=", args.companyId)
+    .where(
+      sql<boolean>`"attributes" @> jsonb_build_object('Shipment', ${args.shipmentId}::text)`
+    );
+  if (args.shipmentLineId) {
+    query = query.where(
+      sql`"attributes"->>'Shipment Line'`,
+      "=",
+      args.shipmentLineId
+    );
+  }
+  if (args.orphansOnly) {
+    query = query.where(
+      sql<boolean>`NOT EXISTS (SELECT 1 FROM "shipmentLine" sl WHERE sl.id = "trackedEntity"."attributes"->>'Shipment Line' AND sl."shipmentId" = ${args.shipmentId} AND sl."companyId" = ${args.companyId})`
+    );
+  }
+  await query.execute();
+}
+
 /** Creates receipts, shipments, NCR tasks, purchase orders and journal entries, per `type`. */
 export async function createDocument(
   ctx: ServiceContext,
@@ -13575,6 +13788,9 @@ export async function createDocument(
           id = insertShipment[0]?.id ?? "";
         }
 
+        if (hasShipment) {
+          await clearShipmentTags(trx, { companyId, shipmentId: id });
+        }
         await trx
           .deleteFrom("shipmentLine")
           .where("shipmentId", "=", id)
@@ -13822,6 +14038,9 @@ export async function createDocument(
           id = insertShipment[0]?.id ?? "";
         }
 
+        if (hasShipment) {
+          await clearShipmentTags(trx, { companyId, shipmentId: id });
+        }
         await trx
           .deleteFrom("shipmentLine")
           .where("shipmentId", "=", id)
@@ -14000,21 +14219,6 @@ export async function createDocument(
         entitiesByReturnLine.set(row.purchaseReturnOrderLineId, list);
       }
 
-      // Re-source path: clear the shipment tag off any entity previously
-      // stamped for this shipment before re-stamping the current selection.
-      const staleEntities = hasShipment
-        ? await many(
-            db,
-            "trackedEntity",
-            {
-              companyId,
-              attributes: contains({ Shipment: shipment.data!.id })
-            },
-            { columns: ["id", "attributes"] }
-          )
-        : { data: [], error: null };
-      if (staleEntities.error) throw new Error(staleEntities.error.message);
-
       const result = await db.transaction().execute(async (trx) => {
         const shipmentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -14056,6 +14260,9 @@ export async function createDocument(
           id = insertShipment[0]?.id ?? "";
         }
 
+        if (hasShipment) {
+          await clearShipmentTags(trx, { companyId, shipmentId: id });
+        }
         await trx
           .deleteFrom("shipmentLine")
           .where("shipmentId", "=", id)
@@ -14072,30 +14279,6 @@ export async function createDocument(
           )
           .returning(["id", "lineId"])
           .execute();
-
-        // Strip the shipment tag off entities left over from a prior source.
-        const staleEntityUpdates: {
-          id: string;
-          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
-        }[] = [];
-        for (const entity of staleEntities.data ?? []) {
-          const attrs = {
-            ...((entity.attributes as Record<string, unknown> | null) ?? {})
-          };
-          delete attrs.Shipment;
-          delete attrs["Shipment Line"];
-          delete attrs["Shipment Line Index"];
-          staleEntityUpdates.push({
-            id: entity.id,
-            data: { attributes: attrs as Json }
-          });
-        }
-        await updateRowsById(
-          trx,
-          "trackedEntity",
-          companyId,
-          staleEntityUpdates
-        );
 
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
@@ -14242,7 +14425,8 @@ export async function createDocument(
             .returning(["id", "shipmentId"])
             .where("companyId", "=", companyId)
             .execute();
-          // delete existing shipment lines
+          // delete existing shipment lines, and the tags units hold for them
+          await clearShipmentTags(trx, { companyId, shipmentId });
           await trx
             .deleteFrom("shipmentLine")
             .where("shipmentId", "=", shipmentId)
@@ -14467,7 +14651,8 @@ export async function createDocument(
             .returning(["id", "shipmentId"])
             .where("companyId", "=", companyId)
             .execute();
-          // delete existing shipment lines
+          // delete existing shipment lines, and the tags units hold for them
+          await clearShipmentTags(trx, { companyId, shipmentId });
           await trx
             .deleteFrom("shipmentLine")
             .where("shipmentId", "=", shipmentId)
@@ -14540,114 +14725,25 @@ export async function createDocument(
           if (salesOrderLine.methodType === "Make to Order") {
             for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ??
               []) {
-              if (!salesOrderLine.itemId) return;
-
-              const quantityToShip = Math.max(
-                0,
-                (job.quantityComplete ?? 0) - (job.quantityShipped ?? 0)
-              );
-
-              if (!isSerial || (isSerial && quantityToShip > 0)) {
-                const fulfillment = await trx
-                  .insertInto("fulfillment")
-                  .values({
-                    salesOrderLineId: salesOrderLine.id,
-                    type: "Job",
-                    jobId: job.id,
-                    quantity: quantityToShip,
-                    companyId: companyId,
-                    createdBy: userId
-                  })
-                  .returning(["id"])
-                  .execute();
-
-                const fulfillmentId = fulfillment?.[0]?.id;
-
-                const shippingAndTaxUnitCost =
-                  (salesOrderLine.shippingCost / quantityToShip +
-                    (salesOrderLine.unitPrice ?? 0)) *
-                  (1 + salesOrderLine.taxPercent);
-
-                const shipmentLine = await trx
-                  .insertInto("shipmentLine")
-                  .values({
-                    shipmentId: shipmentId,
-                    lineId: salesOrderLine.id,
-                    companyId: companyId,
-                    fulfillmentId,
-                    itemId: salesOrderLine.itemId,
-                    orderQuantity: salesOrderLine.saleQuantity,
-                    outstandingQuantity:
-                      salesOrderLine.quantityToSend ??
-                      salesOrderLine.saleQuantity,
-                    shippedQuantity: quantityToShip,
-                    requiresSerialTracking: isSerial,
-                    requiresBatchTracking: isBatch,
-                    unitPrice: shippingAndTaxUnitCost,
-                    unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
-                    createdBy: userId ?? ""
-                  })
-                  .returning(["id"])
-                  .execute();
-
-                const shipmentLineId = shipmentLine?.[0]?.id;
-
-                if (!shipmentLineId)
-                  throw new NotFoundError("Shipment line not found");
-
-                if (isSerial || isBatch) {
-                  const jobMakeMethod = await trx
-                    .selectFrom("jobMakeMethod")
-                    .select(["id"])
-                    .where("jobId", "=", job.id)
-                    .where("parentMaterialId", "is", null)
-                    .executeTakeFirst();
-
-                  if (jobMakeMethod?.id) {
-                    const trackedEntities = await many(
-                      trx,
-                      "trackedEntity",
-                      {
-                        companyId,
-                        attributes: contains({
-                          "Job Make Method": jobMakeMethod.id
-                        })
-                      },
-                      { orderBy: ["createdAt", "readableId", "id"] }
-                    );
-
-                    let index = 0;
-                    const trackedEntityUpdates: {
-                      id: string;
-                      data: Database["public"]["Tables"]["trackedEntity"]["Update"];
-                    }[] = [];
-                    for await (const trackedEntity of trackedEntities?.data ??
-                      []) {
-                      trackedEntityUpdates.push({
-                        id: trackedEntity.id,
-                        data: {
-                          attributes: {
-                            ...(trackedEntity.attributes as Record<
-                              string,
-                              unknown
-                            >),
-                            Shipment: shipmentId,
-                            "Shipment Line": shipmentLineId,
-                            "Shipment Line Index": index
-                          }
-                        }
-                      });
-                      index++;
-                    }
-                    await updateRowsById(
-                      trx,
-                      "trackedEntity",
-                      companyId,
-                      trackedEntityUpdates
-                    );
-                  }
-                }
-              }
+              await addJobShipmentLine(trx, {
+                companyId,
+                userId,
+                locationId,
+                shipmentId,
+                job,
+                tracking: isSerial ? "Serial" : isBatch ? "Batch" : null,
+                salesOrderLine: {
+                  id: salesOrderLine.id,
+                  itemId: salesOrderLine.itemId,
+                  shippingCost: salesOrderLine.shippingCost,
+                  unitPrice: salesOrderLine.unitPrice,
+                  taxPercent: salesOrderLine.taxPercent,
+                  unitOfMeasureCode: salesOrderLine.unitOfMeasureCode
+                },
+                orderQuantity: salesOrderLine.saleQuantity,
+                outstandingQuantity:
+                  salesOrderLine.quantityToSend ?? salesOrderLine.saleQuantity
+              });
             }
           } else {
             const outstandingQuantity =
@@ -14817,7 +14913,8 @@ export async function createDocument(
             .returning(["id", "shipmentId"])
             .where("companyId", "=", companyId)
             .execute();
-          // delete existing shipment lines
+          // delete existing shipment lines, and the tags units hold for them
+          await clearShipmentTags(trx, { companyId, shipmentId });
           await trx
             .deleteFrom("shipmentLine")
             .where("shipmentId", "=", shipmentId)
@@ -14853,111 +14950,27 @@ export async function createDocument(
         }
 
         if (salesOrderLine.data.methodType === "Make to Order") {
-          for await (const job of jobs.data ?? []) {
-            if (!salesOrderLine.data.itemId) return;
-            const quantityToShip = Math.max(
-              0,
-              (job.quantityComplete ?? 0) - (job.quantityShipped ?? 0)
-            );
-
-            if (!isSerial || (isSerial && quantityToShip > 0)) {
-              const fulfillment = await trx
-                .insertInto("fulfillment")
-                .values({
-                  salesOrderLineId: salesOrderLineId,
-                  type: "Job",
-                  jobId: job.id,
-                  quantity: quantityToShip,
-                  companyId: companyId,
-                  createdBy: userId
-                })
-                .returning(["id"])
-                .execute();
-
-              const fulfillmentId = fulfillment?.[0]?.id;
-
-              const shippingAndTaxUnitCost =
-                (salesOrderLine.data.shippingCost / quantityToShip +
-                  (salesOrderLine.data.unitPrice ?? 0)) *
-                (1 + salesOrderLine.data.taxPercent);
-
-              const shipmentLine = await trx
-                .insertInto("shipmentLine")
-                .values({
-                  shipmentId: shipmentId,
-                  lineId: salesOrderLineId,
-                  companyId: companyId,
-                  fulfillmentId,
-                  itemId: salesOrderLine.data.itemId,
-                  orderQuantity: job.productionQuantity ?? 0,
-                  outstandingQuantity: Math.max(0, job.productionQuantity ?? 0),
-                  shippedQuantity: quantityToShip,
-                  requiresSerialTracking: isSerial,
-                  requiresBatchTracking: isBatch,
-                  unitPrice: shippingAndTaxUnitCost,
-                  unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
-                  createdBy: userId ?? ""
-                })
-                .returning(["id"])
-                .execute();
-
-              const shipmentLineId = shipmentLine?.[0]?.id;
-
-              if (!shipmentLineId)
-                throw new NotFoundError("Shipment line not found");
-
-              if (isSerial || isBatch) {
-                const jobMakeMethod = await trx
-                  .selectFrom("jobMakeMethod")
-                  .select(["id"])
-                  .where("jobId", "=", job.id)
-                  .where("parentMaterialId", "is", null)
-                  .executeTakeFirst();
-
-                if (jobMakeMethod?.id) {
-                  const trackedEntities = await many(
-                    trx,
-                    "trackedEntity",
-                    {
-                      companyId,
-                      attributes: contains({
-                        "Job Make Method": jobMakeMethod.id
-                      })
-                    },
-                    { orderBy: ["createdAt", "readableId", "id"] }
-                  );
-
-                  let index = 0;
-                  const trackedEntityUpdates: {
-                    id: string;
-                    data: Database["public"]["Tables"]["trackedEntity"]["Update"];
-                  }[] = [];
-                  for await (const trackedEntity of trackedEntities?.data ??
-                    []) {
-                    trackedEntityUpdates.push({
-                      id: trackedEntity.id,
-                      data: {
-                        attributes: {
-                          ...(trackedEntity.attributes as Record<
-                            string,
-                            unknown
-                          >),
-                          Shipment: shipmentId,
-                          "Shipment Line": shipmentLineId,
-                          "Shipment Line Index": index
-                        }
-                      }
-                    });
-                    index++;
-                  }
-                  await updateRowsById(
-                    trx,
-                    "trackedEntity",
-                    companyId,
-                    trackedEntityUpdates
-                  );
-                }
-              }
+          const itemId = salesOrderLine.data.itemId;
+          if (itemId) {
+            for await (const job of jobs.data ?? []) {
+              await addJobShipmentLine(trx, {
+                companyId,
+                userId,
+                locationId,
+                shipmentId,
+                job,
+                tracking: isSerial ? "Serial" : isBatch ? "Batch" : null,
+                salesOrderLine: {
+                  id: salesOrderLineId,
+                  itemId,
+                  shippingCost: salesOrderLine.data.shippingCost,
+                  unitPrice: salesOrderLine.data.unitPrice,
+                  taxPercent: salesOrderLine.data.taxPercent,
+                  unitOfMeasureCode: salesOrderLine.data.unitOfMeasureCode
+                },
+                orderQuantity: job.productionQuantity ?? 0,
+                outstandingQuantity: Math.max(0, job.productionQuantity ?? 0)
+              });
             }
           }
         } else {
