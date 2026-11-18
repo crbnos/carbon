@@ -421,6 +421,10 @@ msgstr "{0} eliminado correctamente"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} asientos de diario en borrador"
@@ -1036,6 +1040,9 @@ msgstr "{documentTypeLabel} regla de aprobación"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases completadas"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# fila necesita corrección} other {# filas necesitan corrección}}"
@@ -11273,6 +11280,9 @@ msgstr "Descargar el recuento como un archivo para rellenar"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Descargue la plantilla. Cada fila es una cuenta predeterminada a la que Carbon contabiliza. En Número de Cuenta, ingrese el número de la cuenta en su plan que la reemplaza. Carbon actualiza la cuenta predeterminada para coincidir."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Borrador"
@@ -31465,6 +31475,9 @@ msgstr "El precio de una hora en una línea de Tiempo y Materiales: la tasa de l
 
 msgid "The principle:"
 msgstr "El principio:"
+
+msgid "The printer's print density, in dots per inch"
+msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "La clasificación de probabilidad de que el riesgo ocurra (1 = raro a 5 = casi seguro); emparejado con Severidad para calcular la puntuación de riesgo."

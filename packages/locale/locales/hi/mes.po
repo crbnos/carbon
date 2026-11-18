@@ -253,6 +253,9 @@ msgstr ""
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr ""
 
@@ -1328,6 +1331,9 @@ msgstr "पूर्ण करने से पहले हाइलाइट �
 msgid "Flag issue"
 msgstr "समस्या चिह्नित करें"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
@@ -1714,6 +1720,9 @@ msgstr "पूर्ण लॉग करें"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "{0} के लिए पूर्ण लॉग करें"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "पुनः कार्य लॉग करें"
@@ -2290,6 +2299,9 @@ msgstr "खुले जॉब"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "सब-असेंबली {0} खोलें: {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr ""
 
@@ -2446,6 +2458,12 @@ msgstr "पिकिंग {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "एक शैली, एक रंग और एक फेस चुनें।"
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "जॉब चुनें। यह घंटों के बिना दिखाई देता है जब तक आप कुछ न जोड़ दें।"
@@ -2888,9 +2906,6 @@ msgstr "सीरियल नंबर स्कैन करें या ख�
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें, इसे नमूना कॉलम के रूप में जोड़ें, और फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "इकाई को स्कैन करें या चुनें, फिर कानबान कार्ड को दोबारा स्कैन करें"
-
 msgid "Scan received"
 msgstr "स्कैन प्राप्त हुआ"
 
@@ -3040,6 +3055,12 @@ msgstr "स्क्रैप मात्रा और कारण चुन�
 
 msgid "Select a serial number to continue with this operation"
 msgstr "इस ऑपरेशन को जारी रखने के लिए एक सीरियल नंबर चुनें"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "समस्या प्रकार चुनें"
@@ -3520,6 +3541,9 @@ msgstr "यह जॉब उस पार्ट का उपयोग नही
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले कार्यालय से इसे सेट करने के लिए कहें।"
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "यह लेबल इस कंपनी की किसी इकाई का नहीं है"
 
@@ -3546,6 +3570,12 @@ msgstr "यह आपकी घड़ी को रोकता है और �
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "इस इकाई पर यह सुधार अपनी सीमा तक लागू हो चुका है। इसके बजाय इसे स्क्रैप करें या गुणवत्ता समस्या दर्ज करें।"
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट इकाई बनाई जाएगी।"
@@ -3744,6 +3774,9 @@ msgstr "असहेजे परिवर्तन"
 
 msgid "Until <0/>"
 msgstr "<0/> तक"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "अगला"

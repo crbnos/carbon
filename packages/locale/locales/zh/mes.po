@@ -253,6 +253,9 @@ msgstr ""
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr ""
 
@@ -1328,6 +1331,9 @@ msgstr "完成前请修正突出显示的数量。"
 msgid "Flag issue"
 msgstr "标记问题"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
 
@@ -1714,6 +1720,9 @@ msgstr "记录完成数量"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "记录 {0} 的完成数量"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "记录返工"
@@ -2290,6 +2299,9 @@ msgstr "未结工单"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr ""
 
@@ -2446,6 +2458,12 @@ msgstr "拣货 {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "选择样式、颜色和面。"
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "选择工单。在您添加一些时间前，它显示零小时。"
@@ -2888,9 +2906,6 @@ msgstr "扫码或搜索序列号..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "请扫描或选择该单元，然后再次扫描看板卡"
-
 msgid "Scan received"
 msgstr "已收到扫码"
 
@@ -3040,6 +3055,12 @@ msgstr "选择报废数量和原因"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "选择一个序列号以继续此工序"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "选择问题类型"
@@ -3520,6 +3541,9 @@ msgstr "此工单不使用该零件"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "此标签不属于本公司的任何单件"
 
@@ -3546,6 +3570,12 @@ msgstr "这将停止您的时钟并过账工单的时间。工单不再能更改
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "该件已达到此纠正的次数上限。请改为报废该件或发起质量问题。"
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "此单元将被永久报废，并将创建替换单元。"
@@ -3744,6 +3774,9 @@ msgstr "未保存的更改"
 
 msgid "Until <0/>"
 msgstr "直到 <0/>"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "下一个"

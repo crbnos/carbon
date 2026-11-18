@@ -253,6 +253,9 @@ msgstr ""
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} производственных заказов"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr ""
 
@@ -1328,6 +1331,9 @@ msgstr "Исправьте выделенные количества перед 
 msgid "Flag issue"
 msgstr "Отметить проблему"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
 
@@ -1714,6 +1720,9 @@ msgstr "Записать готовые"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "Записать готовые для {0}"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "Записать доработку"
@@ -2290,6 +2299,9 @@ msgstr "Открытые производственные заказы"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr ""
 
@@ -2446,6 +2458,12 @@ msgstr "Отобрать {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "Выберите стиль, цвет и сторону."
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Выберите производственный заказ. Он отображается без часов, пока вы не добавите некоторые."
@@ -2888,9 +2906,6 @@ msgstr "Сканировать или найти серийный номер..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "Отсканируйте или выберите единицу, затем снова отсканируйте карточку канбана"
-
 msgid "Scan received"
 msgstr "Скан получен"
 
@@ -3040,6 +3055,12 @@ msgstr "Выберите количество брака и причину"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Выберите серийный номер для продолжения операции"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "Выберите тип проблемы"
@@ -3520,6 +3541,9 @@ msgstr "Этот производственный заказ не использ
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "Эта метка не относится к единице этой организации"
 
@@ -3546,6 +3570,12 @@ msgstr "Это останавливает ваш таймер и проводи�
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "Эта единица уже использовала эту доработку максимально допустимое число раз. Отправьте её в брак или создайте несоответствие по качеству."
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
@@ -3744,6 +3774,9 @@ msgstr "Несохранённые изменения"
 
 msgid "Until <0/>"
 msgstr "До <0/>"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "Следующее"

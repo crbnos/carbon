@@ -421,6 +421,10 @@ msgstr "{0} 已成功删除"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
@@ -1036,6 +1040,9 @@ msgstr "{documentTypeLabel}审批规则"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# 行需要修复} other {# 行需要修复}}"
@@ -11273,6 +11280,9 @@ msgstr "下载计数以填入文件"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "下载模板。每一行是一个 Carbon 过账的默认账户。在账户编号中，输入您的科目表中对应账户的编号。Carbon 会更新默认账户以匹配。"
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "草稿"
@@ -31465,6 +31475,9 @@ msgstr "时间和物料订单行上一小时的价格：员工的订单行费率
 
 msgid "The principle:"
 msgstr "原则："
+
+msgid "The printer's print density, in dots per inch"
+msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "风险发生的概率等级（1 = 罕见到 5 = 几乎肯定）；与严重度配对计算风险分数。"

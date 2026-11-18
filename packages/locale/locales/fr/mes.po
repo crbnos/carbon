@@ -253,6 +253,9 @@ msgstr ""
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} ordres de fabrication"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr ""
 
@@ -1328,6 +1331,9 @@ msgstr "Corrigez les quantités surlignées avant de continuer."
 msgid "Flag issue"
 msgstr "Signaler un problème"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Avez-vous oublié le pointage fin ?"
 
@@ -1714,6 +1720,9 @@ msgstr "Enregistrer la production"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "Enregistrer la production pour {0}"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "Enregistrer une retouche"
@@ -2290,6 +2299,9 @@ msgstr "Ordres de fabrication ouvertes"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Ouvrir le sous-ensemble {0} : {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr ""
 
@@ -2446,6 +2458,12 @@ msgstr "Prélever {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "Choisir un style, une couleur et une police."
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Sélectionnez l'ordre de fabrication. Il s'affiche sans heures jusqu'à ce que vous en ajoutiez."
@@ -2888,9 +2906,6 @@ msgstr "Scannez ou recherchez un numéro de série..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannez ou sélectionnez une entité suivie de ce lot pour l'ajouter en tant que colonne d'échantillon, puis enregistrez son résultat dans la grille."
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "Scannez ou sélectionnez l'unité, puis scannez à nouveau la carte kanban"
-
 msgid "Scan received"
 msgstr "Scan reçu"
 
@@ -3040,6 +3055,12 @@ msgstr "Sélectionner une quantité de rebut et un motif"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Sélectionner un numéro de série pour continuer cette opération"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "Sélectionnez un type de problème"
@@ -3520,6 +3541,9 @@ msgstr "Cet ordre de fabrication n'utilise pas cette pièce"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Cet ordre de fabrication n'a pas de taux horaire. Demandez au bureau de le définir avant que le temps soit facturé."
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "Cette étiquette n'appartient à aucune unité de cette société"
 
@@ -3546,6 +3570,12 @@ msgstr "Cela arrête votre chronomètre et comptabilise le temps de l'ordre. L'o
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "Cette unité a atteint le nombre maximal d'utilisations de cette correction. Mettez-la au rebut ou signalez plutôt un problème qualité."
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Cette unité sera définitivement mise au rebut et une unité de remplacement sera créée."
@@ -3744,6 +3774,9 @@ msgstr "Modifications non enregistrées"
 
 msgid "Until <0/>"
 msgstr "Jusqu'à <0/>"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "Suivant"
