@@ -4,11 +4,12 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import { Badge, Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuMessageSquarePlus, LuRefreshCw } from "react-icons/lu";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useLoaderData, useRevalidator } from "react-router";
+import { useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
