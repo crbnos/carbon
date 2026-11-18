@@ -5,12 +5,19 @@
 #include <string>
 #include <vector>
 
+#include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <mutex>
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
+#include <IMeshData_Status.hxx>
+#include <Message_ProgressIndicator.hxx>
+#include <gp_Torus.hxx>
 #include <BinXCAFDrivers.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepMesh_Context.hxx>
@@ -184,41 +191,117 @@ static bool has_perforated_face(const TopoDS_Shape &shape) {
   return false;
 }
 
-// OCCT's default factory, except a plane gets the algorithm without the
-// interior-node pass. Every other surface keeps the caller's parameters.
-class LeanPlaneAlgoFactory : public IMeshTools_MeshAlgoFactory {
+// A torus far larger than its part is a sliver of it: an exporter's near-flat
+// face (seen: radius 58 m, a 0.1 mm strip of a 150 mm part). BRepMesh's torus
+// algorithm sizes interior nodes from the whole surface and never finishes such
+// a face, so its part meshes every torus from its boundary, as a plane is.
+static const double SLIVER_TORUS_RATIO = 10.0;
+
+// ASSEMBLER_FLAT_TORI=0 turns it off. Read per call, so a test can flip it.
+static bool flat_tori_enabled() {
+  const char *e = std::getenv("ASSEMBLER_FLAT_TORI");
+  return !(e && e[0] == '0');
+}
+
+static double bbox_diagonal(const TopoDS_Shape &shape) {
+  Bnd_Box box;
+  BRepBndLib::Add(shape, box);
+  if (box.IsVoid()) return 0.0;
+  Standard_Real x0, y0, z0, x1, y1, z1;
+  box.Get(x0, y0, z0, x1, y1, z1);
+  const double dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
+  return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+static bool has_sliver_torus(const TopoDS_Shape &shape) {
+  const double limit = bbox_diagonal(shape) * SLIVER_TORUS_RATIO;
+  if (limit <= 0.0) return false;
+  for (TopExp_Explorer face(shape, TopAbs_FACE); face.More(); face.Next()) {
+    BRepAdaptor_Surface surface(TopoDS::Face(face.Current()), Standard_False);
+    if (surface.GetType() != GeomAbs_Torus) continue;
+    const gp_Torus torus = surface.Torus();
+    if (std::max(torus.MajorRadius(), torus.MinorRadius()) > limit) return true;
+  }
+  return false;
+}
+
+// OCCT's default factory, except: a plane of a perforated part skips the
+// interior-node pass, and every torus of a part with a sliver torus is meshed
+// from its boundary. Every other surface keeps the caller's parameters.
+class CarbonAlgoFactory : public IMeshTools_MeshAlgoFactory {
 public:
+  CarbonAlgoFactory(bool lean_planes, bool flat_tori)
+      : lean_planes_(lean_planes), flat_tori_(flat_tori) {}
+
   Handle(IMeshTools_MeshAlgo)
   GetAlgo(const GeomAbs_SurfaceType type,
           const IMeshTools_Parameters &params) const override {
-    if (type != GeomAbs_Plane) return base->GetAlgo(type, params);
-    IMeshTools_Parameters lean = params;
-    lean.InternalVerticesMode = false;
-    return base->GetAlgo(type, lean);
+    const bool lean = (lean_planes_ && type == GeomAbs_Plane) ||
+                      (flat_tori_ && type == GeomAbs_Torus);
+    if (!lean) return base->GetAlgo(type, params);
+    IMeshTools_Parameters boundary_only = params;
+    boundary_only.InternalVerticesMode = false;
+    return base->GetAlgo(GeomAbs_Plane, boundary_only);
   }
 
 private:
+  bool lean_planes_, flat_tori_;
   Handle(BRepMesh_MeshAlgoFactory) base = new BRepMesh_MeshAlgoFactory;
 };
 
+// Past this the mesher is stopped and the part becomes its bounding box
+// (`mesh_for`), so one face OCCT cannot mesh never holds up the model.
+// ASSEMBLER_PART_MESH_SECONDS overrides it, for tests.
+static double part_mesh_seconds() {
+  const char *e = std::getenv("ASSEMBLER_PART_MESH_SECONDS");
+  const double v = e ? std::atof(e) : 0.0;
+  return v > 0.0 ? v : 120.0;
+}
+
+// BRepMesh checks it between faces and before every node its Delaunay pass inserts.
+class MeshDeadline : public Message_ProgressIndicator {
+public:
+  explicit MeshDeadline(double seconds)
+      : deadline_(std::chrono::steady_clock::now() +
+                  std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                      std::chrono::duration<double>(seconds))) {}
+  bool UserBreak() override { return std::chrono::steady_clock::now() > deadline_; }
+  void Show(const Message_ProgressScope &, const bool) override {}
+
+private:
+  std::chrono::steady_clock::time_point deadline_;
+};
+
+struct MeshTimeout : std::runtime_error {
+  MeshTimeout() : std::runtime_error("part meshing timed out") {}
+};
+
 static void mesh(const TopoDS_Shape &shape, double lin, double ang) {
-  const double deflection = adaptive_deflection(shape, lin);
-  if (!lean_planes_enabled() || !has_perforated_face(shape)) {
-    BRepMesh_IncrementalMesh(shape, deflection, Standard_False, ang,
-                             mesh_parallel() ? Standard_True : Standard_False);
-    return;
-  }
-  // The same four parameters the constructor above sets.
+  // The same four parameters BRepMesh_IncrementalMesh's convenience
+  // constructor sets, so a part on the default path meshes as it always did.
   BRepMesh_IncrementalMesh mesher;
   mesher.SetShape(shape);
   IMeshTools_Parameters &params = mesher.ChangeParameters();
-  params.Deflection = deflection;
+  params.Deflection = adaptive_deflection(shape, lin);
   params.Relative = false;
   params.Angle = ang;
   params.InParallel = mesh_parallel();
+
+  const bool lean_planes = lean_planes_enabled() && has_perforated_face(shape);
+  const bool flat_tori = flat_tori_enabled() && has_sliver_torus(shape);
   Handle(BRepMesh_Context) context = new BRepMesh_Context(params.MeshAlgo);
-  context->SetFaceDiscret(new BRepMesh_FaceDiscret(new LeanPlaneAlgoFactory));
-  mesher.Perform(context);
+  if (lean_planes || flat_tori) {
+    context->SetFaceDiscret(
+        new BRepMesh_FaceDiscret(new CarbonAlgoFactory(lean_planes, flat_tori)));
+  }
+  Handle(MeshDeadline) deadline = new MeshDeadline(part_mesh_seconds());
+  mesher.Perform(context, deadline->Start());
+  if (mesher.GetStatusFlags() & IMeshData_UserBreak) {
+    // Drop the faces it did finish: a later instance of this shape must not
+    // pick up a half-meshed part.
+    BRepTools::Clean(shape);
+    throw MeshTimeout();
+  }
 }
 
 static void tessellate(const TopoDS_Shape &shape, double lin, double ang,
@@ -453,6 +536,11 @@ class Builder {
     m.is_proxy = false;
     try {
       tessellate(shape, lin_, ang_, m.vertices, m.indices);
+    } catch (const MeshTimeout &) {
+      fprintf(stderr, "part %s did not mesh within %.0fs: shown as its bounding box\n",
+              key.c_str(), part_mesh_seconds());
+      m.vertices.clear();
+      m.indices.clear();
     } catch (...) {
       m.vertices.clear();
       m.indices.clear();

@@ -324,6 +324,25 @@ Built to sit as a small always-on pod beside other workloads.
   threshold keep the default path and stay byte-identical. `ASSEMBLER_LEAN_PLANES=0` turns it off. OCCT's other
   mesher (Delabella) is not an answer: lean on memory, but minutes on the same
   plates.
+- **A sliver torus is meshed from its boundary** (`has_sliver_torus` in
+  `occt.cc`). An exporter can write a near-flat face as a sliver of a huge
+  torus (one seen in an Onshape export: radius 58 m, a 0.1 mm strip of a
+  150 mm part). BRepMesh's torus algorithm places interior nodes from the
+  whole surface, so its Delaunay pass did not finish that one face in an hour.
+  A part with a torus more than 10× its own bounding-box diagonal meshes every
+  torus with the plane algorithm and no interior nodes; other parts are
+  untouched. `ASSEMBLER_FLAT_TORI=0` turns it off.
+- **Every part has a mesh deadline** (120 s, `part_mesh_seconds`): a
+  progress indicator stops BRepMesh, which checks it before every node it
+  inserts, and the part becomes its bounding-box proxy (`mesh_for`). The
+  optimize result names those parts in `warnings`, and `model-optimize` logs
+  them. So a face OCCT cannot mesh costs one box, not the job.
+  `ASSEMBLER_PART_MESH_SECONDS` overrides it, for tests.
+- **Parallel meshing is not run-to-run stable.** With `InParallel` on, the
+  same STEP can tessellate differently in a later job of the same process
+  (seen: 2,902,410 then 2,920,773 triangles), before and after the deadline
+  was added. A serial mesh (`ASSEMBLER_MESH_PARALLEL=0`) is the same every
+  time.
 - **The allocator** on Linux is jemalloc for the whole process (unprefixed, so
   OCCT and FCL use it too) with a background thread that returns freed pages
   after a second (`malloc_conf` in `main.rs`). `MALLOC_CONF=stats_print:true`
