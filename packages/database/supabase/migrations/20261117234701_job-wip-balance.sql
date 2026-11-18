@@ -1,14 +1,51 @@
 -- The cost of an outside processing purchase order never reached the job's
 -- finished goods. Its receipt debits WIP under the receipt's id, with the
--- purchase order line in "documentLineReference", while every reader of a
--- job's WIP summed only the lines whose "documentId" is the job. So the
--- completion left the supplier's cost out, and closing the job never wrote
--- it off.
+-- purchase order line in "documentLineReference" ('receipt:' || the line,
+-- journalReference.to.receipt in packages/database/src/utils.ts), while every
+-- reader of a job's WIP summed only the lines whose "documentId" is the job.
+-- So the completion left the supplier's cost out, and closing the job never
+-- wrote it off. A posted journal line cannot change
+-- (check_posted_record_immutable), so the readers find these lines from the
+-- purchase order line, not the other way round.
+--
+-- job_receipt_line_references is the one rule for which receipt lines are a
+-- job's cost: a purchase order line is the job's by its own jobId, else by its
+-- operation's (the operation link is nulled when the operation is deleted).
+-- job_wip_balance reads it, and so do getWorkInProgressItems
+-- (packages/database/src/accounting-cutover/open-items.ts) and the job lock
+-- and close check of an outside processing receipt (inventory and production
+-- services).
 --
 -- job_wip_balance is the one definition of what is in WIP for a job: its own
--- WIP lines, plus the WIP lines of the receipts of the purchase order lines
--- that serve its operations. complete_job_to_inventory, closeJob and
--- attachJob all read it.
+-- WIP lines, plus the WIP lines of those receipts. complete_job_to_inventory,
+-- closeJob and attachJob all read it.
+
+-- SQL, STABLE, SECURITY INVOKER and no SET clause, so the planner inlines it
+-- into job_wip_balance and filters by the job there.
+CREATE OR REPLACE FUNCTION public.job_receipt_line_references(
+  p_company_id text,
+  p_job_id text DEFAULT NULL
+)
+ RETURNS TABLE (
+   "jobId" text,
+   "purchaseOrderLineId" text,
+   "documentLineReference" text
+ )
+ LANGUAGE sql
+ STABLE
+AS $function$
+  SELECT
+    COALESCE(pol."jobId", jo."jobId") AS "jobId",
+    pol.id AS "purchaseOrderLineId",
+    'receipt:' || pol.id AS "documentLineReference"
+  FROM public."purchaseOrderLine" pol
+  LEFT JOIN public."jobOperation" jo
+    ON jo.id = pol."jobOperationId"
+   AND jo."companyId" = pol."companyId"
+  WHERE pol."companyId" = p_company_id
+    AND COALESCE(pol."jobId", jo."jobId") IS NOT NULL
+    AND (p_job_id IS NULL OR COALESCE(pol."jobId", jo."jobId") = p_job_id);
+$function$;
 
 -- SECURITY INVOKER: from complete_job_to_inventory it runs as the owner, and
 -- from the API under the caller's RLS.
@@ -37,18 +74,9 @@ AS $function$
     AND j.status IN ('Provisional', 'Posted', 'Reversed')
     AND (
       jl."documentId" = p_job_id
-      -- journalReference.to.receipt (packages/database/src/utils.ts) writes
-      -- this reference on the receipt's lines.
-      -- A line is the job's by its own jobId, or by its operation's: the
-      -- operation link is nulled when the operation is deleted.
       OR jl."documentLineReference" = ANY (ARRAY(
-        SELECT 'receipt:' || pol.id
-        FROM "purchaseOrderLine" pol
-        LEFT JOIN "jobOperation" jo
-          ON jo.id = pol."jobOperationId"
-         AND jo."companyId" = pol."companyId"
-        WHERE pol."companyId" = p_company_id
-          AND (pol."jobId" = p_job_id OR jo."jobId" = p_job_id)
+        SELECT ref."documentLineReference"
+        FROM job_receipt_line_references(p_company_id, p_job_id) ref
       ))
     )
     -- A line that charged a project in place of WIP is the project's cost.
