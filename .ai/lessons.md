@@ -5195,3 +5195,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 - **Problem:** The change locked the invoice `FOR UPDATE`, but both voids read the lines they reverse before their transaction and never locked the invoice. A change that committed between the void's read and its write survived on a Voided invoice: its amount stayed on the new account with nothing left to reverse it.
 - **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
 - **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
+
+## A `NonRetriableError` subclass must keep its name
+
+**Context:** `AssemblerJobError extends NonRetriableError` (`packages/jobs/.../tasks/assembler-client.ts`) set `this.name = "AssemblerJobError"`.
+
+**Problem:** `@carbon/lib` (which creates the Inngest client, so runs the functions) and `@carbon/jobs` resolve different installed copies of `inngest`, so `error instanceof NonRetriableError` is false inside the SDK. Its fallback is `error.name === "NonRetriableError"`, which the rename defeated. Every "give up" error was retried twice, as 500s from `/api/inngest`, before `onFailure` ran.
+
+**Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
+
+**Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
