@@ -12544,7 +12544,7 @@ msgstr "输入来自您的身份验证器应用的6位数代码"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 
-#. placeholder {0}: formatter.format(100 / 10 ** decimals)
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
 

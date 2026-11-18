@@ -4446,7 +4446,8 @@ export const changePurchaseInvoiceLineAccount = defineServiceFn({
  * @remarks
  * Brings the invoice total to `targetTotal`, the amount the supplier actually
  * charged (for example a card charge a cent off the computed total), with a
- * single G/L Account line on the company's default Rounding Account. The other
+ * single G/L Account line described "Rounding" on the company's default
+ * Rounding Account; other lines on that account are left alone. The other
  * lines, inventory lines included, keep their prices, so receipts and
  * purchase orders are untouched. Calling again with another total replaces
  * the adjustment; a total the other lines already match removes it. Refused

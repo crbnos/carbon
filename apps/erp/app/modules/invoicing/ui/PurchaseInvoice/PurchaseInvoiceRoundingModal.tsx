@@ -20,7 +20,10 @@ import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Number, Submit } from "~/components/Form";
 import { useCurrencyDecimals, useCurrencyFormatter } from "~/hooks";
-import { purchaseInvoiceRoundingValidator } from "~/modules/invoicing/invoicing.models";
+import {
+  MAX_ROUNDING_MINOR_UNITS,
+  purchaseInvoiceRoundingValidator
+} from "~/modules/invoicing/invoicing.models";
 import type { action as roundingAction } from "~/routes/x+/purchase-invoice+/$invoiceId.rounding";
 import { path } from "~/utils/path";
 
@@ -76,8 +79,8 @@ export default function PurchaseInvoiceRoundingModal({
               <Trans>
                 Enter the amount the supplier charged. The difference is added
                 as a line on the Rounding Account, up to{" "}
-                {formatter.format(100 / 10 ** decimals)}. Other lines keep their
-                prices.
+                {formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)}.
+                Other lines keep their prices.
               </Trans>
             </ModalDescription>
           </ModalHeader>

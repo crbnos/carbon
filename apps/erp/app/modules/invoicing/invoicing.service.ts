@@ -21506,11 +21506,12 @@ export async function adjustPurchaseInvoiceRounding(
           "id",
           "invoiceLineType",
           "accountId",
+          "description",
           "purchaseOrderLineId",
           "quantity",
-          "supplierUnitPrice",
-          "supplierShippingCost",
-          "supplierTaxAmount",
+          "unitPrice",
+          "shippingCost",
+          "taxAmount",
           "sortOrder"
         ])
         .where("invoiceId", "=", invoiceId)
@@ -21531,9 +21532,12 @@ export async function adjustPurchaseInvoiceRounding(
       );
     }
 
+    // The account alone is not enough: a company may use its rounding
+    // account for ordinary expense lines, which this must never rewrite.
     const isRoundingLine = (line: (typeof lines)[number]) =>
       line.invoiceLineType === "G/L Account" &&
       line.accountId === roundingAccountId &&
+      line.description === ROUNDING_LINE_DESCRIPTION &&
       !line.purchaseOrderLineId;
     const roundingLines = lines.filter(isRoundingLine);
     if (roundingLines.length > 1) {
@@ -21543,14 +21547,20 @@ export async function adjustPurchaseInvoiceRounding(
     }
     const roundingLine = roundingLines[0];
 
-    let totalWithoutRounding = Number(delivery?.supplierShippingCost ?? 0);
+    // The same arithmetic as the `purchaseInvoices` view's document total,
+    // which balances and settlements read: base line amounts (each at its own
+    // rate) plus header freight, converted back at the invoice's rate.
+    const rate = Number(invoice.exchangeRate);
+    let baseWithoutRounding =
+      Number(delivery?.supplierShippingCost ?? 0) / (rate === 0 ? 1 : rate);
     for (const line of lines) {
       if (line === roundingLine) continue;
-      totalWithoutRounding +=
-        Number(line.quantity) * Number(line.supplierUnitPrice) +
-        Number(line.supplierShippingCost) +
-        Number(line.supplierTaxAmount);
+      baseWithoutRounding +=
+        Number(line.quantity) * Number(line.unitPrice ?? 0) +
+        Number(line.shippingCost ?? 0) +
+        Number(line.taxAmount ?? 0);
     }
+    const totalWithoutRounding = baseWithoutRounding * rate;
 
     const result = purchaseInvoiceRoundingAmount(
       totalWithoutRounding,
@@ -21577,6 +21587,7 @@ export async function adjustPurchaseInvoiceRounding(
           supplierShippingCost: 0,
           supplierTaxAmount: 0,
           taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
           updatedBy: userId,
           updatedAt: datetime.timestamp()
         })

@@ -12544,7 +12544,7 @@ msgstr "認証アプリから6桁のコードを入力してください"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
 
-#. placeholder {0}: formatter.format(100 / 10 ** decimals)
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
 

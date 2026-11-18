@@ -6,12 +6,22 @@
 // database: one line on the rounding account carries the difference, a second
 // call replaces it, and matching the other lines removes it.
 
+import { round } from "@carbon/utils";
 import { describe, expect } from "vitest";
 import {
   adjustPurchaseInvoiceRounding,
+  postPurchaseInvoice,
   ROUNDING_LINE_DESCRIPTION
 } from "../../app/modules/invoicing/invoicing.service";
-import { alwaysPostFixture, type Fixture, seed, USER } from "./fixtures/always-post";
+import { invokePosting } from "../../app/modules/shared/shared.service";
+import {
+  alwaysPostFixture,
+  type Fixture,
+  seed,
+  USER,
+  unwrap
+} from "./fixtures/always-post";
+import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
 
 /** A Draft invoice like APV-000180: 13 x 5.81 + 5.29 tax + 12.64 shipping. */
@@ -124,6 +134,69 @@ describe("adjustPurchaseInvoiceRounding", () => {
             targetTotal: 95
           })
         ).rejects.toThrow(/too large for a rounding adjustment/);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+
+  databaseTest(
+    "posts payables at the charged amount and leaves other lines alone",
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        const invoiceId = await draftInvoice(f);
+        // An ordinary expense line on the rounding account is not the
+        // rounding line: the adjustment adds its own beside it.
+        await seed(f, (trx) =>
+          trx
+            .insertInto("purchaseInvoiceLine")
+            .values({
+              invoiceId,
+              invoiceLineType: "G/L Account",
+              accountId: f.account("filler"),
+              description: "Card fee",
+              quantity: 1,
+              supplierUnitPrice: 0.3,
+              exchangeRate: 1,
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .execute()
+        );
+
+        await adjustPurchaseInvoiceRounding(f.service, {
+          invoiceId,
+          targetTotal: 93.77
+        });
+        expect(
+          (await roundingLines(f, invoiceId))
+            .map((l) => [l.description, l.supplierUnitPrice])
+            .sort()
+        ).toEqual([
+          ["Card fee", 0.3],
+          [ROUNDING_LINE_DESCRIPTION, 0.01]
+        ]);
+
+        unwrap(
+          await invokePosting(
+            handlesOf(f.ctx),
+            "post-purchase-invoice",
+            { type: "post", invoiceId },
+            postPurchaseInvoice
+          )
+        );
+        const payables = await f.db
+          .selectFrom("journalLine")
+          .select("amount")
+          .where("companyId", "=", f.companyId)
+          .where("documentType", "=", "Invoice")
+          .where("documentId", "=", invoiceId)
+          .where("accountId", "=", f.account("payables"))
+          .execute();
+        expect(
+          round(payables.reduce((sum, l) => sum + Number(l.amount), 0), 2)
+        ).toBe(93.77);
       } finally {
         await f.cleanup();
       }
