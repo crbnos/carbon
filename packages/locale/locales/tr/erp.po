@@ -14297,7 +14297,7 @@ msgid "Full setup and migrations"
 msgstr "Tam kurulum ve göçler"
 
 msgid "Full Year"
-msgstr ""
+msgstr "Tam Yıl"
 
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
@@ -15057,7 +15057,7 @@ msgid "Hours/Piece"
 msgstr "Saat/Adet"
 
 msgid "How {week} counts weeks in document, serial and batch numbers."
-msgstr ""
+msgstr "Belge, seri ve parti numaralarında {week} haftaları nasıl sayar."
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Gruplanabilir bir işlemin çalışması: Ardışık, parçaları bir makine üzerinde birbir ardına çalıştırır (testere veya lazer masası gibi), Eşzamanlı ise bunları tek bir yükte birlikte çalıştırır (fırın, fırın veya elektroliz banyosu gibi)."
@@ -15231,7 +15231,7 @@ msgid "How We Work Together"
 msgstr "Nasıl Çalışıyoruz"
 
 msgid "How weeks are numbered"
-msgstr ""
+msgstr "Haftalar nasıl numaralandırılır"
 
 msgid "How will you use {integrationName}?"
 msgstr "{integrationName} uygulamasını nasıl kullanacaksınız?"
@@ -16251,7 +16251,7 @@ msgid "Is supplier type group"
 msgstr "Tedarikçi türü grubu mu"
 
 msgid "ISO 8601"
-msgstr ""
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Sorun"
@@ -17609,7 +17609,7 @@ msgid "Location / Item"
 msgstr "Konum / Ürün"
 
 msgid "Location code"
-msgstr ""
+msgstr "Lokasyon kodu"
 
 msgid "Location Name"
 msgstr "Konum Adı"
@@ -21122,7 +21122,7 @@ msgid "Numbering sequence"
 msgstr "Numaralandırma Sırası"
 
 msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
-msgstr ""
+msgstr "Kaydettikten sonra verilen numaralar haftayı bu şekilde sayar. Daha önce verilmiş numaralar kendi haftasını korur."
 
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
@@ -27369,7 +27369,7 @@ msgid "Search…"
 msgstr "Ara…"
 
 msgid "Second"
-msgstr ""
+msgstr "İkinci"
 
 msgid "Seconds to complete"
 msgstr "Tamamlanmak için gereken saniye"
@@ -34049,7 +34049,7 @@ msgid "URL"
 msgstr "URL"
 
 msgid "US"
-msgstr ""
+msgstr "ABD"
 
 msgid "Usage/Day (30d)"
 msgstr "Günlük Kullanım (30g)"
@@ -34795,7 +34795,7 @@ msgid "Week"
 msgstr "Hafta"
 
 msgid "Week ({numbering})"
-msgstr ""
+msgstr "Hafta ({numbering})"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"
@@ -34811,7 +34811,7 @@ msgid "Week 8 cutover"
 msgstr "8. Hafta geçişi"
 
 msgid "Week Numbering"
-msgstr ""
+msgstr "Hafta Numaralandırma"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34856,16 +34856,16 @@ msgid "Weeks are numbered from the present week"
 msgstr "Haftalar mevcut haftadan itibaren numaralandırılır"
 
 msgid "Weeks are numbered in Settings → Company."
-msgstr ""
+msgstr "Haftalar Ayarlar → Şirket bölümünde numaralandırılır."
 
 msgid "Weeks Open"
 msgstr "Açık Haftalar"
 
 msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
-msgstr ""
+msgstr "Haftalar Pazartesi günü başlar. 1. hafta, yılın ilk Perşembe gününü içeren haftadır; böylece bir hafta asla bölünmez: 1 Ocak 2027 Cuma günü 2026'nın 53. haftasındadır."
 
 msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
-msgstr ""
+msgstr "Haftalar Pazar günü başlar. 1. hafta, 1 Ocak'ı içeren haftadır; bu nedenle yıl başındaki haftalar kısadır: 1–2 Ocak 2027, 1. haftadadır."
 
 msgid "Weighted Average"
 msgstr "Ağırlıklı Ortalama"
@@ -35469,7 +35469,7 @@ msgid "with {0} contingency"
 msgstr "ile {0} acil durum"
 
 msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
-msgstr ""
+msgstr "{week} seçiliyken ve {month} ya da {day} yoksa yıl, haftanın ait olduğu yıldır: 1 Ocak 2027, 2026'nın 53. haftasındadır."
 
 msgid "With Previous"
 msgstr "Öncekiyle birlikte"

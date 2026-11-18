@@ -14297,7 +14297,7 @@ msgid "Full setup and migrations"
 msgstr "Configurazione completa e migrazioni"
 
 msgid "Full Year"
-msgstr ""
+msgstr "Anno completo"
 
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
@@ -15057,7 +15057,7 @@ msgid "Hours/Piece"
 msgstr "Ore/Pezzo"
 
 msgid "How {week} counts weeks in document, serial and batch numbers."
-msgstr ""
+msgstr "Come {week} conta le settimane nei numeri di documento, di serie e di lotto di produzione."
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Come un processo raggruppabile esegue il suo lavoro aggregato: Sequenziale esegue i componenti uno dopo l'altro su una macchina (una sega o un tavolo laser), mentre Simultaneo li esegue insieme in un unico carico (un forno, una stufa o un bagno di galvanica)."
@@ -15231,7 +15231,7 @@ msgid "How We Work Together"
 msgstr "Come Lavoriamo Insieme"
 
 msgid "How weeks are numbered"
-msgstr ""
+msgstr "Come sono numerate le settimane"
 
 msgid "How will you use {integrationName}?"
 msgstr "Come utilizzerai {integrationName}?"
@@ -16251,7 +16251,7 @@ msgid "Is supplier type group"
 msgstr "È gruppo tipo fornitore"
 
 msgid "ISO 8601"
-msgstr ""
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Problema"
@@ -17609,7 +17609,7 @@ msgid "Location / Item"
 msgstr "Ubicazione / Articolo"
 
 msgid "Location code"
-msgstr ""
+msgstr "Codice ubicazione"
 
 msgid "Location Name"
 msgstr "Nome Ubicazione"
@@ -21122,7 +21122,7 @@ msgid "Numbering sequence"
 msgstr "Sequenza di numerazione"
 
 msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
-msgstr ""
+msgstr "I numeri emessi dopo aver salvato contano le settimane in questo modo. I numeri già emessi mantengono la loro settimana."
 
 msgid "OEE Impact"
 msgstr "Impatto OEE"
@@ -27369,7 +27369,7 @@ msgid "Search…"
 msgstr "Cerca…"
 
 msgid "Second"
-msgstr ""
+msgstr "Secondo"
 
 msgid "Seconds to complete"
 msgstr "Secondi per completare"
@@ -34049,7 +34049,7 @@ msgid "URL"
 msgstr "URL"
 
 msgid "US"
-msgstr ""
+msgstr "US"
 
 msgid "Usage/Day (30d)"
 msgstr "Utilizzo/Giorno (30g)"
@@ -34795,7 +34795,7 @@ msgid "Week"
 msgstr "Settimana"
 
 msgid "Week ({numbering})"
-msgstr ""
+msgstr "Settimana ({numbering})"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"
@@ -34811,7 +34811,7 @@ msgid "Week 8 cutover"
 msgstr "Cutover della settimana 8"
 
 msgid "Week Numbering"
-msgstr ""
+msgstr "Numerazione settimane"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34856,16 +34856,16 @@ msgid "Weeks are numbered from the present week"
 msgstr "Le settimane sono numerate dalla settimana corrente"
 
 msgid "Weeks are numbered in Settings → Company."
-msgstr ""
+msgstr "Le settimane sono numerate in Impostazioni → Azienda."
 
 msgid "Weeks Open"
 msgstr "Settimane Aperte"
 
 msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
-msgstr ""
+msgstr "Le settimane iniziano il lunedì. La settimana 1 è quella che contiene il primo giovedì dell'anno, quindi una settimana non viene mai spezzata: venerdì 1 gennaio 2027 appartiene alla settimana 53 del 2026."
 
 msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
-msgstr ""
+msgstr "Le settimane iniziano la domenica. La settimana 1 è la settimana che contiene il 1 gennaio, quindi le settimane a cavallo del nuovo anno sono brevi: 1–2 gennaio 2027 è la settimana 1."
 
 msgid "Weighted Average"
 msgstr "Media Ponderata"
@@ -35469,7 +35469,7 @@ msgid "with {0} contingency"
 msgstr "con contingenza {0}"
 
 msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
-msgstr ""
+msgstr "Con {week} e senza {month} o {day}, l'anno è quello a cui appartiene la settimana: 1 gennaio 2027 appartiene alla settimana 53 del 2026."
 
 msgid "With Previous"
 msgstr "Con il precedente"

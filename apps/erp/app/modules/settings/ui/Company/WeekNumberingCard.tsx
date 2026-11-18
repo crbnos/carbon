@@ -25,6 +25,10 @@ import { sequenceWeekNumberingValidator } from "~/modules/settings/settings.mode
 import { path } from "~/utils/path";
 import { useWeekNumberingLabels } from "../Sequences/SequenceTokens";
 
+type SavedSequenceSettings = {
+  data: { sequenceWeekNumbering?: WeekNumbering } | null;
+};
+
 export function WeekNumberingCard({
   weekNumbering
 }: {
@@ -32,9 +36,9 @@ export function WeekNumberingCard({
 }) {
   const permissions = usePermissions();
   const labels = useWeekNumberingLabels();
-  const fetcher = useAction({
+  const fetcher = useAction<SavedSequenceSettings>({
     onSuccess: ({ data }) => {
-      const saved = data?.sequenceWeekNumbering as WeekNumbering | undefined;
+      const saved = data?.sequenceWeekNumbering;
       if (saved) toast.success(labels[saved]);
     }
   });

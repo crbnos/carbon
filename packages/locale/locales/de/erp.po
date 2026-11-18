@@ -14297,7 +14297,7 @@ msgid "Full setup and migrations"
 msgstr "Vollständiges Setup und Migrationen"
 
 msgid "Full Year"
-msgstr ""
+msgstr "Volles Jahr"
 
 msgid "Fully Depreciated"
 msgstr "Vollständig abgeschrieben"
@@ -15057,7 +15057,7 @@ msgid "Hours/Piece"
 msgstr "Stunden/Stück"
 
 msgid "How {week} counts weeks in document, serial and batch numbers."
-msgstr ""
+msgstr "So zählt {week} die Wochen in Dokument-, Serien- und Losnummern."
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Wie ein batchfähiger Verfahren die gruppierte Arbeit abläuft: Sequenziell führt Teile nacheinander auf einer Maschine aus (z. B. Säge oder Lasertisch), während Simultan sie zusammen in einer Charge ausführt (z. B. Ofen, Backofen oder Galvanisierbad)."
@@ -15231,7 +15231,7 @@ msgid "How We Work Together"
 msgstr "Wie wir zusammenarbeiten"
 
 msgid "How weeks are numbered"
-msgstr ""
+msgstr "So werden die Wochen nummeriert"
 
 msgid "How will you use {integrationName}?"
 msgstr "Wie werden Sie {integrationName} nutzen?"
@@ -16251,7 +16251,7 @@ msgid "Is supplier type group"
 msgstr "Ist Lieferantentyp-Gruppe"
 
 msgid "ISO 8601"
-msgstr ""
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Problem"
@@ -17609,7 +17609,7 @@ msgid "Location / Item"
 msgstr "Standort / Artikel"
 
 msgid "Location code"
-msgstr ""
+msgstr "Standortcode"
 
 msgid "Location Name"
 msgstr "Standortname"
@@ -21122,7 +21122,7 @@ msgid "Numbering sequence"
 msgstr "Nummernkreis"
 
 msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
-msgstr ""
+msgstr "Nummern, die nach dem Speichern vergeben werden, zählen die Wochen auf diese Weise. Bereits vergebene Nummern behalten ihre Woche."
 
 msgid "OEE Impact"
 msgstr "OEE-Auswirkung"
@@ -27369,7 +27369,7 @@ msgid "Search…"
 msgstr "Suchen…"
 
 msgid "Second"
-msgstr ""
+msgstr "Zweite"
 
 msgid "Seconds to complete"
 msgstr "Sekunden zum Abschluss"
@@ -34049,7 +34049,7 @@ msgid "URL"
 msgstr "URL"
 
 msgid "US"
-msgstr ""
+msgstr "US"
 
 msgid "Usage/Day (30d)"
 msgstr "Verbrauch/Tag (30d)"
@@ -34795,7 +34795,7 @@ msgid "Week"
 msgstr "Woche"
 
 msgid "Week ({numbering})"
-msgstr ""
+msgstr "Woche ({numbering})"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"
@@ -34811,7 +34811,7 @@ msgid "Week 8 cutover"
 msgstr "Woche 8 Umstellung"
 
 msgid "Week Numbering"
-msgstr ""
+msgstr "Wochennummerierung"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34856,16 +34856,16 @@ msgid "Weeks are numbered from the present week"
 msgstr "Wochen werden ab der aktuellen Woche nummeriert"
 
 msgid "Weeks are numbered in Settings → Company."
-msgstr ""
+msgstr "Wochen werden unter Einstellungen → Unternehmen nummeriert."
 
 msgid "Weeks Open"
 msgstr "Wochen offen"
 
 msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
-msgstr ""
+msgstr "Wochen beginnen am Montag. Woche 1 ist die Woche mit dem ersten Donnerstag des Jahres, sodass eine Woche nie geteilt wird: Freitag, 1. Januar 2027, liegt in Woche 53 des Jahres 2026."
 
 msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
-msgstr ""
+msgstr "Wochen beginnen am Sonntag. Woche 1 ist die Woche des 1. Januar, daher sind die Wochen um den Jahreswechsel kurz: 1.–2. Januar 2027 ist Woche 1."
 
 msgid "Weighted Average"
 msgstr "Gewichteter Durchschnitt"
@@ -35469,7 +35469,7 @@ msgid "with {0} contingency"
 msgstr "mit {0} Rückstellung"
 
 msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
-msgstr ""
+msgstr "Mit {week} und ohne {month} oder {day} ist das Jahr das Jahr, zu dem die Woche gehört: 1. Januar 2027 liegt in Woche 53 des Jahres 2026."
 
 msgid "With Previous"
 msgstr "Mit Vorgänger"

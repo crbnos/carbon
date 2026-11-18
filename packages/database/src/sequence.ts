@@ -70,15 +70,12 @@ export async function getNextSequences(
   );
 }
 
-/**
- * How the company's `%{ww}` counts weeks (`companySettings.sequenceWeekNumbering`),
- * the same read get_next_sequence and get_next_serial_numbers make in SQL.
- */
-export async function getSequenceWeekNumbering(
-  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+// The same read get_next_sequence and get_next_serial_numbers make in SQL.
+async function getSequenceWeekNumbering(
+  trx: Transaction<KyselyDatabase>,
   companyId: string
 ): Promise<WeekNumbering> {
-  const settings = await db
+  const settings = await trx
     .selectFrom("companySettings")
     .select("sequenceWeekNumbering")
     .where("id", "=", companyId)
