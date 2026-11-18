@@ -24746,36 +24746,36 @@ export async function postInventoryAdjustment(
   const trackingRows = (storageUnitQuantities.data ??
     []) as TrackingQuantityRow[];
 
-  // A tracked entity's movements stay in the stripe that holds it: the
-  // stripe of its row with the most on-hand. Untracked stock, and a new
-  // entity, are adjusted in the requested stripe (common by default).
   const fullest = (rows: TrackingQuantityRow[]) =>
     rows.reduce<TrackingQuantityRow | null>(
       (best, q) =>
         !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
       null
     );
-  const onHandOf = (rows: TrackingQuantityRow[]) =>
-    rows.reduce((sum, q) => sum + (q.quantity ?? 0), 0);
+  const rowsOfLot = (lotId: string) =>
+    trackingRows.filter((q) => q.trackedEntityId === lotId);
   // Non-empty when the payload names a lot that already has stock movements
   // here. That lot is then the target: a batch number is not unique per lot.
-  const lotRows = trackedEntityId
-    ? trackingRows.filter((q) => q.trackedEntityId == trackedEntityId)
-    : [];
+  const lotRows = trackedEntityId ? rowsOfLot(trackedEntityId) : [];
   const lotRowIn = (bin: string | null | undefined) =>
     fullest(lotRows.filter((q) => q.storageUnitId == bin));
-  // The lot's total on-hand after a movement, for settleQuantity. Below zero
-  // means another bin's balance is already negative: refused as input the
-  // user can correct, where settleQuantity would throw a 500.
-  const lotOnHandAfter = (rows: TrackingQuantityRow[], movement: number) => {
-    const total = round(onHandOf(rows) + movement);
+  // A lot's total on-hand after a movement, for settleQuantity. Below zero
+  // means one of its bins is already negative: refused as input the user can
+  // correct, where settleQuantity would throw a 500.
+  const lotOnHandAfter = (lotId: string, movement: number) => {
+    const total = round(
+      rowsOfLot(lotId).reduce((sum, q) => sum + (q.quantity ?? 0), movement)
+    );
     if (total < 0) {
       throw new InvalidInputError(
-        "This tracked entity has a negative quantity in another storage unit — correct that row first"
+        "This tracked entity has a negative quantity in a storage unit — correct that row first"
       );
     }
     return total;
   };
+  // A tracked entity's movements stay in the stripe that holds it: the
+  // stripe of its row with the most on-hand. Untracked stock, and a new
+  // entity, are adjusted in the requested stripe (common by default).
   const entityHolding = fullest(lotRows);
   const entityStripe = entityHolding
     ? (entityHolding.projectId ?? null)
@@ -24949,12 +24949,15 @@ export async function postInventoryAdjustment(
         if (scrapQuantity > entityQuantity) {
           throw new InvalidInputError("Insufficient quantity for scrap");
         }
-        // The payload's bin when the lot has stock there, else the bin
-        // holding most of it (a serial UI sends no bin).
+        // The lot's row in the payload's bin when it has stock there, else
+        // the row holding most of it (a serial UI sends no bin). The scrap
+        // leaves that row's bin and stripe.
+        const scrappedFrom =
+          [lotRowIn(storageUnitId), entityHolding].find(
+            (row) => (row?.quantity ?? 0) > 0
+          ) ?? null;
         const bin =
-          ((lotRowIn(storageUnitId)?.quantity ?? 0) > 0
-            ? storageUnitId
-            : (entityHolding?.storageUnitId ?? storageUnitId)) ?? null;
+          (scrappedFrom ? scrappedFrom.storageUnitId : storageUnitId) ?? null;
 
         let scrappedEntityId = trackedEntityId;
         if (!isFullDraw(entityQuantity, scrapQuantity)) {
@@ -25075,6 +25078,9 @@ export async function postInventoryAdjustment(
             ...scrapLedgerBase,
             trackedEntityId: scrappedEntityId,
             storageUnitId: bin,
+            projectId: scrappedFrom
+              ? (scrappedFrom.projectId ?? null)
+              : scrapLedgerBase.projectId,
             quantity: -Math.abs(scrapQuantity)
           },
           item,
@@ -25428,6 +25434,43 @@ export async function postInventoryAdjustment(
       !namesLot &&
       (readableId || !currentQuantity)
     ) {
+      // Reduces the lot of a resolved on-hand row, in that row's bin and
+      // stripe. Draining the lot's total to zero Consumes it; settleQuantity
+      // is the shared rule, so a Scrapped lot stays Scrapped.
+      const reduceLotOf = async (row: TrackingQuantityRow, rename?: string) => {
+        const lotId = row.trackedEntityId as string;
+        if (round(adjustmentQuantity) > round(row.quantity ?? 0)) {
+          throw new InvalidInputError(
+            "Insufficient quantity for negative adjustment"
+          );
+        }
+        await trx
+          .updateTable("trackedEntity")
+          .set({
+            ...settleQuantity({
+              quantity: lotOnHandAfter(lotId, -adjustmentQuantity),
+              status: await currentEntityStatus(trx, lotId, companyId)
+            }),
+            ...(rename ? { readableId: rename } : {})
+          })
+          .where("id", "=", lotId)
+          .where("companyId", "=", companyId)
+          .execute();
+        const booked = await bookAdjustment(trx, {
+          ledger: {
+            ...ledgerBase,
+            trackedEntityId: lotId,
+            projectId: row.projectId ?? null,
+            entryType,
+            quantity: -Math.abs(adjustmentQuantity)
+          },
+          item,
+          itemCost,
+          accounting
+        });
+        resultLedgerId = booked.itemLedgerId;
+      };
+
       if (readableId) {
         const matches = trackingRows.filter(
           (q) =>
@@ -25449,45 +25492,7 @@ export async function postInventoryAdjustment(
             "Multiple tracked entities in this storage unit — select a specific row to adjust"
           );
         }
-        const resolvedId = resolvedQtyRow.trackedEntityId as string;
-        const resolvedQty = round(resolvedQtyRow.quantity ?? 0);
-        if (round(adjustmentQuantity) > resolvedQty) {
-          throw new InvalidInputError(
-            "Insufficient quantity for negative adjustment"
-          );
-        }
-        // A negative adjustment draws down Available stock; when it lands
-        // on zero the lot is Consumed, not a zero-quantity Available husk.
-        // settleQuantity is the shared rule, so this path also preserves a
-        // Scrapped lot — which the inline flip it replaces did not.
-        await trx
-          .updateTable("trackedEntity")
-          .set({
-            ...settleQuantity({
-              quantity: lotOnHandAfter(
-                trackingRows.filter((q) => q.trackedEntityId === resolvedId),
-                -adjustmentQuantity
-              ),
-              status: await currentEntityStatus(trx, resolvedId, companyId)
-            }),
-            readableId
-          })
-          .where("id", "=", resolvedId)
-          .where("companyId", "=", companyId)
-          .execute();
-        const booked = await bookAdjustment(trx, {
-          ledger: {
-            ...ledgerBase,
-            trackedEntityId: resolvedId,
-            projectId: resolvedQtyRow.projectId ?? null,
-            entryType,
-            quantity: -Math.abs(adjustmentQuantity)
-          },
-          item,
-          itemCost,
-          accounting
-        });
-        resultLedgerId = booked.itemLedgerId;
+        await reduceLotOf(resolvedQtyRow, readableId);
         return;
       }
 
@@ -25538,38 +25543,7 @@ export async function postInventoryAdjustment(
           "Multiple tracked entities in this storage unit — select a specific row to adjust"
         );
       }
-      const targetRow = trackedRowsInUnit[0]!;
-      const targetQty = round(targetRow.quantity ?? 0);
-      if (round(adjustmentQuantity) > targetQty) {
-        throw new InvalidInputError(
-          "Insufficient quantity for negative adjustment"
-        );
-      }
-      const targetId = targetRow.trackedEntityId as string;
-      await trx
-        .updateTable("trackedEntity")
-        .set(
-          settleQuantity({
-            quantity: targetQty - adjustmentQuantity,
-            status: await currentEntityStatus(trx, targetId, companyId)
-          })
-        )
-        .where("id", "=", targetId)
-        .where("companyId", "=", companyId)
-        .execute();
-      const booked = await bookAdjustment(trx, {
-        ledger: {
-          ...ledgerBase,
-          trackedEntityId: targetId,
-          projectId: targetRow.projectId ?? null,
-          entryType,
-          quantity: -Math.abs(adjustmentQuantity)
-        },
-        item,
-        itemCost,
-        accounting
-      });
-      resultLedgerId = booked.itemLedgerId;
+      await reduceLotOf(trackedRowsInUnit[0]!);
       return;
     }
 
@@ -25591,7 +25565,7 @@ export async function postInventoryAdjustment(
         // one that can land on a Scrapped lot — settleQuantity preserves it.
         // Settled on the lot's total, so stock in another bin keeps it open.
         const entityUpdate: Record<string, unknown> = settleQuantity({
-          quantity: lotOnHandAfter(lotRows, signedQuantity),
+          quantity: lotOnHandAfter(trackedEntityId, signedQuantity),
           status: await currentEntityStatus(trx, trackedEntityId, companyId)
         });
         if (readableId !== undefined && readableId !== null) {

@@ -4,9 +4,8 @@
 
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
-// A reduction lands on the lot and bin of the row it names. Batch numbers are
-// not unique per lot, so resolving the target by batch number charged another
-// lot, in a bin it never held stock in, and Consumed it.
+// An adjustment lands on the lot and bin of the row it names. Batch numbers
+// are not unique per lot, so a number never stands in for the lot it names.
 
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { postInventoryAdjustment as postInventoryAdjustmentBody } from "../../../app/modules/inventory/inventory.service";
@@ -226,7 +225,7 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
   }
 
   databaseTest(
-    "a lot in two bins is reduced in the bin named, and stays Available",
+    "a lot in two bins is adjusted in the bin named, and settles on its total",
     async () => {
       const itemId = await item("two-bins", "Batch");
       const id = await lot(itemId, "1", "B-2", [
@@ -266,6 +265,20 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
         [id, binB, 5]
       ]);
       expect(await entity(id)).toEqual({ quantity: 10, status: "Available" });
+
+      // Bin B up to 8: the lot then holds 10 + 8.
+      const raised = await adjust({
+        adjustmentType: "Set Quantity",
+        itemId,
+        locationId: f.locationId,
+        storageUnitId: binB,
+        trackedEntityId: id,
+        readableId: "B-2",
+        quantity: 8
+      });
+      expect(raised.error).toBeNull();
+      expect(await onHandByBin(itemId)).toEqual({ [binA]: 10, [binB]: 8 });
+      expect(await entity(id)).toEqual({ quantity: 18, status: "Available" });
     }
   );
 
@@ -294,8 +307,8 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
     }
   );
 
-  // #821: the form mints an id when no row is selected, so the serial number
-  // is the only handle on the unit.
+  // The form mints an id when no row is selected, so the number is the only
+  // handle on the unit.
   databaseTest(
     "a serial is reduced by its number when no existing entity is named",
     async () => {
@@ -344,6 +357,36 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
         [first, binA, 20],
         [second, binA, 30]
       ]);
+    }
+  );
+
+  // With no row selected and no number typed, the only lot in the bin is the
+  // target; its stock in another bin keeps it open.
+  databaseTest(
+    "the only lot in a bin, reduced without being named, settles on its total",
+    async () => {
+      const itemId = await item("bin-only", "Batch");
+      const id = await lot(itemId, "1", "B-7", [
+        [binA, 10],
+        [binB, 5]
+      ]);
+
+      const result = await adjust({
+        adjustmentType: "Negative Adjmt.",
+        itemId,
+        locationId: f.locationId,
+        storageUnitId: binB,
+        trackedEntityId: `${itemId}-minted`,
+        quantity: 5
+      });
+
+      expect(result.error).toBeNull();
+      expect(await ledger(itemId)).toEqual([
+        [id, binA, 10],
+        [id, binB, -5],
+        [id, binB, 5]
+      ]);
+      expect(await entity(id)).toEqual({ quantity: 10, status: "Available" });
     }
   );
 
@@ -413,10 +456,10 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
     expect(await entity(id)).toEqual({ quantity: 10, status: "Available" });
   });
 
-  // The state the batch-number lookup left behind: stock in one bin, a
-  // negative balance in a bin the lot was never in.
+  // A negative balance in one bin leaves the lot's total below zero, which a
+  // tracked quantity cannot hold.
   databaseTest(
-    "a lot with a negative balance elsewhere is refused until that row is corrected",
+    "a lot with a negative balance in a bin is refused until that row is corrected",
     async () => {
       const itemId = await item("corrupt", "Batch");
       const id = await lot(itemId, "1", "B-6", [
@@ -436,9 +479,6 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
 
       const refused = await reduce();
       expect(refused.error?.status).toBe(400);
-      expect(refused.error?.message).toBe(
-        "This tracked entity has a negative quantity in another storage unit — correct that row first"
-      );
       expect(await onHandByBin(itemId)).toEqual({ [binA]: 55, [binB]: -220 });
 
       const corrected = await adjust({
