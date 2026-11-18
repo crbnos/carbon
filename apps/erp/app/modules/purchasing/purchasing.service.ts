@@ -3125,17 +3125,25 @@ export async function updateSupplierContact(
     }
   }
 
-  if (supplierContact.customFields) {
-    const customFieldUpdate = await client
+  // The location is written whenever it is sent, custom fields or not. Left
+  // out, or blank in the form, it is kept: the app cannot clear it either.
+  const contactRow = {
+    ...(supplierContact.customFields
+      ? { customFields: supplierContact.customFields }
+      : {}),
+    ...(supplierContact.supplierLocationId !== undefined
+      ? { supplierLocationId: supplierContact.supplierLocationId }
+      : {})
+  };
+  if (Object.keys(contactRow).length > 0) {
+    const contactRowUpdate = await client
       .from("supplierContact")
-      .update({
-        customFields: supplierContact.customFields,
-        supplierLocationId: supplierContact.supplierLocationId
-      })
-      .eq("contactId", supplierContact.contactId);
+      .update(contactRow)
+      .eq("contactId", supplierContact.contactId)
+      .eq("companyId", supplierContact.companyId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+    if (contactRowUpdate.error) {
+      return contactRowUpdate;
     }
   }
   // The contact id is the row key and the location is set on supplierContact
@@ -3159,12 +3167,12 @@ export async function updateSupplierLocation(
     addressId: string;
     name: string;
     address: {
-      addressLine1?: string;
-      addressLine2?: string;
-      city?: string;
-      stateProvince?: string;
-      countryCode?: string;
-      postalCode?: string;
+      addressLine1?: string | null;
+      addressLine2?: string | null;
+      city?: string | null;
+      stateProvince?: string | null;
+      countryCode?: string | null;
+      postalCode?: string | null;
     };
     customFields?: Json;
   }

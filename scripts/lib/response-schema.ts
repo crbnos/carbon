@@ -227,11 +227,13 @@ function unionToJsonSchema(
 
   // A union of string literals is an enum — the single most useful thing this
   // reflection recovers, and invisible in a hand-written response example.
+  // `enum` is checked on its own, beside `type`: a nullable enum lists `null`
+  // too, or the input validator refuses the null its type allows.
   if (concrete.length > 0 && concrete.every((t) => t.isStringLiteral())) {
-    return {
-      type: nullable ? ["string", "null"] : "string",
-      enum: concrete.map((t) => t.getLiteralValue())
-    };
+    const values = concrete.map((t) => t.getLiteralValue());
+    return nullable
+      ? { type: ["string", "null"], enum: [...values, null] }
+      : { type: "string", enum: values };
   }
 
   // `boolean` is internally `true | false`; keep it as one type.
@@ -248,7 +250,9 @@ function unionToJsonSchema(
       undefinedIsAbsent
     );
     if (nullable && typeof inner.type === "string") {
-      return { ...inner, type: [inner.type, "null"] };
+      return Array.isArray(inner.enum)
+        ? { ...inner, type: [inner.type, "null"], enum: [...inner.enum, null] }
+        : { ...inner, type: [inner.type, "null"] };
     }
     return inner;
   }

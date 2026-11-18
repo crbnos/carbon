@@ -5195,3 +5195,11 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 - **Problem:** The change locked the invoice `FOR UPDATE`, but both voids read the lines they reverse before their transaction and never locked the invoice. A change that committed between the void's read and its write survived on a Voided invoice: its amount stayed on the new account with nothing left to reverse it.
 - **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
 - **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
+
+## A nullable enum must list null, or the API refuses the null its type allows
+
+- **Context:** The generator publishes each operation's input as JSON Schema, and the API validates every call with `z.fromJSONSchema` (`jsonSchemaInput`).
+- **Problem:** A nullable string-literal union was published as `{ "type": ["string", "null"], "enum": [...] }`. The validator checks `enum` apart from `type`, so it refused `null` although the operation's own zod input took it. Update inputs typed `.optional()` refused `null` before the operation ran. An API or MCP caller could not clear a field the app's form clears.
+- **Rule:** A nullable enum lists `null` in `enum` (`unionToJsonSchema` does this). An update's optional field over a nullable column is `.nullable().optional()`. Test a clear by sending `null` through `jsonSchemaInput`, not only through the zod input.
+- **Applies to:** `scripts/lib/response-schema.ts`, every published update or upsert operation.
+

@@ -6244,19 +6244,20 @@ export const updateSupplierContact = defineServiceFn({
     contact: z.looseObject({
       id: z.string().optional(),
       contactId: z.string().optional(),
-      firstName: z.string().optional(),
-      lastName: z.string().optional(),
-      title: z.string().optional(),
+      firstName: z.string().nullable().optional(),
+      lastName: z.string().nullable().optional(),
+      title: z.string().nullable().optional(),
       // Blank means no email: stored as NULL, never ''.
       email: z
         .string()
         .trim()
         .transform((v) => v || null)
+        .nullable()
         .optional(),
-      mobilePhone: z.string().optional(),
-      homePhone: z.string().optional(),
-      workPhone: z.string().optional(),
-      notes: z.string().optional(),
+      mobilePhone: z.string().nullable().optional(),
+      homePhone: z.string().nullable().optional(),
+      workPhone: z.string().nullable().optional(),
+      notes: z.string().nullable().optional(),
       supplierLocationId: z.string().optional()
     }),
     supplierLocationId: z.string().optional(),
@@ -6284,12 +6285,12 @@ export const updateSupplierLocation = defineServiceFn({
     addressId: z.string(),
     name: z.string(),
     address: z.looseObject({
-      addressLine1: z.string().optional(),
-      addressLine2: z.string().optional(),
-      city: z.string().optional(),
-      stateProvince: z.string().optional(),
-      countryCode: z.string().optional(),
-      postalCode: z.string().optional()
+      addressLine1: z.string().nullable().optional(),
+      addressLine2: z.string().nullable().optional(),
+      city: z.string().nullable().optional(),
+      stateProvince: z.string().nullable().optional(),
+      countryCode: z.string().nullable().optional(),
+      postalCode: z.string().nullable().optional()
     }),
     customFields: z.unknown().optional()
   }),
@@ -6313,10 +6314,10 @@ export const updateSupplierLocation = defineServiceFn({
 export const updateSupplierPayment = defineServiceFn({
   input: z.looseObject({
     supplierId: z.string().min(1),
-    invoiceSupplierId: z.string().optional(),
-    invoiceSupplierLocationId: z.string().optional(),
-    invoiceSupplierContactId: z.string().optional(),
-    paymentTermId: z.string().optional(),
+    invoiceSupplierId: z.string().nullable().optional(),
+    invoiceSupplierLocationId: z.string().nullable().optional(),
+    invoiceSupplierContactId: z.string().nullable().optional(),
+    paymentTermId: z.string().nullable().optional(),
     customFields: z.unknown().optional()
   }),
   permission: { update: "purchasing" },
@@ -6381,10 +6382,10 @@ export const updateSupplierQuoteStatus = defineServiceFn({
 export const updateSupplierShipping = defineServiceFn({
   input: z.looseObject({
     supplierId: z.string().min(1),
-    shippingSupplierId: z.string().optional(),
-    shippingSupplierLocationId: z.string().optional(),
-    shippingSupplierContactId: z.string().optional(),
-    shippingMethodId: z.string().optional(),
+    shippingSupplierId: z.string().nullable().optional(),
+    shippingSupplierLocationId: z.string().nullable().optional(),
+    shippingSupplierContactId: z.string().nullable().optional(),
+    shippingMethodId: z.string().nullable().optional(),
     incoterm: z
       .enum([
         "EXW",
@@ -6399,8 +6400,9 @@ export const updateSupplierShipping = defineServiceFn({
         "DPU",
         "DDP"
       ])
+      .nullable()
       .optional(),
-    incotermLocation: z.string().optional(),
+    incotermLocation: z.string().nullable().optional(),
     customFields: z.unknown().optional()
   }),
   permission: { update: "purchasing" },
@@ -6442,9 +6444,9 @@ export const getSupplierTax = defineServiceFn({
 export const updateSupplierTax = defineServiceFn({
   input: z.looseObject({
     supplierId: z.string().min(1),
-    taxId: z.string().optional(),
-    vatNumber: z.string().optional(),
-    eori: z.string().optional(),
+    taxId: z.string().nullable().optional(),
+    vatNumber: z.string().nullable().optional(),
+    eori: z.string().nullable().optional(),
     taxExempt: z.boolean().optional(),
     taxExemptionReason: z
       .enum([
@@ -6461,7 +6463,7 @@ export const updateSupplierTax = defineServiceFn({
       ])
       .nullable()
       .optional(),
-    taxExemptionCertificateNumber: z.string().optional(),
+    taxExemptionCertificateNumber: z.string().nullable().optional(),
     taxExemptionCertificatePath: z.string().nullable().optional()
   }),
   permission: { update: "purchasing" },
@@ -6955,12 +6957,12 @@ export const updateSupplier = defineServiceFn({
         .enum(["Active", "Inactive", "Pending", "Rejected"])
         .nullable()
         .optional(),
-      supplierStageId: z.string().optional(),
-      supplierTypeId: z.string().optional(),
-      accountManagerId: z.string().optional(),
-      currencyCode: z.string().optional(),
-      purchasingContactId: z.string().optional(),
-      website: z.string().optional(),
+      supplierStageId: z.string().nullable().optional(),
+      supplierTypeId: z.string().nullable().optional(),
+      accountManagerId: z.string().nullable().optional(),
+      currencyCode: z.string().nullable().optional(),
+      purchasingContactId: z.string().nullable().optional(),
+      website: z.string().nullable().optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
