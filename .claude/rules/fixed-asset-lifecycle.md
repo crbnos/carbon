@@ -527,7 +527,9 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   Dr CIP asset / Cr WIP (`'Asset Transfer'`, both lines `documentId = jobId`,
   the transfer in `documentLineReference`), one `fixedAssetCipCost` row
   (`'Job'`) and one transfer (`sourceType 'Job'`), asset → `Under Construction`
-  with `acquisitionCost += balance` (nothing is swept when the balance is 0; before
+  with `acquisitionCost += balance` (nothing is swept when the balance is 0 or
+  below — a negative balance stays in WIP for the close; the job is locked
+  `FOR UPDATE` and its status checked again before the WIP read; before
   the accounting cutover the balance is read from the job's Provisional WIP lines). An unset asset location is filled from the job.
 - `capitalizeCip` (`fixedAssetId`, `toClassId`, `inServiceDate`): asset must be
   `Under Construction` in a CIP class, target must not be CIP, and the asset

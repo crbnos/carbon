@@ -8126,6 +8126,11 @@ export async function reverseJournalEntry(
     companyId: line.companyId,
     description: line.description,
     amount: -Number(line.amount),
+    // The original stays in its document's balance as Reversed; the reversal
+    // nets it only if it names the same document (a job's WIP, for one).
+    documentType: line.documentType,
+    documentId: line.documentId,
+    documentLineReference: line.documentLineReference,
     journalLineReference: crypto.randomUUID()
   }));
 
@@ -14470,13 +14475,28 @@ async function attachJob(
       companyId,
       accounting.postingStatus
     );
+    // Locked before the WIP read: a completion or close that commits after
+    // the checks above would otherwise sweep the same balance twice.
+    const locked = await trx
+      .selectFrom("job")
+      .select("status")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (CLOSED_JOB_STATUSES.has(locked.status)) {
+      throw new InvalidInputError(
+        `Job ${job.jobId} is ${locked.status} and can no longer be attached to an asset`
+      );
+    }
     // The job's WIP balance so far: cost leaves WIP at attachment (SAP AuC).
     // Before the cutover it sits in Provisional journals and is swept by one.
+    // A negative balance is not swept; it stays in WIP for the close.
     const wip = await rpcValue(trx, "job_wip_balance", {
       p_job_id: jobId,
       p_company_id: companyId
     });
-    const balance = round(wip.data ?? 0);
+    const balance = Math.max(round(wip.data ?? 0), 0);
 
     let result: Pick<AssetTransferResult, "id" | "transferId"> = {
       id: null,

@@ -6800,7 +6800,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
             itemId: input.itemId,
             assetId: input.assetId,
             purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
-            conversionFactor: input.conversionFactor
+            conversionFactor: input.conversionFactor,
+            // A field the edit sends empty is written as null.
+            ...("jobId" in input ? { jobId: input.jobId ?? null } : {}),
+            ...("jobOperationId" in input
+              ? { jobOperationId: input.jobOperationId ?? null }
+              : {})
           },
           dates: {
             requiredDate: input.requiredDate,

@@ -236,11 +236,11 @@ const allTenAtFifty = (f: Fixture) => ({
   layers: [{ quantity: 10, cost: 50 }]
 });
 
-/** Completes the job for 10 by hand, as the Complete dialog does. */
-async function completeJob(f: Fixture, jobId: string) {
+/** Completes the job by hand (10 by default), as the Complete dialog does. */
+async function completeJob(f: Fixture, jobId: string, quantity = 10) {
   await sql`
     SELECT complete_job_to_inventory(
-      ${jobId}, 10, NULL, ${f.locationId}, ${f.companyId}, ${USER}
+      ${jobId}, ${quantity}, NULL, ${f.locationId}, ${f.companyId}, ${USER}
     )
   `.execute(f.db);
 }
@@ -438,6 +438,66 @@ databaseTest(
       await receive(f, order.purchaseOrderId, 10);
       expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
       expect(await wipAccount(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a receipt is still the job's cost after its operation is deleted",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f, { thenInHouse: true });
+      await receive(f, order.purchaseOrderId, 10);
+      // What the operation's delete leaves (ON DELETE SET NULL): the line
+      // keeps its job and loses its operation.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("purchaseOrderLine")
+          .set({ jobOperationId: null })
+          .where("purchaseOrderId", "=", order.purchaseOrderId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+
+      await completeJob(f, order.jobId);
+
+      expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
+      expect(await wipAccount(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a receipt returned after a partial completion stays in WIP when the job completes",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f, { thenInHouse: true });
+      await receive(f, order.purchaseOrderId, 6);
+      await completeJob(f, order.jobId, 5);
+      const thirty = {
+        journal: [
+          [f.account("finished-goods"), 30],
+          [f.account("wip"), -30]
+        ],
+        layers: [{ quantity: 5, cost: 30 }]
+      };
+      expect(await finishedGoods(f, order.jobId)).toEqual(thirty);
+
+      // 4 go back to the supplier: WIP is 20 below zero.
+      await receive(f, order.purchaseOrderId, -4);
+      expect(await wipAccount(f)).toBe(-20);
+
+      await completeJob(f, order.jobId);
+
+      // The last 5 are not charged 20 more; the close settles the 20.
+      expect(await finishedGoods(f, order.jobId)).toEqual(thirty);
+      expect(await wipAccount(f)).toBe(-20);
     } finally {
       await f.cleanup();
     }

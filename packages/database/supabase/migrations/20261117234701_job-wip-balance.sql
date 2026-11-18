@@ -39,14 +39,16 @@ AS $function$
       jl."documentId" = p_job_id
       -- journalReference.to.receipt (packages/database/src/utils.ts) writes
       -- this reference on the receipt's lines.
+      -- A line is the job's by its own jobId, or by its operation's: the
+      -- operation link is nulled when the operation is deleted.
       OR jl."documentLineReference" = ANY (ARRAY(
         SELECT 'receipt:' || pol.id
-        FROM "jobOperation" jo
-        INNER JOIN "purchaseOrderLine" pol
-          ON pol."jobOperationId" = jo.id
-         AND pol."companyId" = jo."companyId"
-        WHERE jo."jobId" = p_job_id
-          AND jo."companyId" = p_company_id
+        FROM "purchaseOrderLine" pol
+        LEFT JOIN "jobOperation" jo
+          ON jo.id = pol."jobOperationId"
+         AND jo."companyId" = pol."companyId"
+        WHERE pol."companyId" = p_company_id
+          AND (pol."jobId" = p_job_id OR jo."jobId" = p_job_id)
       ))
     )
     -- A line that charged a project in place of WIP is the project's cost.
@@ -62,7 +64,7 @@ AS $function$
 $function$;
 
 -- Fork of 20261117205342_job-receipt-location-fallback.sql. The only change
--- is the accumulated WIP cost, which is now job_wip_balance.
+-- is the accumulated WIP cost, which is now job_wip_balance, taken signed.
 
 CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text DEFAULT NULL::text, p_location_id text DEFAULT NULL::text, p_company_id text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text)
  RETURNS void
@@ -1309,7 +1311,9 @@ BEGIN
     RETURN;
   END IF;
 
-  v_accumulated_wip_cost := ABS(job_wip_balance(p_job_id, p_company_id));
+  -- A negative balance (a returned outside processing receipt) is not moved
+  -- to finished goods; it stays in WIP for the close.
+  v_accumulated_wip_cost := job_wip_balance(p_job_id, p_company_id);
 
   IF v_accumulated_wip_cost <= 0 THEN
     RETURN;

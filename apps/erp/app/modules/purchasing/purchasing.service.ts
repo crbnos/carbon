@@ -2876,7 +2876,7 @@ export async function getPurchaseOrderLineForAmendment(
   return ctx.asCaller.supabase
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, jobId, jobOperationId, requiredDate, promisedDate, receivedDate"
     )
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)
