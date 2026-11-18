@@ -163,8 +163,7 @@ export default function useProductionSubmodules() {
   };
 }
 
-/** Phones: the module's section switcher, for routes outside the module's
- *  own layout (`handle.compactSidebar`). */
+/** The module sidebar, for routes outside the module's own layout. */
 export function ProductionSections() {
   const { groups } = useProductionSubmodules();
   return <GroupedContentSidebar groups={groups} />;

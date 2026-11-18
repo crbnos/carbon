@@ -210,8 +210,7 @@ export default function useInventorySubmodules() {
   };
 }
 
-/** Phones: the module's section switcher, for routes outside the module's
- *  own layout (`handle.compactSidebar`). */
+/** The module sidebar, for routes outside the module's own layout. */
 export function InventorySections() {
   const { groups } = useInventorySubmodules();
   return <GroupedContentSidebar groups={groups} />;
