@@ -14429,7 +14429,8 @@ async function attachJob(
           "locationId",
           "salesOrderLineId",
           "fixedAssetClassId",
-          "fixedAssetId"
+          "fixedAssetId",
+          "consumeToProject"
         ])
         .where("id", "=", jobId)
         .where("companyId", "=", companyId)
@@ -14461,6 +14462,13 @@ async function attachJob(
   if (job.fixedAssetClassId || job.fixedAssetId) {
     throw new InvalidInputError(
       `Job ${job.jobId} already completes to a fixed asset`
+    );
+  }
+  // Its cost is its project's (complete_job_to_inventory refuses such a job
+  // with an asset target), and the sweep below would capitalize it.
+  if (job.consumeToProject) {
+    throw new InvalidInputError(
+      `Job ${job.jobId} consumes to its project and cannot build an asset`
     );
   }
 

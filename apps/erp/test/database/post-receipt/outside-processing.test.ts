@@ -7,11 +7,16 @@
 // The supplier's cost is the job's cost: the receipt debits WIP under the
 // receipt's own id, and the job's completion and close must still count it.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
+import { CarbonError, createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postAssetTransfer } from "../../../app/modules/accounting/accounting.service";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { closeJob } from "../../../app/modules/production/production.service";
+import { lineOperationJob } from "../../../app/modules/purchasing/purchasing.service";
+import {
+  closeJob,
+  outsideProcessingToReceiveRefusal
+} from "../../../app/modules/production/production.service";
 import {
   invokeCreate,
   invokePosting
@@ -21,32 +26,47 @@ import {
   type Fixture,
   jobFixture,
   seed,
+  stockPart,
   USER,
   unwrap
 } from "../fixtures/always-post";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
+import { postgrestTest } from "../fixtures/local-supabase";
 
 /** A job for 10 whose first operation is sent out on a purchase order for 10
  *  at `unitPrice` (5) each. The job has no material, so the supplier's 50 is
- *  its whole cost. `thenInHouse` adds an operation of our own after the
- *  outside one. `key` keeps two orders of one fixture apart. */
+ *  its whole cost; `keepMaterial` keeps the fixture's 2 parts (at 10 each).
+ *  `thenInHouse` adds an operation of our own after the outside one.
+ *  `lines` splits the 10 over purchase order lines for the one operation.
+ *  `key` keeps two orders of one fixture apart. */
 async function outsideProcessingOrder(
   f: Fixture,
   {
     key = "outside",
     unitPrice = 5,
-    thenInHouse = false
-  }: { key?: string; unitPrice?: number; thenInHouse?: boolean } = {}
+    thenInHouse = false,
+    keepMaterial = false,
+    lines = [10]
+  }: {
+    key?: string;
+    unitPrice?: number;
+    thenInHouse?: boolean;
+    keepMaterial?: boolean;
+    lines?: number[];
+  } = {}
 ) {
   const job = await jobFixture(f, key);
   const purchaseOrderId = `${f.prefix}-po-${key}`;
+  const lineIds = lines.map((_, index) => `${f.prefix}-pol-${key}-${index}`);
   await seed(f, async (trx) => {
-    await trx
-      .deleteFrom("jobMaterial")
-      .where("id", "=", job.materialId)
-      .where("companyId", "=", f.companyId)
-      .execute();
+    if (!keepMaterial) {
+      await trx
+        .deleteFrom("jobMaterial")
+        .where("id", "=", job.materialId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+    }
     if (thenInHouse) {
       const outside = await trx
         .selectFrom("jobOperation")
@@ -113,27 +133,46 @@ async function outsideProcessingOrder(
       .execute();
     await trx
       .insertInto("purchaseOrderLine")
-      .values({
-        purchaseOrderId,
-        purchaseOrderLineType: "Part",
-        itemId: f.assemblyId,
-        purchaseQuantity: 10,
-        supplierUnitPrice: unitPrice,
-        exchangeRate: 1,
-        conversionFactor: 1,
-        inventoryUnitOfMeasureCode: "EA",
-        locationId: f.locationId,
-        jobId: job.jobId,
-        jobOperationId: job.operationId,
-        companyId: f.companyId,
-        createdBy: USER
-      })
+      .values(
+        lines.map((purchaseQuantity, index) => ({
+          id: lineIds[index],
+          purchaseOrderId,
+          purchaseOrderLineType: "Part" as const,
+          itemId: f.assemblyId,
+          purchaseQuantity,
+          supplierUnitPrice: unitPrice,
+          exchangeRate: 1,
+          conversionFactor: 1,
+          inventoryUnitOfMeasureCode: "EA",
+          locationId: f.locationId,
+          jobId: job.jobId,
+          jobOperationId: job.operationId,
+          companyId: f.companyId,
+          createdBy: USER
+        }))
+      )
       .execute();
   });
-  return { ...job, purchaseOrderId };
+  return { ...job, purchaseOrderId, lineIds };
 }
 
-async function receive(f: Fixture, purchaseOrderId: string, quantity: number) {
+/** Posts a receipt of the order: `quantity` on every line, or one quantity
+ *  per purchase order line id. Returns the receipt's id. */
+async function receive(
+  f: Fixture,
+  purchaseOrderId: string,
+  quantity: number | Record<string, number>
+) {
+  const receipt = await draftReceipt(f, purchaseOrderId, quantity);
+  await postReceiptOf(f, receipt);
+  return receipt;
+}
+
+async function draftReceipt(
+  f: Fixture,
+  purchaseOrderId: string,
+  quantity: number | Record<string, number>
+) {
   const receipt = unwrap(
     await invokeCreate(handlesOf(f.ctx), {
       type: "receiptFromPurchaseOrder",
@@ -141,22 +180,33 @@ async function receive(f: Fixture, purchaseOrderId: string, quantity: number) {
       locationId: f.locationId
     })
   );
-  await seed(f, (trx) =>
-    trx
-      .updateTable("receiptLine")
-      .set({ receivedQuantity: quantity })
-      .where("receiptId", "=", receipt.id)
-      .where("companyId", "=", f.companyId)
-      .execute()
-  );
-  unwrap(
-    await invokePosting(
-      handlesOf(f.ctx),
-      "post-receipt",
-      { type: "post", receiptId: receipt.id },
-      postReceipt
-    )
-  );
+  await seed(f, async (trx) => {
+    const byLine =
+      typeof quantity === "number" ? null : Object.entries(quantity);
+    for (const [lineId, received] of byLine ?? [[null, quantity as number]]) {
+      let update = trx
+        .updateTable("receiptLine")
+        .set({ receivedQuantity: received as number })
+        .where("receiptId", "=", receipt.id)
+        .where("companyId", "=", f.companyId);
+      if (lineId) update = update.where("lineId", "=", lineId);
+      await update.execute();
+    }
+  });
+  return receipt.id;
+}
+
+function postReceiptOf(
+  f: Fixture,
+  receiptId: string,
+  type: "post" | "void" = "post"
+) {
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-receipt",
+    { type, receiptId },
+    postReceipt
+  ).then(unwrap);
 }
 
 function operation(f: Fixture, operationId: string) {
@@ -531,6 +581,233 @@ databaseTest(
       // Both receipts' cost (20, then 30) is in the finished goods.
       expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
       expect(await wipAccount(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a job's material and its outside processing both reach finished goods",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      // The job's 2 parts at 10 backflush at completion: 20 of its own.
+      await stockPart(f, 2);
+      const order = await outsideProcessingOrder(f, { keepMaterial: true });
+
+      await receive(f, order.purchaseOrderId, 10);
+
+      expect(await finishedGoods(f, order.jobId)).toEqual({
+        journal: [
+          [f.account("finished-goods"), 70],
+          [f.account("wip"), -70]
+        ],
+        layers: [{ quantity: 10, cost: 70 }]
+      });
+      expect(await wipAccount(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an operation sent out on two purchase order lines completes by what both received",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f, { lines: [6, 4] });
+      const [first, second] = order.lineIds as [string, string];
+
+      // The first line is received complete; the operation still waits for
+      // the other 4.
+      await receive(f, order.purchaseOrderId, { [first]: 6, [second]: 0 });
+      expect(await operation(f, order.operationId)).toEqual({
+        status: "In Progress",
+        quantityComplete: 6
+      });
+      expect(await jobReceived(f, order.jobId)).toEqual({
+        status: "In Progress",
+        received: 0
+      });
+
+      await receive(f, order.purchaseOrderId, { [second]: 4 });
+      expect(await operation(f, order.operationId)).toEqual({
+        status: "Done",
+        quantityComplete: 10
+      });
+      expect(await jobReceived(f, order.jobId)).toEqual({
+        status: "Completed",
+        received: 10
+      });
+      expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "voiding an outside processing receipt takes its units back off the operation",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f, { thenInHouse: true });
+      const receiptId = await receive(f, order.purchaseOrderId, 10);
+      expect(await operation(f, order.operationId)).toEqual({
+        status: "Done",
+        quantityComplete: 10
+      });
+
+      await postReceiptOf(f, receiptId, "void");
+
+      expect(await operation(f, order.operationId)).toEqual({
+        status: "In Progress",
+        quantityComplete: 0
+      });
+      expect(await wipAccount(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a closed job refuses an outside processing receipt",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f);
+      await completeJob(f, order.jobId);
+      await seed(f, (trx) =>
+        trx
+          .updateTable("job")
+          .set({ status: "Closed" })
+          .where("id", "=", order.jobId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+
+      const receiptId = await draftReceipt(f, order.purchaseOrderId, 10);
+      const { error } = await invokePosting(
+        handlesOf(f.ctx),
+        "post-receipt",
+        { type: "post", receiptId },
+        postReceipt
+      );
+
+      // The close wrote the job's WIP off once; this cost would stay in WIP.
+      expect(error?.status).toBe(400);
+      expect(await wipAccount(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a job cannot be closed while its outside processing is still to receive",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f, { thenInHouse: true });
+      await receive(f, order.purchaseOrderId, 6);
+      await completeJob(f, order.jobId);
+
+      const refusal = await outsideProcessingToReceiveRefusal(
+        f.service,
+        order.jobId
+      );
+      expect(refusal?.category).toBe("rule");
+
+      await receive(f, order.purchaseOrderId, 4);
+      expect(
+        await outsideProcessingToReceiveRefusal(f.service, order.jobId)
+      ).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a job that consumes to its project cannot be attached to an asset under construction",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f, { thenInHouse: true });
+      const assetId = await assetUnderConstruction(f);
+      await seed(f, async (trx) => {
+        const project = await trx
+          .insertInto("project")
+          .values({
+            name: "Contract",
+            status: "Released",
+            costTreatment: "Expense",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .updateTable("job")
+          .set({ projectId: project.id, consumeToProject: true })
+          .where("id", "=", order.jobId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+
+      const { error } = await invokePosting(
+        handlesOf(f.ctx),
+        "post-asset-transfer",
+        { type: "attachJob", fixedAssetId: assetId, jobId: order.jobId },
+        postAssetTransfer
+      );
+
+      expect(error?.status).toBe(400);
+      const asset = await f.db
+        .selectFrom("fixedAsset")
+        .select("acquisitionCost")
+        .where("id", "=", assetId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(asset.acquisitionCost).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a purchase order line sent with only an operation takes the operation's job",
+  async (serviceRole) => {
+    const f = await alwaysPostFixture();
+    try {
+      const order = await outsideProcessingOrder(f);
+      const other = await jobFixture(f, "other");
+      const ctx = createServiceContext({
+        actor: { type: "system", onBehalfOf: USER },
+        company: { id: f.companyId, groupId: f.groupId },
+        caller: serviceRole as never,
+        system: () => serviceRole as never,
+        pg: () => f.db,
+        kv: () => {
+          throw new Error("No kv");
+        }
+      });
+
+      // The job keeps the receipt's cost once the operation is deleted.
+      expect(
+        await lineOperationJob(ctx, { jobOperationId: order.operationId })
+      ).toBe(order.jobId);
+      const refusal = await lineOperationJob(ctx, {
+        jobId: other.jobId,
+        jobOperationId: order.operationId
+      });
+      expect(refusal instanceof CarbonError && refusal.category).toBe(
+        "validation"
+      );
     } finally {
       await f.cleanup();
     }

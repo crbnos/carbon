@@ -2868,6 +2868,41 @@ export async function unreleasedChangeOrderRefusal(
   return issue ? ctx.error("rule", `${issue} It cannot be purchased.`) : null;
 }
 
+/**
+ * The job of a line that names a job operation: the operation's. A receipt's
+ * cost stays the job's through the line's own `jobId` once the operation is
+ * deleted (SQL `job_receipt_line_references`), so a line sent with only the
+ * operation gets its job, and a job that is not the operation's is refused.
+ * Read with the service role, since a buyer may not hold production view.
+ */
+export async function lineOperationJob(
+  ctx: ServiceContext,
+  line: { jobId?: string | null; jobOperationId?: string | null }
+): Promise<string | null | CarbonError> {
+  if (!line.jobOperationId) return line.jobId ?? null;
+  const operation = await ctx.asSystem.supabase
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", line.jobOperationId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (operation.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the job operation",
+      operation.error
+    );
+  }
+  if (!operation.data) return ctx.error("notFound", "Job operation not found");
+  if (line.jobId && line.jobId !== operation.data.jobId) {
+    return ctx.error(
+      "validation",
+      "The operation is not an operation of the line's job"
+    );
+  }
+  return operation.data.jobId;
+}
+
 /** The line an edit names, with what was received and invoiced on it. */
 export async function getPurchaseOrderLineForAmendment(
   ctx: ServiceContext,

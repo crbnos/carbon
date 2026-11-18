@@ -53,9 +53,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // The jobs the function accepts: open, not for a sales order, and not
-  // already building an asset. There is no production service for this
-  // shape, so the filter lives here.
+  // The jobs the function accepts: open, not for a sales order, not
+  // consuming to a project, and not already building an asset. There is no
+  // production service for this shape, so the filter lives here.
   const jobs = await client
     .from("job")
     .select(
@@ -65,6 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .is("salesOrderLineId", null)
     .is("fixedAssetClassId", null)
     .is("fixedAssetId", null)
+    .eq("consumeToProject", false)
     .not("status", "in", "(Completed,Cancelled,Closed)")
     .order("jobId");
 

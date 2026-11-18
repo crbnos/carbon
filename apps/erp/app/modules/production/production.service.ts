@@ -14438,6 +14438,47 @@ export const closeJobInput = z.object({
  * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
  * stay in the residual.
  */
+/**
+ * A `rule` refusal while a job has outside processing still to receive: a
+ * line of an outside processing order To Receive that is not received
+ * complete. The close writes the job's WIP off once and a receipt after it is
+ * refused, so the supplier's cost would never reach the job. Stopping the
+ * line's receiving releases it.
+ */
+export async function outsideProcessingToReceiveRefusal(
+  ctx: ServiceContext,
+  jobId: string
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const orders = await ctx.asSystem.pg
+    .selectFrom(
+      sql<{
+        purchaseOrderLineId: string;
+      }>`job_receipt_line_references(${companyId}, ${jobId})`.as("ref")
+    )
+    .innerJoin("purchaseOrderLine as pol", (join) =>
+      join.onRef("pol.id", "=", "ref.purchaseOrderLineId")
+    )
+    .innerJoin("purchaseOrder as po", (join) =>
+      join
+        .onRef("po.id", "=", "pol.purchaseOrderId")
+        .onRef("po.companyId", "=", "pol.companyId")
+    )
+    .select("po.purchaseOrderId")
+    .distinct()
+    .where("pol.companyId", "=", companyId)
+    .where("pol.receivedComplete", "=", false)
+    .where("po.purchaseOrderType", "=", "Outside Processing")
+    .where("po.status", "in", ["To Receive", "To Receive and Invoice"])
+    .orderBy("po.purchaseOrderId")
+    .execute();
+  if (orders.length === 0) return null;
+  return ctx.error(
+    "rule",
+    `Outside processing on ${orders.map((order) => order.purchaseOrderId).join(", ")} is still to receive. Receive it, or stop receiving the line, before closing the job.`
+  );
+}
+
 export async function closeJob(
   ctx: ServiceContext,
   raw: z.input<typeof closeJobInput>

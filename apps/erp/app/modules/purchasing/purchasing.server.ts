@@ -6682,11 +6682,14 @@ export const createPurchaseOrderLine = defineServiceFn({
       .optional()
   }),
   permission: { create: "purchasing" },
-  async run(ctx, { id: _id, ...input }) {
+  async run(ctx, { id: _id, ...fields }) {
     // Always a new line: an `id` would turn the write into an update of a
     // line on another order, past that order's own gate.
-    const held = await service.unreleasedChangeOrderRefusal(ctx, input.itemId);
+    const held = await service.unreleasedChangeOrderRefusal(ctx, fields.itemId);
     if (held) return held;
+    const jobId = await service.lineOperationJob(ctx, fields);
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -6761,7 +6764,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
     })
     .required({ id: true }),
   permission: { update: "purchasing" },
-  async run(ctx, input) {
+  async run(ctx, fields) {
+    const jobId = fields.jobOperationId
+      ? await service.lineOperationJob(ctx, fields)
+      : null;
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
     const line = await service.getPurchaseOrderLineForAmendment(ctx, input.id);
     if (line.error) {
       return ctx.error(

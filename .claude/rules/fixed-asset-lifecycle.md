@@ -521,7 +521,9 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
 - `attachJob` (`fixedAssetId`, `jobId`): asset's class must be CIP and its
   status Draft / Under Construction; the job must not be in
   `CLOSED_JOB_STATUSES` (Completed / Cancelled / Closed), must have no
-  `salesOrderLineId` and no asset target. Sets `job.fixedAssetId` (guarded on
+  `salesOrderLineId`, no asset target and not consume to its project (its
+  cost is the project's, and `complete_job_to_inventory` refuses such a job
+  with an asset target; the attach-job route lists none). Sets `job.fixedAssetId` (guarded on
   the job still having no target) and sweeps the job's current WIP balance
   (SQL `job_wip_balance`: the job's own WIP lines and its outside processing receipts):
   Dr CIP asset / Cr WIP (`'Asset Transfer'`, both lines `documentId = jobId`,

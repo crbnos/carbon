@@ -141,6 +141,7 @@ import {
   indexBy,
   indexByMapped,
   isFullDraw,
+  isJobLocked,
   PickGuardError,
   pluckUnique,
   requireAffected,
@@ -7570,6 +7571,114 @@ export async function inspectionHoldAdjustmentRefusal(
   return `${await partName()} is held for inspection in ${hold.name ?? args.storageUnitId}. Quality must decide its inspection lot before it can move.`;
 }
 
+/**
+ * Locks the jobs an outside processing receipt's purchase order lines serve
+ * (SQL `job_receipt_line_references`), in id order, and refuses a Closed one.
+ * Taken before the receipt writes: a close that waits on it reads WIP with
+ * this receipt in it, and a receipt after the close is refused, since the
+ * close writes the job's WIP off once. FOR UPDATE, as the job completion the
+ * receipt can trigger takes it.
+ */
+async function lockOutsideProcessingJobs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderLineIds: string[]
+) {
+  if (purchaseOrderLineIds.length === 0) return;
+  const jobs = await trx
+    .selectFrom("job")
+    .select(["id", "jobId", "status"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", (eb) =>
+      eb
+        .selectFrom(
+          sql<{
+            jobId: string;
+            purchaseOrderLineId: string;
+          }>`job_receipt_line_references(${companyId})`.as("ref")
+        )
+        .select("ref.jobId")
+        .where("ref.purchaseOrderLineId", "in", purchaseOrderLineIds)
+    )
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const closed = jobs.find((job) => job.status === "Closed");
+  if (closed) {
+    throw new InvalidInputError(
+      `Job ${closed.jobId} is closed, so its outside processing can no longer be received or voided.`
+    );
+  }
+}
+
+/**
+ * Sets each outside processing operation from every purchase order line that
+ * serves it, after the lines are written: `quantityComplete` is what they
+ * have received in the job's units, and the operation is Done once each line
+ * on a released order is received complete (a Closed order's lines count as
+ * complete). One line's receipt no longer overwrites what another line of the
+ * same operation received. A Canceled operation is left alone, and with
+ * `keepLockedJobs` (a void) so is a Completed, Closed or Cancelled job's.
+ */
+async function restateOutsideOperations(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobOperationIds: string[],
+  { keepLockedJobs }: { keepLockedJobs: boolean }
+) {
+  if (jobOperationIds.length === 0) return;
+  const counted = sql.join(
+    [...PURCHASE_ORDER_RELEASED_STATUSES, "Closed"].map(
+      (status) => sql`${status}`
+    )
+  );
+  const { rows } = await sql<{
+    id: string;
+    status: Database["public"]["Enums"]["jobOperationStatus"];
+    jobStatus: Database["public"]["Enums"]["jobStatus"];
+    received: number;
+    lines: number;
+    complete: boolean | null;
+  }>`
+    SELECT
+      jo.id,
+      jo.status,
+      j.status AS "jobStatus",
+      COALESCE(SUM(pol."quantityReceived" * COALESCE(pol."conversionFactor", 1))
+        FILTER (WHERE po.status IN (${counted})), 0)::float8 AS received,
+      (COUNT(pol.id) FILTER (WHERE po.status IN (${counted})))::int AS lines,
+      BOOL_AND(po.status = 'Closed' OR pol."receivedComplete")
+        FILTER (WHERE po.status IN (${counted})) AS complete
+    FROM "jobOperation" jo
+    INNER JOIN "job" j ON j.id = jo."jobId" AND j."companyId" = jo."companyId"
+    LEFT JOIN "purchaseOrderLine" pol
+      ON pol."jobOperationId" = jo.id AND pol."companyId" = jo."companyId"
+    LEFT JOIN "purchaseOrder" po
+      ON po.id = pol."purchaseOrderId" AND po."companyId" = pol."companyId"
+    WHERE jo."companyId" = ${companyId}
+      AND jo.id IN (${sql.join(jobOperationIds)})
+    GROUP BY jo.id, jo.status, j.status
+  `.execute(trx);
+  await updateRowsById(
+    trx,
+    "jobOperation",
+    companyId,
+    rows
+      .filter(
+        (row) =>
+          row.status !== "Canceled" &&
+          !(keepLockedJobs && isJobLocked(row.jobStatus))
+      )
+      .map((row) => ({
+        id: row.id,
+        data: {
+          status: row.lines > 0 && row.complete ? "Done" : "In Progress",
+          quantityComplete: round(row.received)
+        }
+      }))
+  );
+}
+
 export function isConsumedByProjectAtReceipt(line: {
   hasProjectRoute: boolean;
   isOutsideProcessing: boolean;
@@ -14104,7 +14213,11 @@ export function buildPurchaseReceiptJournalLines({
     if (line.projectDebit) {
       debitSide = {
         accountId: line.projectDebit.accountId,
-        description: "Project Account"
+        // A capital job's receipt keeps WIP for its asset.
+        description:
+          line.projectDebit.accountId === accounts.workInProgressAccount
+            ? "WIP Account"
+            : "Project Account"
       };
     } else if (trackingType(line) !== "Non-Inventory" && !isOutsideProcessing) {
       const inventory = resolveInventoryAccount(
@@ -15344,31 +15457,44 @@ export async function postReceipt(
         return { success: true };
       }
 
-      const [originalItemLedger, originalJournalLines, purchaseOrderLinesVoid] =
-        await inOrder([
-          () =>
-            // A line consumed by its project at receipt also wrote a
-            // Project Issue row against the receipt.
-            many(db, "itemLedger", {
-              documentId: receiptId,
-              documentType: ["Purchase Receipt", "Project Issue"],
-              companyId
-            }),
-          () =>
-            documentJournalLines(db, companyId, {
-              documentId: receiptId,
-              documentType: "Receipt"
-            }),
-          () =>
-            many(db, "purchaseOrderLine", {
-              purchaseOrderId: receiptHeader.sourceDocumentId
-            })
-        ]);
+      const [
+        originalItemLedger,
+        originalJournalLines,
+        purchaseOrderLinesVoid,
+        purchaseOrderVoid
+      ] = await inOrder([
+        () =>
+          // A line consumed by its project at receipt also wrote a
+          // Project Issue row against the receipt.
+          many(db, "itemLedger", {
+            documentId: receiptId,
+            documentType: ["Purchase Receipt", "Project Issue"],
+            companyId
+          }),
+        () =>
+          documentJournalLines(db, companyId, {
+            documentId: receiptId,
+            documentType: "Receipt"
+          }),
+        () =>
+          many(db, "purchaseOrderLine", {
+            purchaseOrderId: receiptHeader.sourceDocumentId
+          }),
+        () =>
+          single(
+            db,
+            "purchaseOrder",
+            { id: receiptHeader.sourceDocumentId!, companyId },
+            { columns: ["purchaseOrderType"] }
+          )
+      ]);
 
       if (originalItemLedger.error)
         throw new Error("Failed to fetch item ledger entries");
       if (purchaseOrderLinesVoid.error)
         throw new Error("Failed to fetch purchase order lines");
+      if (purchaseOrderVoid.error)
+        throw new Error("Failed to fetch purchase order");
 
       const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
         originalItemLedger.data.map((entry) => ({
@@ -15420,6 +15546,19 @@ export async function postReceipt(
       > = receivedAfterReceiptReversal(
         purchaseOrderLinesVoid.data,
         receiptLines.data
+      );
+
+      // An outside operation completes what its lines have received, so the
+      // void takes its units back off it (restateOutsideOperations).
+      const outsideLineIdsVoid =
+        purchaseOrderVoid.data.purchaseOrderType === "Outside Processing"
+          ? Object.keys(purchaseOrderLineUpdatesVoid)
+          : [];
+      const outsideOperationIdsVoid = pluckUnique(
+        purchaseOrderLinesVoid.data.filter((line) =>
+          outsideLineIdsVoid.includes(line.id)
+        ),
+        (line) => line.jobOperationId
       );
 
       // Reverse FA PO line received status on void
@@ -15616,6 +15755,7 @@ export async function postReceipt(
             .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOutsideProcessingJobs(trx, companyId, outsideLineIdsVoid);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
           await removeUnpickedPutAways(trx, companyId, receiptId);
           const moveReversals = await rejectedMoveReversals(trx, {
@@ -15733,6 +15873,12 @@ export async function postReceipt(
               id,
               data
             }))
+          );
+          await restateOutsideOperations(
+            trx,
+            companyId,
+            outsideOperationIdsVoid,
+            { keepLockedJobs: true }
           );
 
           await trx
@@ -16280,11 +16426,6 @@ export async function postReceipt(
             return acc;
           }, {}) ?? {};
 
-        const jobOperationUpdates: Record<
-          string,
-          Database["public"]["Tables"]["jobOperation"]["Update"]
-        > = {};
-
         const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
           Record<
             string,
@@ -16319,18 +16460,6 @@ export async function postReceipt(
                 (purchaseOrderLine.quantityToReceive ??
                   purchaseOrderLine.purchaseQuantity);
 
-            // The receipt is the only record of what the supplier finished,
-            // so the operation completes what the line has received across
-            // all its receipts, in the job's units.
-            if (isOutsideProcessing && purchaseOrderLine.jobOperationId) {
-              jobOperationUpdates[purchaseOrderLine.jobOperationId] = {
-                status: receivedComplete ? "Done" : "In Progress",
-                quantityComplete: round(
-                  newQuantityReceived * (receiptLines[0]!.conversionFactor ?? 1)
-                )
-              };
-            }
-
             return {
               ...acc,
               [purchaseOrderLine.id]: {
@@ -16343,6 +16472,19 @@ export async function postReceipt(
 
           return acc;
         }, {});
+
+        // The receipt is the only record of what the supplier finished, so
+        // each outside operation it touches completes what its lines have
+        // received (restateOutsideOperations, after the lines are written).
+        const outsideLineIds = isOutsideProcessing
+          ? Object.keys(purchaseOrderLineUpdates)
+          : [];
+        const outsideOperationIds = pluckUnique(
+          purchaseOrderLines.data.filter((line) =>
+            outsideLineIds.includes(line.id)
+          ),
+          (line) => line.jobOperationId
+        );
 
         // Get account defaults (once for all lines) for the journal entries
         const accountDefaults = await getDefaultPostingGroup(db, companyId);
@@ -17025,6 +17167,7 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,
@@ -17467,15 +17610,9 @@ export async function postReceipt(
           // After the receipt's journal: an outside operation set Done here
           // can complete its job (sync_finish_job_operation), and the
           // completion costs the job from the WIP lines already written.
-          await updateRowsById(
-            trx,
-            "jobOperation",
-            companyId,
-            Object.entries(jobOperationUpdates).map(([id, data]) => ({
-              id,
-              data
-            }))
-          );
+          await restateOutsideOperations(trx, companyId, outsideOperationIds, {
+            keepLockedJobs: false
+          });
 
           if (projectLedgerDrafts.length > 0) {
             await insertProjectLedgerRows(trx, {
