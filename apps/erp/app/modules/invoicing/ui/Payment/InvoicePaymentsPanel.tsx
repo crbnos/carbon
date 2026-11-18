@@ -87,7 +87,11 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
                   className={r.pending ? "text-muted-foreground" : undefined}
                 >
                   <Td>
-                    <DateTime value={r.appliedDate} variant="date" />
+                    {/* A pending row applies on the payment's own date. */}
+                    <DateTime
+                      value={(r.pending && r.source.date) || r.appliedDate}
+                      variant="date"
+                    />
                   </Td>
                   <Td>
                     <HStack spacing={1}>

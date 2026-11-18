@@ -373,20 +373,17 @@ async function loadCardMappings(ctx: RampSyncContext, rampIds: string[]) {
   return new Map(rows.map((row) => [row.externalId, row]));
 }
 
+type CardBillPaymentClaim = {
+  entityId: string;
+  status: Database["public"]["Enums"]["paymentStatus"] | null;
+};
+
 /** Card transactions a card-paid bill's payment claimed, with its status. */
 async function loadCardBillPaymentClaims(
   ctx: RampSyncContext,
   rampIds: string[]
-) {
-  if (rampIds.length === 0) {
-    return new Map<
-      string,
-      {
-        entityId: string;
-        status: Database["public"]["Enums"]["paymentStatus"] | null;
-      }
-    >();
-  }
+): Promise<Map<string, CardBillPaymentClaim>> {
+  if (rampIds.length === 0) return new Map();
   const claims = await ctx.db
     .selectFrom("externalIntegrationMapping")
     .select(["externalId", "entityId"])
@@ -409,11 +406,14 @@ async function loadCardBillPaymentClaims(
       : [];
   const statusById = new Map(payments.map((row) => [row.id, row.status]));
   return new Map(
-    claims.map((claim) => {
+    claims.flatMap((claim) => {
+      if (!claim.externalId) return [];
       const entityId = claimedPaymentId(claim.entityId);
       return [
-        claim.externalId,
-        { entityId, status: statusById.get(entityId) ?? null }
+        [
+          claim.externalId,
+          { entityId, status: statusById.get(entityId) ?? null }
+        ] as const
       ];
     })
   );
@@ -500,6 +500,8 @@ type CardFamilyConfig<TItem extends RampCardListItem> = {
     ramp: RampClient,
     entityId: string | undefined
   ) => AsyncIterable<unknown[]>;
+  /** Whether a card-paid bill's payment can claim this family's rows. */
+  claimable?: boolean;
   /** Build (and post) one row into a `charge`. */
   buildOutcome: (
     ctx: RampSyncContext,
@@ -547,7 +549,9 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
       const ids = items.map((item) => item.id);
       const [mappings, claims] = await Promise.all([
         loadCardMappings(ctx, ids),
-        loadCardBillPaymentClaims(ctx, ids)
+        config.claimable
+          ? loadCardBillPaymentClaims(ctx, ids)
+          : Promise.resolve(new Map<string, CardBillPaymentClaim>())
       ]);
       for (const item of items) {
         if (!isRampEntityInScope(entityId, item.entity_id)) continue;
@@ -812,6 +816,7 @@ export async function syncRampCharges(
       entityType: "charge",
       label: "charges",
       syncType: "TRANSACTION_SYNC",
+      claimable: true,
       gate: (ctx, cardLiabilityAccountId) => {
         if (!cardLiabilityAccountId) {
           logger.warning(

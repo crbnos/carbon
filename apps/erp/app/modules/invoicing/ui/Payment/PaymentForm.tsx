@@ -32,6 +32,7 @@ import {
 } from "~/hooks";
 import type { AccountClass } from "~/modules/accounting/types";
 import {
+  CARD_ACCOUNT_TYPE,
   type DepositDocument,
   isPaymentLocked,
   paymentValidator
@@ -46,7 +47,7 @@ import {
 // A supplier can also be paid by credit card. Module constants keep the
 // picker's filter stable across renders.
 const ASSET_CLASSES: AccountClass[] = ["Asset"];
-const CARD_TYPES = ["Credit Card"];
+const CARD_TYPES = [CARD_ACCOUNT_TYPE];
 
 // Builds the "new payment" URL pre-filled from an invoice. side "ar" seeds the
 // customer (→ Receipt); "ap" seeds the supplier (→ Disbursement). Lives with the

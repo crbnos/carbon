@@ -403,16 +403,20 @@ describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
     expect(unchanged.memo).toBe("Corrected Ramp source");
   });
 
-  it("books no charge for a card transaction a bill payment claimed", async () => {
+  it("books no charge for a card transaction a bill payment claimed", async ({
+    skip
+  }) => {
     const { syncRampCharges } = await import("./ramp-sync-card");
     const { CARD_BILL_PAYMENT_ENTITY } = await import("./ramp-sync-payment");
     const { confirmSyncs } = await import("@carbon/ee/ramp.server");
+    // The claim only reads the payment's status; any Posted payment will do.
     const posted = await db
       .selectFrom("payment")
       .select("id")
       .where("companyId", "=", fixture.companyId)
       .where("status", "=", "Posted")
-      .executeTakeFirstOrThrow();
+      .executeTakeFirst();
+    if (!posted) return skip("The seed has no Posted payment to claim for");
     const paidId = `ramp-card-${crypto.randomUUID()}`;
     const pendingId = `ramp-card-${crypto.randomUUID()}`;
     rampIds.push(paidId, pendingId);

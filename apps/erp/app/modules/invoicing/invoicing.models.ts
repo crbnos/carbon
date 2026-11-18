@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
@@ -556,6 +557,10 @@ export type PaymentStatusType = (typeof paymentStatus)[number];
 export function isPaymentLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+/** The account type a supplier payment may be paid from besides an Asset. */
+export const CARD_ACCOUNT_TYPE =
+  "Credit Card" satisfies Database["public"]["Enums"]["accountType"];
 
 export const paymentValidator = z
   .object({

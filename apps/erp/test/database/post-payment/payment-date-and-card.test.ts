@@ -199,3 +199,55 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a payment cannot settle an invoice posted after its payment date",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      await f.db
+        .updateTable("salesInvoice")
+        .set({ postingDate: "2026-09-05" })
+        .where("id", "=", f.invoiceId)
+        .execute();
+      const paymentId = await f.payment();
+      await expect(
+        postPaymentTransaction(f.db, { ...f.args, paymentId })
+      ).rejects.toThrow(
+        "A document this payment settles posted on 2026-09-05, after the payment date 2026-09-01. Date the payment on or after 2026-09-05."
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "credit posted after the payment date cannot fund it",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      // On-account credit posted on 2026-09-10.
+      const sourceId = await f.payment({ noApplication: true, rate: 1 });
+      await f.db
+        .updateTable("payment")
+        .set({ paymentDate: "2026-09-10" })
+        .where("id", "=", sourceId)
+        .execute();
+      await postPaymentTransaction(f.db, { ...f.args, paymentId: sourceId });
+      // A zero-cash payment dated 2026-09-01 can draw on no earlier credit.
+      const paymentId = await f.payment({ amount: 0, rate: 1.5 });
+      await expect(
+        postPaymentTransaction(f.db, { ...f.args, paymentId })
+      ).rejects.toThrow();
+      const settlement = await f.db
+        .selectFrom("invoiceSettlement")
+        .select("sourcePaymentId")
+        .where("paymentId", "=", paymentId)
+        .executeTakeFirstOrThrow();
+      expect(settlement.sourcePaymentId).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

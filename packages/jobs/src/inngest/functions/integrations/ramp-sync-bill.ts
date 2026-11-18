@@ -21,6 +21,7 @@ import {
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   type RampCardPaymentAccount,
+  rampBillPaymentRoute,
   syncRampBillPayment
 } from "./ramp-sync-payment";
 import {
@@ -529,11 +530,8 @@ async function resolveRampCardPaymentAccount(
   ctx: RampSyncContext,
   accountId: string | undefined
 ): Promise<RampCardPaymentAccount> {
-  if (!accountId) {
-    return {
-      error: "Set the Ramp card liability account to sync card-paid bills"
-    };
-  }
+  // Card bill payments are skipped while no card account is named.
+  if (!accountId) return { error: "No Ramp card liability account is set" };
   const account = await ctx.db
     .selectFrom("account")
     .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
@@ -569,6 +567,7 @@ export async function syncRampBillPayments(
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
   let reconfirmed = 0;
+  const unconfigured = new Set<"bank" | "card">();
 
   try {
     for await (const page of ramp.listBills({
@@ -582,6 +581,16 @@ export async function syncRampBillPayments(
         if (bill.status !== BILL_PAID_STATUS) continue;
         const payment = bill.payment;
         if (!payment) continue;
+        // A rail whose account the integration does not name is left for a
+        // later run, as before: neither confirmed nor failed to Ramp.
+        const route = rampBillPaymentRoute(payment.payment_method);
+        if (
+          (route === "bank" && !metadata.statementBankAccountId) ||
+          (route === "card" && !metadata.cardLiabilityAccountId)
+        ) {
+          unconfigured.add(route);
+          continue;
+        }
 
         const outcome = await syncRampBillPayment(
           {
@@ -618,6 +627,15 @@ export async function syncRampBillPayments(
       error: familyError
     });
     recordRampFamilyError(result, familyError);
+  }
+
+  for (const route of unconfigured) {
+    logger.warning(
+      route === "bank"
+        ? "No statement bank account configured; skipping Ramp bank bill payments"
+        : "No card liability account configured; skipping Ramp card bill payments",
+      { companyId }
+    );
   }
 
   try {

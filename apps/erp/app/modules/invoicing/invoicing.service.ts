@@ -315,6 +315,7 @@ import type {
   salesInvoiceValidator
 } from "./invoicing.models";
 import {
+  CARD_ACCOUNT_TYPE,
   type DepositDocument,
   isPurchaseInvoiceLocked,
   isSalesInvoiceLocked,
@@ -3691,6 +3692,8 @@ export async function upsertPayment(
     .from("payment")
     .update({
       ...sanitize(payment),
+      // An edit may fix why the last post failed; the next post says again.
+      postError: null,
       customerId: payment.customerId ?? null,
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
@@ -5436,36 +5439,51 @@ export async function getApPendingPayments(
   db: Kysely<KyselyDatabase>,
   companyId: string
 ): Promise<Map<string, number>> {
-  const drafts = db
-    .selectFrom("payment")
-    .select("id")
-    .where("companyId", "=", companyId)
-    .where("status", "=", "Draft");
-  const rows = await db
-    .selectFrom("invoiceSettlement as s")
-    .leftJoin("memo as m", (join) =>
+  // Driven from the few Draft payments (a partial index), joined to their
+  // settlements by each indexed column, so no company-wide settlement scan.
+  const settled = [
+    "appliedAmount",
+    "discountAmount",
+    "writeOffAmount",
+    "targetPurchaseInvoiceId"
+  ] as const;
+  const cash = db
+    .selectFrom("payment as p")
+    .innerJoin("invoiceSettlement as s", (join) =>
+      join
+        .onRef("s.paymentId", "=", "p.id")
+        .onRef("s.companyId", "=", "p.companyId")
+    )
+    .select(settled.map((column) => `s.${column}` as const))
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Draft")
+    .where("s.targetPurchaseInvoiceId", "is not", null);
+  const memos = db
+    .selectFrom("payment as p")
+    .innerJoin("invoiceSettlement as s", (join) =>
+      join
+        .onRef("s.appliedViaPaymentId", "=", "p.id")
+        .onRef("s.companyId", "=", "p.companyId")
+    )
+    .innerJoin("memo as m", (join) =>
       join
         .onRef("m.id", "=", "s.memoId")
         .onRef("m.companyId", "=", "s.companyId")
     )
+    .select(settled.map((column) => `s.${column}` as const))
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Draft")
+    .where("m.status", "=", "Posted")
+    .where("s.targetPurchaseInvoiceId", "is not", null);
+  const rows = await db
+    .selectFrom(cash.unionAll(memos).as("pending"))
     .select([
-      "s.targetPurchaseInvoiceId as invoiceId",
-      sql<number>`SUM(s."appliedAmount" + s."discountAmount" + s."writeOffAmount")`.as(
+      "pending.targetPurchaseInvoiceId as invoiceId",
+      sql<number>`SUM(pending."appliedAmount" + pending."discountAmount" + pending."writeOffAmount")`.as(
         "pendingInBase"
       )
     ])
-    .where("s.companyId", "=", companyId)
-    .where("s.targetPurchaseInvoiceId", "is not", null)
-    .where((eb) =>
-      eb.or([
-        eb("s.paymentId", "in", drafts),
-        eb.and([
-          eb("s.appliedViaPaymentId", "in", drafts),
-          eb("m.status", "=", "Posted")
-        ])
-      ])
-    )
-    .groupBy("s.targetPurchaseInvoiceId")
+    .groupBy("pending.targetPurchaseInvoiceId")
     .execute();
   return new Map(
     rows.map((row) => [row.invoiceId!, Number(row.pendingInBase)])
@@ -12843,9 +12861,6 @@ export function paymentKind(
 
 export type PaymentKind = ReturnType<typeof paymentKind>;
 
-/** Card accounts a supplier payment may be paid from. */
-export const CARD_ACCOUNT_TYPE = "Credit Card";
-
 /**
  * The class of the account a payment moves its money through, or null when
  * the payment cannot use it. Any Asset account can; a supplier payment can
@@ -13468,6 +13483,24 @@ async function lockOpenPeriodFor(
   return getCurrentAccountingPeriod(companyId, trx, date);
 }
 
+/**
+ * A payment cannot settle a document that posted after its payment date: the
+ * settlement and its journal would predate what they settle.
+ */
+function refuseDocumentsAfter(
+  documents: { postingDate: string | null }[],
+  postingDate: string
+): void {
+  const later = documents.find(
+    (document) => document.postingDate && document.postingDate > postingDate
+  );
+  if (later) {
+    throw new InvalidInputError(
+      `A document this payment settles posted on ${later.postingDate}, after the payment date ${postingDate}. Date the payment on or after ${later.postingDate}.`
+    );
+  }
+}
+
 /** The endpoint's single commit boundary; every monetary snapshot is read under locks. */
 export function postPaymentTransaction(
   db: Kysely<KyselyDatabase>,
@@ -13858,7 +13891,8 @@ export function postPaymentTransaction(
               "currencyCode",
               "exchangeRate",
               "amount",
-              "payableAccountId"
+              "payableAccountId",
+              "postingDate"
             ])
             .where("companyId", "=", companyId)
             .where("id", "in", targetIds)
@@ -13882,7 +13916,8 @@ export function postPaymentTransaction(
                     "customerId as partyId",
                     "status",
                     "currencyCode",
-                    "exchangeRate"
+                    "exchangeRate",
+                    "postingDate"
                   ])
                   .where("companyId", "=", companyId)
                   .where("id", "in", targetIds)
@@ -13896,7 +13931,8 @@ export function postPaymentTransaction(
                     "supplierId as partyId",
                     "status",
                     "currencyCode",
-                    "exchangeRate"
+                    "exchangeRate",
+                    "postingDate"
                   ])
                   .where("companyId", "=", companyId)
                   .where("id", "in", targetIds)
@@ -13942,6 +13978,7 @@ export function postPaymentTransaction(
       throw new NotFoundError(
         "Payment target invoice not found in this company"
       );
+    refuseDocumentsAfter(invoices, postingDate);
     const totalById = new Map(
       totals.map((row) => [row.id, Number(row.totalAmount)])
     );
@@ -14071,6 +14108,7 @@ export function postPaymentTransaction(
     if (memos.length !== memoIds.length) {
       throw new NotFoundError("Staged memo not found in this company");
     }
+    refuseDocumentsAfter(memos, postingDate);
     const memoConsumption = memoIds.length
       ? (
           await settlementQuery(trx, companyId)
@@ -14192,6 +14230,8 @@ export function postPaymentTransaction(
             .where(isAR ? "customerId" : "supplierId", "=", partyId)
             .where("currencyCode", "=", payment.currencyCode)
             .where("id", "!=", paymentId)
+            // Credit posted after the payment date did not exist yet.
+            .where("postingDate", "<=", postingDate)
             .orderBy("id")
             .forUpdate()
             .execute();

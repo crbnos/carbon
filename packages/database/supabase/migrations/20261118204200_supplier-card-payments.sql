@@ -9,7 +9,8 @@ INSERT INTO "account" (
   number, name, "isGroup", "accountType", "incomeBalance", class,
   "parentId", "isSystem", "companyGroupId", "createdBy"
 )
-SELECT
+-- One per chart, even one with two groups of that name.
+SELECT DISTINCT ON (parent."companyGroupId")
   NULL, 'Credit Cards', TRUE, 'Credit Card'::"accountType",
   'Balance Sheet'::"glIncomeBalance", 'Liability'::"glAccountClass",
   parent.id, FALSE, parent."companyGroupId", 'system'
@@ -22,7 +23,8 @@ WHERE parent."isGroup" = TRUE
     WHERE existing."companyGroupId" = parent."companyGroupId"
       AND existing."accountType" = 'Credit Card'
       AND existing."isGroup" = TRUE
-  );
+  )
+ORDER BY parent."companyGroupId", parent."createdAt", parent.id;
 
 -- 2. An account a card charge already posts to is a card account. Move the
 --    generic current liabilities among them into the group.

@@ -3157,6 +3157,11 @@ export const getInvoiceSettlements = defineServiceFn({
 /**
  * Get invoice settlements for invoice
  *
+ * @remarks
+ * Lists posted payments and memos applied to the invoice, and the
+ * applications of Draft payments with `pending: true`. A pending row pays
+ * nothing until its payment posts, so leave it out of what is paid.
+ *
  * @mcp read
  */
 export const getInvoiceSettlementsForInvoice = defineServiceFn({
