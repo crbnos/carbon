@@ -78,19 +78,22 @@ export function postgrestTest(
 /**
  * A system service context whose caller and service-role clients are the
  * local PostgREST and whose `pg` is the fixture's connection, so a test can
- * run an operation (`production.server.ts`, …) as a route does.
+ * run an operation (`production.server.ts`, …) as a route does. An operation
+ * that holds a transaction while it reads again (the purchase order edit
+ * lock) needs `pg` from `connectLocalTestDatabase({ maxConnections: 2 })`.
  */
 export function operationContext(
   f: { db: unknown; companyId: string; groupId: string },
   client: SupabaseClient<Database>,
-  onBehalfOf: string
+  onBehalfOf: string,
+  pg: unknown = f.db
 ): ServiceContext {
   return createServiceContext({
     actor: { type: "system", onBehalfOf },
     company: { id: f.companyId, groupId: f.groupId },
     caller: client as never,
     system: () => client as never,
-    pg: () => f.db as never,
+    pg: () => pg as never,
     kv: () => {
       throw new Error("No kv in a database test");
     }

@@ -4,8 +4,8 @@
 
 // What takes an outside processing receipt's journal back or settles it: the
 // void, the admin force delete, and the supplier's invoice. Each one must
-// leave the WIP and GR/IR accounts as the ledger says, whichever document a
-// receipt's journal lines name.
+// leave the WIP and GR/IR accounts at what the receipt's journal undoes or
+// settles.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { expect } from "vitest";
 import {

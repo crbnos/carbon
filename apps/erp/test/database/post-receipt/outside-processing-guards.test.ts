@@ -5,12 +5,11 @@
 // What an outside processing order refuses: a receipt for a Closed job, a
 // close while it is still to receive, and a job whose cost is its project's.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
-import { CarbonError } from "@carbon/api/service-fn.server";
 import { expect } from "vitest";
 import { postAssetTransfer } from "../../../app/modules/accounting/accounting.service";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
 import { closeJob } from "../../../app/modules/production/production.server";
-import { lineOperationJob } from "../../../app/modules/purchasing/purchasing.service";
+import { createPurchaseOrderLine } from "../../../app/modules/purchasing/purchasing.server";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -19,7 +18,10 @@ import {
   USER
 } from "../fixtures/always-post";
 import { handlesOf } from "../fixtures/handles";
-import { databaseTest } from "../fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "../fixtures/local-database";
 import { operationContext, postgrestTest } from "../fixtures/local-supabase";
 import {
   assetUnderConstruction,
@@ -150,23 +152,57 @@ postgrestTest(
   "a purchase order line sent with only an operation takes the operation's job",
   async (serviceRole) => {
     const f = await alwaysPostFixture();
+    // The purchase order edit lock holds one connection while the line
+    // writes on another.
+    const pg = await connectLocalTestDatabase({ maxConnections: 2 });
     try {
       const order = await outsideProcessingOrder(f);
       const other = await jobFixture(f, "other");
-      const ctx = operationContext(f, serviceRole, USER);
+      const ctx = operationContext(f, serviceRole, USER, pg);
 
-      // The job keeps the receipt's cost once the operation is deleted.
-      expect(
-        await lineOperationJob(ctx, { jobOperationId: order.operationId })
-      ).toBe(order.jobId);
-      const refusal = await lineOperationJob(ctx, {
-        jobId: other.jobId,
+      const line = {
+        purchaseOrderId: order.purchaseOrderId,
+        purchaseOrderLineType: "Part" as const,
+        itemId: f.assemblyId,
+        purchaseQuantity: 2,
+        supplierUnitPrice: 5,
+        exchangeRate: 1,
+        conversionFactor: 1,
+        inventoryUnitOfMeasureCode: "EA",
+        locationId: f.locationId,
         jobOperationId: order.operationId
+      };
+
+      // The line keeps the job, so a receipt stays the job's cost after the
+      // operation is deleted.
+      const created = await createPurchaseOrderLine(ctx, line);
+      expect(created.error).toBeNull();
+      const saved = await f.db
+        .selectFrom("purchaseOrderLine")
+        .select(["jobId", "jobOperationId"])
+        .where("purchaseOrderId", "=", order.purchaseOrderId)
+        .where("companyId", "=", f.companyId)
+        .where("id", "not in", order.lineIds)
+        .execute();
+      expect(saved).toEqual([
+        { jobId: order.jobId, jobOperationId: order.operationId }
+      ]);
+
+      // A job that is not the operation's is refused, and nothing is saved.
+      const refused = await createPurchaseOrderLine(ctx, {
+        ...line,
+        jobId: other.jobId
       });
-      expect(refusal instanceof CarbonError && refusal.category).toBe(
-        "validation"
-      );
+      expect(refused.error?.category).toBe("validation");
+      const lines = await f.db
+        .selectFrom("purchaseOrderLine")
+        .select("id")
+        .where("purchaseOrderId", "=", order.purchaseOrderId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(lines).toHaveLength(order.lineIds.length + 1);
     } finally {
+      await pg.destroy();
       await f.cleanup();
     }
   }
