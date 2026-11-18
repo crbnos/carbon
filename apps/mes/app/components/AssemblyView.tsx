@@ -49,7 +49,11 @@ import {
   useShortcutKeys,
   useViewport
 } from "@carbon/react";
-import { distinctItemText, formatDurationMilliseconds } from "@carbon/utils";
+import {
+  distinctItemText,
+  documentHasImages,
+  formatDurationMilliseconds
+} from "@carbon/utils";
 import type { AssemblyStep, CameraPose, Fastener } from "@carbon/viewer";
 import {
   AssemblyPlayer,
@@ -398,21 +402,6 @@ function richTextToPlainText(doc: unknown): string {
   };
   walk(doc);
   return parts.join(" ").replace(/\s+/g, " ").trim();
-}
-
-// Strip any inline image nodes so the prose shows text only — reference imagery
-// now lives in first-class slides, not embedded in the description.
-function stripImages(doc: any): any {
-  if (!doc || typeof doc !== "object") return doc;
-  if (Array.isArray(doc.content)) {
-    return {
-      ...doc,
-      content: doc.content
-        .filter((n: any) => n?.type !== "image")
-        .map(stripImages)
-    };
-  }
-  return doc;
 }
 
 function formatElapsed(s: number) {
@@ -1090,15 +1079,18 @@ export function AssemblyView({
 
   // Empty descriptions are persisted as JSON.stringify({}) === "{}" (and legacy
   // rows as a tiptap doc whose only text is "{}"); treat those as "no description".
-  const stepDescriptionText = richTextToPlainText(step?.description);
+  // A photo placed in the description renders with the prose, as it does in the
+  // Operation view: a step can carry its reference photo there and have no slide.
+  const stepDescription = step?.description as
+    | Parameters<typeof generateHTML>[0]
+    | null
+    | undefined;
+  const stepDescriptionText = richTextToPlainText(stepDescription);
   const stepHasDescription =
-    stepDescriptionText.length > 0 && stepDescriptionText !== "{}";
+    (stepDescriptionText.length > 0 && stepDescriptionText !== "{}") ||
+    documentHasImages(stepDescription);
   const stepDescriptionHtml =
-    step && stepHasDescription
-      ? generateHTML(
-          stripImages(step.description) as Parameters<typeof generateHTML>[0]
-        )
-      : "";
+    stepDescription && stepHasDescription ? generateHTML(stepDescription) : "";
   const isLastStep = steps.length === 0 || currentStep >= steps.length - 1;
 
   // Reference slides for this step (first-class media, ordered) + "Completed item"
@@ -2628,7 +2620,7 @@ export function AssemblyView({
                       {() =>
                         stepDescriptionHtml ? (
                           <div
-                            className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
+                            className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:rounded-lg [&_img]:object-contain"
                             dangerouslySetInnerHTML={{
                               __html: stepDescriptionHtml
                             }}
