@@ -14247,9 +14247,6 @@ msgstr "完全なセットアップとマイグレーション"
 msgid "Full Year"
 msgstr ""
 
-msgid "Full Year of the ISO Week"
-msgstr ""
-
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
 
@@ -15007,6 +15004,9 @@ msgstr "時間/1000個"
 msgid "Hours/Piece"
 msgstr "時間/個"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr ""
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "バッチ処理可能な工法がグループ化されたworkをどのように実行するかを示します：シーケンシャルは部品を1つの機械（のこぎりやレーザーテーブル）で次々と実行し、シミュルタネアスは1回の負荷でそれらを一緒に実行します（炉、オーブン、またはメッキ槽）。"
 
@@ -15177,6 +15177,9 @@ msgstr "私たちの働き方"
 
 msgid "How We Work Together"
 msgstr "私たちの働き方"
+
+msgid "How weeks are numbered"
+msgstr ""
 
 msgid "How will you use {integrationName}?"
 msgstr "{integrationName}をどのように使用しますか？"
@@ -16192,7 +16195,7 @@ msgstr "仕入先組織グループです"
 msgid "Is supplier type group"
 msgstr "仕入先タイプグループです"
 
-msgid "ISO Week"
+msgid "ISO 8601"
 msgstr ""
 
 msgid "Issue"
@@ -21022,6 +21025,9 @@ msgstr "週を今週から番号付けする"
 
 msgid "Numbering sequence"
 msgstr "採番"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr ""
 
 msgid "OEE Impact"
 msgstr "OEE影響"
@@ -31840,9 +31846,6 @@ msgstr "保証は拒否されます。明細はサービス返品になり、そ
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "設備障害の形式（保全および品質追跡用）"
 
-msgid "The week is labelled with the calendar year"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生産で引き出されるようにステージングされる場所です。倉庫の仕入元の棚とは異なります。"
 
@@ -33662,9 +33665,6 @@ msgstr "最大{0} {unitOfMeasure}"
 msgid "up to {0} saved"
 msgstr "最大 {0} 削減"
 
-msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
-msgstr ""
-
 msgid "Upcoming"
 msgstr "今後予定"
 
@@ -33898,6 +33898,9 @@ msgstr "緊急"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "US"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "使用量/日 (30日)"
@@ -34642,6 +34645,9 @@ msgstr "水曜日"
 msgid "Week"
 msgstr "週"
 
+msgid "Week ({numbering})"
+msgstr ""
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "第{0}週"
@@ -34654,6 +34660,9 @@ msgstr "週 {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "第8週のカットオーバー"
+
+msgid "Week Numbering"
+msgstr ""
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34697,8 +34706,17 @@ msgstr "週は暦週で番号付けされます"
 msgid "Weeks are numbered from the present week"
 msgstr "週は今週から番号付けされます"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr ""
+
 msgid "Weeks Open"
 msgstr "開いている週数"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr ""
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr ""
 
 msgid "Weighted Average"
 msgstr "加重平均"
@@ -35301,6 +35319,9 @@ msgstr "仕掛品"
 msgid "with {0} contingency"
 msgstr "{0}の予備費付き"
 
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr ""
+
 msgid "With Previous"
 msgstr "前工程と同時"
 
@@ -35486,9 +35507,6 @@ msgstr "{0}件のドキュメントの不足している仕訳を記述"
 
 msgid "Year"
 msgstr "年"
-
-msgid "Year of the ISO Week"
-msgstr ""
 
 msgid "Year-End Close"
 msgstr "年度末決算"

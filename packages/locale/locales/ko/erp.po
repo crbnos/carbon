@@ -14247,9 +14247,6 @@ msgstr "완전한 셋업 및 마이그레이션"
 msgid "Full Year"
 msgstr ""
 
-msgid "Full Year of the ISO Week"
-msgstr ""
-
 msgid "Fully Depreciated"
 msgstr "상각 완료"
 
@@ -15007,6 +15004,9 @@ msgstr "시간/1000개"
 msgid "Hours/Piece"
 msgstr "시간/개"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr ""
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: 순차는 부품을 한 기계에서 차례대로 실행하고(톱 또는 레이저 테이블), 동시는 단일 로드에서 함께 실행합니다(용광로, 오븐 또는 도금 욕조)."
 
@@ -15177,6 +15177,9 @@ msgstr "저희의 협업 방식"
 
 msgid "How We Work Together"
 msgstr "저희가 함께 일하는 방식"
+
+msgid "How weeks are numbered"
+msgstr ""
 
 msgid "How will you use {integrationName}?"
 msgstr "{integrationName}을(를) 어떻게 사용하시겠습니까?"
@@ -16192,7 +16195,7 @@ msgstr "공급업체 조직 그룹입니다"
 msgid "Is supplier type group"
 msgstr "공급업체 유형 그룹입니다"
 
-msgid "ISO Week"
+msgid "ISO 8601"
 msgstr ""
 
 msgid "Issue"
@@ -21022,6 +21025,9 @@ msgstr "현재 주부터 주 번호 매기기"
 
 msgid "Numbering sequence"
 msgstr "채번 규칙"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr ""
 
 msgid "OEE Impact"
 msgstr "OEE 영향"
@@ -31840,9 +31846,6 @@ msgstr "보증이 거부되었습니다. 라인이 서비스 반품이 되고 �
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "설비 실패 방식으로, 유지보수 및 품질 추적을 위해 사용됩니다."
 
-msgid "The week is labelled with the calendar year"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 수 있도록 준비되는 곳이며, 창고 원본 선반과는 다릅니다."
 
@@ -33662,9 +33665,6 @@ msgstr "최대 {0} {unitOfMeasure}"
 msgid "up to {0} saved"
 msgstr "최대 {0} 절감"
 
-msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
-msgstr ""
-
 msgid "Upcoming"
 msgstr "예정된"
 
@@ -33898,6 +33898,9 @@ msgstr "긴급"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "US"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "일 사용량(30일)"
@@ -34642,6 +34645,9 @@ msgstr "수요일"
 msgid "Week"
 msgstr "주"
 
+msgid "Week ({numbering})"
+msgstr ""
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "{0}주차"
@@ -34654,6 +34660,9 @@ msgstr "{weekNumber}주차 ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "8주차 전환"
+
+msgid "Week Numbering"
+msgstr ""
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34697,8 +34706,17 @@ msgstr "주 번호가 달력 주 기준으로 매겨집니다"
 msgid "Weeks are numbered from the present week"
 msgstr "주 번호가 현재 주부터 매겨집니다"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr ""
+
 msgid "Weeks Open"
 msgstr "미결 주수"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr ""
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr ""
 
 msgid "Weighted Average"
 msgstr "가중평균"
@@ -35301,6 +35319,9 @@ msgstr "재공품"
 msgid "with {0} contingency"
 msgstr "{0} 예비비 포함"
 
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr ""
+
 msgid "With Previous"
 msgstr "이전 공정과 함께"
 
@@ -35486,9 +35507,6 @@ msgstr "{0}개 문서의 누락된 전표 작성됨"
 
 msgid "Year"
 msgstr "연도"
-
-msgid "Year of the ISO Week"
-msgstr ""
 
 msgid "Year-End Close"
 msgstr "연말 마감"

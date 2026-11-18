@@ -14247,9 +14247,6 @@ msgstr "Full setup and migrations"
 msgid "Full Year"
 msgstr "Full Year"
 
-msgid "Full Year of the ISO Week"
-msgstr "Full Year of the ISO Week"
-
 msgid "Fully Depreciated"
 msgstr "Fully Depreciated"
 
@@ -15007,6 +15004,9 @@ msgstr "Hours/1000 Pieces"
 msgid "Hours/Piece"
 msgstr "Hours/Piece"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "How {week} counts weeks in document, serial and batch numbers."
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 
@@ -15177,6 +15177,9 @@ msgstr "How We Work"
 
 msgid "How We Work Together"
 msgstr "How We Work Together"
+
+msgid "How weeks are numbered"
+msgstr "How weeks are numbered"
 
 msgid "How will you use {integrationName}?"
 msgstr "How will you use {integrationName}?"
@@ -16192,8 +16195,8 @@ msgstr "Is supplier org group"
 msgid "Is supplier type group"
 msgstr "Is supplier type group"
 
-msgid "ISO Week"
-msgstr "ISO Week"
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Issue"
@@ -21022,6 +21025,9 @@ msgstr "Number weeks from the present week"
 
 msgid "Numbering sequence"
 msgstr "Numbering sequence"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
 
 msgid "OEE Impact"
 msgstr "OEE Impact"
@@ -31840,9 +31846,6 @@ msgstr "The warranty is denied. The line becomes a Return for Service and its se
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "The ways equipment fails, for maintenance and quality tracking"
 
-msgid "The week is labelled with the calendar year"
-msgstr "The week is labelled with the calendar year"
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 
@@ -33662,9 +33665,6 @@ msgstr "Up to {0} {unitOfMeasure}"
 msgid "up to {0} saved"
 msgstr "up to {0} saved"
 
-msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
-msgstr "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
-
 msgid "Upcoming"
 msgstr "Upcoming"
 
@@ -33898,6 +33898,9 @@ msgstr "Urgent"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "US"
+msgstr "US"
 
 msgid "Usage/Day (30d)"
 msgstr "Usage/Day (30d)"
@@ -34642,6 +34645,9 @@ msgstr "Wednesday"
 msgid "Week"
 msgstr "Week"
 
+msgid "Week ({numbering})"
+msgstr "Week ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "Week {0}"
@@ -34654,6 +34660,9 @@ msgstr "Week {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Week 8 cutover"
+
+msgid "Week Numbering"
+msgstr "Week Numbering"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34697,8 +34706,17 @@ msgstr "Weeks are numbered by calendar week"
 msgid "Weeks are numbered from the present week"
 msgstr "Weeks are numbered from the present week"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "Weeks are numbered in Settings → Company."
+
 msgid "Weeks Open"
 msgstr "Weeks Open"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
 
 msgid "Weighted Average"
 msgstr "Weighted Average"
@@ -35301,6 +35319,9 @@ msgstr "WIP"
 msgid "with {0} contingency"
 msgstr "with {0} contingency"
 
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+
 msgid "With Previous"
 msgstr "With Previous"
 
@@ -35486,9 +35507,6 @@ msgstr "Wrote the missing journals of {0} documents"
 
 msgid "Year"
 msgstr "Year"
-
-msgid "Year of the ISO Week"
-msgstr "Year of the ISO Week"
 
 msgid "Year-End Close"
 msgstr "Year-End Close"

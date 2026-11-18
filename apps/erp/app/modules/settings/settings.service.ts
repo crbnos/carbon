@@ -56,7 +56,10 @@ import {
   sequences,
   supplierStages
 } from "@carbon/database/seed-data";
-import { interpolateSequenceDate } from "@carbon/database/sequence-tokens";
+import {
+  asWeekNumbering,
+  interpolateSequenceFormat
+} from "@carbon/database/sequence-tokens";
 import {
   getPullFromLocations,
   missingPullFromLocations,
@@ -579,10 +582,22 @@ export async function getCurrentSequence(
 
   const currentSequence = next.toString().padStart(size, "0");
   // Same calendar as get_next_sequence (SQL): tokens roll over at the
-  // company's midnight, or the preview disagrees with the issued number.
-  const timezone = await getCompanyTimeZone(client, companyId);
-  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
-  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
+  // company's midnight and count weeks its way, or the preview disagrees with
+  // the issued number.
+  const [timezone, settings] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    client
+      .from("companySettings")
+      .select("sequenceWeekNumbering")
+      .eq("id", companyId)
+      .maybeSingle()
+  ]);
+  if (settings.error) return settings;
+  const { prefix: derivedPrefix, suffix: derivedSuffix } =
+    interpolateSequenceFormat(prefix, suffix, {
+      timezone,
+      weekNumbering: asWeekNumbering(settings.data?.sequenceWeekNumbering)
+    });
 
   return {
     data: `${derivedPrefix}${currentSequence}${derivedSuffix}`,

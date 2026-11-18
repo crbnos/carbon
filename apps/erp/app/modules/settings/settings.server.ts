@@ -124,7 +124,8 @@ import {
   serialNumberTimings,
   subsidiaryValidator,
   timekeepingControlsModes,
-  timesheetTimecardChecks
+  timesheetTimecardChecks,
+  weekNumberings
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
@@ -920,6 +921,38 @@ export const updateServiceSettings = defineServiceFn({
       ctx,
       input,
       "Failed to save the service settings"
+    );
+    return saved ?? input;
+  }
+});
+
+/**
+ * Update the sequence settings.
+ *
+ * @remarks
+ * How the `%{ww}` token counts weeks in document, serial and batch numbers:
+ * `iso` (ISO 8601, the default: weeks start on Monday, and week 1 is the week
+ * with the year's first Thursday) or `us` (weeks start on Sunday, and week 1
+ * is the week of 1 January). In a format with `%{ww}` and no `%{mm}` or
+ * `%{dd}`, `%{yyyy}` and `%{yy}` are the year the week belongs to. Numbers
+ * already issued keep their week.
+ *
+ * @param sequenceWeekNumbering - `iso` or `us`.
+ *
+ * @mcp
+ */
+export const updateSequenceSettings = defineServiceFn({
+  input: z.object({
+    sequenceWeekNumbering: z.enum(weekNumberings).optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const refused = service.nothingSent(ctx, input);
+    if (refused) return refused;
+    const saved = await service.saveCompanySettings(
+      ctx,
+      input,
+      "Failed to save the sequence settings"
     );
     return saved ?? input;
   }

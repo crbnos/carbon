@@ -13,9 +13,13 @@ import {
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  asWeekNumbering,
   interpolateSequenceDate,
-  isoWeek,
-  usesCalendarYearForWeek
+  interpolateSequenceFormat,
+  type WeekNumbering,
+  weekNumberings,
+  weekOfYear,
+  yearFollowsWeek
 } from "./sequence-tokens.ts";
 
 const at = (date: string, hour = 13, second = 9) => {
@@ -26,76 +30,108 @@ const at = (date: string, hour = 13, second = 9) => {
   );
 };
 
-const ALL_TOKENS =
-  "%{yyyy}|%{yy}|%{wyyyy}|%{wyy}|%{mm}|%{ww}|%{dd}|%{hh}|%{ss}";
+const format = (
+  value: string,
+  date: string,
+  weekNumbering: WeekNumbering = "iso"
+) => interpolateSequenceDate(value, { at: at(date), weekNumbering });
+
+// With a month or a day, the year is the calendar year; without, the week's.
+const DATE_FORMAT = "%{yyyy}|%{yy}|%{mm}|%{ww}|%{dd}|%{hh}|%{ss}";
+const WEEK_FORMAT = "%{yyyy}|%{yy}|%{ww}|%{hh}|%{ss}";
 
 describe("interpolateSequenceDate", () => {
-  // Every case a calendar year and its ISO week disagree on, either side of
-  // a new year, plus a day where they agree.
+  // Every day around a new year where the calendar year and the ISO week's
+  // year disagree, the US week 54, and a day where every system agrees.
   it.each([
-    ["2024-12-30", "Mon", "2401", "2501", "2024-W01", "2025-W01"],
-    ["2024-12-31", "Tue", "2401", "2501", "2024-W01", "2025-W01"],
-    ["2025-12-29", "Mon", "2501", "2601", "2025-W01", "2026-W01"],
-    ["2026-12-28", "Mon", "2653", "2653", "2026-W53", "2026-W53"],
-    ["2026-12-31", "Thu", "2653", "2653", "2026-W53", "2026-W53"],
-    ["2027-01-01", "Fri", "2753", "2653", "2027-W53", "2026-W53"],
-    ["2027-01-02", "Sat", "2753", "2653", "2027-W53", "2026-W53"],
-    ["2027-01-03", "Sun", "2753", "2653", "2027-W53", "2026-W53"],
-    ["2027-01-04", "Mon", "2701", "2701", "2027-W01", "2027-W01"],
-    ["2021-01-03", "Sun", "2153", "2053", "2021-W53", "2020-W53"],
-    ["2026-11-18", "Wed", "2647", "2647", "2026-W47", "2026-W47"]
-  ])(
-    "%s (%s): %{yy}%{ww} is %s, %{wyy}%{ww} is %s",
-    (date, _day, calendar, week, calendarLong, weekLong) => {
-      expect(interpolateSequenceDate("%{yy}%{ww}", "UTC", at(date))).toBe(
-        calendar
-      );
-      expect(interpolateSequenceDate("%{wyy}%{ww}", "UTC", at(date))).toBe(
-        week
-      );
-      expect(interpolateSequenceDate("%{yyyy}-W%{ww}", "UTC", at(date))).toBe(
-        calendarLong
-      );
-      expect(interpolateSequenceDate("%{wyyyy}-W%{ww}", "UTC", at(date))).toBe(
-        weekLong
-      );
-    }
-  );
+    ["2024-12-30", "Mon", "2501", "2453"],
+    ["2024-12-31", "Tue", "2501", "2453"],
+    ["2025-12-29", "Mon", "2601", "2553"],
+    ["2026-12-27", "Sun", "2652", "2653"],
+    ["2026-12-31", "Thu", "2653", "2653"],
+    ["2027-01-01", "Fri", "2653", "2701"],
+    ["2027-01-02", "Sat", "2653", "2701"],
+    ["2027-01-03", "Sun", "2653", "2702"],
+    ["2027-01-04", "Mon", "2701", "2702"],
+    ["2028-01-01", "Sat", "2752", "2801"],
+    ["2028-12-31", "Sun", "2852", "2854"],
+    ["2021-01-03", "Sun", "2053", "2102"],
+    ["2026-11-18", "Wed", "2647", "2647"]
+  ])("%s (%s): %{yy}%{ww} is %s (ISO 8601), %s (US)", (date, _day, iso, us) => {
+    expect(format("%{yy}%{ww}", date, "iso")).toBe(iso);
+    expect(format("%{yy}%{ww}", date, "us")).toBe(us);
+  });
+
+  it("keeps the calendar year beside a month or a day", () => {
+    expect(format("%{yyyy}%{mm}%{dd}", "2027-01-01")).toBe("20270101");
+    expect(format("%{yyyy}-%{mm}-W%{ww}", "2027-01-01")).toBe("2027-01-W53");
+    expect(format("%{yy}%{dd}-%{ww}", "2027-01-01")).toBe("2701-53");
+    expect(format("%{yyyy}-W%{ww}", "2027-01-01")).toBe("2026-W53");
+  });
 
   it("fills every token, padded to two digits", () => {
     expect(
-      interpolateSequenceDate(ALL_TOKENS, "UTC", at("2027-01-01", 7, 3))
-    ).toBe("2027|27|2026|26|01|53|01|07|03");
+      interpolateSequenceDate(DATE_FORMAT, { at: at("2027-01-01", 7, 3) })
+    ).toBe("2027|27|01|53|01|07|03");
+    expect(
+      interpolateSequenceDate(WEEK_FORMAT, { at: at("2027-01-01", 7, 3) })
+    ).toBe("2026|26|53|07|03");
+    expect(
+      interpolateSequenceDate(WEEK_FORMAT, {
+        at: at("2027-01-01", 7, 3),
+        weekNumbering: "us"
+      })
+    ).toBe("2027|27|01|07|03");
   });
 
   it("uses the wall clock of the zone it is given", () => {
     // 12:00 UTC on 31 December 2026 is already 1 January 2027 in Auckland.
     const auckland = parseAbsolute("2026-12-31T12:00:00Z", "Pacific/Auckland");
     expect(
-      interpolateSequenceDate("%{yyyy}-%{mm}-%{dd} %{hh}", "UTC", auckland)
+      interpolateSequenceDate("%{yyyy}-%{mm}-%{dd} %{hh}", { at: auckland })
     ).toBe("2027-01-01 01");
-    expect(interpolateSequenceDate("%{wyy}%{ww}", "UTC", auckland)).toBe(
-      "2653"
-    );
+    expect(
+      interpolateSequenceDate("%{yy}%{ww}", {
+        at: auckland,
+        weekNumbering: "us"
+      })
+    ).toBe("2701");
   });
 
   it("leaves text and unknown tokens as written", () => {
-    expect(interpolateSequenceDate("SO-", "UTC", at("2027-01-01"))).toBe("SO-");
-    expect(
-      interpolateSequenceDate("%{location}-%{wyy}", "UTC", at("2027-01-01"))
-    ).toBe("%{location}-26");
+    expect(format("SO-", "2027-01-01")).toBe("SO-");
+    expect(format("%{location}-%{yy}", "2027-01-01")).toBe("%{location}-27");
     expect(interpolateSequenceDate(null)).toBe("");
     expect(interpolateSequenceDate("")).toBe("");
   });
 });
 
-describe("isoWeek", () => {
-  // Reference rule, independent of isoWeek's: week 1 is the week of 4 January,
-  // and a week runs Monday to Sunday.
+describe("interpolateSequenceFormat", () => {
+  it("takes the year from the whole format", () => {
+    const options = { at: at("2027-01-01") };
+    // The week in the suffix makes the prefix's year the week's.
+    expect(interpolateSequenceFormat("SN%{yy}-", "-W%{ww}", options)).toEqual({
+      prefix: "SN26-",
+      suffix: "-W53"
+    });
+    // A day in the prefix keeps the suffix's year the calendar year.
+    expect(
+      interpolateSequenceFormat("%{dd}-", "-%{yyyy}W%{ww}", options)
+    ).toEqual({ prefix: "01-", suffix: "-2027W53" });
+    expect(interpolateSequenceFormat(null, undefined, options)).toEqual({
+      prefix: "",
+      suffix: ""
+    });
+  });
+});
+
+describe("weekOfYear", () => {
   const mondayOf = (date: CalendarDate) =>
     date.subtract({ days: getDayOfWeek(date, "en-GB") });
 
-  it("matches the 4 January rule for every day from 2000 to 2100", () => {
+  // Independent reference: week 1 is the week of 4 January, and a week runs
+  // Monday to Sunday.
+  it("ISO 8601: matches the 4 January rule for every day from 2000 to 2100", () => {
     const mismatches: string[] = [];
     let date = new CalendarDate(2000, 1, 1);
     const end = new CalendarDate(2100, 12, 31);
@@ -109,11 +145,28 @@ describe("isoWeek", () => {
             ? date.year
             : date.year - 1;
       const week =
-        Math.floor(
-          mondayOf(date).compare(mondayOf(new CalendarDate(year, 1, 4))) / 7
-        ) + 1;
-      const actual = isoWeek(date);
+        mondayOf(date).compare(mondayOf(new CalendarDate(year, 1, 4))) / 7 + 1;
+      const actual = weekOfYear(date, "iso");
       if (actual.week !== week || actual.year !== year) {
+        mismatches.push(`${date}: ${actual.year}-W${actual.week}`);
+      }
+      date = date.add({ days: 1 });
+    }
+    expect(mismatches).toEqual([]);
+  });
+
+  // Independent reference: 1 January is week 1, and each Sunday after it
+  // starts the next week.
+  it("US: counts a week at each Sunday for every day from 2000 to 2100", () => {
+    const mismatches: string[] = [];
+    let date = new CalendarDate(2000, 1, 1);
+    const end = new CalendarDate(2100, 12, 31);
+    let week = 1;
+    while (date.compare(end) <= 0) {
+      if (date.month === 1 && date.day === 1) week = 1;
+      else if (getDayOfWeek(date, "en-US") === 0) week += 1;
+      const actual = weekOfYear(date, "us");
+      if (actual.week !== week || actual.year !== date.year) {
         mismatches.push(`${date}: ${actual.year}-W${actual.week}`);
       }
       date = date.add({ days: 1 });
@@ -122,22 +175,27 @@ describe("isoWeek", () => {
   });
 });
 
-describe("usesCalendarYearForWeek", () => {
+describe("yearFollowsWeek", () => {
   it.each([
-    ["%{yy}%{ww}-", null, true],
-    ["SN-%{yyyy}-W%{ww}-", "", true],
-    ["%{ww}", "-%{yy}", true],
-    ["%{wyy}%{ww}-", null, false],
-    ["%{wyyyy}-W%{ww}-", null, false],
-    ["%{yyyy}-", "-%{wyy}%{ww}", false],
-    ["%{yy}-%{wyyyy}W%{ww}", null, false],
-    ["%{yyyy}%{mm}%{dd}-W%{ww}-", null, false],
-    ["%{yyyy}-%{mm}-W%{ww}", null, false],
-    ["JE-%{yyyy}-%{mm}-", null, false],
-    ["%{ww}-", null, false],
-    [null, null, false]
-  ])("%s / %s: %s", (prefix, suffix, expected) => {
-    expect(usesCalendarYearForWeek(prefix, suffix)).toBe(expected);
+    ["%{yy}%{ww}-", true],
+    ["SN-%{yyyy}-W%{ww}-", true],
+    ["%{ww}-%{hh}", true],
+    ["%{yyyy}%{mm}%{dd}-W%{ww}-", false],
+    ["%{yyyy}-%{mm}-W%{ww}", false],
+    ["%{dd}%{ww}", false],
+    ["JE-%{yyyy}-%{mm}-", false],
+    ["", false]
+  ])("%s: %s", (value, expected) => {
+    expect(yearFollowsWeek(value)).toBe(expected);
+  });
+});
+
+describe("asWeekNumbering", () => {
+  it("reads a stored value, and anything else as ISO 8601", () => {
+    expect(asWeekNumbering("us")).toBe("us");
+    expect(asWeekNumbering("iso")).toBe("iso");
+    expect(asWeekNumbering("ISO 8601")).toBe("iso");
+    expect(asWeekNumbering(null)).toBe("iso");
   });
 });
 
@@ -150,17 +208,37 @@ describe.skipIf(!url)(
     beforeAll(() => client.connect());
     afterAll(() => client.end());
 
-    it("agrees on every day from 2000 to 2100", async () => {
-      const { rows } = await client.query<{ day: string; value: string }>(
+    it("agrees on every day from 2000 to 2100, for both formats and systems", async () => {
+      const { rows } = await client.query<{
+        day: string;
+        iso_date: string;
+        iso_week: string;
+        us_date: string;
+        us_week: string;
+      }>(
         `SELECT to_char(d, 'YYYY-MM-DD') AS day,
-              interpolate_sequence_date($1, d + time '13:05:09') AS value
-       FROM generate_series('2000-01-01'::timestamp, '2100-12-31', '1 day') d`,
-        [ALL_TOKENS]
+                interpolate_sequence_date($1, d + time '13:05:09', 'iso') AS iso_date,
+                interpolate_sequence_date($2, d + time '13:05:09', 'iso') AS iso_week,
+                interpolate_sequence_date($1, d + time '13:05:09', 'us') AS us_date,
+                interpolate_sequence_date($2, d + time '13:05:09', 'us') AS us_week
+         FROM generate_series('2000-01-01'::timestamp, '2100-12-31', '1 day') d`,
+        [DATE_FORMAT, WEEK_FORMAT]
       );
       expect(rows).toHaveLength(36890);
-      const mismatches = rows.filter(
-        ({ day, value }) =>
-          value !== interpolateSequenceDate(ALL_TOKENS, "UTC", at(day, 13, 9))
+      const mismatches = rows.filter((row) =>
+        weekNumberings.some(
+          (numbering) =>
+            row[`${numbering}_date`] !==
+              interpolateSequenceDate(DATE_FORMAT, {
+                at: at(row.day, 13, 9),
+                weekNumbering: numbering
+              }) ||
+            row[`${numbering}_week`] !==
+              interpolateSequenceDate(WEEK_FORMAT, {
+                at: at(row.day, 13, 9),
+                weekNumbering: numbering
+              })
+        )
       );
       expect(mismatches).toEqual([]);
     });

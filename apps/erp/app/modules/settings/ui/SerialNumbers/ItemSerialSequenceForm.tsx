@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { interpolateSequenceDate } from "@carbon/database/sequence-tokens";
+import {
+  asWeekNumbering,
+  interpolateSequenceFormat
+} from "@carbon/database/sequence-tokens";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -40,10 +43,7 @@ import {
   serialNumberTimings
 } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
-import {
-  SequenceTokenHelp,
-  WeekYearWarning
-} from "../Sequences/SequenceTokens";
+import { SequenceTokenHelp } from "../Sequences/SequenceTokens";
 import { useSerialNumberTimingLabels } from "./useSerialNumberTimingLabels";
 
 type ItemSerialSequenceFormProps = {
@@ -70,21 +70,21 @@ const ItemSerialSequenceForm = ({
   const [size, setSize] = useState(initialValues.size ?? 5);
   const [step, setStep] = useState(initialValues.step ?? 1);
 
-  // Preview in the company timezone — the same calendar serial numbers are
-  // issued in — not the browser's.
+  // Preview in the company timezone and week numbering — the same calendar
+  // serial numbers are issued in — not the browser's.
   const timezone = useCompanyTimeZone();
+  const companySettings = useCompanySettings();
+  const weekNumbering = asWeekNumbering(companySettings?.sequenceWeekNumbering);
   const makePreview = () => {
+    const dated = interpolateSequenceFormat(prefix, suffix, {
+      timezone,
+      weekNumbering
+    });
     // %{location} is resolved at issue time from the item's location; for the
     // preview we stand in a sample location code ("HQ") so the token doesn't
     // show through literally.
-    const p = interpolateSequenceDate(prefix, timezone).replace(
-      /%{location}/g,
-      "HQ"
-    );
-    const s = interpolateSequenceDate(suffix, timezone).replace(
-      /%{location}/g,
-      "HQ"
-    );
+    const p = dated.prefix.replace(/%{location}/g, "HQ");
+    const s = dated.suffix.replace(/%{location}/g, "HQ");
     // Preview the NEXT number that will be issued (current counter + step),
     // not the current counter itself — so a fresh sequence shows "00001".
     return `${p}${(next + step).toString().padStart(size, "0")}${s}`;
@@ -92,7 +92,7 @@ const ItemSerialSequenceForm = ({
 
   // Empty follows the company's timing; the placeholder names it.
   const timingLabels = useSerialNumberTimingLabels();
-  const companyTiming = useCompanySettings()?.serialNumberTiming as
+  const companyTiming = companySettings?.serialNumberTiming as
     | SerialNumberTiming
     | undefined;
   const companyDefault =
@@ -130,7 +130,6 @@ const ItemSerialSequenceForm = ({
             <Hidden name="id" />
             <VStack spacing={4}>
               <Heading size="h2">{makePreview()}</Heading>
-              <WeekYearWarning prefix={prefix} suffix={suffix} />
 
               {isEditing ? (
                 <Item name="itemId" label={t`Item`} type="Item" isReadOnly />
@@ -191,6 +190,7 @@ const ItemSerialSequenceForm = ({
                 bordered
               />
               <SequenceTokenHelp
+                weekNumbering={weekNumbering}
                 extraTokens={[["%{location}", t`Location code`]]}
               />
             </VStack>

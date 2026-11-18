@@ -6,7 +6,11 @@
 // silently diverge and mint duplicate sequence IDs.
 import { type Kysely, sql, type Transaction } from "kysely";
 import type { KyselyDatabase } from "./client.ts";
-import { interpolateSequenceDate } from "./sequence-tokens.ts";
+import {
+  asWeekNumbering,
+  interpolateSequenceFormat,
+  type WeekNumbering
+} from "./sequence-tokens.ts";
 import {
   asSerialNumberTiming,
   type SerialNumberTiming
@@ -55,14 +59,31 @@ export async function getNextSequences(
   if (!Number.isInteger(size)) throw new Error("Size is not an integer");
 
   const timezone = await getCompanyTimeZone(trx, companyId);
-  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
-  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
+  const weekNumbering = await getSequenceWeekNumbering(trx, companyId);
+  const { prefix: derivedPrefix, suffix: derivedSuffix } =
+    interpolateSequenceFormat(prefix, suffix, { timezone, weekNumbering });
   const first = next! - step! * (count - 1);
   return Array.from(
     { length: count },
     (_, index) =>
       `${derivedPrefix}${(first + step! * index).toString().padStart(size!, "0")}${derivedSuffix}`
   );
+}
+
+/**
+ * How the company's `%{ww}` counts weeks (`companySettings.sequenceWeekNumbering`),
+ * the same read get_next_sequence and get_next_serial_numbers make in SQL.
+ */
+export async function getSequenceWeekNumbering(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string
+): Promise<WeekNumbering> {
+  const settings = await db
+    .selectFrom("companySettings")
+    .select("sequenceWeekNumbering")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return asWeekNumbering(settings?.sequenceWeekNumbering);
 }
 
 export async function getNextRevisionSequence(
@@ -108,8 +129,8 @@ export async function getNextRevisionSequence(
  * the numbers.
  *
  * Each number interpolates the date tokens of `./sequence-tokens` in the
- * company's timezone, plus %{location} (location.code, falling back to the
- * location name).
+ * company's timezone and week numbering, plus %{location} (location.code,
+ * falling back to the location name).
  *
  * Used by `assign-serial-numbers` (the N units that exist at job creation),
  * `issue` (a unit spawned lazily on completion, e.g. after the job quantity was

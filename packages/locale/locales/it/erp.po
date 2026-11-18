@@ -14247,9 +14247,6 @@ msgstr "Configurazione completa e migrazioni"
 msgid "Full Year"
 msgstr ""
 
-msgid "Full Year of the ISO Week"
-msgstr ""
-
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
 
@@ -15007,6 +15004,9 @@ msgstr "Ore/1000 Pezzi"
 msgid "Hours/Piece"
 msgstr "Ore/Pezzo"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr ""
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Come un processo raggruppabile esegue il suo lavoro aggregato: Sequenziale esegue i componenti uno dopo l'altro su una macchina (una sega o un tavolo laser), mentre Simultaneo li esegue insieme in un unico carico (un forno, una stufa o un bagno di galvanica)."
 
@@ -15177,6 +15177,9 @@ msgstr "Come Lavoriamo"
 
 msgid "How We Work Together"
 msgstr "Come Lavoriamo Insieme"
+
+msgid "How weeks are numbered"
+msgstr ""
 
 msgid "How will you use {integrationName}?"
 msgstr "Come utilizzerai {integrationName}?"
@@ -16192,7 +16195,7 @@ msgstr "È gruppo organizzativo fornitore"
 msgid "Is supplier type group"
 msgstr "È gruppo tipo fornitore"
 
-msgid "ISO Week"
+msgid "ISO 8601"
 msgstr ""
 
 msgid "Issue"
@@ -21022,6 +21025,9 @@ msgstr "Numera le settimane dalla settimana corrente"
 
 msgid "Numbering sequence"
 msgstr "Sequenza di numerazione"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr ""
 
 msgid "OEE Impact"
 msgstr "Impatto OEE"
@@ -31840,9 +31846,6 @@ msgstr "La garanzia è negata. La riga diventa un Reso di Servizio e il suo ordi
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "I modi in cui l'impianto si guasta, per il tracciamento della manutenzione e della qualità"
 
-msgid "The week is labelled with the calendar year"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Il contenitore proprio del centro di lavoro dove il materiale prelevato viene preparato per il consumo da parte della produzione, in contrasto con lo scaffale di origine nel deposito."
 
@@ -33662,9 +33665,6 @@ msgstr "Fino a {0} {unitOfMeasure}"
 msgid "up to {0} saved"
 msgstr "fino a {0} risparmiati"
 
-msgid "Up to three days around each new year belong to an ISO week of the other year. On 1 January 2027 {calendarWeek} gives 2753; {isoWeek} gives 2653. Use {weekYear} or {fullWeekYear} with {week}."
-msgstr ""
-
 msgid "Upcoming"
 msgstr "Imminente"
 
@@ -33898,6 +33898,9 @@ msgstr "Urgente"
 
 msgid "URL"
 msgstr "URL"
+
+msgid "US"
+msgstr ""
 
 msgid "Usage/Day (30d)"
 msgstr "Utilizzo/Giorno (30g)"
@@ -34642,6 +34645,9 @@ msgstr "Mercoledì"
 msgid "Week"
 msgstr "Settimana"
 
+msgid "Week ({numbering})"
+msgstr ""
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "Settimana {0}"
@@ -34654,6 +34660,9 @@ msgstr "Settimana {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Cutover della settimana 8"
+
+msgid "Week Numbering"
+msgstr ""
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34697,8 +34706,17 @@ msgstr "Le settimane sono numerate per settimana di calendario"
 msgid "Weeks are numbered from the present week"
 msgstr "Le settimane sono numerate dalla settimana corrente"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr ""
+
 msgid "Weeks Open"
 msgstr "Settimane Aperte"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr ""
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr ""
 
 msgid "Weighted Average"
 msgstr "Media Ponderata"
@@ -35301,6 +35319,9 @@ msgstr "WIP"
 msgid "with {0} contingency"
 msgstr "con contingenza {0}"
 
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr ""
+
 msgid "With Previous"
 msgstr "Con il precedente"
 
@@ -35486,9 +35507,6 @@ msgstr "Scritti i prima nota mancanti di {0} documenti"
 
 msgid "Year"
 msgstr "Anno"
-
-msgid "Year of the ISO Week"
-msgstr ""
 
 msgid "Year-End Close"
 msgstr "Chiusura di fine esercizio"
