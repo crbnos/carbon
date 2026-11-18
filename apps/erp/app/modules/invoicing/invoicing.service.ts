@@ -1014,6 +1014,7 @@ export async function getSalesInvoicePostFacts(
     string,
     Record<(typeof ORDER_LINE_CHARGE_FIELDS)[number], number> & {
       unpostedQuantity: number;
+      invoices: Set<string>;
     }
   >();
   for (const line of billingLines) {
@@ -1022,8 +1023,10 @@ export async function getSalesInvoicePostFacts(
       addOnCost: 0,
       nonTaxableAddOnCost: 0,
       shippingCost: 0,
-      unpostedQuantity: 0
+      unpostedQuantity: 0,
+      invoices: new Set<string>()
     };
+    billed.invoices.add(line.invoiceId);
     for (const field of ORDER_LINE_CHARGE_FIELDS) {
       billed[field] += line[field] ?? 0;
     }
@@ -1077,6 +1080,7 @@ export async function getSalesInvoicePostFacts(
           orderedQuantity: line.saleQuantity ?? 0,
           remainingQuantity: line.quantityToInvoice ?? 0,
           unpostedQuantity: billed?.unpostedQuantity ?? 0,
+          otherInvoices: billed?.invoices.size ?? 0,
           charges: {
             addOnCost: {
               charge: line.addOnCost ?? 0,

@@ -31692,6 +31692,9 @@ msgstr "部品のリビジョン番号"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用権資産とリース負債は貸借対照表に計上され、1つの定額リースコストが毎月計上されます。"
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "受注を読み込めなかったため、この請求書との照合は行われていません。"
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
 

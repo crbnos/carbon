@@ -31692,6 +31692,9 @@ msgstr "Номер ревизии детали."
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Активы право пользования и обязательство лизинга отражаются в бухгалтерском балансе, и прямолинейная стоимость лизинга учитывается каждый месяц."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "Заказ покупателя не удалось прочитать, поэтому он не был сверен с этим счетом-фактурой."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."
 

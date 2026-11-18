@@ -31692,6 +31692,9 @@ msgstr "El número de revisión de la pieza"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "El activo de derecho de uso y el pasivo de arrendamiento están en el balance general, y un costo de arrendamiento de línea recta se contabiliza cada mes."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "No se pudo leer el pedido de venta, así que no se verificó con esta factura."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "La línea de pedido de venta que esta orden de trabajo fue creada para surtir, vinculando la orden de trabajo a la demanda del cliente detrás de ella."
 

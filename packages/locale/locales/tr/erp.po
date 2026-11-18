@@ -31692,6 +31692,9 @@ msgstr "Parçanın revizyon numarası"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Kullanım hakkı kıymeti ve kiralama yükümlülüğü bilançoda gösterilir ve her ay bir düz çizgi kiralama maliyeti muhasebeleştirilir."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "Satış siparişi okunamadığından bu faturayla karşılaştırılmadı."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Bu iş emrinin arzulanacak satış siparişi satırı, iş emrini arkasındaki müşteri talebine bağlayan."
 

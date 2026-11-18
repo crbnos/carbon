@@ -31692,6 +31692,9 @@ msgstr "零件的修订版号"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用权资产和租赁负债在资产负债表上列示，每月预提一笔直线租赁成本。"
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "无法读取销售订单，因此未与此发票进行核对。"
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "为供应而创建此作业的销售订单行，将作业与其后的客户需求联系起来。"
 

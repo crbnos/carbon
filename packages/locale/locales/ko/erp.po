@@ -31692,6 +31692,9 @@ msgstr "품목의 리비전 번호"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "사용권 자산과 임차 부채는 재무상태표에 있으며, 매월 하나의 정액 임차 원가가 계상됩니다."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "수주를 읽을 수 없어 이 송장과 대조되지 않았습니다."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "이 작업 지시를 공급하기 위해 생성된 수주 라인으로, 작업 지시를 뒤의 고객 소요량과 연결합니다."
 

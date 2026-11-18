@@ -86,6 +86,8 @@ export type SalesInvoicePostFacts = {
      * already bill of it: it is not in `remainingQuantity` yet.
      */
     unpostedQuantity: number;
+    /** How many other non-voided invoices bill this order line. */
+    otherInvoices: number;
     charges: Record<OrderLineChargeField, { charge: number; billed: number }>;
   }[];
   orders: {
@@ -154,7 +156,9 @@ export function salesInvoicePostChecks({
   facts: SalesInvoicePostFacts | null;
 }): SalesInvoicePostCheck[] {
   const checks: SalesInvoicePostCheck[] = [];
-  const minorUnit = 10 ** -decimals;
+  // A quantity share rounds to the minor unit, so N shares of one charge can
+  // leave up to half a minor unit each unbilled.
+  const halfMinorUnit = 10 ** -decimals / 2;
   const orderLines = new Map(
     (facts?.orderLines ?? []).map((line) => [line.salesOrderLineId, line])
   );
@@ -227,6 +231,7 @@ export function salesInvoicePostChecks({
     // remaining quantity, exactly as the order and shipment conversions call
     // it, so an untouched converted invoice is never flagged.
     let leftOff = 0;
+    const rounding = halfMinorUnit * (orderLine.otherInvoices + 1);
     for (const field of ORDER_LINE_CHARGE_FIELDS) {
       const { charge, billed } = orderLine.charges[field];
       const expected = flatChargeShare({
@@ -238,25 +243,23 @@ export function salesInvoicePostChecks({
         decimals
       });
       const actual = group.reduce((sum, line) => sum + (line[field] ?? 0), 0);
-      if (expected - actual > EPSILON) leftOff += expected - actual;
+      if (expected - actual > rounding + EPSILON) leftOff += expected - actual;
       if (field === "shippingCost") {
         lineShippingSurplus += Math.max(0, actual - expected);
       }
     }
-    // One minor unit is the rounding a quantity share can leave: shares of
-    // $100 over three invoices are $33.33 each.
-    if (leftOff - minorUnit > EPSILON) {
+    if (leftOff > EPSILON) {
       checks.push({ type: "orderChargesLeftOff", lineId, amount: leftOff });
     }
   }
 
-  // The invoice's shipping covers its orders' unbilled shipping in turn; what
-  // it does not cover is left off.
-  let covered = shippingCost + lineShippingSurplus;
+  // The invoice's shipping counts against every order it bills, as another
+  // invoice's does in `billedSalesOrderCharges`, so the check and the order
+  // conversion agree on what is billed.
+  const covered = shippingCost + lineShippingSurplus;
   for (const order of facts?.orders ?? []) {
     if (!billingOrders.has(order.salesOrderId)) continue;
     const leftOff = order.unbilledShipping - covered;
-    covered = Math.max(0, covered - order.unbilledShipping);
     if (leftOff > EPSILON) {
       checks.push({
         type: "orderShippingLeftOff",

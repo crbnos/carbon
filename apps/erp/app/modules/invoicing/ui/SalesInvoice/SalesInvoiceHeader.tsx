@@ -38,7 +38,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { PrintButton } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
 import {
@@ -95,8 +95,26 @@ const SalesInvoiceHeader = () => {
   const postFetcher =
     postRules.fetcher as FetcherWithComponents<SalesInvoicePostResult>;
   // The order facts the post checks compare against, read when Post is
-  // clicked so they include invoices posted since the page loaded.
-  const postFactsFetcher = useFetcher<SalesInvoicePostFactsResponse>();
+  // clicked so they include invoices posted since the page loaded. A plain
+  // fetch, not a fetcher: React Router reloads a fetcher's data after every
+  // action on the page, and these are read only when the modal opens.
+  const [postFacts, setPostFacts] = useState<SalesInvoicePostFactsResponse>({
+    facts: null,
+    failed: false
+  });
+  const [openingPost, setOpeningPost] = useState(false);
+  const readPostFacts = async (
+    id: string
+  ): Promise<SalesInvoicePostFactsResponse> => {
+    try {
+      const response = await fetch(path.to.api.salesInvoicePostFacts(id));
+      if (!response.ok) return { facts: null, failed: true };
+      return (await response.json()) as SalesInvoicePostFactsResponse;
+    } catch {
+      // The checks that need the order say they did not run.
+      return { facts: null, failed: true };
+    }
+  };
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -229,7 +247,9 @@ const SalesInvoiceHeader = () => {
     // The lines posting will ship: items not on a sales order. A Service is
     // never shipped — post-sales-invoice skips it — so it is not listed.
     if (!carbon) throw new Error("carbon not found");
-    const [{ data, error }] = await Promise.all([
+    if (openingPost) return;
+    setOpeningPost(true);
+    const [{ data, error }, facts] = await Promise.all([
       carbon
         .from("salesInvoiceLine")
         .select("itemId, description, quantity")
@@ -242,11 +262,12 @@ const SalesInvoiceHeader = () => {
           "Fixture"
         ])
         .is("salesOrderLineId", null),
-      postFactsFetcher.load(path.to.api.salesInvoicePostFacts(invoiceId))
-    ]);
+      readPostFacts(invoiceId)
+    ]).finally(() => setOpeningPost(false));
 
     if (error) throw new Error(error.message);
     if (!data) return;
+    setPostFacts(facts);
 
     // so that we can ask the user if they want to receive those lines
     flushSync(() =>
@@ -523,8 +544,9 @@ const SalesInvoiceHeader = () => {
                     : "secondary"
                 }
                 onClick={showPostModal}
-                isLoading={postFetcher.state !== "idle"}
+                isLoading={openingPost || postFetcher.state !== "idle"}
                 isDisabled={
+                  openingPost ||
                   postFetcher.state !== "idle" ||
                   isPosted ||
                   routeData?.salesInvoiceLines?.length === 0 ||
@@ -555,7 +577,8 @@ const SalesInvoiceHeader = () => {
         isOpen={postingModal.isOpen}
         onClose={postingModal.onClose}
         linesToShip={linesNotAssociatedWithSO}
-        postFacts={postFactsFetcher.data?.facts ?? null}
+        postFacts={postFacts.facts}
+        postFactsFailed={postFacts.failed}
         fetcher={postFetcher}
         defaultCc={routeData?.defaultCc ?? []}
       />

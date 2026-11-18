@@ -42,6 +42,7 @@ const orderLine = (
     orderedQuantity: 100,
     remainingQuantity: 100,
     unpostedQuantity: 0,
+    otherInvoices: 0,
     charges: {
       addOnCost: addOn ?? { charge: 0, billed: 0 },
       nonTaxableAddOnCost: { charge: 0, billed: 0 },
@@ -357,7 +358,7 @@ describe("salesInvoicePostChecks", () => {
     ).toEqual([{ type: "orderChargesLeftOff", lineId: "line-1", amount: 10 }]);
   });
 
-  it("ignores the one cent a quantity share can leave", () => {
+  it("ignores the rounding the other invoices' shares leave", () => {
     // $100 over three 1-unit invoices: two posted at $33.33, this one the
     // last at $33.33 leaves $0.01 that no share could carry.
     expect(
@@ -375,12 +376,69 @@ describe("salesInvoicePostChecks", () => {
             orderLine({
               orderedQuantity: 3,
               remainingQuantity: 1,
+              otherInvoices: 2,
               addOn: { charge: 100, billed: 66.66 }
             })
           ]
         })
       })
     ).toEqual([]);
+  });
+
+  it("ignores the rounding across several charge fields and many invoices", () => {
+    // $10 add-on and $10 line shipping over 3 one-unit invoices converted as
+    // Drafts: each got $3.33 + $3.33. Two posted; this last one bills the
+    // same shares, leaving $0.01 of each that no share could carry.
+    expect(
+      checks({
+        lines: [
+          line({
+            quantity: 1,
+            salesOrderId: "so-1",
+            salesOrderLineId: "sol-1",
+            addOnCost: 3.33,
+            shippingCost: 3.33
+          })
+        ],
+        facts: facts({
+          orderLines: [
+            orderLine({
+              orderedQuantity: 3,
+              remainingQuantity: 1,
+              otherInvoices: 2,
+              addOn: { charge: 10, billed: 6.66 },
+              shipping: { charge: 10, billed: 6.66 }
+            })
+          ]
+        })
+      })
+    ).toEqual([]);
+  });
+
+  it("still flags a charge an earlier invoice left off", () => {
+    // 60 of 100 posted with none of the $100 add-on; this last 40 bills only
+    // its $40 share, so $60 stays unbilled.
+    expect(
+      checks({
+        lines: [
+          line({
+            quantity: 40,
+            salesOrderId: "so-1",
+            salesOrderLineId: "sol-1",
+            addOnCost: 40
+          })
+        ],
+        facts: facts({
+          orderLines: [
+            orderLine({
+              remainingQuantity: 40,
+              otherInvoices: 1,
+              addOn: { charge: 100, billed: 0 }
+            })
+          ]
+        })
+      })
+    ).toEqual([{ type: "orderChargesLeftOff", lineId: "line-1", amount: 60 }]);
   });
 
   it("does not flag the line without the charge when its split twin bills it", () => {
@@ -498,8 +556,9 @@ describe("salesInvoicePostChecks", () => {
     ).toEqual([]);
   });
 
-  it("reports only the order shipping the invoice's shipping does not cover", () => {
-    // $50 covers SO0001's $30 and $20 of SO0002's $40.
+  it("counts the invoice's shipping against each order it bills, as the conversion does", () => {
+    // $50 of shipping on an invoice billing two orders: each order counts it,
+    // so neither is reported (`billedSalesOrderCharges` counts it the same way).
     expect(
       checks({
         lines: [
@@ -518,11 +577,25 @@ describe("salesInvoicePostChecks", () => {
           ]
         })
       })
+    ).toEqual([]);
+  });
+
+  it("reports the order shipping the invoice's shipping does not reach", () => {
+    expect(
+      checks({
+        lines: [line({ salesOrderId: "so-1" })],
+        shippingCost: 20,
+        facts: facts({
+          orders: [
+            { salesOrderId: "so-1", readableId: "SO0001", unbilledShipping: 60 }
+          ]
+        })
+      })
     ).toEqual([
       {
         type: "orderShippingLeftOff",
-        salesOrderReadableId: "SO0002",
-        amount: 20
+        salesOrderReadableId: "SO0001",
+        amount: 40
       }
     ]);
   });

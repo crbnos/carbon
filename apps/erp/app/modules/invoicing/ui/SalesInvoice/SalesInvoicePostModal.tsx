@@ -95,6 +95,8 @@ type SalesInvoicePostModalProps = {
   }[];
   /** The order facts the checks compare against; null when unread. */
   postFacts: SalesInvoicePostFacts | null;
+  /** The facts could not be read, so the order checks did not run. */
+  postFactsFailed: boolean;
   customerId: string | null;
   customerContactId: string | null;
   dateDue: string | null;
@@ -143,10 +145,12 @@ const SummaryFact = ({
  */
 const SalesInvoicePostSummary = ({
   invoiceId,
-  postFacts
+  postFacts,
+  postFactsFailed
 }: {
   invoiceId: string;
   postFacts: SalesInvoicePostFacts | null;
+  postFactsFailed: boolean;
 }) => {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -316,6 +320,15 @@ const SalesInvoicePostSummary = ({
         </Alert>
       )}
 
+      {postFactsFailed && (
+        <p className="w-full text-sm text-muted-foreground">
+          <Trans>
+            The sales order could not be read, so it was not checked against
+            this invoice.
+          </Trans>
+        </p>
+      )}
+
       <div className="w-full rounded-lg border text-sm">
         <div className="space-y-1 px-3 py-2">
           <SummaryFact label={t`Customer`}>
@@ -455,6 +468,7 @@ const SalesInvoicePostBody = ({
   invoiceId,
   linesToShip,
   postFacts,
+  postFactsFailed,
   customerId,
   customerContactId,
   dateDue,
@@ -581,6 +595,7 @@ const SalesInvoicePostBody = ({
           <SalesInvoicePostSummary
             invoiceId={invoiceId}
             postFacts={postFacts}
+            postFactsFailed={postFactsFailed}
           />
           {hasLinesToShip && (
             <div className="w-full">
