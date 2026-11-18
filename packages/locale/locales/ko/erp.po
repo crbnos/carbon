@@ -3595,8 +3595,14 @@ msgstr "자산이 청구되지 않은 원가를 추가합니다. 예를 들어, 
 msgid "Adds to an existing batch"
 msgstr "기존 배치에 추가"
 
+msgid "Adjust"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "원가 조정"
+
+msgid "Adjust for Rounding"
+msgstr ""
 
 msgid "Adjustment"
 msgstr "조정"
@@ -3904,6 +3910,9 @@ msgstr "계약 담당자가 승인한 금액"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "{0}에 적용할 금액"
+
+msgid "Amount to match"
+msgstr ""
 
 msgid "Amount Type"
 msgstr "금액 유형"
@@ -5626,6 +5635,9 @@ msgstr "은행 코드"
 
 msgid "Bank Name"
 msgstr "은행명"
+
+msgid "Bank, Cash or Card Account"
+msgstr ""
 
 msgid "Banner content (optional)"
 msgstr "배너 내용(선택)"
@@ -9418,6 +9430,10 @@ msgstr "현재 예측"
 msgid "Current quantity"
 msgstr "현재 수량"
 
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr ""
+
 msgid "Custom"
 msgstr "사용자 정의"
 
@@ -12530,6 +12546,10 @@ msgstr "인증자 앱에서 6자리 코드를 입력하세요"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
+
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 클라이언트 암호를 입력한 후 저장하세요."
@@ -20838,6 +20858,9 @@ msgstr "나중에"
 msgid "Not on the page"
 msgstr "페이지에 없음"
 
+msgid "Not posted"
+msgstr ""
+
 msgid "Not Qualified"
 msgstr "부적격"
 
@@ -22523,8 +22546,8 @@ msgstr "공급업체 지불"
 msgid "Payments"
 msgstr "지불"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "이 건에 적용된 지불과 메모는 먼저 적용이 해제됩니다. 각 지불은 전기된 상태로 남아, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 남습니다. 이 건에서 이미 인식된 매출은 역분개됩니다."
@@ -22592,6 +22615,9 @@ msgstr "검사 대기"
 
 msgid "Pending Inspection"
 msgstr "검사 대기"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "인원"
@@ -26477,6 +26503,9 @@ msgstr "반올림 계정"
 msgid "Rounding Account (default)"
 msgstr "반올림 계정(기본값)"
 
+msgid "Rounding adjusted"
+msgstr ""
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "모든 매입채무 송장을 개별 구매자 대신 한 주소(예: 기업 본사)로 라우팅합니다."
 
@@ -26851,6 +26880,9 @@ msgstr "저장 및 덮어쓰기"
 
 msgid "Save and post"
 msgstr "저장 및 전기"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "애플리케이션 저장"
@@ -32336,6 +32368,12 @@ msgstr "이 부품에만"
 
 msgid "This path only decides what runs next"
 msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간은 전기된 전표 항목이 없으며 영구적으로 삭제할 수 있습니다. 이를 취소할 수 없습니다."

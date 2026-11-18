@@ -17,11 +17,16 @@ type AccountData = {
   name: string;
   class: AccountClass | null;
   incomeBalance: string | null;
+  accountType: string | null;
 };
 
 const NO_ACCOUNTS: AccountData[] = [];
 
-export function useAccounts(classes?: readonly AccountClass[]): AccountData[] {
+/** The accounts of `classes`, and of `includeTypes` whatever their class. */
+export function useAccounts(
+  classes?: readonly AccountClass[],
+  includeTypes?: readonly string[]
+): AccountData[] {
   const { data } = useLoaderQuery<Awaited<ReturnType<typeof getAccountsList>>>(
     `${path.to.api.accounts}?isGroup=false`
   );
@@ -30,9 +35,11 @@ export function useAccounts(classes?: readonly AccountClass[]): AccountData[] {
   return useMemo(() => {
     if (!classes || classes.length === 0) return accounts;
     return accounts.filter(
-      (a) => a.class && classes.includes(a.class as AccountClass)
+      (a) =>
+        (a.class && classes.includes(a.class as AccountClass)) ||
+        (a.accountType && includeTypes?.includes(a.accountType))
     );
-  }, [accounts, classes]);
+  }, [accounts, classes, includeTypes]);
 }
 
 const badgeColors: Record<
@@ -46,8 +53,11 @@ const badgeColors: Record<
   Expense: "orange"
 };
 
-function useAccountOptions(classes?: readonly AccountClass[]) {
-  const accounts = useAccounts(classes);
+function useAccountOptions(
+  classes?: readonly AccountClass[],
+  includeTypes?: readonly string[]
+) {
+  const accounts = useAccounts(classes, includeTypes);
 
   return useMemo(
     () =>
@@ -68,10 +78,12 @@ function useAccountOptions(classes?: readonly AccountClass[]) {
 
 type AccountSelectProps = Omit<ComboboxProps, "options"> & {
   classes?: readonly AccountClass[];
+  /** Account types offered even outside `classes`. Pass a stable array. */
+  includeTypes?: readonly string[];
 };
 
-const Account = ({ classes, ...props }: AccountSelectProps) => {
-  const options = useAccountOptions(classes);
+const Account = ({ classes, includeTypes, ...props }: AccountSelectProps) => {
+  const options = useAccountOptions(classes, includeTypes);
 
   return (
     <Combobox options={options} {...props} label={props?.label ?? "Account"} />
