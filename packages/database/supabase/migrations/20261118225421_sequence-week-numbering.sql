@@ -80,7 +80,7 @@ $function$;
 -- The old signature is dropped so that call is not ambiguous.
 DROP FUNCTION IF EXISTS public.interpolate_serial_segment(text, timestamp, text);
 
-CREATE FUNCTION public.interpolate_serial_segment(
+CREATE OR REPLACE FUNCTION public.interpolate_serial_segment(
   p_value text,
   p_now timestamp,
   p_location text,

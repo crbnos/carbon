@@ -30,6 +30,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
@@ -7019,6 +7020,31 @@ export const createItemDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for an item (part/material/tool/consumable/service) document
+ *
+ * @remarks
+ * A signed link to a file on the item's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `items_getItemFiles` lists it, or the name given
+ * to `items_createItemDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not there is not
+ * found.
+ *
+ * @mcp read
+ */
+export const getItemDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "parts" },
+  async run(ctx, { itemId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "parts",
+      entityId: itemId,
+      name
+    });
   }
 });
 

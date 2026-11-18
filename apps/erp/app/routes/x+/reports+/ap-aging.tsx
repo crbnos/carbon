@@ -13,10 +13,12 @@ import {
   getAgingUnappliedPayments,
   getApAging,
   getApOpenBySupplier,
+  getApPendingPayments,
   getApTieOut
 } from "~/modules/invoicing/invoicing.service";
 import { ARAPWorkbench } from "~/modules/invoicing/ui";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -42,13 +44,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companySettings = await getCompanySettings(client, companyId);
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
-  const [tieOut, aging, open, payments] = await Promise.all([
+  const [tieOut, aging, open, payments, pending] = await Promise.all([
     accountingSetUp
       ? getApTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
     getApOpenBySupplier(client, companyId, asOfDate),
-    getAgingUnappliedPayments(client, companyId, asOfDate, "ap")
+    getAgingUnappliedPayments(client, companyId, asOfDate, "ap"),
+    getApPendingPayments(getDatabaseClient(), companyId)
   ]);
 
   return {
@@ -57,6 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bucketDays,
     result: tieOut.data ?? null,
     aging: aging.data ?? [],
+    pending: Object.fromEntries(pending),
     open: (open.data ?? []).map((r) => ({
       ...r,
       invoiceId: r.documentId,
@@ -73,8 +77,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ApAgingRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open, payments } =
-    useLoaderData<typeof loader>();
+  const {
+    asOfDate,
+    agingMethod,
+    bucketDays,
+    result,
+    aging,
+    open,
+    payments,
+    pending
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   return (
     <ARAPWorkbench
@@ -82,6 +94,7 @@ export default function ApAgingRoute() {
       result={result}
       aging={aging}
       open={open}
+      pending={pending}
       payments={payments}
       reportDetails
       asOfDate={asOfDate}

@@ -240,6 +240,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{open} open"
+msgstr ""
+
 msgid "{quantity} in this operation"
 msgstr ""
 
@@ -988,6 +991,9 @@ msgstr "Densité"
 msgid "Depot"
 msgstr "Dépôt"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "Décrivez le problème..."
 
@@ -1216,6 +1222,9 @@ msgstr "Échec de la récupération des unités de stockage"
 msgid "Failed to get options"
 msgstr "Impossible d'obtenir les options"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "Échec du traitement de l'image"
 
@@ -1388,6 +1397,9 @@ msgstr "Aspect de Carbon dans ce navigateur."
 
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "Combien ?"
@@ -1802,6 +1814,9 @@ msgstr "correspond à"
 msgid "Material requested"
 msgstr "Matière demandée"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "Matériaux"
 
@@ -2018,6 +2033,9 @@ msgstr "Aucun contrôle ouvert"
 msgid "No open jobs"
 msgstr "Aucun ordre de fabrication ouvert"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "Aucun ordre de prestation ouvert à ce site"
 
@@ -2149,6 +2167,9 @@ msgstr "Normal"
 
 msgid "Not in this operation"
 msgstr "Absent de cette opération"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "Non planifié"
@@ -2972,6 +2993,9 @@ msgstr "Rechercher des opérateurs"
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "Rechercher les projets et tâches"
 
@@ -3001,6 +3025,9 @@ msgstr "Sélectionner une quantité de production"
 
 msgid "Select a customer"
 msgstr "Sélectionner un client"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "Sélectionnez un site pour voir ses postes"
@@ -3219,6 +3246,9 @@ msgstr "Échéance souple"
 msgid "Solid"
 msgstr "Uni"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "Source"
 
@@ -3420,6 +3450,9 @@ msgstr "Les ordres de fabrication produisent des articles différents — gardez
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Le lot sera marqué comme Réussi et {remaining} unité(s) restante(s) seront complétées à cette opération."
 
@@ -3477,6 +3510,9 @@ msgstr "Ce plan de contrôle ne comporte aucun mode opératoire."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "Cet ordre de fabrication n'utilise pas cette pièce"

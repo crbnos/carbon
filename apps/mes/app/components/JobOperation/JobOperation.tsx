@@ -3238,27 +3238,11 @@ export const JobOperation = ({
         onClose={qualityIssueModal.onClose}
       />
 
-      <Suspense key={`need-material-modal-${operationId}`}>
-        <Await resolve={materials}>
-          {(resolvedMaterials) => (
-            <NeedMaterialModal
-              operationId={operation.id}
-              materials={resolvedMaterials.materials.flatMap((material) =>
-                material.itemId
-                  ? [
-                      {
-                        itemId: material.itemId,
-                        label: material.itemReadableId ?? material.itemId
-                      }
-                    ]
-                  : []
-              )}
-              isOpen={needMaterialModal.isOpen}
-              onClose={needMaterialModal.onClose}
-            />
-          )}
-        </Await>
-      </Suspense>
+      <NeedMaterialModal
+        operationId={operation.id}
+        isOpen={needMaterialModal.isOpen}
+        onClose={needMaterialModal.onClose}
+      />
 
       <Suspense key={`maintenance-modal-${operationId}`}>
         <Await resolve={workCenter}>

@@ -366,6 +366,14 @@ msgstr "{0} disponibili, {1} impegnate"
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} righe BOM non corrispondenti: {names}"
 
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr ""
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} non può essere eliminato perché è ancora in uso da {where}. Modifica prima quei record impostando un'altra unità di misura."
@@ -408,6 +416,10 @@ msgstr "{0} giorni"
 #. placeholder {0}: file.name
 msgid "{0} deleted successfully"
 msgstr "{0} eliminato con successo"
+
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr ""
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -673,6 +685,10 @@ msgstr "{0} segnala che il libro mastro è gestito da"
 msgid "{0} rows"
 msgstr "{0} righe"
 
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr ""
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} scartato"
@@ -763,6 +779,10 @@ msgstr "{0} verrà salvato come {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Anno"
+
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -1574,6 +1594,9 @@ msgstr "2-6 lettere maiuscole o cifre, ad esempio SNS"
 msgid "2 years"
 msgstr "2 anni"
 
+msgid "25th"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 Giorni"
 
@@ -1660,6 +1683,9 @@ msgstr "Limite di file 5MB"
 
 msgid "6 months"
 msgstr "6 mesi"
+
+msgid "75th"
+msgstr ""
 
 msgid "7D"
 msgstr "7 giorni"
@@ -3569,8 +3595,14 @@ msgstr "Aggiunge il costo che l'asset non è mai stato addebitato, come la manod
 msgid "Adds to an existing batch"
 msgstr "Aggiunge a un lotto di produzione esistente"
 
+msgid "Adjust"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Regola il costo"
+
+msgid "Adjust for Rounding"
+msgstr ""
 
 msgid "Adjustment"
 msgstr "Rettifica"
@@ -3878,6 +3910,9 @@ msgstr "Importo approvato dall'ufficiale delle contrattazioni"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "Importo da applicare per {0}"
+
+msgid "Amount to match"
+msgstr ""
 
 msgid "Amount Type"
 msgstr "Tipo di Importo"
@@ -5600,6 +5635,9 @@ msgstr "Codice bancario"
 
 msgid "Bank Name"
 msgstr "Nome della banca"
+
+msgid "Bank, Cash or Card Account"
+msgstr ""
 
 msgid "Banner content (optional)"
 msgstr "Contenuto banner (facoltativo)"
@@ -9392,6 +9430,10 @@ msgstr "Proiezione attuale"
 msgid "Current quantity"
 msgstr "Quantità attuale"
 
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr ""
+
 msgid "Custom"
 msgstr "Personalizzato"
 
@@ -11604,6 +11646,9 @@ msgstr "Ogni periodo è un mese, per la tariffa mensile."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Ogni unità fisica ottiene la propria entità tracciata e numero univoco — un'entità, un'unità."
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr ""
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 msgstr "Ogni ordine di produzione rilasciato riceve una lista di prelievo. I suoi componenti vanno al bordo linea di ogni centro di lavoro che li utilizza."
 
@@ -12501,6 +12546,10 @@ msgstr "Inserisci il codice a 6 cifre dall'app autenticatore"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Inserisci il codice a 6 cifre dall'app autenticatore per continuare."
+
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Immetti l'URL Onshape, l'ID client e il client secret della tua applicazione OAuth privata, quindi salva."
@@ -13855,6 +13904,9 @@ msgstr "Finisci a"
 
 msgid "Finish with material unpicked?"
 msgstr "Terminare con materiale non prelevato?"
+
+msgid "Finished"
+msgstr ""
 
 msgid "Finished goods"
 msgstr "Prodotti finiti"
@@ -15541,6 +15593,9 @@ msgstr "Includi i materiali nel cartellino di produzione"
 msgid "Include operations on the traveler"
 msgstr "Includi le operazioni nel cartellino di produzione"
 
+msgid "Include outliers"
+msgstr ""
+
 msgid "Included"
 msgstr "Incluso"
 
@@ -16824,6 +16879,9 @@ msgstr "Tempo manodopera"
 msgid "Labor Time"
 msgstr "Tempo manodopera"
 
+msgid "Labor time per unit"
+msgstr ""
+
 msgid "Labor transfer"
 msgstr "Trasferimento di manodopera"
 
@@ -17747,6 +17805,9 @@ msgstr "Tempo macchina"
 msgid "Machine Time"
 msgstr "Tempo Macchina"
 
+msgid "Machine time per unit"
+msgstr ""
+
 msgid "Machine unit"
 msgstr "Unità macchina"
 
@@ -18280,6 +18341,9 @@ msgstr "Matrice"
 msgid "Maturity Analysis"
 msgstr "Analisi di scadenza"
 
+msgid "Max"
+msgstr ""
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "Max {0} per unità"
@@ -18317,6 +18381,9 @@ msgstr "Quota massima di prezzo (PBP)"
 msgid "MCP Command"
 msgstr "Comando MCP"
 
+msgid "Mean"
+msgstr ""
+
 msgid "Mean Time Between Failures"
 msgstr "Tempo Medio Tra i Guasti"
 
@@ -18328,6 +18395,9 @@ msgstr "Campione di riferimento"
 
 msgid "Media Size"
 msgstr "Dimensione supporto"
+
+msgid "Median"
+msgstr ""
 
 msgid "Medium"
 msgstr "Medio"
@@ -18876,6 +18946,17 @@ msgstr "La mia vista salvata"
 
 msgid "My Time"
 msgstr "Il mio tempo"
+
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr ""
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr ""
 
 msgid "Name"
 msgstr "Nome"
@@ -19986,6 +20067,9 @@ msgstr "Nessun file caricato"
 msgid "No findings"
 msgstr "Nessun riscontro"
 
+msgid "No finished operations with clocked time in this range"
+msgstr ""
+
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "Nessun cespite è stato acquisito prima della data del cambio."
 
@@ -20443,6 +20527,9 @@ msgstr "Nessuna riga qui."
 msgid "No rules assigned"
 msgstr "Nessuna regola assegnata"
 
+msgid "No run in this range was worked by one operator alone"
+msgstr ""
+
 msgid "No running job to cancel"
 msgstr "Nessun ordine di produzione in esecuzione da annullare"
 
@@ -20786,6 +20873,9 @@ msgstr "Non ora"
 msgid "Not on the page"
 msgstr "Non presente nella pagina"
 
+msgid "Not posted"
+msgstr ""
+
 msgid "Not Qualified"
 msgstr "Non qualificato"
 
@@ -21016,6 +21106,11 @@ msgstr "Numero di attività aperte"
 
 msgid "Number of operations"
 msgstr "Numero di operazioni"
+
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr ""
 
 msgid "Number weeks by calendar week"
 msgstr "Numera le settimane per settimana di calendario"
@@ -21332,6 +21427,9 @@ msgstr "Solo i dipendenti qualificati possono essere programmati e eseguire ques
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Solo le unità serializzate capitalizzate come cespiti possono essere noleggiate. Per aggiungerne una, apri la scheda Magazzino della componente, trova il numero di serie sotto Unità di stoccaggio e scegli Capitalizza come cespite."
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr ""
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "Solo questi dipendenti possono addebitare il tempo al progetto nella registrazione oraria DCAA."
@@ -21695,6 +21793,9 @@ msgstr "Quantità dell'operazione"
 msgid "Operation supplier process"
 msgstr "Processo fornitore dell'operazione"
 
+msgid "Operation time overview"
+msgstr ""
+
 msgid "Operation timer auto-start disabled"
 msgstr "Avvio automatico timer operazione disabilitato"
 
@@ -21958,6 +22059,9 @@ msgstr "In uscita"
 
 msgid "Outgoing"
 msgstr "In uscita"
+
+msgid "Outliers"
+msgstr ""
 
 msgid "Output"
 msgstr "Output"
@@ -22460,8 +22564,8 @@ msgstr "Pagamento a Fornitore"
 msgid "Payments"
 msgstr "Pagamenti"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Pagamenti e crediti applicati a questa fattura. Gli importi applicati e le differenze di cambio sono espressi nella valuta di base dell'azienda. Fai clic su una riga per aprire il documento di origine."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "I pagamenti e le note di credito applicati ad esso vengono prima disapplicati: ogni pagamento resta registrato, come credito non applicato che puoi applicare altrove o eliminare forzatamente. I ricavi già riconosciuti da esso vengono stornati."
@@ -22529,6 +22633,9 @@ msgstr "Controllo in attesa"
 
 msgid "Pending Inspection"
 msgstr "Controllo In Attesa"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "personale"
@@ -26414,6 +26521,9 @@ msgstr "Conto di arrotondamento"
 msgid "Rounding Account (default)"
 msgstr "Conto di arrotondamento (predefinito)"
 
+msgid "Rounding adjusted"
+msgstr ""
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "Indirizza tutte le fatture di debiti verso fornitori a un indirizzo (ad esempio, la sede centrale) invece di singoli acquirenti."
 
@@ -26534,8 +26644,14 @@ msgstr "Funziona continuamente"
 msgid "Runs during every shift at the location."
 msgstr "Funziona durante ogni turno presso la sede."
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr ""
+
 msgid "Runs only during the shifts you select."
 msgstr "Funziona solo durante i turni che selezioni."
+
+msgid "Runs shared between operators are left out"
+msgstr ""
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "Procede fino a una data di fine. Un'unità ancora in uso dopo continua a essere fatturata."
@@ -26782,6 +26898,9 @@ msgstr "Salva e Sovrascrivi"
 
 msgid "Save and post"
 msgstr "Salva e registra"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "Salva applicazioni"
@@ -27418,11 +27537,17 @@ msgstr "Seleziona un evento…"
 msgid "Select an issue type"
 msgstr "Seleziona un tipo di problema"
 
+msgid "Select an item"
+msgstr ""
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Seleziona un articolo e specifica la quantità da emettere"
 
 msgid "Select an item first"
 msgstr "Seleziona prima un articolo"
+
+msgid "Select an item to compare its operation times"
+msgstr ""
 
 msgid "Select an item to configure"
 msgstr "Seleziona un articolo da configurare"
@@ -28054,6 +28179,9 @@ msgstr "tempo di attrezzaggio"
 
 msgid "Setup Time"
 msgstr "Tempo di attrezzaggio"
+
+msgid "Setup time per run"
+msgstr ""
 
 msgid "Setup unit"
 msgstr "Unità di setup"
@@ -29745,6 +29873,9 @@ msgstr "Numeri di Parte Fornitore"
 
 msgid "Supplier part updated"
 msgstr "Componente fornitore aggiornato"
+
+msgid "Supplier Part: {supplierPartId}"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "Componenti fornitore"
@@ -32073,6 +32204,9 @@ msgstr "Questo reparto non ha centri di lavoro in {locationName}. Scegli un altr
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "Questo reparto non ha centri di lavoro in questa ubicazione. Scegli un altro reparto o un'altra ubicazione."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Questo link di scaricamento non è valido o è stato manomesso."
 
@@ -32255,6 +32389,12 @@ msgstr "Solo questo componente"
 
 msgid "This path only decides what runs next"
 msgstr "Questo percorso decide solo cosa viene eseguito dopo"
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Questo periodo non ha voci di prima nota registrate e può essere eliminato permanentemente. Questa azione non può essere annullata."
@@ -32554,6 +32694,9 @@ msgstr "Le righe Time & Materials e Cost Plus fatturano dal costo del progetto o
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Le righe Time & Materials e Cost Plus vengono visualizzate qui. Le righe Fixed Price vengono fatturate su eventi di fatturazione."
 
+msgid "Time Analysis"
+msgstr ""
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Utilizzo temporale e in denaro della flotta di noleggio per cespite e classe"
 
@@ -32643,6 +32786,9 @@ msgstr "Titolo dell'evento"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Il titolo passa al cliente quando il termine termina."
+
+msgid "to"
+msgstr ""
 
 msgid "To"
 msgstr "A"
@@ -33285,6 +33431,9 @@ msgstr "Tipo:"
 
 msgid "Types"
 msgstr "Tipi"
+
+msgid "Typical"
+msgstr ""
 
 msgid "U.S. Person Attestation"
 msgstr "Attestazione di Persona Statunitense"

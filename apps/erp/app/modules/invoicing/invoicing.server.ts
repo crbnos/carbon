@@ -3157,6 +3157,11 @@ export const getInvoiceSettlements = defineServiceFn({
 /**
  * Get invoice settlements for invoice
  *
+ * @remarks
+ * Lists posted payments and memos applied to the invoice, and the
+ * applications of Draft payments with `pending: true`. A pending row pays
+ * nothing until its payment posts, so leave it out of what is paid.
+ *
  * @mcp read
  */
 export const getInvoiceSettlementsForInvoice = defineServiceFn({
@@ -3389,7 +3394,7 @@ export const deletePayment = defineServiceFn({
     return unwrap(
       ctx,
       await service.deletePayment(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         input.id as never,
         ctx.company.id
       )
@@ -4414,7 +4419,8 @@ export const changeSalesInvoiceLineAccount = defineServiceFn({
  * @remarks
  * Posts one journal, dated on the invoice's posting date in its accounting
  * period, that moves the line's posted cost from the account it is on to
- * `accountId` (an active Expense account that is not a group), with the
+ * `accountId` (an active Asset, Liability, Equity or Expense account that
+ * is not a group), with the
  * line's dimensions, and records the new account on the line. Only a G/L
  * Account line can change, and not one charged to a project. Refused while
  * the period is Locked or Closed (the refusal names it), for an invoice dated
@@ -4422,7 +4428,8 @@ export const changeSalesInvoiceLineAccount = defineServiceFn({
  * invoice reverses the change with the posting. Needs invoicing and
  * accounting update.
  *
- * @param accountId - The Expense account the line's cost moves to.
+ * @param accountId - The Asset, Liability, Equity or Expense account the
+ *   line's cost moves to.
  *
  * @mcp
  */
@@ -4436,6 +4443,38 @@ export const changePurchaseInvoiceLineAccount = defineServiceFn({
   async run(ctx, input) {
     return run(ctx, "change-invoice-line-account", () =>
       service.changeInvoiceLineAccount(ctx, { side: "purchase", ...input })
+    );
+  }
+});
+
+/**
+ * Adjust a Draft purchase invoice's total for rounding.
+ *
+ * @remarks
+ * Brings the invoice total to `targetTotal`, the amount the supplier actually
+ * charged (for example a card charge a cent off the computed total), with a
+ * single G/L Account line described "Rounding" on the company's default
+ * Rounding Account; other lines on that account are left alone. The other
+ * lines, inventory lines included, keep their prices, so receipts and
+ * purchase orders are untouched. Calling again with another total replaces
+ * the adjustment; a total the other lines already match removes it. Refused
+ * for an invoice that is not Draft, when no Rounding Account is set, and when
+ * the difference is more than 100 minor units of the invoice's currency
+ * (1.00 USD). Returns the rounding line's amount in the invoice's currency.
+ *
+ * @param targetTotal - The invoice total to reach, in the invoice's currency.
+ *
+ * @mcp
+ */
+export const adjustPurchaseInvoiceRounding = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    targetTotal: z.number().finite()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return run(ctx, "adjust-purchase-invoice-rounding", () =>
+      service.adjustPurchaseInvoiceRounding(ctx, input)
     );
   }
 });

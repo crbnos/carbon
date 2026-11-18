@@ -6,6 +6,7 @@ import { getIntegrationIdsByRole } from "@carbon/ee";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuChartBarBig,
+  LuChartCandlestick,
   LuChartLine,
   LuCirclePlay,
   LuLayers,
@@ -53,6 +54,11 @@ export default function useProductionSubmodules() {
           to: path.to.operationBatches,
           icon: <LuLayers />,
           table: "jobOperationBatch"
+        },
+        {
+          name: t`Time Analysis`,
+          to: path.to.timeAnalysis,
+          icon: <LuChartCandlestick />
         },
         ...(hasOeeProvider
           ? [

@@ -240,6 +240,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{open} open"
+msgstr ""
+
 msgid "{quantity} in this operation"
 msgstr ""
 
@@ -988,6 +991,9 @@ msgstr "घनत्व"
 msgid "Depot"
 msgstr "डिपो"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "समस्या का वर्णन करें..."
 
@@ -1216,6 +1222,9 @@ msgstr "storageUnits को प्राप्त करने में वि�
 msgid "Failed to get options"
 msgstr "विकल्प प्राप्त करने में विफल"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "छवि को संसाधित करने में विफल"
 
@@ -1388,6 +1397,9 @@ msgstr "इस ब्राउज़र में Carbon कैसा दिख�
 
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "कितने?"
@@ -1802,6 +1814,9 @@ msgstr "मेल खाता है"
 msgid "Material requested"
 msgstr "सामग्री का अनुरोध किया गया"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "सामग्री"
 
@@ -2018,6 +2033,9 @@ msgstr "कोई खुला निरीक्षण नहीं"
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "इस स्थान पर कोई खुला सेवा जॉब नहीं"
 
@@ -2149,6 +2167,9 @@ msgstr "सामान्य"
 
 msgid "Not in this operation"
 msgstr "इस ऑपरेशन में नहीं"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "निर्धारित नहीं"
@@ -2972,6 +2993,9 @@ msgstr "ऑपरेटर खोजें"
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "परियोजनाओं और कार्यों को खोजें"
 
@@ -3001,6 +3025,9 @@ msgstr "पूर्ण मात्रा का चयन करें"
 
 msgid "Select a customer"
 msgstr "एक ग्राहक चुनें"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "उसके स्टेशन देखने के लिए एक स्थान चुनें"
@@ -3219,6 +3246,9 @@ msgstr "नरम समय-सीमा"
 msgid "Solid"
 msgstr "ठोस"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "स्रोत"
 
@@ -3420,6 +3450,9 @@ msgstr "जॉब्स विभिन्न आइटम बनाते ह�
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "लॉट को उत्तीर्ण के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूर्ण किया जाएगा।"
 
@@ -3477,6 +3510,9 @@ msgstr "इस निरीक्षण योजना में कोई क�
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "यह पास / फ़ेल जाँच है। P या F दबाएँ।"
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "यह जॉब उस पार्ट का उपयोग नहीं करता"

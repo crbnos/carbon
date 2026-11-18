@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
+import { round } from "@carbon/database/precision";
+import { moneyFormatOptions } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -10,6 +13,16 @@ import { zfd } from "zod-form-data";
 // which also re-exports shared.service/shared.server — those transitively pull in
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
 import { incoterms, itemType, methodType } from "../shared/shared.models";
+
+/** The classes a purchase or purchase order G/L Account line may be coded to.
+ *  Revenue is left out: a supplier's credit belongs on a credit memo, not a
+ *  debit to sales. */
+export const purchaseLineAccountClasses = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Expense"
+] as const;
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -557,6 +570,10 @@ export function isPaymentLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+/** The account type a supplier payment may be paid from besides an Asset. */
+export const CARD_ACCOUNT_TYPE =
+  "Credit Card" satisfies Database["public"]["Enums"]["accountType"];
+
 export const paymentValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -861,3 +878,35 @@ export function paymentJournalDifference<
 export const invoiceLineAccountValidator = z.object({
   accountId: z.string().min(1, { message: "Account is required" })
 });
+
+export const purchaseInvoiceRoundingValidator = z.object({
+  targetTotal: zfd.numeric(z.number({ error: "Amount to match is required" }))
+});
+
+/** A rounding adjustment never exceeds 100 minor units (1.00 USD, 100 JPY). */
+export const MAX_ROUNDING_MINOR_UNITS = 100;
+
+/** The rounding line amount that brings an invoice whose other lines total
+ *  `totalWithoutRounding` to `targetTotal`, or a refusal when the gap is too
+ *  large to be rounding. Amounts are in the invoice's currency. */
+export function purchaseInvoiceRoundingAmount(
+  totalWithoutRounding: number,
+  targetTotal: number,
+  decimals: number
+): { amount: number } | { refusal: string } {
+  // Against the total as the invoice shows it (rounded half away from zero,
+  // like the view), or a half-unit remainder tips the new total one unit over.
+  const amount = round(
+    targetTotal - round(totalWithoutRounding, decimals),
+    decimals
+  );
+  const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
+  if (Math.abs(amount) > max) {
+    const format = new Intl.NumberFormat("en-US", moneyFormatOptions(decimals))
+      .format;
+    return {
+      refusal: `The difference of ${format(amount)} is more than ${format(max)}, too large for a rounding adjustment. Correct the invoice lines instead.`
+    };
+  }
+  return { amount };
+}
