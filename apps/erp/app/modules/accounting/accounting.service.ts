@@ -19155,7 +19155,7 @@ export async function buildLegacyPurchaseInvoiceJournals(
     (ids) =>
       trx
         .selectFrom("account")
-        .select(["id", "name", "isGroup"])
+        .select(["id", "name", "class", "isGroup"])
         .where("companyGroupId", "=", companyGroupId)
         .where("id", "in", ids)
         .execute()

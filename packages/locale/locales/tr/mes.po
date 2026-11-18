@@ -240,6 +240,9 @@ msgstr ""
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr ""
 
+msgid "{open} open"
+msgstr ""
+
 msgid "{quantity} in this operation"
 msgstr ""
 
@@ -988,6 +991,9 @@ msgstr "Yoğunluk"
 msgid "Depot"
 msgstr "Depo"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "Sorunu açıklayın..."
 
@@ -1216,6 +1222,9 @@ msgstr "Depolama birimlerini almak başarısız oldu"
 msgid "Failed to get options"
 msgstr "Seçenekler alınamadı"
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "Görüntüyü işlemede başarısız oldu"
 
@@ -1388,6 +1397,9 @@ msgstr "Bu tarayıcıda Carbon'un görünüşü."
 
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "Kaç tane?"
@@ -1802,6 +1814,9 @@ msgstr "eşleşir"
 msgid "Material requested"
 msgstr "Malzeme talep edildi"
 
+msgid "Material requests"
+msgstr ""
+
 msgid "Materials"
 msgstr "Malzemeler"
 
@@ -2018,6 +2033,9 @@ msgstr "Açık muayene yok"
 msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "Bu lokasyonda açık hizmet işi yok"
 
@@ -2149,6 +2167,9 @@ msgstr "Normal"
 
 msgid "Not in this operation"
 msgstr "Bu operasyonda yok"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "Planlanmamış"
@@ -2972,6 +2993,9 @@ msgstr "Operatörlerde Ara"
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "Projeleri ve Görevleri Arayın"
 
@@ -3001,6 +3025,9 @@ msgstr "Bir tamamlama miktarı seçin"
 
 msgid "Select a customer"
 msgstr "Müşteri seçin"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "İstasyonları görmek için bir lokasyon seçin"
@@ -3219,6 +3246,9 @@ msgstr "Esnek son tarih"
 msgid "Solid"
 msgstr "Düz"
 
+msgid "Something else"
+msgstr ""
+
 msgid "Source"
 msgstr "Kaynak"
 
@@ -3420,6 +3450,9 @@ msgstr "İş emirleri farklı stok kartları üretir — her iş emrinin parçal
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Lot Geçti olarak işaretlenecek ve {remaining} kalan birim bu operasyonda tamamlanacak."
 
@@ -3477,6 +3510,9 @@ msgstr "Bu kontrol planında iş talimatı yok."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "Bu iş emri o parçayı kullanmıyor"

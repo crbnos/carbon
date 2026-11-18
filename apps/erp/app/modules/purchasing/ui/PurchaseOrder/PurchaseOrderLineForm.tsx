@@ -78,6 +78,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { purchaseLineAccountClasses } from "~/modules/invoicing/invoicing.models";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
@@ -978,7 +979,7 @@ const PurchaseOrderLineForm = ({
                                 name="accountId"
                                 label={t`GL Account`}
                                 termId="purchase-indirect-gl-account"
-                                classes={["Expense"]}
+                                classes={purchaseLineAccountClasses}
                                 isOptional={false}
                               />
                               <CostCenter

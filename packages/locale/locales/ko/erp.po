@@ -32151,6 +32151,9 @@ msgstr "이 부서는 {locationName}에 작업장이 없습니다. 다른 부서
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "이 부서는 이 사업장에 작업장이 없습니다. 다른 부서 또는 사업장을 선택하세요."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
 

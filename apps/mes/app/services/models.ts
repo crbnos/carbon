@@ -443,11 +443,17 @@ export const scrapPartsValidator = z.object({
   idempotencyKey: z.string().min(1)
 });
 
-export const materialRequestValidator = z.object({
-  jobOperationId: z.string().min(1),
-  itemId: zfd.text(z.string().optional()),
-  note: zfd.text(z.string().optional())
-});
+export const materialRequestValidator = z
+  .object({
+    jobOperationId: z.string().min(1),
+    itemId: zfd.text(z.string().optional()),
+    note: zfd.text(z.string().trim().optional())
+  })
+  // A UI hint: createMaterialRequest enforces it.
+  .refine((request) => request.itemId || request.note, {
+    path: ["note"],
+    message: "Describe what you need"
+  });
 
 export const maintenanceDispatchIssueValidator = z.object({
   maintenanceDispatchItemId: z.string().min(1, {
