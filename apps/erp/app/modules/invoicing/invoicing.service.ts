@@ -318,6 +318,7 @@ import {
   isPurchaseInvoiceLocked,
   isSalesInvoiceLocked,
   paymentJournalDifference,
+  purchaseLineAccountClasses,
   type stripeCustomerActions
 } from "./invoicing.models";
 import {
@@ -15197,7 +15198,10 @@ export type PurchaseInvoicePostingLine = LineBase &
     | {
         kind: "glAccount";
         purchaseOrderLineId: string | null;
-        account: { id: string; name: string };
+        /** The debit is signed by its class, so a balance sheet account (an
+         *  Equity draw, a Liability paid down) balances. An account with no
+         *  class posts as an expense, as every G/L line once did. */
+        account: { id: string; name: string; class: AccountClass | null };
         costCenterId: string | null;
         projectId: string | null;
         projectElementId?: string | null;
@@ -16048,7 +16052,14 @@ export function buildPurchaseInvoicePostingLines(
             description: glProjectCharge
               ? "Project Account"
               : line.account.name,
-            amount: round(debit("asset", total)),
+            amount: round(
+              debit(
+                glProjectCharge || !line.account.class
+                  ? "expense"
+                  : accountTypeFromClass(line.account.class),
+                total
+              )
+            ),
             ...keys
           },
           meta
@@ -17522,7 +17533,7 @@ export async function postPurchaseInvoice(
             db,
             "account",
             { companyGroupId: companyGroupId!, id: glAccountIds },
-            { columns: ["id", "name", "isGroup"] }
+            { columns: ["id", "name", "class", "isGroup"] }
           )
         : [];
 
@@ -20902,12 +20913,12 @@ const LINE_ACCOUNT_SIDES = {
   sales: {
     label: "Sales Invoice",
     sourceType: "Sales Invoice",
-    accountClass: "Revenue"
+    accountClasses: ["Revenue"]
   },
   purchase: {
     label: "Purchase Invoice",
     sourceType: "Purchase Invoice",
-    accountClass: "Expense"
+    accountClasses: purchaseLineAccountClasses
   }
 } as const;
 
@@ -21303,7 +21314,7 @@ export async function changeInvoiceLineAccount(
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
-  const { label, sourceType, accountClass } = LINE_ACCOUNT_SIDES[side];
+  const { label, sourceType, accountClasses } = LINE_ACCOUNT_SIDES[side];
 
   const postingStatus = await journalPostingStatus(db, companyId);
 
@@ -21323,9 +21334,10 @@ export async function changeInvoiceLineAccount(
       .where("id", "=", accountId)
       .where("companyGroupId", "=", ctx.company.groupId)
       .executeTakeFirst();
-    if (!to || !to.active || to.isGroup || to.class !== accountClass) {
+    const toClass = accountClasses.find((c) => c === to?.class);
+    if (!to || !to.active || to.isGroup || !toClass) {
       throw new InvalidInputError(
-        `Choose an active ${accountClass} account that is not a group.`
+        `Choose an active ${accountClasses.join(", ")} account that is not a group.`
       );
     }
     if (position.leg.accountId === to.id) {
@@ -21367,7 +21379,7 @@ export async function changeInvoiceLineAccount(
 
     const lines = buildLineAccountChangeLines(
       position,
-      { accountId: to.id, accountClass },
+      { accountId: to.id, accountClass: toClass },
       companyId
     );
     const journalEntryId = await getNextSequence(

@@ -603,7 +603,7 @@ const SalesInvoiceItemLineForm = ({
                         invoiceId,
                         initialValues.id!
                       )}
-                      accountClass="Revenue"
+                      accountClasses={["Revenue"]}
                     />
                   </CardAction>
                 )}
