@@ -3595,8 +3595,14 @@ msgstr "Addiert Kosten hinzu, mit denen die Anlage nie belastet wurde, wie das P
 msgid "Adds to an existing batch"
 msgstr "Wird einem bestehenden Los hinzugefügt"
 
+msgid "Adjust"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Kosten anpassen"
+
+msgid "Adjust for Rounding"
+msgstr ""
 
 msgid "Adjustment"
 msgstr "Korrektur"
@@ -3904,6 +3910,9 @@ msgstr "Betrag, den der Auftraggeber genehmigt hat"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "Anzuwendender Betrag für {0}"
+
+msgid "Amount to match"
+msgstr ""
 
 msgid "Amount Type"
 msgstr "Betragtyp"
@@ -9418,6 +9427,10 @@ msgstr "Aktuelle Prognose"
 msgid "Current quantity"
 msgstr "Aktuelle Menge"
 
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr ""
+
 msgid "Custom"
 msgstr "Benutzerdefiniert"
 
@@ -12530,6 +12543,10 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifizierungs-App ein"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifikator-App ein, um fortzufahren."
+
+#. placeholder {0}: formatter.format(100 / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Geben Sie die Onshape URL, Client-ID und Client Secret Ihrer privaten OAuth-Anwendung ein, dann speichern Sie."
@@ -26476,6 +26493,9 @@ msgstr "Rundungskonto"
 
 msgid "Rounding Account (default)"
 msgstr "Rundungskonto (Standard)"
+
+msgid "Rounding adjusted"
+msgstr ""
 
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "Leiten Sie alle Kreditorenrechnungen an eine Adresse (z. B. Unternehmenszentrale) anstelle einzelner Einkäufer weiter."

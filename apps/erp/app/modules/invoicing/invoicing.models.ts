@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toBaseAmount } from "@carbon/database/accounting-currency";
+import { round } from "@carbon/database/precision";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -861,3 +862,28 @@ export function paymentJournalDifference<
 export const invoiceLineAccountValidator = z.object({
   accountId: z.string().min(1, { message: "Account is required" })
 });
+
+export const purchaseInvoiceRoundingValidator = z.object({
+  targetTotal: zfd.numeric(z.number({ error: "Amount to match is required" }))
+});
+
+/** A rounding adjustment never exceeds 100 minor units (1.00 USD, 100 JPY). */
+export const MAX_ROUNDING_MINOR_UNITS = 100;
+
+/** The rounding line amount that brings an invoice whose other lines total
+ *  `totalWithoutRounding` to `targetTotal`, or a refusal when the gap is too
+ *  large to be rounding. Amounts are in the invoice's currency. */
+export function purchaseInvoiceRoundingAmount(
+  totalWithoutRounding: number,
+  targetTotal: number,
+  decimals: number
+): { amount: number } | { refusal: string } {
+  const amount = round(targetTotal - totalWithoutRounding, decimals);
+  const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
+  if (Math.abs(amount) > max) {
+    return {
+      refusal: `The difference of ${amount.toFixed(decimals)} is more than ${max.toFixed(decimals)}, too large for a rounding adjustment. Correct the invoice lines instead.`
+    };
+  }
+  return { amount };
+}
