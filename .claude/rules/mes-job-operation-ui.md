@@ -47,6 +47,13 @@ redirects kinds it does not serve (no loops).
   `path.to.endOperation(id)` (`/x/end/:operationId`); rework targets at
   `path.to.reworkTargets(id)`. Start/end routes write `productionEvent` /
   `productionQuantity` (end calls `finishJobOperation`).
+- **Rework** (`ReworkModal` → `x+/trigger-rework.tsx`): the target list is the
+  earlier operations plus the part's corrections (`rework-targets` returns
+  both). A correction is sent as `correction:<jobCorrectionId>`
+  (`CORRECTION_TARGET_PREFIX`) in `targetJobOperationId`; the route then calls
+  the `trigger-correction` posting instead of `trigger-rework`, with the
+  selected serials. This is how an operator sends a unit to a generic rework
+  station: a correction whose one operation sits at the rework work center.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `x+/scrap.tsx` makes
   ONE `issue` `jobOperationScrap` invoke (replacing the old
   `insertScrapQuantity` + backflush pair) — it records the Scrap

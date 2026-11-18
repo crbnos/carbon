@@ -1340,6 +1340,9 @@ msgstr "Przyrząd pomiarowy dla cechy {characteristicLabel}: {currentGauge}"
 msgid "General"
 msgstr "Ogólne"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Wróć do wcześniejszej operacji, aby powtórzyć wszystkie operacje od tego miejsca, albo wyślij jednostkę do korekty, na przykład na stanowisko poprawek."
+
 msgid "Go back to operation"
 msgstr "Wróć do operacji"
 

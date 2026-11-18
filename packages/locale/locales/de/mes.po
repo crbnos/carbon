@@ -1340,6 +1340,9 @@ msgstr "Prüfmittel für Merkmal {characteristicLabel}: {currentGauge}"
 msgid "General"
 msgstr "Allgemein"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Gehen Sie zu einem früheren Arbeitsgang zurück, um alle Arbeitsgänge ab dort zu wiederholen, oder schicken Sie die Einheit durch eine Korrektur, etwa an einen Nacharbeitsplatz."
+
 msgid "Go back to operation"
 msgstr "Zurück zur Operation"
 

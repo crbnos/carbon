@@ -1340,6 +1340,9 @@ msgstr "Instrument de mesure pour la caractéristique {characteristicLabel} : {c
 msgid "General"
 msgstr "Général"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Revenez à une opération antérieure pour refaire toutes les opérations à partir de là, ou envoyez l'unité dans une correction, comme un poste de retouche."
+
 msgid "Go back to operation"
 msgstr "Revenir à l'opération"
 

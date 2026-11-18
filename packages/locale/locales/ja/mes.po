@@ -1340,6 +1340,9 @@ msgstr "特性 {characteristicLabel} の測定器: {currentGauge}"
 msgid "General"
 msgstr "一般"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "前の工程に戻ってそこからすべての工程をやり直すか、手直しステーションなどの修正にユニットを送ります。"
+
 msgid "Go back to operation"
 msgstr "操作に戻る"
 

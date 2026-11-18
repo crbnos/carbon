@@ -30,7 +30,10 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type RefObject, useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
-import { triggerReworkValidator } from "~/services/models";
+import {
+  CORRECTION_TARGET_PREFIX,
+  triggerReworkValidator
+} from "~/services/models";
 import type { OperationWithDetails } from "~/services/types";
 import { path } from "~/utils/path";
 
@@ -86,6 +89,7 @@ export function ReworkModal({
   });
   const targetsFetcher = useFetcher<{
     operations: UpstreamOperation[];
+    corrections?: { id: string; name: string; returnTo: string }[];
   }>();
 
   const maxQuantity = operation.operationQuantity ?? 0;
@@ -103,6 +107,7 @@ export function ReworkModal({
   const [selectedBatchId, setSelectedBatchId] = useState<string>("");
 
   const targets = targetsFetcher.data?.operations ?? [];
+  const corrections = targetsFetcher.data?.corrections ?? [];
 
   useEffect(() => {
     if (isOpen) {
@@ -207,10 +212,18 @@ export function ReworkModal({
               <Trans>Create Rework</Trans>
             </ModalTitle>
             <ModalDescription>
-              <Trans>
-                Select the operation to go back to. All operations from that
-                point to the current operation will be redone.
-              </Trans>
+              {corrections.length > 0 ? (
+                <Trans>
+                  Go back to an earlier operation to redo every operation from
+                  there, or send the unit through a correction, such as a rework
+                  station.
+                </Trans>
+              ) : (
+                <Trans>
+                  Select the operation to go back to. All operations from that
+                  point to the current operation will be redone.
+                </Trans>
+              )}
             </ModalDescription>
           </ModalHeader>
           <ModalBody>
@@ -222,21 +235,33 @@ export function ReworkModal({
             <VStack spacing={2}>
               <Select
                 name="targetJobOperationId"
-                label={t`Go back to operation`}
+                label={
+                  corrections.length > 0
+                    ? t`Go back to operation, or run a correction`
+                    : t`Go back to operation`
+                }
                 size="lg"
-                options={targets.map((op) => ({
-                  value: op.id,
-                  label: op.jobMakeMethod?.item?.name ? (
-                    <span>
-                      {op.description || op.processId}
-                      <span className="text-muted-foreground text-xs ml-2">
-                        {op.jobMakeMethod.item.name}
+                options={[
+                  ...targets.map((op) => ({
+                    value: op.id,
+                    label: op.jobMakeMethod?.item?.name ? (
+                      <span>
+                        {op.description || op.processId}
+                        <span className="text-muted-foreground text-xs ml-2">
+                          {op.jobMakeMethod.item.name}
+                        </span>
                       </span>
-                    </span>
-                  ) : (
-                    op.description || op.processId
-                  )
-                }))}
+                    ) : (
+                      op.description || op.processId
+                    )
+                  })),
+                  // A correction runs its own operations for these units
+                  // only, then re-inspects or continues as it is set up.
+                  ...corrections.map((correction) => ({
+                    value: `${CORRECTION_TARGET_PREFIX}${correction.id}`,
+                    label: t`Correction: ${correction.name}`
+                  }))
+                ]}
               />
 
               {parentIsSerial ? (

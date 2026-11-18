@@ -1340,6 +1340,9 @@ msgstr "विशेषता {characteristicLabel} के लिए गेज: 
 msgid "General"
 msgstr "सामान्य"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "किसी पिछले ऑपरेशन पर वापस जाएँ ताकि वहाँ से हर ऑपरेशन फिर से किया जाए, या यूनिट को किसी सुधार में भेजें, जैसे रीवर्क स्टेशन।"
+
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
 

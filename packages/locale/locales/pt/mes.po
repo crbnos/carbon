@@ -1340,6 +1340,9 @@ msgstr "Instrumento de medição para característica {characteristicLabel}: {cu
 msgid "General"
 msgstr "Geral"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Volte a uma operação anterior para refazer todas as operações a partir dali, ou envie a unidade para uma correção, como uma estação de retrabalho."
+
 msgid "Go back to operation"
 msgstr "Voltar para operação"
 
