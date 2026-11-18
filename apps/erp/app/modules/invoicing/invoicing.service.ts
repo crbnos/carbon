@@ -21488,7 +21488,7 @@ export async function adjustPurchaseInvoiceRounding(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  return db.transaction().execute(async (trx) => {
+  return withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("purchaseInvoice")
       .select(["id", "status", "currencyCode", "exchangeRate"])

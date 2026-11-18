@@ -284,6 +284,13 @@ describe("purchaseInvoiceRoundingAmount", () => {
     ).toEqual({ amount: 0 });
   });
 
+  it("measures from the total as shown, so a half-unit remainder adds nothing", () => {
+    // 10.125 already shows as 10.13; a 0.01 line would make it 10.14.
+    expect(purchaseInvoiceRoundingAmount(10.125, 10.13, 2)).toEqual({
+      amount: 0
+    });
+  });
+
   it("allows exactly 100 minor units and refuses more", () => {
     expect(purchaseInvoiceRoundingAmount(10, 11, 2)).toEqual({ amount: 1 });
     expect(purchaseInvoiceRoundingAmount(10, 11.01, 2)).toHaveProperty(

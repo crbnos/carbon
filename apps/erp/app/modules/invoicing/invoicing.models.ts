@@ -889,7 +889,12 @@ export function purchaseInvoiceRoundingAmount(
   targetTotal: number,
   decimals: number
 ): { amount: number } | { refusal: string } {
-  const amount = round(targetTotal - totalWithoutRounding, decimals);
+  // Against the total as the invoice shows it (rounded half away from zero,
+  // like the view), or a half-unit remainder tips the new total one unit over.
+  const amount = round(
+    targetTotal - round(totalWithoutRounding, decimals),
+    decimals
+  );
   const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
   if (Math.abs(amount) > max) {
     const format = new Intl.NumberFormat("en-US", moneyFormatOptions(decimals))
