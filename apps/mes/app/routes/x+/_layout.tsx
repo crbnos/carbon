@@ -96,6 +96,7 @@ import { userMiddleware } from "~/middleware/user";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
+import { getOpenMaterialRequestCount } from "~/services/material-request.service";
 import {
   getActiveJobCount,
   getLocationsByCompany
@@ -186,7 +187,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     openClockEntry,
     locationEmployees,
     printerRoutes,
-    openServiceJobCount
+    openServiceJobCount,
+    openMaterialRequestCount
   ] = await Promise.all([
     getCompanies(client, userId),
     getUser(client, userId),
@@ -214,7 +216,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           .eq("companyId", companyId)
       : Promise.resolve({ data: [] as { id: string }[] }),
     getPrinterRoutes(serviceRole, companyId),
-    getOpenServiceJobsCount(client, companyId, locationId)
+    getOpenServiceJobsCount(client, companyId, locationId),
+    locationId
+      ? getOpenMaterialRequestCount(client, { companyId, locationId })
+      : Promise.resolve({ count: 0 })
   ]);
 
   // A failed read is the database or the API being briefly away — a deploy
@@ -313,6 +318,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     activeEvents: activeEvents.data ?? 0,
     activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
     openServiceJobCount: openServiceJobCount.count ?? 0,
+    openMaterialRequestCount: openMaterialRequestCount.count ?? 0,
     company,
     companies: companies.data ?? [],
     consoleEnabled,
@@ -360,6 +366,7 @@ export default function AuthenticatedRoute() {
     activeEvents,
     activeMaintenanceCount,
     openServiceJobCount,
+    openMaterialRequestCount,
     company,
     companies,
     consoleEnabled,
@@ -624,6 +631,7 @@ export default function AuthenticatedRoute() {
                       activeEvents={activeEvents}
                       activeMaintenanceCount={activeMaintenanceCount}
                       openServiceJobCount={openServiceJobCount}
+                      openMaterialRequestCount={openMaterialRequestCount}
                       company={company}
                       companies={companies}
                       consoleEnabled={

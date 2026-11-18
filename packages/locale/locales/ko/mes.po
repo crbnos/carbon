@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,11 +206,17 @@ msgstr "{hours} 시간"
 msgid "{issued} of {required}"
 msgstr "{required} 중 {issued}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, 기한 초과"
+
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr "스캔한 {lost}개는 불출되지 않았습니다. 다시 스캔하세요."
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
@@ -216,6 +228,9 @@ msgstr "{name}, {0}, {percent}% 완료"
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
 
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} 중 {numerator}"
 
@@ -223,6 +238,9 @@ msgid "{onHand} of {need}"
 msgstr ""
 
 msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
+
+msgid "{open} open"
 msgstr ""
 
 msgid "{quantity} in this operation"
@@ -234,6 +252,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel} 타이머 시작됨"
@@ -595,6 +616,13 @@ msgstr "보드 보기"
 
 msgid "Bold"
 msgstr "굵게"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "{quantity} 가져오기"
@@ -963,6 +991,9 @@ msgstr "밀도"
 msgid "Depot"
 msgstr "센터"
 
+msgid "Describe it: what, how many, where"
+msgstr ""
+
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
 
@@ -1191,6 +1222,9 @@ msgstr "저장 단위를 불러오지 못했습니다"
 msgid "Failed to get options"
 msgstr "옵션을 불러올 수 없습니다."
 
+msgid "Failed to load material requests"
+msgstr ""
+
 msgid "Failed to process image"
 msgstr "이미지 처리 실패"
 
@@ -1325,6 +1359,12 @@ msgstr "{0}단계로 이동: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "{0}단계로 이동: {1} (완료)"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1357,6 +1397,9 @@ msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr ""
 
 msgid "How many?"
 msgstr "몇 개?"
@@ -1485,6 +1528,18 @@ msgstr "{issuedQuantity}를 {lotLabel}에서 발급함"
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{issuedQuantity}를 {lotLabel}에서 발급함 — {remainingQuantity}가 남음"
 
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr "{name} {quantity} 불출됨 ({issued} / {required})"
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr "{batches}에서 {name} {quantity} 불출됨 ({issued} / {required})"
+
+msgid "Issuing"
+msgstr "불출 중"
+
+msgid "Issuing. {waiting} more scanned."
+msgstr "불출 중. {waiting}개 더 스캔됨."
+
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "«{table}» 기록에서 여전히 사용 중입니다. 먼저 제거하세요."
 
@@ -1543,6 +1598,9 @@ msgid "kits to finish"
 msgstr ""
 
 msgid "Kitter"
+msgstr ""
+
+msgid "Kitting and preparation"
 msgstr ""
 
 msgid "Labor"
@@ -1689,6 +1747,9 @@ msgstr "로트 추적됨"
 msgid "Low"
 msgstr "낮음"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "기계"
 
@@ -1697,6 +1758,9 @@ msgstr "기계가 지금 유지보수 중인가요?"
 
 msgid "Machine, timer running"
 msgstr "기계, 타이머 실행 중"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "메인"
@@ -1749,6 +1813,9 @@ msgstr "일치"
 
 msgid "Material requested"
 msgstr "자재 요청됨"
+
+msgid "Material requests"
+msgstr ""
 
 msgid "Materials"
 msgstr "자재"
@@ -1826,6 +1893,9 @@ msgstr "이름"
 
 msgid "Navigation"
 msgstr "탐색"
+
+msgid "Need {quantity}"
+msgstr ""
 
 msgid "Need material"
 msgstr "자재 필요"
@@ -1936,9 +2006,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "아직 휴가가 설정되지 않았습니다. 관리자에게 ERP에서 설정하도록 요청하세요."
 
-msgid "No lineside storage"
-msgstr "라인사이드 보관 위치 없음"
-
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
@@ -1966,11 +2033,17 @@ msgstr "미결 검사가 없습니다"
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
 
+msgid "No open material requests"
+msgstr ""
+
 msgid "No open service jobs at this location"
 msgstr "이 사업장에서 미결 서비스 작업이 없습니다"
 
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "작업자 없음"
@@ -2047,6 +2120,9 @@ msgstr "스테이션 없음"
 msgid "No stations at this location"
 msgstr "이 사업장에는 스테이션이 없습니다"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "재고 없음"
 
@@ -2077,6 +2153,12 @@ msgstr "MRP 제외"
 msgid "None"
 msgstr "없음"
 
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
+
 msgid "None on the shelf"
 msgstr ""
 
@@ -2085,6 +2167,9 @@ msgstr "보통 검사"
 
 msgid "Not in this operation"
 msgstr "이 공정에 없음"
+
+msgid "Not on the list: describe it below"
+msgstr ""
 
 msgid "Not scheduled"
 msgstr "예약되지 않음"
@@ -2245,6 +2330,9 @@ msgstr "또는 이 비밀을 수동으로 입력하세요:"
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2529,6 +2617,9 @@ msgstr "수량 {0}"
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "수량:"
 
@@ -2552,6 +2643,9 @@ msgstr ""
 
 msgid "Re"
 msgstr "Re"
+
+msgid "Ready"
+msgstr ""
 
 msgid "Reason"
 msgstr "사유"
@@ -2728,9 +2822,6 @@ msgstr "리치 텍스트"
 msgid "Running"
 msgstr "실행 중"
 
-msgid "Running low"
-msgstr "재고 부족 임박"
-
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
 msgstr "<0>{0}</0>에서 실행 중"
@@ -2902,6 +2993,9 @@ msgstr "작업자 검색"
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search parts, consumables and tools"
+msgstr ""
+
 msgid "Search projects and tasks"
 msgstr "프로젝트 및 작업 검색"
 
@@ -2910,6 +3004,9 @@ msgstr ""
 
 msgid "Search recent operations"
 msgstr "최근 공정 검색"
+
+msgid "Search stations"
+msgstr ""
 
 msgid "Search..."
 msgstr "검색..."
@@ -2928,6 +3025,9 @@ msgstr "완료 수량을 선택하세요"
 
 msgid "Select a customer"
 msgstr "고객 선택"
+
+msgid "Select a location to see its material requests"
+msgstr ""
 
 msgid "Select a location to see its stations"
 msgstr "사업장을 선택하면 스테이션을 볼 수 있습니다"
@@ -3056,6 +3156,9 @@ msgstr "부족"
 msgid "Short"
 msgstr "짧게"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
@@ -3143,10 +3246,7 @@ msgstr "목표 기한"
 msgid "Solid"
 msgstr "단색"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
+msgid "Something else"
 msgstr ""
 
 msgid "Source"
@@ -3206,7 +3306,7 @@ msgstr "스테이션 사용자"
 msgid "Station: {stationName}"
 msgstr "스테이션: {stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3350,6 +3450,9 @@ msgstr "작업 지시가 서로 다른 품목을 생성합니다 — 각 작업 
 msgid "the kit"
 msgstr ""
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개가 완료됩니다."
 
@@ -3407,6 +3510,9 @@ msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
+
+msgid "This job"
+msgstr ""
 
 msgid "This job does not use that part"
 msgstr "이 작업 지시에서는 해당 부품을 사용하지 않습니다"
@@ -3480,6 +3586,9 @@ msgstr "시간 유형"
 
 msgid "Time Worked"
 msgstr "작업 시간"
+
+msgid "to bring lineside"
+msgstr ""
 
 msgid "To pick"
 msgstr "피킹할"
@@ -3715,6 +3824,9 @@ msgstr "보기 또는 열기"
 msgid "View Traceability"
 msgstr "추적성 보기"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "보증"
 
@@ -3723,9 +3835,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "로그인 링크와 6자리 코드를 이메일로 보냈습니다. 링크를 따르거나 여기에 코드를 입력하세요."
-
-msgid "Wet"
-msgstr "습식"
 
 msgid "What do you need?"
 msgstr "무엇이 필요하신가요?"

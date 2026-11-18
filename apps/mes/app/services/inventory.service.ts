@@ -20,6 +20,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
 import {
+  buildFlow,
   buildLaneBoard,
   buildLineFeedRows,
   buildStationBoard,
@@ -837,7 +838,7 @@ export async function getLineFeed(
     fetchAllByIds(itemIds, (batch) =>
       client
         .from("item")
-        .select("id, readableIdWithRevision, thumbnailPath")
+        .select("id, name, readableIdWithRevision, thumbnailPath")
         .in("id", batch)
         .eq("companyId", companyId)
         .order("id")
@@ -871,7 +872,9 @@ export async function getLineFeed(
   // from, and the stock transfer a transfer line belongs to.
   const itemReadableIds: Record<string, string> = {};
   const itemThumbnailPaths: Record<string, string> = {};
+  const itemNames: Record<string, string> = {};
   for (const item of items.data ?? []) {
+    itemNames[item.id] = item.name;
     if (item.readableIdWithRevision) {
       itemReadableIds[item.id] = item.readableIdWithRevision;
     }
@@ -913,8 +916,10 @@ export async function getLineFeed(
   return {
     data: {
       lanes: board,
+      flow: buildFlow(board, laneRows),
       summary: summarizeLanes(board),
       itemReadableIds,
+      itemNames,
       itemThumbnailPaths,
       storageUnitNames,
       jobReadableIds,

@@ -349,6 +349,8 @@ export const path = {
       pullFromLocations: `${api}/items/pull-from-locations`,
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
+      purchaseInvoiceLineAccount: (invoiceId: string, lineId: string) =>
+        generatePath(`${api}/purchase-invoice/${invoiceId}/${lineId}/account`),
       purchaseOrderFinalize: (id: string) =>
         generatePath(`${api}/purchasing/purchase-order/${id}/finalize`),
       purchasesReportLines: `${api}/accounting/purchase-lines`,
@@ -383,6 +385,8 @@ export const path = {
         ),
       root: api,
       salesCustomerOverride: `${api}/sales/customer-override`,
+      salesInvoiceLineAccount: (invoiceId: string, lineId: string) =>
+        generatePath(`${api}/sales-invoice/${invoiceId}/${lineId}/account`),
       salesInvoicePostFacts: (invoiceId: string) =>
         generatePath(`${api}/sales-invoice/${invoiceId}/post-facts`),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
@@ -2348,11 +2352,15 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${id}/exchange-rate`),
     purchaseInvoiceLine: (invoiceId: string, id: string) =>
       generatePath(`${x}/purchase-invoice/${invoiceId}/${id}/details`),
+    purchaseInvoiceLineAccount: (invoiceId: string, id: string) =>
+      generatePath(`${x}/purchase-invoice/${invoiceId}/${id}/account`),
     purchaseInvoiceLineOrder: (invoiceId: string) =>
       generatePath(`${x}/purchase-invoice/${invoiceId}/line-order`),
     purchaseInvoicePost: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/post`),
     purchaseInvoiceRoot: `${x}/purchase-invoice`,
+    purchaseInvoiceRounding: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/rounding`),
     purchaseInvoiceVoid: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/void`),
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),
@@ -2607,6 +2615,8 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/exchange-rate`),
     salesInvoiceLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-invoice/${id}/${lineId}/details`),
+    salesInvoiceLineAccount: (id: string, lineId: string) =>
+      generatePath(`${x}/sales-invoice/${id}/${lineId}/account`),
     salesInvoiceLineOrder: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/line-order`),
     salesInvoicePost: (id: string) =>
@@ -2888,6 +2898,7 @@ export const path = {
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
     tags: `${x}/settings/tags`,
+    timeAnalysis: `${x}/production/time-analysis`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
     timeSettings: `${x}/settings/time`,

@@ -26,6 +26,12 @@ interface UseKeyboardWedgeOptions {
    * returned promise keeps the scan pending, as `callback` does.
    */
   onUnrecognized?: (input: string) => unknown;
+  /**
+   * Also take a matching scan while another scan is pending. For a handler
+   * where each scan counts (one scan, one piece) and that orders its own
+   * work; every other handler leaves it off, so a repeated scan does nothing.
+   */
+  whilePending?: boolean;
 }
 
 /** A scanner types faster than this per key on average; a person never does. */
@@ -130,7 +136,7 @@ export class ScanReader {
 }
 
 type Handler = Required<
-  Pick<UseKeyboardWedgeOptions, "test" | "inTextFields">
+  Pick<UseKeyboardWedgeOptions, "test" | "inTextFields" | "whilePending">
 > & {
   callback: (input: string) => unknown;
   onUnrecognized?: (input: string) => unknown;
@@ -201,15 +207,11 @@ function finish(event: KeyboardEvent | null) {
   origin = null;
   if (!candidates.length || (!event && !byScanner)) return;
 
-  if (pending) {
-    // A scan is already being handled: this is the second scan of the label.
-    if (isScan && !from?.inField) swallow(event);
-    return;
-  }
-
   const eligible = [...handlers]
     .map((handler) => handler.current)
-    .filter((handler) => !from?.inField || handler.inTextFields);
+    .filter((handler) => !from?.inField || handler.inTextFields)
+    // While a scan is being handled, only a handler that counts every scan.
+    .filter((handler) => !pending || handler.whilePending);
   for (const input of candidates) {
     const handler = eligible.find((h) => h.test(input));
     if (!handler) continue;
@@ -223,6 +225,8 @@ function finish(event: KeyboardEvent | null) {
   // is the field's: someone scanned a lot number into it.
   if (!isScan || from?.inField) return;
   swallow(event);
+  // A scan is already being handled: this is the second scan of the label.
+  if (pending) return;
   const [input] = candidates;
   if (input) {
     track(eligible.find((h) => h.onUnrecognized)?.onUnrecognized?.(input));
@@ -322,6 +326,7 @@ export function useKeyboardWedge(options?: UseKeyboardWedgeOptions) {
     test: options?.test ?? defaultTest,
     callback: options?.callback ?? defaultCallback,
     inTextFields: options?.inTextFields ?? false,
+    whilePending: options?.whilePending ?? false,
     onUnrecognized: options?.onUnrecognized
   };
 

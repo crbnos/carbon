@@ -445,13 +445,24 @@ async function missingImages(refs: string[]): Promise<string[]> {
   return refs.filter((_, i) => !present[i]);
 }
 
+/** `docker compose … config --images`, limited to `services` when given.
+ *  Service names are arguments of the subcommand: before it, docker reads the
+ *  first one as the command. */
+export function buildImagesArgs(
+  composeArgs: string[],
+  services: string[] = []
+): string[] {
+  return [...composeArgs, "config", "--images", ...services];
+}
+
 // The images a compose file names, with the arguments and environment its
 // `up` gets.
 async function composeImages(
   args: string[],
-  opts: { cwd: string; env: NodeJS.ProcessEnv; extendEnv?: boolean }
+  opts: { cwd: string; env: NodeJS.ProcessEnv; extendEnv?: boolean },
+  services: string[] = []
 ): Promise<string[]> {
-  const r = await execa("docker", [...args, "config", "--images"], {
+  const r = await execa("docker", buildImagesArgs(args, services), {
     reject: false,
     ...opts
   });
@@ -507,10 +518,11 @@ export async function pullDefaultImages(root: string): Promise<void> {
 
 async function pullSharedImages(services: string[] = []): Promise<void> {
   await pullMissingImages(
-    await composeImages([...sharedComposeArgs(), ...services], {
-      cwd: sharedDir(),
-      ...sharedExec()
-    })
+    await composeImages(
+      sharedComposeArgs(),
+      { cwd: sharedDir(), ...sharedExec() },
+      services
+    )
   );
 }
 

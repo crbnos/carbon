@@ -11,10 +11,12 @@ import {
   getAgingParams,
   getApAging,
   getApOpenBySupplier,
+  getApPendingPayments,
   getApTieOut
 } from "~/modules/invoicing/invoicing.service";
 import { ARAPWorkbench } from "~/modules/invoicing/ui";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -42,12 +44,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companySettings = await getCompanySettings(client, companyId);
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
-  const [tieOut, aging, open] = await Promise.all([
+  const [tieOut, aging, open, pending] = await Promise.all([
     accountingSetUp
       ? getApTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
-    getApOpenBySupplier(client, companyId, asOfDate)
+    getApOpenBySupplier(client, companyId, asOfDate),
+    getApPendingPayments(getDatabaseClient(), companyId)
   ]);
 
   return {
@@ -56,6 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bucketDays,
     result: tieOut.data ?? null,
     aging: aging.data ?? [],
+    pending: Object.fromEntries(pending),
     open: (open.data ?? []).map((r) => ({
       ...r,
       invoiceId: r.documentId,
@@ -65,7 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PayablesRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open } =
+  const { asOfDate, agingMethod, bucketDays, result, aging, open, pending } =
     useLoaderData<typeof loader>();
   return (
     <ARAPWorkbench
@@ -73,6 +77,7 @@ export default function PayablesRoute() {
       result={result}
       aging={aging}
       open={open}
+      pending={pending}
       asOfDate={asOfDate}
       agingMethod={agingMethod}
       bucketDays={bucketDays}

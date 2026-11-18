@@ -34,10 +34,12 @@ import {
 import { type Asset, cacheControl, loadAssets } from "./assets.ts";
 import { toFetchRequest } from "./request.ts";
 
-// Longer than any proxy in front holds an idle connection (an ALB 60s,
-// Traefik 90s). Shorter, and the proxy reuses a connection this side has
-// just closed: an occasional 502 on a request that was never read.
-const KEEP_ALIVE_MS = 100_000;
+// Longer than any proxy in front holds an idle connection. The ALB that
+// `sst.config.ts` deploys holds one 600s (`idleTimeout`): that is also how
+// long a request may take, and a job step can need most of it. Traefik
+// holds 90s. Shorter, and the proxy reuses a connection this side has just
+// closed: an occasional 502 on a request that was never read.
+const KEEP_ALIVE_MS = 620_000;
 // Node's own limit on how long a request may take to arrive, which Fastify
 // turns off. Without it a client that never finishes sending holds its
 // connection for good.

@@ -1025,8 +1025,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   **Positions are bound to sample ids.** `getInspection` (ERP and MES) orders the embedded
   samples by `createdAt`, then `id` (an embed has no order, and an UPDATE moves a row). The grids
   map each column/row to a sample with `placeSamples` (`@carbon/utils`): a sample keeps its
-  position for the page, a new one takes the lowest free position, and cell state is keyed by
-  sample id. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
+  position for the page, then a sample takes the position stored on it
+  (`inspectionSample.position`, `20261117131942`: the save that creates an anonymous sample
+  sends its grid position, and the engine keeps it only inside the lot's `lotSize` columns),
+  then the rest take the lowest free position; cell state is keyed by sample id. So a part
+  reloads in the column it was typed in, on any device. Serial samples and samples made
+  before the column store none. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
   `inspectionSample`, the page reloads, and the index then names another sample.
   Serial lots pass `dropMissing`: their samples come only from a scan, so a sample the loader
   no longer returns was deleted (its tracked entity removed) and its position is freed. The

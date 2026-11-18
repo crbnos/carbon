@@ -25,6 +25,7 @@ export {
 export {
   type Buildable,
   type BuildableItem,
+  type BuildableJobShortage,
   computeBuildable,
   loadBuildable
 } from "./promising/buildable.ts";

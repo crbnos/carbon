@@ -23,6 +23,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import {
   LuGitBranchPlus,
+  LuMapPin,
   LuPackageCheck,
   LuPackageX,
   LuQrCode,
@@ -364,14 +365,22 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
 /** Where a part comes from: the bins that hold it now, or that it is made here. */
 export function MaterialSource({
   material,
-  compact
+  size
 }: {
   material: JobMaterial;
-  /** Smaller badges, for a dense card where they sit under the part's name. */
-  compact?: boolean;
+  /**
+   * Compact: smaller badges, for a dense card where they sit under the part's
+   * name. Large: for a phone, where the bin is what the picker reads first.
+   */
+  size?: "compact" | "large";
 }) {
   const { t } = useLingui();
-  const badgeClass = compact ? "min-h-5 px-2 text-xs" : undefined;
+  const compact = size === "compact";
+  const badgeClass = compact
+    ? "min-h-5 px-2 text-xs"
+    : size === "large"
+      ? "min-h-8 px-3 text-base font-semibold text-foreground whitespace-normal"
+      : undefined;
   const madeHere = material.methodType === "Make to Order";
   const liveStorageUnits = (
     material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
@@ -673,87 +682,94 @@ function MaterialsList({
     return t`Issue ${item}`;
   };
 
+  // Stacked, so the part, its bins and the Issue button each get the full width.
   const renderRow = (row: MaterialRow) => {
     const { material, batchTotal } = row;
     return (
       <li
         key={`material-row-${material.id}`}
         className={cn(
-          "flex items-center gap-3 px-4 py-3",
-          row.isKitChild && "pl-8",
+          "flex flex-col gap-3 px-4 py-4",
+          row.isKitChild && "ml-4 border-l-2 border-l-border pl-4",
           !row.isRelatedToOperation && "opacity-50"
         )}
       >
-        <MaterialThumbnail material={material} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="truncate font-semibold">
+        <div className="flex items-start gap-3">
+          <MaterialThumbnail material={material} />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="break-words text-base font-semibold leading-tight">
               {getItemReadableId(items, material.itemId ?? "")}
             </span>
-            <span className="flex shrink-0 items-center gap-1 text-sm tabular-nums text-foreground font-medium">
+            {material.description ? (
+              <span className="line-clamp-2 text-sm text-muted-foreground">
+                {material.description}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-end">
+            <span className="flex items-center gap-1 text-xl font-semibold leading-tight tabular-nums">
               {actualQuantity(material, parentIsSerial)}
-              <span aria-hidden>/</span>
+              <span aria-hidden className="text-muted-foreground">
+                /
+              </span>
               {estimatedQuantity(material, parentIsSerial)}
             </span>
-          </div>
-          {material.description ? (
-            <span className="truncate text-sm text-muted-foreground">
-              {material.description}
-            </span>
-          ) : null}
-          <MaterialSource material={material} />
-          <div className="flex flex-wrap items-center gap-1">
-            <ShortStockBadge material={material} />
-            <TrackingBadge material={material} />
-            <ExpiredConsumedBadge material={material} />
-            <PickedBadge
-              quantityPicked={material.quantityPicked}
-              quantityToPick={material.quantityToPick}
-            />
-          </div>
-          <PickedBreakdown
-            materialItemId={material.itemId}
-            pickedByItem={material.pickedByItem}
-          />
-          {batchTotal ? (
             <span className="text-xs text-muted-foreground">
-              <Trans>Batch</Trans>: {batchTotal.issued} / {batchTotal.required}
+              <Trans>Issued</Trans>
             </span>
-          ) : null}
+            {batchTotal ? (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                <Trans>Batch</Trans>: {batchTotal.issued} /{" "}
+                {batchTotal.required}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {/* A fixed slot, so the quantities line up. */}
-        <div className="flex min-w-28 shrink-0 items-center justify-end gap-1">
-          <ScrapPartsButton
-            material={material}
-            onScrap={onScrap}
-            disabled={disabled}
-            size="lg"
+        <div className="flex items-start gap-2">
+          <LuMapPin
+            aria-hidden
+            className="mt-2 size-4 shrink-0 text-muted-foreground"
           />
-          {row.issue === "scan" && row.isKitChild ? (
-            <IconButton
-              aria-label={issueLabel(material)}
-              variant="secondary"
-              size="lg"
-              icon={<LuQrCode />}
-              isDisabled={disabled}
-              onClick={() => onIssue(material)}
-            />
-          ) : row.issue ? (
-            <Button
-              size="lg"
-              className="shrink-0"
-              variant={row.isPrimaryIssue ? "primary" : "secondary"}
-              leftIcon={
-                row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
-              }
-              isDisabled={disabled}
-              onClick={() => onIssue(material)}
-              aria-label={issueLabel(material)}
-            >
-              <Trans>Issue</Trans>
-            </Button>
-          ) : null}
+          <MaterialSource material={material} size="large" />
         </div>
+        <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+          <ShortStockBadge material={material} />
+          <TrackingBadge material={material} />
+          <ExpiredConsumedBadge material={material} />
+          <PickedBadge
+            quantityPicked={material.quantityPicked}
+            quantityToPick={material.quantityToPick}
+          />
+        </div>
+        <PickedBreakdown
+          materialItemId={material.itemId}
+          pickedByItem={material.pickedByItem}
+        />
+        {row.issue || (onScrap && canScrapParts(material)) ? (
+          <div className="flex items-center gap-2">
+            {row.issue ? (
+              <Button
+                size="lg"
+                className="flex-1"
+                variant={row.isPrimaryIssue ? "primary" : "secondary"}
+                leftIcon={
+                  row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
+                }
+                isDisabled={disabled}
+                onClick={() => onIssue(material)}
+                aria-label={issueLabel(material)}
+              >
+                <Trans>Issue</Trans>
+              </Button>
+            ) : null}
+            <ScrapPartsButton
+              material={material}
+              onScrap={onScrap}
+              disabled={disabled}
+              size="lg"
+            />
+          </div>
+        ) : null}
       </li>
     );
   };

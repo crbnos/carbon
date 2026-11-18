@@ -30,6 +30,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
@@ -7023,6 +7024,31 @@ export const createItemDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for an item (part/material/tool/consumable/service) document
+ *
+ * @remarks
+ * A signed link to a file on the item's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `items_getItemFiles` lists it, or the name given
+ * to `items_createItemDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not there is not
+ * found.
+ *
+ * @mcp read
+ */
+export const getItemDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "parts" },
+  async run(ctx, { itemId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "parts",
+      entityId: itemId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for a CAD model
  *
  * @remarks
@@ -7166,7 +7192,16 @@ export const updateItemThumbnail = defineServiceFn({
  * scrap allowance, as a job's do. Available stock is on hand less what open
  * jobs, sales orders and project materials have committed.
  * `quantityBuildable` is the answer; `quantityBuildableFromOnHand` is what
- * using committed stock too would allow. `components` lists every item
+ * using committed stock too would allow. Both count only what more can be
+ * started. What is already being made is beside them: `jobs` lists the
+ * item's open jobs at the location (jobs made for a sales order included),
+ * the most urgent first, with the good units each has left to finish
+ * (`quantityRemaining`). `hasAllParts` says whether stock covers everything
+ * the job still has to issue (stock goes first to the jobs it can finish); it
+ * is null when a job material's unit differs from its item's stock unit.
+ * `quantityReadyToFinish` and `quantityWaitingOnParts` split
+ * `quantityInProduction` on that, and `jobShortages` lists what the waiting
+ * jobs lack, to buy or to make (`isMade`). `components` lists every item
  * below, the most limiting first: `quantityBuildableAlone` is how many that
  * component alone allows, and `quantityShort` what is missing at
  * `targetQuantity`. A Make to Order line's subassembly is built, not drawn

@@ -489,3 +489,25 @@ it("does not allow supplier refunds to opt into legacy customer reconstruction",
     )
   ).toThrow();
 });
+
+it("a supplier payment by credit card credits the card liability", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      totalAmount: 100,
+      bankAccountClass: "Liability",
+      newOnAccountBase: 100
+    })
+  );
+  // Natural-signed: a credit to a liability stores positive, the AP debit
+  // negative.
+  expect(amountOf(result, "bank")).toBe(100);
+  expect(amountOf(result, "today-control")).toBe(-100);
+  expect(
+    decodedDebitTotal(result, {
+      bank: "Liability",
+      "today-control": "Liability"
+    })
+  ).toBe(0);
+});

@@ -20,8 +20,8 @@ import {
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { Plural, useLingui } from "@lingui/react/macro";
+import { type ReactNode, useState } from "react";
 import { LuCirclePlus, LuX } from "react-icons/lu";
 
 export type StepLinkItem = {
@@ -76,6 +76,17 @@ function LinkedQuantity({
   );
 }
 
+// The preview and the MES show a tool that no step links on every step.
+export function EveryStepToolsNote({ count }: { count: number }) {
+  return (
+    <Plural
+      value={count}
+      one="# tool on this operation is not linked to a step, so it shows on every step."
+      other="# tools on this operation are not linked to a step, so they show on every step."
+    />
+  );
+}
+
 // One selectable row in the picker popover, shared by both groups.
 function StepLinkOption({
   item,
@@ -125,7 +136,8 @@ export function StepLinkEditor({
   onRemove,
   onQuantityChange,
   primaryGroupLabel,
-  secondaryGroupLabel
+  secondaryGroupLabel,
+  note
 }: {
   label: string;
   addLabel: string;
@@ -149,6 +161,7 @@ export function StepLinkEditor({
   // over the rest. Only rendered when at least one available item is primary.
   primaryGroupLabel?: string;
   secondaryGroupLabel?: string;
+  note?: ReactNode;
 }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -159,7 +172,7 @@ export function StepLinkEditor({
   const availablePrimary = available.filter((p) => p.primary);
   const availableRest = available.filter((p) => !p.primary);
 
-  if (isDisabled && linked.length === 0) return null;
+  if (isDisabled && linked.length === 0 && !note) return null;
 
   return (
     <VStack
@@ -264,6 +277,7 @@ export function StepLinkEditor({
           ))}
         </div>
       )}
+      {note && <p className="w-full text-xs text-muted-foreground">{note}</p>}
     </VStack>
   );
 }

@@ -101,7 +101,10 @@ export const issueInput = z.discriminatedUnion("type", [
     materialId: z.string().optional(),
     // Assembly view: when issuing an unplanned part (no materialId), scope the new
     // jobMaterial to this step so it surfaces on that step in the operator view.
-    jobOperationStepId: z.string().optional()
+    jobOperationStepId: z.string().optional(),
+    // An item scan: refuse an issue that takes the material above what the
+    // job requires. The check runs under the material's lock.
+    refuseOverIssue: z.boolean().optional()
   }),
   z.object({
     type: z.literal("scrapTrackedEntity"),

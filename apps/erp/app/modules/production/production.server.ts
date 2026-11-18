@@ -24,6 +24,7 @@ import {
 import { sql } from "kysely";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import {
   cancelOpenPickingListsForJob,
   issueMaterial,
@@ -1643,7 +1644,8 @@ export const deleteJobs = defineServiceFn({
  * Change the item jobs make.
  *
  * @remarks
- * Refused when any job is locked, and for a Make to Asset job when the new
+ * Refused when any job is locked or its method has production, a supplier
+ * invoice or a picking list recorded against it, and for a Make to Asset job when the new
  * item cannot complete to the asset (`makeToAssetItemError`, judged at the
  * item's lot size when it has one). Then each job takes the item's unit of
  * measure and model, its lot size as the quantity (when it has one) and the
@@ -1662,6 +1664,12 @@ export const setJobItem = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
+    const refused = await service.jobMethodReplacementRefusal(
+      ctx,
+      { jobIds: ids },
+      { billOfMaterial: true, billOfProcess: true }
+    );
+    if (refused) return refused;
 
     const [item, manufacturing] = await Promise.all([
       client
@@ -2226,7 +2234,8 @@ export const updateJobDetails = defineServiceFn({
  * @remarks
  * Saves `configuration` on the job, re-pulls the root method from the job's
  * item with that configuration (`itemToJob`), and recalculates the job's
- * requirements in the background.
+ * requirements in the background. Refused when the job's method has
+ * production, a supplier invoice or a picking list recorded against it.
  *
  * @mcp
  */
@@ -2243,6 +2252,12 @@ export const configureJob = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const unlocked = await service.requireJob(ctx, jobId);
     if (unlocked instanceof CarbonError) return unlocked;
+    const refused = await service.jobMethodReplacementRefusal(
+      ctx,
+      { jobIds: [jobId] },
+      { billOfMaterial: true, billOfProcess: true }
+    );
+    if (refused) return refused;
     const [result, job] = await Promise.all([
       requireAffected(
         client
@@ -2467,7 +2482,9 @@ const methodPartsInput = z.object({
  * parameters, tools, steps and work instructions) of `sourceId` onto job
  * `targetId`, using the item's make method version `versionId` when given and
  * `configuration` for a configurable item. Then the job's requirements and
- * operation dependencies are recalculated.
+ * operation dependencies are recalculated. Refused when the operations or
+ * materials it replaces have production, a supplier invoice or a picking list
+ * recorded against them.
  *
  * @mcp
  */
@@ -2485,6 +2502,12 @@ export const copyMethodToJob = defineServiceFn({
   async run(ctx, { type, configuration, ...method }) {
     const job = await service.requireJob(ctx, method.targetId);
     if (job instanceof CarbonError) return job;
+    const refused = await service.jobMethodReplacementRefusal(
+      ctx,
+      { jobIds: [method.targetId] },
+      method.parts
+    );
+    if (refused) return refused;
 
     const copied = await service.upsertJobMethod(
       ctx.asSystem.supabase,
@@ -2521,7 +2544,9 @@ export const copyMethodToJob = defineServiceFn({
  * @remarks
  * `targetId` is the job material's make method. Copies the chosen parts of
  * item `sourceId`'s make method (version `versionId` when given, with
- * `configuration` for a configurable item) into it.
+ * `configuration` for a configurable item) into it. Refused when the
+ * operations or materials it replaces have production, a supplier invoice or
+ * a picking list recorded against them.
  *
  * @mcp
  */
@@ -2548,6 +2573,12 @@ export const copyMethodToMaterial = defineServiceFn({
     if (!target.data) return ctx.error("notFound", "Make method not found");
     const job = await service.requireJob(ctx, target.data.jobId);
     if (job instanceof CarbonError) return job;
+    const refused = await service.jobMethodReplacementRefusal(
+      ctx,
+      { jobIds: [target.data.jobId], jobMakeMethodId: method.targetId },
+      method.parts
+    );
+    if (refused) return refused;
 
     const copied = await service.upsertJobMaterialMakeMethod(
       ctx.asSystem.supabase,
@@ -11066,5 +11097,33 @@ export const createJobDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a job document
+ *
+ * @remarks
+ * A signed link to a file on the job's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `production_getJobDocuments` lists it, or the
+ * name given to `production_createJobDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found. `production_getJobDocuments` also lists the item's files
+ * (`bucket` `parts`) and the sales line's (`opportunity-line`): get those with
+ * `items_getItemDocumentDownloadUrl` and
+ * `sales_getOpportunityLineDocumentDownloadUrl`.
+ *
+ * @mcp read
+ */
+export const getJobDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ jobId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "production" },
+  async run(ctx, { jobId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "job",
+      entityId: jobId,
+      name
+    });
   }
 });

@@ -26335,6 +26335,7 @@ export type Database = {
           inspectedBy: string | null
           inspectionId: string
           notes: string | null
+          position: number | null
           status: Database["public"]["Enums"]["inspectionSampleStatusType"]
           trackedEntityId: string | null
           updatedAt: string | null
@@ -26349,6 +26350,7 @@ export type Database = {
           inspectedBy?: string | null
           inspectionId: string
           notes?: string | null
+          position?: number | null
           status?: Database["public"]["Enums"]["inspectionSampleStatusType"]
           trackedEntityId?: string | null
           updatedAt?: string | null
@@ -26363,6 +26365,7 @@ export type Database = {
           inspectedBy?: string | null
           inspectionId?: string
           notes?: string | null
+          position?: number | null
           status?: Database["public"]["Enums"]["inspectionSampleStatusType"]
           trackedEntityId?: string | null
           updatedAt?: string | null
@@ -48040,6 +48043,7 @@ export type Database = {
           paymentType: Database["public"]["Enums"]["paymentType"]
           postedAt: string | null
           postedBy: string | null
+          postError: string | null
           postingDate: string | null
           purchaseOrderId: string | null
           reference: string | null
@@ -48072,6 +48076,7 @@ export type Database = {
           paymentType: Database["public"]["Enums"]["paymentType"]
           postedAt?: string | null
           postedBy?: string | null
+          postError?: string | null
           postingDate?: string | null
           purchaseOrderId?: string | null
           reference?: string | null
@@ -48104,6 +48109,7 @@ export type Database = {
           paymentType?: Database["public"]["Enums"]["paymentType"]
           postedAt?: string | null
           postedBy?: string | null
+          postError?: string | null
           postingDate?: string | null
           purchaseOrderId?: string | null
           reference?: string | null
@@ -111759,6 +111765,7 @@ export type Database = {
         | "Other Current Asset"
         | "Other Asset"
         | "Other Current Liability"
+        | "Credit Card"
         | "Long Term Liability"
         | "Equity - No Close"
         | "Equity - Close"
