@@ -15,6 +15,7 @@ import { useLoaderData } from "react-router";
 // so Lingui macros resolve. All copy is wrapped for extraction.
 const REASONS = {
   invalid: msg`This download link is invalid or has been tampered with.`,
+  expired: msg`This download link has expired. Ask for a new one.`,
   unavailable: msg`This file is no longer available, or you don't have permission to download it.`
 } as const;
 
@@ -23,7 +24,9 @@ type Reason = keyof typeof REASONS;
 export async function loader({ request }: LoaderFunctionArgs) {
   const reason = new URL(request.url).searchParams.get("reason");
   return {
-    reason: (reason === "invalid" ? "invalid" : "unavailable") as Reason
+    reason: (reason === "invalid" || reason === "expired"
+      ? reason
+      : "unavailable") as Reason
   };
 }
 

@@ -32171,6 +32171,9 @@ msgstr "इस विभाग के पास {locationName} पर कोई 
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "इस विभाग के पास इस स्थान पर कोई वर्क सेंटर नहीं है। किसी अन्य विभाग या स्थान को चुनें।"
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
 

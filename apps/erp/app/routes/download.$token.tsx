@@ -6,7 +6,10 @@ import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
-import { verifyDownloadToken } from "@carbon/auth/download-token.server";
+import {
+  DownloadTokenExpiredError,
+  verifyDownloadToken
+} from "@carbon/auth/download-token.server";
 import { storage } from "@carbon/files";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -20,7 +23,7 @@ import { path } from "~/utils/path";
 export async function loader({ params }: LoaderFunctionArgs) {
   const { token } = params;
 
-  const fail = (reason: "invalid" | "unavailable") =>
+  const fail = (reason: "invalid" | "expired" | "unavailable") =>
     redirect(path.to.downloadError(reason));
 
   if (!token) return fail("invalid");
@@ -28,7 +31,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
   let payload;
   try {
     payload = await verifyDownloadToken(token);
-  } catch {
+  } catch (error) {
+    if (error instanceof DownloadTokenExpiredError) return fail("expired");
     // Forged / corrupt signature or unexpected claim shape.
     return fail("invalid");
   }
