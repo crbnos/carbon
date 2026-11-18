@@ -403,6 +403,99 @@ describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
     expect(unchanged.memo).toBe("Corrected Ramp source");
   });
 
+  it("books no charge for a card transaction a bill payment claimed", async () => {
+    const { syncRampCharges } = await import("./ramp-sync-card");
+    const { CARD_BILL_PAYMENT_ENTITY } = await import("./ramp-sync-payment");
+    const { confirmSyncs } = await import("@carbon/ee/ramp.server");
+    const posted = await db
+      .selectFrom("payment")
+      .select("id")
+      .where("companyId", "=", fixture.companyId)
+      .where("status", "=", "Posted")
+      .executeTakeFirstOrThrow();
+    const paidId = `ramp-card-${crypto.randomUUID()}`;
+    const pendingId = `ramp-card-${crypto.randomUUID()}`;
+    rampIds.push(paidId, pendingId);
+    const claims = [
+      [paidId, `${posted.id}:${paidId}`],
+      [pendingId, `pay_not_posted:${pendingId}`]
+    ];
+    await db
+      .insertInto("externalIntegrationMapping")
+      .values(
+        claims.map(([externalId, entityId]) => ({
+          entityType: CARD_BILL_PAYMENT_ENTITY,
+          entityId: entityId!,
+          integration: "ramp",
+          externalId: externalId!,
+          companyId: fixture.companyId
+        }))
+      )
+      .execute();
+    try {
+      post.mockReset();
+      vi.mocked(confirmSyncs).mockClear();
+      const client = createClient<Database>(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+      const ctx = {
+        client,
+        db,
+        mapping: createMappingService(db, fixture.companyId),
+        companyId: fixture.companyId,
+        metadata: { sync: { pullTransactions: true } },
+        baseCurrency: fixture.baseCurrency,
+        companyGroupId: fixture.companyGroupId,
+        decimalsCache: new Map([[fixture.baseCurrency, 2]]),
+        exchangeRateCache: new Map(),
+        createdBy: "system",
+        trigger: "event"
+      } as unknown as RampSyncContext;
+      const ramp = {
+        async *listTransactions() {
+          yield [paidId, pendingId].map((id) => ({
+            id,
+            entity_amount: { value: 2500, currency: fixture.baseCurrency },
+            accounting_date: "2026-09-11"
+          }));
+        },
+        getReceipt: async () => null
+      } as unknown as RampClient;
+
+      const result = await syncRampCharges(
+        ctx,
+        ramp,
+        undefined,
+        fixture.liabilityAccountId
+      );
+
+      expect(result).toMatchObject({ failed: 0, created: 0, reconfirmed: 1 });
+      expect(post).not.toHaveBeenCalled();
+      const charges = await db
+        .selectFrom("externalIntegrationMapping")
+        .select("externalId")
+        .where("companyId", "=", fixture.companyId)
+        .where("entityType", "=", "charge")
+        .where("externalId", "in", [paidId, pendingId])
+        .execute();
+      expect(charges).toEqual([]);
+      // Ramp hears only of the one whose payment posted.
+      expect(vi.mocked(confirmSyncs).mock.calls[0]?.[2]).toMatchObject({
+        successful: [{ id: paidId, referenceId: posted.id }],
+        failed: []
+      });
+    } finally {
+      await db
+        .deleteFrom("externalIntegrationMapping")
+        .where("companyId", "=", fixture.companyId)
+        .where("entityType", "=", CARD_BILL_PAYMENT_ENTITY)
+        .where("externalId", "in", [paidId, pendingId])
+        .execute();
+    }
+  });
+
   it("anchors the Ramp source id before an ambiguous post response", async () => {
     const { createAndPostTransaction } = await import("./ramp-sync-card");
     const rampId = `ramp-card-${crypto.randomUUID()}`;

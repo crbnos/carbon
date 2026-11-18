@@ -6,7 +6,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   assertNoLegacyUntrackedPayment,
   ensureRampPaymentPosted,
-  preserveStagedPaymentExchangeRate
+  preserveStagedPaymentExchangeRate,
+  type RampBillPaymentDependencies,
+  syncRampBillPayment
 } from "./ramp-sync-payment";
 
 describe("resumable Ramp payments", () => {
@@ -94,5 +96,65 @@ describe("resumable Ramp payments", () => {
   it("keeps the original source FX snapshot when resuming a Draft", () => {
     expect(preserveStagedPaymentExchangeRate(1.2, 1.15)).toBe(1.15);
     expect(preserveStagedPaymentExchangeRate(1.2, null)).toBe(1.2);
+  });
+});
+
+describe("card-paid Ramp bills", () => {
+  // Every case here returns before the database or Ramp is read.
+  const deps = (
+    overrides: Partial<RampBillPaymentDependencies> = {}
+  ): RampBillPaymentDependencies =>
+    ({
+      companyId: "co",
+      baseCurrency: "USD",
+      statementBankAccountId: "bank",
+      card: { accountId: "card" },
+      ...overrides
+    }) as RampBillPaymentDependencies;
+  const bill = { id: "bill-1" };
+  const cardPayment = (transactionIds: string[] | null) => ({
+    id: "bp-1",
+    payment_method: "CARD",
+    details: { transaction_ids: transactionIds }
+  });
+
+  it("reports a card account that cannot pay a bill", async () => {
+    await expect(
+      syncRampBillPayment(
+        deps({ card: { error: "Not a Credit Card account" } }),
+        bill,
+        cardPayment(["tx-1"])
+      )
+    ).resolves.toEqual({
+      fail: { id: "bp-1", message: "Not a Credit Card account" }
+    });
+  });
+
+  it.each([[null], [[]]])(
+    "fails a card payment with no matched transaction (%j)",
+    async (transactionIds) => {
+      await expect(
+        syncRampBillPayment(deps(), bill, cardPayment(transactionIds))
+      ).resolves.toEqual({
+        fail: {
+          id: "bp-1",
+          message: "Ramp has matched no card transaction to this bill payment"
+        }
+      });
+    }
+  );
+
+  it("needs the statement bank account only for a bank rail", async () => {
+    await expect(
+      syncRampBillPayment(deps({ statementBankAccountId: null }), bill, {
+        id: "bp-2",
+        payment_method: "ACH"
+      })
+    ).resolves.toEqual({
+      fail: {
+        id: "bp-2",
+        message: "Set the Ramp statement bank account to sync bank-paid bills"
+      }
+    });
   });
 });

@@ -19,7 +19,10 @@ import {
   stageOrResumeRampBill
 } from "./ramp-sync-bill-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
-import { syncRampBillPayment } from "./ramp-sync-payment";
+import {
+  type RampCardPaymentAccount,
+  syncRampBillPayment
+} from "./ramp-sync-payment";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled
@@ -517,6 +520,36 @@ export async function syncRampBills(
   return result;
 }
 
+/**
+ * The account a card-paid bill is paid from: the card liability account the
+ * card charges post to. A supplier payment can only come from a Credit Card
+ * account, so anything else is a setup error the bill payment reports.
+ */
+async function resolveRampCardPaymentAccount(
+  ctx: RampSyncContext,
+  accountId: string | undefined
+): Promise<RampCardPaymentAccount> {
+  if (!accountId) {
+    return {
+      error: "Set the Ramp card liability account to sync card-paid bills"
+    };
+  }
+  const account = await ctx.db
+    .selectFrom("account")
+    .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
+    .select("account.accountType")
+    .where("company.id", "=", ctx.companyId)
+    .where("account.id", "=", accountId)
+    .executeTakeFirst();
+  if (account?.accountType !== "Credit Card") {
+    return {
+      error:
+        "The Ramp card liability account must be a Credit Card account. Move it into the Credit Cards group in the chart of accounts."
+    };
+  }
+  return { accountId };
+}
+
 export async function syncRampBillPayments(
   ctx: RampSyncContext,
   ramp: RampClient,
@@ -528,13 +561,10 @@ export async function syncRampBillPayments(
   if (!isRampInboundFamilyEnabled("billPayments", metadata)) {
     return result;
   }
-  if (!metadata.statementBankAccountId) {
-    logger.warning(
-      "No statement bank account configured; skipping Ramp bill payments",
-      { companyId }
-    );
-    return result;
-  }
+  const card = await resolveRampCardPaymentAccount(
+    ctx,
+    metadata.cardLiabilityAccountId
+  );
 
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
@@ -557,7 +587,8 @@ export async function syncRampBillPayments(
           {
             companyId: ctx.companyId,
             baseCurrency: ctx.baseCurrency,
-            statementBankAccountId: metadata.statementBankAccountId,
+            statementBankAccountId: metadata.statementBankAccountId ?? null,
+            card,
             db: ctx.db,
             client: ctx.client,
             getMappedInvoiceId: (billRemoteId) =>

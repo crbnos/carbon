@@ -20,6 +20,10 @@ import { getLogger } from "@carbon/logger";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
+  CARD_BILL_PAYMENT_ENTITY,
+  claimedPaymentId
+} from "./ramp-sync-payment";
+import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled,
   type RampInboundFamily,
@@ -369,6 +373,52 @@ async function loadCardMappings(ctx: RampSyncContext, rampIds: string[]) {
   return new Map(rows.map((row) => [row.externalId, row]));
 }
 
+/** Card transactions a card-paid bill's payment claimed, with its status. */
+async function loadCardBillPaymentClaims(
+  ctx: RampSyncContext,
+  rampIds: string[]
+) {
+  if (rampIds.length === 0) {
+    return new Map<
+      string,
+      {
+        entityId: string;
+        status: Database["public"]["Enums"]["paymentStatus"] | null;
+      }
+    >();
+  }
+  const claims = await ctx.db
+    .selectFrom("externalIntegrationMapping")
+    .select(["externalId", "entityId"])
+    .where("companyId", "=", ctx.companyId)
+    .where("integration", "=", "ramp")
+    .where("entityType", "=", CARD_BILL_PAYMENT_ENTITY)
+    .where("externalId", "in", rampIds)
+    .execute();
+  const paymentIds = [
+    ...new Set(claims.map((claim) => claimedPaymentId(claim.entityId)))
+  ];
+  const payments =
+    paymentIds.length > 0
+      ? await ctx.db
+          .selectFrom("payment")
+          .select(["id", "status"])
+          .where("companyId", "=", ctx.companyId)
+          .where("id", "in", paymentIds)
+          .execute()
+      : [];
+  const statusById = new Map(payments.map((row) => [row.id, row.status]));
+  return new Map(
+    claims.map((claim) => {
+      const entityId = claimedPaymentId(claim.entityId);
+      return [
+        claim.externalId,
+        { entityId, status: statusById.get(entityId) ?? null }
+      ];
+    })
+  );
+}
+
 /** Reconfirm only observably Posted documents; Drafts must be restaged first. */
 async function reconfirmMapped(
   ctx: RampSyncContext,
@@ -494,12 +544,23 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
   try {
     for await (const page of config.list(ramp, entityId)) {
       const items = page as TItem[];
-      const mappings = await loadCardMappings(
-        ctx,
-        items.map((item) => item.id)
-      );
+      const ids = items.map((item) => item.id);
+      const [mappings, claims] = await Promise.all([
+        loadCardMappings(ctx, ids),
+        loadCardBillPaymentClaims(ctx, ids)
+      ]);
       for (const item of items) {
         if (!isRampEntityInScope(entityId, item.entity_id)) continue;
+        // A card transaction that paid a bill is booked by the bill payment,
+        // never as a charge. Ramp hears it is synced once that payment posts.
+        const claim = claims.get(item.id);
+        if (claim) {
+          if (claim.status === "Posted") {
+            successful.push({ id: item.id, referenceId: claim.entityId });
+            result.reconfirmed++;
+          }
+          continue;
+        }
         const existing = mappings.get(item.id);
         if (existing && existing.status !== "Draft") {
           mapped.push({ rampId: item.id, entityId: existing.entityId });
