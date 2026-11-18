@@ -46,6 +46,34 @@ export function getLabelSizeLabel(size: LabelSize): string {
   return size.zpl ? dimensions : `${size.name} ${dimensions}`;
 }
 
+/** Print densities a thermal label printer can run at, in dots per inch. */
+export const labelDpis = [203, 300, 600] as const;
+export type LabelDpi = (typeof labelDpis)[number];
+export const DEFAULT_LABEL_DPI: LabelDpi = 203;
+
+/** The size as printed by a printer at `dpi`; no dpi keeps the size's own. */
+export function withLabelDpi(size: LabelSize, dpi?: number | null): LabelSize {
+  if (!size.zpl || !dpi || size.zpl.dpi === dpi) return size;
+  return { ...size, zpl: { ...size.zpl, dpi } };
+}
+
+function thermalLabel(
+  id: string,
+  name: string,
+  width: number,
+  height: number,
+  metric?: boolean
+): LabelSize {
+  return {
+    id,
+    name,
+    width,
+    height,
+    ...(metric ? { metric } : {}),
+    zpl: { dpi: DEFAULT_LABEL_DPI, width, height }
+  };
+}
+
 export const labelSizes: LabelSize[] = [
   {
     id: "avery5163",
@@ -53,61 +81,14 @@ export const labelSizes: LabelSize[] = [
     width: 4,
     height: 2
   },
-  {
-    id: "label2x1",
-    name: "Label 2x1",
-    width: 2,
-    height: 1,
-    zpl: {
-      dpi: 203,
-      width: 2,
-      height: 1
-    }
-  },
-  {
-    id: "label3x2",
-    name: "Label 3x2",
-    width: 3,
-    height: 2,
-    zpl: {
-      dpi: 203,
-      width: 3,
-      height: 2
-    }
-  },
-  {
-    id: "label4x2",
-    name: "Label 4x2",
-    width: 4,
-    height: 2,
-    zpl: {
-      dpi: 203,
-      width: 4,
-      height: 2
-    }
-  },
-  {
-    id: "label100x50mm",
-    name: "Label 100x50mm",
-    width: 3.937,
-    height: 1.969,
-    metric: true,
-    zpl: {
-      dpi: 203,
-      width: 3.937,
-      height: 1.969
-    }
-  },
-  {
-    id: "label50x25mm",
-    name: "Label 50x25mm",
-    width: 1.969,
-    height: 0.984,
-    metric: true,
-    zpl: {
-      dpi: 203,
-      width: 1.969,
-      height: 0.984
-    }
-  }
+  thermalLabel("label1.5x1", "Label 1.5x1", 1.5, 1),
+  thermalLabel("label2x1", "Label 2x1", 2, 1),
+  thermalLabel("label2x2", "Label 2x2", 2, 2),
+  thermalLabel("label2.25x1.25", "Label 2.25x1.25", 2.25, 1.25),
+  thermalLabel("label3x2", "Label 3x2", 3, 2),
+  thermalLabel("label4x2", "Label 4x2", 4, 2),
+  thermalLabel("label4x3", "Label 4x3", 4, 3),
+  thermalLabel("label4x6", "Label 4x6", 4, 6),
+  thermalLabel("label100x50mm", "Label 100x50mm", 3.937, 1.969, true),
+  thermalLabel("label50x25mm", "Label 50x25mm", 1.969, 0.984, true)
 ];

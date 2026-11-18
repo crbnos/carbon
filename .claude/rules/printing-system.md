@@ -99,7 +99,9 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Printer routing & assignments
 
 - **`printerRoute`** table (`pr` id) = physical printer: `companyId, locationId?, name, format(zpl|pdf
-  CHECK), mediaSizeId?, printerUrl, hasApiKey`. The ProxyBox API key is in Supabase Vault
+  CHECK), mediaSizeId?, dpi(203|300|600 CHECK, default 203), printerUrl, hasApiKey`. The print job
+  renders built-in ZPL at the route's dpi (`withLabelDpi`, `@carbon/utils` labels); the interactive
+  download routes have no printer and stay at 203. The ProxyBox API key is in Supabase Vault
   as `printer:<companyId>:<routeId>` (`20261117091847_printer-api-key-vault.sql`), never in a column
   and never sent to the browser: `set_printer_api_key` / `get_printer_api_key` are service role only
   (`setPrinterApiKey` / `getPrinterApiKey`). The settings form treats it as write-only (blank keeps
@@ -123,7 +125,7 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Redis printer-config cache — `packages/printing/src/cache.server.ts`
 
 `getCachedPrinterConfig(...)` → `CachedPrinterConfig { printerRouteId, printerUrl, format, mediaSizeId,
-autoPrint }`. Key `printing:{companyId}:{locationId}:{context}` (workCenter →
+dpi?, autoPrint }` (`dpi` is absent on entries cached before the column; readers default it to 203). Key `printing:{companyId}:{locationId}:{context}` (workCenter →
 `...:wc:{contextId}`), TTL 1h (`@carbon/kv` redis). Redis failures fall through to DB silently.
 `invalidatePrinterCache(companyId)` deletes `printing:{companyId}:*` — call it after any printer-route
 upsert/delete or assignment update.
@@ -215,7 +217,7 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
 ## Gotchas
 
 - Built-in **ZPL** needs `labelSize.zpl`; a kanban card also needs media of at least 3" x 2"
-  (`label3x2`, `label4x2`, `label100x50mm`), or the job fails.
+  (`label3x2`, `label4x2`, `label4x3`, `label4x6`, `label100x50mm`), or the job fails.
 - Both Inngest fns use `retries: 0`; delivery timeouts are intentionally non-retriable to avoid dupes.
 - `print-job/` is a **directory** (`index.tsx` / `renderers.tsx` / `resolvers.ts`), not a single file.
   `.tsx` because renderers instantiate React-PDF components.

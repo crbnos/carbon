@@ -30,6 +30,8 @@ export type PrinterRoute = {
   name: string;
   format: "zpl" | "pdf";
   mediaSizeId: string | null;
+  /** Print density in dots per inch: 203, 300 or 600. */
+  dpi: number;
   printerUrl: string;
   /** The API key itself is in Supabase Vault and never leaves the server. */
   hasApiKey: boolean;

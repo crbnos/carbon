@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { labelSizes } from "@carbon/utils";
+import { DEFAULT_LABEL_DPI, labelDpis, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { printerContexts } from "./assignments";
@@ -25,6 +25,10 @@ export const printerRouteValidator = z
     // A label printer needs its label size; a document printer prints full
     // pages and may have none.
     mediaSizeId: zfd.text(z.string().optional()),
+    // Print density of a label printer, as the form's select sends it.
+    dpi: z
+      .enum(labelDpis.map(String) as [string, ...string[]])
+      .default(String(DEFAULT_LABEL_DPI)),
     printerUrl: z.string().url({ message: "Must be a valid URL" }),
     // Write-only: blank keeps the saved key, `removeApiKey` clears it.
     apiKey: zfd.text(z.string().optional()),

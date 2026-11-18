@@ -82,6 +82,11 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
+import {
+  getZplLabelGeometry,
+  zplFieldData,
+  zplLabelHeader
+} from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -245,7 +250,9 @@ import {
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
-  searchFilter
+  round,
+  searchFilter,
+  withLabelDpi
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -3755,25 +3762,25 @@ export async function createHeadquarters(
 /** A one-label ZPL test page for the route's media size; null for a PDF route or no size. */
 export function generateTestLabel(
   format: string,
-  mediaSizeId: string | null
+  mediaSizeId: string | null,
+  dpi: number
 ): string | null {
   if (format !== "zpl" || !mediaSizeId) return null;
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
-  const { width, height } = labelSize.zpl;
-  const dpi = labelSize.zpl.dpi || 203;
-  const widthDots = Math.round(width * dpi);
-  const heightDots = Math.round(height * dpi);
+  const geometry = getZplLabelGeometry(withLabelDpi(labelSize, dpi));
+  const { margin, scale } = geometry;
+  // Sizes are in 2"x1" @ 203dpi dots; the geometry's scale fits them to this label and dpi.
+  const d = (dots: number) => round(dots * scale, 0);
   const now = new Date();
   const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+  const text = (y: number, size: number, value: string) =>
+    `^FO${margin},${d(y)}^A0N,${d(size)},${d(size)}${zplFieldData(value)}`;
   return [
-    "^XA",
-    `^PW${widthDots}`,
-    `^LL${heightDots}`,
-    "^MNW",
-    "^FO20,20^A0N,30,30^FDTest Print^FS",
-    `^FO20,60^A0N,20,20^FD${mediaSizeId} — ${width}x${height}"^FS`,
-    `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
+    zplLabelHeader(geometry),
+    text(20, 30, "Test Print"),
+    text(60, 20, `${labelSize.width}x${labelSize.height}" ${geometry.dpi}dpi`),
+    text(90, 16, timestamp),
     "^XZ"
   ].join("\n");
 }

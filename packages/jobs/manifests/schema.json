@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261117211601",
+  "schemaVersion": "20261118083512",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-17T22:38:12.983Z",
+  "exportedAt": "2026-11-18T18:17:27.471Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4311,7 +4311,8 @@
         "printerUrl",
         "createdAt",
         "updatedAt",
-        "hasApiKey"
+        "hasApiKey",
+        "dpi"
       ]
     },
     {

@@ -204,7 +204,9 @@ export async function getPrinterRoute(
 ) {
   return client
     .from("printerRoute")
-    .select("id, locationId, name, format, mediaSizeId, printerUrl, hasApiKey")
+    .select(
+      "id, locationId, name, format, mediaSizeId, dpi, printerUrl, hasApiKey"
+    )
     .eq("id", routeId)
     .eq("companyId", companyId)
     .single();
@@ -219,6 +221,7 @@ export async function upsertPrinterRoute(
     name: string;
     format: string;
     mediaSizeId?: string | null;
+    dpi?: number;
     printerUrl: string;
   }
 ) {
@@ -230,6 +233,7 @@ export async function upsertPrinterRoute(
         name: route.name,
         format: route.format,
         mediaSizeId: route.mediaSizeId ?? null,
+        dpi: route.dpi,
         printerUrl: route.printerUrl,
         updatedAt: new Date().toISOString()
       })
@@ -247,6 +251,7 @@ export async function upsertPrinterRoute(
       name: route.name,
       format: route.format,
       mediaSizeId: route.mediaSizeId ?? null,
+      dpi: route.dpi,
       printerUrl: route.printerUrl
     })
     .select("id")

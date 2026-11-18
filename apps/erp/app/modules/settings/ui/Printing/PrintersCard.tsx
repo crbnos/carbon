@@ -38,7 +38,12 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
+import {
+  DEFAULT_LABEL_DPI,
+  getLabelSizeLabel,
+  labelDpis,
+  labelSizes
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -100,6 +105,10 @@ export function PrintersCard({
         .map((s) => ({ value: s.id, label: getLabelSizeLabel(s) })),
     [selectedFormat]
   );
+  const dpiOptions = labelDpis.map((dpi) => ({
+    value: String(dpi),
+    label: t`${dpi} dpi`
+  }));
 
   return (
     <>
@@ -142,6 +151,11 @@ export function PrintersCard({
                     {route.mediaSizeId && (
                       <span className="text-xs text-muted-foreground">
                         {getMediaSizeLabel(route.mediaSizeId)}
+                      </span>
+                    )}
+                    {route.format === "zpl" && (
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>{route.dpi} dpi</Trans>
                       </span>
                     )}
                     <span className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
@@ -230,9 +244,10 @@ export function PrintersCard({
                     name: printerToEdit.name,
                     format: printerToEdit.format,
                     mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
+                    dpi: String(printerToEdit.dpi ?? DEFAULT_LABEL_DPI),
                     printerUrl: printerToEdit.printerUrl
                   }
-                : { format: "zpl" }
+                : { format: "zpl", dpi: String(DEFAULT_LABEL_DPI) }
             }
             className="flex flex-col h-full"
           >
@@ -286,6 +301,15 @@ export function PrintersCard({
                         : t`Select a label size`
                     }
                   />
+                  {selectedFormat === "zpl" && (
+                    <Select
+                      name="dpi"
+                      label={t`DPI`}
+                      helperText={t`The printer's print density, in dots per inch`}
+                      options={dpiOptions}
+                      isOptional={false}
+                    />
+                  )}
                   <Input
                     name="printerUrl"
                     label={t`Printer URL`}

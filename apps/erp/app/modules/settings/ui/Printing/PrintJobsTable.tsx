@@ -19,6 +19,7 @@ import {
   ModalTitle,
   toast
 } from "@carbon/react";
+import { DEFAULT_LABEL_DPI } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -35,6 +36,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
+import { usePrinting } from "~/hooks";
 
 type PrintJobsTableProps = {
   jobs: PrintJob[];
@@ -142,10 +144,9 @@ const ExpandedRowContent = memo(({ job }: { job: PrintJob }) => {
 });
 ExpandedRowContent.displayName = "ExpandedRowContent";
 
-function parseZplDimensions(zplContent: string) {
+function parseZplDimensions(zplContent: string, dpi: number) {
   const pwMatch = zplContent.match(/\^PW(\d+)/);
   const llMatch = zplContent.match(/\^LL(\d+)/);
-  const dpi = 203;
   const dpmm = Math.round(dpi / 25.4);
 
   const widthInches = pwMatch
@@ -158,7 +159,7 @@ function parseZplDimensions(zplContent: string) {
   return { dpmm, width: widthInches, height: heightInches };
 }
 
-function ZplPreview({ zpl }: { zpl: string }) {
+function ZplPreview({ zpl, dpi }: { zpl: string; dpi: number }) {
   const { t } = useLingui();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +168,7 @@ function ZplPreview({ zpl }: { zpl: string }) {
   useEffect(() => {
     let revoked = false;
     let objectUrl: string | null = null;
-    const { dpmm, width, height } = parseZplDimensions(zpl);
+    const { dpmm, width, height } = parseZplDimensions(zpl, dpi);
 
     fetch(
       `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`,
@@ -200,7 +201,7 @@ function ZplPreview({ zpl }: { zpl: string }) {
       revoked = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [zpl]);
+  }, [zpl, dpi]);
 
   if (loading) {
     return (
@@ -242,6 +243,14 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
   const { t } = useLingui();
   const [viewContent, setViewContent] = useState<ViewContent | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const { printerRoutes } = usePrinting();
+  // Preview at the job's printer's current dpi; a removed printer falls back to 203.
+  const viewPrinterUrl = jobs.find(
+    (job) => job.id === viewContent?.printJobId
+  )?.printerUrl;
+  const viewDpi =
+    printerRoutes.find((route) => route.printerUrl === viewPrinterUrl)?.dpi ??
+    DEFAULT_LABEL_DPI;
   const fetcher = useAction({
     onSuccess: ({ data }) => {
       if (!data) return;
@@ -470,7 +479,7 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
             </ModalHeader>
             <ModalBody>
               {viewContent.contentType === "zpl" ? (
-                <ZplPreview zpl={viewContent.content} />
+                <ZplPreview zpl={viewContent.content} dpi={viewDpi} />
               ) : viewContent.contentType === "pdf" ? (
                 <iframe
                   src={`data:application/pdf;base64,${viewContent.content}`}

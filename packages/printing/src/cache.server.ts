@@ -17,6 +17,8 @@ export type CachedPrinterConfig = {
   printerUrl: string;
   format: "zpl" | "pdf";
   mediaSizeId: string | null;
+  /** Absent on configs cached before printers had a dpi. */
+  dpi?: number;
   autoPrint: boolean;
 };
 
@@ -103,7 +105,7 @@ async function resolvePrinterConfig(
 
   const { data: route } = await client
     .from("printerRoute")
-    .select("id, format, mediaSizeId, printerUrl")
+    .select("id, format, mediaSizeId, dpi, printerUrl")
     .eq("id", printerRouteId)
     .eq("companyId", companyId)
     .single();
@@ -123,6 +125,7 @@ async function resolvePrinterConfig(
     printerUrl: route.printerUrl,
     format: route.format as "zpl" | "pdf",
     mediaSizeId: route.mediaSizeId,
+    dpi: route.dpi,
     autoPrint
   };
 }

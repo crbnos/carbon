@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
+import { labelDpis, labelSizes, withLabelDpi } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { resolveTemplate } from "../template";
 import {
@@ -164,8 +164,14 @@ describe("generateProductLabelZPL", () => {
 
   it("emits only integer coordinates and sizes for every placement", () => {
     for (const s of zplSizes) {
-      const zpl = generateProductLabelZPL(item, s, allPlacementsTemplate);
-      expect(zpl).not.toMatch(/\d+\.\d+/);
+      for (const dpi of labelDpis) {
+        const zpl = generateProductLabelZPL(
+          item,
+          withLabelDpi(s, dpi),
+          allPlacementsTemplate
+        );
+        expect(zpl).not.toMatch(/\d+\.\d+/);
+      }
     }
   });
 
@@ -208,6 +214,37 @@ describe("generateProductLabelZPL", () => {
     );
     expect(zpl).toContain("^FH^FDBlue^FS");
     expect(zpl).not.toContain(": Blue");
+  });
+
+  it("draws a denser printer's label in its own dots, same physical size", () => {
+    // 2" x 1" at 300 dpi is 600 x 300 dots; scale = min(600/406, 300/203).
+    const zpl = generateProductLabelZPL(
+      item,
+      withLabelDpi(size("label2x1"), 300)
+    );
+    expect(zpl).toContain("^PW600^LL300");
+    expect(zpl).toContain("^FO30,44^A0N,37,37");
+  });
+
+  it("keeps a 203 dpi printer's label unchanged", () => {
+    const base = size("label4x2");
+    expect(withLabelDpi(base, 203)).toBe(base);
+    expect(withLabelDpi(base, null)).toBe(base);
+  });
+
+  it("widens barcode bars with the printer's dpi", () => {
+    const barcode = {
+      ...resolveTemplate("trackingLabel", null),
+      blocks: [allPlacementsTemplate.blocks[3]!]
+    };
+    const at = (dpi: number) =>
+      generateProductLabelZPL(
+        item,
+        withLabelDpi(size("label4x2"), dpi),
+        barcode
+      );
+    expect(at(203)).toContain("^BY2^BCN");
+    expect(at(600)).toContain("^BY6^BCN");
   });
 
   it("throws for sizes without ZPL support", () => {

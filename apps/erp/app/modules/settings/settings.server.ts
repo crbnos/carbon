@@ -1426,6 +1426,7 @@ export const savePrinterRoute = defineServiceFn({
       name: route.name,
       format: route.format,
       mediaSizeId: route.mediaSizeId || null,
+      dpi: Number(route.dpi),
       printerUrl: route.printerUrl,
       locationId: route.locationId || null
     });
@@ -1492,7 +1493,7 @@ export const testPrinterRoute = defineServiceFn({
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
-      .select("printerUrl, format, mediaSizeId, hasApiKey")
+      .select("printerUrl, format, mediaSizeId, dpi, hasApiKey")
       .eq("id", routeId)
       .eq("companyId", ctx.company.id)
       .single();
@@ -1500,7 +1501,8 @@ export const testPrinterRoute = defineServiceFn({
 
     const testLabel = service.generateTestLabel(
       route.format,
-      route.mediaSizeId
+      route.mediaSizeId,
+      route.dpi
     );
     if (!testLabel) {
       return ctx.error(
