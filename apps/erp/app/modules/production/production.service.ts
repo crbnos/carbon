@@ -14428,9 +14428,7 @@ export const closeJobInput = z.object({
  * Closing a job writes off whatever is left in WIP for it as production
  * variance, so the job's WIP nets to zero. Nothing to do when the residual is
  * under a cent. The journal is Provisional before the company's accounting
- * cutover and Posted after it. What is in WIP for a job is SQL
- * `job_wip_balance`: it also counts the receipts of the job's outside
- * processing purchase order lines, such as one posted after the completion.
+ * cutover and Posted after it.
  *
  * A line that charged a project in place of WIP (a consume-to-project job's
  * material, labor, overhead and scrap: every one has a projectLedger row
@@ -14491,7 +14489,7 @@ export async function closeJob(
       p_exclude_project_lines: !keepsWip
     });
 
-    const remainingWip = Number(wipBalance.data ?? 0);
+    const remainingWip = wipBalance.data ?? 0;
 
     if (Math.abs(remainingWip) < 0.01) return;
 

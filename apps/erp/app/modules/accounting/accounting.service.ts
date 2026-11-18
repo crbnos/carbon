@@ -14472,12 +14472,11 @@ async function attachJob(
     );
     // The job's WIP balance so far: cost leaves WIP at attachment (SAP AuC).
     // Before the cutover it sits in Provisional journals and is swept by one.
-    // It includes the receipts of the job's outside processing order lines.
     const wip = await rpcValue(trx, "job_wip_balance", {
       p_job_id: jobId,
       p_company_id: companyId
     });
-    const balance = round(Number(wip.data ?? 0));
+    const balance = round(wip.data ?? 0);
 
     let result: Pick<AssetTransferResult, "id" | "transferId"> = {
       id: null,

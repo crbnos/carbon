@@ -16280,59 +16280,10 @@ export async function postReceipt(
             return acc;
           }, {}) ?? {};
 
-        const jobOperationUpdates = isOutsideProcessing
-          ? purchaseOrderLines.data.reduce<
-              Record<
-                string,
-                Database["public"]["Tables"]["jobOperation"]["Update"]
-              >
-            >((acc, purchaseOrderLine) => {
-              const receiptLines =
-                receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
-              if (
-                receiptLines &&
-                receiptLines.length > 0 &&
-                purchaseOrderLine.purchaseQuantity &&
-                purchaseOrderLine.purchaseQuantity > 0 &&
-                purchaseOrderLine.jobOperationId
-              ) {
-                const recivedQuantityInPurchaseUnit =
-                  receiptLines.reduce((acc, receiptLine) => {
-                    const safeReceivedQuantity =
-                      isNaN(receiptLine.receivedQuantity) ||
-                      receiptLine.receivedQuantity == null
-                        ? 0
-                        : receiptLine.receivedQuantity;
-                    return acc + safeReceivedQuantity;
-                  }, 0) / (receiptLines[0]!.conversionFactor ?? 1);
-
-                const receivedComplete =
-                  purchaseOrderLine.receivedComplete ||
-                  recivedQuantityInPurchaseUnit >=
-                    (purchaseOrderLine.quantityToReceive ??
-                      purchaseOrderLine.purchaseQuantity);
-
-                // The receipt is the only record of what the supplier
-                // finished, so the operation completes what the line has
-                // received across all its receipts, in the job's units.
-                const quantityComplete = round(
-                  ((purchaseOrderLine.quantityReceived ?? 0) +
-                    recivedQuantityInPurchaseUnit) *
-                    (receiptLines[0]!.conversionFactor ?? 1)
-                );
-
-                return {
-                  ...acc,
-                  [purchaseOrderLine.jobOperationId]: {
-                    status: receivedComplete ? "Done" : "In Progress",
-                    quantityComplete
-                  }
-                };
-              }
-
-              return acc;
-            }, {})
-          : {};
+        const jobOperationUpdates: Record<
+          string,
+          Database["public"]["Tables"]["jobOperation"]["Update"]
+        > = {};
 
         const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
           Record<
@@ -16367,6 +16318,18 @@ export async function postReceipt(
               recivedQuantityInPurchaseUnit >=
                 (purchaseOrderLine.quantityToReceive ??
                   purchaseOrderLine.purchaseQuantity);
+
+            // The receipt is the only record of what the supplier finished,
+            // so the operation completes what the line has received across
+            // all its receipts, in the job's units.
+            if (isOutsideProcessing && purchaseOrderLine.jobOperationId) {
+              jobOperationUpdates[purchaseOrderLine.jobOperationId] = {
+                status: receivedComplete ? "Done" : "In Progress",
+                quantityComplete: round(
+                  newQuantityReceived * (receiptLines[0]!.conversionFactor ?? 1)
+                )
+              };
+            }
 
             return {
               ...acc,

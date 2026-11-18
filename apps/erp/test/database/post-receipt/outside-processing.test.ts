@@ -4,7 +4,6 @@
 
 // Receiving an outside processing purchase order is how its job operation
 // records the units the supplier finished: nobody records production for it.
-// Before, the receipt set the operation Done and left quantityComplete at 0.
 // The supplier's cost is the job's cost: the receipt debits WIP under the
 // receipt's own id, and the job's completion and close must still count it.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
@@ -29,14 +28,19 @@ import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
 
 /** A job for 10 whose first operation is sent out on a purchase order for 10
- *  at 5 each. The job has no material, so the supplier's 50 is its whole
- *  cost. `thenInHouse` adds an operation of our own after the outside one. */
+ *  at `unitPrice` (5) each. The job has no material, so the supplier's 50 is
+ *  its whole cost. `thenInHouse` adds an operation of our own after the
+ *  outside one. `key` keeps two orders of one fixture apart. */
 async function outsideProcessingOrder(
   f: Fixture,
-  { thenInHouse = false }: { thenInHouse?: boolean } = {}
+  {
+    key = "outside",
+    unitPrice = 5,
+    thenInHouse = false
+  }: { key?: string; unitPrice?: number; thenInHouse?: boolean } = {}
 ) {
-  const job = await jobFixture(f, "outside");
-  const purchaseOrderId = `${f.prefix}-po-outside`;
+  const job = await jobFixture(f, key);
+  const purchaseOrderId = `${f.prefix}-po-${key}`;
   await seed(f, async (trx) => {
     await trx
       .deleteFrom("jobMaterial")
@@ -87,7 +91,7 @@ async function outsideProcessingOrder(
       .insertInto("purchaseOrder")
       .values({
         id: purchaseOrderId,
-        purchaseOrderId: "PO-OUTSIDE",
+        purchaseOrderId: `PO-${key}`,
         purchaseOrderType: "Outside Processing",
         supplierId: f.supplierId,
         supplierInteractionId: interaction.id,
@@ -114,7 +118,7 @@ async function outsideProcessingOrder(
         purchaseOrderLineType: "Part",
         itemId: f.assemblyId,
         purchaseQuantity: 10,
-        supplierUnitPrice: 5,
+        supplierUnitPrice: unitPrice,
         exchangeRate: 1,
         conversionFactor: 1,
         inventoryUnitOfMeasureCode: "EA",
@@ -129,7 +133,6 @@ async function outsideProcessingOrder(
   return { ...job, purchaseOrderId };
 }
 
-/** Receives `quantity` of the order's one line. */
 async function receive(f: Fixture, purchaseOrderId: string, quantity: number) {
   const receipt = unwrap(
     await invokeCreate(handlesOf(f.ctx), {
@@ -156,14 +159,13 @@ async function receive(f: Fixture, purchaseOrderId: string, quantity: number) {
   );
 }
 
-async function operation(f: Fixture, operationId: string) {
-  const row = await f.db
+function operation(f: Fixture, operationId: string) {
+  return f.db
     .selectFrom("jobOperation")
     .select(["status", "quantityComplete"])
     .where("id", "=", operationId)
     .where("companyId", "=", f.companyId)
     .executeTakeFirstOrThrow();
-  return { status: row.status, quantityComplete: Number(row.quantityComplete) };
 }
 
 /** The job's status and the units its completion received to stock. */
@@ -183,16 +185,21 @@ async function jobReceived(f: Fixture, jobId: string) {
     .execute();
   return {
     status: job.status,
-    received: receipts.reduce((sum, row) => sum + Number(row.quantity), 0)
+    received: receipts.reduce((sum, row) => sum + row.quantity, 0)
   };
 }
 
-/** What is still in WIP for the job. */
-async function wipBalance(f: Fixture, jobId: string) {
-  const { rows } = await sql<{ balance: number }>`
-    SELECT job_wip_balance(${jobId}, ${f.companyId}) AS balance
-  `.execute(f.db);
-  return Number(rows[0]!.balance);
+/** The WIP account's balance in the fixture's company: with one job, that
+ *  job's cost still in WIP, read from the ledger and not from the function
+ *  the completion and the close use. */
+async function wipAccount(f: Fixture) {
+  const row = await f.db
+    .selectFrom("journalLine")
+    .select((eb) => eb.fn.sum<number>("amount").as("balance"))
+    .where("companyId", "=", f.companyId)
+    .where("accountId", "=", f.account("wip"))
+    .executeTakeFirstOrThrow();
+  return row.balance ?? 0;
 }
 
 /** What the job's completion moved to finished goods: its Job Receipt
@@ -215,11 +222,8 @@ async function finishedGoods(f: Fixture, jobId: string) {
     .where("itemLedgerType", "=", "Output")
     .execute();
   return {
-    journal: lines.map((line) => [line.accountId, Number(line.amount)]),
-    layers: layers.map((layer) => ({
-      quantity: Number(layer.quantity),
-      cost: Number(layer.cost)
-    }))
+    journal: lines.map((line) => [line.accountId, line.amount]),
+    layers
   };
 }
 
@@ -242,20 +246,37 @@ async function completeJob(f: Fixture, jobId: string) {
 }
 
 databaseTest(
-  "a receipt that finishes the job's last operation puts the supplier's cost in finished goods",
+  "a job's cost takes only its own outside processing receipts",
   async () => {
     const f = await alwaysPostFixture();
     try {
-      const order = await outsideProcessingOrder(f);
-
-      await receive(f, order.purchaseOrderId, 10);
-
-      expect(await jobReceived(f, order.jobId)).toEqual({
-        status: "Completed",
-        received: 10
+      // Two jobs, each with our own operation still open: 50 and 30 in WIP.
+      const first = await outsideProcessingOrder(f, {
+        key: "first",
+        thenInHouse: true
       });
-      expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      const second = await outsideProcessingOrder(f, {
+        key: "second",
+        unitPrice: 3,
+        thenInHouse: true
+      });
+      await receive(f, first.purchaseOrderId, 10);
+      await receive(f, second.purchaseOrderId, 10);
+
+      const jobWip = async (jobId: string) => {
+        const { rows } = await sql<{ balance: number }>`
+          SELECT job_wip_balance(${jobId}, ${f.companyId}) AS balance
+        `.execute(f.db);
+        return rows[0]!.balance;
+      };
+      expect(await jobWip(first.jobId)).toBe(50);
+      expect(await jobWip(second.jobId)).toBe(30);
+
+      await completeJob(f, first.jobId);
+
+      expect(await finishedGoods(f, first.jobId)).toEqual(allTenAtFifty(f));
+      // The second job's 30 is still in WIP.
+      expect(await wipAccount(f)).toBe(30);
     } finally {
       await f.cleanup();
     }
@@ -275,12 +296,12 @@ databaseTest(
         journal: [],
         layers: []
       });
-      expect(await wipBalance(f, order.jobId)).toBe(50);
+      expect(await wipAccount(f)).toBe(50);
 
       await completeJob(f, order.jobId);
 
       expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      expect(await wipAccount(f)).toBe(0);
     } finally {
       await f.cleanup();
     }
@@ -297,7 +318,7 @@ databaseTest(
       // Completed before the supplier's parts were received: nothing to cost.
       await completeJob(f, order.jobId);
       await receive(f, order.purchaseOrderId, 10);
-      expect(await wipBalance(f, order.jobId)).toBe(50);
+      expect(await wipAccount(f)).toBe(50);
 
       await closeJob(f.service, { jobId: order.jobId });
 
@@ -309,20 +330,17 @@ databaseTest(
         .where("documentId", "=", order.jobId)
         .orderBy("amount", "desc")
         .execute();
-      expect(
-        variance.map((line) => [line.accountId, Number(line.amount)])
-      ).toEqual([
+      expect(variance.map((line) => [line.accountId, line.amount])).toEqual([
         [f.account("filler"), 50],
         [f.account("wip"), -50]
       ]);
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      expect(await wipAccount(f)).toBe(0);
     } finally {
       await f.cleanup();
     }
   }
 );
 
-/** An asset under construction, in a Construction in Progress class. */
 async function assetUnderConstruction(f: Fixture) {
   const classId = `${f.prefix}-cip-class`;
   const assetId = `${f.prefix}-cip-asset`;
@@ -395,8 +413,8 @@ databaseTest(
         .where("id", "=", assetId)
         .where("companyId", "=", f.companyId)
         .executeTakeFirstOrThrow();
-      expect(Number(asset.acquisitionCost)).toBe(50);
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      expect(asset.acquisitionCost).toBe(50);
+      expect(await wipAccount(f)).toBe(0);
     } finally {
       await f.cleanup();
     }
@@ -411,15 +429,15 @@ databaseTest(
       const order = await outsideProcessingOrder(f);
 
       await receive(f, order.purchaseOrderId, 4);
-      expect(await wipBalance(f, order.jobId)).toBe(20);
+      expect(await wipAccount(f)).toBe(20);
       // The 4 go back to the supplier: the job holds no cost again.
       await receive(f, order.purchaseOrderId, -4);
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      expect(await wipAccount(f)).toBe(0);
 
       // All 10 then come in: finished goods carry 50, not 50 plus the 20.
       await receive(f, order.purchaseOrderId, 10);
       expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      expect(await wipAccount(f)).toBe(0);
     } finally {
       await f.cleanup();
     }
@@ -427,7 +445,7 @@ databaseTest(
 );
 
 databaseTest(
-  "receiving an outside processing order completes the operation by what was received, across receipts",
+  "an outside processing order received in parts completes the operation by what was received and costs the job from every receipt",
   async () => {
     const f = await alwaysPostFixture();
     try {
@@ -452,7 +470,7 @@ databaseTest(
       });
       // Both receipts' cost (20, then 30) is in the finished goods.
       expect(await finishedGoods(f, order.jobId)).toEqual(allTenAtFifty(f));
-      expect(await wipBalance(f, order.jobId)).toBe(0);
+      expect(await wipAccount(f)).toBe(0);
     } finally {
       await f.cleanup();
     }

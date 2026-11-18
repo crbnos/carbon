@@ -33,9 +33,12 @@ AS $function$
       FROM "accountDefault" ad
       WHERE ad."companyId" = p_company_id
     )
+    -- DOCUMENT_JOURNAL_STATUSES (@carbon/database/accounting-posting).
     AND j.status IN ('Provisional', 'Posted', 'Reversed')
     AND (
       jl."documentId" = p_job_id
+      -- journalReference.to.receipt (packages/database/src/utils.ts) writes
+      -- this reference on the receipt's lines.
       OR jl."documentLineReference" = ANY (ARRAY(
         SELECT 'receipt:' || pol.id
         FROM "jobOperation" jo
@@ -1306,8 +1309,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Calculate accumulated WIP cost for this job: its own WIP lines and the
-  -- receipts of its outside processing purchase order lines.
   v_accumulated_wip_cost := ABS(job_wip_balance(p_job_id, p_company_id));
 
   IF v_accumulated_wip_cost <= 0 THEN
