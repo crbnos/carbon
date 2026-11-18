@@ -3580,7 +3580,7 @@ function MaterialRow({
           {/* Everything else stacks under the name and wraps, so a narrow
               card never squeezes "Requires Scan" beside the count. */}
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            <MaterialSource material={material} compact />
+            <MaterialSource material={material} size="compact" />
             <ShortStockBadge material={material} className={compactBadge} />
             {/* An unplanned part (issued from the floor, not on the BOM). */}
             {isExtra && (
