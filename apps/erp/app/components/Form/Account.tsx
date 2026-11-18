@@ -24,8 +24,8 @@ const NO_ACCOUNTS: AccountData[] = [];
 
 /** The accounts of `classes`, and of `includeTypes` whatever their class. */
 export function useAccounts(
-  classes?: AccountClass[],
-  includeTypes?: string[]
+  classes?: readonly AccountClass[],
+  includeTypes?: readonly string[]
 ): AccountData[] {
   const { data } = useLoaderQuery<Awaited<ReturnType<typeof getAccountsList>>>(
     `${path.to.api.accounts}?isGroup=false`
@@ -53,7 +53,10 @@ const badgeColors: Record<
   Expense: "orange"
 };
 
-function useAccountOptions(classes?: AccountClass[], includeTypes?: string[]) {
+function useAccountOptions(
+  classes?: readonly AccountClass[],
+  includeTypes?: readonly string[]
+) {
   const accounts = useAccounts(classes, includeTypes);
 
   return useMemo(
@@ -74,9 +77,9 @@ function useAccountOptions(classes?: AccountClass[], includeTypes?: string[]) {
 }
 
 type AccountSelectProps = Omit<ComboboxProps, "options"> & {
-  classes?: AccountClass[];
+  classes?: readonly AccountClass[];
   /** Account types offered even outside `classes`. Pass a stable array. */
-  includeTypes?: string[];
+  includeTypes?: readonly string[];
 };
 
 const Account = ({ classes, includeTypes, ...props }: AccountSelectProps) => {
@@ -92,7 +95,7 @@ Account.displayName = "Account";
 export default Account;
 
 type AccountControlledProps = {
-  classes?: AccountClass[];
+  classes?: readonly AccountClass[];
   value?: string;
   onChange?: (selected: string) => void;
   size?: "sm" | "md" | "lg";

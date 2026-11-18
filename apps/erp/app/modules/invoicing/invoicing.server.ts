@@ -4419,7 +4419,8 @@ export const changeSalesInvoiceLineAccount = defineServiceFn({
  * @remarks
  * Posts one journal, dated on the invoice's posting date in its accounting
  * period, that moves the line's posted cost from the account it is on to
- * `accountId` (an active Expense account that is not a group), with the
+ * `accountId` (an active Asset, Liability, Equity or Expense account that
+ * is not a group), with the
  * line's dimensions, and records the new account on the line. Only a G/L
  * Account line can change, and not one charged to a project. Refused while
  * the period is Locked or Closed (the refusal names it), for an invoice dated
@@ -4427,7 +4428,8 @@ export const changeSalesInvoiceLineAccount = defineServiceFn({
  * invoice reverses the change with the posting. Needs invoicing and
  * accounting update.
  *
- * @param accountId - The Expense account the line's cost moves to.
+ * @param accountId - The Asset, Liability, Equity or Expense account the
+ *   line's cost moves to.
  *
  * @mcp
  */
