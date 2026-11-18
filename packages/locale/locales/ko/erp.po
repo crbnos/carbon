@@ -824,6 +824,9 @@ msgstr "{alreadyPlannedItemCount}개 부품 건너뜀 — 이미 미결 작업 �
 msgid "{amount} of {0} posted to {element}"
 msgstr "{0}의 {amount}이 {element}에 전기되었습니다."
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "주문 라인 요금 중 청구되지 않은 {amount}"
+
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
 
@@ -868,6 +871,9 @@ msgstr "{quantity} 수량의 {categoryLabel} 마크업"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {#개 라인에서 주문의 추가 항목이나 배송비가 빠져 있습니다} other {#개 라인에서 주문의 추가 항목이나 배송비가 빠져 있습니다}}"
 
 msgid "{code} counted"
 msgstr "{code} 계산 완료"
@@ -1197,6 +1203,12 @@ msgstr "{name}님, 돌아오셨군요!"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {#개 라인에 가격이 없습니다} other {#개 라인에 가격이 없습니다}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {#개 라인에 수량이 없습니다} other {#개 라인에 수량이 없습니다}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} 중 {numerator}"
 
@@ -1219,12 +1231,18 @@ msgstr "{openedTotal}건 등록, {closedTotal}건 마감"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# 시간 항목이 아직 전기되지 않음} other {# 시간 항목이 아직 전기되지 않음}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} 주문에는 어떤 송장에도 포함되지 않은 배송비가 {amount} 있습니다"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# 차용은 반환 기한을 지남} other {# 차용은 반환 기한을 지남}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {#개 라인의 청구 금액이 주문에 남은 송장 발행 가능 금액을 초과합니다} other {#개 라인의 청구 금액이 주문에 남은 송장 발행 가능 금액을 초과합니다}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower}은(는) {lender}에 {due}에 만기인 채무가 있습니다."
@@ -1366,9 +1384,6 @@ msgstr "{unmapped}개 구성품이 BOM과 일치하지 않습니다 — Match BO
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 매핑하세요.} other {먼저 # 남은 필수 계정을 매핑하세요.}}"
-
-msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
-msgstr ""
 
 msgid "{unread} unread"
 msgstr "{unread} 미읽음"
@@ -5797,9 +5812,6 @@ msgstr "청구 요율"
 msgid "Bill Rate (per hour)"
 msgstr "청구 요금 (시간당)"
 
-msgid "Bill to"
-msgstr ""
-
 msgid "Bill To"
 msgstr "청구 대상"
 
@@ -6974,7 +6986,7 @@ msgid "Check"
 msgstr "점검"
 
 msgid "Check before posting"
-msgstr ""
+msgstr "전기하기 전에 확인하세요"
 
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
@@ -6983,7 +6995,7 @@ msgid "Check Quantity"
 msgstr ""
 
 msgid "Check the details below. A posted invoice can't be edited."
-msgstr ""
+msgstr "아래 세부 정보를 확인하세요. 전기된 송장은 수정할 수 없습니다."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 기준 음수 현재고 수량이 있는 품목에 대해 품목 장부를 확인하십시오 — 일반적으로 입고 누락 또는 순서 없는 전기로 인해 재고 관리 가치 및 매출원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유를 포함하여 건너뜁니다."
@@ -20271,6 +20283,9 @@ msgstr "전기된 환급 라인 없음"
 msgid "No posted supplier invoice lines"
 msgstr "전기된 공급업체 송장 라인 없음"
 
+msgid "No price"
+msgstr "가격 없음"
+
 msgid "No pricing for selected quantity"
 msgstr "선택한 수량에 대한 가격 책정이 없습니다."
 
@@ -20321,6 +20336,9 @@ msgstr "아직 프로젝트가 없습니다"
 
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
+
+msgid "No quantity"
+msgstr "수량 없음"
 
 msgid "No Quote"
 msgstr "견적 거절"
@@ -20432,9 +20450,6 @@ msgstr "출하 내역이 없습니다"
 
 msgid "No shipments yet"
 msgstr "아직 출하가 없습니다"
-
-msgid "No shipping is charged on this invoice"
-msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서 사용할 수 있는 단축키가 없습니다."
@@ -20680,8 +20695,8 @@ msgstr "없음"
 msgid "None (full page)"
 msgstr ""
 
-msgid "None (Net 30)"
-msgstr ""
+msgid "None (Net {defaultTermDays})"
+msgstr "없음 (Net {defaultTermDays})"
 
 msgid "None available"
 msgstr "사용 가능한 항목 없음"
@@ -21261,6 +21276,9 @@ msgstr "여기에는 {quantity}뿐입니다."
 
 msgid "Only {quantity} with a serial number there"
 msgstr "여기에서 시리얼 번호가 있는 수량은 {quantity}뿐입니다."
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "주문에 남은 송장 발행 가능 금액은 {remaining}뿐입니다"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "초안 절차서만 편집 가능합니다. 활성 또는 보관됨 절차서를 변경하려면 새로운 버전을 생성하세요."
@@ -32069,6 +32087,9 @@ msgstr "이 {0}에 가입하라는 초대가 만료되었습니다. 새 초대�
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "이 송장에는 사용 가능한 마감일이 없습니다 — Stripe를 위해 하나를 선택하세요."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "이 송장은 {currencyCode}에 대해 환율 1을 사용하고 있지만, 오늘 환율은 {currentRate}입니다"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."

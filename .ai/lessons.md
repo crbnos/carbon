@@ -5168,3 +5168,10 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Problem:** The registry resolved both names, but the table's Customer columns had only `id` and `cell`. `buildColumnMaps` excluded them, so the export request never asked for either name.
 **Rule:** A display column needs `meta.exportValue` to participate in CSV export. Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports.
 **Applies to:** ERP Table display columns, `buildColumnMaps`, and list-registry `exportValues`.
+
+## A pre-post check flags facts, never guesses
+
+**Context:** The Post Invoice summary (PR #2305) first warned "No shipping is charged" on every $0-shipping invoice, and compared each line's add-ons with the order line's whole unbilled charge.
+**Problem:** $0 shipping is normal (free, buyer-paid, a later partial invoice whose shipping went on the first), and a partial invoice bills a quantity SHARE of a line's flat charges (`flatChargeShare`). Both produced amber warnings on correct invoices, which teaches people to ignore the box.
+**Rule:** Flag only what the data proves wrong: a charge the order holds that no invoice bills, more than is left to invoice, a missing unit price, a rate of 1 when today's rate is not. Compute "expected" with the same helper the conversion uses (`flatChargeShare`), judge split lines together, skip credits, and read the order tables with the service role (they need `sales_view`; the invoice page needs only `invoicing_view`). Show the rest plainly.
+**Applies to:** `salesInvoicePostChecks` (`invoicing.utils.ts`), `getSalesInvoicePostFacts`, and any future pre-post check on a document built from another one.

@@ -824,6 +824,9 @@ msgstr "{alreadyPlannedItemCount} पार्ट्स छोड़ा गय�
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} का {0} {element} को पोस्ट किया गया"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "ऑर्डर पंक्ति के शुल्कों में से {amount} का बिल नहीं बना है"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% देय राशि का"
 
@@ -868,6 +871,9 @@ msgstr "मात्रा {quantity} के लिए {categoryLabel} मार
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# पंक्ति में ऑर्डर के ऐड-ऑन या शिपिंग शामिल नहीं है} other {# पंक्तियों में ऑर्डर के ऐड-ऑन या शिपिंग शामिल नहीं हैं}}"
 
 msgid "{code} counted"
 msgstr "{code} गिना गया"
@@ -1197,6 +1203,12 @@ msgstr "{name} लौट गए!"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} पार्ट्स छोड़ा गया — कुछ भी बनाने के लिए नहीं"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# पंक्ति में मूल्य नहीं है} other {# पंक्तियों में मूल्य नहीं है}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# पंक्ति में मात्रा नहीं है} other {# पंक्तियों में मात्रा नहीं है}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} में से {numerator}"
 
@@ -1219,12 +1231,18 @@ msgstr "{openedTotal} खुले, {closedTotal} बंद"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# समय प्रविष्टि अभी पोस्ट नहीं की गई है} other {# समय प्रविष्टियाँ अभी पोस्ट नहीं की गई हैं}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} में {amount} की शिपिंग है, जो किसी भी चालान में शामिल नहीं है"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# उधार अपनी भुगतान तिथि से गुजर चुका है} other {# उधार अपनी भुगतान तिथि से गुजर चुके हैं}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# पंक्ति ऑर्डर में चालान के लिए बचे हुए से अधिक बिल करती है} other {# पंक्तियाँ ऑर्डर में चालान के लिए बचे हुए से अधिक बिल करती हैं}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} का {lender} पर {due} तक बकाया है"
@@ -1366,9 +1384,6 @@ msgstr "{unmapped} घटकों के पास कोई BOM मेल न�
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {पहले # शेष आवश्यक खाता मैप करें।} other {पहले # शेष आवश्यक खातों को मैप करें।}}"
-
-msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
-msgstr ""
 
 msgid "{unread} unread"
 msgstr "{unread} अपठित"
@@ -5797,9 +5812,6 @@ msgstr "बिल दर"
 msgid "Bill Rate (per hour)"
 msgstr "बिल दर (प्रति घंटे)"
 
-msgid "Bill to"
-msgstr ""
-
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
 
@@ -6974,7 +6986,7 @@ msgid "Check"
 msgstr "जाँच"
 
 msgid "Check before posting"
-msgstr ""
+msgstr "पोस्टिंग से पहले जाँचें"
 
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
@@ -6983,7 +6995,7 @@ msgid "Check Quantity"
 msgstr ""
 
 msgid "Check the details below. A posted invoice can't be edited."
-msgstr ""
+msgstr "नीचे दिए गए विवरण जाँचें। पोस्ट किया गया चालान संपादित नहीं किया जा सकता।"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक किसी भी आइटम के लिए आइटम लेजर की जांच करें जिसमें नकारात्मक ऑन-हैंड मात्रा है — आमतौर पर एक लापता प्राप्ति या एक गलत क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए माल की लागत को विकृत करती है। एक बार समीक्षा के बाद इसे हो गया के रूप में चिह्नित करें, या कारण के साथ छोड़ दें।"
@@ -20271,6 +20283,9 @@ msgstr "कोई पोस्ट किया गया प्रतिपू�
 msgid "No posted supplier invoice lines"
 msgstr "कोई पोस्ट किया गया आपूर्तिकर्ता चालान पंक्ति नहीं"
 
+msgid "No price"
+msgstr "मूल्य नहीं"
+
 msgid "No pricing for selected quantity"
 msgstr "चयनित मात्रा के लिए कोई मूल्य निर्धारण नहीं"
 
@@ -20321,6 +20336,9 @@ msgstr "अभी कोई प्रोजेक्ट नहीं"
 
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
+
+msgid "No quantity"
+msgstr "मात्रा नहीं"
 
 msgid "No Quote"
 msgstr "कोई कोटेशन नहीं"
@@ -20432,9 +20450,6 @@ msgstr "कोई शिपमेंट नहीं मिला"
 
 msgid "No shipments yet"
 msgstr "अभी कोई शिपमेंट नहीं"
-
-msgid "No shipping is charged on this invoice"
-msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं है।"
@@ -20680,8 +20695,8 @@ msgstr "कोई नहीं"
 msgid "None (full page)"
 msgstr ""
 
-msgid "None (Net 30)"
-msgstr ""
+msgid "None (Net {defaultTermDays})"
+msgstr "कोई नहीं (Net {defaultTermDays})"
 
 msgid "None available"
 msgstr "कोई उपलब्ध नहीं"
@@ -21261,6 +21276,9 @@ msgstr "वहाँ केवल {quantity}"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "वहाँ सीरियल नंबर वाले केवल {quantity}"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "ऑर्डर पर चालान के लिए केवल {remaining} बचा है"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "केवल ड्राफ्ट कार्यविधियाँ संपादन योग्य हैं। सक्रिय या संग्रहीत कार्यविधि को बदलने के लिए एक नया संस्करण बनाएँ।"
@@ -32069,6 +32087,9 @@ msgstr "यह आमंत्रण {0} में शामिल होने 
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "इस चालान का कोई उपयोगी नियत तिथि नहीं है — Stripe के लिए एक चुनें।"
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "इस चालान में {currencyCode} के लिए 1 की दर का उपयोग किया गया है, लेकिन आज की दर {currentRate} है"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"

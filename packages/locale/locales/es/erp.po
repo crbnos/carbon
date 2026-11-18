@@ -824,6 +824,9 @@ msgstr "{alreadyPlannedItemCount} piezas omitidas — ya tienen órdenes de trab
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} de {0} contabilizado para {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount} de los cargos de la línea de pedido sin facturar"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% de cuentas por pagar"
 
@@ -868,6 +871,9 @@ msgstr "Recargo de {categoryLabel} para la cantidad {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considere apuntar esta pieza directamente al sucesor final."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# línea no incluye los cargos adicionales ni el envío de su pedido} other {# líneas no incluyen los cargos adicionales ni el envío de sus pedidos}}"
 
 msgid "{code} counted"
 msgstr "{code} contado"
@@ -1197,6 +1203,12 @@ msgstr "{names} debe coincidir — carga separada"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} piezas omitidas — no hay nada que fabricar"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# línea no tiene precio} other {# líneas no tienen precio}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# línea no tiene cantidad} other {# líneas no tienen cantidad}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} de {denominator}"
 
@@ -1219,12 +1231,18 @@ msgstr "{openedTotal} abiertos, {closedTotal} cerrados"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# la entrada de tiempo aún no está contabilizada} other {# las entradas de tiempo aún no están contabilizadas}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} tiene {amount} de envío que no aparece en ninguna factura"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} se reabrirá para edición como revisión {0}. El documento ya enviado al proveedor permanece sin cambios hasta que finalices y reenvíes la orden."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# el préstamo está vencido para su devolución} other {# los préstamos están vencidos para su devolución}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# línea factura más de lo que queda pendiente de facturar en su pedido} other {# líneas facturan más de lo que queda pendiente de facturar en sus pedidos}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} debe {lender}, vencimiento {due}"
@@ -1366,9 +1384,6 @@ msgstr "{unmapped} componentes sin coincidencia BOM — usa Emparejar BOM para v
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Asigna primero la # cuenta requerida restante.} other {Asigna primero las # cuentas requeridas restantes.}}"
-
-msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
-msgstr ""
 
 msgid "{unread} unread"
 msgstr "{unread} sin leer"
@@ -5797,9 +5812,6 @@ msgstr "Tasa de facturación"
 msgid "Bill Rate (per hour)"
 msgstr "Tarifa de facturación (por hora)"
 
-msgid "Bill to"
-msgstr ""
-
 msgid "Bill To"
 msgstr "Facturar a"
 
@@ -6974,7 +6986,7 @@ msgid "Check"
 msgstr "Verificación"
 
 msgid "Check before posting"
-msgstr ""
+msgstr "Revisar antes de la contabilización"
 
 msgid "Check operations on the left to build the batch."
 msgstr "Marque las operaciones a la izquierda para construir el lote."
@@ -6983,7 +6995,7 @@ msgid "Check Quantity"
 msgstr ""
 
 msgid "Check the details below. A posted invoice can't be edited."
-msgstr ""
+msgstr "Revise los detalles a continuación. Una factura contabilizada ya no se puede editar."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Verifique el libro mayor de artículos para cualquier artículo con cantidad negativa en existencias a fin de período — generalmente una recepción faltante o una contabilización fuera de orden que distorsiona el valor del inventario y el costo de ventas. Márquelo como completado una vez revisado, o omítalo con un motivo."
@@ -20271,6 +20283,9 @@ msgstr "Sin líneas de reembolso contabilizadas"
 msgid "No posted supplier invoice lines"
 msgstr "Sin líneas de factura de proveedor contabilizadas"
 
+msgid "No price"
+msgstr "Sin precio"
+
 msgid "No pricing for selected quantity"
 msgstr "Sin fijación de precios para la cantidad seleccionada"
 
@@ -20321,6 +20336,9 @@ msgstr "Sin proyectos aún"
 
 msgid "No purchases in this period"
 msgstr "Sin compras en este período"
+
+msgid "No quantity"
+msgstr "Sin cantidad"
 
 msgid "No Quote"
 msgstr "Sin Cotización"
@@ -20432,9 +20450,6 @@ msgstr "No se encontraron envíos"
 
 msgid "No shipments yet"
 msgstr "Sin envíos aún"
-
-msgid "No shipping is charged on this invoice"
-msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "No hay atajos disponibles en esta página."
@@ -20680,8 +20695,8 @@ msgstr "Ninguno"
 msgid "None (full page)"
 msgstr ""
 
-msgid "None (Net 30)"
-msgstr ""
+msgid "None (Net {defaultTermDays})"
+msgstr "Ninguno (Neto {defaultTermDays} días)"
 
 msgid "None available"
 msgstr "Ninguna disponible"
@@ -21261,6 +21276,9 @@ msgstr "Solo hay {quantity} allí"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "Solo hay {quantity} con número de serie allí"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "Solo quedan {remaining} por facturar en el pedido"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Solo se pueden editar los procedimientos en Borrador. Crear una nueva versión para cambiar un procedimiento Activo o Archivado."
@@ -32069,6 +32087,9 @@ msgstr "Esta invitación para unirse a {0} ha vencido. Puedes solicitar que se e
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Esta factura no tiene una fecha de vencimiento utilizable: elija una para Stripe."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "Esta factura usa un tipo de cambio de 1 para {currencyCode}, pero el tipo de cambio de hoy es {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta factura se facturará al cliente de Stripe ya vinculado a este cliente de Carbon. Para cambiar sus detalles, edítalo en el panel de Stripe."

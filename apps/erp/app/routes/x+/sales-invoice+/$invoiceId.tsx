@@ -47,6 +47,8 @@ export const handle: Handle = {
   realtime: [
     { table: "salesInvoice", column: "id", param: "invoiceId" },
     { table: "salesInvoiceLine", column: "invoiceId", param: "invoiceId" },
+    // The Shipping section: the post summary shows its cost.
+    { table: "salesInvoiceShipment", column: "id", param: "invoiceId" },
     // What is applied to this invoice, and the payments behind it: voiding a
     // payment changes the payment row only.
     {

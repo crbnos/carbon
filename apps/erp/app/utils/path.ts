@@ -383,6 +383,8 @@ export const path = {
         ),
       root: api,
       salesCustomerOverride: `${api}/sales/customer-override`,
+      salesInvoicePostFacts: (invoiceId: string) =>
+        generatePath(`${api}/sales-invoice/${invoiceId}/post-facts`),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrderDeliveryDate: (orderId: string, line: Record<string, string>) =>
         `${generatePath(`${api}/sales-order/${orderId}/delivery-date`)}?${new URLSearchParams(

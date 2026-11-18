@@ -19,7 +19,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { AnimatePresence, motion } from "motion/react";
@@ -35,18 +35,18 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   isItemlessServiceLine,
   isSalesInvoiceLocked
 } from "../../invoicing.models";
+import { salesInvoiceLineAmounts } from "../../invoicing.utils";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
   SalesInvoiceShipment
 } from "../../types";
-import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
+import { useSalesInvoiceLineName } from "./useSalesInvoiceLineName";
 import { useSalesInvoiceTotals } from "./useSalesInvoiceTotals";
 
 const LineItems = ({
@@ -69,9 +69,8 @@ const LineItems = ({
 
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  const [items] = useItems();
   const percentFormatter = usePercentFormatter();
-  const rentalLineTypeLabel = useRentalLineTypeLabel();
+  const getLineName = useSalesInvoiceLineName();
   const [openItems, setOpenItems] = useState<string[]>([]);
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -84,43 +83,20 @@ const LineItems = ({
   const rows = salesInvoiceLines.map((line) => {
     if (!line.id) return null;
 
-    const itemReadableId =
-      line.invoiceLineType === "Rental"
-        ? rentalLineTypeLabel(line.rentalLineType)
-        : line.invoiceLineType === "Fixed Asset"
-          ? (line as any).assetReadableId || "Fixed Asset"
-          : isItemlessServiceLine(line)
-            ? line.description || t`Service`
-            : getItemReadableId(items, line.itemId);
-    const description = distinctItemText(itemReadableId, line.description);
+    const itemReadableId = getLineName(line);
     const lineName = itemReadableId ?? "";
+    const description = distinctItemText(itemReadableId, line.description);
     // The discount reduces the merchandise only (the generated net
     // prices); add-ons and shipping are not discounted.
     const discountPercent = line.discountPercent ?? 0;
     const discount = percentFormatter.format(discountPercent);
-    const lineSubtotal = (line.netUnitPrice ?? 0) * (line.quantity ?? 0);
-    const customerSubtotal =
-      (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0);
-    const total =
-      (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0)) *
-        (1 + (line.taxPercent ?? 0)) +
-      (line.nonTaxableAddOnCost ?? 0);
-    const customerTotal =
-      (customerSubtotal +
-        (line.convertedAddOnCost ?? 0) +
-        (line.convertedShippingCost ?? 0)) *
-        (1 + (line.taxPercent ?? 0)) +
-      (line.convertedNonTaxableAddOnCost ?? 0);
-
-    const lineTaxAmount =
-      (line.taxPercent ?? 0) *
-      (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0));
-
-    const customerLineTaxAmount =
-      (line.taxPercent ?? 0) *
-      (customerSubtotal +
-        (line.convertedAddOnCost ?? 0) +
-        (line.convertedShippingCost ?? 0));
+    const amounts = salesInvoiceLineAmounts(line);
+    const lineSubtotal = amounts.merchandise;
+    const customerSubtotal = amounts.customerMerchandise;
+    const total = amounts.total;
+    const customerTotal = amounts.customerTotal;
+    const lineTaxAmount = amounts.tax;
+    const customerLineTaxAmount = amounts.customerTax;
 
     // Phones: one row that opens the line page (its Edit link, the
     // badges and the breakdown stay on desktop).

@@ -824,6 +824,9 @@ msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} of {0} posted to {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount} of the order line's charges not billed"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% of payables"
 
@@ -868,6 +871,9 @@ msgstr "{categoryLabel} markup for quantity {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
 
 msgid "{code} counted"
 msgstr "{code} counted"
@@ -1197,6 +1203,12 @@ msgstr "{names} must match — separate load"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parts skipped — nothing to make"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} of {denominator}"
 
@@ -1219,12 +1231,18 @@ msgstr "{openedTotal} opened, {closedTotal} closed"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} has {amount} of shipping that is not on any invoice"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
@@ -1366,9 +1384,6 @@ msgstr "{unmapped} components have no BOM match — use Match BOM to link their 
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
-
-msgid "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
-msgstr "{unpricedLines, plural, one {# line has no price} other {# lines have no price}}"
 
 msgid "{unread} unread"
 msgstr "{unread} unread"
@@ -5796,9 +5811,6 @@ msgstr "Bill Rate"
 
 msgid "Bill Rate (per hour)"
 msgstr "Bill Rate (per hour)"
-
-msgid "Bill to"
-msgstr "Bill to"
 
 msgid "Bill To"
 msgstr "Bill To"
@@ -20271,6 +20283,9 @@ msgstr "No posted reimbursement lines"
 msgid "No posted supplier invoice lines"
 msgstr "No posted supplier invoice lines"
 
+msgid "No price"
+msgstr "No price"
+
 msgid "No pricing for selected quantity"
 msgstr "No pricing for selected quantity"
 
@@ -20321,6 +20336,9 @@ msgstr "No projects yet"
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
+
+msgid "No quantity"
+msgstr "No quantity"
 
 msgid "No Quote"
 msgstr "No Quote"
@@ -20432,9 +20450,6 @@ msgstr "No shipments found"
 
 msgid "No shipments yet"
 msgstr "No shipments yet"
-
-msgid "No shipping is charged on this invoice"
-msgstr "No shipping is charged on this invoice"
 
 msgid "No shortcuts available on this page."
 msgstr "No shortcuts available on this page."
@@ -20680,8 +20695,8 @@ msgstr "None"
 msgid "None (full page)"
 msgstr "None (full page)"
 
-msgid "None (Net 30)"
-msgstr "None (Net 30)"
+msgid "None (Net {defaultTermDays})"
+msgstr "None (Net {defaultTermDays})"
 
 msgid "None available"
 msgstr "None available"
@@ -21261,6 +21276,9 @@ msgstr "Only {quantity} there"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "Only {quantity} with a serial number there"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "Only {remaining} left to invoice on the order"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -32069,6 +32087,9 @@ msgstr "This invitation to join {0} has expired. You can request a new invite to
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "This invoice has no usable due date — choose one for Stripe."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."

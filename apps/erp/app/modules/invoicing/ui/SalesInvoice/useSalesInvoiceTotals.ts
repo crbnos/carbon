@@ -4,6 +4,7 @@
 
 import { useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
+import { salesInvoiceLineAmounts } from "../../invoicing.utils";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
@@ -12,8 +13,8 @@ import type {
 
 /**
  * The invoice totals the summary card and the post modal both show, in base
- * currency and in the invoice's own currency. Merchandise is NET of the line
- * discount, as in the `salesInvoices` view.
+ * currency and in the invoice's own currency, summed from
+ * `salesInvoiceLineAmounts` so a line and the totals can never disagree.
  */
 export function useSalesInvoiceTotals(invoiceId: string) {
   const routeData = useRouteData<{
@@ -23,47 +24,17 @@ export function useSalesInvoiceTotals(invoiceId: string) {
   }>(path.to.salesInvoice(invoiceId));
   const { company } = useUser();
 
-  const lines = routeData?.salesInvoiceLines ?? [];
-
-  const subtotal = lines.reduce(
-    (acc, line) =>
-      acc +
-      (line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
-      (line.shippingCost ?? 0) +
-      (line.addOnCost ?? 0) +
-      (line.nonTaxableAddOnCost ?? 0),
-    0
-  );
-
-  const customerSubtotal = lines.reduce(
-    (acc, line) =>
-      acc +
-      (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
-      (line.convertedShippingCost ?? 0) +
-      (line.convertedAddOnCost ?? 0) +
-      (line.convertedNonTaxableAddOnCost ?? 0),
-    0
-  );
-
-  const tax = lines.reduce(
-    (acc, line) =>
-      acc +
-      (line.taxPercent ?? 0) *
-        ((line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
-          (line.shippingCost ?? 0) +
-          (line.addOnCost ?? 0)),
-    0
-  );
-
-  const customerTax = lines.reduce(
-    (acc, line) =>
-      acc +
-      (line.taxPercent ?? 0) *
-        ((line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
-          (line.convertedShippingCost ?? 0) +
-          (line.convertedAddOnCost ?? 0)),
-    0
-  );
+  let subtotal = 0;
+  let customerSubtotal = 0;
+  let tax = 0;
+  let customerTax = 0;
+  for (const line of routeData?.salesInvoiceLines ?? []) {
+    const amounts = salesInvoiceLineAmounts(line);
+    subtotal += amounts.subtotal;
+    customerSubtotal += amounts.customerSubtotal;
+    tax += amounts.tax;
+    customerTax += amounts.customerTax;
+  }
 
   // `salesInvoiceShipment.shippingCost` is stored in BASE currency, like every
   // other raw column on this side -- the `salesInvoices` view adds it straight

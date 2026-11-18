@@ -38,7 +38,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { PrintButton } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
 import {
@@ -58,6 +58,7 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { isInvoicePayable } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing/types";
 import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
+import type { SalesInvoicePostFactsResponse } from "~/routes/api+/sales-invoice.$invoiceId.post-facts";
 import type { action as sendAction } from "~/routes/x+/sales-invoice+/$invoiceId.send";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -93,6 +94,9 @@ const SalesInvoiceHeader = () => {
   });
   const postFetcher =
     postRules.fetcher as FetcherWithComponents<SalesInvoicePostResult>;
+  // The order facts the post checks compare against, read when Post is
+  // clicked so they include invoices posted since the page loaded.
+  const postFactsFetcher = useFetcher<SalesInvoicePostFactsResponse>();
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -225,18 +229,21 @@ const SalesInvoiceHeader = () => {
     // The lines posting will ship: items not on a sales order. A Service is
     // never shipped — post-sales-invoice skips it — so it is not listed.
     if (!carbon) throw new Error("carbon not found");
-    const { data, error } = await carbon
-      .from("salesInvoiceLine")
-      .select("itemId, description, quantity")
-      .eq("invoiceId", invoiceId)
-      .in("invoiceLineType", [
-        "Part",
-        "Material",
-        "Tool",
-        "Consumable",
-        "Fixture"
-      ])
-      .is("salesOrderLineId", null);
+    const [{ data, error }] = await Promise.all([
+      carbon
+        .from("salesInvoiceLine")
+        .select("itemId, description, quantity")
+        .eq("invoiceId", invoiceId)
+        .in("invoiceLineType", [
+          "Part",
+          "Material",
+          "Tool",
+          "Consumable",
+          "Fixture"
+        ])
+        .is("salesOrderLineId", null),
+      postFactsFetcher.load(path.to.api.salesInvoicePostFacts(invoiceId))
+    ]);
 
     if (error) throw new Error(error.message);
     if (!data) return;
@@ -548,6 +555,7 @@ const SalesInvoiceHeader = () => {
         isOpen={postingModal.isOpen}
         onClose={postingModal.onClose}
         linesToShip={linesNotAssociatedWithSO}
+        postFacts={postFactsFetcher.data?.facts ?? null}
         fetcher={postFetcher}
         defaultCc={routeData?.defaultCc ?? []}
       />

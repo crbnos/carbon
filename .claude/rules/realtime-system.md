@@ -53,7 +53,9 @@ has no invoice column, so its message names the invoices its
 `invoiceSettlement` rows apply it to (`targetSalesInvoiceId`,
 `targetPurchaseInvoiceId`; an empty list when it is applied to none). An
 invoice page follows `invoiceSettlement` and `payment` on that column: voiding
-a payment changes the payment row only.
+a payment changes the payment row only. A sales invoice page also follows
+`salesInvoiceShipment` by `id` (its Shipping section; the Post modal shows the
+cost).
 
 The broadcast functions return at once when `realtime.send` does not exist, so
 a database without Supabase Realtime still accepts writes.
