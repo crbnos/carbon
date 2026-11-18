@@ -11,7 +11,7 @@ import {
   toZoned
 } from "@internationalized/date";
 import { Client } from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   asWeekNumbering,
   interpolateSequenceDate,
@@ -122,6 +122,22 @@ describe("interpolateSequenceFormat", () => {
       prefix: "",
       suffix: ""
     });
+  });
+
+  it("reads the clock once for both segments", () => {
+    // The second read crosses midnight into Monday 4 January 2027, week 1 of
+    // 2027. Read twice, the pair would be 26 with week 01.
+    const clock = vi
+      .spyOn(Date, "now")
+      .mockReturnValueOnce(Date.parse("2027-01-03T23:59:59.999Z"))
+      .mockReturnValueOnce(Date.parse("2027-01-04T00:00:00.001Z"));
+    try {
+      expect(
+        interpolateSequenceFormat("%{yy}-", "-%{ww}", { timezone: "UTC" })
+      ).toEqual({ prefix: "26-", suffix: "-53" });
+    } finally {
+      clock.mockRestore();
+    }
   });
 });
 

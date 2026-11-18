@@ -82,6 +82,8 @@ SELECT pg_temp.expect('serial segment counts US weeks', 'HQ-2702-', interpolate_
 -- A document number takes the company's week numbering in its timezone.
 UPDATE "sequence" SET "prefix" = 'WK%{yy}%{ww}-', "suffix" = '/%{yyyy}', "size" = 4, "next" = 501
 WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
+UPDATE "companySettings" SET "sequenceWeekNumbering" = 'iso'
+WHERE "id" = (SELECT "companyId" FROM picked);
 SELECT pg_temp.expect(
   'a document number in ISO 8601 weeks',
   (SELECT 'WK' || to_char(v, 'IY') || to_char(v, 'IW') || '-0502/' || to_char(v, 'IYYY')

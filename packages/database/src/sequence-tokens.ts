@@ -124,8 +124,11 @@ export function interpolateSequenceFormat(
   options: Omit<SequenceDateOptions, "format"> = {}
 ): { prefix: string; suffix: string } {
   const format = `${prefix ?? ""}${suffix ?? ""}`;
+  // One instant for both, as get_next_sequence takes one: two clock reads can
+  // fall either side of the company's midnight.
+  const at = options.at ?? now(options.timezone ?? "UTC");
   return {
-    prefix: interpolateSequenceDate(prefix, { ...options, format }),
-    suffix: interpolateSequenceDate(suffix, { ...options, format })
+    prefix: interpolateSequenceDate(prefix, { ...options, at, format }),
+    suffix: interpolateSequenceDate(suffix, { ...options, at, format })
   };
 }
