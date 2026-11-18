@@ -202,9 +202,9 @@ const PrimaryNavigation = () => {
         disableHover={editMode.isEditing || isSearchModalOpen}
         // Phones switch company from the Profile sheet.
         header={isMobile ? undefined : <CompanySwitcher />}
+        sticky={canSearch ? <NavigationSearchButton /> : undefined}
         footer={footer}
       >
-        {canSearch && <NavigationSearchButton />}
         {editMode.isEditing ? null : (
           <ImplementationData>
             {(data) => {

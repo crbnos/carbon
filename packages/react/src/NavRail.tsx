@@ -91,12 +91,18 @@ function useNavRailHold(triggerProps: object) {
 export function NavRail({
   children,
   header,
+  sticky,
   footer,
   forceExpanded = false,
   disableHover = false
 }: {
   children: ReactNode;
   header?: ReactNode;
+  /**
+   * Items above the scrolling list that stay in view with the header (e.g.
+   * Search). On phones they scroll with the list.
+   */
+  sticky?: ReactNode;
   footer?: ReactNode;
   /** Hold the rail open regardless of hover or pin (e.g. while rearranging). */
   forceExpanded?: boolean;
@@ -253,23 +259,29 @@ export function NavRail({
   const content = (
     <NavRailHoldContext.Provider value={hold}>
       <VStack spacing={1} className="flex flex-col justify-between h-full">
-        {/* Only the list scrolls, so the footer stays in view. A color theme makes
-            the rail transparent, so nothing can paint over a scrolling list. */}
+        {/* Only the list scrolls, so the header, the sticky items and the
+            footer stay in view. A color theme makes the rail transparent, so
+            nothing can paint over a scrolling list. */}
+        {header || sticky ? (
+          <VStack spacing={1} className="shrink-0 px-2">
+            {header ? (
+              // As tall as the app's top bar (ERP `--topbar-height`, MES
+              // `--header-height`) and as far down: the rail's padding plus the
+              // content panel's 1px border. The logo centres on the bar.
+              <div className="mt-px mb-2 flex h-[var(--topbar-height,var(--header-height,2.5rem))] w-full shrink-0 items-center gap-1">
+                {header}
+                <NavRailToggle />
+              </div>
+            ) : null}
+            {sticky}
+          </VStack>
+        ) : null}
         <VStack
           spacing={1}
           data-nav-list=""
           onScroll={followScroll}
           className="min-h-0 flex-1 px-2 pb-1 overflow-x-hidden overflow-y-auto hide-scrollbar scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
-          {header ? (
-            // As tall as the app's top bar (ERP `--topbar-height`, MES
-            // `--header-height`) and as far down: the rail's padding plus the
-            // content panel's 1px border. The logo centres on the bar.
-            <div className="mt-px mb-2 flex h-[var(--topbar-height,var(--header-height,2.5rem))] w-full shrink-0 items-center gap-1">
-              {header}
-              <NavRailToggle />
-            </div>
-          ) : null}
           {children}
         </VStack>
         {footer ? (
@@ -305,6 +317,7 @@ export function NavRail({
             >
               <VStack spacing={1} className="px-2">
                 {header ? <div className="w-full pb-2">{header}</div> : null}
+                {sticky}
                 {children}
               </VStack>
               {/* A static fade: it pins to the bottom while rows sit under
