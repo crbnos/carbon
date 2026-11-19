@@ -99096,6 +99096,7 @@ export type Database = {
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
+          projectElementId: string | null
           projectId: string | null
           purchaseOrderId: string | null
           purchaseOrderLineId: string | null
@@ -99248,6 +99249,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_projectElement_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLine_projectId_fkey"
@@ -103958,6 +103966,7 @@ export type Database = {
           salesOrderId: string | null
           salesOrderLineId: string | null
           serviceEndDate: string | null
+          serviceJobId: string | null
           serviceStartDate: string | null
           setupPrice: number | null
           shippingCost: number | null
@@ -104238,6 +104247,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrderLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoiceLine_storageUnitId_fkey"
