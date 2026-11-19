@@ -74,6 +74,7 @@ import {
   neq,
   newIds,
   notNull,
+  rpcValue,
   selectRow,
   selectRows,
   single,
@@ -14437,6 +14438,47 @@ export const closeJobInput = z.object({
  * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
  * stay in the residual.
  */
+/**
+ * A `rule` refusal while a job has outside processing still to receive: a
+ * line of an outside processing order To Receive that is not received
+ * complete. The close writes the job's WIP off once and a receipt after it is
+ * refused, so the supplier's cost would never reach the job. Stopping the
+ * line's receiving releases it.
+ */
+export async function outsideProcessingToReceiveRefusal(
+  ctx: ServiceContext,
+  jobId: string
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const orders = await ctx.asSystem.pg
+    .selectFrom(
+      sql<{
+        purchaseOrderLineId: string;
+      }>`job_receipt_line_references(${companyId}, ${jobId})`.as("ref")
+    )
+    .innerJoin("purchaseOrderLine as pol", (join) =>
+      join.onRef("pol.id", "=", "ref.purchaseOrderLineId")
+    )
+    .innerJoin("purchaseOrder as po", (join) =>
+      join
+        .onRef("po.id", "=", "pol.purchaseOrderId")
+        .onRef("po.companyId", "=", "pol.companyId")
+    )
+    .select("po.purchaseOrderId")
+    .distinct()
+    .where("pol.companyId", "=", companyId)
+    .where("pol.receivedComplete", "=", false)
+    .where("po.purchaseOrderType", "=", "Outside Processing")
+    .where("po.status", "in", ["To Receive", "To Receive and Invoice"])
+    .orderBy("po.purchaseOrderId")
+    .execute();
+  if (orders.length === 0) return null;
+  return ctx.error(
+    "rule",
+    `Outside processing on ${orders.map((order) => order.purchaseOrderId).join(", ")} is still to receive. Receive it, or stop receiving the line, before closing the job.`
+  );
+}
+
 export async function closeJob(
   ctx: ServiceContext,
   raw: z.input<typeof closeJobInput>
@@ -14482,34 +14524,13 @@ export async function closeJob(
       .executeTakeFirstOrThrow();
     const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
 
-    const wipBalance = await trx
-      .selectFrom("journalLine")
-      .innerJoin("journal", "journal.id", "journalLine.journalId")
-      .select((eb) => eb.fn.sum("journalLine.amount").as("balance"))
-      .where(
-        "journalLine.accountId",
-        "=",
-        accountDefaults.data!.workInProgressAccount
-      )
-      .where("journalLine.documentId", "=", jobId)
-      .where("journal.companyId", "=", companyId)
-      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .$if(!keepsWip, (qb) =>
-        qb.where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("projectLedger")
-                .select("projectLedger.id")
-                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
-                .where("projectLedger.companyId", "=", companyId)
-            )
-          )
-        )
-      )
-      .executeTakeFirst();
+    const wipBalance = await rpcValue(trx, "job_wip_balance", {
+      p_job_id: jobId,
+      p_company_id: companyId,
+      p_exclude_project_lines: !keepsWip
+    });
 
-    const remainingWip = Number(wipBalance?.balance ?? 0);
+    const remainingWip = wipBalance.data ?? 0;
 
     if (Math.abs(remainingWip) < 0.01) return;
 

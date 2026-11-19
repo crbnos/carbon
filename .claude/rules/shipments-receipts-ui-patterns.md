@@ -221,6 +221,7 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   batch or serial still on it is not set Available and gets no Receive activity). PO path: inserts `itemLedger`
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s for every
   company (the journal is Provisional before the accounting cutover, Posted after it), advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
+  sets an outside-processing operation's status and `quantityComplete` from every PO line that serves it, after the journal is written (that update can complete the job, whose cost is read from WIP: production AGENTS → Job completion; a void sets it the same way, and both refuse a Closed job),
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).

@@ -42,13 +42,17 @@ type RoutablePurchaseOrderLine = {
  * The project route of each purchase order line, keyed by line id. A line
  * has a route when:
  * - the order is outside processing and the line's job consumes to a project
- *   (the job's project account in place of WIP); or
+ *   (the job's project account in place of WIP);
+ * - the order is outside processing and the line's job is a capital job
+ *   (`loadJobProjectCharge`'s `keepsWip`): the receipt keeps WIP, which the
+ *   job's completion sweeps onto its asset, and the route only writes the
+ *   project's ledger row, with no CIP row of its own; or
  * - the order is not outside processing and the line carries a project whose
  *   treatment on `postingDate` is not Statistical.
  * A Statistical project keeps today's posting, so it has no route. Every
  * routed line must take postings (`assertChargeable("commitment")`).
- * Two queries at most (the jobs, then the posting contexts), never one per
- * line.
+ * Three queries at most (the jobs, the posting contexts, and the WIP account
+ * for a capital job), never one per line.
  */
 export async function loadReceiptProjectRoutes(
   db: Kysely<DB>,
@@ -62,7 +66,12 @@ export async function loadReceiptProjectRoutes(
   const routes = new Map<string, ReceiptProjectRoute>();
   const charges = new Map<
     string,
-    { projectId: string; projectElementId: string | null; jobId: string | null }
+    {
+      projectId: string;
+      projectElementId: string | null;
+      jobId: string | null;
+      capitalJob: boolean;
+    }
   >();
 
   if (args.isOutsideProcessing) {
@@ -76,10 +85,15 @@ export async function loadReceiptProjectRoutes(
     if (jobIds.length === 0) return routes;
     const jobs = await db
       .selectFrom("job")
-      .select(["id", "projectId", "projectElementId"])
+      .select(["id", "projectId", "projectElementId", "consumeToProject"])
       .where("id", "in", jobIds)
       .where("companyId", "=", companyId)
-      .where("consumeToProject", "=", true)
+      .where((eb) =>
+        eb.or([
+          eb("consumeToProject", "=", true),
+          eb("fixedAssetId", "is not", null)
+        ])
+      )
       .execute();
     const jobById = new Map(jobs.map((job) => [job.id, job]));
     for (const line of args.purchaseOrderLines) {
@@ -88,7 +102,8 @@ export async function loadReceiptProjectRoutes(
       charges.set(line.id, {
         projectId: job.projectId,
         projectElementId: job.projectElementId,
-        jobId: job.id
+        jobId: job.id,
+        capitalJob: !job.consumeToProject
       });
     }
   } else {
@@ -97,7 +112,8 @@ export async function loadReceiptProjectRoutes(
       charges.set(line.id, {
         projectId: line.projectId,
         projectElementId: line.projectElementId,
-        jobId: null
+        jobId: null,
+        capitalJob: false
       });
     }
   }
@@ -107,8 +123,18 @@ export async function loadReceiptProjectRoutes(
   const contexts = await loadProjectPostingContexts(db, companyId, [
     ...charges.values()
   ]);
+  const hasCapitalJob = [...charges.values()].some((c) => c.capitalJob);
+  const wipAccount = hasCapitalJob
+    ? (
+        await db
+          .selectFrom("accountDefault")
+          .select("workInProgressAccount")
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      )?.workInProgressAccount
+    : null;
 
-  for (const [lineId, charge] of charges) {
+  for (const [lineId, { capitalJob, ...charge }] of charges) {
     const context = contexts.get(
       projectPostingKey(charge.projectId, charge.projectElementId)
     );
@@ -119,6 +145,26 @@ export async function loadReceiptProjectRoutes(
     }
     const { treatment, accountId, fixedAssetId, postCapitalization } =
       resolveProjectPostingAccount(context, args.postingDate);
+    if (capitalJob) {
+      // Not a capital job unless it builds a Capitalize project's asset;
+      // its receipt then debits WIP with no project row, as before.
+      if (treatment !== "Capitalize") continue;
+      if (!wipAccount) {
+        throw new Error(
+          "workInProgressAccount not configured in account defaults"
+        );
+      }
+      assertChargeable(context, "commitment");
+      routes.set(lineId, {
+        ...charge,
+        accountId: wipAccount,
+        fixedAssetId: null,
+        postCapitalization: false,
+        // The cost ends on the asset the job builds, so its account decides.
+        unallowable: isUnallowableCharge(context, accountId)
+      });
+      continue;
+    }
     if (treatment === "Statistical" || !accountId) {
       // A consume-to-project job cannot charge a Statistical project.
       if (charge.jobId) {
