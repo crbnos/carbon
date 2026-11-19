@@ -14,9 +14,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   DocumentNotFoundError,
   getBase64Image,
-  getCompanyWithPublicLogos,
+  getCompany,
   renderPdfToBuffer,
-  resolveSections
+  resolveSections,
+  withPdfLogos
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
 
@@ -89,17 +90,14 @@ export async function loadPackingSlipDocument(args: {
   companyId: string;
   shipmentId: string;
   locale: string;
-  /** Base for public logo URLs (`SUPABASE_URL`). */
-  storageUrl: string;
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<PackingSlipDocument> {
-  const { client, serviceRole, companyId, shipmentId, locale, storageUrl } =
-    args;
+  const { client, serviceRole, companyId, shipmentId, locale } = args;
 
   const [companyResult, shipmentResult, linesResult, termsResult, template] =
     await Promise.all([
-      getCompanyWithPublicLogos(client, companyId, storageUrl),
+      getCompany(client, companyId),
       // RLS admits a shipment from any company the user belongs to, but the
       // source document is read with the service role: pin it to this company.
       client
@@ -146,7 +144,9 @@ export async function loadPackingSlipDocument(args: {
   return {
     pdfProps: {
       ...source,
-      company: company as unknown as PackingSlipPDFProps["company"],
+      company: withPdfLogos(
+        company
+      ) as unknown as PackingSlipPDFProps["company"],
       locale,
       shipment,
       shipmentLines,

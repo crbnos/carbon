@@ -11,6 +11,7 @@ import {
   ASSEMBLER_SERVICE_URL,
   ASSEMBLER_STORAGE_PUBLIC_URL,
   ERP_URL,
+  internalSupabaseUrl,
   PORT_API,
   SESSION_SECRET,
   SUPABASE_URL
@@ -184,13 +185,19 @@ export async function requireModelSourceBucket(
 }
 
 /**
- * Dev-only URL surgery on assembler-bound signed storage URLs. The portless
- * `.dev` proxy exists only on this machine (/etc/hosts + local CA), so: a LOCAL
- * assembler gets a direct `localhost:<kong>` rewrite (the proxy also times out
- * on multi-GB transfers), and a REMOTE assembler (staging Lambda) gets the
- * public tunnel origin when one is configured. No-op in prod/preview.
+ * A signed storage URL as the assembler must fetch it. On a cluster with an
+ * in-cluster address the assembler runs beside the server, so it gets
+ * `SUPABASE_INTERNAL_URL`.
+ *
+ * Otherwise only dev rewrites it. The portless `.dev` proxy exists only on this
+ * machine (/etc/hosts + local CA), so: a LOCAL assembler gets a direct
+ * `localhost:<kong>` rewrite (the proxy also times out on multi-GB transfers),
+ * and a REMOTE assembler (staging Lambda) gets the public tunnel origin when
+ * one is configured.
  */
 export function internalizeStorageUrl(url: string): string {
+  const internal = internalSupabaseUrl(url);
+  if (internal !== url) return internal;
   if (!SUPABASE_URL) return url;
   let publicHost: string;
   try {
