@@ -29882,9 +29882,6 @@ msgstr "Kredyt dostawcy"
 msgid "Supplier Credits"
 msgstr "Kredyty dostawcy"
 
-msgid "Supplier default"
-msgstr "Domyślne dla dostawcy"
-
 msgid "Supplier Email"
 msgstr "E-mail dostawcy"
 
@@ -29936,6 +29933,9 @@ msgstr "Lokalizacja dostawcy"
 
 msgid "Supplier Name"
 msgstr "Nazwa dostawcy"
+
+msgid "Supplier or company default"
+msgstr "Domyślne dla dostawcy lub firmy"
 
 msgid "Supplier Order Number"
 msgstr "Numer zamówienia dostawcy"

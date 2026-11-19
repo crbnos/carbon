@@ -12,7 +12,7 @@ ALTER TABLE "supplier" ADD COLUMN IF NOT EXISTS "partNumberDisplay" "partNumberD
 ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "partNumberDisplay" "partNumberDisplay";
 
 -- Fills a new line's display choice from its order's supplier: the supplier's
--- override, else the company default. A dataset apply (app.sync_in_progress)
+-- override, else the company default. A dataset apply (app.dataset_apply)
 -- and a backup load (app.backup_load) bring their own values, so it skips
 -- them. SECURITY DEFINER so a caller who may write the line gets the stamp even
 -- when RLS hides the supplier or the settings row. A trigger function is not
@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION stamp_purchase_order_line_part_number_display()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF NEW."partNumberDisplay" IS NOT NULL
-    OR current_setting('app.sync_in_progress', true) = 'true'
+    OR current_setting('app.dataset_apply', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
@@ -49,7 +49,7 @@ CREATE TRIGGER "purchaseOrderLine_stamp_part_number_display"
 CREATE OR REPLACE FUNCTION copy_purchase_order_line_supplier_part()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF current_setting('app.sync_in_progress', true) = 'true'
+  IF current_setting('app.dataset_apply', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
@@ -89,7 +89,7 @@ DECLARE
   v_display "partNumberDisplay";
   v_user TEXT := COALESCE(NEW."updatedBy", NEW."createdBy");
 BEGIN
-  IF current_setting('app.sync_in_progress', true) = 'true'
+  IF current_setting('app.dataset_apply', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NULL;
   END IF;

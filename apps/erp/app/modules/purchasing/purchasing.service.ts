@@ -405,7 +405,7 @@ export async function duplicatePurchaseOrder(
     client
       .from("purchaseOrderLine")
       .select(
-        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId, partNumberDisplay"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
       .eq("companyId", companyId)
@@ -2911,7 +2911,7 @@ export async function getPurchaseOrderLineForAmendment(
   return ctx.asCaller.supabase
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, jobId, jobOperationId, requiredDate, promisedDate, receivedDate"
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, jobId, jobOperationId, requiredDate, promisedDate, receivedDate, partNumberDisplay"
     )
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)

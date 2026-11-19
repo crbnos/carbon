@@ -29882,9 +29882,6 @@ msgstr "आपूर्तिकर्ता क्रेडिट"
 msgid "Supplier Credits"
 msgstr "आपूर्तिकर्ता क्रेडिट"
 
-msgid "Supplier default"
-msgstr "आपूर्तिकर्ता का डिफ़ॉल्ट"
-
 msgid "Supplier Email"
 msgstr "आपूर्तिकर्ता का ईमेल"
 
@@ -29936,6 +29933,9 @@ msgstr "आपूर्तिकर्ता स्थान"
 
 msgid "Supplier Name"
 msgstr "आपूर्तिकर्ता का नाम"
+
+msgid "Supplier or company default"
+msgstr "आपूर्तिकर्ता या कंपनी का डिफ़ॉल्ट"
 
 msgid "Supplier Order Number"
 msgstr "आपूर्तिकर्ता ऑर्डर संख्या"

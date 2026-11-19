@@ -29882,9 +29882,6 @@ msgstr "Lieferantengutschrift"
 msgid "Supplier Credits"
 msgstr "Lieferantengutschriften"
 
-msgid "Supplier default"
-msgstr "Lieferanten-Standard"
-
 msgid "Supplier Email"
 msgstr "Lieferanten-E-Mail"
 
@@ -29936,6 +29933,9 @@ msgstr "Lieferantenstandort"
 
 msgid "Supplier Name"
 msgstr "Lieferantenname"
+
+msgid "Supplier or company default"
+msgstr "Lieferanten- oder Unternehmensstandard"
 
 msgid "Supplier Order Number"
 msgstr "Lieferantennummer"

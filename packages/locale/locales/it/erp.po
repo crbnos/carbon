@@ -29882,9 +29882,6 @@ msgstr "Credito fornitore"
 msgid "Supplier Credits"
 msgstr "Crediti fornitori"
 
-msgid "Supplier default"
-msgstr "Predefinito del fornitore"
-
 msgid "Supplier Email"
 msgstr "Email Fornitore"
 
@@ -29936,6 +29933,9 @@ msgstr "Ubicazione Fornitore"
 
 msgid "Supplier Name"
 msgstr "Nome Fornitore"
+
+msgid "Supplier or company default"
+msgstr "Predefinito del fornitore o dell'azienda"
 
 msgid "Supplier Order Number"
 msgstr "Numero Ordine Fornitore"

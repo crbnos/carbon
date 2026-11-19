@@ -29882,9 +29882,6 @@ msgstr "공급업체 크레딧"
 msgid "Supplier Credits"
 msgstr "공급업체 크레딧"
 
-msgid "Supplier default"
-msgstr "공급업체 기본값"
-
 msgid "Supplier Email"
 msgstr "공급업체 이메일"
 
@@ -29936,6 +29933,9 @@ msgstr "공급업체 위치"
 
 msgid "Supplier Name"
 msgstr "공급업체 이름"
+
+msgid "Supplier or company default"
+msgstr "공급업체 또는 회사 기본값"
 
 msgid "Supplier Order Number"
 msgstr "공급업체 주문 번호"
