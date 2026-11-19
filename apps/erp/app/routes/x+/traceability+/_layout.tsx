@@ -17,7 +17,7 @@ export const handle: Handle = {
   breadcrumb: msg`Inventory`,
   to: path.to.inventory,
   module: "inventory",
-  sidebar: InventorySections
+  boardSidebar: InventorySections
 };
 
 export default function TraceabilityLayout() {

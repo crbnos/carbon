@@ -210,7 +210,8 @@ export default function useInventorySubmodules() {
   };
 }
 
-/** The module sidebar, for routes outside the module's own layout. */
+/** The module sidebar for its boards outside the module layout
+ *  (`handle.boardSidebar`): the phone switcher, and the desktop sidebar when shown. */
 export function InventorySections() {
   const { groups } = useInventorySubmodules();
   return <GroupedContentSidebar groups={groups} />;

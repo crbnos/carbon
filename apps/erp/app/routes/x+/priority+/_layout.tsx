@@ -18,7 +18,7 @@ export const handle: Handle = {
   breadcrumb: msg`Production`,
   to: path.to.production,
   module: "production",
-  sidebar: ProductionSections
+  boardSidebar: ProductionSections
 };
 
 export default function SchedulingRoute() {
