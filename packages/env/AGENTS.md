@@ -37,7 +37,7 @@ pnpm --filter @carbon/env test
 - **`getEnv(name)`** — reads one schema variable (its own name, then its aliases)
 - **Deployment:** `APP_URL` (this app's origin; alias `VERCEL_URL`), `APP_ENV` (alias `VERCEL_ENV`, defaults to `NODE_ENV`)
 - **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `SUPABASE_INTERNAL_URL` (server clients only; defaults to `SUPABASE_URL`)
-- **`publicSupabaseUrl(url)`** — a link a server client signed, moved from `SUPABASE_INTERNAL_URL` onto `SUPABASE_URL` (`rebaseUrl` underneath). Every signed link handed to a browser, an email, Slack or an API caller goes through it; a link our own server or the assembler fetches keeps the internal address
+- **`internalSupabaseUrl(url)`** — a `SUPABASE_URL` address moved onto `SUPABASE_INTERNAL_URL` (`rebaseUrl` underneath). Server clients are built on `SUPABASE_URL`, so the links they sign can be handed out as is; this is for what the server itself requests: the clients' own calls (`packages/auth/src/lib/supabase/client.ts`), email attachments (`sendCompanyEmail`), the staged backup and the assembler (`internalizeStorageUrl`)
 - **Redis/Jobs:** `REDIS_URL`, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)

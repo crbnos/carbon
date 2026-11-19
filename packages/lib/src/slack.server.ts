@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { getAppUrl, publicSupabaseUrl, SLACK_BOT_TOKEN } from "@carbon/env";
+import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { WebClientOptions } from "@slack/web-api";
@@ -119,9 +119,7 @@ export async function postSuggestionToCarbonSlack(
         ? storage(client)
             .company(input.companyId)
             .createSignedUrl(input.attachmentPath, 60 * 60 * 24 * 7)
-            .then((result) =>
-              result.data ? publicSupabaseUrl(result.data.signedUrl) : null
-            )
+            .then((result) => result.data?.signedUrl ?? null)
         : Promise.resolve(null)
     ]);
 

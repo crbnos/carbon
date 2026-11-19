@@ -17,11 +17,6 @@ let postInvoice: (
   input: unknown
 ) => Promise<{ data: unknown; error: { message: string } | null }>;
 
-vi.mock("@carbon/env", () => ({
-  SUPABASE_INTERNAL_URL: "http://internal:8000",
-  SUPABASE_URL: "https://db.example.com",
-  publicSupabaseUrl: (url: string) => url
-}));
 vi.mock("@carbon/lib/email.server", () => ({
   DEFAULT_FROM: "Carbon <no-reply@carbon.ms>",
   SERVER_MAIL_CONFIGURED: false,

@@ -11,7 +11,6 @@ import {
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { withStripe } from "@carbon/api/stock-stripes";
-import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -6522,8 +6521,7 @@ export async function sendPostedSalesInvoice(
       companyId,
       companyGroupId: ctx.company.groupId,
       invoiceId,
-      locale,
-      storageUrl: SUPABASE_URL ?? ""
+      locale
     });
     const file = await renderSalesInvoicePdf(document.pdfProps);
     const fileName = storedDocumentPdfName(

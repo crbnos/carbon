@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import { getPickingListTravelerEntities } from "@carbon/database/travelers";
 import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
-import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
+import { ERP_URL } from "@carbon/env";
 import {
   loadPackingSlipDocument,
   type PackingSlipPDFProps
@@ -366,8 +366,7 @@ export async function resolveSalesInvoiceData(
     companyId,
     companyGroupId: company.data.companyGroupId,
     invoiceId,
-    locale: "en-US",
-    storageUrl: SUPABASE_INTERNAL_URL ?? ""
+    locale: "en-US"
   });
 
   return {
@@ -387,8 +386,7 @@ export async function resolvePackingSlipData(
     serviceRole: client,
     companyId,
     shipmentId,
-    locale: "en-US",
-    storageUrl: SUPABASE_INTERNAL_URL ?? ""
+    locale: "en-US"
   });
 
   return {

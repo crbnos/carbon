@@ -330,8 +330,8 @@ export const SUPABASE_INTERNAL_URL =
   getEnv("SUPABASE_INTERNAL_URL") || SUPABASE_URL;
 
 /**
- * `url` with its `from` base swapped for `to`. A url not under `from`, or
- * either base unset, comes back unchanged.
+ * `url` with its `from` base swapped for `to`. A url not under `from`, one
+ * that does not parse, or either base unset, comes back unchanged.
  */
 export function rebaseUrl(
   url: string,
@@ -339,26 +339,34 @@ export function rebaseUrl(
   to: string | undefined
 ): string {
   if (!from || !to || from === to) return url;
-  const base = new URL(from);
-  const target = new URL(url);
+  let base: URL;
+  let target: URL;
+  let next: URL;
+  try {
+    base = new URL(from);
+    target = new URL(url);
+    next = new URL(to);
+  } catch {
+    return url;
+  }
   const basePath = base.pathname.replace(/\/+$/, "");
   const underBase =
     target.origin === base.origin &&
     (target.pathname === basePath ||
       target.pathname.startsWith(`${basePath}/`));
   if (!underBase) return url;
-  const next = new URL(to);
   return `${next.origin}${next.pathname.replace(/\/+$/, "")}${target.pathname.slice(basePath.length)}${target.search}${target.hash}`;
 }
 
 /**
- * A link a server client made, on the public `SUPABASE_URL`. Server clients
- * use `SUPABASE_INTERNAL_URL`, and supabase-js builds a signed link from the
- * client's own address, so pass every link handed to a browser, an email or an
- * API caller through here. A link our own server fetches keeps the internal one.
+ * A `SUPABASE_URL` address moved onto `SUPABASE_INTERNAL_URL`. Server clients
+ * are built on the public `SUPABASE_URL`, so every link supabase-js signs for
+ * them can be handed out as is; only what the server itself requests goes
+ * through here: the clients' own calls, and a signed link the server fetches
+ * (an email attachment, a staged backup) or hands to the assembler.
  */
-export function publicSupabaseUrl(url: string): string {
-  return rebaseUrl(url, SUPABASE_INTERNAL_URL, SUPABASE_URL);
+export function internalSupabaseUrl(url: string): string {
+  return rebaseUrl(url, SUPABASE_URL, SUPABASE_INTERNAL_URL);
 }
 
 export const DEFAULT_LANGUAGE = getEnv("DEFAULT_LANGUAGE") ?? "en";

@@ -18,7 +18,7 @@ import {
   createEventSystemSubscription,
   deleteEventSystemSubscriptionsByName
 } from "@carbon/database/event";
-import { CONTROLLED_ENVIRONMENT, publicSupabaseUrl } from "@carbon/env";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/env";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 
@@ -398,7 +398,7 @@ export async function getArchiveDownloadUrl(
     throw new Error(`Failed to generate download URL: ${error?.message}`);
   }
 
-  return publicSupabaseUrl(data.signedUrl);
+  return data.signedUrl;
 }
 
 /**

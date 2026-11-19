@@ -18,7 +18,6 @@ import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument
 } from "@carbon/ee/rules.server";
-import { publicSupabaseUrl, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { getDocumentType, storage } from "@carbon/files";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import {
@@ -547,14 +546,12 @@ async function fileInvoicePdf(args: {
 }) {
   const { client, companyId, companyGroupId, invoiceId, opportunityId } = args;
 
-  // The PDF is rendered here, so its logo is fetched from the internal URL.
   const document = await loadSalesInvoiceDocument({
     client,
     companyId,
     companyGroupId,
     invoiceId,
-    locale: "en-US",
-    storageUrl: SUPABASE_INTERNAL_URL ?? ""
+    locale: "en-US"
   });
   const pdf = await renderSalesInvoicePdf(document.pdfProps);
 
@@ -767,25 +764,8 @@ export async function emailPostedInvoice(args: {
       receivablesEmail
     });
 
-    // The email is read in the recipient's mail client: its logo must use
-    // the public URL, not the internal one the PDF was rendered with.
-    const publicCompany = { ...document.email.company };
-    for (const field of [
-      "logoLight",
-      "logoDark",
-      "logoLightIcon",
-      "logoDarkIcon",
-      "logoWatermark"
-    ] as const) {
-      const value = publicCompany[field];
-      if (typeof value === "string") {
-        publicCompany[field] = publicSupabaseUrl(value);
-      }
-    }
-
     const template = SalesInvoiceEmail({
       ...document.email,
-      company: publicCompany,
       locale: "en-US",
       recipient: {
         email: recipient.email,

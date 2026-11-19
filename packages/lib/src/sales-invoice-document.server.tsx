@@ -15,9 +15,11 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getBase64Image,
-  getCompanyWithPublicLogos,
+  getCompany,
   renderPdfToBuffer,
-  resolveSections
+  resolveSections,
+  withEmailLogos,
+  withPdfLogos
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
 
@@ -53,20 +55,10 @@ export async function loadSalesInvoiceDocument(args: {
   companyGroupId: string;
   invoiceId: string;
   locale: string;
-  /** Base for public logo URLs (`SUPABASE_URL`). */
-  storageUrl: string;
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
-  const {
-    client,
-    companyId,
-    companyGroupId,
-    invoiceId,
-    locale,
-    storageUrl,
-    edit
-  } = args;
+  const { client, companyId, companyGroupId, invoiceId, locale, edit } = args;
 
   const [
     company,
@@ -82,7 +74,7 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms,
     templateConfig
   ] = await Promise.all([
-    getCompanyWithPublicLogos(client, companyId, storageUrl),
+    getCompany(client, companyId),
     client.from("companySettings").select("*").eq("id", companyId).single(),
     client
       .from("companyAccountsReceivableBillingAddress")
@@ -262,13 +254,18 @@ export async function loadSalesInvoiceDocument(args: {
     contactEmail: invoiceContact?.data?.contact?.email ?? null
   };
 
-  // `company` (table, logos rewritten to public URLs) stands in for the
-  // `companies` view row the documents type against, as the routes always did.
-  const companyRow = company.data as unknown as SalesInvoicePDFProps["company"];
+  // `company` (the table row) stands in for the `companies` view row the
+  // documents type against, as the routes always did.
+  const pdfCompany = withPdfLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
+  const emailCompany = withEmailLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
   const lines = salesInvoiceLines.data ?? [];
 
   const pdfProps: SalesInvoicePDFProps = {
-    company: companyRow,
+    company: pdfCompany,
     companySettings: companySettings.data,
     locale,
     currencyDecimals,
@@ -301,7 +298,7 @@ export async function loadSalesInvoiceDocument(args: {
   return {
     pdfProps,
     email: {
-      company: companyRow,
+      company: emailCompany,
       currencyDecimals,
       salesInvoice: salesInvoice.data,
       salesInvoiceLines: lines,

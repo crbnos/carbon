@@ -7,6 +7,7 @@ import {
   getBuiltInSection,
   type ResolvedSection
 } from "@carbon/documents/template";
+import { SUPABASE_INTERNAL_URL, SUPABASE_URL } from "@carbon/env";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -40,27 +41,29 @@ const LOGO_FIELDS = [
   "logoWatermark"
 ] as const;
 
-/** The company row with its logo paths expanded to public URLs under `storageUrl`. */
-export async function getCompanyWithPublicLogos(
-  client: Client,
-  companyId: string,
-  storageUrl: string
-) {
-  const company = await client
-    .from("company")
-    .select("*")
-    .eq("id", companyId)
-    .single();
-  if (company.error) return company;
+type Company = Database["public"]["Tables"]["company"]["Row"];
 
-  const prefix = `${storageUrl}/storage/v1/object/public/public/`;
-  const data = { ...company.data };
+export async function getCompany(client: Client, companyId: string) {
+  return client.from("company").select("*").eq("id", companyId).single();
+}
+
+function withLogoUrls(company: Company, storageUrl: string | undefined) {
+  const prefix = `${storageUrl ?? ""}/storage/v1/object/public/public/`;
+  const data = { ...company };
   for (const field of LOGO_FIELDS) {
-    data[field] = company.data[field]
-      ? `${prefix}${company.data[field]}`
-      : null;
+    data[field] = company[field] ? `${prefix}${company[field]}` : null;
   }
-  return { data, error: null };
+  return data;
+}
+
+/** The company row with logo URLs for a PDF, which this server renders. */
+export function withPdfLogos(company: Company) {
+  return withLogoUrls(company, SUPABASE_INTERNAL_URL);
+}
+
+/** The company row with logo URLs for an email, which the recipient's mail client renders. */
+export function withEmailLogos(company: Company) {
+  return withLogoUrls(company, SUPABASE_URL);
 }
 
 /** A document template's sections: built-in ones from code, the rest from the DB. */

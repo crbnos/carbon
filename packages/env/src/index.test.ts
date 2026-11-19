@@ -50,16 +50,16 @@ describe("module load", { timeout: 30_000 }, () => {
   });
 });
 
-describe("publicSupabaseUrl", { timeout: 30_000 }, () => {
+describe("internalSupabaseUrl", { timeout: 30_000 }, () => {
   const signed =
-    "http://storage-gateway:8000/storage/v1/object/upload/sign/co/a.pdf?token=t";
+    "https://api.example.com/storage/v1/object/sign/co/a.pdf?token=t";
 
-  it("moves a link the server signed in-cluster onto the public address", async () => {
+  it("moves a public link onto the in-cluster address", async () => {
     vi.stubEnv("SUPABASE_URL", "https://api.example.com");
     vi.stubEnv("SUPABASE_INTERNAL_URL", "http://storage-gateway:8000");
     const env = await import("./index");
-    expect(env.publicSupabaseUrl(signed)).toBe(
-      "https://api.example.com/storage/v1/object/upload/sign/co/a.pdf?token=t"
+    expect(env.internalSupabaseUrl(signed)).toBe(
+      "http://storage-gateway:8000/storage/v1/object/sign/co/a.pdf?token=t"
     );
   });
 
@@ -67,9 +67,7 @@ describe("publicSupabaseUrl", { timeout: 30_000 }, () => {
     vi.stubEnv("SUPABASE_URL", "https://api.example.com");
     vi.stubEnv("SUPABASE_INTERNAL_URL", "");
     const env = await import("./index");
-    const link =
-      "https://api.example.com/storage/v1/object/sign/co/a.pdf?token=t";
-    expect(env.publicSupabaseUrl(link)).toBe(link);
+    expect(env.internalSupabaseUrl(signed)).toBe(signed);
   });
 });
 
@@ -102,6 +100,13 @@ describe("rebaseUrl", { timeout: 30_000 }, () => {
       "http://gw:8000/supabase",
       "https://api.example.com",
       "http://gw:8000/supabase-other/a.pdf"
+    ],
+    [
+      "a url that does not parse",
+      "/storage/v1/object/sign/a.pdf",
+      "http://gw:8000",
+      "https://api.example.com",
+      "/storage/v1/object/sign/a.pdf"
     ]
   ])("handles %s", async (_, url, from, to, expected) => {
     const { rebaseUrl } = await import("./index");
