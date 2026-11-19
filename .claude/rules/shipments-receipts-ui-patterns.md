@@ -35,6 +35,16 @@ run the same checks. The route only parses the form, and takes the document id f
   `companySettings.receiptQuantitiesStartAtZero` is on (Settings → Inventory → Receiving —
   every source `create` builds lines for: Purchase Order, Inbound Transfer, Sales Return Order;
   a PO's fixed-asset lines then start unticked). Shipments are not affected.
+  A sales order line filled from a serial or batch job (`addJobShipmentLine`, `shared.service.ts`)
+  takes only the job's units that can post (`shippableJobUnits`: a shippable status, common stock at
+  the shipment's location; a batch line one lot, the oldest, because its post books one), so a
+  lot an earlier shipment took (Consumed) is never re-tagged. A serial line is left off when it
+  takes none; a batch line is kept with no lot, and its post refuses until one is picked. While the job still owes units,
+  the `create` result's `warnings` names the item and location (`skippedJobLineMessages`);
+  with no line left the `create` refuses with it (400), rolling back the new shipment or the
+  rebuilt Draft. `new.tsx`, the line's Ship route and `$id.details.tsx` (`updateShipment`
+  returns the rebuild's `warnings`) show them as the toast's second line (`shipmentLinesFlash`,
+  `inventory.utils.ts`, through `respond(...).redirect`'s `description`).
   The `'Customer Contract'` source (a contract delivery, below) does the same: `createShipment`
   returns the contract's Draft delivery, else invokes `create` with `shipmentFromCustomerContract`.
 - `$id.tsx` — layout loader: parallel `getShipment` / `getShipmentLines` / `getShipmentTracking`,
@@ -102,6 +112,11 @@ run the same checks. The route only parses the form, and takes the document id f
   A serial `receiptLineSplit` drops the line's serials, deleting only entities with no
   `itemLedger` history; a unit with history (a sales return) only loses its receipt link.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
+  **A unit's `Shipment` tag must name a live line of its shipment.** So every write that
+  deletes or rebuilds shipment lines clears their units' tags (`clearShipmentTags`,
+  `shared.service.ts`): `deleteShipmentLine` (that line), `deleteShipment`, and a `create`
+  that re-sources a Draft (every line). Posting reads only tags whose `Shipment Line` is a
+  live line (`liveShipmentTags`, `inventory.utils.ts`) and clears the rest (`orphansOnly`).
 - `fixed-asset-lines.update.tsx` (`updateShipmentFixedAssetLine` / `updateReceiptFixedAssetLine`) — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
   parsed by `shipmentFixedAssetLineUpdateValidator` / `receiptFixedAssetLineUpdateValidator`
   (`inventory.models.ts`): `shipped`/`received`, `serialNumber`, `meter`; the receipt also takes
@@ -199,6 +214,10 @@ shipment, which write no item ledger row); then it optimistically sets
 `invokePosting(ctx, "post-shipment", { type: "post", shipmentId, postingDate }, service.postShipment)`
 (receipt: `invokePosting(ctx, "post-receipt", { receiptId, postingDate }, service.postReceipt)`,
 whose `type` defaults to `"post"`).
+Before `Pending`, a serial line whose shipped quantity is not its count of tagged
+live units is refused (`serialLineShortfalls` / `serialShortfallMessage`,
+`inventory.utils.ts`; category `rule`, 422), and the posting refuses it again with the same
+message (`ServerFnError`, 422) for its other callers.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
 save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.pdf.tsx`, the
 same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call

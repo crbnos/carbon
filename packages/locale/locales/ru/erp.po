@@ -421,6 +421,10 @@ msgstr "{0} успешно удален"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} черновых операций"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} правило утверждения"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# строка требует исправления} other {# строк требуют исправления}}"
@@ -11280,6 +11287,9 @@ msgstr "Редактирование пути завершено"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Готово, когда ежедневные операции работают без нас в офисе"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Дважды щелкните, чтобы открыть эту подсборку"
 
@@ -11319,6 +11329,9 @@ msgstr "Загрузить подсчет как файл для заполне�
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Скачайте шаблон. Каждая строка — это стандартный счет, на который Carbon проводит операции. В поле «Номер счета» введите номер счета из вашего плана счетов, который его заменяет. Carbon обновит стандартный счет, чтобы он соответствовал."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Черновик"
@@ -14948,6 +14961,9 @@ msgstr "Скрыть чертёж"
 
 msgid "Hide lines"
 msgstr "Скрыть строки"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Скрыть ежемесячную выручку"
@@ -25176,6 +25192,9 @@ msgstr "Отклонить время"
 msgid "Rejected"
 msgstr "Отклонено"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Отклонено при контроле"
 
@@ -28628,6 +28647,9 @@ msgstr "Показать сочетания клавиш"
 
 msgid "Show lines"
 msgstr "Показать строки"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "Показать месячную выручку"

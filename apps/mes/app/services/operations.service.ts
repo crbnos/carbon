@@ -9,6 +9,7 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
 import {
   lockMachinePress,
@@ -367,39 +368,9 @@ export async function getJobOperationDependencies(
 }
 
 /**
- * Is this the first operation of its make method's routing? A serial unit only
- * earns a printed label when it is completed at its first operation, so this
- * decides both the label auto-print and how the operation views pick units.
- *
- * "First" means no jobOperationDependency whose predecessor shares this op's
- * jobMakeMethodId. Cross make-method (subassembly) dependencies are ignored: a
- * parent-assembly op still has no printed label just because a subassembly
- * finished first. `order` is only a display/sort field, not a precedence signal.
- *
- * Fails closed: an errored lookup reads as "not first" — no auto-select, no
- * label — which is the safe default when we can't confirm there's no predecessor.
- */
-export async function isFirstOperationOfMakeMethod(
-  client: SupabaseClient<Database>,
-  operationId: string,
-  jobMakeMethodId: string
-): Promise<boolean> {
-  const priorDependency = await client
-    .from("jobOperationDependency")
-    .select(
-      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
-    )
-    .eq("operationId", operationId)
-    .eq("dependsOn.jobMakeMethodId", jobMakeMethodId)
-    .limit(1)
-    .maybeSingle();
-  return !priorDependency.error && !priorDependency.data;
-}
-
-/**
  * Is this the last operation of its make method's routing? Mirrors
- * isFirstOperationOfMakeMethod: "last" means no operation of the same make
- * method depends on this one.
+ * the first-operation rule (`isFirstOperationOfMakeMethod`, work-unit.server):
+ * "last" means no operation of the same make method depends on this one.
  *
  * Fails closed: an errored lookup reads as "not last".
  */
@@ -2550,7 +2521,7 @@ export async function getTrackedEntitiesByMakeMethodId(
     .order("id", { ascending: true });
 }
 
-type SerialEntityForSelection = Pick<
+export type SerialEntityForSelection = Pick<
   Database["public"]["Tables"]["trackedEntity"]["Row"],
   "attributes" | "status"
 > & {
@@ -2583,38 +2554,7 @@ export function isSerialEntityIncompleteForOperation(
   );
 }
 
-/**
- * The next serial unit an operator should work on for a job operation. Entities
- * must be ordered by `createdAt` ascending (as `getTrackedEntitiesByMakeMethodId`
- * returns them). Returns the first entity still incomplete for this operation;
- * when every entity is already complete it falls back to the last entity, which
- * preserves the prior end-state behavior. This unifies both the pre-split flow
- * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` posting spawns the next entity on each completion).
- */
-export function getNextIncompleteSerialEntity<
-  T extends SerialEntityForSelection
->(entities: T[], jobOperationId: string): T | undefined {
-  if (entities.length === 0) return undefined;
-  // Prefer a non-terminal (not Consumed/Scrapped) unit for the end-state
-  // fallback so we never seed work onto a scrapped/consumed serial. But keep
-  // the guaranteed last-entity fallback for a fully-terminal make method (every
-  // unit Consumed on a finished subassembly), preserving the prior behavior of
-  // always returning something when entities exist.
-  const selectable = entities.filter(
-    (entity) =>
-      entity.inOperationScope !== false &&
-      entity.status !== "Consumed" &&
-      entity.status !== "Scrapped"
-  );
-  return (
-    selectable.find((entity) =>
-      isSerialEntityIncompleteForOperation(entity, jobOperationId)
-    ) ??
-    selectable[selectable.length - 1] ??
-    entities[entities.length - 1]
-  );
-}
+type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
 
 /**
  * The units of an operation's make method, in unit-axis order, each flagged
@@ -2625,38 +2565,118 @@ export function getNextIncompleteSerialEntity<
  * The list is never narrowed: step records are keyed by a unit's position in
  * the full axis, so a filtered list would shift every position after a skipped
  * unit. Consumers read `inOperationScope` (via
- * `isSerialEntityIncompleteForOperation`) instead.
+ * `isSerialEntityIncompleteForOperation`) instead. Paged past PostgREST's
+ * 1000-row cap, like `getOperationUnitAxis`, so the screens and the server
+ * see the same units.
  */
 export async function getTrackedEntitiesForOperation(
   client: SupabaseClient<Database>,
   args: { operationId: string; jobMakeMethodId: string; companyId: string }
 ) {
+  return readOperationUnits<TrackedEntityRow>(client, args, "*");
+}
+
+/**
+ * `getTrackedEntitiesForOperation` for the unit-write gate: only the columns
+ * the rule reads.
+ */
+export async function getOperationUnitAxis(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; jobMakeMethodId: string; companyId: string }
+) {
+  return readOperationUnits<
+    Pick<TrackedEntityRow, "id" | "status" | "attributes">
+  >(client, args, "id, status, attributes");
+}
+
+/** The one paged read of an operation's units, in unit-axis order. */
+async function readOperationUnits<T extends { id: string }>(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; jobMakeMethodId: string; companyId: string },
+  columns: string
+) {
   const [entities, scope] = await Promise.all([
-    getTrackedEntitiesByMakeMethodId(
-      client,
-      args.jobMakeMethodId,
-      args.companyId
+    fetchAll<T>(() =>
+      client
+        .from("trackedEntity")
+        .select(columns)
+        .eq("attributes->>Job Make Method", args.jobMakeMethodId)
+        .eq("companyId", args.companyId)
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true })
     ),
-    client
-      .from("jobOperationTrackedEntity")
-      .select("trackedEntityId")
-      .eq("jobOperationId", args.operationId)
-      .eq("companyId", args.companyId)
+    fetchAll<{ trackedEntityId: string }>(() =>
+      client
+        .from("jobOperationTrackedEntity")
+        .select("trackedEntityId")
+        .eq("jobOperationId", args.operationId)
+        .eq("companyId", args.companyId)
+        .order("trackedEntityId", { ascending: true })
+    )
   ]);
 
   if (entities.error) return { data: null, error: entities.error };
   if (scope.error) return { data: null, error: scope.error };
 
-  const scopedIds =
-    scope.data.length > 0
-      ? new Set(scope.data.map((row) => row.trackedEntityId))
-      : null;
-
   return {
-    data: entities.data.map((entity) => ({
-      ...entity,
-      inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
-    })),
+    data: flagOperationScope(entities.data ?? [], scope.data ?? []),
+    error: null
+  };
+}
+
+function flagOperationScope<T extends { id: string }>(
+  entities: T[],
+  scope: { trackedEntityId: string }[]
+) {
+  const scopedIds =
+    scope.length > 0 ? new Set(scope.map((row) => row.trackedEntityId)) : null;
+  return entities.map((entity) => ({
+    ...entity,
+    inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
+  }));
+}
+
+/**
+ * Were these units consumed into `parentTrackedEntityId`? Each unit's newest
+ * Consume activity must output that parent. One read.
+ */
+export async function childrenConsumedInto(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; parentTrackedEntityId: string; childIds: string[] }
+): Promise<{ data: boolean; error: PostgrestError | null }> {
+  const childIds = [...new Set(args.childIds)];
+  if (childIds.length === 0) return { data: false, error: null };
+  const read = await client
+    .from("trackedActivityInput")
+    .select(
+      "trackedEntityId, trackedActivity!inner(type, createdAt, trackedActivityOutput(trackedEntityId))"
+    )
+    .in("trackedEntityId", childIds)
+    .eq("companyId", args.companyId)
+    .eq("trackedActivity.type", "Consume");
+  if (read.error) return { data: false, error: read.error };
+
+  const newest = new Map<
+    string,
+    { createdAt: string; outputs: (string | null)[] }
+  >();
+  for (const row of read.data ?? []) {
+    const activity = row.trackedActivity;
+    if (!activity || activity.type !== "Consume") continue;
+    const seen = newest.get(row.trackedEntityId);
+    if (seen && seen.createdAt >= activity.createdAt) continue;
+    newest.set(row.trackedEntityId, {
+      createdAt: activity.createdAt,
+      outputs: (activity.trackedActivityOutput ?? []).map(
+        (output) => output.trackedEntityId
+      )
+    });
+  }
+  return {
+    data: childIds.every((id) =>
+      newest.get(id)?.outputs.includes(args.parentTrackedEntityId)
+    ),
     error: null
   };
 }
@@ -3093,7 +3113,7 @@ export async function getWorkCentersByCompany(
 // value.
 export async function insertAttributeRecord(
   client: SupabaseClient<Database>,
-  data: z.infer<typeof stepRecordValidator> & {
+  data: Omit<z.infer<typeof stepRecordValidator>, "trackedEntityId"> & {
     companyId: string;
     createdBy: string;
   }

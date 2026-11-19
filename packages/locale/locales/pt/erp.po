@@ -421,6 +421,10 @@ msgstr "{0} eliminado com sucesso"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} lançamentos de diário em rascunho"
@@ -1045,6 +1049,9 @@ msgstr "Regra de aprovação de {documentTypeLabel}"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases concluídas"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# linha precisa de correção} other {# linhas precisam de correção}}"
@@ -11280,6 +11287,9 @@ msgstr "Edição de Caminho Concluída"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Feito quando o dia a dia funciona sem nós"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Clique duas vezes para abrir esta sub-montagem"
 
@@ -11319,6 +11329,9 @@ msgstr "Baixar a contagem como um arquivo para preencher"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Baixe o modelo. Cada linha é uma conta padrão em que o Carbon contabiliza. No Número da conta, insira o número da conta em seu plano que a corresponde. Carbon atualiza a conta padrão para corresponder."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Rascunho"
@@ -14948,6 +14961,9 @@ msgstr "Ocultar desenho"
 
 msgid "Hide lines"
 msgstr "Ocultar linhas"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Ocultar receita mensal"
@@ -25176,6 +25192,9 @@ msgstr "Rejeitar tempo"
 msgid "Rejected"
 msgstr "Rejeitado"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Rejeitado na inspeção"
 
@@ -28628,6 +28647,9 @@ msgstr "Mostrar atalhos do teclado"
 
 msgid "Show lines"
 msgstr "Mostrar linhas"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "Mostrar receita mensal"

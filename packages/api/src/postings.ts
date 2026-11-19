@@ -699,6 +699,9 @@ export type CreateResults = {
     success: true;
     purchaseOrderIdsBySupplierId: Record<string, string>;
   };
+  // Why a serial job line was left off: none of its units are in stock there.
+  shipmentFromSalesOrder: { id: string; warnings: string[] };
+  shipmentFromSalesOrderLine: { id: string; warnings: string[] };
 };
 
 export type CreateResultFor<T extends CreateInput["type"]> =

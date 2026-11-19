@@ -9,6 +9,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { shipmentValidator } from "~/modules/inventory/inventory.models";
+import { shipmentLinesFlash } from "~/modules/inventory/inventory.utils";
 import type { Shipment, ShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentForm,
@@ -32,9 +33,10 @@ export async function action(args: ActionFunctionArgs) {
     id: shipmentId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(path.to.shipment(shipmentId), {
-    message: "Updated shipment"
-  });
+  return respond(args.request, result).redirect(
+    path.to.shipment(shipmentId),
+    shipmentLinesFlash(result.data?.warnings ?? [], "Updated shipment")
+  );
 }
 
 export default function ShipmentDetailsRoute() {

@@ -38,7 +38,13 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
+import {
+  DEFAULT_LABEL_DPI,
+  getLabelSizeLabel,
+  type LabelDpi,
+  labelDpis,
+  labelSizes
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -51,6 +57,11 @@ import {
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
+
+/** A select's value is a string; `printerRouteValidator` reads it back as a dpi. */
+function dpiFieldValue(dpi: LabelDpi): LabelDpi {
+  return String(dpi) as unknown as LabelDpi;
+}
 
 export function getMediaSizeLabel(mediaSizeId: string): string {
   const size = labelSizes.find((s) => s.id === mediaSizeId);
@@ -100,6 +111,10 @@ export function PrintersCard({
         .map((s) => ({ value: s.id, label: getLabelSizeLabel(s) })),
     [selectedFormat]
   );
+  const dpiOptions = labelDpis.map((dpi) => ({
+    value: String(dpi),
+    label: t`${dpi} dpi`
+  }));
 
   return (
     <>
@@ -142,6 +157,11 @@ export function PrintersCard({
                     {route.mediaSizeId && (
                       <span className="text-xs text-muted-foreground">
                         {getMediaSizeLabel(route.mediaSizeId)}
+                      </span>
+                    )}
+                    {route.format === "zpl" && (
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>{route.dpi} dpi</Trans>
                       </span>
                     )}
                     <span className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
@@ -230,9 +250,10 @@ export function PrintersCard({
                     name: printerToEdit.name,
                     format: printerToEdit.format,
                     mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
+                    dpi: dpiFieldValue(printerToEdit.dpi),
                     printerUrl: printerToEdit.printerUrl
                   }
-                : { format: "zpl" }
+                : { format: "zpl", dpi: dpiFieldValue(DEFAULT_LABEL_DPI) }
             }
             className="flex flex-col h-full"
           >
@@ -286,6 +307,16 @@ export function PrintersCard({
                         : t`Select a label size`
                     }
                   />
+                  {/* Left out for a PDF printer, so saving one keeps its dpi. */}
+                  {selectedFormat === "zpl" && (
+                    <Select
+                      name="dpi"
+                      label={t`DPI`}
+                      helperText={t`Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi.`}
+                      options={dpiOptions}
+                      isOptional={false}
+                    />
+                  )}
                   <Input
                     name="printerUrl"
                     label={t`Printer URL`}

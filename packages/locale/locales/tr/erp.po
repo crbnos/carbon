@@ -421,6 +421,10 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe fişi"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} onay kuralı"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# satır düzeltme gerekli} other {# satırlar düzeltme gerekli}}"
@@ -11280,6 +11287,9 @@ msgstr "Yolu Düzenleme Bitti"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Günlük işlemler bizim olmadan kendi kendine çalışırken bitti"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Bu alt montajı açmak için çift tıkla"
 
@@ -11319,6 +11329,9 @@ msgstr "Sayıyı doldurulacak bir dosya olarak indir"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Şablonu indir. Her satır, Carbon'un muhasebeleştirdiği varsayılan bir hesaptır. Hesap Numarası'nda, bunu alan hesap planınızdaki hesabın numarasını girin. Carbon varsayılan hesabı eşleştirecek şekilde günceller."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Taslak"
@@ -14948,6 +14961,9 @@ msgstr "Teknik resmi gizle"
 
 msgid "Hide lines"
 msgstr "Satırları Gizle"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Hesaplamayı gizle"
@@ -25176,6 +25192,9 @@ msgstr "Zamanı Reddet"
 msgid "Rejected"
 msgstr "Reddedilmiş"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Muayenede reddedildi"
 
@@ -28628,6 +28647,9 @@ msgstr "Klavye kısayollarını göster"
 
 msgid "Show lines"
 msgstr "Satırları Göster"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "Aylık Hasılatı Göster"

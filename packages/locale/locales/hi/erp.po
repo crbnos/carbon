@@ -421,6 +421,10 @@ msgstr "{0} सफलतापूर्वक हटाया गया"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} ड्राफ्ट जर्नल प्रविष्टियाँ"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} अनुमोदन नियम"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# पंक्ति को ठीक करने की आवश्यकता है} other {# पंक्तियों को ठीक करने की आवश्यकता है}}"
@@ -11280,6 +11287,9 @@ msgstr "पथ संपादन पूरा किया"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "दिन-प्रतिदिन हमारे बिना कमरे में चले तब हो गया"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "इस उप-विधानसभा को खोलने के लिए डबल-क्लिक करें"
 
@@ -11319,6 +11329,9 @@ msgstr "गणना को भरने के लिए एक फाइल �
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "टेम्पलेट डाउनलोड करें। प्रत्येक पंक्ति एक डिफ़ॉल्ट खाता है जो Carbon पोस्ट करता है। खाता संख्या में, अपने चार्ट में उस खाते की संख्या दर्ज करें जो इसे लेता है। Carbon डिफ़ॉल्ट खाते को मेल खाने के लिए अपडेट करता है।"
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "ड्राफ्ट"
@@ -14948,6 +14961,9 @@ msgstr "ड्राइंग छिपाएं"
 
 msgid "Hide lines"
 msgstr "पंक्तियां छुपाएं"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "गणना को छिपाएं"
@@ -25176,6 +25192,9 @@ msgstr "समय को अस्वीकार करें"
 msgid "Rejected"
 msgstr "अस्वीकृत"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "निरीक्षण में अस्वीकृत"
 
@@ -28628,6 +28647,9 @@ msgstr "कीबोर्ड शॉर्टकट दिखाएँ"
 
 msgid "Show lines"
 msgstr "पंक्तियां दिखाएं"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "मासिक राजस्व दिखाएं"

@@ -421,6 +421,10 @@ msgstr "{0} usunięty pomyślnie"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} wpisów z wersji roboczej dowodu księgowego"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} reguła zatwierdzania"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} z {total} faz ukończonych"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# wiersz wymaga naprawy} other {# wiersze wymagają naprawy}}"
@@ -11280,6 +11287,9 @@ msgstr "Gotowe edytowanie ścieżki"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Gotowe, gdy codzienne operacje działają bez naszej obecności"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Kliknij dwukrotnie, aby otworzyć ten podzespół"
 
@@ -11319,6 +11329,9 @@ msgstr "Pobierz inwentaryzację jako plik do wypełnienia"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Pobierz szablon. Każdy wiersz to domyślne konto, na które Carbon dokonuje księgowań. W polu Numer konta wpisz numer konta w twoim planie, które go zastępuje. Carbon aktualizuje domyślne konto, aby się zgadzało."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Wersja robocza"
@@ -14948,6 +14961,9 @@ msgstr "Ukryj rysunek"
 
 msgid "Hide lines"
 msgstr "Ukryj pozycje"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Ukryj miesięczne przychody ze sprzedaży"
@@ -25176,6 +25192,9 @@ msgstr "Odrzuć czas"
 msgid "Rejected"
 msgstr "Odrzucone"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Odrzucone przy kontroli"
 
@@ -28628,6 +28647,9 @@ msgstr "Pokaż skróty klawiszowe"
 
 msgid "Show lines"
 msgstr "Pokaż pozycje"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "Pokaż przychody ze sprzedaży co miesiąc"

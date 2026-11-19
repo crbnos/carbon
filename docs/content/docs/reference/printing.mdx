@@ -32,6 +32,7 @@ A **printer route** is one physical printer (`printerRoute` table, `202603260000
 <Field name="name" type="text" required>What you call the printer, unique per location. "e.g. Zebra 2x1".</Field>
 <Field name="format" type='"zpl" | "pdf"' required>"ZPL (Thermal Label)" or "PDF (Document)". A CHECK constraint enforces the two values.</Field>
 <Field name="mediaSizeId" type="text" required>The label size this printer loads. ZPL printers only offer thermal (ZPL-capable) sizes; PDF printers offer all.</Field>
+<Field name="dpi" type="203 | 300 | 600" required>The printer's print density in dots per inch, shown for ZPL printers. Defaults to 203; saving a printer as PDF keeps the value it had. Built-in ZPL labels and the test label are drawn in this printer's dots, so the label, its text and its barcodes keep their physical size. A QR code can print smaller at 300 and 600 dpi, because ZPL caps a QR code's magnification at 10. Custom label templates are always drawn at 203 dpi, so a denser printer prints them smaller. A CHECK constraint enforces the three values.</Field>
 <Field name="printerUrl" type="url" required>The ProxyBox HTTP endpoint jobs are delivered to, e.g. `https://pbx-XXXX.pbxz.cloud/api/v1/print/…`.</Field>
 <Field name="apiKey" type="text">Optional key sent as an `X-API-Key` header on delivery. Carbon stores it encrypted in Supabase Vault, never in the `printerRoute` row, and never sends it back to the browser: the form shows only whether a key is saved. Leave the field blank to keep the saved key, or tick **Remove API key** to clear it.</Field>
 <Field name="locationId" type="text">The location the printer lives at (optional; a route can be company-wide).</Field>
@@ -88,9 +89,11 @@ Every print, manual or automatic, becomes a **`printJob`** row (`20260326000000_
 <Status name="failed" terminal>Rendering or delivery failed. The `error` column holds the reason and `attempts` counts tries.</Status>
 </StatusFlow>
 
-Each job records its `origin`, one of **auto** (an automatic print behind a business event), **manual** (someone clicked print), or **reprint** (re-run from the jobs list). It also keeps the `sourceDocument`, `sourceDocumentId`, a readable id, the `contentType`, and the `printerUrl` it was sent to.
+Each job records its `origin`, one of **auto** (an automatic print behind a business event), **manual** (someone clicked print), or **reprint** (re-run from the jobs list). It also keeps the `sourceDocument`, `sourceDocumentId`, a readable id, the `contentType`, the `printerUrl` it was sent to, and the `dpi` its content was drawn for (`20261119102744_print-job-dpi.sql`; 203 for a custom template and for every job from before the column).
 
-You watch the queue under **Settings → Printing → Print jobs** (`printing.jobs.tsx`). The table streams in real time and shows status, description, source, type, origin, and when. Expanding a row exposes the printer URL, attempts, timestamps, and any error. From there you can **View** the content (ZPL previews via Labelary, PDF via an inline frame), **Reprint** it (a fresh job with `origin: "reprint"`), or **Delete** it.
+You watch the queue under **Settings → Printing → Print jobs** (`printing.jobs.tsx`). The table streams in real time and shows status, description, source, type, origin, and when. Expanding a row exposes the printer URL, attempts, timestamps, and any error.
+
+From there you can **View** the content (ZPL previews via Labelary at the job's own `dpi`, PDF via an inline frame), **Reprint** it (a fresh job with `origin: "reprint"` and the same content), or **Delete** it. A ZPL job is not reprinted to a printer at another dpi, because the copy would print the wrong size.
 
 <Callout type="note">
 Print jobs are pruned on a schedule: completed jobs after 30 days, failed jobs after 90. A failed job stays around long enough to diagnose.
@@ -122,7 +125,9 @@ When a location has printer routes, **Print** opens a printer picker with the re
 
 ## Label sizes
 
-Media sizes are a fixed catalog (`packages/utils/src/labels.ts`): `label2x1`, `label4x2`, metric `label100x50mm` and `label50x25mm`, and PDF-only `avery5163`. Only sizes with ZPL dimensions can print to a thermal printer; a PDF-only size like Avery can't.
+Media sizes are a fixed catalog (`packages/utils/src/labels.ts`): thermal `label1.5x1`, `label2x1`, `label2x2`, `label2.25x1.25`, `label3x2`, `label4x2`, `label4x3`, `label4x6`, metric `label100x50mm` and `label50x25mm`, and PDF-only `avery5163`. Only sizes with ZPL dimensions can print to a thermal printer; a PDF-only size like Avery can't.
+
+The catalog lists each thermal size at 203 dpi. A print job redraws a built-in label at the dpi of the printer it goes to; custom templates and the interactive label downloads stay at 203.
 
 Two places set a size. A printer route pins its own `mediaSizeId` (the size loaded in that physical printer). And the company has a **default product-label size** (`companySettings.productLabelSize`), set on the document-template screen, used by the interactive label-download routes when no route dictates one. See [Company settings](/docs/reference/company-settings) for where that default lives, and [Documents](/docs/reference/documents) for the customizer that styles the built-in label templates.
 
@@ -172,6 +177,9 @@ The printer's ProxyBox endpoint returned an HTTP error. The trailing text is Pro
 
 ### "Test print is only supported for ZPL label printers with a media size configured."
 The Test action only works on a ZPL-format route that has a media size set. PDF routes and ZPL routes without a media size can't be test-printed.
+
+### "This label was printed for a … dpi printer. Print it again from the record to send it to a … dpi printer."
+A reprint sends the original job's ZPL unchanged, and ZPL is drawn in one printer's dots. The job keeps only that finished content, not the record it was drawn from, so Carbon cannot redraw it for the other printer. Print from the source document instead, which renders a new label at the target printer's dpi.
 
 ### "Cannot reprint a job with no content" / "Cannot reprint a job that is still generating"
 Reprint copies the original job's rendered content into a new job. A job that never rendered (still generating, or failed before render) has nothing to copy — resolve the original first, or trigger a fresh print from the source document.

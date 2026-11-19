@@ -25,10 +25,13 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef } from "react";
 import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
+  /** Fill the field when it is empty and there is exactly one option. */
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   termId?: TermId;
@@ -48,6 +51,7 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
 };
 
 const Select = ({
+  autoSelectSingleOption = false,
   name,
   label,
   termId,
@@ -73,6 +77,14 @@ const Select = ({
     label,
     isEmpty: !value,
     isReadOnly: isReadOnly || isDisabled
+  });
+
+  useAutoSelectSingleOption({
+    enabled: autoSelectSingleOption,
+    options,
+    value,
+    setValue,
+    onChange: props.onChange
   });
 
   const onChange = (value: string) => {
