@@ -217,15 +217,22 @@ const PurchaseInvoiceHeader = () => {
     invoiceId,
     balance: purchaseInvoice.balance
   });
-  const isDraft = routeData?.purchaseInvoice?.status === "Draft";
+  const status = routeData?.purchaseInvoice?.status;
+  const isDraft = status === "Draft";
+  // A posted invoice can be adjusted too; that posts a journal.
+  const canAdjustRounding =
+    !!status && status !== "Pending" && status !== "Voided";
   const menuItems = (
     <>
       {auditLogTrigger}
-      {isDraft && (
+      {canAdjustRounding && (
         <>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={!permissions.can("update", "invoicing")}
+            disabled={
+              !permissions.can("update", "invoicing") ||
+              (!isDraft && !permissions.can("update", "accounting"))
+            }
             onClick={roundingModal.onOpen}
           >
             <DropdownMenuIcon icon={<LuCoins />} />
@@ -420,6 +427,7 @@ const PurchaseInvoiceHeader = () => {
         <PurchaseInvoiceRoundingModal
           open
           invoiceId={invoiceId}
+          isPosted={!isDraft}
           currencyCode={
             purchaseInvoice.currencyCode ?? company.baseCurrencyCode
           }

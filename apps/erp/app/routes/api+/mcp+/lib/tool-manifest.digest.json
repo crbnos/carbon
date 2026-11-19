@@ -313,7 +313,7 @@
     {"name":"inventory_voidReceipt","classification":"DESTRUCTIVE","schema":"c7150d5019fc","response":"e00a9764517d","permission":"inventory:update","paginates":false},
     {"name":"inventory_voidShipment","classification":"DESTRUCTIVE","schema":"23145c149b1d","response":"2e39a760a5ca","permission":"inventory:update","paginates":false},
     {"name":"invoicing_adjustPayables","classification":"WRITE","schema":"783894538b85","response":"7e2279b19577","permission":"accounting:create","paginates":false},
-    {"name":"invoicing_adjustPurchaseInvoiceRounding","classification":"WRITE","schema":"5264074370c2","response":"a6c503ff1863","permission":"invoicing:update","paginates":false},
+    {"name":"invoicing_adjustPurchaseInvoiceRounding","classification":"WRITE","schema":"5264074370c2","response":"ce7b73a7acda","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_adjustReceivables","classification":"WRITE","schema":"783894538b85","response":"7e2279b19577","permission":"accounting:create","paginates":false},
     {"name":"invoicing_applyCreditsToInvoices","classification":"DESTRUCTIVE","schema":"5015b8187c1a","response":"none","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_changePurchaseInvoiceLineAccount","classification":"WRITE","schema":"85487136f4cd","response":"c788b0362de1","permission":"none","paginates":false},

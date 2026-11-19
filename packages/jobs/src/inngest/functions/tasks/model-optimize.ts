@@ -6,11 +6,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { modelPathOptimizeFormat } from "@carbon/files/cad";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
+  AssemblerJobError,
   assemblerEnabled,
   internalizeStorageUrl,
   requireModelSourceBucket,
@@ -217,9 +218,28 @@ export const modelOptimizeFunction = inngest.createFunction(
             : {})
         });
       }
+    }).catch((error) => {
+      // The stored error names the file's format and size.
+      if (!(error instanceof AssemblerJobError)) throw error;
+      const size =
+        model.size === null
+          ? "size unknown"
+          : `${round(Number(model.size) / 1024 ** 2, 0)} MB`;
+      throw new AssemblerJobError(
+        `${error.message} [${format}, ${size}]`,
+        error.code
+      );
     });
-    const outputs =
-      ((optimize.result ?? {}) as { outputs?: IngestOutputs }).outputs ?? {};
+    const { outputs = {}, warnings = [] } = (optimize.result ?? {}) as {
+      outputs?: IngestOutputs;
+      warnings?: string[];
+    };
+    if (warnings.length > 0) {
+      logger.warn("Model optimise finished with warnings", {
+        modelUploadId,
+        warnings
+      });
+    }
     const stats: Json = optimize.stats;
 
     await step.run("persist", async () => {

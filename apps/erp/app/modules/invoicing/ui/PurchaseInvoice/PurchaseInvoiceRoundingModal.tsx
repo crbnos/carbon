@@ -27,12 +27,14 @@ import {
 import type { action as roundingAction } from "~/routes/x+/purchase-invoice+/$invoiceId.rounding";
 import { path } from "~/utils/path";
 
-/** Brings a Draft invoice to the amount the supplier actually charged. The
- *  server computes and books the difference on the Rounding Account. */
+/** Brings an invoice to the amount the supplier actually charged. The server
+ *  computes and books the difference on the Rounding Account, and posts it
+ *  when the invoice is already posted. */
 export default function PurchaseInvoiceRoundingModal({
   invoiceId,
   currencyCode,
   total,
+  isPosted,
   open,
   onClose
 }: {
@@ -40,6 +42,8 @@ export default function PurchaseInvoiceRoundingModal({
   currencyCode: string;
   /** The invoice total in its own currency. */
   total: number;
+  /** A posted invoice's adjustment is also posted to the ledger. */
+  isPosted: boolean;
   open: boolean;
   onClose: () => void;
 }) {
@@ -82,6 +86,16 @@ export default function PurchaseInvoiceRoundingModal({
                 {formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)}.
                 Other lines keep their prices.
               </Trans>
+              {isPosted && (
+                <>
+                  {" "}
+                  <Trans>
+                    The invoice is posted, so the change is also posted to the
+                    Rounding Account and Accounts Payable on the invoice's
+                    posting date.
+                  </Trans>
+                </>
+              )}
             </ModalDescription>
           </ModalHeader>
           <ModalBody className="flex flex-col gap-4">

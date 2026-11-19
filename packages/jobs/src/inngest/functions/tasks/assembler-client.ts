@@ -20,6 +20,7 @@ import {
   isUnsafeStoragePath,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
+import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError, RetryAfterError } from "inngest";
 import { getJobDatabaseClient } from "../../../db";
@@ -508,18 +509,22 @@ export function decideJobStep(
       if (runningSince !== null && now - runningSince > maxWaitMs) {
         return {
           kind: "fail",
-          message: `assembler ${action} did not finish within ${maxWaitMs}ms of starting`
+          message: `assembler ${action} timed out: still ${outcome.status} ${minutes(now - runningSince)} min after it started (limit ${minutes(maxWaitMs)} min, ${minutes(now - submittedAt)} min since submit)`
         };
       }
       if (now - submittedAt > MAX_QUEUED_MS + maxWaitMs) {
         return {
           kind: "fail",
-          message: `assembler ${action} waited more than ${MAX_QUEUED_MS}ms for the service`
+          message: `assembler ${action} never started: still ${outcome.status} ${minutes(now - submittedAt)} min after submit (limit ${minutes(MAX_QUEUED_MS + maxWaitMs)} min)`
         };
       }
       return { kind: "wait", runningSince };
     }
   }
+}
+
+function minutes(ms: number): number {
+  return round(ms / 60_000, 0);
 }
 
 /**
@@ -547,7 +552,8 @@ export class AssemblerJobError extends NonRetriableError {
   readonly code?: string;
   constructor(message: string, code?: string) {
     super(message);
-    this.name = "AssemblerJobError";
+    // Keep the inherited name: Inngest falls back to `name === "NonRetriableError"`
+    // when `instanceof` fails across its two installed copies, else it retries.
     this.code = code;
   }
 }
