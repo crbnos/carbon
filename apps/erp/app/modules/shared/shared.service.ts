@@ -9575,7 +9575,7 @@ export async function convertDocument(
       }, []);
 
       if (!uninvoicedLines || uninvoicedLines.length === 0) {
-        throw new Error(
+        throw new InvalidInputError(
           "No lines available to invoice. All lines may already be marked as invoiced complete."
         );
       }
@@ -10223,7 +10223,7 @@ export async function convertDocument(
       }, 0);
 
       if (!uninvoicedLines || uninvoicedLines.length === 0) {
-        throw new Error(
+        throw new InvalidInputError(
           "No lines available to invoice. All lines may already be marked as invoiced complete."
         );
       }
@@ -10878,7 +10878,7 @@ export async function convertDocument(
       }, 0);
 
       if (!uninvoicedLines || uninvoicedLines.length === 0) {
-        throw new Error(
+        throw new InvalidInputError(
           "No lines available to invoice. All lines may already be marked as invoiced complete."
         );
       }
