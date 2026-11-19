@@ -22,6 +22,7 @@ import {
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { log } from "@clack/prompts";
+import { parse as parseDotenv } from "dotenv";
 import { execa } from "execa";
 import { basename, join } from "pathe";
 import { isCloudDev } from "../../stack-state.js";
@@ -108,6 +109,63 @@ const DOCKERD_LOG = join(homedir(), ".carbon", "dockerd.log");
 async function dockerResponds(): Promise<boolean> {
   const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
   return r.exitCode === 0;
+}
+
+/** The CPUs Docker can give a container: Docker Desktop's VM can have fewer
+ *  than the host. Null when `docker info` fails or does not say. */
+export async function dockerCpuCount(): Promise<number | null> {
+  const r = await execa("docker", ["info", "--format", "{{.NCPU}}"], {
+    reject: false,
+    ...sharedExec()
+  });
+  const cpus = Number(r.stdout?.trim());
+  return r.exitCode === 0 && Number.isInteger(cpus) && cpus > 0 ? cpus : null;
+}
+
+/**
+ * `CPU_<NAME>=<cpus>` for each `${CPU_<NAME>:-<default>}` in the compose files
+ * whose default is above Docker's CPU count. Docker refuses to create a
+ * container whose limit is above it ("range of CPUs is from 0.01 to 2.00").
+ * A limit is a ceiling, not a reservation, so the cap costs nothing. Limits
+ * that fit get no line, so the resolved config stays as it is.
+ */
+export function cpuLimitOverrides(
+  composeTexts: string[],
+  cpus: number | null
+): Record<string, string> {
+  const limits: Record<string, string> = {};
+  if (cpus === null) return limits;
+  for (const text of composeTexts) {
+    for (const [, name, fallback] of text.matchAll(
+      /\$\{(CPU_[A-Z0-9_]+):?-([^}]*)\}/g
+    )) {
+      if (name && Number(fallback) > cpus) limits[name] = String(cpus);
+    }
+  }
+  return limits;
+}
+
+/** The CPU limits a worktree's `.env.local` caps (`cpuLimitOverrides` over
+ *  the compose files its mode runs), less the keys the user sets in `.env`:
+ *  `.env.local` wins over `.env`, and their value sizes their stack. */
+export async function worktreeCpuLimits(
+  root: string,
+  mode: StackRef["mode"]
+): Promise<Record<string, string>> {
+  const names =
+    mode === "isolated"
+      ? [COMPOSE_DEV_FILE, COMPOSE_ISOLATED_FILE]
+      : [COMPOSE_DEV_FILE];
+  const files = names.map((f) => join(root, f)).filter((f) => existsSync(f));
+  const limits = cpuLimitOverrides(
+    files.map((f) => readFileSync(f, "utf8")),
+    await dockerCpuCount()
+  );
+  const dotEnv = join(root, ".env");
+  const own = existsSync(dotEnv) ? parseDotenv(readFileSync(dotEnv)) : {};
+  return Object.fromEntries(
+    Object.entries(limits).filter(([key]) => !(key in own))
+  );
 }
 
 // A cloud container has no Docker Desktop and nobody to start one, so crbn
@@ -775,7 +833,8 @@ async function pruneSharedDirs(current: Record<string, string>) {
 export function renderSharedEnv(
   jwt: JwtCreds,
   redisDatabases: number,
-  dirs: Record<string, string>
+  dirs: Record<string, string>,
+  cpuLimits: Record<string, string>
 ): string {
   return [
     `SUPABASE_JWT_SECRET=${jwt.secret}`,
@@ -783,6 +842,7 @@ export function renderSharedEnv(
     `SUPABASE_SERVICE_ROLE_KEY=${jwt.serviceKey}`,
     `REDIS_DATABASES=${redisDatabases}`,
     ...Object.entries(dirs).map(([env, dirName]) => `${env}=${dirName}`),
+    ...Object.entries(cpuLimits).map(([env, cpus]) => `${env}=${cpus}`),
     ""
   ].join("\n");
 }
@@ -838,9 +898,16 @@ async function prepareShared(
   // SELECT fails and ioredis falls back to DB 0, another worktree's.
   const databases = redisDatabasesNeeded(Object.values(listSlugs()));
   const dirs = syncSharedDirs();
-  writeFileSync(join(dir, ".env"), renderSharedEnv(jwt, databases, dirs), {
-    mode: 0o600
-  });
+  // From the file compose runs: the running one when it was kept.
+  const cpuLimits = cpuLimitOverrides(
+    [readFileSync(composeTarget, "utf8")],
+    await dockerCpuCount()
+  );
+  writeFileSync(
+    join(dir, ".env"),
+    renderSharedEnv(jwt, databases, dirs, cpuLimits),
+    { mode: 0o600 }
+  );
   await ensureSharedNetwork();
   await ensureRedisVolume();
   await removeStandaloneRedis();

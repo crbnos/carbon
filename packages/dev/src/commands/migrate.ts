@@ -14,7 +14,8 @@ import {
   ensureDockerRunning,
   ensureSharedNetwork,
   ensureSlugAvailable,
-  stopStack
+  stopStack,
+  worktreeCpuLimits
 } from "../services/compose.js";
 import { wakeIfAsleep } from "../services/hibernate.js";
 import {
@@ -104,7 +105,8 @@ async function provision(stack: Stack): Promise<Stack> {
     ...slot,
     prefix: branchToPrefix(await currentBranch(stack.root), stack.slug),
     mode: "shared",
-    database: stackDatabase(stack.slug, "shared")
+    database: stackDatabase(stack.slug, "shared"),
+    cpuLimits: await worktreeCpuLimits(stack.root, "shared")
   });
   return currentStack();
 }
