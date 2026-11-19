@@ -14326,6 +14326,9 @@ msgstr "전체 이름"
 msgid "Full setup and migrations"
 msgstr "완전한 셋업 및 마이그레이션"
 
+msgid "Full Year"
+msgstr "연도 전체"
+
 msgid "Fully Depreciated"
 msgstr "상각 완료"
 
@@ -15083,6 +15086,9 @@ msgstr "시간/1000개"
 msgid "Hours/Piece"
 msgstr "시간/개"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "문서, 일련번호, 배치 번호에서 {week} 값이 주를 세는 방식입니다."
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: 순차는 부품을 한 기계에서 차례대로 실행하고(톱 또는 레이저 테이블), 동시는 단일 로드에서 함께 실행합니다(용광로, 오븐 또는 도금 욕조)."
 
@@ -15253,6 +15259,9 @@ msgstr "저희의 협업 방식"
 
 msgid "How We Work Together"
 msgstr "저희가 함께 일하는 방식"
+
+msgid "How weeks are numbered"
+msgstr "주 번호 매기는 방식"
 
 msgid "How will you use {integrationName}?"
 msgstr "{integrationName}을(를) 어떻게 사용하시겠습니까?"
@@ -16270,6 +16279,9 @@ msgstr "공급업체 조직 그룹입니다"
 
 msgid "Is supplier type group"
 msgstr "공급업체 유형 그룹입니다"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "이슈"
@@ -17625,6 +17637,9 @@ msgstr "위치"
 
 msgid "Location / Item"
 msgstr "위치 / 항목"
+
+msgid "Location code"
+msgstr "사업장 코드"
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -21144,6 +21159,9 @@ msgstr "현재 주부터 주 번호 매기기"
 
 msgid "Numbering sequence"
 msgstr "채번 규칙"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "저장한 후 발급되는 번호는 이 방식으로 주를 계산합니다. 이미 발급된 번호는 기존 주를 유지합니다."
 
 msgid "OEE Impact"
 msgstr "OEE 영향"
@@ -27391,6 +27409,9 @@ msgstr "검색..."
 
 msgid "Search…"
 msgstr "검색…"
+
+msgid "Second"
+msgstr "초"
 
 msgid "Seconds to complete"
 msgstr "완료할 시간(초)"
@@ -34078,6 +34099,9 @@ msgstr "긴급"
 msgid "URL"
 msgstr "URL"
 
+msgid "US"
+msgstr "미국식"
+
 msgid "Usage/Day (30d)"
 msgstr "일 사용량(30일)"
 
@@ -34821,6 +34845,9 @@ msgstr "수요일"
 msgid "Week"
 msgstr "주"
 
+msgid "Week ({numbering})"
+msgstr "주 ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "{0}주차"
@@ -34833,6 +34860,9 @@ msgstr "{weekNumber}주차 ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "8주차 전환"
+
+msgid "Week Numbering"
+msgstr "주 번호 체계"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34876,8 +34906,17 @@ msgstr "주 번호가 달력 주 기준으로 매겨집니다"
 msgid "Weeks are numbered from the present week"
 msgstr "주 번호가 현재 주부터 매겨집니다"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "주 번호는 설정 → 회사에서 지정합니다."
+
 msgid "Weeks Open"
 msgstr "미결 주수"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "주는 월요일에 시작합니다. 1주차는 그 해 첫 목요일이 속한 주이므로 한 주가 나뉘지 않습니다. 예: 2027년 1월 1일(금요일)은 2026년 53주차에 속합니다."
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "주는 일요일에 시작합니다. 1주차는 1월 1일이 속한 주이므로 연초와 연말의 주는 짧아질 수 있습니다. 예: 2027년 1월 1일~2일은 1주차입니다."
 
 msgid "Weighted Average"
 msgstr "가중평균"
@@ -35479,6 +35518,9 @@ msgstr "재공품"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "{0} 예비비 포함"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "{week}만 사용하고 {month}이나 {day}가 없으면, 연도는 해당 주가 속한 연도입니다. 예: 2027년 1월 1일은 2026년 53주차에 속합니다."
 
 msgid "With Previous"
 msgstr "이전 공정과 함께"

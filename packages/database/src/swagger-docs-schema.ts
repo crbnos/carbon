@@ -119410,6 +119410,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -119766,6 +119769,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -120074,6 +120080,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -134757,6 +134766,20 @@ export default {
             name: "p_location",
             required: true,
             type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_week_numbering",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_format",
+            required: false,
+            type: "string"
           }
         ],
         produces: [
@@ -134779,6 +134802,10 @@ export default {
             required: true,
             schema: {
               properties: {
+                p_format: {
+                  format: "text",
+                  type: "string"
+                },
                 p_location: {
                   format: "text",
                   type: "string"
@@ -134788,6 +134815,10 @@ export default {
                   type: "string"
                 },
                 p_value: {
+                  format: "text",
+                  type: "string"
+                },
+                p_week_numbering: {
                   format: "text",
                   type: "string"
                 }
@@ -139319,6 +139350,96 @@ export default {
           }
         },
         tags: ["(rpc) get_next_serial_numbers"]
+      }
+    },
+    "/rpc/interpolate_sequence_date": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_value",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "timestamp without time zone",
+            in: "query",
+            name: "p_now",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_week_numbering",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_format",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) interpolate_sequence_date"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_format: {
+                  format: "text",
+                  type: "string"
+                },
+                p_now: {
+                  format: "timestamp without time zone",
+                  type: "string"
+                },
+                p_value: {
+                  format: "text",
+                  type: "string"
+                },
+                p_week_numbering: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_value", "p_now"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) interpolate_sequence_date"]
       }
     },
     "/rpc/inspection_lot_holds": {
@@ -196810,7 +196931,8 @@ export default {
         "travelerLabels",
         "requireTrackedMaterialsIssued",
         "autoPickingListOnRelease",
-        "receiptBatchNumbersFromPurchaseOrder"
+        "receiptBatchNumbersFromPurchaseOrder",
+        "sequenceWeekNumbering"
       ],
       properties: {
         id: {
@@ -197338,6 +197460,11 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean"
+        },
+        sequenceWeekNumbering: {
+          default: "iso",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -261867,6 +261994,12 @@ export default {
     },
     "rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder": {
       name: "receiptBatchNumbersFromPurchaseOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.sequenceWeekNumbering": {
+      name: "sequenceWeekNumbering",
       required: false,
       in: "query",
       type: "string"

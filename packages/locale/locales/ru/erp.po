@@ -14326,6 +14326,9 @@ msgstr "Полное имя"
 msgid "Full setup and migrations"
 msgstr "Полная наладка и миграции"
 
+msgid "Full Year"
+msgstr "Полный год"
+
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
 
@@ -15083,6 +15086,9 @@ msgstr "Часов/1000 Деталей"
 msgid "Hours/Piece"
 msgstr "Часов/Деталь"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "Как {week} считает недели в номерах документов, серийных номерах и номерах серий."
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Как процесс, допускающий батчинг, работает с сгруппированной работой: режим « Последовательный» запускает детали одну за другой на одном станке (пила или лазерный стол), а режим «Одновременный» запускает их вместе в одной загрузке (печь, духовка или гальваническая ванна)."
 
@@ -15253,6 +15259,9 @@ msgstr "Как мы работаем"
 
 msgid "How We Work Together"
 msgstr "Как мы работаем вместе"
+
+msgid "How weeks are numbered"
+msgstr "Как нумеруются недели"
 
 msgid "How will you use {integrationName}?"
 msgstr "Как вы будете использовать {integrationName}?"
@@ -16270,6 +16279,9 @@ msgstr "Является группой организаций поставщи�
 
 msgid "Is supplier type group"
 msgstr "Является группой типов поставщиков"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Проблема"
@@ -17625,6 +17637,9 @@ msgstr "Местоположение"
 
 msgid "Location / Item"
 msgstr "Местоположение / Товар"
+
+msgid "Location code"
+msgstr "Код площадки"
 
 msgid "Location Name"
 msgstr "Название местоположения"
@@ -21144,6 +21159,9 @@ msgstr "Нумеровать недели от текущей недели"
 
 msgid "Numbering sequence"
 msgstr "Нумерационная последовательность"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "Номера, выданные после сохранения, считают недели так. Уже выданные номера сохраняют свою неделю."
 
 msgid "OEE Impact"
 msgstr "Влияние OEE"
@@ -27391,6 +27409,9 @@ msgstr "Поиск..."
 
 msgid "Search…"
 msgstr "Поиск…"
+
+msgid "Second"
+msgstr "Секунда"
 
 msgid "Seconds to complete"
 msgstr "Секунды для завершения"
@@ -34078,6 +34099,9 @@ msgstr "Срочно"
 msgid "URL"
 msgstr "URL"
 
+msgid "US"
+msgstr "US"
+
 msgid "Usage/Day (30d)"
 msgstr "Использование/День (30д)"
 
@@ -34821,6 +34845,9 @@ msgstr "Среда"
 msgid "Week"
 msgstr "Неделя"
 
+msgid "Week ({numbering})"
+msgstr "Неделя ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "Неделя {0}"
@@ -34833,6 +34860,9 @@ msgstr "Неделя {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Неделя 8 переход"
+
+msgid "Week Numbering"
+msgstr "Нумерация недель"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34876,8 +34906,17 @@ msgstr "Недели нумеруются по календарной недел
 msgid "Weeks are numbered from the present week"
 msgstr "Недели нумеруются от текущей недели"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "Недели нумеруются в Настройках → Организация."
+
 msgid "Weeks Open"
 msgstr "Недель открыто"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "Недели начинаются в понедельник. Неделя 1 — это неделя, в которой приходится первый четверг года, поэтому неделя никогда не делится: пятница 1 января 2027 года относится к 53-й неделе 2026 года."
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "Недели начинаются в воскресенье. Неделя 1 — это неделя, в которую входит 1 января, поэтому недели вокруг нового года короткие: 1–2 января 2027 года относятся к неделе 1."
 
 msgid "Weighted Average"
 msgstr "Средневзвешенное значение"
@@ -35479,6 +35518,9 @@ msgstr "Незавершенное производство"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "с {0} резервом"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "Если в формате есть {week}, но нет {month} и {day}, год — это год, к которому относится неделя: 1 января 2027 года входит в 53-ю неделю 2026 года."
 
 msgid "With Previous"
 msgstr "С предыдущим"

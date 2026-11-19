@@ -14326,6 +14326,9 @@ msgstr "全名"
 msgid "Full setup and migrations"
 msgstr "完整设置和迁移"
 
+msgid "Full Year"
+msgstr "完整年份"
+
 msgid "Fully Depreciated"
 msgstr "已提足折旧"
 
@@ -15083,6 +15086,9 @@ msgstr "小时/1000件"
 msgid "Hours/Piece"
 msgstr "小时/件"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "{week} 如何在文件、序列号和生产批次编号中计算周数。"
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
 
@@ -15253,6 +15259,9 @@ msgstr "我们如何合作"
 
 msgid "How We Work Together"
 msgstr "我们如何合作"
+
+msgid "How weeks are numbered"
+msgstr "周如何编号"
 
 msgid "How will you use {integrationName}?"
 msgstr "你将如何使用 {integrationName}？"
@@ -16270,6 +16279,9 @@ msgstr "是供应商组织组"
 
 msgid "Is supplier type group"
 msgstr "是供应商类型组"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "问题"
@@ -17625,6 +17637,9 @@ msgstr "位置"
 
 msgid "Location / Item"
 msgstr "位置 / 物品"
+
+msgid "Location code"
+msgstr "地点代码"
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -21144,6 +21159,9 @@ msgstr "从本周开始为周编号"
 
 msgid "Numbering sequence"
 msgstr "编号规则"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "保存后签发的编号按此方式计算周数。已签发的编号保留其原周数。"
 
 msgid "OEE Impact"
 msgstr "OEE 影响"
@@ -27391,6 +27409,9 @@ msgstr "搜索..."
 
 msgid "Search…"
 msgstr "搜索…"
+
+msgid "Second"
+msgstr "秒"
 
 msgid "Seconds to complete"
 msgstr "完成秒数"
@@ -34078,6 +34099,9 @@ msgstr "紧急"
 msgid "URL"
 msgstr "网址"
 
+msgid "US"
+msgstr "美国"
+
 msgid "Usage/Day (30d)"
 msgstr "用量/天 (30天)"
 
@@ -34821,6 +34845,9 @@ msgstr "星期三"
 msgid "Week"
 msgstr "周"
 
+msgid "Week ({numbering})"
+msgstr "周（{numbering}）"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "第{0}周"
@@ -34833,6 +34860,9 @@ msgstr "第 {weekNumber} 周 ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "第8周切换"
+
+msgid "Week Numbering"
+msgstr "周编号"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34876,8 +34906,17 @@ msgstr "周按日历周编号"
 msgid "Weeks are numbered from the present week"
 msgstr "周从本周开始编号"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "周编号在“设置”→“公司”中设置。"
+
 msgid "Weeks Open"
 msgstr "未结周数"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "周从周一开始。第1周是包含当年第一个周四的那一周，因此一周不会被拆分：2027年1月1日（周五）属于2026年第53周。"
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "周从周日开始。第1周是包含1月1日的那一周，因此跨年前后的周会较短：2027年1月1日至2日属于第1周。"
 
 msgid "Weighted Average"
 msgstr "加权平均"
@@ -35479,6 +35518,9 @@ msgstr "在制品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "含{0}应急储备"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "使用 {week} 且不含 {month} 或 {day} 时，年份为该周所属的年份：2027年1月1日属于2026年第53周。"
 
 msgid "With Previous"
 msgstr "同上一个"

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1822,
+  "totalTools": 1823,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1722,7 +1722,7 @@
     {"name":"settings_getApiKeys","classification":"WRITE","schema":"cd40ae40fad5","response":"14fbafc2ddf8","permission":"users:update","paginates":true},
     {"name":"settings_getCompanies","classification":"READ","schema":"31b84d65b2ac","response":"5783a32e0f4a","permission":"settings:view","paginates":false},
     {"name":"settings_getCompany","classification":"READ","schema":"31b84d65b2ac","response":"81a93f0029ec","permission":"settings:view","paginates":false},
-    {"name":"settings_getCompanySettings","classification":"READ","schema":"31b84d65b2ac","response":"7b9d5dac1296","permission":"settings:view","paginates":false},
+    {"name":"settings_getCompanySettings","classification":"READ","schema":"31b84d65b2ac","response":"2fe479941683","permission":"settings:view","paginates":false},
     {"name":"settings_getConfig","classification":"READ","schema":"31b84d65b2ac","response":"aa1021ff34cf","permission":"settings:view","paginates":false},
     {"name":"settings_getCurrentSequence","classification":"READ","schema":"31018ffa701d","response":"00404e686415","permission":"settings:view","paginates":false},
     {"name":"settings_getCustomField","classification":"READ","schema":"7f8214d1083f","response":"a533a796c094","permission":"settings:view","paginates":false},
@@ -1772,6 +1772,7 @@
     {"name":"settings_updateSalesSettings","classification":"WRITE","schema":"21176a603607","response":"c066167c685a","permission":"settings:update","paginates":false},
     {"name":"settings_updateSecuritySettings","classification":"WRITE","schema":"1a5429a80ff2","response":"1a5429a80ff2","permission":"settings:update","paginates":false},
     {"name":"settings_updateSequence","classification":"WRITE","schema":"4f2efa805950","response":"bcde375ebd4c","permission":"settings:update","paginates":false},
+    {"name":"settings_updateSequenceSettings","classification":"WRITE","schema":"ea352c52484c","response":"862101ad7ff2","permission":"settings:update","paginates":false},
     {"name":"settings_updateServiceSettings","classification":"WRITE","schema":"56f932d0e060","response":"092756efd7d5","permission":"settings:update","paginates":false},
     {"name":"settings_updateTimeSettings","classification":"WRITE","schema":"3fbbe2f5c04c","response":"e0459cdd878d","permission":"settings:update","paginates":false},
     {"name":"shared_assignRecord","classification":"WRITE","schema":"fc5741825100","response":"3797626bd17e","permission":"none","paginates":false},
