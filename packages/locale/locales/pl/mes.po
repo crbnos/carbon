@@ -2141,6 +2141,9 @@ msgstr "Brak wpisów czasu pracy w tym tygodniu"
 msgid "No unit"
 msgstr "Brak sztuki"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 

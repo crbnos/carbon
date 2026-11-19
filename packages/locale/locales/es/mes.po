@@ -2141,6 +2141,9 @@ msgstr "No hay registros de tiempo para esta semana"
 msgid "No unit"
 msgstr "Sin unidad"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 

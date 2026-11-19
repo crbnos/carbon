@@ -22,9 +22,10 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useEffect } from "react";
+import { forwardRef } from "react";
 import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
@@ -78,13 +79,13 @@ const Select = ({
     isReadOnly: isReadOnly || isDisabled
   });
 
-  const soleOption =
-    autoSelectSingleOption && options.length === 1
-      ? options[0]!.value
-      : undefined;
-  useEffect(() => {
-    if (soleOption && !value) setValue(soleOption);
-  }, [soleOption, value, setValue]);
+  useAutoSelectSingleOption({
+    enabled: autoSelectSingleOption,
+    options,
+    value,
+    setValue,
+    onChange: props.onChange
+  });
 
   const onChange = (value: string) => {
     if (value) {

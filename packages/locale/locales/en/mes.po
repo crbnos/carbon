@@ -2141,6 +2141,9 @@ msgstr "No time entries for this week"
 msgid "No unit"
 msgstr "No unit"
 
+msgid "No unit selected"
+msgstr "No unit selected"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 

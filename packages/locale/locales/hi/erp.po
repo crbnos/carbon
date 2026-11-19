@@ -11241,6 +11241,9 @@ msgstr "पथ संपादन पूरा किया"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "दिन-प्रतिदिन हमारे बिना कमरे में चले तब हो गया"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "इस उप-विधानसभा को खोलने के लिए डबल-क्लिक करें"
 
@@ -14905,6 +14908,9 @@ msgstr "ड्राइंग छिपाएं"
 
 msgid "Hide lines"
 msgstr "पंक्तियां छुपाएं"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "गणना को छिपाएं"
@@ -28544,6 +28550,9 @@ msgstr "कीबोर्ड शॉर्टकट दिखाएँ"
 msgid "Show lines"
 msgstr "पंक्तियां दिखाएं"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "मासिक राजस्व दिखाएं"
 
@@ -31475,9 +31484,6 @@ msgstr "Time & Materials लाइन पर एक घंटे की मू�
 
 msgid "The principle:"
 msgstr "सिद्धांत:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "संभाव्यता रेटिंग कि जोखिम होता है (1 = दुर्लभ से 5 = लगभग निश्चित); जोखिम स्कोर की गणना के लिए गंभीरता के साथ जोड़ी गई।"

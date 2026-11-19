@@ -11241,6 +11241,9 @@ msgstr "パス編集完了"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "日常業務が私たちなしで円滑に進むようになったら完了"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "ダブルクリックするとこのサブアセンブリが開きます"
 
@@ -14905,6 +14908,9 @@ msgstr "図面を非表示"
 
 msgid "Hide lines"
 msgstr "明細を非表示"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "計算を非表示"
@@ -28544,6 +28550,9 @@ msgstr "キーボードショートカットを表示"
 msgid "Show lines"
 msgstr "明細を表示"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "月別売上高を表示"
 
@@ -31475,9 +31484,6 @@ msgstr "タイム & マテリアル明細の 1 時間の価格：従業員の明
 
 msgid "The principle:"
 msgstr "原則:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "リスクが発生する確率評価（1 =稀、5 =ほぼ確実）。重大度と組み合わされてリスクスコアを計算します。"

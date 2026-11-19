@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
@@ -74,13 +75,13 @@ const Combobox = ({
       setValue(props.value ?? "");
   }, [props.value, setValue]);
 
-  const soleOption =
-    autoSelectSingleOption && props.options.length === 1
-      ? props.options[0]!.value
-      : undefined;
-  useEffect(() => {
-    if (soleOption && !value) setValue(soleOption);
-  }, [soleOption, value, setValue]);
+  useAutoSelectSingleOption({
+    enabled: autoSelectSingleOption,
+    options: props.options,
+    value,
+    setValue,
+    onChange: props.onChange
+  });
 
   const onChange = (value: string) => {
     if (value) {

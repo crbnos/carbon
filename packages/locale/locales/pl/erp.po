@@ -11241,6 +11241,9 @@ msgstr "Gotowe edytowanie ścieżki"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Gotowe, gdy codzienne operacje działają bez naszej obecności"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Kliknij dwukrotnie, aby otworzyć ten podzespół"
 
@@ -14905,6 +14908,9 @@ msgstr "Ukryj rysunek"
 
 msgid "Hide lines"
 msgstr "Ukryj pozycje"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Ukryj miesięczne przychody ze sprzedaży"
@@ -28544,6 +28550,9 @@ msgstr "Pokaż skróty klawiszowe"
 msgid "Show lines"
 msgstr "Pokaż pozycje"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "Pokaż przychody ze sprzedaży co miesiąc"
 
@@ -31475,9 +31484,6 @@ msgstr "Cena godziny w linii Time & Materials: stawka linii dla pracownika, inac
 
 msgid "The principle:"
 msgstr "Zasada:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "Ocena prawdopodobieństwa, że ryzyko się materializuje (1 = rzadko do 5 = prawie na pewno); połączona z Wagą do obliczenia wyniku ryzyka."

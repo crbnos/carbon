@@ -2141,6 +2141,9 @@ msgstr "Nessuna registrazione oraria per questa settimana"
 msgid "No unit"
 msgstr "Nessuna unità"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
 

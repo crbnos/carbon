@@ -11241,6 +11241,9 @@ msgstr "完成编辑路径"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "完成时日常运营无需我们在场"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "双击以打开此子装配"
 
@@ -14905,6 +14908,9 @@ msgstr "隐藏图纸"
 
 msgid "Hide lines"
 msgstr "隐藏行"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "隐藏月度收入"
@@ -28544,6 +28550,9 @@ msgstr "显示键盘快捷键"
 msgid "Show lines"
 msgstr "显示行"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "显示每月收入"
 
@@ -31475,9 +31484,6 @@ msgstr "时间和物料订单行上一小时的价格：员工的订单行费率
 
 msgid "The principle:"
 msgstr "原则："
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "风险发生的概率等级（1 = 罕见到 5 = 几乎肯定）；与严重度配对计算风险分数。"

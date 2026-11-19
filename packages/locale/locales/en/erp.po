@@ -11241,6 +11241,9 @@ msgstr "Done Editing Path"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Done when day-to-day runs without us in the room"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Double-click to open this sub-assembly"
 
@@ -14905,6 +14908,9 @@ msgstr "Hide drawing"
 
 msgid "Hide lines"
 msgstr "Hide lines"
+
+msgid "Hide menu"
+msgstr "Hide menu"
 
 msgid "Hide monthly revenue"
 msgstr "Hide monthly revenue"
@@ -28544,6 +28550,9 @@ msgstr "Show keyboard shortcuts"
 msgid "Show lines"
 msgstr "Show lines"
 
+msgid "Show menu"
+msgstr "Show menu"
+
 msgid "Show monthly revenue"
 msgstr "Show monthly revenue"
 
@@ -31475,9 +31484,6 @@ msgstr "The price of an hour on a Time & Materials line: the line's rate for the
 
 msgid "The principle:"
 msgstr "The principle:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr "The printer's print density, in dots per inch"
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."

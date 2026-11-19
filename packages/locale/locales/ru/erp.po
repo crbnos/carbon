@@ -11241,6 +11241,9 @@ msgstr "Редактирование пути завершено"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Готово, когда ежедневные операции работают без нас в офисе"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Дважды щелкните, чтобы открыть эту подсборку"
 
@@ -14905,6 +14908,9 @@ msgstr "Скрыть чертёж"
 
 msgid "Hide lines"
 msgstr "Скрыть строки"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Скрыть ежемесячную выручку"
@@ -28544,6 +28550,9 @@ msgstr "Показать сочетания клавиш"
 msgid "Show lines"
 msgstr "Показать строки"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "Показать месячную выручку"
 
@@ -31475,9 +31484,6 @@ msgstr "Цена часа на строке Time & Materials: ставка ст�
 
 msgid "The principle:"
 msgstr "Принцип:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "Оценка вероятности возникновения риска (1 = редко до 5 = почти наверняка); в паре с Серьезностью для расчета оценки риска."

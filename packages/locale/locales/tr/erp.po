@@ -11241,6 +11241,9 @@ msgstr "Yolu Düzenleme Bitti"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Günlük işlemler bizim olmadan kendi kendine çalışırken bitti"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Bu alt montajı açmak için çift tıkla"
 
@@ -14905,6 +14908,9 @@ msgstr "Teknik resmi gizle"
 
 msgid "Hide lines"
 msgstr "Satırları Gizle"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Hesaplamayı gizle"
@@ -28544,6 +28550,9 @@ msgstr "Klavye kısayollarını göster"
 msgid "Show lines"
 msgstr "Satırları Göster"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "Aylık Hasılatı Göster"
 
@@ -31475,9 +31484,6 @@ msgstr "Bir Zaman ve Malzeme satırında bir saatin fiyatı: satır için çalı
 
 msgid "The principle:"
 msgstr "İlke:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "Riskin oluşma olasılık puanı (1 = nadire 5 = neredeyse kesin); risk puanını hesaplamak için Şiddet ile eşleştirilir."

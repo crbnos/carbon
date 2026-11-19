@@ -11241,6 +11241,9 @@ msgstr "Édition du chemin terminée"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Terminé quand les opérations quotidiennes fonctionnent sans nous."
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Double-cliquez pour ouvrir ce sous-ensemble"
 
@@ -14905,6 +14908,9 @@ msgstr "Masquer le plan"
 
 msgid "Hide lines"
 msgstr "Masquer les lignes"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Masquer les revenus mensuels"
@@ -28544,6 +28550,9 @@ msgstr "Afficher les raccourcis clavier"
 msgid "Show lines"
 msgstr "Afficher les lignes"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "Afficher les revenus mensuels"
 
@@ -31475,9 +31484,6 @@ msgstr "Le prix d'une heure sur une ligne Temps et Matériel : le taux de la lig
 
 msgid "The principle:"
 msgstr "Le principe :"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "L'évaluation de probabilité que le risque se manifeste (1 = rare à 5 = quasi certain) ; associée à la Gravité pour calculer le score de risque."

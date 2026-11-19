@@ -11241,6 +11241,9 @@ msgstr "경로 편집 완료"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "저희가 없어도 일상 업무가 원활하게 돌아가면 완료입니다"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "이 하위 조립품을 열려면 이중 클릭하세요"
 
@@ -14905,6 +14908,9 @@ msgstr "도면 숨기기"
 
 msgid "Hide lines"
 msgstr "라인 숨기기"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "월간 매출 숨기기"
@@ -28544,6 +28550,9 @@ msgstr "키보드 단축키 표시"
 msgid "Show lines"
 msgstr "라인 표시"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "월간 매출 표시"
 
@@ -31475,9 +31484,6 @@ msgstr "시간 및 자재 라인의 시간 가격: 직원을 위한 라인의 �
 
 msgid "The principle:"
 msgstr "원칙:"
-
-msgid "The printer's print density, in dots per inch"
-msgstr ""
 
 msgid "The probability rating that the risk occurs (1 = rare to 5 = almost certain); paired with Severity to compute the risk score."
 msgstr "리스크가 발생할 확률 등급(1=드묾 ~ 5=거의 확실함)입니다. 심각도와 결합하여 리스크 점수를 계산합니다."

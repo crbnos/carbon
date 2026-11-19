@@ -2141,6 +2141,9 @@ msgstr "本周无考勤记录"
 msgid "No unit"
 msgstr "无件"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 

@@ -2141,6 +2141,9 @@ msgstr "今週のタイムエントリーはありません"
 msgid "No unit"
 msgstr "ユニットなし"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
