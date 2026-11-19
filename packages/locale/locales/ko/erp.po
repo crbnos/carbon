@@ -31108,6 +31108,9 @@ msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 
 msgid "The invoice for this payment is drafted on this date"
 msgstr "이 지불에 대한 송장이 이 날짜에 초안으로 작성됩니다."
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
 

@@ -31108,6 +31108,9 @@ msgstr "发货过账时确认的库存管理成本，按物料的成本核算方
 msgid "The invoice for this payment is drafted on this date"
 msgstr "此付款的发票在此日期草稿完成"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 

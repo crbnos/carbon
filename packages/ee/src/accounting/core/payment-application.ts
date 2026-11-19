@@ -326,17 +326,21 @@ export async function upsertLocalPaymentDraft(
     );
   let resolvedTotal = 0;
   for (const doc of resolved) {
-    if (
-      toDocumentAmount(doc.amount, 1, decimalPlaces) !== doc.amount ||
-      doc.amount >
-        toDocumentAmount(
-          Math.min(doc.totalAmount, doc.balance),
-          doc.exchangeRate,
-          decimalPlaces
-        )
-    )
+    if (toDocumentAmount(doc.amount, 1, decimalPlaces) !== doc.amount)
+      throw new Error("Payment principal exceeds document precision");
+    const open = toDocumentAmount(
+      Math.min(doc.totalAmount, doc.balance),
+      doc.exchangeRate,
+      decimalPlaces
+    );
+    if (doc.amount > open)
+      // A card charged a cent more than the bill is the usual cause: the
+      // accountant's fix is on the invoice, so say which one.
       throw new Error(
-        "Payment principal exceeds invoice balance or document precision"
+        `Payment of ${doc.amount} ${currencyCode} is more than the ${open} ${currencyCode} still open on the invoice.` +
+          (normalized.family === "ap"
+            ? " If the difference is rounding, use Adjust for Rounding on the purchase invoice, then retry."
+            : "")
       );
     resolvedTotal += doc.amount;
   }

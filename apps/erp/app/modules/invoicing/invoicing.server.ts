@@ -4448,7 +4448,7 @@ export const changePurchaseInvoiceLineAccount = defineServiceFn({
 });
 
 /**
- * Adjust a Draft purchase invoice's total for rounding.
+ * Adjust a purchase invoice's total for rounding.
  *
  * @remarks
  * Brings the invoice total to `targetTotal`, the amount the supplier actually
@@ -4457,10 +4457,20 @@ export const changePurchaseInvoiceLineAccount = defineServiceFn({
  * Rounding Account; other lines on that account are left alone. The other
  * lines, inventory lines included, keep their prices, so receipts and
  * purchase orders are untouched. Calling again with another total replaces
- * the adjustment; a total the other lines already match removes it. Refused
- * for an invoice that is not Draft, when no Rounding Account is set, and when
- * the difference is more than 100 minor units of the invoice's currency
- * (1.00 USD). Returns the rounding line's amount in the invoice's currency.
+ * the adjustment; a total the other lines already match removes it.
+ *
+ * On a posted invoice it also posts the change: one journal dated on the
+ * invoice's posting date, debiting the Rounding Account and crediting the
+ * invoice's Accounts Payable (the reverse for a lower total), so balances
+ * and payments read the new total and a void reverses it. That needs
+ * accounting update permission too, and is refused when the period is Locked
+ * or Closed, for an invoice dated before the accounting cutover, and for a
+ * lower total than is already paid.
+ *
+ * Refused for a Pending or Voided invoice, when no Rounding Account is set,
+ * and when the difference is more than 100 minor units of the invoice's
+ * currency (1.00 USD). Returns the rounding line's amount in the invoice's
+ * currency, and on a posted invoice the journal it posted.
  *
  * @param targetTotal - The invoice total to reach, in the invoice's currency.
  *
