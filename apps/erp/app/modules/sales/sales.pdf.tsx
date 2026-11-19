@@ -226,6 +226,7 @@ export async function renderQuotePdf(
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      partNumberDisplayDraft={edit?.partNumberDisplay}
     />
   );
 
@@ -398,6 +399,7 @@ export async function renderSalesOrderPdf(
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      partNumberDisplayDraft={edit?.partNumberDisplay}
     />
   );
 

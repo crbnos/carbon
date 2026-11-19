@@ -397,7 +397,7 @@ exports[`clicking a real PDF > opens the right text on the packingSlip sample 1`
     "Qty": "lineItems:qty",
   },
   {
-    "WIDGET-100": "lineItems:itemCell",
+    "WIDGET-100 (C-100 Rev 3)": "lineItems:itemCell",
   },
   {
     "Precision Widget, anodized": "lineItems:descriptionCell",
@@ -1185,7 +1185,7 @@ exports[`clicking a real PDF > opens the right text on the quote sample 1`] = `
     "Total": "lineItems:total",
   },
   {
-    "WIDGET-100": "lineItems:descriptionCell",
+    "WIDGET-100 (C-100 Rev 3)": "lineItems:descriptionCell",
   },
   {
     "Precision Widget, anodized": "lineItems:detailsCell",
@@ -1257,7 +1257,7 @@ exports[`clicking a real PDF > opens the right text on the quote sample 1`] = `
     "48.00": "lineItems:totalCell",
   },
   {
-    "ASSEMBLY-HOUSING-AN…": "lineItems:descriptionCell",
+    "ASSEMBLY-HOUSING…": "lineItems:descriptionCell",
   },
   {
     "Fully machined precision aluminium hous…": "lineItems:detailsCell",
@@ -1445,7 +1445,7 @@ exports[`clicking a real PDF > opens the right text on the salesInvoice sample 1
     "1": "lineItems:numberCell",
   },
   {
-    "WIDGET-100": "lineItems:descriptionCell",
+    "WIDGET-100 (C-100 Rev 3)": "lineItems:descriptionCell",
   },
   {
     "Precision Widget, anodized": "lineItems:detailsCell",
@@ -1666,7 +1666,7 @@ exports[`clicking a real PDF > opens the right text on the salesOrder sample 1`]
     "Total": "lineItems:total",
   },
   {
-    "WIDGET-100": "lineItems:descriptionCell",
+    "WIDGET-100 (C-100 Rev 3)": "lineItems:descriptionCell",
   },
   {
     "Precision Widget, anodized": "lineItems:detailsCell",

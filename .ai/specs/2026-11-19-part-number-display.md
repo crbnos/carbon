@@ -1,6 +1,6 @@
 # Part numbers on customer and supplier documents
 
-> Status: in progress. Every question is resolved. Part II (purchasing) is built first.
+> Status: built, not yet merged. Every question is resolved. Part II (purchasing) lands first.
 > Author: Raul Soonawala, with Claude
 > Date: 2026-11-19
 > Issues: ENG-102 (Part I), ENG-140 (Part II)
@@ -81,7 +81,7 @@ Example: a precision shop buys 2 kinds of parts from one supplier. A catalog fas
 - Each document line stores its own display choice. The company default and the party override are only the values a new line starts with.
 - Stamp: a trigger writes the display choice onto a new line. It reads the party through the line's document: the party's override, else the company default. The stamp covers every insert path: forms, conversions, the API, MCP, imports and jobs.
 - A conversion copies each source line's display choice, so an order line prints like its quote line. A legacy source line copies a null, so the stamp gives the new line the current starting value.
-- Legacy line: a line whose display choice is null. Every line that exists when the migration runs is a legacy line. A legacy line prints exactly as its surface prints today. No migration rewrites a line.
+- Legacy line: a line whose display choice is null. Every line that exists when the migration runs is a legacy line. A legacy line prints exactly as its surface prints today, except for the defect fixes below and the title wrap (see Changelog). No migration rewrites a line.
 - The "Edit document" modal sets the display choice of every line of one document at once. A line form that allows edits sets one line. Both follow the document's lock.
 - One pure formatter, `formatPartNumber`, prints the part number for every surface, the in-app shared pages included.
 - The template keeps separate merge fields for our part number and for theirs. These fields hold their value whatever the display choice, so a custom template never loses a number (the defect CodeRabbit found in PR #2290).
@@ -428,4 +428,7 @@ Part II:
   5. The quote revision and the emails need no change.
   6. One dataset step stamps the seeded lines.
 - 2026-11-19: Review. The user kept the per-line design with no document column. P3 became `Theirs First`. P4 and P5 resolved. Part II design written. Part II is built first.
+- 2026-11-19: Built and self-tested on the local stack. Two changes from the design:
+  1. A line title breaks only between words, so a part number never splits inside itself (`breakLongItemWord`, `pdf/blocks/itemText.ts`). A word longer than 16 characters still breaks every 16 characters. This also applies to legacy lines: a truncated long title can end a few characters earlier.
+  2. A legacy packing slip line prints our part number as it did before (`packingSlip: "Ours Only"` in the legacy map).
 - 2026-11-21: Strict review fixes. The triggers skip only `app.backup_load`; the dataset helper is gone. The migrations are dated after main's newest. A restamp writes only the lines whose values change. A purchase order's lines cannot change their choice in Needs Approval either (`purchaseOrderPartNumberRefusal`, inside `amendPurchaseOrder`). Edit document sets item lines only and is disabled on a document with none. A long part number wraps after its own separators.

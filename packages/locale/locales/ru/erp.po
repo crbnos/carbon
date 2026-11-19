@@ -17391,6 +17391,12 @@ msgstr "строка {position}"
 msgid "Line Add-On"
 msgstr "Дополнение строки"
 
+msgid "Line Customer Part ID"
+msgstr "ID детали покупателя в строке"
+
+msgid "Line Customer Part Revision"
+msgstr "Ревизия покупателя в строке"
+
 msgid "Line description"
 msgstr "Описание строки"
 

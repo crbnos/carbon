@@ -17,7 +17,7 @@ A supplier part has **no lead time** — purchasing lead time is set per item, n
 
 ## Customers
 
-A customer lives in sales and anchors the sell side: <Term id="quote">quotes</Term>, orders, and <Term id="invoice">invoices</Term> reference it. Unlike supplier status, **customer status is a configurable list** you define, not a fixed enum. Customers don't have a supplier-part analog; pricing instead comes from **price overrides** and **pricing rules**, which can target a whole customer type and stack with quantity breaks.
+A customer lives in sales and anchors the sell side: <Term id="quote">quotes</Term>, orders, and <Term id="invoice">invoices</Term> reference it. Unlike supplier status, **customer status is a configurable list** you define, not a fixed enum. A customer can have its own number for one of your items, the **customer part number**, kept per customer and item. Pricing comes from **price overrides** and **pricing rules**, which can target a whole customer type and stack with quantity breaks.
 
 <Callout type="info">
 The asymmetry to remember: **supplier status is a fixed four-value set; customer status is a company-configurable lookup.** Their type catalogs (supplier type, customer type) are both user-defined.
@@ -72,23 +72,29 @@ Both records have a **Documents** tab for files that belong to the party itself 
 
 ## Part numbers on documents
 
-A supplier often has its own number for one of your items: the supplier part number. Each purchase order line chooses which numbers it prints:
+A customer or a supplier often has its own number for one of your items. Each document line chooses which numbers it prints:
 
 | Choice | Prints |
 |---|---|
-| Our part number, then the supplier's | `P000123.B (SW-1045-50R)` |
-| The supplier's part number, then ours | `SW-1045-50R (P000123.B)` |
-| The supplier's part number only | `SW-1045-50R` |
+| Our part number, then the customer's (or the supplier's) | `P000123.B (C-100 Rev 3)` |
+| The customer's (or the supplier's) part number, then ours | `C-100 Rev 3 (P000123.B)` |
+| The customer's (or the supplier's) part number only | `C-100 Rev 3` |
 | Our part number only | `P000123.B` |
 
-- Our part number includes its revision. The supplier part number has no revision of its own; type it into the number when the supplier needs it.
-- A line with no supplier part number prints our part number, whatever the choice.
-- A new line takes the supplier's choice from the supplier's **Details**, else the company default in **Settings > Purchasing**, which starts as "The supplier's part number, then ours".
-- Change one line in its **Part Numbers** field, or every item line at once in **Edit document**, until the order is sent. Neither can change it while the order waits for approval.
-- A line keeps its own copy of the supplier part number, so a later edit of the supplier part does not change an order that exists. A line with no number of its own shows the supplier part's current number.
-- Changing the order's supplier gives every line the new supplier's part number, replacing a number typed on the line, and gives every line that has a choice the new supplier's choice.
-- A purchase order line saved before this choice existed prints as it did before: our part number as the line title, and the supplier part number in its own "Supplier Part ID" row.
-- A document template can place each number itself with `{line.itemId}` (our part number) and `{line.supplierPartNumber}` (the supplier's). Both hold their number whatever the line's choice.
+- "Theirs" is the customer on a quote, sales order, sales invoice and packing slip, and the supplier on a purchase order.
+- Our part number includes its revision. A customer part number prints its own revision when it has one. A supplier part number has no revision; type it into the number when the supplier needs it.
+- A line with no number of theirs prints our part number, whatever the choice.
+- A new line takes the customer's or supplier's choice from its **Details**, else the company default in **Settings > Sales** or **Settings > Purchasing**. The sales default is "Our part number, then the customer's"; the purchasing default is "The supplier's part number, then ours".
+- Converting a document copies each line's choice: a quote to an order, an order to an invoice or a shipment, and a shipment to an invoice.
+- Change every item line of a document at once in **Edit document**, while the document is not locked. A purchase order line also has its own **Part Numbers** field. A purchase order's lines keep their choice once it is sent, and while it waits for approval.
+- A new quote, sales order or purchase order line keeps its own copy of the other party's number, so a later edit of the cross-reference does not change that line. A line saved before this change, or one created when no number existed yet, reads the current cross-reference.
+- Changing a document's customer or supplier gives each line that has a choice the new party's choice. A quote's, sales order's or purchase order's lines also take the new party's numbers, replacing a number typed on the line.
+- A line saved before this choice existed prints as its document did before, with three exceptions:
+  - A sales order prints the customer part number once, not a second time under the line.
+  - A quote prints `P000123.B (C-200)`, with no space, when the customer part number has no revision.
+  - A purchase order prints our part number as the line title and the supplier part number in its own "Supplier Part ID" row, as it did before the supplier's number replaced the title.
+- A line title wraps between words. A part number too long for its column wraps after one of its own hyphens, so it never gains a hyphen it does not have.
+- A document template can place each number itself: `{line.itemId}` (our part number), `{line.customerPartId}` and `{line.customerPartRevision}` on sales documents, `{line.supplierPartNumber}` on the purchase order. Each holds its number whatever the line's choice.
 
 ## Related
 

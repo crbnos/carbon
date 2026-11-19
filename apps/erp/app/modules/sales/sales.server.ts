@@ -6,6 +6,7 @@ import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
@@ -7670,6 +7671,13 @@ export const createCustomer = defineServiceFn({
     taxPercent: z.number().min(0).max(1),
     salesContactId: z.string().optional(),
     website: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers this customer's new quote, sales order, invoice and packing slip lines print. Null uses the company default."
+      )
+      .nullable()
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -7708,6 +7716,13 @@ export const updateCustomer = defineServiceFn({
       taxPercent: z.number().min(0).max(1),
       salesContactId: z.string().optional(),
       website: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe(
+          "Which part numbers this customer's new quote, sales order, invoice and packing slip lines print. Null clears the customer's choice, so the company default applies."
+        )
+        .nullable()
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()

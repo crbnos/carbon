@@ -17391,6 +17391,12 @@ msgstr "riga {position}"
 msgid "Line Add-On"
 msgstr "Componente aggiuntivo di Riga"
 
+msgid "Line Customer Part ID"
+msgstr "ID parte cliente della riga"
+
+msgid "Line Customer Part Revision"
+msgstr "Revisione cliente della riga"
+
 msgid "Line description"
 msgstr "Descrizione riga"
 

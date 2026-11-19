@@ -9,6 +9,7 @@ export {
   formatPartNumber,
   isPartNumberDisplay,
   LEGACY_PART_NUMBER_DISPLAY,
+  lineCustomerPart,
   PART_NUMBER_DISPLAYS,
   type PartNumberDisplay,
   type PartNumberDisplaySummary,

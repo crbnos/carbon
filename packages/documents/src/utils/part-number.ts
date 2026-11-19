@@ -65,6 +65,25 @@ export function summarizePartNumberDisplay(
 }
 
 /**
+ * A sales order line's customer part: its own copy, else the live
+ * cross-reference (`customerPartToItem`). The pair stays together, so a copy's
+ * number never prints with the cross-reference's revision.
+ */
+export function lineCustomerPart(line: {
+  customerPartId?: string | null;
+  customerPartRevision?: string | null;
+  customerPartIdFromCustomer?: string | null;
+  customerPartRevisionFromCustomer?: string | null;
+}): { id: string | null; revision: string | null } {
+  return line.customerPartId?.trim()
+    ? { id: line.customerPartId, revision: line.customerPartRevision ?? null }
+    : {
+        id: line.customerPartIdFromCustomer ?? null,
+        revision: line.customerPartRevisionFromCustomer ?? null
+      };
+}
+
+/**
  * The part number one line prints. A line with no number of theirs, or one
  * equal to ours, prints ours whatever the choice.
  */

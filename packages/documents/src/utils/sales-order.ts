@@ -4,9 +4,21 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
+import {
+  formatPartNumber,
+  lineCustomerPart,
+  type PartNumberDisplay,
+  resolvePartNumberDisplay
+} from "./part-number";
 
+/**
+ * A sales order line's title: the asset for a Fixed Asset line, the
+ * description for a Comment line, else the line's part numbers per its display
+ * choice. `draft` is the Edit document modal's unsaved pick.
+ */
 export function getLineDescription(
-  line: Database["public"]["Views"]["salesOrderLines"]["Row"]
+  line: Database["public"]["Views"]["salesOrderLines"]["Row"],
+  draft?: PartNumberDisplay
 ) {
   switch (line?.salesOrderLineType) {
     case "Fixed Asset":
@@ -17,14 +29,17 @@ export function getLineDescription(
       );
     case "Comment":
       return line?.description;
-    default:
-      let customerPartNumber = line.customerPartId
-        ? ` (${line.customerPartId}${
-            line.customerPartRevision ? ` Rev ${line.customerPartRevision}` : ""
-          })`
-        : "";
-
-      return line?.itemReadableId + customerPartNumber;
+    default: {
+      const customerPart = lineCustomerPart(line);
+      return formatPartNumber(
+        {
+          ours: line?.itemReadableId,
+          theirs: customerPart.id,
+          theirsRevision: customerPart.revision
+        },
+        resolvePartNumberDisplay("salesOrder", draft ?? line?.partNumberDisplay)
+      );
+    }
   }
 }
 
@@ -36,16 +51,9 @@ export function getLineDescriptionDetails(
       return line?.description;
     case "Comment":
     default:
-      const itemDescription = line?.customerPartId
-        ? `\n${line.customerPartId}${
-            line.customerPartRevision ? ` Rev ${line.customerPartRevision}` : ""
-          }`
-        : "";
-      // A service's readable id is its name — don't print it twice.
-      return (
-        (distinctItemText(line?.itemReadableId, line?.description) ?? "") +
-        itemDescription
-      );
+      // A service's readable id is its name — don't print it twice. The
+      // customer part number prints in the title only.
+      return distinctItemText(line?.itemReadableId, line?.description) ?? "";
   }
 }
 

@@ -10004,6 +10004,13 @@ export async function convertDocument(
               nonTaxableAddOnCost: addOn - taxableAddOn,
               description: line.description,
               itemId: line.itemId,
+              // The quote line's part number choice and the customer's number
+              // it quoted, so the order prints like the quote.
+              partNumberDisplay: line.partNumberDisplay,
+              customerPartId: line.customerPartId?.trim() || null,
+              customerPartRevision: line.customerPartId?.trim()
+                ? line.customerPartRevision
+                : null,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
               storageUnitId: sourceStorageUnitId(line, price.quantity),
@@ -10319,6 +10326,7 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
+              partNumberDisplay: line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
@@ -10975,6 +10983,7 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
+              partNumberDisplay: line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
@@ -14578,6 +14587,7 @@ export async function createDocument(
                   .values({
                     shipmentId: shipmentId,
                     lineId: salesOrderLine.id,
+                    partNumberDisplay: salesOrderLine.partNumberDisplay,
                     companyId: companyId,
                     fulfillmentId,
                     itemId: salesOrderLine.itemId,
@@ -14670,6 +14680,7 @@ export async function createDocument(
               .values({
                 shipmentId: shipmentId,
                 lineId: salesOrderLine.id,
+                partNumberDisplay: salesOrderLine.partNumberDisplay,
                 companyId: companyId,
                 itemId: salesOrderLine.itemId,
                 orderQuantity: salesOrderLine.saleQuantity,
@@ -14891,6 +14902,7 @@ export async function createDocument(
                 .values({
                   shipmentId: shipmentId,
                   lineId: salesOrderLineId,
+                  partNumberDisplay: salesOrderLine.data.partNumberDisplay,
                   companyId: companyId,
                   fulfillmentId,
                   itemId: salesOrderLine.data.itemId,
@@ -15002,6 +15014,7 @@ export async function createDocument(
             .values({
               shipmentId: shipmentId,
               lineId: salesOrderLineId,
+              partNumberDisplay: salesOrderLine.data.partNumberDisplay,
               companyId: companyId,
               itemId: salesOrderLine.data.itemId!,
               orderQuantity: salesOrderLine.data.saleQuantity ?? 0,

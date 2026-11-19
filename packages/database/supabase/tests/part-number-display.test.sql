@@ -13,6 +13,8 @@ DECLARE
   v_supplier text; v_override_supplier text; v_plain_supplier text;
   v_interaction text; v_po text; v_other_po text;
   v_line text; v_kept_line text; v_display "partNumberDisplay"; v_part text;
+  v_customer text; v_override_customer text; v_quote text; v_so text;
+  v_invoice text; v_shipment text; v_legacy_line text; v_revision text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Part number display test', 'system') RETURNING id INTO v_group;
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
@@ -25,9 +27,11 @@ BEGIN
   INSERT INTO item ("readableId", name, type, "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
     VALUES ('PND-2', 'Fastener', 'Part', 'Inventory', 'EA', v_company, 'system') RETURNING id INTO v_other_item;
 
-  -- The default a new company starts with.
+  -- The defaults a new company starts with.
   ASSERT (SELECT "supplierPartNumberDisplay" FROM "companySettings" WHERE id = v_company) = 'Theirs First',
     'New purchase order lines start as Theirs First';
+  ASSERT (SELECT "customerPartNumberDisplay" FROM "companySettings" WHERE id = v_company) = 'Ours First',
+    'New sales lines start as Ours First';
 
   -- A supplier with a supplier part, one with an override, and one with neither.
   INSERT INTO supplier (name, "readableId", "companyId") VALUES ('Plain supplier', 'PND-S1', v_company) RETURNING id INTO v_supplier;
@@ -98,6 +102,107 @@ BEGIN
   ASSERT (SELECT "updatedAt" IS NULL FROM "purchaseOrderLine" WHERE id = v_line),
     'A supplier change leaves a line with the same values unwritten';
 
+  -- Sales: a customer with a cross-reference, and one with an override.
+  INSERT INTO customer (name, "readableId", "companyId") VALUES ('Plain customer', 'PND-C1', v_company) RETURNING id INTO v_customer;
+  INSERT INTO customer (name, "readableId", "companyId", "partNumberDisplay")
+    VALUES ('Override customer', 'PND-C2', v_company, 'Theirs Only') RETURNING id INTO v_override_customer;
+  INSERT INTO "customerPartToItem" ("customerId", "itemId", "customerPartId", "customerPartRevision", "companyId")
+    VALUES (v_customer, v_item, 'C-100', '3', v_company);
+  INSERT INTO "customerPartToItem" ("customerId", "itemId", "customerPartId", "companyId")
+    VALUES (v_override_customer, v_item, 'C-200', v_company);
+  INSERT INTO "customerPartToItem" ("customerId", "itemId", "customerPartId", "companyId")
+    VALUES (v_customer, v_other_item, 'C-300', v_company);
+
+  -- Quote lines: the stamp, and a customer change copies the new customer's
+  -- choice and numbers onto the stamped lines.
+  INSERT INTO quote ("quoteId", "customerId", "companyId", "createdBy")
+    VALUES ('PND-Q', v_customer, v_company, 'system') RETURNING id INTO v_quote;
+  INSERT INTO "quoteLine" ("quoteId", "itemId", description, "customerPartId", "customerPartRevision", "companyId", "createdBy")
+    VALUES (v_quote, v_item, 'Bracket', 'C-100', '3', v_company, 'system') RETURNING id INTO v_line;
+  ASSERT (SELECT "partNumberDisplay" FROM "quoteLine" WHERE id = v_line) = 'Ours First',
+    'A new quote line takes the company default';
+  UPDATE quote SET "customerId" = v_override_customer, "updatedBy" = 'system' WHERE id = v_quote;
+  SELECT "partNumberDisplay", "customerPartId", "customerPartRevision" INTO v_display, v_part, v_revision
+    FROM "quoteLine" WHERE id = v_line;
+  ASSERT v_display = 'Theirs Only' AND v_part = 'C-200' AND coalesce(v_revision, '') = '',
+    format('A quote customer change gives the line the new customer''s choice and number, got %s %s %s', v_display, v_part, v_revision);
+
+  -- Sales order lines: the stamp and the copy of the customer's number.
+  INSERT INTO "salesOrder" ("salesOrderId", "currencyCode", "customerId", "companyId", "createdBy")
+    VALUES ('PND-SO', 'USD', v_customer, v_company, 'system') RETURNING id INTO v_so;
+  INSERT INTO "salesOrderLine" ("salesOrderId", "salesOrderLineType", "itemId", "companyId", "createdBy")
+    VALUES (v_so, 'Part', v_item, v_company, 'system') RETURNING id INTO v_line;
+  SELECT "partNumberDisplay", "customerPartId", "customerPartRevision" INTO v_display, v_part, v_revision
+    FROM "salesOrderLine" WHERE id = v_line;
+  ASSERT v_display = 'Ours First', format('A new order line takes the company default, got %s', v_display);
+  ASSERT v_part = 'C-100' AND v_revision = '3', 'A new order line copies the customer part number and revision';
+
+  -- An item change copies the new item's number, unless the same write sets one.
+  UPDATE "salesOrderLine" SET "itemId" = v_other_item WHERE id = v_line;
+  ASSERT (SELECT "customerPartId" FROM "salesOrderLine" WHERE id = v_line) = 'C-300',
+    'An item change copies the new item''s customer part number';
+  UPDATE "salesOrderLine" SET "itemId" = v_item, "customerPartId" = 'C-100', "customerPartRevision" = '3' WHERE id = v_line;
+  ASSERT (SELECT "customerPartId" FROM "salesOrderLine" WHERE id = v_line) = 'C-100',
+    'An item change that sets the number keeps it';
+
+  -- The view reads the copy, and the live cross-reference under its own name.
+  UPDATE "customerPartToItem" SET "customerPartId" = 'C-101' WHERE "customerId" = v_customer AND "itemId" = v_item;
+  ASSERT (SELECT "customerPartId" FROM "salesOrderLines" WHERE id = v_line) = 'C-100',
+    'salesOrderLines returns the line copy';
+  ASSERT (SELECT "customerPartIdFromCustomer" FROM "salesOrderLines" WHERE id = v_line) = 'C-101',
+    'salesOrderLines returns the live cross-reference as customerPartIdFromCustomer';
+
+  -- A legacy order line keeps its null through a customer change, and still takes the numbers.
+  INSERT INTO "salesOrderLine" ("salesOrderId", "salesOrderLineType", "itemId", "companyId", "createdBy")
+    VALUES (v_so, 'Part', v_item, v_company, 'system') RETURNING id INTO v_legacy_line;
+  UPDATE "salesOrderLine" SET "partNumberDisplay" = NULL WHERE id = v_legacy_line;
+  UPDATE "salesOrder" SET "customerId" = v_override_customer WHERE id = v_so;
+  SELECT "partNumberDisplay", "customerPartId", "customerPartRevision" INTO v_display, v_part, v_revision
+    FROM "salesOrderLine" WHERE id = v_line;
+  ASSERT v_display = 'Theirs Only', format('A customer change restamps the line, got %s', v_display);
+  ASSERT v_part = 'C-200' AND coalesce(v_revision, '') = '', format('A customer change copies the new customer''s number, got %s %s', v_part, v_revision);
+  SELECT "partNumberDisplay", "customerPartId" INTO v_display, v_part FROM "salesOrderLine" WHERE id = v_legacy_line;
+  ASSERT v_display IS NULL AND v_part = 'C-200', 'A customer change keeps a legacy order line legacy and copies the number';
+
+  -- Invoice and shipment lines: the stamp, and the copy-else-live columns of their views.
+  INSERT INTO "salesInvoice" ("invoiceId", "customerId", "currencyCode", "companyId", "createdBy")
+    VALUES ('PND-INV', v_customer, 'USD', v_company, 'system') RETURNING id INTO v_invoice;
+  INSERT INTO "salesInvoiceLine" ("invoiceId", "invoiceLineType", "itemId", "unitOfMeasureCode", "salesOrderLineId", "companyId", "createdBy")
+    VALUES (v_invoice, 'Part', v_item, 'EA', v_line, v_company, 'system') RETURNING id INTO v_kept_line;
+  ASSERT (SELECT "partNumberDisplay" FROM "salesInvoiceLine" WHERE id = v_kept_line) = 'Ours First',
+    'A new invoice line takes the customer''s choice, else the default';
+  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_kept_line) = 'C-200',
+    'salesInvoiceLines reads the order line''s copy';
+  INSERT INTO "salesInvoiceLine" ("invoiceId", "invoiceLineType", "itemId", "unitOfMeasureCode", "companyId", "createdBy")
+    VALUES (v_invoice, 'Part', v_item, 'EA', v_company, 'system') RETURNING id INTO v_kept_line;
+  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_kept_line) = 'C-101',
+    'salesInvoiceLines reads the live cross-reference when no order line holds a copy';
+  UPDATE "salesInvoice" SET "customerId" = v_override_customer WHERE id = v_invoice;
+  ASSERT (SELECT "partNumberDisplay" FROM "salesInvoiceLine" WHERE id = v_kept_line) = 'Theirs Only',
+    'An invoice customer change restamps its lines';
+
+  INSERT INTO shipment ("shipmentId", "customerId", "sourceDocument", "sourceDocumentId", "companyId", "createdBy")
+    VALUES ('PND-SH', v_customer, 'Sales Order', v_so, v_company, 'system') RETURNING id INTO v_shipment;
+  INSERT INTO "shipmentLine" ("shipmentId", "itemId", "unitOfMeasure", "unitPrice", "lineId", "companyId", "createdBy")
+    VALUES (v_shipment, v_item, 'EA', 0, v_line, v_company, 'system') RETURNING id INTO v_kept_line;
+  ASSERT (SELECT "partNumberDisplay" FROM "shipmentLine" WHERE id = v_kept_line) = 'Ours First',
+    'A new shipment line takes the customer''s choice, else the default';
+  ASSERT (SELECT "customerPartId" FROM "shipmentLines" WHERE id = v_kept_line) = 'C-200',
+    'shipmentLines reads the order line''s copy';
+  UPDATE shipment SET "customerId" = v_override_customer WHERE id = v_shipment;
+  ASSERT (SELECT "partNumberDisplay" FROM "shipmentLine" WHERE id = v_kept_line) = 'Theirs Only',
+    'A shipment customer change restamps its lines';
+
+  -- A customer change that changes nothing on a line does not write it.
+  UPDATE "shipmentLine" SET "updatedAt" = NULL, "updatedBy" = NULL WHERE id = v_kept_line;
+  UPDATE shipment SET "customerId" = v_customer WHERE id = v_shipment;
+  UPDATE "customer" SET "partNumberDisplay" = 'Theirs Only' WHERE id = v_customer;
+  UPDATE shipment SET "customerId" = v_override_customer WHERE id = v_shipment;
+  UPDATE "shipmentLine" SET "updatedAt" = NULL WHERE id = v_kept_line;
+  UPDATE shipment SET "customerId" = v_customer WHERE id = v_shipment;
+  ASSERT (SELECT "updatedAt" IS NULL FROM "shipmentLine" WHERE id = v_kept_line),
+    'A customer change leaves a line with the same choice unwritten';
+
   -- A backup load brings its own values: no stamp, no copy, no restamp.
   PERFORM set_config('app.backup_load', 'on', true);
   INSERT INTO "purchaseOrderLine" ("purchaseOrderId", "purchaseOrderLineType", "itemId", "companyId", "createdBy")
@@ -110,6 +215,10 @@ BEGIN
   UPDATE "purchaseOrder" SET "supplierId" = v_supplier WHERE id = v_po;
   ASSERT (SELECT "partNumberDisplay" FROM "purchaseOrderLine" WHERE "purchaseOrderId" = v_po AND "partNumberDisplay" IS NOT NULL LIMIT 1) = 'Ours Only',
     'A backup load does not restamp on a supplier change';
+  INSERT INTO "salesOrderLine" ("salesOrderId", "salesOrderLineType", "itemId", "companyId", "createdBy")
+    VALUES (v_so, 'Part', v_item, v_company, 'system') RETURNING id INTO v_line;
+  ASSERT (SELECT "partNumberDisplay" IS NULL AND "customerPartId" IS NULL FROM "salesOrderLine" WHERE id = v_line),
+    'A backup load keeps a sales order line''s nulls';
   PERFORM set_config('app.backup_load', '', true);
 
   -- A dataset apply and an accounting sync are not backup loads: their lines are
@@ -121,6 +230,11 @@ BEGIN
   SELECT "partNumberDisplay", "supplierPartId" INTO v_display, v_part FROM "purchaseOrderLine" WHERE id = v_line;
   ASSERT v_display = 'Theirs First' AND v_part = 'SUP-101',
     format('A dataset apply or sync line is stamped and copied, got %s %s', v_display, v_part);
+  INSERT INTO "salesOrderLine" ("salesOrderId", "salesOrderLineType", "itemId", "companyId", "createdBy")
+    VALUES (v_so, 'Part', v_item, v_company, 'system') RETURNING id INTO v_line;
+  SELECT "partNumberDisplay", "customerPartId" INTO v_display, v_part FROM "salesOrderLine" WHERE id = v_line;
+  ASSERT v_display = 'Theirs Only' AND v_part = 'C-200',
+    format('A dataset apply or sync sales order line is stamped and copied, got %s %s', v_display, v_part);
   PERFORM set_config('app.dataset_apply', '', true);
   PERFORM set_config('app.sync_in_progress', '', true);
 

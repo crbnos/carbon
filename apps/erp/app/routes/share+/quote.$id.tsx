@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getQuoteDisplayId } from "@carbon/documents/utils";
+import {
+  formatPartNumber,
+  getQuoteDisplayId,
+  resolvePartNumberDisplay
+} from "@carbon/documents/utils";
 import { downloadUrl } from "@carbon/files";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -254,6 +258,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         id: line.id,
         description: line.description,
         itemReadableId: line.itemReadableId,
+        // What the line heading prints: a legacy line (no choice stored)
+        // prints our part number only, as this page did before.
+        partNumber: formatPartNumber(
+          {
+            ours: line.itemReadableId,
+            theirs: line.customerPartId,
+            theirsRevision: line.customerPartRevision
+          },
+          resolvePartNumberDisplay("sharedQuote", line.partNumberDisplay)
+        ),
         quantity: line.quantity,
         additionalCharges: line.additionalCharges,
         taxPercent: line.taxPercent,
@@ -535,9 +549,7 @@ const LineItems = ({
                     {/* min-w-0 so a long item id wraps inside the card
                         instead of shoving the price out of it. */}
                     <div className="flex min-w-0 items-center gap-2">
-                      <Heading className="min-w-0">
-                        {line.itemReadableId}
-                      </Heading>
+                      <Heading className="min-w-0">{line.partNumber}</Heading>
                       {selectedLines[line.id!]?.quantity === 0 &&
                         (pricingByLine[line.id!]?.length ?? 0) > 0 &&
                         ![

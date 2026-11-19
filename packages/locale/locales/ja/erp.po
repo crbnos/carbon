@@ -17391,6 +17391,12 @@ msgstr "明細 {position}"
 msgid "Line Add-On"
 msgstr "行アドオン"
 
+msgid "Line Customer Part ID"
+msgstr "明細の得意先品番"
+
+msgid "Line Customer Part Revision"
+msgstr "明細の得意先リビジョン"
+
 msgid "Line description"
 msgstr "明細の説明"
 

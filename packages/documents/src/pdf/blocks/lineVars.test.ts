@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { buildPackingSlipLineVars } from "./packingSlip/vars";
 import { buildPurchaseOrderLineVars } from "./purchaseOrder/vars";
 import { buildSalesOrderLineVars } from "./salesOrder/vars";
 import { buildStockTransferLineVars } from "./stockTransfer/vars";
@@ -116,6 +117,62 @@ describe("table row variables", () => {
     );
     expect(transfer["line.quantity"]).toBe("");
     expect(transfer["line.unit"]).toBe("");
+  });
+});
+
+describe("sales line part numbers", () => {
+  const customerPart = {
+    itemId: "item_1",
+    itemReadableId: "P000123.B",
+    customerPartId: "C-100",
+    customerPartRevision: "3"
+  };
+
+  it("keeps the customer part number when the line prints ours only", () => {
+    const row = buildSalesOrderLineVars(
+      {
+        salesOrderLineType: "Part",
+        ...customerPart,
+        partNumberDisplay: "Ours Only"
+      } as never,
+      1,
+      formats
+    );
+    expect(row["line.description"]).toBe("P000123.B");
+    expect(row["line.customerPartId"]).toBe("C-100");
+    expect(row["line.customerPartRevision"]).toBe("3");
+  });
+
+  it("keeps our part number when the line prints theirs only", () => {
+    const row = buildSalesInvoiceLineVars(
+      {
+        invoiceLineType: "Part",
+        ...customerPart,
+        partNumberDisplay: "Theirs Only"
+      } as never,
+      1,
+      formats
+    );
+    expect(row["line.description"]).toBe("C-100 Rev 3");
+    expect(row["line.itemId"]).toBe("P000123.B");
+  });
+
+  it("prints the modal's draft over a packing slip line's choice", () => {
+    const row = buildPackingSlipLineVars(
+      { ...customerPart, partNumberDisplay: "Theirs Only" } as never,
+      [],
+      "Ours Only"
+    );
+    expect(row["line.item"]).toBe("P000123.B");
+    expect(row["line.customerPartId"]).toBe("C-100");
+  });
+
+  it("prints a legacy packing slip line's item ID only", () => {
+    const row = buildPackingSlipLineVars(
+      { ...customerPart, partNumberDisplay: null } as never,
+      []
+    );
+    expect(row["line.item"]).toBe("P000123.B");
   });
 });
 
