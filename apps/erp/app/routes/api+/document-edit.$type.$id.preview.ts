@@ -7,6 +7,7 @@ import {
   documentSettingsSchema,
   editToPrint
 } from "@carbon/documents/template";
+import { isPartNumberDisplay } from "@carbon/documents/utils";
 import {
   getCompanyTemplate,
   getDocumentEdit
@@ -80,11 +81,17 @@ function parseDraft(formData: FormData) {
       postedNotes === null
         ? undefined
         : notesSchema.parse(JSON.parse(String(postedNotes)));
+    // Sent only when the user picked one: `undefined` prints each line's own.
+    const postedDisplay = formData.get("partNumberDisplay");
+    if (postedDisplay !== null && !isPartNumberDisplay(postedDisplay)) {
+      return null;
+    }
     return blocks.success && settings.success
       ? {
           blocks: blocks.data,
           settings: settings.data,
-          notes: notes as JSONContent | null | undefined
+          notes: notes as JSONContent | null | undefined,
+          partNumberDisplay: postedDisplay ?? undefined
         }
       : null;
   } catch {

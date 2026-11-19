@@ -446,7 +446,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
-      supplierStatus: s.status ?? "Active"
+      supplierStatus: s.status ?? "Active",
+      partNumberDisplay: s.partNumberDisplay ?? null
     });
     ctx.refs.suppliers[s.name] = supId;
 

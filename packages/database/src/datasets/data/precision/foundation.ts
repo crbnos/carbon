@@ -353,7 +353,8 @@ export const SUPPLIERS = [
     stage: "Qualified" as const,
     type: "Hardware",
     phone: "+1-847-555-0330",
-    website: "https://fastlinesupply.com"
+    website: "https://fastlinesupply.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Midway Bearing & Seal",

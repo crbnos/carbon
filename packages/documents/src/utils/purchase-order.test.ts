@@ -22,12 +22,12 @@ describe("getLineDescription", () => {
     ).toBe("P000123.B");
   });
 
-  it("shows the supplier part number in place of the item id", () => {
+  it("prints a legacy line as the email did before the display choice", () => {
     expect(
       getLineDescription(
         line({ itemReadableId: "P000123.B", supplierPartId: "SUP-778" })
       )
-    ).toBe("SUP-778");
+    ).toBe("P000123.B (SUP-778)");
     expect(
       getLineDescription(
         line({
@@ -36,7 +36,37 @@ describe("getLineDescription", () => {
           supplierPartIdFromSupplier: "SUP-778"
         })
       )
-    ).toBe("SUP-778");
+    ).toBe("P000123.B (SUP-778)");
+  });
+
+  it.each([
+    ["Ours First", "P000123.B (SUP-778)"],
+    ["Theirs First", "SUP-778 (P000123.B)"],
+    ["Theirs Only", "SUP-778"],
+    ["Ours Only", "P000123.B"]
+  ] as const)("prints the line's choice %s", (partNumberDisplay, expected) => {
+    expect(
+      getLineDescription(
+        line({
+          itemReadableId: "P000123.B",
+          supplierPartId: "SUP-778",
+          partNumberDisplay
+        })
+      )
+    ).toBe(expected);
+  });
+
+  it("prints the modal's draft over the line's choice", () => {
+    expect(
+      getLineDescription(
+        line({
+          itemReadableId: "P000123.B",
+          supplierPartId: "SUP-778",
+          partNumberDisplay: "Theirs Only"
+        }),
+        "Ours Only"
+      )
+    ).toBe("P000123.B");
   });
 
   it("falls back to the supplier part number when the line has no item", () => {

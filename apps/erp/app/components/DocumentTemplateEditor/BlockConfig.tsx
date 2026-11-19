@@ -27,6 +27,7 @@ import {
   getTextEntries,
   HEADER_TEXT_KEYS
 } from "@carbon/documents/template";
+import { isPartNumberDisplay } from "@carbon/documents/utils";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -53,6 +54,7 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { usePartNumberDisplayOptions } from "~/components/Form";
 import { path } from "~/utils/path";
 import { ToggleRow } from "./configHelpers";
 import {
@@ -198,6 +200,7 @@ export function BlockConfig() {
         </RememberedSection>
       )}
       {isDocument && block.type === "notes" && <NotesConfig />}
+      {isDocument && block.type === "lineItems" && <PartNumberDisplayConfig />}
       {hasOptions && !isDocument && (
         <RememberedSection
           id={`options:${block.type}`}
@@ -262,6 +265,70 @@ function ReadOnlyWhenLocked({ children }: { children: ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * Which part numbers every line of the record prints. Each line stores its own
+ * choice; a pick here sets every line when the document is saved.
+ */
+function PartNumberDisplayConfig() {
+  const party = useEditorStore((s) => s.document?.partNumberParty ?? null);
+  if (!party) return null;
+  return <PartNumberDisplaySelect party={party} />;
+}
+
+function PartNumberDisplaySelect({
+  party
+}: {
+  party: "customer" | "supplier";
+}) {
+  const { t } = useLingui();
+  const value = useEditorStore((s) => s.partNumberDisplay);
+  const setPartNumberDisplay = useEditorStore((s) => s.setPartNumberDisplay);
+  const options = usePartNumberDisplayOptions(party);
+
+  return (
+    <RememberedSection
+      id="document:part-numbers"
+      title={t`Part Numbers`}
+      className="-mx-3 border-t"
+    >
+      <ReadOnlyWhenLocked>
+        <div className="flex flex-col gap-1.5">
+          <Select
+            value={isPartNumberDisplay(value) ? value : ""}
+            onValueChange={(next) => {
+              if (isPartNumberDisplay(next)) setPartNumberDisplay(next);
+            }}
+          >
+            <SelectTrigger aria-label={t`Part Numbers`}>
+              <SelectValue
+                placeholder={
+                  value === "mixed" ? t`Mixed` : t`Not set: prints as before`
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {value === "mixed" ? (
+              <Trans>
+                The lines print different part numbers. A pick sets every line.
+              </Trans>
+            ) : (
+              <Trans>Sets every line of this document when you save.</Trans>
+            )}
+          </p>
+        </div>
+      </ReadOnlyWhenLocked>
+    </RememberedSection>
   );
 }
 

@@ -52,7 +52,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 | Table / View | Purpose |
 |---|---|
 | `purchaseOrder` / `purchaseOrders` (view) | PO header: supplier, status, dates, location; view adds `receivableQuantity`/`receivedQuantity` aggregates (drives the list's Received progress bar and the derived "Partially Received" header chip — display-only, not a status enum value) |
-| `purchaseOrderLine` | Line items: item, quantity, price, conversionFactor, jobId |
+| `purchaseOrderLine` | Line items: item, quantity, price, conversionFactor, jobId. `supplierPartId` is the line's own copy of the supplier part number (a trigger copies `supplierPart` on insert and item change; the line form edits it). `partNumberDisplay` is which part numbers the line prints (null: a legacy line, printed as before PR #2290); a BEFORE INSERT trigger stamps it from `supplier.partNumberDisplay`, else `companySettings.supplierPartNumberDisplay`, and a supplier change restamps the lines that have one. Formatter: `formatPartNumber` (`@carbon/documents/utils`) |
 | `purchaseOrderDelivery` / `purchaseOrderPayment` | PO delivery and payment terms |
 | `purchaseOrderVersion` / `purchaseOrderLineVersion` | The order as it was before an edit that sent it back to approval, kept with the `approvalRequest` (`approvalRequestId`, one per request) and restored on rejection; same columns and foreign keys as the delivery and line rows, all `ON DELETE SET NULL`. Service role only |
 | `supplier` / `suppliers` (view) | Vendor master: name, type, status, tax info |

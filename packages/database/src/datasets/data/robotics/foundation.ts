@@ -337,7 +337,8 @@ export const SUPPLIERS = [
     stage: "Production" as const,
     type: "Motion Control",
     phone: "+1-847-555-0600",
-    website: "https://torqline.com"
+    website: "https://torqline.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Northgate Electronics",

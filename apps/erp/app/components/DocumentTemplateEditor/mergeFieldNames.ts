@@ -119,6 +119,7 @@ export const MERGE_FIELD_NAMES: Record<string, MessageDescriptor> = {
   "Line Number": msg`Line Number`,
   "Line Operation": msg`Line Operation`,
   "Line Supplier Part ID": msg`Line Supplier Part ID`,
+  "Line Supplier Part Number": msg`Line Supplier Part Number`,
   "Line Shipping": msg`Line Shipping`,
   "Line Total": msg`Line Total`,
   "Linked Record": msg`Linked Record`,
