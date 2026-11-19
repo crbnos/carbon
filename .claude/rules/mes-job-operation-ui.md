@@ -430,16 +430,20 @@ the same for `JobOperation` and `AssemblyView`.
   unit looked back at): Complete / Log completed, Scrap, Rework, step
   records, Complete all steps and issuing are disabled, and no write that
   needs an open unit names one (`workUnitId` is open units only). Complete
-  stays disabled while the held unit is done here. `AssemblyView` still shows
-  a unit's steps for viewing, and paging to a unit picks it.
+  stays disabled while the held unit is done here. Paging to a unit in
+  `AssemblyView` picks it.
+- On a later serial operation with no unit on screen, neither view shows any
+  unit's records (`shownRecordIndex`, `~/utils/workUnit`): steps read "not
+  recorded", the steps bar shows none, and the unit counter reads "No unit
+  selected".
 - A finished unit looked back at still takes the `member` writes, which name
   it (`reviewUnitId`): a quality issue, and Unconsume. The Issue dialog opens
   on it with `issueBlocked`: Unconsume works, Issue stays disabled with a
   note.
 - `AssemblyView` shows the unit `useWorkUnit` holds (picked or looked back
   at), so the steps on screen, their done state, the auto-complete check and
-  the complete-all index are the held unit's. With none held it falls back
-  to the URL or loader unit, for viewing only.
+  the complete-all index are the held unit's. The assembly loader still reads
+  materials for a default unit; the view ignores them while no unit is shown.
 - Scans while no unit is held: an item sticker issues nothing, and the
   server refuses a part's traveler with `pickUnit`. Both say "Select a unit
   first" and open the picker. A traveler scan of a unit of this operation

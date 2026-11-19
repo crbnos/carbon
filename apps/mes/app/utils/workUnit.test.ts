@@ -8,6 +8,7 @@ import {
   operationUnits,
   pickEvent,
   serialUnitSelection,
+  shownRecordIndex,
   type WorkUnitEvent,
   type WorkUnitState,
   workUnitReducer
@@ -141,6 +142,49 @@ describe("serialUnitSelection on the first operation", () => {
     expect(
       select({ isFirstOperation: true, urlUnitId: "b" }).writesBlocked
     ).toBe(false);
+  });
+});
+
+describe("shownRecordIndex", () => {
+  const all = units("a", "b", "c");
+  const recordIndexOf = (selection: ReturnType<typeof select>) =>
+    shownRecordIndex(
+      selection,
+      Math.max(
+        all.findIndex((unit) => unit.id === selection.unit?.id),
+        0
+      )
+    );
+
+  it("shows no unit's records on a later operation with none held", () => {
+    expect(recordIndexOf(select({ urlUnitId: "b" }))).toBeNull();
+    const closed = run([{ type: "close" }]);
+    expect(recordIndexOf(select({ state: closed }))).toBeNull();
+  });
+
+  it("shows the picked unit's records on a later operation", () => {
+    const state = run([{ type: "pick", unitId: "c", isOpen: true }]);
+    expect(recordIndexOf(select({ state }))).toBe(2);
+  });
+
+  it("shows a finished unit looked back at", () => {
+    const state = run([{ type: "pick", unitId: "b", isOpen: false }]);
+    expect(recordIndexOf(select({ units: units("a", "b!", "c"), state }))).toBe(
+      1
+    );
+  });
+
+  it("keeps the first operation's unit, and the first when it has none", () => {
+    expect(
+      recordIndexOf(select({ isFirstOperation: true, urlUnitId: "b" }))
+    ).toBe(1);
+    expect(recordIndexOf(select({ isFirstOperation: true, units: [] }))).toBe(
+      0
+    );
+  });
+
+  it("passes the index through for a part that is not serial", () => {
+    expect(shownRecordIndex(select({ serial: false }), 3)).toBe(3);
   });
 });
 

@@ -138,6 +138,7 @@ import {
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
+import { shownRecordIndex } from "~/utils/workUnit";
 
 const log = getLogger("mes", "assembly-view");
 
@@ -976,9 +977,10 @@ export function AssemblyView({
   // Step records key off the unit index for ALL tracking types, identical to the
   // Operation view (FIX-1 / FIX-5) — this is what isolates unit i's records.
   const activeIndex = axisIndexOf(currentUnitIndex);
+  const shownIndex = shownRecordIndex(workUnit, activeIndex);
 
   const isStepDone = (step: Step) =>
-    (step.jobOperationStepRecord ?? []).some((r) => r.index === activeIndex);
+    (step.jobOperationStepRecord ?? []).some((r) => r.index === shownIndex);
   // A recorded step whose value FAILS its acceptance criteria for a given unit:
   // a Measurement out of [min, max], or a pass/fail step (Inspection) recorded as
   // not passing. Mirrors the out-of-spec red styling in the operation view's Step
@@ -1000,7 +1002,7 @@ export function AssemblyView({
     return false;
   };
   const isStepBadResult = (step: Step) =>
-    isStepBadResultAtIndex(step, activeIndex);
+    shownIndex !== null && isStepBadResultAtIndex(step, shownIndex);
   // Does any step have an out-of-spec record for this unit? Flags the unit red in
   // the sidebar navigator so a bad build is visible without opening each unit.
   const unitHasBadResult = (position: number) =>
@@ -1063,12 +1065,15 @@ export function AssemblyView({
         : steps.some(
             (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
           );
+    // No unit on screen: the loader's default unit's issues are not shown.
     const issuedOverride =
-      !isTrackedMat && perUnit > 0
-        ? ownedStepDoneForUnit
-          ? perUnit
-          : 0
-        : undefined;
+      shownIndex === null
+        ? 0
+        : !isTrackedMat && perUnit > 0
+          ? ownedStepDoneForUnit
+            ? perUnit
+            : 0
+          : undefined;
     // Shadow the line quantity with the step share so the card's required/issued
     // numbers describe this step's portion of the split, not the whole line.
     const effectiveMaterial =
@@ -1398,7 +1403,7 @@ export function AssemblyView({
   const openLaborEvent = openByType("Labor");
   const currentStepDone = step ? isStepDone(step) : false;
   const currentStepRecord = step?.jobOperationStepRecord?.find(
-    (r) => r.index === activeIndex
+    (r) => r.index === shownIndex
   );
   const currentStepValue =
     step && currentStepRecord
@@ -1873,7 +1878,13 @@ export function AssemblyView({
               variant="secondary"
               className="whitespace-nowrap tabular-nums"
             >
-              Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+              {shownIndex === null ? (
+                <Trans>No unit selected</Trans>
+              ) : (
+                <>
+                  Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+                </>
+              )}
             </Badge>
             <IconButton
               aria-label="Next unit"

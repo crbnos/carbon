@@ -163,7 +163,7 @@ import {
 } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
-import { operationUnits } from "~/utils/workUnit";
+import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
@@ -373,10 +373,18 @@ export const JobOperation = ({
   // passing `batch`, and the modal unmounts mid-flight.
   const batchCompleteFetcher = useFetcher<{ completed?: boolean }>();
 
-  const serialIndex = Math.max(
-    trackedEntities.findIndex((entity) => entity.id === shownUnitId),
-    0
+  const recordIndex = shownRecordIndex(
+    workUnit,
+    Math.max(
+      trackedEntities.findIndex((entity) => entity.id === shownUnitId),
+      0
+    )
   );
+  const serialIndex = recordIndex ?? 0;
+  const shownSteps = (steps: JobOperationStep[]) =>
+    recordIndex === null
+      ? steps.map((step) => ({ ...step, jobOperationStepRecord: [] }))
+      : steps;
   // `serialIndex` keys the step records, so it counts every unit of the job.
   // The "N of M" heading counts only the units this operation works: a
   // correction or rework operation works the units sent into it.
@@ -1776,7 +1784,10 @@ export const JobOperation = ({
                 <Suspense key={`attributes-${operationId}`}>
                   <Await resolve={procedure}>
                     {(resolvedProcedure) => {
-                      const { attributes, parameters } = resolvedProcedure;
+                      const { parameters } = resolvedProcedure;
+                      const attributes = shownSteps(
+                        resolvedProcedure.attributes
+                      );
 
                       return (
                         <>
@@ -1904,12 +1915,18 @@ export const JobOperation = ({
                                                     size="h2"
                                                     className="font-sans"
                                                   >
-                                                    <Trans>
-                                                      {unitPosition + 1} of{" "}
-                                                      {
-                                                        operation.operationQuantity
-                                                      }
-                                                    </Trans>
+                                                    {recordIndex === null ? (
+                                                      <Trans>
+                                                        No unit selected
+                                                      </Trans>
+                                                    ) : (
+                                                      <Trans>
+                                                        {unitPosition + 1} of{" "}
+                                                        {
+                                                          operation.operationQuantity
+                                                        }
+                                                      </Trans>
+                                                    )}
                                                   </Heading>
                                                 )}
                                               </div>
@@ -2492,7 +2509,8 @@ export const JobOperation = ({
               <Suspense key={`procedure-${operationId}`}>
                 <Await resolve={procedure}>
                   {(resolvedProcedure) => {
-                    const { attributes, parameters } = resolvedProcedure;
+                    const { parameters } = resolvedProcedure;
+                    const attributes = shownSteps(resolvedProcedure.attributes);
                     if (attributes.length === 0 && parameters.length === 0)
                       return null;
 
@@ -2609,10 +2627,14 @@ export const JobOperation = ({
                                             size="h2"
                                             className="font-sans"
                                           >
-                                            <Trans>
-                                              {serialIndex + 1} of{" "}
-                                              {operation.operationQuantity}
-                                            </Trans>
+                                            {recordIndex === null ? (
+                                              <Trans>No unit selected</Trans>
+                                            ) : (
+                                              <Trans>
+                                                {serialIndex + 1} of{" "}
+                                                {operation.operationQuantity}
+                                              </Trans>
+                                            )}
                                           </Heading>
                                         )}
                                       </div>

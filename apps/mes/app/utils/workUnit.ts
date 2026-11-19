@@ -81,6 +81,18 @@ export function workUnitReducer(
   }
 }
 
+/**
+ * Whose step records the screen shows: `index`, the shown unit's record key,
+ * or null for none. A later operation of a serial part with no unit on screen
+ * shows no unit's records, not a default unit's.
+ */
+export function shownRecordIndex(
+  selection: { requiresPick: boolean; unit?: unknown },
+  index: number
+): number | null {
+  return selection.requiresPick && !selection.unit ? null : index;
+}
+
 /** The unit the screen works on, decided from the pick, the URL and the units. */
 export function serialUnitSelection<T extends UnitLike>({
   serial,
