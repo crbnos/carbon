@@ -88,7 +88,14 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
-import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
+import {
+  incoterms,
+  optionalTiptapDoc,
+  purchaseOrderExternalNotesNote,
+  purchaseOrderLineDescriptionNote,
+  rfqLineDescriptionNote,
+  supplierQuoteLineDescriptionNote
+} from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
@@ -6503,7 +6510,7 @@ export const insertPurchaseOrder = defineServiceFn({
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
     notes: optionalTiptapDoc,
-    externalNotes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc.describe(purchaseOrderExternalNotesNote),
     customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },
@@ -6655,9 +6662,7 @@ export const createPurchaseOrderLine = defineServiceFn({
     description: z
       .string()
       .optional()
-      .describe(
-        "Printed on the purchase order the supplier receives: keep internal notes out."
-      ),
+      .describe(purchaseOrderLineDescriptionNote),
     exchangeRate: z.number().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     jobId: z.string().optional(),
@@ -6738,9 +6743,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
       description: z
         .string()
         .optional()
-        .describe(
-          "Printed on the purchase order the supplier receives: keep internal notes out."
-        ),
+        .describe(purchaseOrderLineDescriptionNote),
       exchangeRate: z.number().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       jobId: z.string().optional(),
@@ -7146,7 +7149,10 @@ export const createSupplierQuoteLine = defineServiceFn({
     itemId: z.string().optional(),
     accountId: z.string().optional(),
     costCenterId: z.string().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(supplierQuoteLineDescriptionNote),
     supplierPartId: z.string().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7194,7 +7200,10 @@ export const updateSupplierQuoteLine = defineServiceFn({
       itemId: z.string().optional(),
       accountId: z.string().optional(),
       costCenterId: z.string().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(supplierQuoteLineDescriptionNote),
       supplierPartId: z.string().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7462,7 +7471,7 @@ export const createPurchasingRFQLine = defineServiceFn({
   input: z.looseObject({
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -7495,7 +7504,7 @@ export const updatePurchasingRFQLine = defineServiceFn({
     id: z.string(),
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),

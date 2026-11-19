@@ -50,6 +50,7 @@ import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import {
   inspectionPlanRequired,
+  jobOperationDescriptionNote,
   methodItemType,
   methodType,
   optionalTiptapDoc,
@@ -2863,6 +2864,9 @@ export const deleteJobMaterials = defineServiceFn({
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
 const jobOperationFields = baseJobOperationValidator.extend({
+  description: baseJobOperationValidator.shape.description.describe(
+    jobOperationDescriptionNote
+  ),
   workCenterId: zfd.text(z.string().optional()),
   jobId: z.string(),
   customFields: customFieldsInput
