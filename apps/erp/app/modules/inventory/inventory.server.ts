@@ -22,7 +22,6 @@ import {
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { runLocationSchedule } from "@carbon/planning";
 import {
   datetime,
   EPSILON,
@@ -42,6 +41,7 @@ import {
   getActiveJobOperationByJobId,
   getJobReleaseReadiness,
   insertJob,
+  queueJobsForScheduling,
   updateKanbanJob,
   upsertJobMethod
 } from "~/modules/production/production.service";
@@ -4315,8 +4315,7 @@ export const scanKanban = defineServiceFn({
      *  `releaseJobs` a supplier's newest Draft PO is reused rather than a
      *  blocker. */
     async function releaseKanbanJob(
-      jobId: string,
-      locationId: string
+      jobId: string
     ): Promise<{ released: boolean; message: string | null }> {
       const job = await serviceRole
         .from("job")
@@ -4389,23 +4388,15 @@ export const scanKanban = defineServiceFn({
         });
       }
 
-      // After the status is persisted: the scheduler only places released jobs.
+      // After the status is persisted: the scheduler only places released
+      // jobs. Out of band, because a scan is a GET whose request can end
+      // before an inline location run does, leaving the job unscheduled.
       if (released) {
-        try {
-          await runLocationSchedule({
-            db: ctx.asSystem.pg,
-            client: serviceRole,
-            locationId,
-            companyId,
-            userId
-          });
-        } catch (error) {
-          logger.error("Failed to schedule a kanban job", {
-            companyId,
-            jobId,
-            error
-          });
-        }
+        await queueJobsForScheduling(ctx.asSystem.pg, {
+          companyId,
+          jobIds: [jobId],
+          reason: "Released by a kanban scan"
+        });
       }
 
       return {
@@ -4492,7 +4483,7 @@ export const scanKanban = defineServiceFn({
             message: `${createdJob.data.jobId} was created, but its method could not be copied. Use Get Method on the job before releasing it.`
           }
         : card.autoRelease
-          ? await releaseKanbanJob(jobId, card.locationId!)
+          ? await releaseKanbanJob(jobId)
           : { released: false, message: null };
 
       const operation = release.released
