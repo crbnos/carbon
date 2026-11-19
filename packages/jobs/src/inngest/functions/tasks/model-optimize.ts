@@ -6,7 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { modelPathOptimizeFormat } from "@carbon/files/cad";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import {
@@ -224,7 +224,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       const size =
         model.size === null
           ? "size unknown"
-          : `${Math.round(Number(model.size) / 1024 ** 2)} MB`;
+          : `${round(Number(model.size) / 1024 ** 2, 0)} MB`;
       throw new AssemblerJobError(
         `${error.message} [${format}, ${size}]`,
         error.code

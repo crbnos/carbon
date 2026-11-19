@@ -20,6 +20,7 @@ import {
   isUnsafeStoragePath,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
+import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError, RetryAfterError } from "inngest";
 import { getJobDatabaseClient } from "../../../db";
@@ -523,7 +524,7 @@ export function decideJobStep(
 }
 
 function minutes(ms: number): number {
-  return Math.round(ms / 60_000);
+  return round(ms / 60_000, 0);
 }
 
 /**
