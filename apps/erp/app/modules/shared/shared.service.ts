@@ -11643,20 +11643,20 @@ export const createDocumentPermission = {
 } satisfies PermissionRule<z.output<typeof createInput>>;
 
 /**
- * A job's serial units a sales shipment can post, oldest first, at most `limit`:
- * a shippable status, and common stock at the shipment's location (what
- * `postShipment` checks: `getTrackedEntityBins`, `assertEntitiesInCommonStock`).
+ * A job's serial units or lots a sales shipment can post, oldest first: a
+ * shippable status, and common (no project) stock at the shipment's location.
+ * A lot an earlier shipment took is Consumed, so it is never taken again.
  */
-async function shippableJobSerials(
+async function shippableJobUnits(
   trx: Transaction<KyselyDatabase>,
   args: {
     companyId: string;
     jobMakeMethodId: string;
     locationId: string;
-    limit: number;
+    limit?: number;
   }
 ) {
-  return trx
+  const query = trx
     .selectFrom("trackedEntity as te")
     .select(["te.id"])
     .where("te.companyId", "=", args.companyId)
@@ -11667,12 +11667,11 @@ async function shippableJobSerials(
     )
     .orderBy("te.createdAt")
     .orderBy("te.readableId")
-    .orderBy("te.id")
-    .limit(args.limit)
-    .execute();
+    .orderBy("te.id");
+  return (args.limit === undefined ? query : query.limit(args.limit)).execute();
 }
 
-/** The units a shipment line filled from a job carries: a serial line the units it can post, a batch line every lot of the job. */
+/** The units a shipment line filled from a job carries: a serial line up to its quantity, a batch line one lot, since its post books one. */
 async function jobUnitsForShipment(
   trx: Transaction<KyselyDatabase>,
   args: {
@@ -11692,34 +11691,22 @@ async function jobUnitsForShipment(
     .executeTakeFirst();
   if (!jobMakeMethod?.id) return [];
 
-  if (args.tracking === "Serial") {
-    if (args.quantity <= 0) return [];
-    const serials = await shippableJobSerials(trx, {
-      companyId: args.companyId,
-      jobMakeMethodId: jobMakeMethod.id,
-      locationId: args.locationId,
-      limit: args.quantity
-    });
-    return serials.map((unit) => unit.id);
-  }
-
-  const lots = await many(
-    trx,
-    "trackedEntity",
-    {
-      companyId: args.companyId,
-      attributes: contains({ "Job Make Method": jobMakeMethod.id })
-    },
-    { columns: ["id"], orderBy: ["createdAt", "readableId", "id"] }
-  );
-  return (lots.data ?? []).map((lot) => lot.id);
+  if (args.tracking === "Serial" && args.quantity <= 0) return [];
+  const units = await shippableJobUnits(trx, {
+    companyId: args.companyId,
+    jobMakeMethodId: jobMakeMethod.id,
+    locationId: args.locationId,
+    limit: args.tracking === "Serial" ? args.quantity : 1
+  });
+  return units.map((unit) => unit.id);
 }
 
 /**
  * Adds a sales order line's shipment line filled from one of its jobs, with
  * its fulfillment, and tags the job's units on it. The units are picked first:
  * a serial line ships exactly the units it tagged, and is skipped when it
- * tagged none.
+ * tagged none. Returns true when it skipped a line the job still owes units
+ * on, so the caller can say why.
  */
 async function addJobShipmentLine(
   trx: Transaction<KyselyDatabase>,
@@ -11730,6 +11717,8 @@ async function addJobShipmentLine(
     shipmentId: string;
     job: {
       id: string;
+      status: string;
+      productionQuantity: number | null;
       quantityComplete: number | null;
       quantityShipped: number | null;
     };
@@ -11762,7 +11751,13 @@ async function addJobShipmentLine(
     : [];
   const shippedQuantity =
     args.tracking === "Serial" ? unitIds.length : quantityToShip;
-  if (args.tracking === "Serial" && shippedQuantity === 0) return;
+  if (args.tracking === "Serial" && shippedQuantity === 0) {
+    // A closed job owes only what it completed; an open one its whole run.
+    const owed = ["Completed", "Closed"].includes(args.job.status)
+      ? quantityToShip
+      : (args.job.productionQuantity ?? 0) - (args.job.quantityShipped ?? 0);
+    return owed > 0;
+  }
 
   const fulfillment = await trx
     .insertInto("fulfillment")
@@ -11802,7 +11797,7 @@ async function addJobShipmentLine(
     .returning(["id"])
     .executeTakeFirst();
   if (!shipmentLine?.id) throw new NotFoundError("Shipment line not found");
-  if (unitIds.length === 0) return;
+  if (unitIds.length === 0) return false;
 
   // Merged into the stored attributes, so a concurrent attribute write is kept.
   await trx
@@ -11813,6 +11808,58 @@ async function addJobShipmentLine(
     .where("companyId", "=", companyId)
     .where("id", "in", unitIds)
     .execute();
+  return false;
+}
+
+/**
+ * Why each serial job line was left off a sales order shipment, one message
+ * per item; with no line left on the shipment the create is refused with them.
+ */
+async function skippedJobLineMessages(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    shipmentId: string;
+    locationId: string;
+    itemIds: Set<string>;
+  }
+): Promise<string[]> {
+  if (args.itemIds.size === 0) return [];
+  const [items, location, line, fixedAssetLine] = await Promise.all([
+    trx
+      .selectFrom("item")
+      .select(["id", "readableIdWithRevision", "name"])
+      .where("companyId", "=", args.companyId)
+      .where("id", "in", [...args.itemIds])
+      .execute(),
+    trx
+      .selectFrom("location")
+      .select("name")
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("shipmentLine")
+      .select("id")
+      .where("shipmentId", "=", args.shipmentId)
+      .where("companyId", "=", args.companyId)
+      .limit(1)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("shipmentFixedAssetLine")
+      .select("id")
+      .where("shipmentId", "=", args.shipmentId)
+      .where("companyId", "=", args.companyId)
+      .limit(1)
+      .executeTakeFirst()
+  ]);
+  const where = location?.name ?? "this location";
+  const messages = items.map(
+    (item) =>
+      `${item.readableIdWithRevision ?? item.name}: no finished units are in stock at ${where} yet. Complete them to inventory on the job first.`
+  );
+  if (!line && !fixedAssetLine) throw new InvalidInputError(messages.join(" "));
+  return messages;
 }
 
 /**
@@ -14631,6 +14678,7 @@ export async function createDocument(
 
       let shipmentId = hasShipment ? shipment.data?.id! : "";
       let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+      let warnings: string[] = [];
 
       await db.transaction().execute(async (trx) => {
         if (hasShipment) {
@@ -14709,6 +14757,7 @@ export async function createDocument(
             }))
         });
 
+        const skippedJobItemIds = new Set<string>();
         // Process each sales order line
         for await (const salesOrderLine of salesOrderLines.data) {
           if (
@@ -14725,7 +14774,7 @@ export async function createDocument(
           if (salesOrderLine.methodType === "Make to Order") {
             for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ??
               []) {
-              await addJobShipmentLine(trx, {
+              const skipped = await addJobShipmentLine(trx, {
                 companyId,
                 userId,
                 locationId,
@@ -14744,6 +14793,7 @@ export async function createDocument(
                 outstandingQuantity:
                   salesOrderLine.quantityToSend ?? salesOrderLine.saleQuantity
               });
+              if (skipped) skippedJobItemIds.add(salesOrderLine.itemId);
             }
           } else {
             const outstandingQuantity =
@@ -14821,9 +14871,16 @@ export async function createDocument(
             )
             .execute();
         }
+
+        warnings = await skippedJobLineMessages(trx, {
+          companyId,
+          shipmentId,
+          locationId,
+          itemIds: skippedJobItemIds
+        });
       });
 
-      return { id: shipmentId };
+      return { id: shipmentId, warnings };
     }
     case "shipmentFromSalesOrderLine": {
       const {
@@ -14896,6 +14953,7 @@ export async function createDocument(
 
       let shipmentId = hasShipment ? shipment.data?.id! : "";
       let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+      let warnings: string[] = [];
 
       await db.transaction().execute(async (trx) => {
         if (hasShipment) {
@@ -14951,9 +15009,10 @@ export async function createDocument(
 
         if (salesOrderLine.data.methodType === "Make to Order") {
           const itemId = salesOrderLine.data.itemId;
+          const skippedJobItemIds = new Set<string>();
           if (itemId) {
             for await (const job of jobs.data ?? []) {
-              await addJobShipmentLine(trx, {
+              const skipped = await addJobShipmentLine(trx, {
                 companyId,
                 userId,
                 locationId,
@@ -14971,8 +15030,15 @@ export async function createDocument(
                 orderQuantity: job.productionQuantity ?? 0,
                 outstandingQuantity: Math.max(0, job.productionQuantity ?? 0)
               });
+              if (skipped) skippedJobItemIds.add(itemId);
             }
           }
+          warnings = await skippedJobLineMessages(trx, {
+            companyId,
+            shipmentId,
+            locationId,
+            itemIds: skippedJobItemIds
+          });
         } else {
           const outstandingQuantity = Math.max(
             0,
@@ -15027,7 +15093,7 @@ export async function createDocument(
         }
       });
 
-      return { id: shipmentId };
+      return { id: shipmentId, warnings };
     }
     case "shipmentLineSplit": {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;

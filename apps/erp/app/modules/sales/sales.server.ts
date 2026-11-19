@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
+import {
+  paged,
+  payload,
+  run,
+  serverFnRefusal,
+  unwrap
+} from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -2508,7 +2514,8 @@ export const updateSalesOrderLine = defineServiceFn({
  *
  * @remarks
  * The line needs a location; the shipment is created there through the
- * `create` server function.
+ * `create` server function. A serial job line whose finished units are not
+ * yet in stock there is refused with why.
  *
  * @mcp
  */
@@ -2544,10 +2551,17 @@ export const shipSalesOrderLine = defineServiceFn({
         salesOrderLineId
       }
     );
+    if (shipment.error && shipment.error.status < 500) {
+      // A refusal (no finished units in stock) is written for the person.
+      return serverFnRefusal(ctx, shipment.error);
+    }
     if (!shipment.data || shipment.error) {
       return ctx.error("internal", "Failed to create shipment", shipment.error);
     }
-    return { shipmentId: shipment.data.id };
+    return {
+      shipmentId: shipment.data.id,
+      warnings: shipment.data.warnings
+    };
   }
 });
 

@@ -35,6 +35,16 @@ run the same checks. The route only parses the form, and takes the document id f
   `companySettings.receiptQuantitiesStartAtZero` is on (Settings → Inventory → Receiving —
   every source `create` builds lines for: Purchase Order, Inbound Transfer, Sales Return Order;
   a PO's fixed-asset lines then start unticked). Shipments are not affected.
+  A sales order line filled from a serial or batch job (`addJobShipmentLine`, `shared.service.ts`)
+  takes only the job's units that can post (`shippableJobUnits`: a shippable status, common stock at
+  the shipment's location; a batch line one lot, the oldest, because its post books one), so a
+  lot an earlier shipment took (Consumed) is never re-tagged. A serial line is left off when it
+  takes none; a batch line is kept with no lot, and its post refuses until one is picked. While the job still owes units,
+  the `create` result's `warnings` names the item and location (`skippedJobLineMessages`);
+  with no line left the `create` refuses with it (400), rolling back the new shipment or the
+  rebuilt Draft. `new.tsx`, the line's Ship route and `$id.details.tsx` (`updateShipment`
+  returns the rebuild's `warnings`) show them as the toast's second line (`shipmentLinesFlash`,
+  `inventory.utils.ts`, through `respond(...).redirect`'s `description`).
   The `'Customer Contract'` source (a contract delivery, below) does the same: `createShipment`
   returns the contract's Draft delivery, else invokes `create` with `shipmentFromCustomerContract`.
 - `$id.tsx` — layout loader: parallel `getShipment` / `getShipmentLines` / `getShipmentTracking`,

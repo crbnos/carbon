@@ -1475,6 +1475,10 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
  * A return order or rental agreement with a Draft shipment already returns
  * that shipment instead of a second one.
  *
+ * A sales order line filled from a serial job whose finished units are not
+ * yet in stock at the location is left off, and `warnings` says why; with
+ * no line left the create is refused with that message.
+ *
  * @mcp
  */
 export const createShipment = defineServiceFn({
@@ -1597,7 +1601,11 @@ export const createShipment = defineServiceFn({
         getErrorMessage(created.error, "Failed to create shipment")
       );
     }
-    return { id: created.data.id };
+    const warnings: string[] =
+      "warnings" in created.data && Array.isArray(created.data.warnings)
+        ? created.data.warnings
+        : [];
+    return { id: created.data.id, warnings };
   }
 });
 
@@ -1608,8 +1616,9 @@ export const createShipment = defineServiceFn({
  * A changed source document or location rebuilds the shipment's lines from
  * the new source (a sales order, a sales return order, a purchase order, a
  * purchase return order or an outbound transfer), and is refused once the
- * shipment is not Draft. Otherwise the fields are saved as sent. A rental
- * shipment keeps its rental agreement: changing it is refused.
+ * shipment is not Draft. A rebuild names in `warnings` the serial job lines
+ * it left off. Otherwise the fields are saved as sent. A rental shipment
+ * keeps its rental agreement: changing it is refused.
  *
  * @mcp
  */
@@ -1686,7 +1695,7 @@ export const updateShipment = defineServiceFn({
           updated.error
         );
       }
-      return { id };
+      return { id, warnings: [] as string[] };
     }
 
     const { locationId, sourceDocumentId } = shipment;
@@ -1743,7 +1752,11 @@ export const updateShipment = defineServiceFn({
         getErrorMessage(created.error, "Failed to create shipment")
       );
     }
-    return { id };
+    const warnings: string[] =
+      "warnings" in created.data && Array.isArray(created.data.warnings)
+        ? created.data.warnings
+        : [];
+    return { id, warnings };
   }
 });
 /**

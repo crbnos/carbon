@@ -39,8 +39,9 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
   type Stock = "here" | "other location" | "project";
   type Unit = {
     readableId: string;
-    status: "Available" | "On Hold" | "Reserved";
+    status: "Available" | "On Hold" | "Reserved" | "Consumed";
     stock?: Stock;
+    quantity?: number;
   };
   type Scenario = {
     itemId: string;
@@ -90,6 +91,19 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
   const shipmentDeleteUnits: Unit[] = [
     { readableId: "SN-H1", status: "Available", stock: "here" }
   ];
+  // A batch job: LOT-A1 left on an earlier shipment (Consumed, no stock),
+  // LOT-B1 and LOT-B2 are in stock. A batch line's post books one lot, so the
+  // line takes LOT-B1 only.
+  const batchLots: Unit[] = [
+    { readableId: "LOT-A1", status: "Consumed", quantity: 2 },
+    { readableId: "LOT-B1", status: "Available", stock: "here", quantity: 3 },
+    { readableId: "LOT-B2", status: "Available", stock: "here", quantity: 1 }
+  ];
+  // Finished on the shop floor but never completed into stock.
+  const unreceivedUnits: Unit[] = [
+    { readableId: "SN-K1", status: "Available" },
+    { readableId: "SN-K2", status: "Available" }
+  ];
   let main: Scenario;
   let short: Scenario;
   let mismatch: Scenario;
@@ -97,11 +111,16 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
   let orphan: Scenario;
   let lineDelete: Scenario;
   let shipmentDelete: Scenario;
+  let unreceived: Scenario;
+  let unreceivedMixed: Scenario;
+  let batch: Scenario;
+  let untrackedLineId: string;
 
   async function seedScenario(
     key: string,
     scenarioUnits: Unit[],
-    quantityComplete: number
+    quantityComplete: number,
+    tracking: "Serial" | "Batch" = "Serial"
   ): Promise<Scenario> {
     const itemId = `${f.prefix}-${key}-item`;
     const jobId = `${f.prefix}-${key}-job`;
@@ -115,7 +134,7 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
           readableId: `${f.prefix}-${key}-SAT`,
           name: "Satellite",
           type: "Part",
-          itemTrackingType: "Serial",
+          itemTrackingType: tracking,
           replenishmentSystem: "Make",
           companyId: f.companyId,
           createdBy: USER
@@ -199,7 +218,7 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
           scenarioUnits.map((unit) => ({
             id: unitIds[unit.readableId]!,
             readableId: unit.readableId,
-            quantity: 1,
+            quantity: unit.quantity ?? 1,
             status: unit.status,
             sourceDocument: "Item",
             sourceDocumentId: itemId,
@@ -218,7 +237,7 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
           received.map((unit) => ({
             itemId,
             trackedEntityId: unitIds[unit.readableId],
-            quantity: 1,
+            quantity: unit.quantity ?? 1,
             locationId:
               unit.stock === "other location"
                 ? f.otherLocationId
@@ -265,6 +284,43 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
       shipmentDeleteUnits,
       1
     );
+    unreceived = await seedScenario("unreceived", unreceivedUnits, 2);
+    unreceivedMixed = await seedScenario("unreceived-mixed", unreceivedUnits, 2);
+    batch = await seedScenario("batch", batchLots, 3, "Batch");
+    // The mixed order also ships an untracked part from stock.
+    await seed(f, async (trx) => {
+      const itemId = `${f.prefix}-untracked-item`;
+      await trx
+        .insertInto("item")
+        .values({
+          id: itemId,
+          readableId: `${f.prefix}-BOLT`,
+          name: "Bolt",
+          type: "Part",
+          itemTrackingType: "Inventory",
+          replenishmentSystem: "Buy",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      const line = await trx
+        .insertInto("salesOrderLine")
+        .values({
+          salesOrderId: unreceivedMixed.salesOrderId,
+          salesOrderLineType: "Part",
+          itemId,
+          saleQuantity: 5,
+          unitPrice: 1,
+          methodType: "Pull from Inventory",
+          unitOfMeasureCode: "EA",
+          locationId: f.locationId,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      untrackedLineId = line.id;
+    });
   });
 
   async function unit(scenario: Scenario, readableId: string) {
@@ -358,6 +414,23 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
       expect(await taggedOn(shipment.id)).toEqual({
         shippedQuantity: 2,
         tagged: shippable
+      });
+    }
+  );
+
+  databaseTest(
+    "a batch line tags one lot it can post, never one an earlier shipment took",
+    async () => {
+      const shipment = unwrap(
+        await invokeCreate(handlesOf(f.ctx), {
+          type: "shipmentFromSalesOrderLine",
+          salesOrderLineId: batch.salesOrderLineId,
+          locationId: f.locationId
+        })
+      );
+      expect(await taggedOn(shipment.id)).toEqual({
+        shippedQuantity: 3,
+        tagged: [{ readableId: "LOT-B1", index: "0" }]
       });
     }
   );
@@ -609,6 +682,96 @@ describe.skipIf(!hasLocalDatabase)("shipment from a partly built job", () => {
       expect(await unit(shipmentDelete, "SN-H1")).toMatchObject({
         tagged: false
       });
+    }
+  );
+
+  async function shipmentsFor(salesOrderId: string) {
+    return f.db
+      .selectFrom("shipment")
+      .select("id")
+      .where("sourceDocumentId", "=", salesOrderId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+  }
+
+  databaseTest(
+    "a sales order whose only line has no units in stock is refused, and no empty shipment is left",
+    async () => {
+      const result = await invokeCreate(handlesOf(f.ctx), {
+        type: "shipmentFromSalesOrder",
+        salesOrderId: unreceived.salesOrderId,
+        locationId: f.locationId
+      });
+      expect(result.data).toBeNull();
+      expect(result.error?.status).toBe(400);
+      expect(result.error?.message).toContain(`${f.prefix}-unreceived-SAT`);
+      expect(result.error?.message).toContain("Headquarters");
+      expect(await shipmentsFor(unreceived.salesOrderId)).toEqual([]);
+    }
+  );
+
+  databaseTest(
+    "a sales order line with no units in stock is refused, and no empty shipment is left",
+    async () => {
+      const result = await invokeCreate(handlesOf(f.ctx), {
+        type: "shipmentFromSalesOrderLine",
+        salesOrderLineId: unreceived.salesOrderLineId,
+        locationId: f.locationId
+      });
+      expect(result.data).toBeNull();
+      expect(result.error?.status).toBe(400);
+      expect(result.error?.message).toContain(`${f.prefix}-unreceived-SAT`);
+      expect(await shipmentsFor(unreceived.salesOrderId)).toEqual([]);
+    }
+  );
+
+  databaseTest(
+    "rebuilding a Draft from a sales order with nothing to ship is refused and keeps the Draft as it was",
+    async () => {
+      const draft = unwrap(
+        await invokeCreate(handlesOf(f.ctx), {
+          type: "shipmentDefault",
+          locationId: f.locationId
+        })
+      );
+      const result = await invokeCreate(handlesOf(f.ctx), {
+        type: "shipmentFromSalesOrder",
+        salesOrderId: unreceived.salesOrderId,
+        locationId: f.locationId,
+        shipmentId: draft.id
+      });
+      expect(result.error?.status).toBe(400);
+      const header = await f.db
+        .selectFrom("shipment")
+        .select(["status", "sourceDocumentId"])
+        .where("id", "=", draft.id)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(header).toEqual({ status: "Draft", sourceDocumentId: null });
+    }
+  );
+
+  databaseTest(
+    "a sales order with other lines creates the shipment without the line and warns why",
+    async () => {
+      const shipment = unwrap(
+        await invokeCreate(handlesOf(f.ctx), {
+          type: "shipmentFromSalesOrder",
+          salesOrderId: unreceivedMixed.salesOrderId,
+          locationId: f.locationId
+        })
+      );
+      const lines = await f.db
+        .selectFrom("shipmentLine")
+        .select("lineId")
+        .where("shipmentId", "=", shipment.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(lines).toEqual([{ lineId: untrackedLineId }]);
+      expect(shipment.warnings).toHaveLength(1);
+      expect(shipment.warnings?.[0]).toContain(
+        `${f.prefix}-unreceived-mixed-SAT`
+      );
     }
   );
 

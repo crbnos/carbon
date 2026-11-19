@@ -602,3 +602,13 @@ export function batchPropertyFilter(
   });
   return clauses.join(",");
 }
+
+/** The flash after a shipment is made or rebuilt: lines left off are named on its second line. */
+export function shipmentLinesFlash(warnings: string[], message?: string) {
+  return warnings.length > 0
+    ? {
+        message: "Some lines were left off the shipment",
+        description: warnings.join(" ")
+      }
+    : { message };
+}
