@@ -262,7 +262,7 @@ export async function requirePermissions(
         throw new Response("Rate limit exceeded", {
           status: 429,
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "text/plain; charset=utf-8",
             "X-RateLimit-Limit": rl.limit.toString(),
             "X-RateLimit-Remaining": rl.remaining.toString(),
             "X-RateLimit-Reset": rl.resetAt.toString(),
