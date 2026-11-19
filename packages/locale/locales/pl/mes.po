@@ -2813,9 +2813,6 @@ msgstr "Zwrot części"
 msgid "Rework"
 msgstr "Poprawka"
 
-msgid "Rework created successfully"
-msgstr "Poprawka została pomyślnie utworzona"
-
 msgid "Rework quantity"
 msgstr "Ilość do poprawki"
 

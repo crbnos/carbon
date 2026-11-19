@@ -2813,9 +2813,6 @@ msgstr "退回零件"
 msgid "Rework"
 msgstr "返工"
 
-msgid "Rework created successfully"
-msgstr "返工创建成功"
-
 msgid "Rework quantity"
 msgstr "返工数量"
 

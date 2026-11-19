@@ -2813,9 +2813,6 @@ msgstr "Return part"
 msgid "Rework"
 msgstr "Rework"
 
-msgid "Rework created successfully"
-msgstr "Rework created successfully"
-
 msgid "Rework quantity"
 msgstr "Rework quantity"
 

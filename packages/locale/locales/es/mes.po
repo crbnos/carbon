@@ -2813,9 +2813,6 @@ msgstr "Devolver pieza"
 msgid "Rework"
 msgstr "Retrabajo"
 
-msgid "Rework created successfully"
-msgstr "Retrabajo creado exitosamente"
-
 msgid "Rework quantity"
 msgstr "Cantidad de retrabajo"
 

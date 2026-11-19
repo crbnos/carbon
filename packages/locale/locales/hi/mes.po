@@ -2813,9 +2813,6 @@ msgstr "पार्ट लौटाएं"
 msgid "Rework"
 msgstr "पुनः कार्य"
 
-msgid "Rework created successfully"
-msgstr "पुनः कार्य सफलतापूर्वक बनाया गया"
-
 msgid "Rework quantity"
 msgstr "पुनः कार्य की मात्रा"
 

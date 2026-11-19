@@ -2813,9 +2813,6 @@ msgstr "Возвращаемая деталь"
 msgid "Rework"
 msgstr "Доработка"
 
-msgid "Rework created successfully"
-msgstr "Доработка успешно создана"
-
 msgid "Rework quantity"
 msgstr "Количество для доработки"
 

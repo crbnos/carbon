@@ -2813,9 +2813,6 @@ msgstr "İade Parçası"
 msgid "Rework"
 msgstr "Yeniden işleme"
 
-msgid "Rework created successfully"
-msgstr "Yeniden işleme başarıyla oluşturuldu"
-
 msgid "Rework quantity"
 msgstr "Yeniden işleme miktarı"
 

@@ -6,13 +6,16 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import {
-  CORRECTION_TARGET_PREFIX,
+  correctionIdOfTarget,
   triggerReworkValidator
 } from "~/services/models";
+
+const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -20,36 +23,11 @@ export async function action({ request }: ActionFunctionArgs) {
     request,
     {}
   );
-
-  const formData = await request.formData();
-  const validation = await validator(triggerReworkValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    trackedEntityIds: trackedEntityIdsJson,
-    targetJobOperationId,
-    ...reworkData
-  } = validation.data;
-  const trackedEntityIds = trackedEntityIdsJson
-    ? JSON.parse(trackedEntityIdsJson)
-    : undefined;
-
-  // The target is an earlier operation, or one of the part's corrections
-  // (for example a "send to rework station" routing).
-  const jobCorrectionId = targetJobOperationId.startsWith(
-    CORRECTION_TARGET_PREFIX
-  )
-    ? targetJobOperationId.slice(CORRECTION_TARGET_PREFIX.length)
-    : null;
-
-  // The correction posting runs as the system, so it checks nothing about
-  // the caller. An API key needs the production update scope, as on
-  // `trigger-correction.tsx`.
+  // Both postings run as the system, so they check nothing about the caller.
+  // An operator on the floor may send a unit back; an API key needs the
+  // production update scope, the postings' own rule
+  // (`triggerReworkPermission`, `triggerCorrectionPermission`).
   if (
-    jobCorrectionId &&
     caller === "apiKey" &&
     !permissions.production?.update?.includes(companyId)
   ) {
@@ -59,17 +37,31 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = jobCorrectionId
-    ? await erpPosting(
-        "trigger-correction",
-        { companyId, userId },
-        { ...reworkData, jobCorrectionId, trackedEntityIds }
-      )
-    : await erpPosting(
-        "trigger-rework",
-        { companyId, userId },
-        { ...reworkData, targetJobOperationId, trackedEntityIds }
-      );
+  const formData = await request.formData();
+  const validation = await validator(triggerReworkValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const { targetJobOperationId, ...reworkData } = validation.data;
+
+  // The target is an earlier operation, or one of the part's corrections
+  // (for example a "send to rework station" routing).
+  const jobCorrectionId = correctionIdOfTarget(targetJobOperationId);
+
+  const result =
+    jobCorrectionId !== null
+      ? await erpPosting(
+          "trigger-correction",
+          { companyId, userId },
+          { ...reworkData, jobCorrectionId }
+        )
+      : await erpPosting(
+          "trigger-rework",
+          { companyId, userId },
+          { ...reworkData, targetJobOperationId }
+        );
 
   if (result.error) {
     return data(
@@ -78,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          jobCorrectionId
+          jobCorrectionId !== null
             ? "Failed to start correction"
             : "Failed to trigger rework"
         )
@@ -86,8 +78,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Trigger quantity recalculation
-  await erpPosting(
+  // The new operations and materials change what the job needs.
+  const recalculated = await erpPosting(
     "recalculate",
     { companyId, userId },
     {
@@ -95,13 +87,21 @@ export async function action({ request }: ActionFunctionArgs) {
       id: validation.data.jobId
     }
   );
+  if (recalculated.error) {
+    log.error("Failed to recalculate job requirements after a rework", {
+      jobId: validation.data.jobId,
+      error: recalculated.error
+    });
+  }
 
   return data(
     result.data,
     await flash(
       request,
       success(
-        jobCorrectionId ? "Correction started" : "Rework triggered successfully"
+        jobCorrectionId !== null
+          ? "Correction started"
+          : "Rework triggered successfully"
       )
     )
   );

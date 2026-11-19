@@ -2813,9 +2813,6 @@ msgstr "Teil zurückgeben"
 msgid "Rework"
 msgstr "Nacharbeit"
 
-msgid "Rework created successfully"
-msgstr "Nacharbeit erfolgreich erstellt"
-
 msgid "Rework quantity"
 msgstr "Nacharbeitsmenge"
 

@@ -2813,9 +2813,6 @@ msgstr "Componente reso"
 msgid "Rework"
 msgstr "Rilavorazione"
 
-msgid "Rework created successfully"
-msgstr "Rilavorazione creata con successo"
-
 msgid "Rework quantity"
 msgstr "Quantità di rilavorazione"
 

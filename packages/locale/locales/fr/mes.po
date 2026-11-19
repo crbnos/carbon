@@ -2813,9 +2813,6 @@ msgstr "Retourner la pièce"
 msgid "Rework"
 msgstr "Retouche"
 
-msgid "Rework created successfully"
-msgstr "Retouche créée avec succès"
-
 msgid "Rework quantity"
 msgstr "Quantité de retouche"
 

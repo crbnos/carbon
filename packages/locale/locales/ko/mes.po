@@ -2813,9 +2813,6 @@ msgstr "부품 반품"
 msgid "Rework"
 msgstr "재작업"
 
-msgid "Rework created successfully"
-msgstr "재작업이 생성되었습니다"
-
 msgid "Rework quantity"
 msgstr "재작업 수량"
 

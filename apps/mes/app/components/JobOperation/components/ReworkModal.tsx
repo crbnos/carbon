@@ -24,7 +24,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -49,6 +48,23 @@ type UpstreamOperation = {
 };
 
 type TrackedEntity = Database["public"]["Tables"]["trackedEntity"]["Row"];
+
+type ReworkTargets = {
+  operations: UpstreamOperation[];
+  corrections?: { id: string; name: string; returnTo: string }[];
+};
+
+/**
+ * The earlier operations and the part's corrections an operation can send
+ * units to. Loaded once per mount: the parent remounts the modal on each open.
+ */
+function useReworkTargets(operationId: string) {
+  const { data, load } = useFetcher<ReworkTargets>();
+  useEffect(() => {
+    load(path.to.reworkTargets(operationId));
+  }, [load, operationId]);
+  return data;
+}
 
 export function ReworkModal({
   operation,
@@ -79,18 +95,13 @@ export function ReworkModal({
       ? null
       : (document.activeElement as HTMLElement | null)
   );
+  // The route's flash already toasts the result.
   const fetcher = useAction<Result>({
     onSuccess: (data) => {
-      if (data?.success) {
-        toast.success(t`Rework created successfully`);
-        onClose();
-      }
+      if (data?.success) onClose();
     }
   });
-  const targetsFetcher = useFetcher<{
-    operations: UpstreamOperation[];
-    corrections?: { id: string; name: string; returnTo: string }[];
-  }>();
+  const reworkTargets = useReworkTargets(operation.id);
 
   const maxQuantity = operation.operationQuantity ?? 0;
   const defaultQuantity = Math.max(
@@ -99,39 +110,21 @@ export function ReworkModal({
       (operation.quantityScrapped ?? 0),
     1
   );
+  // The parent remounts this modal on every open (`key`), so these start
+  // fresh each time; a lone unit or batch is chosen for the operator.
   const [quantity, setQuantity] = useState(defaultQuantity);
-  const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(
-    new Set()
+  const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(() =>
+    parentIsSerial && trackedEntities.length === 1
+      ? new Set([trackedEntities[0].id])
+      : new Set()
   );
   const [scanInput, setScanInput] = useState("");
-  const [selectedBatchId, setSelectedBatchId] = useState<string>("");
+  const [selectedBatchId, setSelectedBatchId] = useState(() =>
+    parentIsBatch && trackedEntities.length === 1 ? trackedEntities[0].id : ""
+  );
 
-  const targets = targetsFetcher.data?.operations ?? [];
-  const corrections = targetsFetcher.data?.corrections ?? [];
-
-  useEffect(() => {
-    if (isOpen) {
-      targetsFetcher.load(path.to.reworkTargets(operation.id));
-      setSelectedEntityIds(
-        parentIsSerial && trackedEntities.length === 1
-          ? new Set([trackedEntities[0].id])
-          : new Set()
-      );
-      setScanInput("");
-      setSelectedBatchId(
-        parentIsBatch && trackedEntities.length === 1
-          ? trackedEntities[0].id
-          : ""
-      );
-    }
-  }, [
-    isOpen,
-    operation.id,
-    parentIsSerial,
-    parentIsBatch,
-    trackedEntities,
-    targetsFetcher.load
-  ]);
+  const targets = reworkTargets?.operations ?? [];
+  const corrections = reworkTargets?.corrections ?? [];
 
   const filteredEntities = useMemo(() => {
     if (!scanInput) return trackedEntities;

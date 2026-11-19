@@ -2813,9 +2813,6 @@ msgstr "部品返品"
 msgid "Rework"
 msgstr "手直し"
 
-msgid "Rework created successfully"
-msgstr "手直しが正常に作成されました"
-
 msgid "Rework quantity"
 msgstr "手直し数量"
 
