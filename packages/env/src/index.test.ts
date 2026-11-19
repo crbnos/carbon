@@ -52,11 +52,11 @@ describe("module load", { timeout: 30_000 }, () => {
 
 describe("publicSupabaseUrl", { timeout: 30_000 }, () => {
   const signed =
-    "http://supabase-api-gw:8000/storage/v1/object/upload/sign/co/a.pdf?token=t";
+    "http://storage-gateway:8000/storage/v1/object/upload/sign/co/a.pdf?token=t";
 
   it("moves a link the server signed in-cluster onto the public address", async () => {
     vi.stubEnv("SUPABASE_URL", "https://api.example.com");
-    vi.stubEnv("SUPABASE_INTERNAL_URL", "http://supabase-api-gw:8000");
+    vi.stubEnv("SUPABASE_INTERNAL_URL", "http://storage-gateway:8000");
     const env = await import("./index");
     expect(env.publicSupabaseUrl(signed)).toBe(
       "https://api.example.com/storage/v1/object/upload/sign/co/a.pdf?token=t"
