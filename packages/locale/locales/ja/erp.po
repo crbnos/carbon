@@ -853,6 +853,9 @@ msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行
 msgid "{amount} of {0} posted to {element}"
 msgstr "{0} の {amount} が {element} に転記されました"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount}（受注明細の未請求料金）"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
 
@@ -880,6 +883,9 @@ msgstr "{assigned, plural, one {# 営業日割当済} other {# 営業日割当�
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {目標より # 日遅れ} other {目標より # 日遅れ}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# 件の明細は、受注から作成された契約で請求されます} other {# 件の明細は、受注から作成された契約で請求されます}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 個の請求対象項目がレビュー待ちです} other {# 個の請求対象項目がレビュー待ちです}}"
 
@@ -897,6 +903,9 @@ msgstr "{categoryLabel}のマークアップ（数量 {quantity}）"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# 件の明細には受注の追加料金・送料が含まれていません} other {# 件の明細には受注の追加料金・送料が含まれていません}}"
 
 msgid "{code} counted"
 msgstr "{code} がカウント済"
@@ -1229,6 +1238,12 @@ msgstr "{names}は一致する必要があります — 別ロード"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}個の部品はスキップ済 — 製造する必要がありません"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# 件の明細は価格が設定されていません} other {# 件の明細は価格が設定されていません}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# 件の明細は数量が設定されていません} other {# 件の明細は数量が設定されていません}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
 
@@ -1251,12 +1266,18 @@ msgstr "オープン {openedTotal} 件、クローズ {closedTotal} 件"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# 件のタイムエントリはまだ転記待ちです} other {# 件のタイムエントリはまだ転記待ちです}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order}には、どの請求書にも含まれていない送料が{amount}あります"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# 件の貸与が返却期限を超過しています} other {# 件の貸与が返却期限を超過しています}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# 件の明細で、受注の請求可能残高を超える請求が行われています} other {# 件の明細で、受注の請求可能残高を超える請求が行われています}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed}×{itemLabel}—{borrower}は{lender}に負債があり、期限は{due}"
@@ -1794,6 +1815,9 @@ msgstr "消耗品は、部品を製造するために使用される物理的な
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "契約明細のCLIN（契約明細番号）：0001などの4桁。プロジェクト請求発票はCLINごとに別の金額を表示します。"
+
+msgid "A contract made from the order bills this line"
+msgstr "受注から作成された契約がこの明細を請求します"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D税レポートの契約設定。資金提供契約下のDirect プロジェクトの原価は適格研究費ではありません。デフォルトでは、Cost Plus または Time & Materials 明細を持つ契約は資金提供されたと見なされます。"
@@ -7038,11 +7062,17 @@ msgstr "チャット"
 msgid "Check"
 msgstr "チェック"
 
+msgid "Check before posting"
+msgstr "転記前に確認"
+
 msgid "Check operations on the left to build the batch."
 msgstr "左側の工程をチェックしてバッチを構築してください。"
 
 msgid "Check Quantity"
 msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "下記の内容をご確認ください。転記済の請求書は編集できません。"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
@@ -20389,6 +20419,9 @@ msgstr "転記済の払戻明細がありません"
 msgid "No posted supplier invoice lines"
 msgstr "転記済の仕入先請求書明細がありません"
 
+msgid "No price"
+msgstr "価格未設定"
+
 msgid "No pricing for selected quantity"
 msgstr "選択した数量の価格設定がありません"
 
@@ -20439,6 +20472,9 @@ msgstr "プロジェクトがまだありません"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
+
+msgid "No quantity"
+msgstr "数量未設定"
 
 msgid "No Quote"
 msgstr "見積辞退"
@@ -20797,6 +20833,9 @@ msgstr "なし"
 
 msgid "None (full page)"
 msgstr ""
+
+msgid "None (Net {defaultTermDays})"
+msgstr "なし（ネット{defaultTermDays}日）"
 
 msgid "None available"
 msgstr "該当なし"
@@ -21379,6 +21418,9 @@ msgstr "そこには{quantity}のみ"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "そこにはシリアル番号付きの{quantity}のみ"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "受注の請求可能残高は{remaining}のみです"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "下書きの手順書のみが編集可能です。有効またはアーカイブ済の手順書を変更するには、新しいバージョンを作成してください。"
@@ -31659,6 +31701,9 @@ msgstr "部品のリビジョン番号"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用権資産とリース負債は貸借対照表に計上され、1つの定額リースコストが毎月計上されます。"
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "受注を読み込めなかったため、この請求書との照合は行われていません。"
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
 
@@ -32244,6 +32289,9 @@ msgstr "この{0}への参加への招待は期限切れです。新しい招待
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "この請求書は使用可能な支払期日がありません。Stripe 用に 1 つ選択してください。"
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "この請求書は {currencyCode} の為替レートとして 1 を使用していますが、本日の為替レートは {currentRate} です"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"

@@ -187,7 +187,7 @@ import {
   type VarianceAllocation
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -325,6 +325,10 @@ import {
   purchaseLineAccountClasses,
   type stripeCustomerActions
 } from "./invoicing.models";
+import {
+  ORDER_LINE_CHARGE_FIELDS,
+  type SalesInvoicePostFacts
+} from "./invoicing.utils";
 import {
   type InvoiceProjectCharges,
   loadInvoiceProjectCharges
@@ -866,6 +870,280 @@ export async function getSalesInvoiceLine(
     .select("*")
     .eq("id", salesInvoiceLineId)
     .single();
+}
+
+/** Invoice statuses whose quantity `quantityToInvoice` does not count yet. */
+const UNPOSTED_INVOICE_STATUSES = new Set(["Draft", "Pending"]);
+
+/**
+ * What a draft sales invoice's post checks (`salesInvoicePostChecks`) read
+ * beyond the invoice: each order line it bills (ordered, left to invoice,
+ * what other unposted invoices bill, whether a contract bills it, and each
+ * flat charge with what others already billed of it), each order's shipping
+ * no other invoice bills, and today's rate for the invoice's currency.
+ * "Other" means every non-voided invoice of the order but this one, drafts
+ * included, counted as `billedSalesOrderCharges` counts them when an order
+ * is invoiced.
+ *
+ * The order and contract tables need `sales_view`, which an invoicing user
+ * may not hold, so the caller passes the service role rather than tie the
+ * checks to a second module's permission; every read is scoped to the
+ * company. It reads only the orders, order lines and contract lines of the
+ * order lines this invoice's own lines link to, from ids the server loaded,
+ * never from the request, and returns only whether a contract bills each
+ * one: keep it that way, since whatever it returns reaches the browser.
+ */
+export async function getSalesInvoicePostFacts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceId: string,
+  currencyCode: string | null,
+  lines: { salesOrderId: string | null; salesOrderLineId: string | null }[]
+): Promise<
+  | { data: SalesInvoicePostFacts; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const orderIds = [
+    ...new Set(lines.flatMap((line) => line.salesOrderId ?? []))
+  ];
+  const orderLineIds = [
+    ...new Set(lines.flatMap((line) => line.salesOrderLineId ?? []))
+  ];
+  const none = { data: [], error: null };
+
+  const [rate, orderLines, contractLines, orders, orderShipments, otherLines] =
+    await Promise.all([
+      currencyCode
+        ? getExchangeRate(client, companyId, currencyCode)
+        : Promise.resolve({ data: null, error: null }),
+      // Every id list is batched (`fetchAllByIds`): one too long for a single
+      // `.in()` fails at the gateway, and the checks would silently go.
+      orderLineIds.length > 0
+        ? fetchAllByIds<{
+            id: string;
+            unitPrice: number | null;
+            saleQuantity: number | null;
+            quantityToInvoice: number | null;
+            addOnCost: number | null;
+            nonTaxableAddOnCost: number | null;
+            shippingCost: number | null;
+          }>(orderLineIds, (batch) =>
+            client
+              .from("salesOrderLine")
+              .select(
+                "id, unitPrice, saleQuantity, quantityToInvoice, addOnCost, nonTaxableAddOnCost, shippingCost"
+              )
+              .in("id", batch)
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none),
+      // The order lines a contract made from the order still bills: one that
+      // ended before it billed leaves the line to an invoice.
+      orderLineIds.length > 0
+        ? fetchAllByIds<{
+            salesOrderLineId: string | null;
+            customerContract: { status: string };
+          }>(orderLineIds, (batch) =>
+            client
+              .from("customerContractLine")
+              .select(
+                "salesOrderLineId, customerContract!customerContractLine_contract_fkey!inner(status)"
+              )
+              .in("salesOrderLineId", batch)
+              .in("customerContract.status", ["Draft", "Active"])
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none),
+      orderIds.length > 0
+        ? fetchAllByIds<{ id: string; salesOrderId: string }>(
+            orderIds,
+            (batch) =>
+              client
+                .from("salesOrder")
+                .select("id, salesOrderId")
+                .in("id", batch)
+                .eq("companyId", companyId)
+                .order("id")
+          )
+        : Promise.resolve(none),
+      orderIds.length > 0
+        ? fetchAllByIds<{ id: string; shippingCost: number | null }>(
+            orderIds,
+            (batch) =>
+              client
+                .from("salesOrderShipment")
+                .select("id, shippingCost")
+                .in("id", batch)
+                .eq("companyId", companyId)
+                .order("id")
+          )
+        : Promise.resolve(none),
+      // Every line of the orders' other invoices: paged, since a long-running
+      // order can pass the 1,000 rows one read returns.
+      orderIds.length > 0
+        ? fetchAllByIds<{
+            invoiceId: string;
+            salesOrderId: string | null;
+            salesOrderLineId: string | null;
+            quantity: number | null;
+            addOnCost: number | null;
+            nonTaxableAddOnCost: number | null;
+            shippingCost: number | null;
+            salesInvoice: { status: string };
+          }>(orderIds, (batch) =>
+            client
+              .from("salesInvoiceLine")
+              .select(
+                "invoiceId, salesOrderId, salesOrderLineId, quantity, addOnCost, nonTaxableAddOnCost, shippingCost, salesInvoice!salesInvoiceLine_invoiceId_fkey!inner(status)"
+              )
+              .in("salesOrderId", batch)
+              .neq("invoiceId", invoiceId)
+              .neq("salesInvoice.status", "Voided")
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none)
+    ]);
+  const failed =
+    orderLines.error ??
+    contractLines.error ??
+    orders.error ??
+    orderShipments.error ??
+    otherLines.error;
+  if (failed) return { data: null, error: failed as PostgrestError };
+
+  const billingLines = otherLines.data ?? [];
+  const otherInvoiceIds = [
+    ...new Set(billingLines.map((line) => line.invoiceId))
+  ];
+  const otherShipments =
+    otherInvoiceIds.length > 0
+      ? await fetchAllByIds<{ id: string; shippingCost: number | null }>(
+          otherInvoiceIds,
+          (batch) =>
+            client
+              .from("salesInvoiceShipment")
+              .select("id, shippingCost")
+              .in("id", batch)
+              .eq("companyId", companyId)
+              .order("id")
+        )
+      : none;
+  if (otherShipments.error) return { data: null, error: otherShipments.error };
+
+  const billedByLine = new Map<
+    string,
+    Record<(typeof ORDER_LINE_CHARGE_FIELDS)[number], number> & {
+      unpostedQuantity: number;
+      invoices: Set<string>;
+    }
+  >();
+  for (const line of billingLines) {
+    if (!line.salesOrderLineId) continue;
+    const billed = billedByLine.get(line.salesOrderLineId) ?? {
+      addOnCost: 0,
+      nonTaxableAddOnCost: 0,
+      shippingCost: 0,
+      unpostedQuantity: 0,
+      invoices: new Set<string>()
+    };
+    billed.invoices.add(line.invoiceId);
+    for (const field of ORDER_LINE_CHARGE_FIELDS) {
+      billed[field] += line[field] ?? 0;
+    }
+    // A posted invoice's quantity is in `quantityToInvoice` already; a Draft's
+    // and a Pending one's (its post still running) is not.
+    if (UNPOSTED_INVOICE_STATUSES.has(line.salesInvoice.status)) {
+      billed.unpostedQuantity += line.quantity ?? 0;
+    }
+    billedByLine.set(line.salesOrderLineId, billed);
+  }
+
+  // An invoice's own shipping counts against every order it bills from.
+  const shippingByInvoice = new Map(
+    (otherShipments.data ?? []).map((row) => [row.id, row.shippingCost ?? 0])
+  );
+  const billedShippingByOrder = new Map<string, number>();
+  const counted = new Set<string>();
+  for (const line of billingLines) {
+    if (!line.salesOrderId) continue;
+    const key = `${line.salesOrderId}:${line.invoiceId}`;
+    if (counted.has(key)) continue;
+    counted.add(key);
+    billedShippingByOrder.set(
+      line.salesOrderId,
+      (billedShippingByOrder.get(line.salesOrderId) ?? 0) +
+        (shippingByInvoice.get(line.invoiceId) ?? 0)
+    );
+  }
+
+  const contractBilled = new Set(
+    (contractLines.data ?? []).flatMap((line) => line.salesOrderLineId ?? [])
+  );
+
+  const orderShippingById = new Map(
+    (orderShipments.data ?? []).map((row) => [row.id, row.shippingCost ?? 0])
+  );
+
+  if (rate.error) {
+    logger.warning("Could not read today's exchange rate for the post checks", {
+      companyId,
+      invoiceId,
+      currencyCode,
+      error: rate.error
+    });
+  }
+
+  return {
+    data: {
+      orderLines: (orderLines.data ?? []).map((line) => {
+        const billed = billedByLine.get(line.id);
+        return {
+          salesOrderLineId: line.id,
+          // Null when the order line was never priced: not an agreed $0.
+          unitPrice: line.unitPrice,
+          orderedQuantity: line.saleQuantity ?? 0,
+          remainingQuantity: line.quantityToInvoice ?? 0,
+          unpostedQuantity: billed?.unpostedQuantity ?? 0,
+          otherInvoices: billed?.invoices.size ?? 0,
+          billedByContract: contractBilled.has(line.id),
+          charges: {
+            addOnCost: {
+              charge: line.addOnCost ?? 0,
+              billed: billed?.addOnCost ?? 0
+            },
+            nonTaxableAddOnCost: {
+              charge: line.nonTaxableAddOnCost ?? 0,
+              billed: billed?.nonTaxableAddOnCost ?? 0
+            },
+            shippingCost: {
+              charge: line.shippingCost ?? 0,
+              billed: billed?.shippingCost ?? 0
+            }
+          }
+        };
+      }),
+      // The invoice's shipping covers the orders in this order: a stable one,
+      // so the same invoice always names the same order.
+      orders: [...(orders.data ?? [])]
+        .sort((a, b) => a.salesOrderId.localeCompare(b.salesOrderId))
+        .map((order) => ({
+          salesOrderId: order.id,
+          readableId: order.salesOrderId,
+          unbilledShipping: Math.max(
+            0,
+            (orderShippingById.get(order.id) ?? 0) -
+              (billedShippingByOrder.get(order.id) ?? 0)
+          )
+        })),
+      // A missing rate is an error from `get_exchange_rate`, never 1: the
+      // check then decides nothing rather than guess.
+      currentExchangeRate: rate.error ? null : rate.data
+    },
+    error: null
+  };
 }
 
 export async function updatePurchaseInvoiceExchangeRate(

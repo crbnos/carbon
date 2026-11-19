@@ -853,6 +853,9 @@ msgstr "{alreadyPlannedItemCount} pièces ignorées – elles ont déjà des ord
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} de {0} comptabilisé vers {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount} de frais de la ligne de commande non facturés"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% des dettes fournisseurs"
 
@@ -880,6 +883,9 @@ msgstr "{assigned, plural, one {Assigné pour # jour ouvrable} other {Assigné p
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {En retard sur cible de # jour} other {En retard sur cible de # jours}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# ligne est facturée par un contrat créé à partir de sa commande} other {# lignes sont facturées par des contrats créés à partir de leur commande}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# article facturable attend la revue} other {# articles facturables attendent la revue}}"
 
@@ -897,6 +903,9 @@ msgstr "Majoration {categoryLabel} pour la quantité {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Envisagez de pointer cette pièce directement vers le successeur final."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# ligne omet les suppléments ou les frais de port de sa commande} other {# lignes omettent les suppléments ou les frais de port de leur commande}}"
 
 msgid "{code} counted"
 msgstr "{code} dénombré"
@@ -1229,6 +1238,12 @@ msgstr "{names} doivent correspondre — chargement séparé"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} pièces ignorées — rien à fabriquer"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# ligne sans prix} other {# lignes sans prix}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# ligne sans quantité} other {# lignes sans quantité}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} sur {denominator}"
 
@@ -1251,12 +1266,18 @@ msgstr "{openedTotal} ouverts, {closedTotal} clôturés"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# saisie de temps n'est pas encore comptabilisée} other {# saisies de temps ne sont pas encore comptabilisées}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} a {amount} de frais de port qui ne figurent sur aucune facture"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} sera rouvert pour modification en tant que révision {0}. Le document déjà envoyé au fournisseur reste inchangé jusqu'à ce que vous le finalisiez et le renvoiez."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# emprunt a dépassé sa date d'échéance du remboursement} other {# emprunts ont dépassé leur date d'échéance du remboursement}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# ligne facture plus que ce qui reste à facturer sur sa commande} other {# lignes facturent plus que ce qui reste à facturer sur leur commande}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} doit à {lender}, exigible le {due}"
@@ -1794,6 +1815,9 @@ msgstr "Un consommable est un article physique utilisé pour fabriquer une pièc
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Un numéro d'article contractuel sur une ligne de contrat : 4 chiffres, comme 0001. Une facture de facturation de projet affiche un montant séparé par CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "Un contrat créé à partir de la commande facture cette ligne"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Un paramètre de contrat pour les rapports fiscaux R&D. Le coût d'un projet Direct dans le cadre d'un contrat financé n'est pas une dépense de recherche qualifiée ; par défaut, un contrat avec une ligne au coût majoré ou au temps et matériaux est considéré comme financé."
@@ -7038,11 +7062,17 @@ msgstr "Chat"
 msgid "Check"
 msgstr "Contrôle"
 
+msgid "Check before posting"
+msgstr "Vérifier avant comptabilisation"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Cochez les opérations à gauche pour créer le lot."
 
 msgid "Check Quantity"
 msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "Vérifiez les informations ci-dessous. Une facture comptabilisée ne peut plus être modifiée."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Vérifiez le registre des articles pour tous les articles ayant une quantité disponible négative à la fin de la période — généralement un reçu manquant ou une comptabilisation désordonnée qui fausse la valeur des stocks et le coût des marchandises vendues. Marquez comme fait une fois examiné, ou ignorez avec une raison."
@@ -20389,6 +20419,9 @@ msgstr "Aucune ligne de remboursement comptabilisée"
 msgid "No posted supplier invoice lines"
 msgstr "Aucune ligne de facture fournisseur comptabilisée"
 
+msgid "No price"
+msgstr "Aucun prix"
+
 msgid "No pricing for selected quantity"
 msgstr "Aucune tarification pour la quantité sélectionnée"
 
@@ -20439,6 +20472,9 @@ msgstr "Aucun projet pour l'instant"
 
 msgid "No purchases in this period"
 msgstr "Aucun achat dans cette période"
+
+msgid "No quantity"
+msgstr "Aucune quantité"
 
 msgid "No Quote"
 msgstr "Refus de devis"
@@ -20797,6 +20833,9 @@ msgstr "Aucun"
 
 msgid "None (full page)"
 msgstr ""
+
+msgid "None (Net {defaultTermDays})"
+msgstr "Aucun ({defaultTermDays} jours net)"
 
 msgid "None available"
 msgstr "Aucune disponible"
@@ -21379,6 +21418,9 @@ msgstr "Seulement {quantity} là"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "Seulement {quantity} avec un numéro de série là"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "Il ne reste que {remaining} à facturer sur la commande"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Seules les procédures en brouillon sont modifiables. Créez une nouvelle version pour modifier une procédure active ou archivée."
@@ -31659,6 +31701,9 @@ msgstr "Le numéro de révision de la pièce"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "L'actif du droit d'utilisation et le passif de location sont au bilan, et un coût de location linéaire est comptabilisé chaque mois."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "La commande client n'a pas pu être lue, elle n'a donc pas été vérifiée par rapport à cette facture."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "La ligne de commande client pour laquelle cet ordre de fabrication a été créé, reliant l'ordre de fabrication aux besoins du client."
 
@@ -32244,6 +32289,9 @@ msgstr "Cette invitation pour rejoindre {0} a expiré. Vous pouvez demander une 
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Cette facture n'a pas de date d'échéance utilisable — choisissez-en une pour Stripe."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "Cette facture utilise un taux de change de 1 pour {currencyCode}, mais le taux du jour est {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Cette facture sera facturée au client Stripe déjà lié à ce client Carbon. Pour modifier ses détails, modifiez-le dans le tableau de bord Stripe."
