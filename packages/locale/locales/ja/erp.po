@@ -29882,9 +29882,6 @@ msgstr "仕入先クレジット"
 msgid "Supplier Credits"
 msgstr "仕入先クレジット"
 
-msgid "Supplier default"
-msgstr "仕入先のデフォルト"
-
 msgid "Supplier Email"
 msgstr "仕入先メール"
 
@@ -29936,6 +29933,9 @@ msgstr "仕入先の場所"
 
 msgid "Supplier Name"
 msgstr "仕入先名"
+
+msgid "Supplier or company default"
+msgstr "仕入先または会社のデフォルト"
 
 msgid "Supplier Order Number"
 msgstr "仕入先注文番号"

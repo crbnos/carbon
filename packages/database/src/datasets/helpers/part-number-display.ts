@@ -6,7 +6,7 @@ import type { Ctx } from "../types.ts";
 
 /**
  * The line triggers that stamp part number display skip a dataset apply
- * (`app.sync_in_progress`), so the apply stamps the seeded lines here as those
+ * (`app.dataset_apply`), so the apply stamps the seeded lines here as those
  * triggers do outside a seed.
  */
 const LINE_STAMPS: readonly string[] = [

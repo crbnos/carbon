@@ -84,6 +84,7 @@ import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   isPurchaseOrderEditLocked,
+  isPurchaseOrderLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing/purchasing.models";
 import type {
@@ -161,6 +162,10 @@ const PurchaseOrderLineForm = ({
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
+  // A sent order keeps printing the part numbers it was sent with.
+  const isPartNumberDisplayLocked = isPurchaseOrderLocked(
+    routeData?.purchaseOrder?.status
+  );
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.purchaseOrderLineType as ItemType
@@ -771,16 +776,18 @@ const PurchaseOrderLineForm = ({
                         />
 
                         {/* Empty on a new line: the supplier's choice, else the
-                            company default. Empty on a saved line: unchanged. */}
+                            company default. A saved line keeps a value, so its
+                            select has nothing to clear. */}
                         <PartNumberDisplay
                           party="supplier"
                           name="partNumberDisplay"
                           label={t`Part Numbers`}
-                          isOptional
+                          isOptional={!isEditing}
+                          isReadOnly={isPartNumberDisplayLocked}
                           placeholder={
                             isEditing
                               ? t`Not set: prints as before`
-                              : t`Supplier default`
+                              : t`Supplier or company default`
                           }
                         />
 

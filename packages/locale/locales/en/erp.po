@@ -29882,9 +29882,6 @@ msgstr "Supplier Credit"
 msgid "Supplier Credits"
 msgstr "Supplier Credits"
 
-msgid "Supplier default"
-msgstr "Supplier default"
-
 msgid "Supplier Email"
 msgstr "Supplier Email"
 
@@ -29936,6 +29933,9 @@ msgstr "Supplier Location"
 
 msgid "Supplier Name"
 msgstr "Supplier Name"
+
+msgid "Supplier or company default"
+msgstr "Supplier or company default"
 
 msgid "Supplier Order Number"
 msgstr "Supplier Order Number"

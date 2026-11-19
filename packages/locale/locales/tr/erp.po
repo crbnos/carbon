@@ -29882,9 +29882,6 @@ msgstr "Tedarikçi Kredisi"
 msgid "Supplier Credits"
 msgstr "Tedarikçi Kredileri"
 
-msgid "Supplier default"
-msgstr "Tedarikçi varsayılanı"
-
 msgid "Supplier Email"
 msgstr "Tedarikçi E-postası"
 
@@ -29936,6 +29933,9 @@ msgstr "Tedarikçi Konumu"
 
 msgid "Supplier Name"
 msgstr "Tedarikçi Adı"
+
+msgid "Supplier or company default"
+msgstr "Tedarikçi veya şirket varsayılanı"
 
 msgid "Supplier Order Number"
 msgstr "Tedarikçi Sipariş Numarası"

@@ -5229,3 +5229,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
 
 **Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
+
+## A trigger that skips demo data reads `app.dataset_apply`, not `app.sync_in_progress`
+
+**Context:** The part number display triggers (`20261119123627_supplier-part-number-display.sql`, `20261119125953_customer-part-number-display.sql`) first skipped when `app.sync_in_progress` was set, so the dataset apply could stamp the seeded lines itself.
+
+**Problem:** `app.sync_in_progress` is also the accounting sync's flag (`withTriggersDisabled`, `@carbon/ee/accounting`). The Xero purchase order pull deletes and re-inserts every line under it, so every synced line would have come back with no display choice and no copy of the supplier part number.
+
+**Rule:** A trigger that must step aside only for a demo dataset apply tests `current_setting('app.dataset_apply', true) = 'true'`, which only `applyDatasetTiers` sets. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
+
+**Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.

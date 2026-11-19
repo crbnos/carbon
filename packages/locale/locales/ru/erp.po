@@ -29882,9 +29882,6 @@ msgstr "Кредит поставщика"
 msgid "Supplier Credits"
 msgstr "Кредиты поставщика"
 
-msgid "Supplier default"
-msgstr "По умолчанию у поставщика"
-
 msgid "Supplier Email"
 msgstr "Электронная почта поставщика"
 
@@ -29936,6 +29933,9 @@ msgstr "Местоположение поставщика"
 
 msgid "Supplier Name"
 msgstr "Название поставщика"
+
+msgid "Supplier or company default"
+msgstr "По умолчанию у поставщика или организации"
 
 msgid "Supplier Order Number"
 msgstr "Номер заказа поставщика"

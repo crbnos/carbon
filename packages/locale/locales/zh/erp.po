@@ -29882,9 +29882,6 @@ msgstr "供应商贷项凭证"
 msgid "Supplier Credits"
 msgstr "供应商贷项凭证"
 
-msgid "Supplier default"
-msgstr "供应商默认值"
-
 msgid "Supplier Email"
 msgstr "供应商电子邮件"
 
@@ -29936,6 +29933,9 @@ msgstr "供应商位置"
 
 msgid "Supplier Name"
 msgstr "供应商名称"
+
+msgid "Supplier or company default"
+msgstr "供应商或公司默认值"
 
 msgid "Supplier Order Number"
 msgstr "供应商订单号"

@@ -28,17 +28,16 @@ export function isPartNumberDisplay(
 
 /**
  * What a legacy line (a null display choice) prints, per surface. Each value
- * repeats what the surface printed before the setting existed. The purchase
- * order PDF title prints our part number, and the "Supplier Part ID:" row the
- * supplier's: see `purchaseOrder/vars.ts`.
+ * repeats what the surface printed before the setting existed. Two surfaces
+ * print their legacy lines in code instead: the packing slip prints our part
+ * number, and the purchase order PDF prints our part number as the title with
+ * the supplier's in the "Supplier Part ID:" row (`purchaseOrder/vars.ts`).
  */
 export const LEGACY_PART_NUMBER_DISPLAY = {
   quote: "Ours First",
   sharedQuote: "Ours Only",
   salesOrder: "Ours First",
   salesInvoice: "Ours Only",
-  packingSlip: "Ours Only",
-  purchaseOrder: "Ours Only",
   purchaseOrderEmail: "Ours First"
 } as const satisfies Record<string, PartNumberDisplay>;
 

@@ -29882,9 +29882,6 @@ msgstr "Avoir fournisseur"
 msgid "Supplier Credits"
 msgstr "Avoirs fournisseur"
 
-msgid "Supplier default"
-msgstr "Par défaut du fournisseur"
-
 msgid "Supplier Email"
 msgstr "E-mail du fournisseur"
 
@@ -29936,6 +29933,9 @@ msgstr "Localisation du fournisseur"
 
 msgid "Supplier Name"
 msgstr "Nom du fournisseur"
+
+msgid "Supplier or company default"
+msgstr "Par défaut du fournisseur ou de la société"
 
 msgid "Supplier Order Number"
 msgstr "Numéro de commande fournisseur"
