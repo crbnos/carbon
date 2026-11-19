@@ -853,6 +853,9 @@ msgstr "{alreadyPlannedItemCount} деталей пропущено — у ни�
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} из {0} проведено {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "Не выставлено начислений по строке заказа на {amount}"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% кредиторской задолженности"
 
@@ -880,6 +883,9 @@ msgstr "{assigned, plural, one {Назначено на # рабочий ден�
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Отставание от плана на # день} other {Отставание от плана на # дней}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {За # строку счет-фактуру выставляет контракт, созданный из ее заказа} few {За # строки счета-фактуры выставляют контракты, созданные из их заказов} many {За # строк счета-фактуры выставляют контракты, созданные из их заказов} other {За # строки счета-фактуры выставляют контракты, созданные из их заказов}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# биллинговый элемент ожидает рассмотрения} other {# биллинговых элементов ожидают рассмотрения}}"
 
@@ -897,6 +903,9 @@ msgstr "{categoryLabel}: наценка для количества {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# строка не включает дополнительные услуги или доставку из заказа} few {# строки не включают дополнительные услуги или доставку из заказа} many {# строк не включают дополнительные услуги или доставку из заказа} other {# строки не включают дополнительные услуги или доставку из заказа}}"
 
 msgid "{code} counted"
 msgstr "{code} подсчитано"
@@ -1229,6 +1238,12 @@ msgstr "{name} возвращается!"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# строка без цены} few {# строки без цены} many {# строк без цены} other {# строки без цены}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# строка без количества} few {# строки без количества} many {# строк без количества} other {# строки без количества}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} из {denominator}"
 
@@ -1251,12 +1266,18 @@ msgstr "{openedTotal} открыто, {closedTotal} закрыто"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# запись времени еще не проведена} other {# записи времени еще не проведены}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "В заказе {order} есть доставка на сумму {amount}, которой нет ни в одном счете-фактуре"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} будет переоткрыт для редактирования как ревизия {0}. Отправленный поставщику документ останется неизменным, пока вы не завершите и не переотправите заказ."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# заимствование просрочено по дате возврата} other {# заимствования просрочены по дате возврата}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# строка выставляет счет-фактуру на сумму больше остатка по заказу} few {# строки выставляют счета-фактуры на сумму больше остатка по заказу} many {# строк выставляют счета-фактуры на сумму больше остатка по заказу} other {# строки выставляют счета-фактуры на сумму больше остатка по заказу}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} должен {lender}, срок {due}"
@@ -1794,6 +1815,9 @@ msgstr "Расходный материал — это физическая но
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Номер строкового элемента контракта на строке контракта: 4 цифры, такие как 0001. Счет-фактура проекта показывает отдельную сумму на CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "Счет-фактуру за эту строку выставляет контракт, созданный из заказа"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Параметр контракта для отчетов налога на НИОКР. Стоимость прямого проекта в рамках финансируемого контракта не является квалифицированными расходами на исследования; По умолчанию контракт со строкой Cost Plus или Time & Materials считается финансируемым."
@@ -7038,11 +7062,17 @@ msgstr "Чат"
 msgid "Check"
 msgstr "Проверка"
 
+msgid "Check before posting"
+msgstr "Проверьте перед проведением"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
 
 msgid "Check Quantity"
 msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "Проверьте данные ниже. Проведенную счет-фактуру нельзя редактировать."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Проверьте реестр номенклатуры на наличие номенклатур с отрицательным количеством на складе на конец периода — обычно это недостающее поступление или неправильно проведённая операция, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
@@ -20389,6 +20419,9 @@ msgstr "Нет проведенных строк возмещения"
 msgid "No posted supplier invoice lines"
 msgstr "Нет проведенных строк счета-фактуры поставщика"
 
+msgid "No price"
+msgstr "Нет цены"
+
 msgid "No pricing for selected quantity"
 msgstr "Нет ценообразования для выбранного количества"
 
@@ -20439,6 +20472,9 @@ msgstr "Нет проектов"
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
+
+msgid "No quantity"
+msgstr "Нет количества"
 
 msgid "No Quote"
 msgstr "Отказ от предложения"
@@ -20797,6 +20833,9 @@ msgstr "Нет"
 
 msgid "None (full page)"
 msgstr ""
+
+msgid "None (Net {defaultTermDays})"
+msgstr "Нет (Net {defaultTermDays})"
 
 msgid "None available"
 msgstr "Нет доступных"
@@ -21379,6 +21418,9 @@ msgstr "Там только {quantity}"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "Там только {quantity} с серийным номером"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "В заказе для выставления счета-фактуры осталось только {remaining}"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Редактировать можно только процедуры в статусе «Черновик». Создайте новую версию, чтобы изменить активную или архивную процедуру."
@@ -31108,6 +31150,9 @@ msgstr "Себестоимость Запасов, признаваемая пр
 msgid "The invoice for this payment is drafted on this date"
 msgstr "Счет-фактура для этого платежа создается в эту дату"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
 
@@ -31655,6 +31700,9 @@ msgstr "Номер ревизии детали."
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Активы право пользования и обязательство лизинга отражаются в бухгалтерском балансе, и прямолинейная стоимость лизинга учитывается каждый месяц."
+
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "Заказ покупателя не удалось прочитать, поэтому он не был сверен с этим счетом-фактурой."
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."
@@ -32241,6 +32289,9 @@ msgstr "Приглашение присоединиться к {0} истекл�
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Эта Счет-фактура не имеет пригодной даты Срока выполнения — выберите одну для Stripe."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "В этом счете-фактуре для {currencyCode} используется курс 1, но курс на сегодня — {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."

@@ -394,7 +394,10 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   salesInvoiceLine: { events: true, statement: ["broadcast_table_changes"] },
-  salesInvoiceShipment: { events: true },
+  salesInvoiceShipment: {
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   salesOrder: {
     before: ["sync_update_sales_order_exchange_rate"],
     after: ["sync_advance_document_sequence"],

@@ -853,6 +853,9 @@ msgstr "{alreadyPlannedItemCount}个零件已跳过——它们已有未结的�
 msgid "{amount} of {0} posted to {element}"
 msgstr "已将 {amount} 的 {0} 过账到 {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "订单行费用中尚未开票的 {amount}"
+
 msgid "{apOverduePct}% of payables"
 msgstr "应付款项的{apOverduePct}%"
 
@@ -880,6 +883,9 @@ msgstr "{assigned, plural, one {已分配 # 个工作日} other {已分配 # 个
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# 行由其订单创建的合约开票} other {# 行由其订单创建的合约开票}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 项计费物料等待评审} other {# 项计费物料等待评审}}"
 
@@ -897,6 +903,9 @@ msgstr "{categoryLabel} 加价，数量 {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# 行未包含订单中的附加项或运费} other {# 行未包含订单中的附加项或运费}}"
 
 msgid "{code} counted"
 msgstr "{code} 已计数"
@@ -1229,6 +1238,12 @@ msgstr "{names} 必须匹配 — 需要单独一批"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# 行没有价格} other {# 行没有价格}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# 行没有数量} other {# 行没有数量}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
 
@@ -1251,12 +1266,18 @@ msgstr "已开启 {openedTotal}，已关闭 {closedTotal}"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# 条工时条目尚未过账} other {# 条工时条目尚未过账}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} 有 {amount} 的运费未包含在任何发票中"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# 项借出已逾期} other {# 项借出已逾期}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# 行开票量超过订单剩余可开票量} other {# 行开票量超过订单剩余可开票量}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} 欠 {lender}，应付期限 {due}"
@@ -1794,6 +1815,9 @@ msgstr "耗材是用来制造零件的物理物料，可以在多个工单中使
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "合同行的合同行项目号 (CLIN)：4 位数字，如 0001。项目计费发票为每个 CLIN 显示单独的金额。"
+
+msgid "A contract made from the order bills this line"
+msgstr "由该订单创建的合约将为此行开票"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D 税收报告的合同设置。有资金支持的合同下的直接项目成本不是合格的研究费用。默认情况下，有成本加成或工料合约行的合同计为有资金支持。"
@@ -7038,11 +7062,17 @@ msgstr "聊天"
 msgid "Check"
 msgstr "检查"
 
+msgid "Check before posting"
+msgstr "过账前请检查"
+
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
 
 msgid "Check Quantity"
 msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "请检查以下详细信息。已过账的发票无法编辑。"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
@@ -20389,6 +20419,9 @@ msgstr "没有已过账报销行"
 msgid "No posted supplier invoice lines"
 msgstr "没有已过账供应商发票行"
 
+msgid "No price"
+msgstr "无价格"
+
 msgid "No pricing for selected quantity"
 msgstr "所选数量无定价"
 
@@ -20439,6 +20472,9 @@ msgstr "还没有项目"
 
 msgid "No purchases in this period"
 msgstr "此期间无采购"
+
+msgid "No quantity"
+msgstr "无数量"
 
 msgid "No Quote"
 msgstr "不报价"
@@ -20797,6 +20833,9 @@ msgstr "无"
 
 msgid "None (full page)"
 msgstr ""
+
+msgid "None (Net {defaultTermDays})"
+msgstr "无（净{defaultTermDays}天）"
 
 msgid "None available"
 msgstr "无可用项"
@@ -21379,6 +21418,9 @@ msgstr "该处仅有 {quantity}"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "该处仅有 {quantity} 带序列号"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "订单中仅剩 {remaining} 可开票"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "仅草稿程序文件可编辑。创建新版本以更改启用或已归档程序文件。"
@@ -31108,6 +31150,9 @@ msgstr "发货过账时确认的库存管理成本，按物料的成本核算方
 msgid "The invoice for this payment is drafted on this date"
 msgstr "此付款的发票在此日期草稿完成"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
@@ -31655,6 +31700,9 @@ msgstr "零件的修订版号"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用权资产和租赁负债在资产负债表上列示，每月预提一笔直线租赁成本。"
+
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "无法读取销售订单，因此未与此发票进行核对。"
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "为供应而创建此作业的销售订单行，将作业与其后的客户需求联系起来。"
@@ -32241,6 +32289,9 @@ msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您�
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "此发票没有可用的截止日期——为Stripe选择一个。"
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "此发票对 {currencyCode} 使用汇率 1，但今日汇率为 {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"

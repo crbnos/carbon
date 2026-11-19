@@ -557,8 +557,35 @@ fn run_optimize(
         .map_err(|e| ActionErr::new(e.code, e.message))?;
     let detected_format = format.name();
 
-    let src = load_source(path, format, &head, opts)?;
-    let glb = src.bytes();
+    let (src, boxed_parts) = load_source(path, format, &head, opts)?;
+    let mut outcome = optimize_loaded(src.bytes(), detected_format, detected_via, opts)?;
+    if let Some(warning) = boxed_parts_warning(&boxed_parts) {
+        outcome.warnings.push(warning);
+    }
+    Ok(outcome)
+}
+
+/// At most ten names: a model can have thousands.
+fn boxed_parts_warning(names: &[String]) -> Option<String> {
+    if names.is_empty() {
+        return None;
+    }
+    let listed: Vec<&str> = names.iter().take(10).map(String::as_str).collect();
+    let more = names.len().saturating_sub(listed.len());
+    Some(format!(
+        "{} part(s) could not be meshed and are shown as their bounding box: {}{}",
+        names.len(),
+        listed.join(", "),
+        if more > 0 { format!(" and {more} more") } else { String::new() }
+    ))
+}
+
+fn optimize_loaded(
+    glb: &[u8],
+    detected_format: &'static str,
+    detected_via: &'static str,
+    opts: &Opts,
+) -> Result<Outcome, ActionErr> {
     let input_bytes = glb.len();
 
     // One optimize pass over the tessellated GLB. Every source is GLB here
@@ -758,30 +785,36 @@ fn map_source(path: &str) -> Result<memmap2::Mmap, ActionErr> {
         .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))
 }
 
-/// Load the resolved format into GLB bytes.
-fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<Src, ActionErr> {
+/// Load the resolved format into GLB bytes, with the names of the parts shown
+/// as their bounding box (B-rep sources only).
+fn load_source(
+    path: &str,
+    format: Format,
+    head: &[u8],
+    opts: &Opts,
+) -> Result<(Src, Vec<String>), ActionErr> {
+    let brep = |c: converter::convert::Conversion| {
+        let boxed = c.root.proxy_part_names();
+        (Src::Owned(c.glb), boxed)
+    };
     match format {
-        Format::Step => {
-            let glb = converter::convert::convert_step_head(path, head, opts.lin, opts.ang)
-                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
-                .glb;
-            Ok(Src::Owned(glb))
-        }
+        Format::Step => converter::convert::convert_step_head(path, head, opts.lin, opts.ang)
+            .map(brep)
+            .map_err(|e| ActionErr::new("tessellation_failed", e.message)),
         Format::Xbf => {
             // Compacted retained raw (BinXCAF). Geometry already mm; tessellate
             // like STEP. Lets reoptimise run off the compacted source.
-            let glb = converter::convert::convert_xbf(path, opts.lin, opts.ang)
-                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
-                .glb;
-            Ok(Src::Owned(glb))
+            converter::convert::convert_xbf(path, opts.lin, opts.ang)
+                .map(brep)
+                .map_err(|e| ActionErr::new("tessellation_failed", e.message))
         }
         Format::Stl => {
             let bytes = map_source(path)?;
             let glb = optimize::stl_to_glb(&bytes)
                 .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
-            Ok(Src::Owned(glb))
+            Ok((Src::Owned(glb), Vec::new()))
         }
-        Format::Glb => Ok(Src::Mapped(map_source(path)?)),
+        Format::Glb => Ok((Src::Mapped(map_source(path)?), Vec::new())),
         Format::Gltf => {
             use std::io::Write as _;
             // Repack text glTF → GLB with a streaming base64 decode, then mmap the
@@ -807,7 +840,7 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
                 .map_err(|e| ActionErr::new("invalid_input", format!("open temp glb: {e}")))?;
             let glb_map = unsafe { memmap2::Mmap::map(&glb_file) }
                 .map_err(|e| ActionErr::new("invalid_input", format!("mmap temp glb: {e}")))?;
-            Ok(Src::MappedTemp(glb_map, temp_path))
+            Ok((Src::MappedTemp(glb_map, temp_path), Vec::new()))
         }
         // Plain mesh formats: parse → triangle-soup GLB (the optimiser's weld
         // pass reconstructs sharing) → the bounded GLB path.
@@ -822,21 +855,15 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
                 _ => optimize::amf_to_glb(&bytes),
             }
             .map_err(|e| ActionErr::new("invalid_input", e.message))?;
-            Ok(Src::Owned(glb))
+            Ok((Src::Owned(glb), Vec::new()))
         }
         // Exact B-rep sources tessellated by OCCT, same walk as STEP.
-        Format::Iges => {
-            let glb = converter::convert::convert_iges(path, opts.lin, opts.ang)
-                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
-                .glb;
-            Ok(Src::Owned(glb))
-        }
-        Format::Brep => {
-            let glb = converter::convert::convert_brep(path, opts.lin, opts.ang)
-                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
-                .glb;
-            Ok(Src::Owned(glb))
-        }
+        Format::Iges => converter::convert::convert_iges(path, opts.lin, opts.ang)
+            .map(brep)
+            .map_err(|e| ActionErr::new("tessellation_failed", e.message)),
+        Format::Brep => converter::convert::convert_brep(path, opts.lin, opts.ang)
+            .map(brep)
+            .map_err(|e| ActionErr::new("tessellation_failed", e.message)),
     }
 }
 
