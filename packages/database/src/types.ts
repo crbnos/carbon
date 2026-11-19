@@ -8533,6 +8533,7 @@ export type Database = {
           showSupplierReadableId: boolean
           skipApprovalForPlanningPurchaseOrders: boolean
           standardWeeklyHours: number
+          supplierPartNumberDisplay: Database["public"]["Enums"]["partNumberDisplay"]
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
           timekeepingControls: Database["public"]["Enums"]["timekeepingControls"]
@@ -8635,6 +8636,7 @@ export type Database = {
           showSupplierReadableId?: boolean
           skipApprovalForPlanningPurchaseOrders?: boolean
           standardWeeklyHours?: number
+          supplierPartNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"]
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           timekeepingControls?: Database["public"]["Enums"]["timekeepingControls"]
@@ -8737,6 +8739,7 @@ export type Database = {
           showSupplierReadableId?: boolean
           skipApprovalForPlanningPurchaseOrders?: boolean
           standardWeeklyHours?: number
+          supplierPartNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"]
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           timekeepingControls?: Database["public"]["Enums"]["timekeepingControls"]
@@ -59859,6 +59862,9 @@ export type Database = {
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
+          partNumberDisplay:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           planningGroupId: string | null
           projectElementId: string | null
           projectId: string | null
@@ -59914,6 +59920,9 @@ export type Database = {
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
+          partNumberDisplay?:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           planningGroupId?: string | null
           projectElementId?: string | null
           projectId?: string | null
@@ -59969,6 +59978,9 @@ export type Database = {
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
+          partNumberDisplay?:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           planningGroupId?: string | null
           projectElementId?: string | null
           projectId?: string | null
@@ -78882,6 +78894,9 @@ export type Database = {
           intercompanyCompanyId: string | null
           logo: string | null
           name: string
+          partNumberDisplay:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           phone: string | null
           purchasingContactId: string | null
           readableId: string
@@ -78911,6 +78926,9 @@ export type Database = {
           intercompanyCompanyId?: string | null
           logo?: string | null
           name: string
+          partNumberDisplay?:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           phone?: string | null
           purchasingContactId?: string | null
           readableId?: string
@@ -78940,6 +78958,9 @@ export type Database = {
           intercompanyCompanyId?: string | null
           logo?: string | null
           name?: string
+          partNumberDisplay?:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           phone?: string | null
           purchasingContactId?: string | null
           readableId?: string
@@ -98783,6 +98804,9 @@ export type Database = {
           modelSize: number | null
           modelUploadId: string | null
           ownerId: string | null
+          partNumberDisplay:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           planningGroupId: string | null
           projectElementId: string | null
           projectId: string | null
@@ -106415,6 +106439,9 @@ export type Database = {
           name: string | null
           orderCount: number | null
           partCount: number | null
+          partNumberDisplay:
+            | Database["public"]["Enums"]["partNumberDisplay"]
+            | null
           phone: string | null
           purchasingContactId: string | null
           readableId: string | null
@@ -112434,6 +112461,11 @@ export type Database = {
         | "Inspection"
         | "Outside Processing"
       parameterSource: "Manual" | "Sum" | "Min" | "Max" | "Formula" | "Item"
+      partNumberDisplay:
+        | "Ours First"
+        | "Theirs First"
+        | "Theirs Only"
+        | "Ours Only"
       payableLineType:
         | "Comment"
         | "G/L Account"

@@ -366,7 +366,8 @@ export const SUPPLIERS = [
     stage: "Qualified" as const,
     type: "Materials",
     phone: "+1-219-555-0730",
-    website: "https://lakelandsteel.com"
+    website: "https://lakelandsteel.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Summit Bearing Supply",

@@ -7246,6 +7246,12 @@ msgstr "Choisir la destination"
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Choisissez si l'explorateur de nomenclature sur les articles, les devis et les ordres de fabrication étiquette chaque ligne avec sa description ou son ID article."
 
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Choisissez les numéros de pièce à imprimer sur les nouvelles lignes de bon de commande. Un fournisseur peut remplacer ce choix, et chaque ligne peut le modifier."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Choisissez les numéros de pièce à imprimer sur les nouvelles lignes de devis, de commande, de facture et de bon de livraison. Un client peut remplacer ce choix."
+
 msgid "Choose your style"
 msgstr "Choisissez votre style"
 
@@ -17436,6 +17442,9 @@ msgstr "Statut de la ligne"
 msgid "Line Supplier Part ID"
 msgstr "Réf. fournisseur de la ligne"
 
+msgid "Line Supplier Part Number"
+msgstr "Numéro de pièce fournisseur de la ligne"
+
 msgid "Line Total"
 msgstr "Total de ligne"
 
@@ -18621,6 +18630,9 @@ msgstr "Temps manquant"
 
 msgid "Missing:"
 msgstr "Manquants :"
+
+msgid "Mixed"
+msgstr "Mixte"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20954,6 +20966,9 @@ msgstr "non défini dans les paramètres de la société"
 msgid "Not set up"
 msgstr "Non configuré"
 
+msgid "Not set: prints as before"
+msgstr "Non défini : impression inchangée"
+
 msgid "Not started"
 msgstr "Non commencé"
 
@@ -22078,6 +22093,15 @@ msgstr "Autre Type"
 msgid "Otherwise"
 msgstr "Sinon"
 
+msgid "Our part number only"
+msgstr "Notre numéro de pièce uniquement"
+
+msgid "Our part number, then the customer's"
+msgstr "Notre numéro de pièce, puis celui du client"
+
+msgid "Our part number, then the supplier's"
+msgstr "Notre numéro de pièce, puis celui du fournisseur"
+
 msgid "Out"
 msgstr "Hors"
 
@@ -22395,6 +22419,15 @@ msgstr "Les délais d'approvisionnement des pièces sont mis à jour à partir d
 
 msgid "Part Number"
 msgstr "Numéro de pièce"
+
+msgid "Part Numbers"
+msgstr "Numéros de pièce"
+
+msgid "Part Numbers on Documents"
+msgstr "Numéros de pièce sur les documents"
+
+msgid "Part numbers on documents updated"
+msgstr "Numéros de pièce sur les documents mis à jour"
 
 msgid "Part Supersession"
 msgstr "Remplacement de pièce"
@@ -28181,6 +28214,9 @@ msgstr "Définir la version {0} comme version active ?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Définissez votre emplacement par défaut dans les paramètres de profil pour sélectionner une unité de stockage."
 
+msgid "Sets every line of this document when you save."
+msgstr "Applique ce réglage à toutes les lignes de ce document à l'enregistrement."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Définit la garantie de main-d'œuvre d'un numéro de série lors de son expédition"
 
@@ -29846,6 +29882,9 @@ msgstr "Avoir fournisseur"
 msgid "Supplier Credits"
 msgstr "Avoirs fournisseur"
 
+msgid "Supplier default"
+msgstr "Par défaut du fournisseur"
+
 msgid "Supplier Email"
 msgstr "E-mail du fournisseur"
 
@@ -30880,6 +30919,12 @@ msgstr "Le client dont ce lien de portail affiche les commandes. Le lien ne dema
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Référence propre du client pour ce document - typiquement son numéro RFQ ou PO sur son système; apparaît sur le résultat imprimable et est reportée sur tout document dans lequel celui-ci se convertit."
 
+msgid "The customer's part number only"
+msgstr "Le numéro de pièce du client uniquement"
+
+msgid "The customer's part number, then ours"
+msgstr "Le numéro de pièce du client, puis le nôtre"
+
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "L'étiquette de révision du client pour son ID de pièce, lorsqu'elle diffère de la nôtre; épinglée au niveau de la référence croisée, non sur notre révision."
 
@@ -31295,6 +31340,9 @@ msgstr "L'état du cycle de vie de ce fournisseur - Actif, Inactif, Approbation 
 
 msgid "The lines could not be loaded."
 msgstr "Impossible de charger les lignes."
+
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "Les lignes impriment des numéros de pièce différents. Choisir une option applique ce réglage à toutes les lignes."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Le lien d'un morceau d'une commande d'un groupe de planification aux besoins d'un membre : Soft tant que la commande est ouverte (MRP peut le déplacer), Hard une fois qu'il est reçu ou terminé (jamais déplacé), ou Manual quand un planificateur le définit avec une raison."
@@ -31874,6 +31922,12 @@ msgstr "La référence propre du fournisseur pour cette commande (son numéro SO
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Le numéro de bordereau d'emballage ou d'expédition du fournisseur, enregistré pour audit; non utilisé par aucune logique de comptabilisation."
+
+msgid "The supplier's part number only"
+msgstr "Le numéro de pièce du fournisseur uniquement"
+
+msgid "The supplier's part number, then ours"
+msgstr "Le numéro de pièce du fournisseur, puis le nôtre"
 
 msgid "The supplier's return authorization number"
 msgstr "Le numéro d'autorisation de retour du fournisseur"

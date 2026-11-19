@@ -29,6 +29,7 @@ import { path } from "~/utils/path";
 import { EditorPanes } from "./DocumentTemplateEditor";
 import {
   changedNotes,
+  changedPartNumberDisplay,
   DocumentTemplateProvider,
   useDocumentTemplate,
   useEditorStore,
@@ -127,9 +128,13 @@ export default function DocumentEditModal({
               template: {
                 blocks: editor.template.blocks,
                 settings: editor.template.settings as DocumentSettings
-              }
+              },
+              partNumberParty:
+                DOCUMENT_EDIT_RECORDS[documentType].partNumberLines?.party ??
+                null
             }}
             initialNotes={editor.notes as JSONContent | null}
+            initialPartNumberDisplay={editor.partNumberDisplay}
             onSaved={({ notesChanged, stillEditing }) => {
               notesSaved.current ||= notesChanged;
               if (!stillEditing) close();
@@ -210,6 +215,7 @@ function DocumentEditBar({
   const isDirty = useIsDirty();
   const document = useEditorStore((s) => s.document);
   const notes = useEditorStore(changedNotes);
+  const partNumberDisplay = useEditorStore(changedPartNumberDisplay);
   const resetToTemplate = useEditorStore((s) => s.resetToTemplate);
   const [isDownloading, setIsDownloading] = useState(false);
   if (!document) return null;
@@ -225,6 +231,9 @@ function DocumentEditBar({
       formData.append("settings", JSON.stringify(settings));
       formData.append("intent", "download");
       if (notes !== undefined) formData.append("notes", notes);
+      if (partNumberDisplay !== undefined) {
+        formData.append("partNumberDisplay", partNumberDisplay);
+      }
       const response = await fetch(previewPath, {
         method: "post",
         body: formData

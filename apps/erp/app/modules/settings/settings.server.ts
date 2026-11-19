@@ -24,6 +24,7 @@ import {
   validateDocumentEdit,
   validateTemplateText
 } from "@carbon/documents/template";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
   getUnmappedRequiredAccounts,
@@ -129,6 +130,7 @@ import {
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
+  DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
   documentEditPermissions
 } from "./settings.utils";
@@ -518,7 +520,8 @@ export const updateProductionSettings = defineServiceFn({
  * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
- * and the default CC on supplier emails.
+ * the default CC on supplier emails, and which part numbers new purchase
+ * order lines print (a supplier's own choice overrides it).
  *
  * @mcp
  */
@@ -537,7 +540,8 @@ export const updatePurchasingSettings = defineServiceFn({
     updateLeadTimesOnReceipt: z.boolean().optional(),
     showSupplierReadableId: z.boolean().optional(),
     supplierQuoteNotificationGroup: notificationGroup.optional(),
-    defaultSupplierCc: z.array(z.string().email()).optional()
+    defaultSupplierCc: z.array(z.string().email()).optional(),
+    supplierPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -1970,11 +1974,19 @@ export const saveDocumentEdit = defineServiceFn({
     documentId: z.string().min(1),
     blocks: z.array(blockSchema),
     settings: documentSettingsSchema,
-    notes: z.record(z.string(), z.unknown()).nullable().optional()
+    notes: z.record(z.string(), z.unknown()).nullable().optional(),
+    /** Which part numbers every line of the document prints. */
+    partNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
   permission: { by: "documentType", rules: documentEditPermissions },
   async run(ctx, input) {
     const { documentType, documentId } = input;
+    if (
+      input.partNumberDisplay !== undefined &&
+      !DOCUMENT_EDIT_RECORDS[documentType].partNumberLines
+    ) {
+      return ctx.error("validation", "This document has no part number choice");
+    }
     const client = ctx.asCaller.supabase;
     const record = await service.getDocumentEditRecord(
       client,
@@ -2011,6 +2023,7 @@ export const saveDocumentEdit = defineServiceFn({
       documentId,
       edit,
       notes: input.notes as JSONContent | null | undefined,
+      partNumberDisplay: input.partNumberDisplay,
       userId: ctx.auditUserId
     });
     if (saved === "locked") {

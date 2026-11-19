@@ -19,6 +19,7 @@ import { motorLine } from "./data/motor-line/index.ts";
 import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
 import { satellite } from "./data/satellite/index.ts";
+import { stampPartNumberDisplay } from "./helpers/part-number-display.ts";
 import { ensureUnitsOfMeasure } from "./helpers/units-of-measure.ts";
 import { ensureSequences } from "./sql.ts";
 import { selectTiers } from "./tiers/index.ts";
@@ -157,4 +158,5 @@ export async function applyDatasetTiers(
     await tier.run(ctx);
     await onProgress?.({ done: i + 1, total: selected.length });
   }
+  await stampPartNumberDisplay(ctx);
 }

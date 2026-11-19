@@ -7246,6 +7246,12 @@ msgstr "गंतव्य चुनें"
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "चुनें कि आइटम, कोटेशन और जॉब पर बिल ऑफ मैटेरियल एक्सप्लोरर प्रत्येक पंक्ति को इसके विवरण या आइटम ID के साथ दिखाएगा।"
 
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "चुनें कि नई क्रय आदेश पंक्तियों पर कौन से पार्ट नंबर प्रिंट हों। आपूर्तिकर्ता इस चुनाव को बदल सकता है, और हर पंक्ति इसे बदल सकती है।"
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "चुनें कि नई कोटेशन, ऑर्डर, चालान और पैकिंग स्लिप की पंक्तियों पर कौन से पार्ट नंबर प्रिंट हों। ग्राहक इस चुनाव को बदल सकता है।"
+
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
 
@@ -17436,6 +17442,9 @@ msgstr "लाइन स्थिति"
 msgid "Line Supplier Part ID"
 msgstr "लाइन आपूर्तिकर्ता पार्ट आईडी"
 
+msgid "Line Supplier Part Number"
+msgstr "पंक्ति का आपूर्तिकर्ता पार्ट नंबर"
+
 msgid "Line Total"
 msgstr "लाइन कुल"
 
@@ -18621,6 +18630,9 @@ msgstr "लापता समय"
 
 msgid "Missing:"
 msgstr "लापता:"
+
+msgid "Mixed"
+msgstr "मिश्रित"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20954,6 +20966,9 @@ msgstr "कंपनी सेटिंग्स में सेट नही�
 msgid "Not set up"
 msgstr "सेटअप नहीं किया गया"
 
+msgid "Not set: prints as before"
+msgstr "सेट नहीं: पहले की तरह प्रिंट होगा"
+
 msgid "Not started"
 msgstr "शुरू नहीं किया गया"
 
@@ -22078,6 +22093,15 @@ msgstr "अन्य प्रकार"
 msgid "Otherwise"
 msgstr "अन्यथा"
 
+msgid "Our part number only"
+msgstr "केवल हमारा पार्ट नंबर"
+
+msgid "Our part number, then the customer's"
+msgstr "हमारा पार्ट नंबर, फिर ग्राहक का"
+
+msgid "Our part number, then the supplier's"
+msgstr "हमारा पार्ट नंबर, फिर आपूर्तिकर्ता का"
+
 msgid "Out"
 msgstr "बाहर"
 
@@ -22395,6 +22419,15 @@ msgstr "पार्ट लीड टाइम पोस्ट की गई क
 
 msgid "Part Number"
 msgstr "भाग संख्या"
+
+msgid "Part Numbers"
+msgstr "पार्ट नंबर"
+
+msgid "Part Numbers on Documents"
+msgstr "दस्तावेज़ों पर पार्ट नंबर"
+
+msgid "Part numbers on documents updated"
+msgstr "दस्तावेज़ों पर पार्ट नंबर अपडेट हुए"
 
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
@@ -28181,6 +28214,9 @@ msgstr "संस्करण {0} को सक्रिय संस्कर�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "एक भंडारण इकाई चुनने के लिए प्रोफ़ाइल सेटिंग्स में अपना डिफ़ॉल्ट स्थान सेट करें।"
 
+msgid "Sets every line of this document when you save."
+msgstr "सहेजने पर इस दस्तावेज़ की हर पंक्ति पर यह सेट हो जाएगा।"
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "जब यह शिप होता है तो एक क्रम संख्या की श्रम वारंटी सेट करता है"
 
@@ -29846,6 +29882,9 @@ msgstr "आपूर्तिकर्ता क्रेडिट"
 msgid "Supplier Credits"
 msgstr "आपूर्तिकर्ता क्रेडिट"
 
+msgid "Supplier default"
+msgstr "आपूर्तिकर्ता का डिफ़ॉल्ट"
+
 msgid "Supplier Email"
 msgstr "आपूर्तिकर्ता का ईमेल"
 
@@ -30880,6 +30919,12 @@ msgstr "वह ग्राहक जिसके ऑर्डर यह पो�
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "इस दस्तावेज़ के लिए ग्राहक का अपना संदर्भ — आमतौर पर उनके सिस्टम पर उनका RFQ या PO नंबर; प्रिंट करने योग्य आउटपुट पर सामने आया और किसी भी दस्तावेज़ में जिसमें यह परिवर्तित होता है।"
 
+msgid "The customer's part number only"
+msgstr "केवल ग्राहक का पार्ट नंबर"
+
+msgid "The customer's part number, then ours"
+msgstr "ग्राहक का पार्ट नंबर, फिर हमारा"
+
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "उनके पार्ट ID के लिए ग्राहक का रिवीजन टैग, जब यह हमारे से भिन्न हो; क्रॉस-रेफरेंस स्तर पर लॉक किया जाता है, हमारे रिवीजन पर नहीं।"
 
@@ -31295,6 +31340,9 @@ msgstr "इस आपूर्तिकर्ता की जीवन चक�
 
 msgid "The lines could not be loaded."
 msgstr "पंक्तियाँ लोड नहीं हो सकीं।"
+
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "पंक्तियों पर अलग-अलग पार्ट नंबर प्रिंट होते हैं। एक चुनाव से हर पंक्ति सेट हो जाती है।"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "एक योजना समूह के आदेश के एक टुकड़े से एक सदस्य की मांग के लिए लिंक: नरम जबकि आदेश खुला है (MRP इसे स्थानांतरित कर सकता है), कठोर एक बार प्राप्त या पूर्ण होने के बाद (कभी नहीं स्थानांतरित), या Manual जब एक योजनाकार इसे एक कारण के साथ सेट करता है।"
@@ -31874,6 +31922,12 @@ msgstr "इस ऑर्डर के लिए आपूर्तिकर्�
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "आपूर्तिकर्ता की पैकिंग-स्लिप या शिपमेंट संख्या, ऑडिट के लिए दर्ज की गई; किसी भी पोस्टिंग तर्क द्वारा उपयोग नहीं किया गया।"
+
+msgid "The supplier's part number only"
+msgstr "केवल आपूर्तिकर्ता का पार्ट नंबर"
+
+msgid "The supplier's part number, then ours"
+msgstr "आपूर्तिकर्ता का पार्ट नंबर, फिर हमारा"
 
 msgid "The supplier's return authorization number"
 msgstr "आपूर्तिकर्ता की रिटर्न प्राधिकरण संख्या"

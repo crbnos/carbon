@@ -115,6 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id: _id,
     requiredDate: _requiredDate,
     promisedDate: _promisedDate,
+    partNumberDisplay,
     ...d
   } = validation.data;
 
@@ -173,6 +174,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const api = await carbon(request);
   const result = await api.purchasing.updatePurchaseOrderLine({
     ...d,
+    // An empty select leaves the line's choice as it is.
+    ...(partNumberDisplay ? { partNumberDisplay } : {}),
     id: lineId,
     purchaseOrderId: orderId,
     customFields: setCustomFields(formData)
@@ -219,6 +222,7 @@ export default function EditPurchaseOrderLineRoute() {
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
     storageUnitId: line?.storageUnitId ?? "",
     supplierPartId: line?.supplierPartId ?? "",
+    partNumberDisplay: line?.partNumberDisplay ?? undefined,
     supplierShippingCost: line?.supplierShippingCost ?? 0,
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,

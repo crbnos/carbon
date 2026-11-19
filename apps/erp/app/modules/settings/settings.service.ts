@@ -22,7 +22,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
-import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import {
+  activeJobStatuses,
+  fetchAllFromTable,
+  getCompanyTimeZone
+} from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import {
   type Kysely,
@@ -85,7 +89,11 @@ import {
   rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
-import { withRevisionSuffix } from "@carbon/documents/utils";
+import {
+  type PartNumberDisplay,
+  summarizePartNumberDisplay,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -9699,12 +9707,34 @@ export async function getDocumentEditRecord(
     .maybeSingle();
   if (error || !data) return { data: null, error };
   const row = data as unknown as Record<string, unknown>;
+
+  // The lines' display choices, summed up for the modal's select.
+  const partNumberLines = record.partNumberLines;
+  const lines = partNumberLines
+    ? await fetchAllFromTable<{ partNumberDisplay: PartNumberDisplay | null }>(
+        client,
+        partNumberLines.table,
+        "id, partNumberDisplay",
+        (query) =>
+          query
+            .eq(partNumberLines.documentColumn, documentId)
+            .eq("companyId", companyId)
+            .order("id")
+      )
+    : null;
+  if (lines?.error) return { data: null, error: lines.error };
+
   return {
     data: {
       label: String(row[record.readableId] ?? documentId),
       locked: record.isLocked(row.status as string | null),
       notes: record.notesColumn
         ? ((row[record.notesColumn] as JSONContent | null) ?? null)
+        : null,
+      partNumberDisplay: lines
+        ? summarizePartNumberDisplay(
+            lines.data.map((line) => line.partNumberDisplay)
+          )
         : null
     },
     error: null
@@ -9724,6 +9754,8 @@ export async function saveDocumentEditRow(
     documentId: string;
     edit: DocumentEdit;
     notes?: JSONContent | null;
+    /** The modal's pick for every line of the document. */
+    partNumberDisplay?: PartNumberDisplay;
     userId: string;
   }
 ) {
@@ -9783,6 +9815,24 @@ export async function saveDocumentEditRow(
           updatedAt: now
         } as never)
         .where("id", "=", documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    if (args.partNumberDisplay !== undefined && record.partNumberLines) {
+      // Every line of the document takes the one choice the modal made.
+      await trx
+        .updateTable(record.partNumberLines.table as "purchaseOrderLine")
+        .set({
+          partNumberDisplay: args.partNumberDisplay,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where(
+          record.partNumberLines.documentColumn as "purchaseOrderId",
+          "=",
+          documentId
+        )
         .where("companyId", "=", companyId)
         .execute();
     }

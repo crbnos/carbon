@@ -70,6 +70,25 @@ Both records have a **Documents** tab for files that belong to the party itself 
 
 <Screenshot src="/screens/reference-party-documents.png" label="Customer Documents tab listing two uploaded files with their size and upload date, above the drag-and-drop area" caption="Files filed here belong to the party, not to any one order." ratio="wide" />
 
+## Part numbers on documents
+
+A supplier often has its own number for one of your items: the supplier part number. Each purchase order line chooses which numbers it prints:
+
+| Choice | Prints |
+|---|---|
+| Our part number, then the supplier's | `P000123.B (SW-1045-50R)` |
+| The supplier's part number, then ours | `SW-1045-50R (P000123.B)` |
+| The supplier's part number only | `SW-1045-50R` |
+| Our part number only | `P000123.B` |
+
+- Our part number includes its revision. The supplier part number has no revision of its own; type it into the number when the supplier needs it.
+- A line with no supplier part number prints our part number, whatever the choice.
+- A new line takes the supplier's choice from the supplier's **Details**, else the company default in **Settings > Purchasing**, which starts as "The supplier's part number, then ours".
+- Change one line in its **Part Numbers** field, or every line at once in **Edit document**, while the order is not locked.
+- A line keeps its own copy of the supplier part number, so a later edit of the supplier part does not change an order that exists.
+- A purchase order line saved before this choice existed prints as it did before: our part number as the line title, and the supplier part number in its own "Supplier Part ID" row.
+- A document template can place each number itself with `{line.itemId}` (our part number) and `{line.supplierPartNumber}` (the supplier's). Both hold their number whatever the line's choice.
+
 ## Related
 
 <Cards>

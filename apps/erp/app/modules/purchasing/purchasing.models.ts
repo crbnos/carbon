@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   addDays,
   addMonths,
@@ -282,6 +283,7 @@ export const purchaseOrderLineValidator = z
     requiredDate: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     supplierPartId: zfd.text(z.string().optional()),
+    partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
@@ -406,7 +408,9 @@ export const supplierValidator = z.object({
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -422,7 +426,9 @@ export const supplierApprovalValidator = z.object({
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 

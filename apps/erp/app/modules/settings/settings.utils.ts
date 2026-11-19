@@ -61,6 +61,26 @@ export interface DocumentEditRecord {
     | "production"
     | "quality";
   notesColumn: "externalNotes" | "notes" | "content" | null;
+  /**
+   * The lines that store a part number display choice: their table, the column
+   * that names the document, and whose part number "theirs" is. Absent: the
+   * document has no part number choice.
+   */
+  partNumberLines?: {
+    table:
+      | "quoteLine"
+      | "salesOrderLine"
+      | "salesInvoiceLine"
+      | "shipmentLine"
+      | "purchaseOrderLine";
+    documentColumn:
+      | "quoteId"
+      | "salesOrderId"
+      | "invoiceId"
+      | "shipmentId"
+      | "purchaseOrderId";
+    party: "customer" | "supplier";
+  };
 }
 
 export const DOCUMENT_EDIT_RECORDS: Record<
@@ -72,7 +92,12 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     readableId: "purchaseOrderId",
     isLocked: isPurchaseOrderLocked,
     module: "purchasing",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "purchaseOrderLine",
+      documentColumn: "purchaseOrderId",
+      party: "supplier"
+    }
   },
   purchaseReturnOrder: {
     table: "purchaseReturnOrder",

@@ -63,6 +63,7 @@ import {
   Item,
   Location,
   NumberControlled,
+  PartNumberDisplay,
   StorageUnit,
   Submit,
   TaxFields,
@@ -766,6 +767,20 @@ const PurchaseOrderLineForm = ({
                               ...d,
                               supplierPartId: value
                             }))
+                          }
+                        />
+
+                        {/* Empty on a new line: the supplier's choice, else the
+                            company default. Empty on a saved line: unchanged. */}
+                        <PartNumberDisplay
+                          party="supplier"
+                          name="partNumberDisplay"
+                          label={t`Part Numbers`}
+                          isOptional
+                          placeholder={
+                            isEditing
+                              ? t`Not set: prints as before`
+                              : t`Supplier default`
                           }
                         />
 

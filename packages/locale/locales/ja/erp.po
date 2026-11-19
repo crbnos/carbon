@@ -7246,6 +7246,12 @@ msgstr "移動先を選択"
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
 
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "新規の発注書明細に印刷する部品番号を選択します。仕入先ごとにこの設定を上書きでき、各明細でも変更できます。"
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "新規の見積、受注、請求書、納品書の明細に印刷する部品番号を選択します。得意先ごとにこの設定を上書きできます。"
+
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
 
@@ -17436,6 +17442,9 @@ msgstr "ラインステータス"
 msgid "Line Supplier Part ID"
 msgstr "明細の仕入先部品ID"
 
+msgid "Line Supplier Part Number"
+msgstr "明細の仕入先部品番号"
+
 msgid "Line Total"
 msgstr "行合計"
 
@@ -18621,6 +18630,9 @@ msgstr "不足時間"
 
 msgid "Missing:"
 msgstr "不足:"
+
+msgid "Mixed"
+msgstr "混在"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20954,6 +20966,9 @@ msgstr "会社設定で設定されていません"
 msgid "Not set up"
 msgstr "未設定"
 
+msgid "Not set: prints as before"
+msgstr "未設定：従来どおり印刷"
+
 msgid "Not started"
 msgstr "未開始"
 
@@ -22078,6 +22093,15 @@ msgstr "その他のタイプ"
 msgid "Otherwise"
 msgstr "その他"
 
+msgid "Our part number only"
+msgstr "自社の部品番号のみ"
+
+msgid "Our part number, then the customer's"
+msgstr "自社の部品番号、次に得意先の部品番号"
+
+msgid "Our part number, then the supplier's"
+msgstr "自社の部品番号、次に仕入先の部品番号"
+
 msgid "Out"
 msgstr "対象外"
 
@@ -22395,6 +22419,15 @@ msgstr "部品のリードタイムは転記済の購買入荷から更新され
 
 msgid "Part Number"
 msgstr "部品番号"
+
+msgid "Part Numbers"
+msgstr "部品番号"
+
+msgid "Part Numbers on Documents"
+msgstr "帳票の部品番号"
+
+msgid "Part numbers on documents updated"
+msgstr "帳票の部品番号を更新しました"
 
 msgid "Part Supersession"
 msgstr "部品後継切替"
@@ -28181,6 +28214,9 @@ msgstr "バージョン {0} をアクティブバージョンとして設定し�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
 
+msgid "Sets every line of this document when you save."
+msgstr "保存時に、この帳票のすべての明細に適用されます。"
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "シリアルが出荷される時に労務保証を設定します"
 
@@ -29846,6 +29882,9 @@ msgstr "仕入先クレジット"
 msgid "Supplier Credits"
 msgstr "仕入先クレジット"
 
+msgid "Supplier default"
+msgstr "仕入先のデフォルト"
+
 msgid "Supplier Email"
 msgstr "仕入先メール"
 
@@ -30880,6 +30919,12 @@ msgstr "このポータルリンクが注文を表示する顧客です。リン
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "この文書に対する得意先独自の参照 — 通常は彼らのシステム上の見積依頼または発注書番号。印刷可能な出力に表示され、これが変換される任意の文書に引き継がれます。"
 
+msgid "The customer's part number only"
+msgstr "得意先の部品番号のみ"
+
+msgid "The customer's part number, then ours"
+msgstr "得意先の部品番号、次に自社の部品番号"
+
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "得意先が所有する部品IDのリビジョン タグ。当社のものと異なる場合。クロスリファレンスレベルで固定され、当社のリビジョンではなく。"
 
@@ -31295,6 +31340,9 @@ msgstr "この仕入先のライフサイクル状態 — 有効、無効、承�
 
 msgid "The lines could not be loaded."
 msgstr "明細を読み込めませんでした。"
+
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "明細ごとに異なる部品番号が印刷されています。いずれかを選択すると、すべての明細に適用されます。"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "計画グループのオーダーの一部から 1 つのメンバーの需要へのリンク：オーダーが開いている間はソフト（MRP は移動する可能性があります）。受け取られたまたは完了したときはハード（移動しない）。またはプランナーが理由を付けて設定するときはマニュアル。"
@@ -31874,6 +31922,12 @@ msgstr "この注文の仕入先独自の参照（彼らのシステム上の彼
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "仕入先のパッキングスリップまたは出荷番号。監査用に記録されます。転記ロジックでは使用されません。"
+
+msgid "The supplier's part number only"
+msgstr "仕入先の部品番号のみ"
+
+msgid "The supplier's part number, then ours"
+msgstr "仕入先の部品番号、次に自社の部品番号"
 
 msgid "The supplier's return authorization number"
 msgstr "仕入先の返品認可番号"
