@@ -243,6 +243,7 @@ export function InventoryValuationWorkbench({
                 <div className="w-5 shrink-0 flex items-center justify-center self-center">
                   {kids.length > 0 ? (
                     <button
+                      aria-expanded={isExpanded}
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
                       className="text-muted-foreground hover:text-foreground max-md:hit-area"
@@ -647,6 +648,7 @@ export function InventoryValuationWorkbench({
         <Trans>As of:</Trans>
       </span>
       <DatePicker
+        aria-label={t`As of date`}
         size="sm"
         value={parseDate(asOfDate)}
         onChange={(value) =>

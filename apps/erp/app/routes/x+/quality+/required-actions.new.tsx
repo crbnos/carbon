@@ -6,9 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { requiredActionValidator } from "~/modules/quality/quality.models";
 import { upsertRequiredAction } from "~/modules/quality/quality.service";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
@@ -55,8 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewRequiredActionRoute() {
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.requiredActions);
+  const dialog = useRouteDialog(path.to.requiredActions);
 
   return (
     <RequiredActionForm
@@ -65,7 +64,8 @@ export default function NewRequiredActionRoute() {
         name: "",
         active: true
       }}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

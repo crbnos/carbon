@@ -19,11 +19,14 @@ import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const newPurchaseOrderValidator = purchaseOrderValidator.extend({
   locationId: z.string().min(1, { message: "Location is required" })
 });
+
+export const meta = newRecordMeta("Purchase Order");
 
 export const handle: Handle = {
   breadcrumb: msg`Orders`,

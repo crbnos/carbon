@@ -140,7 +140,7 @@ export default function PaymentSettings() {
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
-        <Heading size="h3">
+        <Heading as="h1" size="h3">
           <Trans>Billing</Trans>
         </Heading>
         {edition === Edition.Cloud && isOwner() && (

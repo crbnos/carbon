@@ -29,6 +29,7 @@ import {
 import { Link, useLocation } from "react-router";
 import { DiffBadge } from "~/components/Diff";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import type {
   ChangeOperationMark,
   ProjectElementType,
@@ -114,8 +115,8 @@ export function ElementList({
   const routes = useElementRoutes(projectId);
   const changeRequestId = useActiveChangeRequestId();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [moving, setMoving] = useState<ProjectElementListItem | null>(null);
-  const [deleting, setDeleting] = useState<ListElement | null>(null);
+  const moving = useDrawerItem<ProjectElementListItem>();
+  const deleting = useDrawerItem<ListElement>();
 
   // One group per state, in state-group order. Inside a group the rows keep
   // tree order; a row is indented only under a parent in the same group.
@@ -264,8 +265,8 @@ export function ElementList({
                       canMove={canUpdate}
                       canDelete={canDelete}
                       onAddChild={() => onNew("Task", element.id)}
-                      onMove={() => setMoving(element)}
-                      onDelete={() => setDeleting(element)}
+                      onMove={() => moving.open(element)}
+                      onDelete={() => deleting.open(element)}
                     />
                   }
                 />
@@ -273,24 +274,26 @@ export function ElementList({
           </section>
         );
       })}
-      {moving && (
+      {moving.item && (
         <MoveElementModal
+          open={moving.isOpen}
           projectId={projectId}
-          element={moving}
+          element={moving.item}
           elements={elements}
-          onClose={() => setMoving(null)}
+          onClose={moving.close}
         />
       )}
-      {deleting && (
+      {deleting.item && (
         <ConfirmDelete
           action={withChangeRequest(
-            routes.remove(deleting.id),
+            routes.remove(deleting.item.id),
             changeRequestId
           )}
-          name={deleting.readableId}
-          text={t`Delete ${deleting.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          isOpen={deleting.isOpen}
+          name={deleting.item.readableId}
+          text={t`Delete ${deleting.item.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
+          onCancel={deleting.close}
+          onSubmit={deleting.close}
         />
       )}
     </div>

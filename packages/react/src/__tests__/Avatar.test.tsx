@@ -34,4 +34,16 @@ describe("Avatar", () => {
     expect(html).not.toContain("<img");
     expect(html).toContain("JD");
   });
+
+  it("hides a decorative avatar so the name beside it is read once", () => {
+    const image = renderToStaticMarkup(
+      <Avatar decorative name="Jane Doe" src="https://example.com/jane.webp" />
+    );
+    expect(image).toContain('alt=""');
+    const initials = renderToStaticMarkup(
+      <Avatar decorative name="Jane Doe" />
+    );
+    expect(initials).toContain('aria-hidden="true"');
+    expect(initials).not.toContain("aria-label");
+  });
 });

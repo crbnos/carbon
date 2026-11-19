@@ -5,9 +5,8 @@
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { useUser } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources/resources.service";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
@@ -18,15 +17,14 @@ type WorkCenterSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
 };
 
 const WorkCenters = (props: WorkCenterSelectProps) => {
-  const newWorkCenterModal = useDisclosure();
+  const create = useDrawerItem<string>();
   const { defaults } = useUser();
-  const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useWorkCenters();
 
   const emptyMessage = useEmptyState("workCenter", {
-    onCreate: () => newWorkCenterModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -38,21 +36,21 @@ const WorkCenters = (props: WorkCenterSelectProps) => {
         label={props?.label ?? "Work Center"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newWorkCenterModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newWorkCenterModal.isOpen && (
+      {create.item !== null && (
         <WorkCenterForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newWorkCenterModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           showProcesses={false}
           initialValues={{
-            name: created,
+            name: create.item,
             description: "",
             overheadRate: 0,
             laborRate: 0,

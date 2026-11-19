@@ -8,6 +8,7 @@ import {
   Combobox,
   DatePicker,
   InputControlled,
+  TextAreaControlled,
   ValidatedForm
 } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
@@ -19,7 +20,6 @@ import {
   FormLabel,
   HStack,
   IconButton,
-  Input,
   Label,
   ModalCard,
   ModalCardBody,
@@ -33,6 +33,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
   toast,
   useDisclosure,
   useMount,
@@ -48,7 +49,7 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -59,6 +60,7 @@ import {
   ConversionFactor,
   CostCenter,
   CustomFormFields,
+  FormSection,
   Hidden,
   Item,
   Location,
@@ -85,10 +87,11 @@ import {
   useUser
 } from "~/hooks";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
+import { purchaseLineAccountClasses } from "~/modules/invoicing/invoicing.models";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing/purchasing.models";
 import type {
@@ -118,14 +121,22 @@ type PurchaseOrderLineFormProps = {
     promisedDate: string | null;
     receivedDate: string | null;
   };
+  /**
+   * Something was received or invoiced on the line: its item, unit of
+   * measure and conversion factor are what the postings name, so they stay.
+   */
+  isReceived?: boolean;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const PurchaseOrderLineForm = ({
   initialValues,
   lineDates,
+  isReceived = false,
   type,
+  open = true,
   onClose
 }: PurchaseOrderLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -170,7 +181,7 @@ const PurchaseOrderLineForm = ({
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.purchaseOrderLineType as ItemType
@@ -636,6 +647,7 @@ const PurchaseOrderLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             defaultCollapsed={false}
             isCollapsible={isEditing}
@@ -777,6 +789,7 @@ const PurchaseOrderLineForm = ({
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
+                          isReadOnly={isReceived}
                           label={i18n._(itemTypeLabel(itemFilter))}
                           type={itemFilter}
                           validItemTypes={[...itemType]}
@@ -791,10 +804,13 @@ const PurchaseOrderLineForm = ({
                           onChange={(value) => {
                             onItemChange(value?.value as string);
                           }}
-                          onTypeChange={onTypeChange}
+                          // No type switch on a received line: the type
+                          // decides what the write keeps, and the server
+                          // refuses a change anyway.
+                          onTypeChange={isReceived ? undefined : onTypeChange}
                         />
 
-                        <InputControlled
+                        <TextAreaControlled
                           label={t`Description`}
                           name="description"
                           value={itemData.description}
@@ -836,6 +852,7 @@ const PurchaseOrderLineForm = ({
                           <UnitOfMeasure
                             name="purchaseUnitOfMeasureCode"
                             label={t`Unit of Measure`}
+                            isReadOnly={isReceived}
                             value={itemData.purchaseUom}
                             onChange={(newValue) => {
                               if (newValue) {
@@ -868,6 +885,7 @@ const PurchaseOrderLineForm = ({
                             <ConversionFactor
                               name="conversionFactor"
                               termId="conversion-factor"
+                              isReadOnly={isReceived}
                               purchasingCode={itemData.purchaseUom}
                               inventoryCode={itemData.inventoryUom}
                               value={itemData.conversionFactor}
@@ -952,6 +970,7 @@ const PurchaseOrderLineForm = ({
                               </Badge>
                             )}
                             <IconButton
+                              aria-expanded={costsDisclosure.isOpen}
                               icon={<LuChevronRight />}
                               aria-label={
                                 costsDisclosure.isOpen
@@ -1035,7 +1054,7 @@ const PurchaseOrderLineForm = ({
                                 name="accountId"
                                 label={t`GL Account`}
                                 termId="purchase-indirect-gl-account"
-                                classes={["Expense"]}
+                                classes={purchaseLineAccountClasses}
                                 isOptional={false}
                               />
                               <CostCenter
@@ -1056,6 +1075,7 @@ const PurchaseOrderLineForm = ({
                                 label={t`Fixed Asset`}
                                 termId="purchase-order-line-fixed-asset"
                                 isOptional={false}
+                                isReadOnly={isReceived}
                                 options={assetOptions}
                                 value={indirectData.assetId}
                                 onChange={(selected) => {
@@ -1095,7 +1115,7 @@ const PurchaseOrderLineForm = ({
                             <FormLabel>
                               <Trans>Description</Trans>
                             </FormLabel>
-                            <Input
+                            <Textarea
                               value={indirectData.description}
                               onChange={(e) =>
                                 setIndirectData((d) => ({
@@ -1180,6 +1200,7 @@ const PurchaseOrderLineForm = ({
                                 </Badge>
                               )}
                               <IconButton
+                                aria-expanded={indirectCostsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   indirectCostsDisclosure.isOpen
@@ -1261,9 +1282,10 @@ const PurchaseOrderLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeletePurchaseOrderLine
           line={initialValues as PurchaseOrderLine}
+          isOpen={deleteDisclosure.isOpen}
           onCancel={deleteDisclosure.onClose}
         />
       )}
@@ -1328,23 +1350,6 @@ function JobOperationSelect(initialValues: { jobId?: string }) {
   );
 }
 
-function FormSection({
-  title,
-  children
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-      <Label>{title}</Label>
-      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        {children}
-      </div>
-    </div>
-  );
-}
-
 /**
  * A new line's dates, sent with the form. A saved line's dates save on their
  * own (PurchaseOrderLineDateFields).
@@ -1361,7 +1366,7 @@ function NewLineDates({
     <FormSection title={t`Dates`}>
       <DatePicker
         name="requiredDate"
-        label={t`Requested Date`}
+        label={t`Required Date`}
         termId="purchase-order-line-required-date"
         value={requiredDate ?? undefined}
         onChange={onRequiredDateChange}

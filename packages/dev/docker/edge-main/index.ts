@@ -5,9 +5,6 @@
 // Edge runtime dispatcher. Routes /functions/v1/<name>/* to <name>/index.ts.
 // Required by supabase/edge-runtime when started with --main-service.
 
-import { STATUS_CODE } from "https://deno.land/std@0.224.0/http/status.ts";
-import { jwtVerify } from "https://deno.land/x/jose@v4.14.4/index.ts";
-
 // The gateway's verify_jwt, which Supabase Cloud applies before a function runs.
 // Self-hosted, Kong forwards /functions/v1/ with no auth plugin, so this is the
 // check: without it a token claiming `role: service_role` needs no signature.
@@ -18,11 +15,32 @@ if (VERIFY_JWT && !JWT_SECRET) {
   throw new Error("VERIFY_JWT is on but JWT_SECRET is empty");
 }
 
+// Loaded only when the check is on (the self-host recipe); local dev runs with
+// it off. A static import is fetched at boot, and a failed fetch stops the
+// whole runtime where containers cannot reach the internet (a cloud dev
+// container). A dynamic import's fetch failure surfaces only if it runs. The
+// URL stays a literal: the runtime loads only modules its compiled graph has.
+const jose = VERIFY_JWT
+  ? await import("https://deno.land/x/jose@v4.14.4/index.ts")
+  : undefined;
+
+// The self-host recipe mounts this file too
+// (contrib/deploying/simple-docker-caddy/docker-compose.prod.yml), with
+// API_URL_FROM_HEADER unset: with it off, this file must behave as it did
+// before the shared runtime.
+//
+// The shared runtime (crbn-shared) serves every worktree. Each worktree's
+// Envoy names its own gateway in x-carbon-api (overwriting any client value),
+// and the function gets it as SUPABASE_URL. A private runtime (`crbn up
+// --full`) keeps the SUPABASE_URL it was started with.
+const API_URL_FROM_HEADER = Deno.env.get("API_URL_FROM_HEADER") === "true";
+const WORKTREE_API = /^http:\/\/[A-Za-z0-9._-]+-api-gw:8000$/;
+
 async function hasValidJwt(req: Request): Promise<boolean> {
   const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return false;
   try {
-    await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
+    await jose.jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
     return true;
   } catch {
     return false;
@@ -34,7 +52,7 @@ Deno.serve(async (req: Request) => {
   const segments = url.pathname.split("/").filter(Boolean);
   const fnName = segments[0];
   if (!fnName) {
-    return new Response("Not found", { status: STATUS_CODE.NotFound });
+    return new Response("Not found", { status: 404 });
   }
 
   if (
@@ -43,17 +61,42 @@ Deno.serve(async (req: Request) => {
     !(await hasValidJwt(req))
   ) {
     return new Response(JSON.stringify({ msg: "Invalid JWT" }), {
-      status: STATUS_CODE.Unauthorized,
+      status: 401,
       headers: { "content-type": "application/json" }
     });
   }
 
   const servicePath = `/home/deno/functions/${fnName}`;
 
+  let envVars = Object.entries(Deno.env.toObject());
+  // The runtime reuses a worker per pool key (default: the service path), env
+  // and all, so a key per worktree keeps one worktree's URL out of another's.
+  let poolKey = servicePath;
+  if (API_URL_FROM_HEADER) {
+    const api = req.headers.get("x-carbon-api") ?? "";
+    if (!WORKTREE_API.test(api)) {
+      return new Response(
+        JSON.stringify({
+          error: "x-carbon-api is missing: call functions through a worktree's gateway"
+        }),
+        {
+          status: 400,
+          headers: { "content-type": "application/json" }
+        }
+      );
+    }
+    envVars = [
+      ...envVars.filter(([name]) => name !== "SUPABASE_URL"),
+      ["SUPABASE_URL", api]
+    ];
+    poolKey = `${api} ${servicePath}`;
+  }
+
   try {
     // @ts-ignore EdgeRuntime is provided by the supabase/edge-runtime image.
     const worker = await EdgeRuntime.userWorkers.create({
       servicePath,
+      poolKey,
       memoryLimitMb: 512,
       workerTimeoutMs: 5 * 60 * 1000,
       // Without explicit budgets the runtime's low defaults (~1s soft / 2s
@@ -65,7 +108,7 @@ Deno.serve(async (req: Request) => {
       cpuTimeSoftLimitMs: 30 * 1000,
       cpuTimeHardLimitMs: 60 * 1000,
       noModuleCache: false,
-      envVars: Object.entries(Deno.env.toObject()),
+      envVars,
     });
     return await worker.fetch(req);
   } catch (err) {
@@ -75,7 +118,7 @@ Deno.serve(async (req: Request) => {
         function: fnName,
       }),
       {
-        status: STATUS_CODE.InternalServerError,
+        status: 500,
         headers: { "content-type": "application/json" },
       }
     );

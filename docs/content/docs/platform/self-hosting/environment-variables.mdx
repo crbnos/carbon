@@ -51,7 +51,7 @@ Enterprise [SAML single sign-on](/docs/reference/single-sign-on) adds two more:
 <EnvVar name="SAML_PRIVATE_KEY" type="string">SAML signing key — base64-encoded PKCS#1 DER RSA, minimum 2048-bit; the generation command is in `.env.example`.</EnvVar>
 </EnvVars>
 
-Outside Vercel, set both `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` to enable Cloudflare Turnstile on login forms. Without them, only per-IP rate limits and per-account lockouts apply. Set `BOT_PROTECTION` to `turnstile`, or to `botid` for invisible Vercel BotID protection. BotID runs only on Vercel.
+Outside Vercel, set both `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` to enable Cloudflare Turnstile on login forms. Without them, only per-IP rate limits and per-account lockouts apply. Set `BOT_PROTECTION` to `turnstile`, or to `botid` for invisible Vercel BotID protection. BotID runs only on Vercel. Set it to `none` to turn the check off.
 
 ## Jobs & cache
 

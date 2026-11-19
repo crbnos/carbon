@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import {
   bicMatchesCountry,
+  colorNames,
   conditionAstFormField,
   equals,
   getBankFieldConfig,
@@ -269,7 +270,9 @@ export const customerShippingValidator = z.object({
 
 export const customerStatusValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  /** Empty keeps the color derived from the name. */
+  color: zfd.text(z.enum(colorNames).optional())
 });
 
 export const customerTypeValidator = z.object({
@@ -832,7 +835,8 @@ export const quoteFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "None"]).optional(),
     customerContact: zfd.text(z.string().optional()),
-    cc: z.array(z.string()).optional()
+    cc: z.array(z.string()).optional(),
+    emailOrderOnAcceptance: zfd.checkbox()
   })
   .refine(
     (data) => (data.notification === "Email" ? data.customerContact : true),
@@ -1024,6 +1028,8 @@ export const salesOrderLineValidator = z
     ),
     modelUploadId: zfd.text(z.string().optional()),
     promisedDate: zfd.text(z.string().optional()),
+    // The customer's wish, kept apart from the date the company promises.
+    requestedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
     serviceId: zfd.text(z.string().optional()),
     serviceStartDate: zfd.text(z.string().optional()),
@@ -1211,6 +1217,18 @@ export const quoteLeadTimeValidator = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional()
     .nullable()
+});
+
+// A sales order line's delivery date check — a JSON body (not FormData), so
+// plain zod. The fields are the line's as the form holds them before a save.
+export const deliveryDateCheckValidator = z.object({
+  salesOrderLineId: z.string().optional().nullable(),
+  salesOrderLineType: z.enum(salesOrderLineType),
+  itemId: z.string().min(1),
+  locationId: z.string().optional().nullable(),
+  methodType: z.enum(methodType),
+  saleQuantity: z.number().positive(),
+  promisedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 });
 
 // Sales Order Locked Status

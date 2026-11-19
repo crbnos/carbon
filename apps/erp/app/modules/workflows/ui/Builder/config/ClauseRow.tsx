@@ -161,6 +161,7 @@ function ClauseRowImpl({
           {leftMode === "column" ? (
             <Field label={t`Property`}>
               <Combobox
+                aria-label={t`Property`}
                 size="md"
                 placeholder={t`Pick a property`}
                 value={currentColumn}

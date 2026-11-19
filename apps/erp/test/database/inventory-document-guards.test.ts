@@ -704,6 +704,44 @@ describeLocal("picking and editing a stock transfer", () => {
     expect(await movementsOf(id)).toEqual([]);
   });
 
+  it("an unpick takes back the pick that completed a transfer and reopens it", async () => {
+    const { id, lineId } = await transferLine("Released");
+    const picked = await inventory.pickStockTransferLine(ctx(), {
+      lineId,
+      quantity: 5,
+      locationId: f.locationId
+    });
+    expect(picked.error).toBeNull();
+    // The last pick completes a transfer by itself.
+    await f.db
+      .updateTable("stockTransfer")
+      .set({ status: "Completed" })
+      .where("id", "=", id)
+      .where("companyId", "=", f.companyId)
+      .execute();
+
+    const unpicked = await inventory.unpickStockTransferLine(ctx(), {
+      lineId,
+      locationId: f.locationId
+    });
+
+    expect(unpicked.error).toBeNull();
+    const transfer = await f.db
+      .selectFrom("stockTransfer")
+      .select(["status", "completedAt"])
+      .where("id", "=", id)
+      .executeTakeFirstOrThrow();
+    expect(transfer).toEqual({ status: "Released", completedAt: null });
+    const moved = await f.db
+      .selectFrom("itemLedger")
+      .select((eb) => eb.fn.sum<number>("quantity").as("net"))
+      .where("companyId", "=", f.companyId)
+      .where("documentId", "=", id)
+      .executeTakeFirstOrThrow();
+    expect(Number(moved.net)).toBe(0);
+    expect(await movementsOf(id)).toHaveLength(4);
+  });
+
   it("refuses a pick at another location of the company", async () => {
     const { id, lineId } = await transferLine("Released");
     const elsewhere = `${f.prefix}-loc-${crypto.randomUUID().slice(0, 8)}`;

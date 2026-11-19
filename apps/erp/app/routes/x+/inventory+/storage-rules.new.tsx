@@ -8,10 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertEnforcementRule } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { TargetType } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { storageRuleValidator } from "~/modules/inventory/inventory.models";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
 import { getParams, path } from "~/utils/path";
@@ -62,14 +63,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewStorageRuleRoute() {
   const { targetType } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.storageRules);
   // navigate(-1) breaks when the page was opened directly (no history entry
   // to pop). Always navigate forward to the parent list route — closes the
   // drawer regardless of how the user got here.
   return (
     <StorageRuleForm
       initialValues={{ targetType }}
-      onClose={() => navigate(path.to.storageRules)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

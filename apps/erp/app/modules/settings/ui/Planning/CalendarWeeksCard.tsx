@@ -81,6 +81,7 @@ export function CalendarWeeksCard({
             </span>
           </VStack>
           <Switch
+            aria-label={t`Number weeks by calendar week`}
             checked={enabled}
             disabled={fetcher.state !== "idle"}
             onCheckedChange={(checked) => {

@@ -34,6 +34,7 @@ export function PrintButton({
   locationId,
   context,
   workCenterId,
+  format,
   fileRoutes,
   disabled,
   variant = "secondary",
@@ -46,7 +47,11 @@ export function PrintButton({
   locationId: string | undefined;
   context: PrinterContext;
   workCenterId?: string;
-  fileRoutes: FileRoutes;
+  /** Lists only printers of this format, e.g. "pdf" for a full-page document. */
+  format?: "zpl" | "pdf";
+  /** Label downloads offered when no printer is set up. Without them the
+   *  button is hidden when there is no printer to send to. */
+  fileRoutes?: FileRoutes;
   disabled?: boolean;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
@@ -56,21 +61,30 @@ export function PrintButton({
   /** The labeled button's text. Defaults to "Print". */
   label?: ReactNode;
 }) {
-  const { printerRoutes, resolvePrinterRoute, printPath } = usePrinting();
+  const {
+    printerRoutes: allPrinterRoutes,
+    resolvePrinterRoute,
+    printPath
+  } = usePrinting();
   const modal = useDisclosure();
   const downloadModal = useDisclosure();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
 
-  const defaultPrinter = resolvePrinterRoute(locationId, context, workCenterId);
+  const printerRoutes = format
+    ? allPrinterRoutes.filter((route) => route.format === format)
+    : allPrinterRoutes;
+  const resolvedPrinter = resolvePrinterRoute(
+    locationId,
+    context,
+    workCenterId
+  );
+  const defaultPrinter =
+    resolvedPrinter && (!format || resolvedPrinter.format === format)
+      ? resolvedPrinter
+      : undefined;
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(
     defaultPrinter?.id ?? ""
   );
-
-  useEffect(() => {
-    if (modal.isOpen) {
-      setSelectedPrinterId(defaultPrinter?.id ?? printerRoutes[0]?.id ?? "");
-    }
-  }, [modal.isOpen, defaultPrinter?.id, printerRoutes]);
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -83,6 +97,7 @@ export function PrintButton({
 
   const handleClick = () => {
     if (printerRoutes.length > 0) {
+      setSelectedPrinterId(defaultPrinter?.id ?? printerRoutes[0]?.id ?? "");
       modal.onOpen();
     } else {
       downloadModal.onOpen();
@@ -105,6 +120,8 @@ export function PrintButton({
       }
     );
   };
+
+  if (printerRoutes.length === 0 && !fileRoutes) return null;
 
   return (
     <>
@@ -129,71 +146,74 @@ export function PrintButton({
         </Button>
       )}
 
-      {modal.isOpen && (
-        <Modal open onOpenChange={(open) => !open && modal.onClose()}>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Select Printer</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <div className="flex flex-col gap-1">
-                {printerRoutes.map((route) => (
-                  <button
-                    type="button"
-                    key={route.id}
-                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                      selectedPrinterId === route.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted"
-                    }`}
-                    onClick={() => setSelectedPrinterId(route.id)}
-                  >
-                    <LuPrinter className="size-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{route.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2 uppercase">
-                        {route.format}
-                      </span>
-                      {route.mediaSizeId && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {route.mediaSizeId}
-                        </span>
-                      )}
-                    </div>
-                    {selectedPrinterId === route.id && (
-                      <LuCheck className="size-4 text-primary shrink-0" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <div className="flex gap-2">
-                <Button
-                  variant="primary"
-                  leftIcon={<LuPrinter />}
-                  disabled={!selectedPrinterId || fetcher.state !== "idle"}
-                  onClick={handlePrint}
+      <Modal
+        open={modal.isOpen}
+        onOpenChange={(open) => !open && modal.onClose()}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Select Printer</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <div className="flex flex-col gap-1">
+              {printerRoutes.map((route) => (
+                <button
+                  type="button"
+                  key={route.id}
+                  className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                    selectedPrinterId === route.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted"
+                  }`}
+                  onClick={() => setSelectedPrinterId(route.id)}
                 >
-                  <Trans>Print</Trans>
-                </Button>
-                <Button variant="solid" onClick={modal.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </div>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+                  <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium">{route.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2 uppercase">
+                      {route.format}
+                    </span>
+                    {route.mediaSizeId && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {route.mediaSizeId}
+                      </span>
+                    )}
+                  </div>
+                  {selectedPrinterId === route.id && (
+                    <LuCheck className="size-4 text-primary shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                leftIcon={<LuPrinter />}
+                disabled={!selectedPrinterId || fetcher.state !== "idle"}
+                onClick={handlePrint}
+              >
+                <Trans>Print</Trans>
+              </Button>
+              <Button variant="solid" onClick={modal.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+            </div>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      <LabelDownloadModal
-        sourceDocumentId={sourceDocumentId}
-        fileRoutes={fileRoutes}
-        isOpen={downloadModal.isOpen}
-        onClose={downloadModal.onClose}
-      />
+      {fileRoutes && (
+        <LabelDownloadModal
+          sourceDocumentId={sourceDocumentId}
+          fileRoutes={fileRoutes}
+          isOpen={downloadModal.isOpen}
+          onClose={downloadModal.onClose}
+        />
+      )}
     </>
   );
 }

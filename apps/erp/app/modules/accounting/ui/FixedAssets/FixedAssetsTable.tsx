@@ -244,11 +244,9 @@ const FixedAssetsTable = memo(
             text={t`Are you sure you want to delete ${selectedAsset.fixedAssetId}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedAsset(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedAsset(null);
             }}
           />
         )}

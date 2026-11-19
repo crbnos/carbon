@@ -6,9 +6,12 @@ import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
+export const meta = moduleMeta("Reports");
 
 export const handle: Handle = {
   // Report pages live in their own full-screen namespace, not under the

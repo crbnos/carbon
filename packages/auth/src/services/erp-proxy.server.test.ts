@@ -5,9 +5,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@carbon/env", () => ({ getAppUrl: () => "https://erp.test" }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
-}));
 
 const { proxyToErp } = await import("./erp-proxy.server");
 

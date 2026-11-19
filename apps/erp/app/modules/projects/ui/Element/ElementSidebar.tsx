@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import { Badge, Button, Copy, cn, VStack } from "@carbon/react";
+import { Badge, Button, Copy, cn, useDisclosure, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo } from "react";
 import { LuBuilding2 } from "react-icons/lu";
 import { Link } from "react-router";
 import { z } from "zod";
@@ -610,7 +610,7 @@ function CapitalAssetLink({
   asset: CapitalAsset;
 }) {
   const permissions = usePermissions();
-  const [placing, setPlacing] = useState(false);
+  const placeModal = useDisclosure();
   if (!asset) {
     return (
       <span className="text-sm text-muted-foreground">
@@ -636,18 +636,17 @@ function CapitalAssetLink({
             !permissions.can("create", "accounting") ||
             !permissions.can("update", "projects")
           }
-          onClick={() => setPlacing(true)}
+          onClick={placeModal.onOpen}
         >
           <Trans>Place in service</Trans>
         </Button>
       )}
-      {placing && (
-        <PlaceInServiceModal
-          projectId={projectId}
-          fixedAssetId={asset.id}
-          onClose={() => setPlacing(false)}
-        />
-      )}
+      <PlaceInServiceModal
+        open={placeModal.isOpen}
+        projectId={projectId}
+        fixedAssetId={asset.id}
+        onClose={placeModal.onClose}
+      />
     </div>
   );
 }

@@ -115,6 +115,16 @@ export const receiptStatusType = [
   "Voided"
 ] as const;
 
+export const receiptInspectionStatusType = [
+  "Not Required",
+  "Pending Inspection",
+  "Inspection In Progress",
+  "Inspection Passed",
+  "Inspection Failed",
+  "Partially Passed",
+  "Put Away"
+] as const;
+
 export const batchPropertyValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -413,7 +423,8 @@ export const storageUnitValidator = z.object({
   workCenterId: zfd.text(z.string().optional()),
   storageTypeIds: zfd.repeatableOfType(z.string()).default([]),
   // Stored as storageUnit.nettable = !nonNettable (see upsertStorageUnit).
-  nonNettable: zfd.checkbox()
+  nonNettable: zfd.checkbox(),
+  kitRack: zfd.checkbox()
 });
 
 export const storageTypeValidator = z.object({

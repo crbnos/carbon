@@ -36,7 +36,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // Check if audit log is enabled for this company
   try {
     const enabled = await isAuditLogEnabled(client, companyId);
     if (!enabled) {
@@ -47,15 +46,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // are captured for companies that enabled audit logging before they existed.
     try {
       await syncAuditSubscriptions(client, companyId);
-    } catch {
+    } catch (error) {
       // Non-critical: return whatever history already exists.
+      logger.warning("Failed to sync audit log subscriptions", { error });
     }
   } catch {
     // Table might not exist yet
     return Response.json({ entries: [] });
   }
 
-  // Get audit log entries for this entity
   try {
     if (!all) {
       const entries = await getEntityAuditLog(

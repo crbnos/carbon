@@ -8,14 +8,21 @@ import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
   blockSchema,
+  COMPANY_MERGE_FIELDS,
+  collectSectionIds,
+  DOCUMENT_EDIT_TYPES,
   type DocumentBlock,
   type DocumentSettings,
   type DocumentTheme,
+  diffDocumentEdit,
   documentSectionPlacementSchema,
   documentSettingsSchema,
   documentTemplateTypeSchema,
   sectionConfigSchema,
-  themeSchema
+  themeSchema,
+  unknownVariables,
+  validateDocumentEdit,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
@@ -53,31 +60,47 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
+import {
+  getCompanyTemplate,
+  getDocumentEdit
+} from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
+  deleteLabelTemplate,
   deletePrinterRoute,
+  getPrinterApiKey,
   getPrintingSettings,
   getPrintJob,
   getPrintJobContent,
+  labelTemplateValidator,
+  locationPrinterContexts,
   type PrintingSettings,
   printerRouteValidator,
   reprintValidator,
   setContextAssignment,
+  setPrinterApiKey,
   updateAssignmentValidator,
   updatePrintingSettings,
+  upsertLabelTemplate,
   upsertPrinterRoute
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { datetime, requireAffected, unchecked } from "@carbon/utils";
+import {
+  datetime,
+  isUniqueViolation,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import {
   invalidateCompanyTimeZone,
   invokePosting,
@@ -104,9 +127,14 @@ import {
   subsidiaryValidator,
   taxCodeMappingEntrySchema,
   timekeepingControlsModes,
-  timesheetTimecardChecks
+  timesheetTimecardChecks,
+  weekNumberings
 } from "./settings.models";
 import * as service from "./settings.service";
+import {
+  DOCUMENT_TERMS_FIELD,
+  documentEditPermissions
+} from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
 // ─── Operations (`defineServiceFn`) ─────────────────────────────────────────
@@ -242,7 +270,8 @@ export const writeMissingJournals = defineServiceFn({
  * material warns or refuses, and when unconsumed picked material is returned
  * (when the job completes, or when each operation is done), and whether a
  * new receipt's lines start at a received quantity of 0 instead of the
- * quantity still to receive.
+ * quantity still to receive, and whether a purchase order receipt numbers
+ * its batches from the purchase order and the day received.
  *
  * @mcp
  */
@@ -262,7 +291,8 @@ export const updateInventorySettings = defineServiceFn({
       .enum(incompletePickingListPolicies)
       .optional(),
     returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional(),
-    receiptQuantitiesStartAtZero: z.boolean().optional()
+    receiptQuantitiesStartAtZero: z.boolean().optional(),
+    receiptBatchNumbersFromPurchaseOrder: z.boolean().optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -388,7 +418,9 @@ export const updateItemsSettings = defineServiceFn({
  * unit draws its serial number (when the job is created, when it is released,
  * or the first time the unit is worked on, scrapped or received), and whether
  * one location requires an assigned operator before the scheduler places work
- * there. The staffing rule lives on the location row and is written for the
+ * there, whether travelers print at the pick, whether an operation needs its
+ * tracked parts issued before completion, and whether releasing a job creates
+ * its picking list. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
  * permission can still set it. Changing it re-plans the location.
  *
@@ -403,6 +435,9 @@ export const updateProductionSettings = defineServiceFn({
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
     serialNumberTiming: z.enum(serialNumberTimings).optional(),
+    travelerLabels: z.boolean().optional(),
+    requireTrackedMaterialsIssued: z.boolean().optional(),
+    autoPickingListOnRelease: z.boolean().optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -498,6 +533,7 @@ export const updatePurchasingSettings = defineServiceFn({
     requireSupplierContactEmail: z.boolean().optional(),
     includeSupplierPartFiles: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
+    requirePromisedDateToFinalizePurchaseOrder: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
       .optional(),
@@ -546,7 +582,12 @@ export const updatePurchasingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether an inspection needs a
  * second person to sign it off, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration.
+ * gauge goes out of calibration. Then one location's goods-in storage units:
+ * the inspection storage unit received parts wait in, and the rejected
+ * storage unit rejected stock moves to (null clears one). Each must be an
+ * active storage unit at that location. A location is a
+ * resources record: without the resources update permission it is refused.
+ * The location and the company settings are written in one transaction.
  *
  * @mcp
  */
@@ -555,18 +596,88 @@ export const updateQualitySettings = defineServiceFn({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
-    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional()
+    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
+    locationGoodsInStorage: z
+      .object({
+        locationId: z.string().min(1),
+        inspectionStorageUnitId: z.string().nullable().optional(),
+        rejectedStorageUnitId: z.string().nullable().optional()
+      })
+      .optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await service.saveCompanySettings(
-      ctx,
-      input,
-      "Failed to update quality settings"
-    );
-    return saved ?? input;
+    const { locationGoodsInStorage: location, ...settings } = input;
+
+    if (location) {
+      // The write below runs as the system, so it checks what the location's
+      // row-level security (resources update) would have.
+      if (!ctx.can({ update: "resources" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change this location"
+        );
+      }
+      const ids = [
+        location.inspectionStorageUnitId,
+        location.rejectedStorageUnitId
+      ].filter((id): id is string => !!id);
+      if (ids.length > 0) {
+        const units = await ctx.asCaller.supabase
+          .from("storageUnit")
+          .select("id, locationId, active")
+          .eq("companyId", ctx.company.id)
+          .in("id", ids);
+        if (units.error) {
+          return ctx.error(
+            "internal",
+            "Failed to read storage units",
+            units.error
+          );
+        }
+        const unitById = new Map(units.data.map((unit) => [unit.id, unit]));
+        if (
+          ids.some((id) => unitById.get(id)?.locationId !== location.locationId)
+        ) {
+          return ctx.error("rule", "Choose a storage unit at this location.");
+        }
+        if (ids.some((id) => unitById.get(id)?.active !== true)) {
+          return ctx.error("rule", "Choose an active storage unit.");
+        }
+      }
+    }
+
+    const saved = await ctx.transaction(async (tx) => {
+      if (location) {
+        const row = await service.setLocationGoodsInStorage(tx.asSystem.pg, {
+          companyId: ctx.company.id,
+          locationId: location.locationId,
+          inspectionStorageUnitId: location.inspectionStorageUnitId,
+          rejectedStorageUnitId: location.rejectedStorageUnitId,
+          userId: ctx.auditUserId
+        });
+        if (!row) return tx.error("notFound", "Location not found");
+        if (row === "sameUnit") {
+          return tx.error(
+            "rule",
+            "Use different storage units for inspection and rejected stock."
+          );
+        }
+      }
+      const written = await service.saveCompanySettingsIn(
+        tx.asSystem.pg,
+        ctx.company.id,
+        settings
+      );
+      if (!written) {
+        return tx.error("internal", "Failed to update quality settings");
+      }
+      return input;
+    });
+    if (saved.error) return saved.error;
+    return input;
   }
 });
 
@@ -629,7 +740,9 @@ export const updateResourcesSettings = defineServiceFn({
  * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
- * broken, and the default markup per cost category on a quote line.
+ * broken, the default markup per cost category on a quote line, and the
+ * level of the delivery date check a sales order line runs (an item's
+ * Planning tab can override it per location).
  *
  * @mcp
  */
@@ -643,6 +756,7 @@ export const updateSalesSettings = defineServiceFn({
     digitalQuoteIncludesPurchaseOrders: z.boolean().optional(),
     rfqReadyNotificationGroup: notificationGroup.optional(),
     salesRuleNotificationGroup: notificationGroup.optional(),
+    deliveryDateControl: z.enum(deliveryDateControlTypes).optional(),
     quoteLineCategoryMarkups: z
       .object({
         materialCost: z.number().min(0),
@@ -810,6 +924,38 @@ export const updateServiceSettings = defineServiceFn({
       ctx,
       input,
       "Failed to save the service settings"
+    );
+    return saved ?? input;
+  }
+});
+
+/**
+ * Update the sequence settings.
+ *
+ * @remarks
+ * How the `%{ww}` token counts weeks in document, serial and batch numbers:
+ * `iso` (ISO 8601, the default: weeks start on Monday, and week 1 is the week
+ * with the year's first Thursday) or `us` (weeks start on Sunday, and week 1
+ * is the week of 1 January). In a format with `%{ww}` and no `%{mm}` or
+ * `%{dd}`, `%{yyyy}` and `%{yy}` are the year the week belongs to. Numbers
+ * already issued keep their week.
+ *
+ * @param sequenceWeekNumbering - `iso` or `us`.
+ *
+ * @mcp
+ */
+export const updateSequenceSettings = defineServiceFn({
+  input: z.object({
+    sequenceWeekNumbering: z.enum(weekNumberings).optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const refused = service.nothingSent(ctx, input);
+    if (refused) return refused;
+    const saved = await service.saveCompanySettings(
+      ctx,
+      input,
+      "Failed to save the sequence settings"
     );
     return saved ?? input;
   }
@@ -1296,16 +1442,20 @@ export const updateSubsidiaryDetails = defineServiceFn({
  *
  * @remarks
  * A printer route is a printer the company prints to: its name, format (ZPL
- * labels or PDF documents), media size, URL and optional API key, location
- * and template. With an `id` the company's route is updated, without one a
- * route is created. The cached printer routing is dropped, so the change
- * applies to the next print. Not published: the server POSTs to the URL it
- * saves, so an API caller could aim it at any address.
+ * labels or PDF documents), media size, URL and optional API key, and
+ * location. With an `id` the company's route is updated, without one a
+ * route is created. The API key is kept in Supabase Vault and is write-only:
+ * a blank key keeps the saved one, `removeApiKey` clears it. When the key
+ * cannot be stored, a route this call created is deleted again, so a retry
+ * does not hit the unique name. The cached printer routing is dropped, so the
+ * change applies to the next print. Not published: the server POSTs to the
+ * URL it saves, so an API caller could aim it at any address.
  */
 export const savePrinterRoute = defineServiceFn({
   input: printerRouteValidator,
   permission: { update: "settings" },
   async run(ctx, route) {
+    const created = !route.id;
     const result = await upsertPrinterRoute(ctx.asCaller.supabase, {
       id: route.id || undefined,
       companyId: ctx.company.id,
@@ -1313,9 +1463,7 @@ export const savePrinterRoute = defineServiceFn({
       format: route.format,
       mediaSizeId: route.mediaSizeId || null,
       printerUrl: route.printerUrl,
-      apiKey: route.apiKey || null,
-      locationId: route.locationId || null,
-      templateId: route.templateId || null
+      locationId: route.locationId || null
     });
     if (result.error) {
       return ctx.error(
@@ -1324,8 +1472,45 @@ export const savePrinterRoute = defineServiceFn({
         result.error
       );
     }
+
+    // The route row is saved even if the key below fails, so drop the cache now.
     await invalidatePrinterCache(ctx.company.id);
-    return { created: !route.id };
+
+    // A key of only whitespace is a blank field: it keeps the saved key.
+    const apiKey = route.removeApiKey
+      ? null
+      : route.apiKey?.trim() || undefined;
+    if (apiKey !== undefined) {
+      const saved = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        result.data.id,
+        apiKey
+      );
+      if (saved.error) {
+        if (created) {
+          // System client: a caller who may create routes may not delete them.
+          const undone = await deletePrinterRoute(
+            ctx.asSystem.supabase,
+            result.data.id,
+            ctx.company.id
+          );
+          if (undone.error) {
+            logger.warning("Failed to delete a printer route after its key", {
+              printerRouteId: result.data.id,
+              error: undone.error
+            });
+          }
+        }
+        return ctx.error(
+          "internal",
+          "Failed to save the printer API key",
+          saved.error
+        );
+      }
+    }
+
+    return { created };
   }
 });
 
@@ -1343,7 +1528,7 @@ export const testPrinterRoute = defineServiceFn({
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
-      .select("printerUrl, format, mediaSizeId, apiKey")
+      .select("printerUrl, format, mediaSizeId, hasApiKey")
       .eq("id", routeId)
       .eq("companyId", ctx.company.id)
       .single();
@@ -1363,7 +1548,21 @@ export const testPrinterRoute = defineServiceFn({
     const headers: Record<string, string> = {
       "Content-Type": "application/octet-stream"
     };
-    if (route.apiKey) headers["X-API-Key"] = route.apiKey;
+    if (route.hasApiKey) {
+      const apiKey = await getPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        routeId
+      );
+      if (apiKey.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the printer API key",
+          apiKey.error
+        );
+      }
+      if (apiKey.data) headers["X-API-Key"] = apiKey.data;
+    }
 
     try {
       const response = await fetch(route.printerUrl, {
@@ -1390,12 +1589,71 @@ export const testPrinterRoute = defineServiceFn({
 });
 
 /**
+ * Create or update a label template.
+ *
+ * @remarks
+ * Sets the BinderyPress template a label type prints with on one media size
+ * (a 4x2 kanban card, a 2x1 serial label). Every printer loaded with that
+ * media size uses it; a label with no template renders built-in. One template
+ * per label type and media size: a second is refused as a conflict.
+ */
+export const saveLabelTemplate = defineServiceFn({
+  input: labelTemplateValidator,
+  permission: { update: "settings" },
+  async run(ctx, { id, ...template }) {
+    const result = await upsertLabelTemplate(ctx.asCaller.supabase, {
+      ...template,
+      id: id || undefined,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (isUniqueViolation(result.error)) {
+      return ctx.error(
+        "conflict",
+        "A template for this label type and media size already exists"
+      );
+    }
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save label template",
+        result.error
+      );
+    }
+    return { created: !id };
+  }
+});
+
+/**
+ * Delete a label template. Labels of its type and media size render built-in.
+ */
+export const removeLabelTemplate = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const result = await deleteLabelTemplate(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete label template",
+        result.error
+      );
+    }
+    return { deleted: true };
+  }
+});
+
+/**
  * Delete a printer route.
  *
  * @remarks
- * Deletes the company's printer route, then clears it from every printer
- * assignment that named it (a location's default, its shipping and receiving
- * printers, and its work centers), so no assignment points at a printer that
+ * Deletes the company's printer route and its API key, then clears it from
+ * every printer assignment that named it (a location's default, each of its
+ * context printers, and its work centers), so no assignment points at a printer that
  * is gone. The cached printer routing is dropped.
  *
  * @mcp destructive
@@ -1414,6 +1672,24 @@ export const removePrinterRoute = defineServiceFn({
       );
     }
 
+    // The key of a deleted route can no longer be read; this only tidies it.
+    // Only when a row went: RLS can leave the route in place without an error,
+    // and its key must stay with it.
+    if (result.data?.length) {
+      const cleared = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        id,
+        null
+      );
+      if (cleared.error) {
+        logger.warning("Failed to delete a printer API key", {
+          printerRouteId: id,
+          error: cleared.error
+        });
+      }
+    }
+
     const { data: existing } = await getPrintingSettings(
       client,
       ctx.company.id
@@ -1429,12 +1705,7 @@ export const removePrinterRoute = defineServiceFn({
           next.defaultPrinterRouteId = null;
           dirty = true;
         }
-        for (const context of [
-          "shipping",
-          "receiving",
-          "inventory",
-          "kanban"
-        ] as const) {
+        for (const context of locationPrinterContexts) {
           const assigned = next[context];
           if (assigned?.printerRouteId === id) {
             next[context] = { ...assigned, printerRouteId: null };
@@ -1637,6 +1908,125 @@ export const viewPrintJobContent = defineServiceFn({
 });
 
 /**
+ * Get the editor for one document: the company template, this document's own
+ * edits, whether the record is locked, and its notes.
+ */
+export const getDocumentEditor = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1)
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, { documentType, documentId }) {
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    const termsField = DOCUMENT_TERMS_FIELD[documentType];
+    const [template, edit, terms] = await Promise.all([
+      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
+      getDocumentEdit(client, {
+        companyId: ctx.company.id,
+        documentType,
+        documentId
+      }),
+      termsField ? service.getTerms(client, ctx.company.id) : null
+    ]);
+    const termsSeed = termsField
+      ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
+      : null;
+    // The preview's clicks read what the template's sections print.
+    const sections = await service.resolveSections(
+      client,
+      ctx.company.id,
+      collectSectionIds(template)
+    );
+    return {
+      ...record.data,
+      documentType,
+      documentId,
+      template,
+      edit,
+      termsSeed,
+      sections: Object.values(sections)
+    };
+  }
+});
+
+/**
+ * Save how one document prints: the words, hidden fields and blocks, and Terms
+ * that differ from the company template, plus its notes. Refused once the
+ * record is locked.
+ */
+export const saveDocumentEdit = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1),
+    blocks: z.array(blockSchema),
+    settings: documentSettingsSchema,
+    notes: z.record(z.string(), z.unknown()).nullable().optional()
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, input) {
+    const { documentType, documentId } = input;
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+
+    const template = await getCompanyTemplate(client, {
+      companyId: ctx.company.id,
+      documentType
+    });
+    const edit = diffDocumentEdit(documentType, template, {
+      blocks: input.blocks as DocumentBlock[],
+      settings: input.settings as DocumentSettings
+    });
+    const problems = validateDocumentEdit(documentType, template, edit);
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
+
+    const saved = await service.saveDocumentEditRow(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      documentType,
+      documentId,
+      edit,
+      notes: input.notes as JSONContent | null | undefined,
+      userId: ctx.auditUserId
+    });
+    if (saved === "locked") {
+      return ctx.error("rule", "This document is locked.");
+    }
+    if (saved === "notFound") {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    return { documentId };
+  }
+});
+
+/**
  * Save a document's layout.
  *
  * @remarks
@@ -1662,7 +2052,21 @@ export const saveDocumentTemplate = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, template) {
+    // Changed values belong to one document, never to a company template.
+    template.settings.valueEdits = undefined;
     const { headerConfig, headerSectionId } = template;
+
+    const problems = validateTemplateText({
+      documentType: template.documentType,
+      blocks: template.blocks as DocumentBlock[],
+      settings: template.settings as DocumentSettings
+    });
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
 
     let header: Parameters<typeof service.upsertDocumentTemplate>[2];
     if (headerConfig && headerSectionId) {
@@ -1728,6 +2132,18 @@ export const saveDocumentSection = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { id, name, placement, content, config }) {
+    // The registration line prints on every document type, so it may use only
+    // the company variables every type offers.
+    const unknown = unknownVariables(
+      config?.registrationNumber ?? "",
+      COMPANY_MERGE_FIELDS.map((field) => field.token)
+    );
+    if (unknown.length > 0) {
+      return ctx.error(
+        "validation",
+        `Registration number: unknown variable ${unknown.map((token) => `{${token}}`).join(", ")}`
+      );
+    }
     const result = await service.upsertDocumentSection(ctx.asCaller.supabase, {
       id,
       companyId: ctx.company.id,
@@ -1792,7 +2208,7 @@ export const createApiKey = defineServiceFn({
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      created = await upsertApiKey(ctx.asCaller.supabase, {
+      created = await upsertApiKey(ctx.asSystem.supabase, {
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -1828,8 +2244,9 @@ export const updateApiKey = defineServiceFn({
   async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      updated = await upsertApiKey(ctx.asCaller.supabase, {
+      updated = await upsertApiKey(ctx.asSystem.supabase, {
         id,
+        companyId: ctx.company.id,
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -1862,7 +2279,7 @@ export const revokeApiKey = defineServiceFn({
     const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
     try {
-      deleted = await deleteApiKey(ctx.asCaller.supabase, id);
+      deleted = await deleteApiKey(ctx.asSystem.supabase, id, ctx.company.id);
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
@@ -2224,7 +2641,7 @@ export const transitionSyncOperations = defineServiceFn({
       );
     }
     if (result.failures.length > 0) {
-      logger.warn("Sync operations were not transitioned", {
+      logger.warning("Sync operations were not transitioned", {
         companyId: ctx.company.id,
         to,
         failures: result.failures
@@ -3197,6 +3614,12 @@ export const createItemSerialSequence = defineServiceFn({
       .describe(
         "When this item's units draw their serial numbers. Omit or null to follow the company setting."
       ),
+    printLabelOnCompletion: z
+      .boolean()
+      .optional()
+      .describe(
+        "Print the serial label when the job's last operation completes."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -3237,6 +3660,12 @@ export const updateItemSerialSequence = defineServiceFn({
         .optional()
         .describe(
           "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+        ),
+      printLabelOnCompletion: z
+        .boolean()
+        .optional()
+        .describe(
+          "Print the serial label when the job's last operation completes."
         ),
       id: z
         .string()

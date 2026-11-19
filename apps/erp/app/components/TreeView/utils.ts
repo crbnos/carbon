@@ -264,3 +264,19 @@ export function generateChanges(a: NodesState, b: NodesState): Changes {
     selectedId: selectedIdA !== selectedIdB ? selectedIdB : undefined
   };
 }
+
+/**
+ * The one row of a roving-focus tree that is in the tab order: the selected
+ * row while it is rendered, else the first rendered row. A virtualized tree
+ * keeps only the rows near the view in the DOM, so a tab stop that is not
+ * rendered would let Tab skip the whole tree.
+ */
+export function rovingTabStopId(
+  renderedIds: readonly string[],
+  selectedId: string | undefined
+): string | undefined {
+  if (selectedId !== undefined && renderedIds.includes(selectedId)) {
+    return selectedId;
+  }
+  return renderedIds[0];
+}

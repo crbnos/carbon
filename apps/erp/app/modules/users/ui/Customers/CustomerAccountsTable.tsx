@@ -189,7 +189,15 @@ const CustomerAccountsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const email = item.row.original.user?.email;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${email}`}
+              />
+            );
+          },
           meta: {
             mobile: "P2",
             icon: <LuUserCheck />,
@@ -347,28 +355,22 @@ const CustomerAccountsTable = memo(
           withSelectableRows={canEdit}
         />
 
-        {deactivateCustomerModal.isOpen && (
-          <DeactivateUsersModal
-            userIds={selectedUserIds}
-            isOpen={deactivateCustomerModal.isOpen}
-            redirectTo={path.to.customerAccounts}
-            onClose={deactivateCustomerModal.onClose}
-          />
-        )}
-        {resendInviteModal.isOpen && (
-          <ResendInviteModal
-            userIds={selectedUserIds}
-            isOpen={resendInviteModal.isOpen}
-            onClose={resendInviteModal.onClose}
-          />
-        )}
-        {revokeInviteModal.isOpen && (
-          <RevokeInviteModal
-            userIds={selectedUserIds}
-            isOpen={revokeInviteModal.isOpen}
-            onClose={revokeInviteModal.onClose}
-          />
-        )}
+        <DeactivateUsersModal
+          userIds={selectedUserIds}
+          isOpen={deactivateCustomerModal.isOpen}
+          redirectTo={path.to.customerAccounts}
+          onClose={deactivateCustomerModal.onClose}
+        />
+        <ResendInviteModal
+          userIds={selectedUserIds}
+          isOpen={resendInviteModal.isOpen}
+          onClose={resendInviteModal.onClose}
+        />
+        <RevokeInviteModal
+          userIds={selectedUserIds}
+          isOpen={revokeInviteModal.isOpen}
+          onClose={revokeInviteModal.onClose}
+        />
       </>
     );
   }

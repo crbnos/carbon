@@ -190,7 +190,7 @@ export function WeekHoursChart({
             isEditable={isEditable}
             formatHours={formatHours}
             renderBarAccessory={renderBarAccessory}
-            pointerHours={hover?.day === day ? hover.hours : null}
+            pointerHours={!dragging && hover?.day === day ? hover.hours : null}
             onHover={(hours) =>
               setHover(hours === null ? null : { day, hours })
             }
@@ -259,6 +259,7 @@ function DayColumn({
       : null;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a pointer shortcut that fills the day to where it is clicked; each bar is a keyboard slider (role="slider") that sets the same hours
     <div
       className={cn(
         "relative min-w-24 flex-1 border-l border-border",
@@ -355,6 +356,7 @@ function WeekBar({
   const drag = useRef<{ startY: number; base: number; last: number } | null>(
     null
   );
+  const resized = useRef(false);
   const height = hours * hourPx;
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -362,13 +364,16 @@ function WeekBar({
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = { startY: event.clientY, base: hours, last: hours };
+    resized.current = false;
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
+    event.stopPropagation();
     const next = snapHours(
       drag.current.base + (event.clientY - drag.current.startY) / hourPx,
       maxHours
     );
+    if (equals(next, drag.current.last)) return;
     drag.current.last = next;
     onDrag(next);
   };
@@ -376,6 +381,7 @@ function WeekBar({
     if (!drag.current) return;
     const { last, base } = drag.current;
     drag.current = null;
+    resized.current = !equals(last, base);
     onDrag(null);
     if (!equals(last, base)) onCommit(last);
   };
@@ -453,13 +459,19 @@ function WeekBar({
           aria-hidden
           className={cn(
             "absolute inset-x-0 bottom-0 cursor-ns-resize touch-none",
-            size === "lg" ? "h-5" : "h-2"
+            size === "lg" ? "h-5" : "h-2",
+            height >= 88 &&
+              "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:bottom-0 pointer-coarse:after:h-11"
           )}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!resized.current) onSelect();
+            resized.current = false;
+          }}
         >
           <span
             className={cn(

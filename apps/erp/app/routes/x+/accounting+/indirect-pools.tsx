@@ -6,7 +6,6 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIndirectPools } from "@carbon/ee/indirect-rates.server";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -19,8 +18,6 @@ import {
 } from "~/modules/accounting/ui/IndirectRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "indirect-pools");
 
 export const handle: Handle = {
   breadcrumb: msg`Indirect Pools`,
@@ -37,10 +34,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const pools = await getIndirectPools(client, companyId);
   if (pools.error) {
-    logger.error("Failed to load the indirect pools", {
-      companyId,
-      error: pools.error
-    });
     throw redirect(
       path.to.accounting,
       await flash(request, error(pools.error, "Failed to load indirect pools"))

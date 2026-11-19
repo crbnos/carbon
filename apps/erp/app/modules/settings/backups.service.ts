@@ -8,6 +8,7 @@ import type {
   CompatibilityFinding,
   Manifest
 } from "@carbon/jobs/backups";
+import { removeBucketPrefix } from "@carbon/jobs/backups";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RowsByTable } from "./settings.utils";
 
@@ -43,29 +44,6 @@ const BACKUP_LIST_MAX_PAGES = 50;
  * Remove every object under a prefix (recursing into folders) so a deleted
  * backup actually releases its bucket space rather than orphaning files.
  */
-async function removeStoragePrefix(
-  client: SupabaseClient<Database>,
-  bucket: string,
-  prefix: string
-) {
-  const { data } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000 });
-  if (!data) return;
-  const files: string[] = [];
-  for (const entry of data) {
-    const path = `${prefix}/${entry.name}`;
-    if (entry.id === null) {
-      await removeStoragePrefix(client, bucket, path);
-    } else {
-      files.push(path);
-    }
-  }
-  if (files.length > 0) {
-    await client.storage.from(bucket).remove(files);
-  }
-}
-
 export type CompanyBackupSummary = {
   /** Backup folder name (also the restore `source` identifier). */
   name: string;
@@ -194,8 +172,14 @@ export async function deleteCompanyBackup(
   companyId: string,
   name: string
 ) {
-  await removeStoragePrefix(client, companyId, `exports/${name}`);
-  return { error: null as Error | null };
+  try {
+    await removeBucketPrefix(client, companyId, `exports/${name}`, {
+      strict: true
+    });
+    return { error: null as Error | null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(String(err)) };
+  }
 }
 
 /**

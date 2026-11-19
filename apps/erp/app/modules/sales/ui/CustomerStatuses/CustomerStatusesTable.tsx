@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import { asColor } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -38,7 +39,10 @@ const CustomerStatusesTable = memo(
           header: t`Customer Status`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id}>
-              <Enumerable value={row.original.name ?? ""} />
+              <Enumerable
+                value={row.original.name ?? ""}
+                color={asColor(row.original.color)}
+              />
             </Hyperlink>
           ),
           meta: {

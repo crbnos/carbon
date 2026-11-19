@@ -24,7 +24,7 @@ import {
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -72,6 +72,7 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   onSelectQuantity: (lineId: string, quantity: number) => void;
 }) => {
+  const { t } = useLingui();
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company } = useUser();
@@ -146,12 +147,14 @@ const LineItems = ({
         (selectedLine.convertedTaxableAddOn ?? 0) +
         (selectedLine.convertedShippingCost ?? 0)) *
         (selectedLine.taxPercent ?? 0);
+    const lineName = line.itemReadableId ?? "";
     // The quantity-break picker: a tap on the line opens it.
     const pricingOptions = (
       <AnimatePresence initial={false}>
         {openItems.includes(line.id) ? (
           <motion.div
             key="panel"
+            id={`quote-line-details-${line.id}`}
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
             animate={{ opacity: 1, height: "auto", marginTop: 16 }}
             exit={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -234,9 +237,13 @@ const LineItems = ({
           )}
 
           <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
             <div
               className="flex flex-col cursor-pointer w-full"
-              onClick={() => toggleOpen(line.id!)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
+              }}
             >
               <div className="flex items-center gap-x-4 justify-between flex-grow">
                 <HStack spacing={2} className="min-w-0 flex-shrink">
@@ -260,16 +267,24 @@ const LineItems = ({
                   <motion.button
                     type="button"
                     aria-expanded={openItems.includes(line.id)}
+                    aria-controls={
+                      openItems.includes(line.id)
+                        ? `quote-line-details-${line.id}`
+                        : undefined
+                    }
+                    aria-label={
+                      openItems.includes(line.id)
+                        ? t`Hide details for ${lineName}`
+                        : t`Show details for ${lineName}`
+                    }
                     className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => toggleOpen(line.id!)}
                     animate={{
                       rotate: openItems.includes(line.id) ? 90 : 0
                     }}
                     transition={{ duration: 0.2 }}
                   >
-                    <LuChevronRight size={24} />
-                    <span className="sr-only">
-                      <Trans>Details</Trans>
-                    </span>
+                    <LuChevronRight size={24} aria-hidden />
                   </motion.button>
                 </HStack>
               </div>

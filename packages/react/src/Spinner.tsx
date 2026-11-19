@@ -8,15 +8,26 @@ interface SpinnerProps {
   /** Diameter of the spinner in pixels */
   size?: number;
   className?: string;
+  /**
+   * Decorative: no status role or "Loading" text, for a spinner inside a
+   * control that says it is busy itself (a loading Button sets `aria-busy`).
+   */
+  "aria-hidden"?: boolean;
 }
 
 const BARS = Array.from({ length: 12 });
 
-export function Spinner({ size = 16, className }: SpinnerProps) {
+export function Spinner({
+  size = 16,
+  className,
+  "aria-hidden": ariaHidden
+}: SpinnerProps) {
+  const a11y = ariaHidden
+    ? { "aria-hidden": true as const }
+    : { role: "status", "aria-label": "Loading" };
   return (
     <div
-      role="status"
-      aria-label="Loading"
+      {...a11y}
       className={cn("relative inline-block", className)}
       style={{ width: size, height: size }}
     >
@@ -31,7 +42,7 @@ export function Spinner({ size = 16, className }: SpinnerProps) {
           }}
         />
       ))}
-      <span className="sr-only">Loading</span>
+      {!ariaHidden && <span className="sr-only">Loading</span>}
     </div>
   );
 }

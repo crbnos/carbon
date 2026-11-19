@@ -55,7 +55,12 @@ const ReturnReasonsTable = memo((props: ReturnReasonsTableProps) => {
       {
         accessorKey: "inventoryValueZero",
         header: t`Zero Inventory Value`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => (
+          <Checkbox
+            aria-label={t`Zero Inventory Value`}
+            isChecked={item.getValue<boolean>()}
+          />
+        ),
         meta: {
           filter: {
             type: "static",

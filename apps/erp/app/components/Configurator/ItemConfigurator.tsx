@@ -104,20 +104,18 @@ export function ItemConfigureButton({
       >
         {configuration ? <Trans>Reconfigure</Trans> : <Trans>Configure</Trans>}
       </Button>
-      {disclosure.isOpen && (
-        <ConfiguratorModal
-          open
-          initialValues={configuration ?? {}}
-          groups={parameters.groups}
-          parameters={parameters.parameters}
-          onClose={disclosure.onClose}
-          onSubmit={(values) => {
-            setConfiguration(values);
-            disclosure.onClose();
-            onConfigured(values);
-          }}
-        />
-      )}
+      <ConfiguratorModal
+        open={disclosure.isOpen}
+        initialValues={configuration ?? {}}
+        groups={parameters.groups}
+        parameters={parameters.parameters}
+        onClose={disclosure.onClose}
+        onSubmit={(values) => {
+          setConfiguration(values);
+          disclosure.onClose();
+          onConfigured(values);
+        }}
+      />
     </>
   );
 }

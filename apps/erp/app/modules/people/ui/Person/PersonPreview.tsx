@@ -42,7 +42,11 @@ const PersonHeader = () => {
       <Card>
         <HStack className="justify-between items-center p-6 pl-0">
           <CardHeader className="pt-0">
-            <CardTitle className="font-headline text-2xl">
+            <CardTitle
+              // The record page's heading.
+              aria-level={1}
+              className="font-headline text-2xl"
+            >
               {routeData?.employeeSummary?.name}
             </CardTitle>
             <CardDescription>

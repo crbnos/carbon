@@ -4,16 +4,14 @@
 
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Warehouse Transfer" }];
-};
+export const meta = moduleMeta("Warehouse Transfer");
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,

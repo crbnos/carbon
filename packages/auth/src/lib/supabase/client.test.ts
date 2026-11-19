@@ -15,13 +15,16 @@ afterAll(() => vi.unstubAllEnvs());
 
 const waitEnded = vi.fn();
 const startSpan = vi.fn((_name: string, _attributes: object) => waitEnded);
-vi.mock("@carbon/logger/tracing.server", () => ({ startSpan }));
+vi.mock("@carbon/logger/span", async (original) => ({
+  ...(await original<typeof import("@carbon/logger/span")>()),
+  startSpan
+}));
 
 const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
   await import("./client");
 const { requestFetch } = await import("./client.server");
 const { requestContextMiddleware } = await import(
-  "@carbon/logger/middleware.server"
+  "@carbon/logger/context.server"
 );
 const { RouterContextProvider } = await import("react-router");
 
@@ -215,6 +218,36 @@ describe("Edge Function calls carry the Authorization bearer", () => {
     });
     expect(sent()).toBe("Bearer sb_publishable_anon");
   });
+});
+
+describe("a server client on a cluster with an internal address", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    ["a user or service-role client", () => getCarbonClient("service")],
+    ["an API-key client", () => getCarbonAPIKeyClient("crbn_key")]
+  ])(
+    "%s signs links on the public address and calls the internal one",
+    async (_, client) => {
+      const fetchMock = vi.fn(
+        async (_input: RequestInfo | URL, _init?: RequestInit) =>
+          Response.json({ signedURL: "/object/sign/co/a.pdf?token=t" })
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      const { data, error } = await client()
+        .storage.from("private")
+        .createSignedUrl("co/a.pdf", 60);
+
+      expect(error).toBeNull();
+      expect(data?.signedUrl).toBe(
+        "http://supabase.test/storage/v1/object/sign/co/a.pdf?token=t"
+      );
+      expect(String(fetchMock.mock.calls[0]![0])).toBe(
+        "http://supabase.internal.test/storage/v1/object/sign/private/co/a.pdf"
+      );
+    }
+  );
 });
 
 describe("storage reads are retried, everything else passes through", () => {

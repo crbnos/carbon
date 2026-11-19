@@ -124,7 +124,12 @@ const OperatorsTable = memo(
         {
           accessorKey: "active",
           header: "Active",
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Active`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             mobile: "P2",
             filter: {
@@ -138,7 +143,7 @@ const OperatorsTable = memo(
           }
         }
       ],
-      [employeeTypesById]
+      [employeeTypesById, t]
     );
 
     const renderContextMenu = useCallback(

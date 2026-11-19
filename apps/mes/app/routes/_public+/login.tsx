@@ -11,6 +11,7 @@ import {
   getMESUrl,
   getRedirectTo,
   isAuthProviderEnabled,
+  isDevBypassEmail,
   magicLinkValidator,
   RATE_LIMIT,
   signInCodeValidator
@@ -78,6 +79,8 @@ import type {
 import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 
 import { path } from "~/utils/path";
+
+const logger = getLogger("mes", "login");
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Login" }];
@@ -181,10 +184,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const user = await getUserByEmail(email);
 
-  const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
   if (
-    devBypassEmail &&
-    email.toLowerCase() === devBypassEmail.toLowerCase() &&
+    isDevBypassEmail(email, process.env.DEV_BYPASS_EMAIL) &&
     user.data?.active
   ) {
     const authSession = await signInWithBypassEmail(email);
@@ -239,7 +240,7 @@ export async function action({ request }: ActionFunctionArgs) {
         reason: "magic link send failed"
       });
       const message = getMagicLinkErrorMessage(magicLink.error);
-      getLogger("mes", "login").error("Failed to send magic link", {
+      logger.error("Failed to send magic link", {
         error: magicLink.error
       });
       return data(
@@ -268,9 +269,7 @@ export default function LoginRoute() {
   useEffect(() => {
     import("localforage")
       .then((storage) => storage.default.clear())
-      .catch((error) =>
-        getLogger("mes", "login").warn("stored lists not cleared", { error })
-      );
+      .catch((error) => logger.warning("stored lists not cleared", { error }));
   }, []);
 
   const { t } = useLingui();
@@ -668,6 +667,7 @@ export default function LoginRoute() {
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       height="16"
       strokeLinejoin="round"
       viewBox="0 0 16 16"
@@ -697,6 +697,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       height="24"
       width="24"

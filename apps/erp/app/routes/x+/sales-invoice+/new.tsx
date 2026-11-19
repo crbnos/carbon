@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
@@ -23,7 +23,10 @@ import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceFo
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
+
+export const meta = newRecordMeta("Sales Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
@@ -62,10 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           requestReferrer(request) ?? path.to.salesOrders,
           await flash(
             request,
-            error(
-              result.error,
-              getErrorMessage(result.error, "Failed to create sales invoice")
-            )
+            error(result.error, "Failed to create sales invoice")
           )
         );
       }
@@ -87,10 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           requestReferrer(request) ?? path.to.shipment(sourceDocumentId),
           await flash(
             request,
-            error(
-              result.error,
-              getErrorMessage(result.error, "Failed to create sales invoice")
-            )
+            error(result.error, "Failed to create sales invoice")
           )
         );
       }

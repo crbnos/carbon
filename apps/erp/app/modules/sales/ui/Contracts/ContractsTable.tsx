@@ -298,11 +298,9 @@ const ContractsTable = memo((props: ContractsTableProps) => {
           text={t`Are you sure you want to delete ${selected.customerContractId ?? ""}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelected(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelected(null);
           }}
         />
       )}

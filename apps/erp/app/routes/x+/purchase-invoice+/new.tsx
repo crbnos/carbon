@@ -9,7 +9,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
@@ -20,7 +20,10 @@ import { PurchaseInvoiceForm } from "~/modules/invoicing/ui";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
+
+export const meta = newRecordMeta("Purchase Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
@@ -60,10 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           requestReferrer(request) ?? path.to.purchaseOrders,
           await flash(
             request,
-            error(
-              result.error,
-              getErrorMessage(result.error, "Failed to create purchase invoice")
-            )
+            error(result.error, "Failed to create purchase invoice")
           )
         );
       }

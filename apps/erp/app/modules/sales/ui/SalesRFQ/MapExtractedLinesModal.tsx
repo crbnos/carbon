@@ -9,12 +9,14 @@ import { path } from "~/utils/path";
 export type MapExtractedLinesModalProps = {
   rfqId: string;
   customerId: string | undefined;
+  open?: boolean;
   onClose: () => void;
 };
 
 export default function MapExtractedLinesModal({
   rfqId,
   customerId,
+  open,
   onClose
 }: MapExtractedLinesModalProps) {
   return (
@@ -22,6 +24,7 @@ export default function MapExtractedLinesModal({
       endpoint={`${path.to.api.salesRfq(rfqId)}/map-lines`}
       party={{ field: "customerId", id: customerId }}
       title={<Trans>Map Extracted Lines</Trans>}
+      open={open}
       onClose={onClose}
       renderSummary={(map) => (
         <>

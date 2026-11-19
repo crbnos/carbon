@@ -40,7 +40,7 @@ Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carb
 `auth.server.ts`) picks ONE provider per process from `BOT_PROTECTION`: `"botid"` (only
 ON Vercel — `IS_VERCEL`, from Vercel's own `VERCEL=1`, which SST/Docker/the BYOC chart
 never set) or `"turnstile"` (needs both `CLOUDFLARE_TURNSTILE_SITE_KEY` and
-`_SECRET_KEY`). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
+`_SECRET_KEY`), or `"none"` (no check, even with keys set). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
 else `null` (no check). It is explicit because the Turnstile keys can be present for
 something else (GoTrue, another form) while login uses BotID. An explicit value that
 cannot work (botid off Vercel, turnstile without keys, anything else) throws at boot.
@@ -291,6 +291,12 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
   `RP_ID`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
+- `refreshAccessToken` refreshes one refresh token once: concurrent callers in a
+  process share the GoTrue call, and later callers read its session from Redis
+  (`auth:refresh:<sha256 of the token>`, 10 s, the local GoTrue reuse interval). Every
+  loader and picker request on a page refreshes on its own, so without this a
+  burst of realtime reloads near expiry hit GoTrue's per-IP refresh limit (429)
+  and answered 503. A refused token is never shared.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
 - `clearAuthCookies` (which `destroyAuthSession` and the login loader's
   expired-session branch call) also ends this browser's push notifications: it
@@ -420,7 +426,7 @@ the gate used in every loader/action. Two paths:
      `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
      (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
    - `getUserClaims` is additionally memoized **per read request** via
-     `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
+     `oncePerRead` (`@carbon/logger/context.server`), so the several loaders a
      page matches share one Redis GET. Read-gated on purpose: an action and its
      loader revalidation run in the same request, and memoizing there could let a
      gate pass on claims the action just revoked. The Supabase clients

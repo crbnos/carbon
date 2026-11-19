@@ -13,6 +13,7 @@ import {
 import {
   Badge,
   Button,
+  CardAction,
   cn,
   FormControl,
   FormLabel,
@@ -87,7 +88,10 @@ import {
   useUser
 } from "~/hooks";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
-import { purchaseInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import {
+  purchaseInvoiceLineValidator,
+  purchaseLineAccountClasses
+} from "~/modules/invoicing/invoicing.models";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
@@ -99,6 +103,7 @@ import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ChangeInvoiceLineAccount } from "../InvoiceLineAccount/ChangeInvoiceLineAccount";
 
 type PurchaseInvoiceLineFormProps = {
   initialValues: z.infer<typeof purchaseInvoiceLineValidator> & {
@@ -108,12 +113,14 @@ type PurchaseInvoiceLineFormProps = {
     leaseReadableId?: string;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const PurchaseInvoiceLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: PurchaseInvoiceLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -147,6 +154,13 @@ const PurchaseInvoiceLineForm = ({
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
   );
+  const canChangeAccount =
+    !!routeData?.purchaseInvoice?.postingDate &&
+    !["Draft", "Pending", "Voided"].includes(
+      routeData?.purchaseInvoice?.status ?? ""
+    ) &&
+    permissions.can("update", "invoicing") &&
+    permissions.can("update", "accounting");
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
   // The loader's currency row is the primary source — it is correct on first
@@ -416,8 +430,8 @@ const PurchaseInvoiceLineForm = ({
   });
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.can("update", "invoicing")
+    : !permissions.can("create", "invoicing");
 
   // These badges render DOCUMENT-currency values, so both formatters take the
   // document's currency and decimals. Defaulting to base currency is what
@@ -611,6 +625,7 @@ const PurchaseInvoiceLineForm = ({
     >
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           defaultCollapsed={false}
           isCollapsible={isEditing}
@@ -711,6 +726,22 @@ const PurchaseInvoiceLineForm = ({
                     </TabsList>
                   )}
                 </div>
+                {isEditing && isGLAccount && canChangeAccount && (
+                  // pr-12 keeps it clear of the card's collapse chevron.
+                  <CardAction className="pr-12">
+                    <ChangeInvoiceLineAccount
+                      action={path.to.purchaseInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      currentAccountPath={path.to.api.purchaseInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      accountClasses={purchaseLineAccountClasses}
+                    />
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />
@@ -904,6 +935,7 @@ const PurchaseInvoiceLineForm = ({
                             </Badge>
                           )}
                           <IconButton
+                            aria-expanded={costsDisclosure.isOpen}
                             icon={<LuChevronRight />}
                             aria-label={
                               costsDisclosure.isOpen
@@ -1014,7 +1046,7 @@ const PurchaseInvoiceLineForm = ({
                             <Account
                               name="accountId"
                               label={t`GL Account`}
-                              classes={["Expense"]}
+                              classes={purchaseLineAccountClasses}
                               isOptional={false}
                             />
                             <CostCenter
@@ -1151,6 +1183,7 @@ const PurchaseInvoiceLineForm = ({
                               </Badge>
                             )}
                             <IconButton
+                              aria-expanded={indirectCostsDisclosure.isOpen}
                               icon={<LuChevronRight />}
                               aria-label={
                                 indirectCostsDisclosure.isOpen

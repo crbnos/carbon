@@ -22,6 +22,7 @@ import { Hyperlink } from "~/components";
 import { Hidden, InspectionDocument, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import {
+  type InspectionDocumentStatus,
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
 } from "~/modules/quality/quality.models";
@@ -35,8 +36,9 @@ type ItemQualityViewProps = {
   documents: {
     id: string;
     fileName: string | null;
-    drawingNumber: string | null;
+    name: string | null;
     version: number;
+    status: InspectionDocumentStatus;
   }[];
   assignments: ItemInspectionDocumentAssignment[];
 };
@@ -55,6 +57,9 @@ const ItemQualityView = ({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "quality");
   const newDocumentDisclosure = useDisclosure();
+  // Archived plans are retired versions — hide them from the list. They stay
+  // reachable from Quality → Inspection Plans.
+  const visibleDocuments = documents.filter((doc) => doc.status !== "Archived");
 
   return (
     <VStack spacing={4} className="w-full">
@@ -81,20 +86,20 @@ const ItemQualityView = ({
           </CardAction>
         </HStack>
         <CardContent>
-          {documents.length === 0 ? (
+          {visibleDocuments.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
               <Trans>No inspection plans</Trans>
             </p>
           ) : (
             <VStack spacing={0} className="w-full">
-              {documents.map((doc) => (
+              {visibleDocuments.map((doc) => (
                 <HStack
                   key={doc.id}
                   className="w-full justify-between border-b py-2 last:border-b-0"
                 >
                   <Hyperlink to={path.to.inspectionDocument(doc.id)}>
                     <span className="text-sm font-medium">
-                      {doc.drawingNumber ?? doc.fileName ?? doc.id}
+                      {doc.name ?? doc.fileName ?? doc.id}
                     </span>
                   </Hyperlink>
                   <Badge
@@ -161,12 +166,11 @@ const ItemQualityView = ({
         </CardContent>
       </Card>
 
-      {newDocumentDisclosure.isOpen && (
-        <InspectionDocumentForm
-          initialValues={{ name: "", partId: itemId, drawingNumber: "" }}
-          onClose={newDocumentDisclosure.onClose}
-        />
-      )}
+      <InspectionDocumentForm
+        open={newDocumentDisclosure.isOpen}
+        initialValues={{ name: "", partId: itemId }}
+        onClose={newDocumentDisclosure.onClose}
+      />
     </VStack>
   );
 };

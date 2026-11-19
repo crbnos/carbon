@@ -67,3 +67,31 @@ export function workspaceSourceStates(
     assemblies: fingerprint("wa1", sources)
   };
 }
+
+/**
+ * Waits for `promise` until `deadline` (epoch ms), then abandons it and
+ * swallows its rejection, so one slow Onshape read cannot hold a review.
+ */
+export async function settleBefore<T>(
+  promise: Promise<T>,
+  deadline: number
+): Promise<{ settled: true; value: T } | { settled: false }> {
+  if (!Number.isFinite(deadline)) {
+    return { settled: true, value: await promise };
+  }
+  const late = Symbol("late");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const lateAt = new Promise<typeof late>((resolve) => {
+    timer = setTimeout(() => resolve(late), Math.max(deadline - Date.now(), 0));
+  });
+  try {
+    const winner = await Promise.race([promise, lateAt]);
+    if (winner === late) {
+      promise.catch(() => undefined);
+      return { settled: false };
+    }
+    return { settled: true, value: winner as T };
+  } finally {
+    clearTimeout(timer);
+  }
+}

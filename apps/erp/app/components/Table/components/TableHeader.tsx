@@ -33,7 +33,7 @@ import type {
   ColumnPinningState
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   LuCheck,
@@ -48,11 +48,12 @@ import { zfd } from "zod-form-data";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
-import { useUrlParams } from "~/hooks";
+import { useDrawerItem, useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
+import type { ServerExportLinks } from "../types";
 import Columns from "./Columns";
 import Download, { type InfiniteExport } from "./Download";
 import { ActiveFilters, Filter } from "./Filter";
@@ -77,6 +78,7 @@ type HeaderProps<T> = {
   data: object[];
   // Infinite lists: the export loads the rest first, or hands it to a job.
   infiniteExport?: InfiniteExport;
+  serverExport?: ServerExportLinks;
   editMode: boolean;
   filters: ColumnFilter[];
   // True when the table has no rows and no active filter/sort/search — hides the
@@ -94,6 +96,8 @@ type HeaderProps<T> = {
   // The selection's size: the matching count when every matching row is
   // selected, else `selectedRows.length`.
   selectedCount?: number;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
   table?: string;
@@ -112,6 +116,7 @@ type HeaderProps<T> = {
   // CSV download; both default on so ordinary tables are unchanged.
   withColumnOrdering?: boolean;
   withCsvExport?: boolean;
+  csvExportHref?: string;
   sort?: ReactNode;
 };
 
@@ -129,6 +134,7 @@ const TableHeader = <T extends object>({
   countIsExact,
   data,
   infiniteExport,
+  serverExport,
   editMode,
   filters,
   isEmpty,
@@ -137,6 +143,8 @@ const TableHeader = <T extends object>({
   headerActions,
   selectedRows,
   selectedCount,
+  hasRememberedChanges,
+  onResetRememberedState,
   renderActions,
   setColumnOrder,
   setEditMode,
@@ -152,6 +160,7 @@ const TableHeader = <T extends object>({
   withSelectableRows,
   withColumnOrdering = true,
   withCsvExport = true,
+  csvExportHref,
   sort
 }: HeaderProps<T>) => {
   const { t } = useLingui();
@@ -159,9 +168,7 @@ const TableHeader = <T extends object>({
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
 
-  const [importCSVTable, setImportCSVTable] = useState<
-    keyof typeof fieldMappings | null
-  >(null);
+  const importCSVModal = useDrawerItem<keyof typeof fieldMappings>();
 
   const savedViewDisclosure = useDisclosure();
   const canSaveView = withSavedView && !!table;
@@ -197,6 +204,8 @@ const TableHeader = <T extends object>({
       }),
     [t]
   );
+
+  const selectedTotal = selectedCount ?? selectedRows.length;
 
   const hideTitleBar =
     !viewTitle && !primaryAction && !canSaveView && !titleBadge;
@@ -282,12 +291,39 @@ const TableHeader = <T extends object>({
             <HStack spacing={2}>
               {withSidebarTrigger && <CollapsibleSidebarTrigger />}
               {viewTitle && (
-                <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
+                // A list page's title is its h1; a compact table sits inside a page.
+                <Heading
+                  as={compact ? "h2" : "h1"}
+                  size={compact ? "h3" : "h2"}
+                >
+                  {viewTitle}
+                </Heading>
               )}
               {titleBadge}
             </HStack>
 
             <HStack>
+              {serverExport && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" leftIcon={<LuDownload />}>
+                      <Trans>Export</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <a href={serverExport.csv}>
+                        <Trans>Download CSV</Trans>
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href={serverExport.xlsx}>
+                        <Trans>Download Excel</Trans>
+                      </a>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {/* <Button variant="secondary" leftIcon={<LuDownload />}>
             Export
             </Button> */}
@@ -310,7 +346,7 @@ const TableHeader = <T extends object>({
                       <DropdownMenuItem
                         key={table}
                         onClick={() => {
-                          setImportCSVTable(table);
+                          importCSVModal.open(table);
                         }}
                       >
                         <DropdownMenuIcon icon={<LuDownload />} />
@@ -324,7 +360,7 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      {!isEmpty && !hideToolbar && (
+      {(!isEmpty || hasRememberedChanges) && !hideToolbar && (
         <HStack
           className={cn(
             compact
@@ -342,9 +378,10 @@ const TableHeader = <T extends object>({
                       className="pl-2 pr-1"
                       leftIcon={<LuCheck />}
                       variant="secondary"
+                      aria-label={t`${selectedTotal} selected — actions`}
                     >
                       <Badge variant="secondary">
-                        <span>{selectedCount ?? selectedRows.length}</span>
+                        <span>{selectedTotal}</span>
                       </Badge>
                     </Button>
                   </DropdownMenuTrigger>
@@ -358,6 +395,15 @@ const TableHeader = <T extends object>({
             {headerActions}
           </HStack>
           <HStack>
+            {hasRememberedChanges && table && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetRememberedState}
+              >
+                <Trans>Reset</Trans>
+              </Button>
+            )}
             {sort === undefined ? (
               <Sort sortKeyToLabel={sortKeyToLabel} />
             ) : (
@@ -374,31 +420,41 @@ const TableHeader = <T extends object>({
             )}
 
             {canSaveView && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <IconButton
-                    aria-label={hasView ? t`Edit View` : t`Save View`}
-                    variant={
-                      savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
-                    }
-                    icon={<LuLayers />}
-                    onClick={savedViewDisclosure.onToggle}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {hasView ? (
-                      <Trans>Edit View</Trans>
-                    ) : (
-                      <Trans>Save View</Trans>
-                    )}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <>
+                {hasRememberedChanges && !hasView && (
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Save View</Trans>
+                  </span>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      aria-label={hasView ? t`Edit View` : t`Save View`}
+                      variant={
+                        savedViewDisclosure.isOpen || hasView
+                          ? "active"
+                          : "ghost"
+                      }
+                      icon={<LuLayers />}
+                      onClick={savedViewDisclosure.onToggle}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {hasView ? (
+                        <Trans>Edit View</Trans>
+                      ) : (
+                        <Trans>Save View</Trans>
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
 
             {withCsvExport && (
               <Download
+                href={csvExportHref}
                 data={data}
                 infinite={infiniteExport}
                 columnAccessors={columnAccessors}
@@ -451,10 +507,12 @@ const TableHeader = <T extends object>({
           <ActiveFilters filters={filters} />
         </HStack>
       )}
-      {importCSVTable && (
+      {importCSVModal.item && (
         <ImportCSVModal
-          table={importCSVTable}
-          onClose={() => setImportCSVTable(null)}
+          key={importCSVModal.key}
+          open={importCSVModal.isOpen}
+          table={importCSVModal.item}
+          onClose={importCSVModal.close}
         />
       )}
     </div>

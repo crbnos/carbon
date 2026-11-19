@@ -117,6 +117,7 @@ function SetupInstructions({ companyId }: { companyId: string }) {
 function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       {...props}
       xmlns="http://www.w3.org/2000/svg"
       width="558.86"

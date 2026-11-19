@@ -267,6 +267,7 @@ const ConversionFactor = forwardRef<
                   <HStack className="w-full justify-around items-start">
                     <VStack spacing={1}>
                       <NumberField
+                        aria-label={t`Purchased quantity`}
                         value={1 / conversionFactor}
                         onChange={onPurchaseUnitChange}
                         formatOptions={SCALE_FORMAT}
@@ -292,7 +293,7 @@ const ConversionFactor = forwardRef<
                       <span className="font-mono text-xl">=</span>
                     </VStack>
                     <VStack spacing={1}>
-                      <NumberField value={1}>
+                      <NumberField aria-label={t`Inventory quantity`} value={1}>
                         <NumberInputGroup className="relative">
                           <NumberInput isReadOnly />
                         </NumberInputGroup>
@@ -306,6 +307,7 @@ const ConversionFactor = forwardRef<
                   <HStack className="w-full justify-around items-start">
                     <VStack spacing={1}>
                       <NumberField
+                        aria-label={t`Inventory quantity`}
                         value={conversionFactor}
                         onChange={onInventoryUnitChange}
                         formatOptions={SCALE_FORMAT}
@@ -331,7 +333,7 @@ const ConversionFactor = forwardRef<
                       <span className="font-mono text-xl">=</span>
                     </VStack>
                     <VStack spacing={1}>
-                      <NumberField value={1}>
+                      <NumberField aria-label={t`Purchased quantity`} value={1}>
                         <NumberInputGroup className="relative">
                           <NumberInput isReadOnly />
                         </NumberInputGroup>

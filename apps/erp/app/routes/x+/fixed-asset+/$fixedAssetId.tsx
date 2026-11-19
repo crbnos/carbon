@@ -19,7 +19,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
@@ -44,6 +44,7 @@ import {
 } from "~/modules/accounting/ui/FixedAssets";
 import { getWorkCenter } from "~/modules/resources/resources.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -53,6 +54,9 @@ export const handle: Handle = {
   ),
   module: "accounting"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.asset?.fixedAssetId, "Fixed Asset");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

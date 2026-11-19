@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
+import { usePrinting } from "@carbon/printing/ui";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -38,7 +39,17 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useParams } from "react-router";
+import { PrintButton } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
+import {
+  type DocumentForceDeleteData,
+  DocumentForceDeleteMenuItem,
+  DocumentForceDeleteModal
+} from "~/components/ForceDelete/DocumentForceDelete";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -47,6 +58,7 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { isInvoicePayable } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing/types";
 import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
+import type { SalesInvoicePostFactsResponse } from "~/routes/api+/sales-invoice.$invoiceId.post-facts";
 import type { action as sendAction } from "~/routes/x+/sales-invoice+/$invoiceId.send";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -60,10 +72,12 @@ const SalesInvoiceHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { invoiceId } = useParams();
+  const documentEdit = useDocumentEditModal("salesInvoice", invoiceId);
   const { company } = useUser();
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "salesInvoice",
     // @ts-expect-error TS2322 - TODO: fix type
@@ -80,6 +94,27 @@ const SalesInvoiceHeader = () => {
   });
   const postFetcher =
     postRules.fetcher as FetcherWithComponents<SalesInvoicePostResult>;
+  // The order facts the post checks compare against, read when Post is
+  // clicked so they include invoices posted since the page loaded. A plain
+  // fetch, not a fetcher: React Router reloads a fetcher's data after every
+  // action on the page, and these are read only when the modal opens.
+  const [postFacts, setPostFacts] = useState<SalesInvoicePostFactsResponse>({
+    facts: null,
+    failed: false
+  });
+  const [openingPost, setOpeningPost] = useState(false);
+  const readPostFacts = async (
+    id: string
+  ): Promise<SalesInvoicePostFactsResponse> => {
+    try {
+      const response = await fetch(path.to.api.salesInvoicePostFacts(id));
+      if (!response.ok) return { facts: null, failed: true };
+      return (await response.json()) as SalesInvoicePostFactsResponse;
+    } catch {
+      // The checks that need the order say they did not run.
+      return { facts: null, failed: true };
+    }
+  };
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -94,17 +129,22 @@ const SalesInvoiceHeader = () => {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const [items] = useItems();
-  const routeData = useRouteData<{
-    salesInvoice: SalesInvoice;
-    salesInvoiceLines: SalesInvoiceLine[];
-    defaultCc: string[];
-    orgHasCredits: boolean;
-    stripeInvoiceUrl: string | null;
-  }>(path.to.salesInvoice(invoiceId));
+  const routeData = useRouteData<
+    {
+      salesInvoice: SalesInvoice;
+      salesInvoiceLines: SalesInvoiceLine[];
+      defaultCc: string[];
+      orgHasCredits: boolean;
+      stripeInvoiceUrl: string | null;
+    } & DocumentForceDeleteData
+  >(path.to.salesInvoice(invoiceId));
 
   if (!routeData?.salesInvoice) throw new Error("salesInvoice not found");
   const { salesInvoice } = routeData;
   const { toggleExplorer, toggleProperties } = usePanels();
+  const hasPdfPrinter = usePrinting().printerRoutes.some(
+    (route) => route.format === "pdf"
+  );
   const isPosted = salesInvoice.postingDate !== null;
   const isVoided = salesInvoice.status === "Voided";
 
@@ -207,21 +247,27 @@ const SalesInvoiceHeader = () => {
     // The lines posting will ship: items not on a sales order. A Service is
     // never shipped — post-sales-invoice skips it — so it is not listed.
     if (!carbon) throw new Error("carbon not found");
-    const { data, error } = await carbon
-      .from("salesInvoiceLine")
-      .select("itemId, description, quantity")
-      .eq("invoiceId", invoiceId)
-      .in("invoiceLineType", [
-        "Part",
-        "Material",
-        "Tool",
-        "Consumable",
-        "Fixture"
-      ])
-      .is("salesOrderLineId", null);
+    if (openingPost) return;
+    setOpeningPost(true);
+    const [{ data, error }, facts] = await Promise.all([
+      carbon
+        .from("salesInvoiceLine")
+        .select("itemId, description, quantity")
+        .eq("invoiceId", invoiceId)
+        .in("invoiceLineType", [
+          "Part",
+          "Material",
+          "Tool",
+          "Consumable",
+          "Fixture"
+        ])
+        .is("salesOrderLineId", null),
+      readPostFacts(invoiceId)
+    ]).finally(() => setOpeningPost(false));
 
     if (error) throw new Error(error.message);
     if (!data) return;
+    setPostFacts(facts);
 
     // so that we can ask the user if they want to receive those lines
     flushSync(() =>
@@ -283,6 +329,11 @@ const SalesInvoiceHeader = () => {
         <DropdownMenuIcon icon={<LuTrash />} />
         <Trans>Delete Sales Invoice</Trans>
       </DropdownMenuItem>
+      <DocumentForceDeleteMenuItem
+        forceDelete={routeData}
+        canDelete={permissions.can("delete", "invoicing")}
+        onClick={forceDeleteModal.onOpen}
+      />
     </>
   );
   const statusBadges = (
@@ -445,6 +496,17 @@ const SalesInvoiceHeader = () => {
                 </Button>
               </RecordAction>
             )}
+            {hasPdfPrinter && (
+              <RecordAction slot="overflow">
+                <PrintButton
+                  sourceDocument="SalesInvoice"
+                  sourceDocumentId={invoiceId}
+                  locationId={salesInvoice.locationId ?? undefined}
+                  context="documents"
+                  format="pdf"
+                />
+              </RecordAction>
+            )}
             <RecordAction slot="overflow">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -467,6 +529,9 @@ const SalesInvoiceHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -479,8 +544,9 @@ const SalesInvoiceHeader = () => {
                     : "secondary"
                 }
                 onClick={showPostModal}
-                isLoading={postFetcher.state !== "idle"}
+                isLoading={openingPost || postFetcher.state !== "idle"}
                 isDisabled={
+                  openingPost ||
                   postFetcher.state !== "idle" ||
                   isPosted ||
                   routeData?.salesInvoiceLines?.length === 0 ||
@@ -503,38 +569,48 @@ const SalesInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
-        <SalesInvoicePostModal
-          invoiceId={invoiceId}
-          customerId={salesInvoice.invoiceCustomerId}
-          customerContactId={salesInvoice.invoiceCustomerContactId}
-          dateDue={salesInvoice.dateDue}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToShip={linesNotAssociatedWithSO}
-          fetcher={postFetcher}
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SalesInvoicePostModal
+        invoiceId={invoiceId}
+        customerId={salesInvoice.invoiceCustomerId}
+        customerContactId={salesInvoice.invoiceCustomerContactId}
+        dateDue={salesInvoice.dateDue}
+        isOpen={postingModal.isOpen}
+        onClose={postingModal.onClose}
+        linesToShip={linesNotAssociatedWithSO}
+        postFacts={postFacts.facts}
+        postFactsFailed={postFacts.failed}
+        fetcher={postFetcher}
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <postRules.ViolationModal />
-      {voidModal.isOpen && (
-        <SalesInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={salesInvoice.invoiceId ?? "sales invoice"}
-          text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
+      <SalesInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deleteSalesInvoice(invoiceId)}
+        name={salesInvoice.invoiceId ?? "sales invoice"}
+        text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      {routeData?.isAdmin && (
+        <DocumentForceDeleteModal
+          documentType="salesInvoice"
+          documentId={invoiceId}
+          readableId={salesInvoice.invoiceId ?? invoiceId}
+          status={salesInvoice.status ?? "Draft"}
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

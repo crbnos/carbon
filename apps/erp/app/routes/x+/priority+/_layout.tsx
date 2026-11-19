@@ -4,16 +4,14 @@
 
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 import { ProductionSections } from "~/modules/production/ui/useProductionSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Priority" }];
-};
+export const meta = moduleMeta("Priority");
 
 export const handle: Handle = {
   realtime: ["job", "jobOperation"],

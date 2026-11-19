@@ -33,6 +33,7 @@ type LeasePaymentFormProps = {
   /** The lease's assets: a row belongs to one of them. */
   assets: { id: string; description: string }[];
   currencyCode: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -43,6 +44,7 @@ const LeasePaymentForm = ({
   initialValues,
   assets,
   currencyCode,
+  open = true,
   onClose
 }: LeasePaymentFormProps) => {
   const { t } = useLingui();
@@ -56,7 +58,7 @@ const LeasePaymentForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

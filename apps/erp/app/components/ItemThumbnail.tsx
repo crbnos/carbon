@@ -91,6 +91,13 @@ const ItemThumbnail = ({
       data-thumbnail={size}
       className={itemVariants({ size, withPadding: false })}
       key={thumbnailPath}
+      // A server-rendered image can fail before React attaches `onError`, so
+      // the event is lost and the broken image stays: check it on mount too.
+      ref={(image) => {
+        if (image?.complete && image.naturalWidth === 0) {
+          setFailedPath(thumbnailPath);
+        }
+      }}
       onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
     />

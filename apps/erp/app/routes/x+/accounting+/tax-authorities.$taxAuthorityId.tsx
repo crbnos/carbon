@@ -6,7 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { taxAuthorityValidator } from "~/modules/accounting/accounting.models";
@@ -50,7 +50,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditTaxAuthorityRoute() {
   const { taxAuthority } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: taxAuthority?.id ?? undefined,
@@ -63,7 +63,8 @@ export default function EditTaxAuthorityRoute() {
     <TaxAuthorityForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

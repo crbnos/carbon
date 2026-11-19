@@ -5,11 +5,15 @@
 import { useCarbon } from "@carbon/auth";
 import type { StandardFieldId } from "@carbon/ee";
 import { everyPushTargets } from "@carbon/ee";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -36,21 +40,20 @@ type ExternalSourceMapping = {
   } | null;
 };
 
-/**
- * Self-loading card for the item's `onshape-v2` link: the fields a push
- * replaces, last push time, Open in Onshape and Detach. Renders nothing when
- * the item has no link.
- */
+/** Self-loading `onshape-v2` link card; renders nothing without a link. */
 export function ExternalSourceCard({
   itemId,
-  canDetach
+  canDetach,
+  onshapeOrigin
 }: {
   itemId: string;
   canDetach: boolean;
+  /** `getOnshapePanelOrigin`: a Government tenant has its own host. */
+  onshapeOrigin: string;
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { formatDateTime } = useDateFormatter();
   const [mapping, setMapping] = useState<ExternalSourceMapping | null>(null);
   const [confirmingDetach, setConfirmingDetach] = useState(false);
@@ -97,7 +100,10 @@ export function ExternalSourceCard({
         .from("companyIntegration")
         .select("metadata")
         .eq("companyId", company.id)
-        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .in("id", [...ONSHAPE_PANEL_INTEGRATION_IDS])
+        .order("active", { ascending: false })
+        .order("updatedAt", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (cancelled) return;
       if (!integration.data) {
@@ -141,44 +147,53 @@ export function ExternalSourceCard({
   const onshapeUrl = !meta.documentId
     ? null
     : meta.wvId && meta.elementId
-      ? `https://cad.onshape.com/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
-      : `https://cad.onshape.com/documents/${meta.documentId}`;
+      ? `${onshapeOrigin}/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
+      : `${onshapeOrigin}/documents/${meta.documentId}`;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
   const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
+  // All a push can change: the card cannot tell which ones a push brings.
+  const pushTargets = new Intl.ListFormat(i18n.locale, {
+    style: "long",
+    type: "conjunction"
+  }).format([
+    t`BOM`,
+    t`CAD model`,
+    t`drawings`,
+    ...(replaced ?? [t`any fields set to update on every push`])
+  ]);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Onshape
-          <Badge variant="green">
-            <Trans>Linked</Trans>
-          </Badge>
-        </CardTitle>
-      </CardHeader>
+      <HStack className="justify-between items-start">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Onshape
+            <Badge variant="green">
+              <Trans>Linked</Trans>
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        {lastPushed ? (
+          <CardAction>
+            <span className="text-sm text-muted-foreground">
+              <Trans>Last pushed {lastPushed}</Trans>
+            </span>
+          </CardAction>
+        ) : null}
+      </HStack>
       <CardContent>
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            {replaced === null ? (
+            {replaced?.length === 0 ? (
               <Trans>
-                Pushes replace only the fields that Onshape's Fields page sets
-                to Update on every push.
-              </Trans>
-            ) : replaced.length === 0 ? (
-              <Trans>
-                Pushes don't change this item's fields, so edits made here stay.
+                Pushes from Onshape can update this item's {pushTargets}, but
+                not its fields.
               </Trans>
             ) : (
               <Trans>
-                Each push replaces: {replaced.join(", ")}. Other edits stay.
+                Pushes from Onshape can update this item's {pushTargets}.
               </Trans>
             )}
-            {lastPushed ? (
-              <>
-                {" "}
-                <Trans>Last pushed {lastPushed}.</Trans>
-              </>
-            ) : null}
           </p>
           <HStack spacing={2} className="shrink-0">
             {onshapeUrl ? (
@@ -200,21 +215,20 @@ export function ExternalSourceCard({
           </HStack>
         </div>
       </CardContent>
-      {confirmingDetach ? (
-        <Confirm
-          action={path.to.api.onShapeDetach}
-          title={t`Detach from Onshape?`}
-          text={t`Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back.`}
-          confirmText={t`Detach`}
-          onCancel={() => setConfirmingDetach(false)}
-          onSubmit={() => {
-            setConfirmingDetach(false);
-            setReload((n) => n + 1);
-          }}
-        >
-          <input type="hidden" name="itemId" value={itemId} />
-        </Confirm>
-      ) : null}
+      <Confirm
+        action={path.to.api.onShapeDetach}
+        isOpen={confirmingDetach}
+        title={t`Detach from Onshape?`}
+        text={t`Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again.`}
+        confirmText={t`Detach`}
+        onCancel={() => setConfirmingDetach(false)}
+        onSubmit={() => {
+          setConfirmingDetach(false);
+          setReload((n) => n + 1);
+        }}
+      >
+        <input type="hidden" name="itemId" value={itemId} />
+      </Confirm>
     </Card>
   );
 }

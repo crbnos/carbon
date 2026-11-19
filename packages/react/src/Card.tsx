@@ -73,6 +73,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
           {isCollapsible && (
             <IconButton
               aria-label={isCollapsed ? "Expand" : "Collapse"}
+              aria-expanded={!isCollapsed}
               variant="ghost"
               onClick={context.toggle}
               className="absolute right-2 top-2"
@@ -165,6 +166,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     };
 
     return (
+      // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse shortcut for the card's Expand IconButton, which is the keyboard and screen-reader control
       <div
         ref={ref}
         className={cn(

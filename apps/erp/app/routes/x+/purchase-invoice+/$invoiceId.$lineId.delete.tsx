@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { isPurchaseInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
@@ -71,13 +72,11 @@ export default function DeletePurchaseInvoiceLineRoute() {
   const { t } = useLingui();
   const { lineId, invoiceId } = useParams();
   const { purchaseInvoiceLine } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.purchaseInvoiceDetails(invoiceId!));
 
   if (!purchaseInvoiceLine) return null;
   if (!lineId) throw notFound("Could not find lineId");
   if (!invoiceId) throw notFound("Could not find invoiceId");
-
-  const onCancel = () => navigate(path.to.purchaseInvoiceDetails(invoiceId));
 
   return (
     <ConfirmDelete
@@ -86,7 +85,8 @@ export default function DeletePurchaseInvoiceLineRoute() {
       text={t`Are you sure you want to delete the purchase invoice line for ${
         purchaseInvoiceLine.quantity ?? 0
       } ${purchaseInvoiceLine.description ?? ""}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

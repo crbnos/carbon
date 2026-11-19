@@ -7,7 +7,7 @@
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
-
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 
 const variations = {
@@ -37,6 +37,9 @@ const Switch = forwardRef<
   SwitchProps
 >(({ className, label, variant, ...props }, ref) => {
   const { container, root, thumb, text } = variations[variant ?? "large"];
+  // Inside a FormControl the field's error, helper text and glossary
+  // definition describe the switch.
+  const { ariaProps } = useFormControl(props);
 
   return (
     <SwitchPrimitives.Root
@@ -48,6 +51,7 @@ const Switch = forwardRef<
         className
       )}
       {...props}
+      aria-describedby={ariaProps["aria-describedby"]}
       ref={ref}
     >
       <div

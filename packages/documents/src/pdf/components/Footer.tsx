@@ -24,6 +24,9 @@ interface FooterProps {
   showPageNumbers?: boolean;
   pageNumberFormat?: "pageOfTotal" | "page";
   showRegistrationLine?: boolean;
+  /** The words around the page number, from the template's document texts. */
+  pageLabel?: string;
+  ofLabel?: string;
 }
 
 const Footer = ({
@@ -32,7 +35,9 @@ const Footer = ({
   content,
   showPageNumbers = true,
   pageNumberFormat = "pageOfTotal",
-  showRegistrationLine = true
+  showRegistrationLine = true,
+  pageLabel = "Page",
+  ofLabel = "of"
 }: FooterProps) => {
   const hasContent =
     content &&
@@ -63,8 +68,10 @@ const Footer = ({
           {showPageNumbers ? (
             <Text
               render={({ pageNumber, totalPages }) =>
-                `${documentId ? `${documentId}   ` : ""}Page ${pageNumber}${
-                  pageNumberFormat === "pageOfTotal" ? ` of ${totalPages}` : ""
+                `${documentId ? `${documentId}   ` : ""}${pageLabel} ${pageNumber}${
+                  pageNumberFormat === "pageOfTotal"
+                    ? ` ${ofLabel} ${totalPages}`
+                    : ""
                 }`
               }
             />

@@ -23,10 +23,14 @@ import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { fixedAssetRegisterValidator } from "../../accounting.models";
 
 type FixedAssetRegisterFormProps = {
+  open?: boolean;
   onClose: () => void;
 };
 
-const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
+const FixedAssetRegisterForm = ({
+  open = true,
+  onClose
+}: FixedAssetRegisterFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -38,7 +42,7 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

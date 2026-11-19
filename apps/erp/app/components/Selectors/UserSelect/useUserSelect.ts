@@ -40,7 +40,6 @@ const defaultProps = {
   checkedSelections: false,
   disabled: false,
   hideSelections: false,
-  id: "MultiUserSelect",
   innerInputRender: null,
   isMulti: false,
   placeholder: "",

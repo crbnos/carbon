@@ -1,0 +1,85 @@
+CREATE OR REPLACE FUNCTION public.sync_receipt_inspection_status(p_table text, p_operation text, p_new jsonb, p_old jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+-- Keeps receipt."inspectionStatus" in step with the receipt's inspection lots
+-- and its putaway transfers (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
+-- An NCR that closes or reopens, and a lot linked to or unlinked from a closed
+-- NCR, change a lot's Use As Is part (inspection_use_as_is), which Put Away
+-- counts.
+DECLARE
+  v_receipt_id TEXT;
+BEGIN
+  IF p_table = 'inspection' THEN
+    IF COALESCE(p_new->>'sourceDocument', p_old->>'sourceDocument') IS DISTINCT FROM 'Receipt' THEN
+      RETURN;
+    END IF;
+    IF p_operation = 'UPDATE'
+       AND p_new->>'status' IS NOT DISTINCT FROM p_old->>'status'
+       AND p_new->>'acceptedQuantity' IS NOT DISTINCT FROM p_old->>'acceptedQuantity' THEN
+      RETURN;
+    END IF;
+    PERFORM public.refresh_receipt_inspection_status(
+      COALESCE(p_new->>'sourceDocumentId', p_old->>'sourceDocumentId')
+    );
+  ELSIF p_table = 'stockTransfer' THEN
+    IF p_operation <> 'UPDATE' OR p_new->>'receiptId' IS NULL THEN
+      RETURN;
+    END IF;
+    IF p_new->>'status' IS NOT DISTINCT FROM p_old->>'status' THEN
+      RETURN;
+    END IF;
+    PERFORM public.refresh_receipt_inspection_status(p_new->>'receiptId');
+  ELSIF p_table = 'nonConformance' THEN
+    IF p_operation <> 'UPDATE'
+       OR (COALESCE(p_new->>'status', '') = 'Closed')
+          = (COALESCE(p_old->>'status', '') = 'Closed') THEN
+      RETURN;
+    END IF;
+    FOR v_receipt_id IN
+      SELECT DISTINCT i."sourceDocumentId"
+      FROM "nonConformanceInspection" nci
+      JOIN "inspection" i
+        ON i."id" = nci."inspectionId" AND i."companyId" = nci."companyId"
+      WHERE nci."nonConformanceId" = p_new->>'id'
+        AND nci."companyId" = p_new->>'companyId'
+        AND i."sourceDocument" = 'Receipt'
+        AND i."sourceDocumentId" IS NOT NULL
+      ORDER BY 1
+    LOOP
+      PERFORM public.refresh_receipt_inspection_status(v_receipt_id);
+    END LOOP;
+  ELSIF p_table = 'nonConformanceInspection' THEN
+    IF p_operation = 'UPDATE'
+       AND p_new->>'inspectionId' IS NOT DISTINCT FROM p_old->>'inspectionId'
+       AND p_new->>'nonConformanceId' IS NOT DISTINCT FROM p_old->>'nonConformanceId' THEN
+      RETURN;
+    END IF;
+    -- Only a link of a closed NCR counts. A link removed with its NCR (the
+    -- NCR row is already gone) refreshes too. A link of an open NCR changes
+    -- nothing, and skipping it keeps the NCR's own lock order (lot, then
+    -- receipt) out of the receipt's.
+    FOR v_receipt_id IN
+      SELECT DISTINCT i."sourceDocumentId"
+      FROM (
+        VALUES
+          (p_new->>'inspectionId', p_new->>'nonConformanceId'),
+          (p_old->>'inspectionId', p_old->>'nonConformanceId')
+      ) AS link("inspectionId", "nonConformanceId")
+      JOIN "inspection" i ON i."id" = link."inspectionId"
+      WHERE i."sourceDocument" = 'Receipt'
+        AND i."sourceDocumentId" IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "nonConformance" nc
+          WHERE nc."id" = link."nonConformanceId"
+            AND nc."status" IS DISTINCT FROM 'Closed'
+        )
+      ORDER BY 1
+    LOOP
+      PERFORM public.refresh_receipt_inspection_status(v_receipt_id);
+    END LOOP;
+  END IF;
+END;
+$function$;

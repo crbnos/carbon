@@ -24,6 +24,7 @@ export const Sage = defineIntegration({
 function Logo(props: ComponentProps<"svg">) {
   return (
     <svg
+      aria-hidden="true"
       {...props}
       xmlns="http://www.w3.org/2000/svg"
       width="250"

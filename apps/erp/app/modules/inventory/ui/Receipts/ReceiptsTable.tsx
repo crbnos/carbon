@@ -18,6 +18,8 @@ import {
   LuCalendar,
   LuCheck,
   LuCirclePlus,
+  LuClipboardCheck,
+  LuClipboardX,
   LuClock,
   LuFileText,
   LuHash,
@@ -40,6 +42,7 @@ import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import {
+  receiptInspectionStatusType,
   receiptSourceDocumentType,
   receiptStatusType
 } from "~/modules/inventory/inventory.models";
@@ -47,6 +50,7 @@ import type { Receipt } from "~/modules/inventory/types";
 import { ReceiptStatus } from "~/modules/inventory/ui";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import ReceiptInspectionStatus from "./ReceiptInspectionStatus";
 
 function NewReceipt() {
   const fetcher = useFetcher();
@@ -199,6 +203,48 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
         }
       },
       {
+        accessorKey: "inspectionStatus",
+        header: t`Inspection`,
+        cell: (item) => (
+          <ReceiptInspectionStatus
+            status={item.getValue<
+              (typeof receiptInspectionStatusType)[number]
+            >()}
+          />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: receiptInspectionStatusType.map((status) => ({
+              value: status,
+              label: <ReceiptInspectionStatus status={status} showNotRequired />
+            }))
+          },
+          pluralHeader: t`Inspection Statuses`,
+          icon: <LuClipboardCheck />
+        }
+      },
+      {
+        accessorKey: "rejectedAtInspection",
+        header: t`Rejected at Inspection`,
+        cell: (item) => (
+          <Checkbox
+            aria-label={t`Rejected at Inspection`}
+            isChecked={item.getValue<boolean>()}
+          />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: t`Yes` },
+              { value: "false", label: t`No` }
+            ]
+          },
+          icon: <LuClipboardX />
+        }
+      },
+      {
         id: "postedBy",
         header: t`Posted By`,
         cell: ({ row }) => (
@@ -267,7 +313,15 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
       {
         accessorKey: "invoiced",
         header: t`Invoiced`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const receiptId = item.row.original.receiptId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Invoiced: ${receiptId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -395,6 +449,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
   return (
     <>
       <Table<(typeof data)[number]>
+        getRowLabel={(row) => row.receiptId ?? undefined}
         data={data}
         infinite={infinite}
         columns={columns}
@@ -404,6 +459,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
         }}
         defaultColumnVisibility={{
           createdAt: false,
+          rejectedAtInspection: false,
           createdBy: false,
           updatedAt: false,
           updatedBy: false
@@ -422,11 +478,9 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           text={`Are you sure you want to delete ${selectedReceipt.receiptId!}? This cannot be undone.`}
           onCancel={() => {
             deleteReceiptModal.onClose();
-            setSelectedReceipt(null);
           }}
           onSubmit={() => {
             deleteReceiptModal.onClose();
-            setSelectedReceipt(null);
           }}
         />
       )}

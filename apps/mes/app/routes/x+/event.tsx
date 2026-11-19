@@ -182,7 +182,7 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
 
     return data(
       startEvent.data,
-      await flash(request, success(`Started ${d.type.toLowerCase()} operation`))
+      await flash(request, success(`Started ${d.type.toLowerCase()}`))
     );
   }
 
@@ -232,7 +232,7 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
       .eq("companyId", companyId);
     return data(
       ended.data,
-      await flash(request, success(`Ended ${typeLabel} operation`))
+      await flash(request, success(`Paused ${typeLabel}`))
     );
   }
 
@@ -260,6 +260,6 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
   await postEnded([ended.id]);
   return data(
     endEvent.data,
-    await flash(request, success(`Ended ${typeLabel} operation`))
+    await flash(request, success(`Paused ${typeLabel}`))
   );
 }

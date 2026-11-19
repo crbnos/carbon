@@ -10,10 +10,8 @@ type Line = Database["public"]["Views"]["purchaseOrderLines"]["Row"];
 const line = (overrides: Partial<Line>) =>
   ({ purchaseOrderLineType: "Part", ...overrides }) as Line;
 
-// `itemReadableId` is the view's `readableIdWithRevision`, so it is the only
-// place the revision reaches the document.
 describe("getLineDescription", () => {
-  it("shows the item id on its own when there is no supplier part number", () => {
+  it("shows the item id when there is no supplier part number", () => {
     expect(getLineDescription(line({ itemReadableId: "P000123.B" }))).toBe(
       "P000123.B"
     );
@@ -24,12 +22,12 @@ describe("getLineDescription", () => {
     ).toBe("P000123.B");
   });
 
-  it("keeps the item id and revision next to the supplier part number", () => {
+  it("shows the supplier part number in place of the item id", () => {
     expect(
       getLineDescription(
         line({ itemReadableId: "P000123.B", supplierPartId: "SUP-778" })
       )
-    ).toBe("P000123.B (SUP-778)");
+    ).toBe("SUP-778");
     expect(
       getLineDescription(
         line({
@@ -38,7 +36,7 @@ describe("getLineDescription", () => {
           supplierPartIdFromSupplier: "SUP-778"
         })
       )
-    ).toBe("P000123.B (SUP-778)");
+    ).toBe("SUP-778");
   });
 
   it("falls back to the supplier part number when the line has no item", () => {

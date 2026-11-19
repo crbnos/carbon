@@ -16,7 +16,10 @@ import { upsertTool } from "~/modules/items/items.service";
 import { ToolForm } from "~/modules/items/ui/Tools";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Tool");
 
 export const handle: Handle = {
   breadcrumb: msg`Tools`,

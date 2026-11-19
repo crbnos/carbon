@@ -174,6 +174,7 @@ export function NodeCard({
       {/* Never clip: the condition form draws its own handles, and they straddle the
           card's right border. Every control inside is `min-w-0` instead. */}
       {isExpanded && children && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: keydown wrapper that keeps typing in the node's form from triggering canvas shortcuts; not a control itself
         <div
           ref={bodyRef}
           className={cn("border-t px-2.5 py-2", BODY_TYPE)}

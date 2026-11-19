@@ -477,6 +477,7 @@ export const TimeTypeIcon = ({
 export const LinearIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
+      aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -555,6 +556,7 @@ export const LinearIssueStateBadge = (props: {
 export const JiraIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 65 65"
       fill="currentColor"

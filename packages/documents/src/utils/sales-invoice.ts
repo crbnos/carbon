@@ -128,7 +128,7 @@ export function getLineTotal(
  * The tax on the invoice's header shipping, in document currency. A line
  * whose code taxes shipping adds its share of header shipping to its tax
  * base; the `salesInvoices` view's `totalTax` includes that tax
- * (`20261105223847_sales-invoice-shipping-tax.sql`), so it is the view's tax
+ * (`20261119231547_sales-invoice-shipping-tax.sql`), so it is the view's tax
  * less the lines' own.
  */
 export function getHeaderShippingTax(

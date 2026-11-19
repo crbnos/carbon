@@ -240,6 +240,7 @@ export function ForecastHeader({
       <HStack className="flex-wrap gap-y-2">
         <HStack spacing={2} className="flex-wrap gap-y-2">
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}
@@ -253,6 +254,7 @@ export function ForecastHeader({
           />
           {departments.length > 0 && (
             <Combobox
+              aria-label={t`Department`}
               asButton
               size="sm"
               value={departmentId ?? "all"}
@@ -265,6 +267,7 @@ export function ForecastHeader({
           )}
           {range === "shift" && shifts.length > 0 && (
             <Combobox
+              aria-label={t`Shift`}
               asButton
               size="sm"
               value={shiftId ?? shifts[0]?.id}

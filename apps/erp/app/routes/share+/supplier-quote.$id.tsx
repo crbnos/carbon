@@ -333,6 +333,7 @@ const NotesEditorModal = ({
   onSave: (content: JSONContent) => void;
   quoteStatus: SupplierQuote["status"];
 }) => {
+  const { t } = useLingui();
   const isDraft = quoteStatus === "Draft";
   const modal = useDisclosure();
 
@@ -382,46 +383,45 @@ const NotesEditorModal = ({
           {hasNotes ? "Edit Notes" : "Add Notes"}
         </Button>
 
-        {modal.isOpen && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) handleCancel();
-            }}
+        <Modal
+          open={modal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) handleCancel();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent
+            className="max-w-4xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <ModalOverlay />
-            <ModalContent
-              className="max-w-4xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ModalHeader>
-                <ModalTitle>Edit Notes</ModalTitle>
-                <ModalDescription>
-                  Add or edit notes for this line item
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <VStack spacing={4} className="w-full">
-                  <div className="flex flex-col gap-2 w-full">
-                    <Label>Notes</Label>
-                    <Editor
-                      initialValue={editorContent}
-                      onChange={handleEditorChange}
-                      className="min-h-[300px] p-4 border rounded-lg transition-colors"
-                      disableFileUpload
-                    />
-                  </div>
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={handleCancel}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>Save Notes</Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
+            <ModalHeader>
+              <ModalTitle>Edit Notes</ModalTitle>
+              <ModalDescription>
+                Add or edit notes for this line item
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <VStack spacing={4} className="w-full">
+                <div className="flex flex-col gap-2 w-full">
+                  <Label>Notes</Label>
+                  <Editor
+                    label={t`Notes`}
+                    initialValue={editorContent}
+                    onChange={handleEditorChange}
+                    className="min-h-[300px] p-4 border rounded-lg transition-colors"
+                    disableFileUpload
+                  />
+                </div>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>Save Notes</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </>
     );
   }
@@ -448,6 +448,7 @@ const LineItems = ({
   quoteLinePrices: SupplierQuoteLinePrice[];
   onSaveNotes: (lineId: string, content: JSONContent) => void;
 }) => {
+  const { t } = useLingui();
   const { quoteLines, thumbnails, files } =
     useLoaderData<typeof loader>().data!;
   const [openItems, setOpenItems] = useState<string[]>(() =>
@@ -474,6 +475,7 @@ const LineItems = ({
         const lineDescription = isGlAccount
           ? "Indirect Expense"
           : line.description;
+        const lineName = lineHeading ?? "";
 
         return (
           <div key={line.id} className="border-b border-input py-6 w-full">
@@ -495,9 +497,13 @@ const LineItems = ({
                   thumbnail beside it, pushing the description past the card
                   edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  onClick={() => toggleOpen(line.id!)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
@@ -507,16 +513,20 @@ const LineItems = ({
                       <motion.button
                         type="button"
                         aria-expanded={openItems.includes(line.id!)}
+                        aria-controls={`supplier-quote-line-details-${line.id}`}
+                        aria-label={
+                          openItems.includes(line.id!)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
                         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id!) ? 90 : 0
                         }}
                         transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                        <span className="sr-only">
-                          <Trans>Details</Trans>
-                        </span>
+                        <LuChevronRight size={24} aria-hidden />
                       </motion.button>
                     </HStack>
                   </div>
@@ -533,6 +543,7 @@ const LineItems = ({
             {/* Stays mounted: LinePricing holds the supplier's unsaved prices.
                 `display: none` once collapsed takes it out of the tab order. */}
             <motion.div
+              id={`supplier-quote-line-details-${line.id}`}
               initial={false}
               animate={openItems.includes(line.id) ? "open" : "collapsed"}
               variants={{
@@ -594,6 +605,11 @@ const LinePricing = ({
   quoteStatus: SupplierQuote["status"];
   quoteLinePrices: SupplierQuoteLinePrice[];
 }) => {
+  const { t } = useLingui();
+  const lineLabel =
+    line.supplierQuoteLineType === "G/L Account"
+      ? line.description || "Indirect Expense"
+      : line.itemReadableId;
   const pricingOptions =
     quoteLinePrices
       ?.filter((price) => price.supplierQuoteLineId === line.id)
@@ -819,6 +835,7 @@ const LinePricing = ({
                   <>
                     <Td className="">
                       <NumberField
+                        aria-label={t`Unit price for ${lineLabel}, quantity ${qty}`}
                         value={unitPrice}
                         formatOptions={{
                           style: "currency",
@@ -841,6 +858,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[150px]">
                       <NumberField
+                        aria-label={t`Lead time for ${lineLabel}, quantity ${qty}`}
                         value={leadTime}
                         formatOptions={{
                           style: "unit",
@@ -864,6 +882,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[150px]">
                       <NumberField
+                        aria-label={t`Shipping cost for ${lineLabel}, quantity ${qty}`}
                         value={shippingCost}
                         formatOptions={{
                           style: "currency",
@@ -889,6 +908,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[120px]">
                       <NumberField
+                        aria-label={t`Tax for ${lineLabel}, quantity ${qty}`}
                         value={taxAmount}
                         formatOptions={{
                           style: "currency",
@@ -1072,127 +1092,123 @@ const Quote = ({
         </CardContent>
       </Card>
 
-      {submitModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) submitModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              validator={externalSupplierQuoteValidator}
-              action={path.to.api.digitalSupplierQuote(id)}
-              method="post"
-              fetcher={fetcher}
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>Submit Quote</ModalTitle>
-                <ModalDescription>
-                  Are you sure you want to submit the updated pricing?
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <input type="hidden" name="intent" value="submit" />
-                <input
-                  type="hidden"
-                  name="selectedLines"
-                  value={JSON.stringify(selectedLines)}
+      <Modal
+        open={submitModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) submitModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            validator={externalSupplierQuoteValidator}
+            action={path.to.api.digitalSupplierQuote(id)}
+            method="post"
+            fetcher={fetcher}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>Submit Quote</ModalTitle>
+              <ModalDescription>
+                Are you sure you want to submit the updated pricing?
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <input type="hidden" name="intent" value="submit" />
+              <input
+                type="hidden"
+                name="selectedLines"
+                value={JSON.stringify(selectedLines)}
+              />
+              <div className="space-y-4 py-4">
+                <Input
+                  name="digitalSupplierQuoteSubmittedBy"
+                  label={t`Your Name`}
+                  placeholder="Enter your name"
                 />
-                <div className="space-y-4 py-4">
-                  <Input
-                    name="digitalSupplierQuoteSubmittedBy"
-                    label={t`Your Name`}
-                    placeholder="Enter your name"
-                  />
-                  <Input
-                    name="digitalSupplierQuoteSubmittedByEmail"
-                    label={t`Your Email`}
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={submitModal.onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  type="submit"
-                >
-                  Submit
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+                <Input
+                  name="digitalSupplierQuoteSubmittedByEmail"
+                  label={t`Your Email`}
+                  placeholder="Enter your email"
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={submitModal.onClose}>
+                Cancel
+              </Button>
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                type="submit"
+              >
+                Submit
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
 
-      {declineModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) declineModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              validator={externalSupplierQuoteValidator}
-              action={path.to.api.digitalSupplierQuote(id)}
-              method="post"
-              fetcher={fetcher}
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>Decline Quote</ModalTitle>
-                <ModalDescription>
-                  Are you sure you want to decline this quote?
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <input type="hidden" name="intent" value="decline" />
-                <div className="space-y-4 py-4">
-                  <TextArea
-                    name="note"
-                    label={t`Reason for declining (Optional)`}
-                  />
-                  <Input
-                    name="digitalSupplierQuoteSubmittedBy"
-                    label={t`Your Name`}
-                    placeholder="Enter your name"
-                  />
-                  <Input
-                    name="digitalSupplierQuoteSubmittedByEmail"
-                    label={t`Your Email`}
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="ghost" onClick={declineModal.onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  type="submit"
-                  variant="destructive"
-                >
-                  Decline Quote
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={declineModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) declineModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            validator={externalSupplierQuoteValidator}
+            action={path.to.api.digitalSupplierQuote(id)}
+            method="post"
+            fetcher={fetcher}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>Decline Quote</ModalTitle>
+              <ModalDescription>
+                Are you sure you want to decline this quote?
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <input type="hidden" name="intent" value="decline" />
+              <div className="space-y-4 py-4">
+                <TextArea
+                  name="note"
+                  label={t`Reason for declining (Optional)`}
+                />
+                <Input
+                  name="digitalSupplierQuoteSubmittedBy"
+                  label={t`Your Name`}
+                  placeholder="Enter your name"
+                />
+                <Input
+                  name="digitalSupplierQuoteSubmittedByEmail"
+                  label={t`Your Email`}
+                  placeholder="Enter your email"
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" onClick={declineModal.onClose}>
+                Cancel
+              </Button>
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                type="submit"
+                variant="destructive"
+              >
+                Decline Quote
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };

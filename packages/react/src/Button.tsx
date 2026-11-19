@@ -9,11 +9,12 @@ import type { ButtonHTMLAttributes, MouseEvent, ReactElement } from "react";
 import { cloneElement, forwardRef, useCallback, useRef } from "react";
 import { useActionPresentation } from "./ActionPresentation";
 import type { ShortcutInput } from "./hooks/useShortcutKeys";
-import { useShortcutKeys } from "./hooks/useShortcutKeys";
+import { ariaKeyShortcuts, useShortcutKeys } from "./hooks/useShortcutKeys";
 import { ShortcutKey } from "./ShortcutKey";
 import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import { isBareKeyForAnotherControl } from "./utils/keyboard";
 import { mergeRefs } from "./utils/react";
 import { HitArea, useViewport } from "./Viewport";
 
@@ -183,6 +184,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const dialogGuard = useCallback(
       (event: KeyboardEvent) =>
         (!hasOpenDialog() || isInsideTopmostDialog(innerRef.current)) &&
+        // A bare Enter/Space on another button or link activates that one.
+        !isBareKeyForAnotherControl(event, innerRef.current) &&
         (shortcutGuard?.(event) ?? true),
       [shortcutGuard]
     );
@@ -222,6 +225,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <Comp
+        // Lets a modal skip a destructive action when it places initial focus.
+        data-variant={variant === "destructive" ? "destructive" : undefined}
         {...props}
         onClick={onClick}
         className={cn(
@@ -255,11 +260,21 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         // no spinner: it says "working on it" while accepting another click.
         disabled={isDisabled || props.disabled || isLoading}
         role={asChild ? undefined : "button"}
+        // The combo is announced as a shortcut, not read as part of the name:
+        // the keycap below is hidden, so the button stays "Save".
+        aria-keyshortcuts={
+          props["aria-keyshortcuts"] ?? ariaKeyShortcuts(shortcut)
+        }
+        // Busy while loading; the spinner is decorative, so the name stays put.
+        aria-busy={props["aria-busy"] ?? (isLoading ? true : undefined)}
         ref={mergeRefs(ref, innerRef)}
       >
         {isPhone && <HitArea />}
         {isLoading && (
-          <Spinner className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")} />
+          <Spinner
+            aria-hidden
+            className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")}
+          />
         )}
         {!isLoading &&
           leftIcon &&
@@ -281,6 +296,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {badgeShortcut && (
           <ShortcutKey
+            aria-hidden
             shortcut={badgeShortcut}
             variant={size === "lg" ? "medium" : "small"}
           />

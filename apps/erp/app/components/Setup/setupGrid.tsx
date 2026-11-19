@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import { ActionMenu, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -9,6 +10,8 @@ import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { useCallback } from "react";
+
+const logger = getLogger("erp", "setup");
 
 /** The setup grids' Table has a container with `contain: strict`, so it
  *  takes its height from its parent: a header row and the footer row, each
@@ -68,7 +71,10 @@ export function useCellSave() {
       const response = await fetch(action, {
         method: "post",
         body: formData
-      }).catch(() => null);
+      }).catch((error) => {
+        logger.warning("Failed to send the change", { action, error });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         error?: string | { message?: string } | null;
         warning?: string | null;

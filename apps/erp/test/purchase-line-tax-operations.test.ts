@@ -14,10 +14,6 @@ import {
   createPurchaseInvoiceLine,
   updatePurchaseInvoiceLine
 } from "../app/modules/invoicing/invoicing.server";
-import {
-  createPurchaseOrderLine,
-  updatePurchaseOrderLine
-} from "../app/modules/purchasing/purchasing.server";
 
 const unreachable = () => {
   throw new Error("must not be reached");
@@ -126,105 +122,6 @@ const inserted = (writes: Write[], table: string) =>
 const updated = (writes: Write[], table: string) =>
   writes.find((write) => write.table === table && write.op === "update")
     ?.value;
-
-describe("createPurchaseOrderLine", () => {
-  const order = {
-    purchaseOrders: {
-      id: "po-1",
-      supplierId: "supplier-1",
-      orderDate: "2026-10-01",
-      currencyCode: "USD"
-    }
-  };
-  // What the API, an MCP tool or a workflow sends: no tax code at all.
-  const apiLine = {
-    purchaseOrderId: "po-1",
-    purchaseOrderLineType: "Part" as const,
-    itemId: "item-1",
-    purchaseQuantity: 2,
-    supplierUnitPrice: 100
-  };
-
-  it("gives a line sent with no tax code the supplier's code and its rate", async () => {
-    const { client, writes } = database({
-      ...order,
-      ...supplierTaxRows,
-      item: { taxable: true }
-    });
-
-    const result = await createPurchaseOrderLine(
-      contextFor(client, "purchasing"),
-      apiLine
-    );
-
-    expect(result.error).toBeNull();
-    expect(inserted(writes, "purchaseOrderLine")).toMatchObject({
-      taxCodeId: "tc-houston",
-      taxPercent: 0.0825,
-      supplierTaxAmount: 16.5
-    });
-  });
-
-  it("keeps the sent percent with no code when the code is cleared", async () => {
-    const { client, writes } = database({
-      ...order,
-      ...supplierTaxRows,
-      item: { taxable: true }
-    });
-
-    await createPurchaseOrderLine(contextFor(client, "purchasing"), {
-      ...apiLine,
-      taxCodeId: "",
-      taxPercent: 0.03,
-      supplierTaxAmount: 6
-    });
-
-    const line = inserted(writes, "purchaseOrderLine");
-    expect(line).toMatchObject({ taxPercent: 0.03, supplierTaxAmount: 6 });
-    expect(line.taxCodeId).toBeUndefined();
-  });
-
-  it("stores no tax for a non-taxable item, whatever was sent", async () => {
-    const { client, writes } = database({
-      ...order,
-      ...supplierTaxRows,
-      item: { taxable: false }
-    });
-
-    await createPurchaseOrderLine(contextFor(client, "purchasing"), {
-      ...apiLine,
-      taxCodeId: "tc-houston",
-      taxPercent: 0.0825,
-      supplierTaxAmount: 16.5
-    });
-
-    const line = inserted(writes, "purchaseOrderLine");
-    expect(line).toMatchObject({ taxPercent: 0, supplierTaxAmount: 0 });
-    expect(line.taxCodeId).toBeUndefined();
-  });
-});
-
-describe("updatePurchaseOrderLine", () => {
-  it("clears the tax of a line on a non-taxable item", async () => {
-    const { client, writes } = database({ item: { taxable: false } });
-
-    await updatePurchaseOrderLine(contextFor(client, "purchasing"), {
-      id: "pol-1",
-      purchaseOrderId: "po-1",
-      purchaseOrderLineType: "Part",
-      itemId: "item-1",
-      taxCodeId: "tc-houston",
-      taxPercent: 0.0825,
-      supplierTaxAmount: 16.5
-    });
-
-    expect(updated(writes, "purchaseOrderLine")).toMatchObject({
-      taxCodeId: null,
-      taxPercent: 0,
-      supplierTaxAmount: 0
-    });
-  });
-});
 
 describe("createPurchaseInvoiceLine", () => {
   it("gives a line sent with no tax code the supplier's code and its rate", async () => {

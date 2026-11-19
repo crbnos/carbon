@@ -34,6 +34,14 @@ import type {
 import { path } from "~/utils/path";
 import { placeInServiceValidator } from "../../projects.models";
 
+type PlaceInServiceModalProps = {
+  open?: boolean;
+  projectId: string;
+  /** Select only this asset (a final-asset element's page). */
+  fixedAssetId?: string | null;
+  onClose: () => void;
+};
+
 /**
  * Place in service: capitalizes a capital project's assets under
  * construction into an in-service class (post-asset-transfer
@@ -43,15 +51,25 @@ import { placeInServiceValidator } from "../../projects.models";
  * service stay capitalized.
  */
 export function PlaceInServiceModal({
+  open = true,
+  onClose,
+  ...props
+}: PlaceInServiceModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <PlaceInServiceBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function PlaceInServiceBody({
   projectId,
   fixedAssetId,
   onClose
-}: {
-  projectId: string;
-  /** Select only this asset (a final-asset element's page). */
-  fixedAssetId?: string | null;
-  onClose: () => void;
-}) {
+}: Omit<PlaceInServiceModalProps, "open">) {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -98,150 +116,140 @@ export function PlaceInServiceModal({
   };
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        {!data ? (
+    <>
+      {!data ? (
+        <ModalBody>
+          <div className="flex h-32 items-center justify-center">
+            <Spinner />
+          </div>
+        </ModalBody>
+      ) : (
+        <ValidatedForm
+          validator={placeInServiceValidator}
+          method="post"
+          action={path.to.projectPlaceInService(projectId)}
+          fetcher={submitFetcher}
+          defaultValues={{
+            fixedAssetIds: selected,
+            toClassId: "",
+            inServiceDate: data.inServiceDate
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Place in Service</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>
+                Each asset moves into its in-service class and starts
+                depreciating from the in-service date.
+              </Trans>
+            </ModalDescription>
+          </ModalHeader>
           <ModalBody>
-            <div className="flex h-32 items-center justify-center">
-              <Spinner />
-            </div>
-          </ModalBody>
-        ) : (
-          <ValidatedForm
-            validator={placeInServiceValidator}
-            method="post"
-            action={path.to.projectPlaceInService(projectId)}
-            fetcher={submitFetcher}
-            defaultValues={{
-              fixedAssetIds: selected,
-              toClassId: "",
-              inServiceDate: data.inServiceDate
-            }}
-          >
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Place in Service</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>
-                  Each asset moves into its in-service class and starts
-                  depreciating from the in-service date.
-                </Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={4}>
-                {failures.length > 0 && (
-                  <Alert variant="destructive">
-                    <LuTriangleAlert />
-                    <AlertDescription>
-                      <ul className="flex flex-col gap-1">
-                        {failures.map((failure) => (
-                          <li key={failure.fixedAssetId}>
-                            {failure.label ? `${failure.label}: ` : ""}
-                            {failure.error}
-                          </li>
-                        ))}
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                {assets.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>This project has no asset under construction.</Trans>
-                  </p>
-                ) : (
-                  <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-                    {assets.map((asset) => (
-                      <li
-                        key={asset.id}
-                        className="flex items-center gap-3 px-3 py-2 text-sm"
+            <VStack spacing={4}>
+              {failures.length > 0 && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert />
+                  <AlertDescription>
+                    <ul className="flex flex-col gap-1">
+                      {failures.map((failure) => (
+                        <li key={failure.fixedAssetId}>
+                          {failure.label ? `${failure.label}: ` : ""}
+                          {failure.error}
+                        </li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {assets.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  <Trans>This project has no asset under construction.</Trans>
+                </p>
+              ) : (
+                <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+                  {assets.map((asset) => (
+                    <li
+                      key={asset.id}
+                      className="flex items-center gap-3 px-3 py-2 text-sm"
+                    >
+                      <Checkbox
+                        id={`place-${asset.id}`}
+                        checked={selected.includes(asset.id)}
+                        onCheckedChange={(checked) =>
+                          toggle(asset.id, checked === true)
+                        }
+                      />
+                      <label
+                        htmlFor={`place-${asset.id}`}
+                        className="flex min-w-0 flex-1 items-center gap-2"
                       >
-                        <Checkbox
-                          id={`place-${asset.id}`}
-                          checked={selected.includes(asset.id)}
-                          onCheckedChange={(checked) =>
-                            toggle(asset.id, checked === true)
-                          }
-                        />
-                        <label
-                          htmlFor={`place-${asset.id}`}
-                          className="flex min-w-0 flex-1 items-center gap-2"
-                        >
-                          <span className="font-mono">
-                            {asset.fixedAssetId}
+                        <span className="font-mono">{asset.fixedAssetId}</span>
+                        <span className="truncate">{asset.name}</span>
+                        {asset.elementReadableId === null && (
+                          <span className="text-xs text-muted-foreground">
+                            <Trans>Project</Trans>
                           </span>
-                          <span className="truncate">{asset.name}</span>
-                          {asset.elementReadableId === null && (
-                            <span className="text-xs text-muted-foreground">
-                              <Trans>Project</Trans>
-                            </span>
-                          )}
-                        </label>
-                        <span className="tabular-nums">
-                          {currencyFormatter.format(asset.cipTotal)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {selected.map((id) => (
-                  <input
-                    key={id}
-                    type="hidden"
-                    name="fixedAssetIds"
-                    value={id}
-                  />
-                ))}
-                <Combobox
-                  name="toClassId"
-                  label={t`Asset Class`}
-                  termId="asset-class"
-                  options={data.assetClasses.map((c) => ({
-                    label: c.name,
-                    value: c.id
-                  }))}
-                  onChange={(value) => setToClassId(value?.value ?? "")}
-                />
-                <DatePicker name="inServiceDate" label={t`In-Service Date`} />
-                <div className="w-full rounded-lg bg-muted/50 p-3 text-sm">
-                  <p className="font-medium">
-                    <Trans>Journal Preview</Trans>
-                  </p>
-                  {assets
-                    .filter((asset) => selected.includes(asset.id))
-                    .map((asset) => (
-                      <p key={asset.id} className="text-muted-foreground">
-                        <Trans>Debit</Trans>{" "}
-                        {targetClass?.name ?? t`the selected class`} ·{" "}
-                        <Trans>Credit</Trans> {asset.className} ·{" "}
-                        <span className="tabular-nums">
-                          {currencyFormatter.format(asset.cipTotal)}
-                        </span>
-                      </p>
-                    ))}
-                </div>
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Submit
-                withBlocker={false}
-                isDisabled={
-                  selected.length === 0 ||
-                  !permissions.can("create", "accounting") ||
-                  !permissions.can("update", "projects")
-                }
-              >
-                <Trans>Place in Service</Trans>
-              </Submit>
-            </ModalFooter>
-          </ValidatedForm>
-        )}
-      </ModalContent>
-    </Modal>
+                        )}
+                      </label>
+                      <span className="tabular-nums">
+                        {currencyFormatter.format(asset.cipTotal)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {selected.map((id) => (
+                <input key={id} type="hidden" name="fixedAssetIds" value={id} />
+              ))}
+              <Combobox
+                name="toClassId"
+                label={t`Asset Class`}
+                termId="asset-class"
+                options={data.assetClasses.map((c) => ({
+                  label: c.name,
+                  value: c.id
+                }))}
+                onChange={(value) => setToClassId(value?.value ?? "")}
+              />
+              <DatePicker name="inServiceDate" label={t`In-Service Date`} />
+              <div className="w-full rounded-lg bg-muted/50 p-3 text-sm">
+                <p className="font-medium">
+                  <Trans>Journal Preview</Trans>
+                </p>
+                {assets
+                  .filter((asset) => selected.includes(asset.id))
+                  .map((asset) => (
+                    <p key={asset.id} className="text-muted-foreground">
+                      <Trans>Debit</Trans>{" "}
+                      {targetClass?.name ?? t`the selected class`} ·{" "}
+                      <Trans>Credit</Trans> {asset.className} ·{" "}
+                      <span className="tabular-nums">
+                        {currencyFormatter.format(asset.cipTotal)}
+                      </span>
+                    </p>
+                  ))}
+              </div>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit
+              withBlocker={false}
+              isDisabled={
+                selected.length === 0 ||
+                !permissions.can("create", "accounting") ||
+                !permissions.can("update", "projects")
+              }
+            >
+              <Trans>Place in Service</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      )}
+    </>
   );
 }

@@ -263,19 +263,17 @@ const FixedAssetHeader = () => {
         }
       />
 
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteFixedAsset(fixedAssetId)}
-          isOpen={deleteModal.isOpen}
-          name={asset.fixedAssetId}
-          text={t`Are you sure you want to delete ${asset.fixedAssetId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={() => {
-            deleteModal.onClose();
-            navigate(path.to.fixedAssets);
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteFixedAsset(fixedAssetId)}
+        isOpen={deleteModal.isOpen}
+        name={asset.fixedAssetId}
+        text={t`Are you sure you want to delete ${asset.fixedAssetId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={() => {
+          deleteModal.onClose();
+          navigate(path.to.fixedAssets);
+        }}
+      />
     </>
   );
 };

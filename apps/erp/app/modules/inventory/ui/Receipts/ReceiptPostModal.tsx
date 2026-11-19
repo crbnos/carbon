@@ -38,7 +38,28 @@ import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.utils";
 import type { Receipt, ReceiptLine, RentalReceiptLine } from "../../types";
 
-const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
+type ReceiptPostModalProps = {
+  open?: boolean;
+  onClose: () => void;
+};
+
+const ReceiptPostModal = ({ open = true, onClose }: ReceiptPostModalProps) => {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ReceiptPostBody onClose={onClose} />
+      </ModalContent>
+    </Modal>
+  );
+};
+
+const ReceiptPostBody = ({ onClose }: Omit<ReceiptPostModalProps, "open">) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
@@ -203,97 +224,91 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
 
   const ruleViolations = useRuleViolations({
     action: path.to.receiptPost(receiptId),
-    onSuccess: onClose
+    onSuccess: onClose,
+    // A refusal is toasted; the confirm dialog over it adds nothing.
+    onError: onClose
   });
   const { fetcher } = ruleViolations;
 
   return (
-    <Modal
-      open={true}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Post Receipt</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          {isRental && (
-            <FormControl className="mb-4">
-              <FormLabel>
-                <Trans>Returned on</Trans>
-              </FormLabel>
-              <DatePicker
-                aria-label={t`Returned on`}
-                value={parseDate(postingDate)}
-                maxValue={parseDate(companyToday)}
-                onChange={(d) => d && setPostingDate(d.toString())}
-              />
-            </FormControl>
-          )}
-          {validationErrors.length > 0 ? (
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Missing Information</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  {validationErrors.map((error, index) => (
-                    <li key={index} className="text-sm font-medium">
-                      <span className="font-mono">{error.itemReadableId}</span>
-                      <span className="text-muted-foreground ml-2">
-                        {error.receivedQuantity}
-                      </span>
-                      <span className="block mt-0.5 text-red-500 font-normal">
-                        {error.receivedQuantityError}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              <Trans>Are you sure you want to post this receipt?</Trans>
-            </p>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <HStack>
-            <Button variant="solid" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData();
-                if (isRental) formData.set("postingDate", postingDate);
-                ruleViolations.submit(formData);
-              }}
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Post Receipt</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        {isRental && (
+          <FormControl className="mb-4">
+            <FormLabel>
+              <Trans>Returned on</Trans>
+            </FormLabel>
+            <DatePicker
+              aria-label={t`Returned on`}
+              value={parseDate(postingDate)}
+              maxValue={parseDate(companyToday)}
+              onChange={(d) => d && setPostingDate(d.toString())}
+            />
+          </FormControl>
+        )}
+        {validationErrors.length > 0 ? (
+          <Alert variant="destructive">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
+              <Trans>Missing Information</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index} className="text-sm font-medium">
+                    <span className="font-mono">{error.itemReadableId}</span>
+                    <span className="text-muted-foreground ml-2">
+                      {error.receivedQuantity}
+                    </span>
+                    <span className="block mt-0.5 text-red-500 font-normal">
+                      {error.receivedQuantityError}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            <Trans>Are you sure you want to post this receipt?</Trans>
+          </p>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="solid" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData();
+              if (isRental) formData.set("postingDate", postingDate);
+              ruleViolations.submit(formData);
+            }}
+          >
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={
+                fetcher.state !== "idle" ||
+                navigation.state !== "idle" ||
+                !validated ||
+                validationErrors.length > 0
+              }
+              type="submit"
             >
-              <Button
-                isLoading={fetcher.state !== "idle"}
-                isDisabled={
-                  fetcher.state !== "idle" ||
-                  navigation.state !== "idle" ||
-                  !validated ||
-                  validationErrors.length > 0
-                }
-                type="submit"
-              >
-                Post Receipt
-              </Button>
-            </form>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
+              Post Receipt
+            </Button>
+          </form>
+        </HStack>
+      </ModalFooter>
       <ruleViolations.ViolationModal />
-    </Modal>
+    </>
   );
 };
 

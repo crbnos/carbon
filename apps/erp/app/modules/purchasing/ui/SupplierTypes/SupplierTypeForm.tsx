@@ -44,7 +44,7 @@ const SupplierTypeForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -54,7 +54,7 @@ const SupplierTypeForm = ({
         `Failed to create supplier type: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type]);
+  }, [fetcher.data, fetcher.state, onClose, open, type]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { taxCodeValidator } from "~/modules/accounting/accounting.models";
@@ -39,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewTaxCodeRoute() {
   const { taxAuthorities } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     calculationType: "Normal" as const,
@@ -53,7 +53,8 @@ export default function NewTaxCodeRoute() {
     <TaxCodeForm
       initialValues={initialValues}
       taxAuthorities={taxAuthorities}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

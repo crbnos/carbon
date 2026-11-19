@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useDisclosure } from "@carbon/react";
 import { formatDate, redirect } from "@carbon/utils";
 import {
   fromAbsolute,
@@ -17,7 +18,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
@@ -688,8 +689,8 @@ export default function SchedulePeopleRoute() {
     attendedByWorkCenter
   } = useLoaderData<typeof loader>();
   const { locale } = useLocale();
-  const [overtimeOpen, setOvertimeOpen] = useState(false);
-  const [timeOffOpen, setTimeOffOpen] = useState(false);
+  const overtimeDialog = useDisclosure();
+  const timeOffDialog = useDisclosure();
 
   const departments = useMemo(() => {
     const seen = new Map<string, string>();
@@ -867,8 +868,8 @@ export default function SchedulePeopleRoute() {
         shiftId={shiftId}
         departments={departments}
         shifts={shifts}
-        onOpenOvertime={() => setOvertimeOpen(true)}
-        onOpenTimeOff={() => setTimeOffOpen(true)}
+        onOpenOvertime={overtimeDialog.onOpen}
+        onOpenTimeOff={timeOffDialog.onOpen}
       />
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         {view === "board" &&
@@ -965,30 +966,28 @@ export default function SchedulePeopleRoute() {
         )}
       </div>
 
-      {overtimeOpen && (
-        <OvertimeDialog
-          onClose={() => setOvertimeOpen(false)}
-          range={range}
-          date={date}
-          weekDates={weekDates}
-          weekOptions={weekOptions}
-          locationId={locationId}
-          locationTimeZone={locationTimeZone}
-          departmentId={departmentId}
-          shiftId={shiftId}
-          employeeShiftId={employeeShiftId}
-          dayAssignments={boardAssignments}
-          weekAssignments={matrixAssignments}
-        />
-      )}
-      {timeOffOpen && (
-        <TimeOffDialog
-          onClose={() => setTimeOffOpen(false)}
-          date={date}
-          locationId={locationId}
-          shiftId={shiftId}
-        />
-      )}
+      <OvertimeDialog
+        open={overtimeDialog.isOpen}
+        onClose={overtimeDialog.onClose}
+        range={range}
+        date={date}
+        weekDates={weekDates}
+        weekOptions={weekOptions}
+        locationId={locationId}
+        locationTimeZone={locationTimeZone}
+        departmentId={departmentId}
+        shiftId={shiftId}
+        employeeShiftId={employeeShiftId}
+        dayAssignments={boardAssignments}
+        weekAssignments={matrixAssignments}
+      />
+      <TimeOffDialog
+        open={timeOffDialog.isOpen}
+        onClose={timeOffDialog.onClose}
+        date={date}
+        locationId={locationId}
+        shiftId={shiftId}
+      />
     </div>
   );
 }

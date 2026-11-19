@@ -90,12 +90,16 @@ export function ChoiceCardGroup<V extends string = string>({
   return (
     <div className={cn("space-y-2 w-full", className)}>
       {label && (
-        <span className="text-xs font-medium text-muted-foreground">
+        <span
+          id={`${groupId}-label`}
+          className="text-xs font-medium text-muted-foreground"
+        >
           {label}
         </span>
       )}
       <RadioGroup
         ref={groupRef}
+        aria-labelledby={label ? `${groupId}-label` : undefined}
         value={value}
         onValueChange={(v) => onChange(v as V)}
         className={cn(

@@ -134,7 +134,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         isDisabled={isDisabled}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? <Trans>Quote</Trans> : <Trans>New Quote</Trans>}
           </CardTitle>
           {!isEditing && (

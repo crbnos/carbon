@@ -56,6 +56,7 @@ type LaborCategoryFormProps = {
   initialValues: z.infer<typeof laborCategoryValidator>;
   /** The category's cost rates, newest first. Only for an existing one. */
   rates?: LaborCategoryRate[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -66,6 +67,7 @@ type LaborCategoryFormProps = {
 const LaborCategoryForm = ({
   initialValues,
   rates,
+  open = true,
   onClose
 }: LaborCategoryFormProps) => {
   const { t } = useLingui();
@@ -82,7 +84,7 @@ const LaborCategoryForm = ({
     <>
       <ModalDrawerProvider type="drawer">
         <ModalDrawer
-          open
+          open={open}
           onOpenChange={(open) => {
             if (!open) onClose();
           }}

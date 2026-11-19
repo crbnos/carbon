@@ -408,6 +408,9 @@ function SecuritySettingsForm({
                   </p>
                   <button
                     type="button"
+                    // Named by what it does; the secret is its description.
+                    aria-label={t`Copy secret`}
+                    aria-description={mfaEnrollment.secret}
                     className="font-mono text-xs break-all text-center cursor-pointer hover:text-foreground text-muted-foreground"
                     onClick={() => {
                       navigator.clipboard.writeText(mfaEnrollment.secret);

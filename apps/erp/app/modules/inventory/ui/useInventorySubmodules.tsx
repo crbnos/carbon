@@ -8,9 +8,11 @@ import {
   LuArrowRightLeft,
   LuClipboardCheck,
   LuClipboardList,
+  LuClipboardX,
   LuHandCoins,
   LuListChecks,
   LuNetwork,
+  LuPackageCheck,
   LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
@@ -25,6 +27,18 @@ import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
+import type { receiptInspectionStatusType } from "../inventory.models";
+
+const receiptsByInspectionStatus = (
+  statuses: (typeof receiptInspectionStatusType)[number][]
+) =>
+  `${path.to.receipts}?filter=${encodeURIComponent(
+    `inspectionStatus:in:${statuses.join(",")}`
+  )}`;
+
+const receiptsRejectedAtInspection = `${path.to.receipts}?filter=${encodeURIComponent(
+  "rejectedAtInspection:eq:true"
+)}`;
 
 export default function useInventorySubmodules() {
   const permissions = usePermissions();
@@ -76,6 +90,29 @@ export default function useInventorySubmodules() {
           to: path.to.receipts,
           icon: <LuHandCoins />,
           table: "receipt"
+        },
+        {
+          name: t`Pending inspection`,
+          to: receiptsByInspectionStatus([
+            "Pending Inspection",
+            "Inspection In Progress"
+          ]),
+          icon: <LuClipboardCheck />
+        },
+        {
+          name: t`Ready for putaway`,
+          to: receiptsByInspectionStatus([
+            "Inspection Passed",
+            "Partially Passed"
+          ]),
+          icon: <LuPackageCheck />
+        },
+        {
+          name: t`Inspection failed`,
+          // Not a status filter: a receipt with a Partial lot reads Put Away
+          // once its passed stock is put away, and must stay listed here.
+          to: receiptsRejectedAtInspection,
+          icon: <LuClipboardX />
         },
         {
           name: t`Shipments`,

@@ -38,8 +38,11 @@ const RichText = ({ documentId, notes }: RichTextProps) => {
               throw new Error("Invalid user");
             return (
               <Fragment key={note.id}>
-                {/* @ts-expect-error */}
-                <Avatar path={note.user.avatarUrl} name={note.user?.fullName} />
+                <Avatar
+                  path={note.user.avatarUrl}
+                  name={note.user?.fullName ?? undefined}
+                  decorative
+                />
                 <VStack spacing={1}>
                   <p className="font-bold">{note.user?.fullName!}</p>
                   <HTML text={note.note} />

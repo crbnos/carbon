@@ -31,15 +31,6 @@ vi.mock("@carbon/env", async () => {
   };
 });
 
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn()
-  })
-}));
-
 // connections.server now imports provisioning.server, which pulls in the auth
 // client and Redis at module load. Stub them so the module graph loads without a
 // real Supabase/Redis connection — these tests never reach code that uses them.

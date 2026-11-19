@@ -248,7 +248,15 @@ const PeopleTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const email = item.row.original.email;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${email}`}
+              />
+            );
+          },
           meta: {
             icon: <LuToggleRight />
           }

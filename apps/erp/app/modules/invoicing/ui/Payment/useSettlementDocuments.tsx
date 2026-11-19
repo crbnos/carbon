@@ -24,6 +24,7 @@ import MemoStatus from "../Memo/MemoStatus";
 import PurchaseInvoicingStatus from "../PurchaseInvoice/PurchaseInvoicingStatus";
 import ReimbursementStatus from "../Reimbursement/ReimbursementStatus";
 import SalesInvoiceStatus from "../SalesInvoice/SalesInvoiceStatus";
+import PaymentStatus from "./PaymentStatus";
 
 export type SettlementRelatedItems = Awaited<
   ReturnType<typeof getSettlementRelatedItems>
@@ -157,6 +158,19 @@ export function useSettlementRows(
         title={reimbursement.reimbursementId}
         description={t`Reimbursement`}
         status={<ReimbursementStatus status={reimbursement.status} />}
+      />
+    );
+  }
+
+  for (const payment of related.payments) {
+    rows.push(
+      <RelatedDocument
+        key={`payment:${payment.id}`}
+        to={path.to.payment(payment.id)}
+        icon={<LuWallet />}
+        title={payment.paymentId}
+        description={t`Payment`}
+        status={<PaymentStatus status={payment.status} />}
       />
     );
   }

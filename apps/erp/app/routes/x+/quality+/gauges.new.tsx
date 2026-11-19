@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -77,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function GaugeNewRoute() {
   const { defaults } = useUser();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const routeData = useRouteData<{
     gaugeTypes: GaugeType[];
@@ -107,7 +107,8 @@ export default function GaugeNewRoute() {
     <GaugeForm
       initialValues={initialValues}
       gaugeTypes={routeData?.gaugeTypes ?? []}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

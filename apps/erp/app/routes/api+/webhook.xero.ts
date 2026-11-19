@@ -250,7 +250,6 @@ export async function action({ request }: ActionFunctionArgs) {
           AccountingEntity["operation"]
         >;
 
-        // Log each entity change for debugging
         logger.info("Xero entity change", {
           operation,
           eventCategory,
@@ -291,7 +290,7 @@ export async function action({ request }: ActionFunctionArgs) {
             const invoiceInfo = await fetchInvoiceForSync(provider, resourceId);
 
             if (!invoiceInfo) {
-              logger.info("Skipping invoice - could not determine type", {
+              logger.warning("Skipping invoice - could not determine type", {
                 resourceId
               });
               continue;
@@ -385,7 +384,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   logger.info("Processed Xero webhook", { syncJobsTriggered: syncJobs.length });
 
-  // Return detailed response
   return {
     success: errors.length === 0,
     jobsTriggered: syncJobs.length,

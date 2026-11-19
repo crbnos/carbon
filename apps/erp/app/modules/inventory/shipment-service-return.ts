@@ -5,8 +5,8 @@
 // Shipping a serviced unit back on its RMA, and the warranty replacement. A
 // Return for Service or Return for Warranty line ships the customer's own
 // unit: it never entered stock, so the line writes no stock ledger, no cost
-// layer and no journal, and its serial stays Consumed. Its asset goes back In
-// Service at the RMA's site. A sales order line that replaces a Return for
+// layer and no journal. Its serial, Available while it was at the depot, is
+// Consumed again. Its asset goes back In Service at the RMA's site. A sales order line that replaces a Return for
 // Warranty line is shipped to warranty expense, not cost of goods sold.
 // Spec: .ai/specs/2026-10-22-service-jobs-and-returns.md (The RMA, Postings).
 
@@ -121,8 +121,8 @@ export async function loadWarrantyReturnLineIds(
  * 1. Refuses a unit whose line's job (the live one, else the latest
  *    Cancelled one) is not Completed, Invoiced or Cancelled, or whose asset
  *    is no longer At Depot.
- * 2. Writes one `Return Shipment` activity with `At Depot: false`, the
- *    serials as its inputs. The serials stay Consumed.
+ * 2. Sets the serials Consumed and writes one `Return Shipment` activity
+ *    with `At Depot: false`, the serials as its inputs.
  * 3. Sets the jobs' assets In Service at the RMA's site (else their own),
  *    shipped today on this shipment.
  */
@@ -171,6 +171,16 @@ export async function shipServiceUnits(
 
   const serials = units.filter((unit) => unit.trackedEntityId);
   if (serials.length > 0) {
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Consumed" })
+      .where(
+        "id",
+        "in",
+        serials.map((unit) => unit.trackedEntityId!)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
     const activity = await trx
       .insertInto("trackedActivity")
       .values({
@@ -228,7 +238,8 @@ export async function shipServiceUnits(
 
 /**
  * The void of a ship-back, in the void transaction: the jobs' assets go back
- * At Depot. There is no ledger to reverse, and the serials stay Consumed.
+ * At Depot. There is no ledger to reverse. The caller sets the serials back
+ * to Available.
  */
 export async function unshipServiceUnits(
   trx: Transaction<DB>,

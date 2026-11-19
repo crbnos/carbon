@@ -83,7 +83,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? "Purchase Invoice" : "New Purchase Invoice"}
           </CardTitle>
           {!isEditing && (

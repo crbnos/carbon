@@ -131,6 +131,57 @@ export const FIXED_ASSETS: FixedAssetSpec[] = [
       { monthsBack: 1, unitsProduced: 335 }
     ],
     depreciationCharge: 1474
+  },
+  {
+    key: "fleet-1",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Hydraulic Power Unit Manifold Assembly (Rental Unit 1)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "HMA-4000-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 2310,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "HMA-4000", serial: "HMA-4000-RNT-001" }
+  },
+  {
+    key: "fleet-2",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Hydraulic Power Unit Manifold Assembly (Rental Unit 2)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "HMA-4000-RNT-002",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 2310,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "HMA-4000", serial: "HMA-4000-RNT-002" }
+  },
+  {
+    key: "fleet-3",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Hydraulic Power Unit Manifold Assembly (Rental Unit 3)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "HMA-4000-RNT-003",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 2310,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "HMA-4000", serial: "HMA-4000-RNT-003" }
   }
 ];
 

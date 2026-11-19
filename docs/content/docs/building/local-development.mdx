@@ -45,7 +45,8 @@ Carbon is a **pnpm and Turborepo** monorepo containing the ERP and MES applicati
 | --- | --- |
 | `crbn up` | Boot the compose stack and apps. |
 | `crbn up --no-portless` | Localhost mode: fixed ports (API `54321`, ERP `3000`, MES `3001`). |
-| `crbn up --no-apps` | Services only: Postgres, Kong, Supabase, Inngest, mail. |
+| `crbn up --no-apps` | Services only: the API gateway, GoTrue, PostgREST, Realtime and Inngest. The shared containers start too. |
+| `crbn up --isolated` | Start a private stack, with Postgres, PgBouncer, Storage and mail inside the worktree's project. |
 | `crbn up --no-migrate` | Skip database migrations on boot. |
 | `crbn up --no-regen` | Skip type and Swagger regeneration. |
 | `crbn up --borrow` | Reuse another worktree's already-running containers. |
@@ -79,9 +80,22 @@ By default, `crbn up` uses **portless** to assign each application a stable TLS 
 
 | Service | Port |
 | --- | --- |
-| Supabase API (Kong) | `54321` |
+| Supabase API (Envoy gateway) | `54321` |
 | ERP | `3000` |
 | MES | `3001` |
+
+## Shared containers
+
+Every worktree uses one set of shared containers by default, in the Docker Compose project `crbn-shared`. Each worktree gets its own database, `wt_<slug>`, and its own Storage tenant. A worktree then runs only 5 containers: the API gateway, GoTrue, PostgREST, Realtime and Inngest.
+
+| Shared container | Host port |
+| --- | --- |
+| Postgres (one database per worktree) | `54322` |
+| PgBouncer (transaction mode) | `54329` |
+| Inbucket (mail) | `54324` |
+| Storage (admin API) | `54326` |
+
+`crbn down --purge` drops the worktree's database. `crbn prune --all` removes the shared containers. Use `crbn up --isolated` on a branch that changes the Postgres, Realtime or Storage image.
 
 ## Sync files from main
 

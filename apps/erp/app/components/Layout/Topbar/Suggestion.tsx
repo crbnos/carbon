@@ -137,7 +137,9 @@ const Suggestion = () => {
         });
 
       if (imageUpload.error) {
-        logger.error(imageUpload.error);
+        logger.error("Failed to upload the suggestion image", {
+          error: imageUpload.error
+        });
         toastError(t`Failed to upload image`, imageUpload.error);
       }
 
@@ -192,6 +194,7 @@ const Suggestion = () => {
                   {attachment.name}
                   <BadgeCloseButton
                     type="button"
+                    aria-label={t`Remove ${attachment.name}`}
                     onClick={() => {
                       setAttachment(null);
                     }}
@@ -203,6 +206,7 @@ const Suggestion = () => {
               <VStack spacing={2}>
                 <HStack spacing={2}>
                   <Checkbox
+                    aria-label={t`Submit anonymously`}
                     isChecked={anonymous}
                     onCheckedChange={(checked) =>
                       setAnonymous(checked === true)
@@ -215,6 +219,7 @@ const Suggestion = () => {
                 {CARBON_SLACK_ENABLED && (
                   <HStack spacing={2}>
                     <Checkbox
+                      aria-label={t`Send to Carbon`}
                       isChecked={sendToCarbon}
                       onCheckedChange={(checked) =>
                         setSendToCarbon(checked === true)

@@ -18,6 +18,8 @@ import {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
+  reactNodeToString,
+  useInlineTriggerLabel,
   VStack
 } from "@carbon/react";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -95,9 +97,15 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
       setControlValue(newValue);
       onChange?.(newValue);
     };
+    const hasValue = value !== undefined && !isNaN(value);
+    // "Edit Quantity", not a bare "Edit": the label is a sibling span, so it
+    // does not name the button.
+    const inlineTriggerLabel = useInlineTriggerLabel(
+      hasValue,
+      reactNodeToString(label).trim()
+    );
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
-    const hasValue = value !== undefined && !isNaN(value);
     const inlineField = useInlineField({
       inline,
       label,
@@ -114,6 +122,12 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           <InlineTrigger
             isEmpty={!hasValue}
             placeholder={inlineField.placeholder}
+            // The field and its value: "Edit Quantity: 12".
+            aria-label={
+              hasValue
+                ? `${inlineTriggerLabel}: ${rest.formatOptions ? formatter.format(value) : value}`
+                : inlineTriggerLabel
+            }
             isDisabled={isReadOnly || isDisabled}
             onClick={() => setInlineMode(false)}
           >

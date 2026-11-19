@@ -17,7 +17,10 @@ import { SalesReturnOrderForm } from "~/modules/sales/ui/SalesReturnOrders";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("RMA");
 
 export const handle: Handle = {
   breadcrumb: msg`RMAs`,

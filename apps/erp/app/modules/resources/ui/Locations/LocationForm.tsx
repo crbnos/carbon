@@ -52,7 +52,7 @@ const LocationForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -60,7 +60,7 @@ const LocationForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toastError(t`Failed to create location`, fetcher.data.error);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

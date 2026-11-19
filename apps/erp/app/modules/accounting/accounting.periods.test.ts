@@ -13,9 +13,11 @@ import {
   checklistTasksToCreate,
   earnedValueClosedCheck,
   evaluateCloseChecklist,
-  periodRunChecks
+  periodRunChecks,
+  shippedNotInvoicedCheck
 } from "./accounting.service";
 import {
+  closeTaskChangeRefusal,
   fiscalYearPeriodDates,
   periodDeletionRefusal,
   periodPostingRefusal
@@ -164,6 +166,53 @@ describe("periodPostingRefusal", () => {
     ["Closed", "accounting"]
   ] as const)("refuses a %s period an %s posting", (status, source) => {
     expect(periodPostingRefusal(status, source)).not.toBeNull();
+  });
+});
+
+describe("closeTaskChangeRefusal", () => {
+  const manual = { taskType: "Manual", severity: null };
+
+  it.each(["complete", "skip"] as const)(
+    "refuses to %s a task of a Closed period",
+    (change) => {
+      expect(closeTaskChangeRefusal(manual, "Closed", change)).not.toBeNull();
+      expect(
+        closeTaskChangeRefusal(
+          { taskType: "Action", severity: "Warning" },
+          "Closed",
+          change
+        )
+      ).not.toBeNull();
+    }
+  );
+
+  it.each([
+    ["Open", "complete"],
+    ["Open", "skip"],
+    ["Locked", "complete"],
+    ["Locked", "skip"]
+  ] as const)("lets a %s period's manual task %s", (status, change) => {
+    expect(closeTaskChangeRefusal(manual, status, change)).toBeNull();
+  });
+
+  it("refuses to complete an automatic task by hand", () => {
+    expect(
+      closeTaskChangeRefusal(
+        { taskType: "Auto", severity: "Warning" },
+        "Locked",
+        "complete"
+      )
+    ).not.toBeNull();
+  });
+
+  it("refuses to skip a Blocker task, and skips a Warning one", () => {
+    const auto = (severity: string) => ({ taskType: "Auto", severity });
+    expect(
+      closeTaskChangeRefusal(auto("Blocker"), "Locked", "skip")
+    ).not.toBeNull();
+    expect(
+      closeTaskChangeRefusal(auto("Warning"), "Locked", "skip")
+    ).toBeNull();
   });
 });
 
@@ -378,6 +427,48 @@ describe("periodRunChecks", () => {
 
 // The Government Contracting close checks: "Compute burden for the period"
 // (5b) and "Close earned value for the period" (5c).
+describe("shippedNotInvoicedCheck", () => {
+  it("passes with no uninvoiced shipment", () => {
+    expect(shippedNotInvoicedCheck({ shipments: [], count: 0 })).toEqual({
+      failing: false,
+      count: 0,
+      documents: []
+    });
+  });
+
+  it("fails with the shipments as linked documents and the exact count", () => {
+    expect(
+      shippedNotInvoicedCheck({
+        shipments: [{ id: "s1", shipmentId: "SH000001", status: "Posted" }],
+        count: 1
+      })
+    ).toEqual({
+      failing: true,
+      count: 1,
+      documents: [
+        {
+          documentType: "Shipment",
+          id: "s1",
+          readableId: "SH000001",
+          status: "Posted"
+        }
+      ]
+    });
+  });
+
+  it("lists at most the first 25 shipments while the count stays exact", () => {
+    const shipments = Array.from({ length: 30 }, (_, i) => ({
+      id: `s${i}`,
+      shipmentId: `SH${i}`,
+      status: "Posted"
+    }));
+    const result = shippedNotInvoicedCheck({ shipments, count: 30 });
+    expect(result.count).toBe(30);
+    expect(result.documents).toHaveLength(25);
+    expect(result.documents[24]?.id).toBe("s24");
+  });
+});
+
 describe("burdenComputedCheck", () => {
   it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
     expect(

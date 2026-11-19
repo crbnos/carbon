@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useField } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { cachedApiQuery, RefreshRate } from "@carbon/query";
 import {
   Badge,
@@ -22,6 +23,7 @@ import {
   PopoverTrigger,
   useMount
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import {
   type KeyboardEvent,
   useCallback,
@@ -34,6 +36,8 @@ import { LuUsers } from "react-icons/lu";
 import type { User, UserSelectGroup } from "~/modules/users/types";
 import { isValidEmail } from "~/utils/form";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "email-recipients");
 
 type EmailRecipientsProps = {
   name: string;
@@ -137,6 +141,7 @@ export default function EmailRecipients({
   helperText,
   type = "employee"
 }: EmailRecipientsProps) {
+  const { t } = useLingui();
   const {
     error,
     defaultValue,
@@ -224,8 +229,12 @@ export default function EmailRecipients({
           emails: string[];
         }>(path.to.api.userSelectGroupEmails(option.id));
         addEmails(groupEmails);
-      } catch {
+      } catch (error) {
         // leave the input as-is — selecting again retries
+        logger.warning("Failed to load the group's emails", {
+          groupId: option.id,
+          error
+        });
       }
     }
     setInputValue("");
@@ -250,6 +259,7 @@ export default function EmailRecipients({
       ))}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click only forwards focus to the inner <input>, which is the real control */}
           <div
             className={cn(
               "flex flex-wrap gap-1 min-h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text max-md:min-h-11 max-md:text-base",
@@ -270,6 +280,7 @@ export default function EmailRecipients({
                 {email}
                 <BadgeCloseButton
                   type="button"
+                  aria-label={t`Remove ${email}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -279,6 +290,8 @@ export default function EmailRecipients({
               </Badge>
             ))}
             <input
+              id={name}
+              aria-label={label ? undefined : t`Email recipients`}
               ref={inputRef}
               value={inputValue}
               onChange={(e) => {

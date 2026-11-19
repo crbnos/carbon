@@ -1,5 +1,5 @@
 -- A tax code component's accounts must belong to its company's group
--- (20261105223848_tax-component-account-group.sql).
+-- (20261119231550_tax-component-account-group.sql).
 -- Run from the repository root against an existing migrated local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 \
 --   -f packages/database/supabase/tests/tax-component-account-group.test.sql

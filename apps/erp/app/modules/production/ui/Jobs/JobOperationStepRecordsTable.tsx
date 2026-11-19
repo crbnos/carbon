@@ -95,7 +95,12 @@ const JobOperationStepRecordsTable = memo(
             switch (record.type) {
               case "Task":
               case "Checkbox":
-                return <Checkbox checked={record.booleanValue ?? false} />;
+                return (
+                  <Checkbox
+                    checked={record.booleanValue ?? false}
+                    aria-label={record.name}
+                  />
+                );
               case "Value":
                 return <p className="text-sm">{record.value}</p>;
               case "Measurement":
@@ -170,7 +175,10 @@ const JobOperationStepRecordsTable = memo(
                         </a>
                       </>
                     )}
-                    <Checkbox checked={record.booleanValue ?? false} />
+                    <Checkbox
+                      checked={record.booleanValue ?? false}
+                      aria-label={record.name}
+                    />
                   </div>
                 );
               default:

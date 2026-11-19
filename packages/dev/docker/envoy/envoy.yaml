@@ -1,0 +1,29 @@
+# Vendored from supabase/supabase docker/volumes/api/envoy (self-hosted v0.8.4).
+# Local changes are marked "carbon:"; keep the rest byte-identical so upstream syncs stay a diff.
+dynamic_resources:
+  cds_config:
+    path_config_source:
+      path: /etc/envoy/cds.yaml
+    resource_api_version: V3
+  lds_config:
+    path_config_source:
+      path: /etc/envoy/lds.yaml
+    resource_api_version: V3
+
+node:
+  cluster: supabase_cluster
+  id: supabase_node
+
+overload_manager:
+  resource_monitors:
+    - name: envoy.resource_monitors.global_downstream_max_connections
+      typed_config:
+        '@type': >-
+          type.googleapis.com/envoy.extensions.resource_monitors.downstream_connections.v3.DownstreamConnectionsConfig
+        max_active_downstream_connections: 30000
+
+admin:
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9901

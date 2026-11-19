@@ -6,6 +6,8 @@ import type { AuthSession } from "@carbon/auth";
 import { describe, expect, it } from "vitest";
 import {
   PANEL_SESSION_TTL_SECONDS,
+  panelCompanyChoices,
+  panelSessionForCompany,
   panelSessionFromAuthSession,
   panelSessionRefusal,
   panelSessionTtlSeconds
@@ -41,6 +43,85 @@ describe("panelSessionFromAuthSession", () => {
       createdAt: NOW - 2 * HOUR,
       lastActiveAt: NOW
     });
+  });
+});
+
+describe("panelSessionForCompany", () => {
+  it("moves the company and keeps the sign-in's age and MFA and SSO facts", () => {
+    const session = {
+      userId: "user-1",
+      companyId: "company-1",
+      companyGroupId: "group-1",
+      email: "someone@example.com",
+      mfaVerified: true,
+      ssoProviderId: "provider-1",
+      createdAt: NOW - 2 * HOUR,
+      lastActiveAt: NOW - HOUR
+    };
+    expect(
+      panelSessionForCompany(
+        session,
+        { companyId: "company-2", companyGroupId: "group-2" },
+        NOW
+      )
+    ).toEqual({
+      userId: "user-1",
+      companyId: "company-2",
+      companyGroupId: "group-2",
+      email: "someone@example.com",
+      mfaVerified: true,
+      ssoProviderId: "provider-1",
+      createdAt: NOW - 2 * HOUR,
+      lastActiveAt: NOW
+    });
+  });
+});
+
+describe("panelCompanyChoices", () => {
+  const membership = (id: string, role = "employee") => ({
+    id,
+    name: `Company ${id}`,
+    companyGroupId: `group-${id}`,
+    role
+  });
+  const choice = (id: string) => ({
+    id,
+    name: `Company ${id}`,
+    companyGroupId: `group-${id}`
+  });
+
+  it("offers the employee memberships with the panel connected", () => {
+    expect(
+      panelCompanyChoices(
+        [membership("a"), membership("b"), membership("c")],
+        new Set(["a", "c"]),
+        "a"
+      )
+    ).toEqual([choice("a"), choice("c")]);
+  });
+
+  it("never offers a company where the user is a customer or supplier", () => {
+    expect(
+      panelCompanyChoices(
+        [
+          membership("a"),
+          membership("b", "customer"),
+          membership("c", "supplier")
+        ],
+        new Set(["a", "b", "c"]),
+        "a"
+      )
+    ).toEqual([choice("a")]);
+  });
+
+  it("keeps the current company listed while it is not connected", () => {
+    expect(
+      panelCompanyChoices(
+        [membership("a"), membership("b")],
+        new Set(["b"]),
+        "a"
+      )
+    ).toEqual([choice("a"), choice("b")]);
   });
 });
 

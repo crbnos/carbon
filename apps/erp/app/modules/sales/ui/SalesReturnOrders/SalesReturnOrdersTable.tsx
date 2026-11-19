@@ -255,11 +255,9 @@ const SalesReturnOrdersTable = memo(
             text={t`Are you sure you want to delete ${selectedSalesReturnOrder.salesReturnOrderId!}? This cannot be undone.`}
             onCancel={() => {
               deleteSalesReturnOrderModal.onClose();
-              setSelectedSalesReturnOrder(null);
             }}
             onSubmit={() => {
               deleteSalesReturnOrderModal.onClose();
-              setSelectedSalesReturnOrder(null);
             }}
           />
         )}

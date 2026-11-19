@@ -1,102 +1,187 @@
 ---
 title: Inspections and sampling
-description: How Carbon inspects received goods against AQL sampling plans, and how inspection templates and ballooned FAI drawings define what gets checked.
+description: How Carbon inspects received goods, stock on hand and job operations against an inspection plan, how sampling is resolved, and how plans, versions and ballooned FAI drawings define what gets checked.
 ---
 
-Carbon's <Term id="inbound-inspection">inbound inspection</Term> evaluates received goods against a sampling plan. When a receipt posts for an item that [requires inspection](/docs/reference/quality), Carbon holds the received units, calculates the sample size, and requires inspection results before releasing stock.
+Carbon's <Term id="inbound-inspection">inbound inspection</Term> evaluates units against an inspection plan. When a receipt posts for a part with a Receipt inspection plan, Carbon holds the received units, calculates the sample size, and requires inspection results before releasing stock. The same lots also inspect stock already on hand (a manual inspection) and the output of an inspection operation on a job.
 
-This page describes the inspection lifecycle, sampling calculations, template step types, and ballooned-drawing FAI workflow. See [quality](/docs/reference/quality) for the module overview.
+This page describes the inspection lifecycle, manual inspections, inspections on the shop floor, sampling calculations, and the inspection plan itself: versions, parameters, work instructions, step types and ballooned drawings. See [quality](/docs/reference/quality) for the module overview.
 
-## The inbound inspection lifecycle
+## The inspection lifecycle
 
-Inspection is **lot-based**: one inspection per received line (the `receiptLineId` is unique, so a line can't spawn two lots). The lot carries a snapshot of the resolved plan — sample size, acceptance number, rejection number, the standard, the code letter — frozen at receipt so later plan edits never rewrite history.
+Inspection is **lot-based**. Every lot records where it came from, its **Source**:
+
+- **Receipt**: one lot per received line of a part with a Receipt inspection plan. A line can't open two lots.
+- **Job Operation**: one lot per inspection operation, opened the first time the operation is opened on the shop floor.
+- **Manual**: a lot someone creates from the Inspections list for picked serials or batches. See [manual inspections](#manual-inspections).
+
+The lot carries a snapshot of the resolved sampling rule (sample size, acceptance number, rejection number, the standard, the code letter), frozen when the lot is created so later plan edits never rewrite it.
 
 <StatusFlow entity="inspection">
-  <Status name="Pending">The lot exists but no samples are recorded yet. Its tracked entities were posted **On Hold** at receipt, not Available.</Status>
+  <Status name="Pending">The lot exists but no samples are recorded yet. A receipt lot's tracked entities were posted **On Hold** at receipt, not Available. A manual lot's Available entities went On Hold when it was created.</Status>
   <Status name="In Progress">At least one sample has been inspected. The inspector is working through the sample size, recording each unit as Passed or Failed.</Status>
   <Status name="Passed" accent>The lot was **accepted** on disposition. Un-sampled entities are released to Available; sampled passes stay Available, sampled failures stay Rejected.</Status>
   <Status name="Failed" terminal>The lot was **rejected**. Every entity in the lot flips to Rejected, and an issue can be opened automatically.</Status>
-  <Status name="Partial" terminal>Some units cleared and the rest stay On Hold. A middle disposition for when part of the lot is good and part isn't.</Status>
+  <Status name="Partial" terminal>Part of a receipt lot passed and part failed. The passed part can be put away. An untracked lot holds the rest until its NCR is Closed, so it cannot be marked Partial while linked to a Closed NCR; a serial lot's failed units are Rejected.</Status>
+  <Status name="Cancelled" terminal>The receipt was voided while the lot was still Pending or In Progress, or a manual inspection was cancelled. A cancelled lot keeps what it recorded but takes no more samples or decisions.</Status>
 </StatusFlow>
 
-The status enum is `Pending`, `In Progress`, `Passed`, `Failed`, or `Partial` (`quality.models.ts:698`, matching `inboundInspectionStatus` in `20260419163058_inbound-inspection-sampling.sql:73`). **Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**.
+**Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**. **Cancelled** comes from voiding the receipt or cancelling a manual inspection.
 
-<Callout type="warn" title="Inspection-required stock is not on-hand until dispositioned">
-When a receipt posts for a `requiresInspection` item, its tracked entities are set to **On Hold**, not Available. They're received but you can't sell or consume them yet. Only Accept (or the per-sample passes) releases them.
+<Callout type="warn" title="Received stock is held until the lot is decided">
+A part that needs inspection posts into its location's inspection storage unit, set in **Settings → Quality**. Serial and batch units are **On Hold**. For an untracked part, the open lot holds its lot size at that unit. Nothing held can be picked, shipped, issued or transferred until the lot is decided.
+
+See [parts that need inspection](/docs/reference/receipts#parts-that-need-inspection) for setup, the receipt's inspection status and Put Away.
 </Callout>
 
 ### What triggers a lot
 
-The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` posting reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
+A part needs inspection at receipt when it has an inspection plan assigned to **Receipt** (the part's **Quality** tab, **Inspection Plan Assignments**). There is no separate "requires inspection" switch: the assignment is the gate.
+
+Posting a purchase-order receipt opens one lot for each received line of such a part, and resolves the lot's sampling from the plan. Outside processing receipts open no lot. A sales return receipt goes to the inspection storage unit too, but opens no lot.
+
+A job operation of type Inspection opens its lot on the shop floor, against the operation's inspection plan. A manual lot is created by hand.
 
 ### Recording samples
 
-Each recorded result is an `inboundInspectionSample` row. For a **Serial** item, the inspector scans or selects a discrete <Term>tracked entity</Term> per sample; for **Batch / Inventory / Non-Inventory** items there's no discrete unit to scan, so the sample records just a Pass/Fail with `trackedEntityId` left null (`inboundInspectionSampleValidator`, `quality.models.ts:754`). Same modal either way — the serial path just adds a Scan/Select step.
+Each recorded result is an `inspectionSample` row. For a **Serial** item, each sample is a discrete <Term>tracked entity</Term>; for **Batch / Inventory / Non-Inventory** items there's no discrete unit to scan, so the sample records just a Pass/Fail with `trackedEntityId` left null (`inspectionSampleValidator`). Same grid either way.
+
+How a serial lot gets its samples depends on the lot:
+
+- When the lot's sample size covers every unit, every unit is a sample from the start, so there is nothing to scan.
+- When the lot samples a subset, the inspector scans or selects each unit with **Add Sample**.
+- A manual lot's picked serials are its samples, so it never scans.
+
+A serial is sampled at most once in a lot. It can be sampled again in a later lot, such as a manual re-inspection of stock on hand or the fresh lot a reworked job operation opens.
 
 ### Disposition
 
-The Accept / Reject / Partial buttons gate on the recorded results (`InboundInspectionLotView.tsx:143`):
+Receipt and manual lots are decided in the ERP inspection page. A job-operation lot is decided on the shop floor, where the verdict also posts its completions, scrap or rework. The ERP page has three disposition buttons:
 
-- **Accept Lot** is available once the inspected count reaches the sample size and failures are at or below the **acceptance number**.
-- **Reject Lot** is available the moment failures exceed the acceptance number — you don't have to finish the sample to reject a clearly bad lot.
-- **Partial** is available as soon as any unit is inspected.
+- **Accept Lot** is available once the inspected count reaches the sample size and failures are at or below the **acceptance number**. With characteristics, each characteristic must reach its own sample size within its own acceptance number.
+- **Reject Lot** is available on any open lot. Without a statistical failure, the reject dialog asks for a reason.
+- **Partial** is available on an open receipt lot of an untracked part, and on an open receipt lot of a serial part that has a failed unit, a passed sample and complete sampling. A batch or non-inventory lot, and every manual lot, is accepted or rejected as a whole.
 
-Disposition writes the terminal status, stamps `dispositionedBy` / `dispositionedAt`, and appends a row to `inboundInspectionHistory` (a log kept for future plan auto-switching). Rejecting a **non-tracked Inventory** lot also posts a compensating `itemLedger` negative adjustment under the `Inbound Inspection` document type, because that received quantity has no per-entity status to exclude it from on-hand (`quality.server.ts:305`). A reject can also open an <Term id="nonconformance">issue</Term> automatically — the reject dialog has an "Open an NCR" checkbox, on by default, linking the new issue back through `nonConformanceInboundInspection`. See [Quality](/docs/reference/quality) for how those issues run to closure.
+Disposition writes the terminal status, stamps `dispositionedBy` / `dispositionedAt`, and appends a row to `inspectionHistory` (a log kept for future plan auto-switching). Rejecting a **non-tracked Inventory** lot also posts a compensating `itemLedger` negative adjustment under the `Inbound Inspection` document type, booked from the storage unit that holds the lot. A manual lot is always tracked, so it is never written off.
+
+A reject can also open an <Term id="nonconformance">issue</Term> automatically: the reject dialog has an "Open an NCR" checkbox, on by default. An untracked receipt lot belongs to one NCR, and a Partial lot must be the only lot on its NCR. A manual lot's NCR lists the lot's own entities and names no supplier. See [Quality](/docs/reference/quality) for how those issues run to closure.
+
+### Partial lots
+
+**Partial** opens the **Partial Lot** dialog. What it does depends on the part's tracking:
+
+| Tracking | What Partial does |
+|---|---|
+| Serial | Units that failed a sample stay **Rejected**. Every other unit, including units never sampled, becomes **Available** and is ready for putaway. |
+| Untracked | You enter the **Accepted quantity**, more than 0 and less than the lot size. The accepted quantity is ready for putaway. The rest stays held until its NCR is **Closed**, so the dialog always opens an NCR and needs an **Issue Type**. |
+
+### Where rejected stock goes
+
+When the location has a rejected storage unit (**Settings → Quality**, **Goods-in storage**), Reject and Partial move the rejected stock there. For an untracked part, the hold moves with the stock. A full Reject of an untracked lot is written off instead, from the inspection storage unit. With no rejected storage unit set, rejected stock stays in the inspection storage unit.
+
+## Manual inspections
+
+A manual inspection checks serials or batches you already have: a quality hold on stock on hand, a re-check, a customer complaint. It holds the units, then releases or rejects them like a receipt lot. It completes no job and moves no stock.
+
+You need quality create permission. In **Quality → Inspection → Inspections**, select **Add Inspection**:
+
+<Steps>
+  <Step>Choose the **Item**.</Step>
+  <Step>In **Tracked Entities**, pick its serials or batches. The list offers only units that are Available or On Hold.</Step>
+  <Step>Choose an **Inspection Plan**. The list offers the item's own plans, Active versions only.</Step>
+  <Step>Optionally set a **Work Center** and an **Assignee**. They decide where the lot shows on the shop floor queue.</Step>
+</Steps>
+
+<Screenshot label="Inspections list with the New Inspection drawer open: an item, two picked serials and an Active inspection plan" />
+
+On create, every Available unit goes **On Hold**. Units that were already On Hold stay On Hold. The lot size is the number of serials, or the batches' summed quantity in whole units, and the sampling comes from the chosen plan. A unit can be in one open inspection at a time, so a unit in another open manual lot, or in its receipt line's open lot, is refused.
+
+Accept and Reject work as for a receipt lot, in the ERP and on the shop floor. Accept releases every unit that did not fail a sample to Available and rejects the ones that did. Reject makes every unit Rejected. A manual lot has no Partial.
+
+### Cancel and delete
+
+An open manual lot has **Cancel Inspection** and **Delete Inspection**, in the list's row menu and in the menu beside the inspection id. Receipt and job-operation lots have neither.
+
+| Action | When | What happens |
+|---|---|---|
+| Cancel Inspection | Any open manual lot. Needs quality update. | The lot becomes **Cancelled** and leaves the shop floor queue. What it recorded is kept. |
+| Delete Inspection | An open manual lot that recorded nothing: no sample verdict, measurement, gauge, disposition or linked issue. Needs quality delete. | The lot is removed. |
+
+Both give each unit still On Hold the status it had before the lot, so a unit that was Available is Available again. A unit a sample verdict already moved keeps its new status.
+
+## Inspections on the shop floor
+
+The MES **Inspections** queue lists every Pending or In Progress lot, of all three sources. Filter it by **Work Center** and **Source**, or switch to **Assigned to Me**. Operators see the queue without quality view permission; recording results and deciding a lot need quality update.
+
+A job-operation lot opens around its operation, with the operation's timer, completions, scrap and rework. A receipt or manual lot opens in a lot view with the same measurement matrix, drawing and scanner, and only **Accept** and **Reject**:
+
+- **Accept** releases the lot's units, as Accept Lot does in the ERP.
+- **Reject** runs the ERP's own Reject Lot, so an untracked Inventory lot is written off the same way. The dialog has **Open an NCR for MRB disposition**, on by default, and asks for a reason when nothing has failed.
+- Each decides the lot once. A second Accept or Reject on a decided lot is refused.
+- A receipt lot whose receipt was voided shows **Receipt voided** and is locked.
+
+Only job-operation inspection time is clocked. It is a production event on the operation, costed and corrected like any other. A receipt or manual lot has no timer and records no labor.
 
 ## Sampling plans and AQL
 
-Every lot needs a sample size and an accept/reject rule. That comes from the item's **sampling plan** (`itemSamplingPlan`, 1:1 with the item, created lazily) resolved against the lot size at receipt. There are four plan types (`samplingPlanTypes`, `samplingStandards.ts:17`):
+Every lot needs a sample size and an accept/reject rule. Sampling lives on the inspection plan, not on the item, and resolves against the lot size when the lot is created:
+
+1. A characteristic's own rule, set in its **Sampling** column in the plan editor.
+2. Otherwise, the plan's default rule, set with the sampling button in the **Characteristics** header. The button shows the rule, or **Inspect All** when none is set.
+3. Otherwise, **Inspect All**. A lot with no plan inspects all too.
+
+The plan's default rule is also the lot-level snapshot. There are four rule types (`samplingPlanTypes`, `samplingStandards.ts`):
 
 <FieldTable>
   <Field name="Inspect All" type="All">Sample size equals the whole lot. Accept on 0 defects, reject on 1.</Field>
   <Field name="Inspect First N" type="First">A fixed count off the top of the lot (`sampleSize`). Accept 0 / reject 1.</Field>
   <Field name="Percentage" type="Percentage">A share of the lot (`percentage`), rounded up, capped at the lot size. Accept 0 / reject 1.</Field>
-  <Field name="AQL" type="AQL">Statistical acceptance sampling per ANSI/ASQ Z1.4 or ISO 2859-1 — the sample size and accept/reject numbers come from the standard's tables.</Field>
+  <Field name="AQL" type="AQL">Statistical acceptance sampling per ANSI/ASQ Z1.4 or ISO 2859-1. The sample size and accept/reject numbers come from the standard's tables.</Field>
 </FieldTable>
 
-The first three plans use a zero-defect rule. **AQL** uses standard acceptance tables.
+The first three rules use a zero-defect rule. **AQL** uses standard acceptance tables.
 
 ### How an AQL plan resolves
 
-<Term id="sampling-plan-aql">AQL</Term> — Acceptable Quality Limit — is the defect rate you're willing to treat as "good enough". The resolver (`resolveSamplingPlan` in `samplingStandards.ts`, mirrored for `post-receipt` in `sampling-engine.ts`) takes the plan, the lot size, and the company's standard, then walks the standard's tables in two steps:
+<Term id="sampling-plan-aql">AQL</Term> (Acceptable Quality Limit) is the defect rate you're willing to treat as "good enough". The resolver (`resolveSamplingPlan`) takes the rule, the lot size, and the company's standard, then walks the standard's tables in two steps:
 
-1. **Lot size → code letter.** A single lot-size-range table maps the lot to a code letter (A–R) for the chosen **inspection level**. Level II is the general default; I and III trade sample size for confidence, and S1–S4 are special small-sample levels (`inspectionLevels`, `samplingStandards.ts:20`).
-2. **Code letter + AQL + severity → sample plan.** The code letter and AQL pick a cell giving the sample size `n`, the **acceptance number** (`Ac`, max defects to still accept), and the **rejection number** (`Re`). Severity switches which table is used: **Normal**, **Tightened** (stricter — used when a supplier's quality slips), or **Reduced** (`inspectionSeverities`, `samplingStandards.ts:31`).
+1. **Lot size → code letter.** A single lot-size-range table maps the lot to a code letter (A–R) for the chosen **inspection level**. Level II is the general default; I and III trade sample size for confidence, and S1–S4 are special small-sample levels (`inspectionLevels`).
+2. **Code letter + AQL + severity → sample plan.** The code letter and AQL pick a cell giving the sample size `n`, the **acceptance number** (`Ac`, max defects to still accept), and the **rejection number** (`Re`). Severity switches which table is used: **Normal**, **Tightened** (stricter, used when a supplier's quality slips), or **Reduced** (`inspectionSeverities`).
 
-The standard AQL values Carbon exposes are the twelve canonical steps `0.065, 0.1, 0.15, 0.25, 0.4, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5, 10.0` (`standardAqlValues`, `samplingStandards.ts:34`). The whole Z1.4 / ISO 2859-1 constant tables live in `samplingStandards.ts` (and the posting copy at `sampling-engine.ts`) — ISO 2859-1 cells match Z1.4 for the plans Carbon exposes, so both standards share the same tables today.
+The standard AQL values Carbon exposes are the twelve canonical steps `0.065, 0.1, 0.15, 0.25, 0.4, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5, 10.0` (`standardAqlValues`). The Z1.4 / ISO 2859-1 tables live in `samplingStandards.ts`. ISO 2859-1 cells match Z1.4 for the plans Carbon exposes, so both standards share the same tables today.
 
-<Callout type="note" title="The plan is snapshotted, not referenced">
-When the receipt posts, the resolved numbers are copied onto the `inboundInspection` row (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`). Editing the item's sampling plan afterward changes future lots, never the lot already on the dock. If no plan is configured, `post-receipt` defaults to `Inspect All`, level II, Normal.
+<Callout type="note" title="The sampling is snapshotted, not referenced">
+When the lot is created, the resolved numbers are copied onto the `inspection` row (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`), and each characteristic's resolved numbers onto its own per-lot row. A characteristic added to the plan later gets its numbers when the lot is next opened. The lot already on the dock never changes otherwise.
 </Callout>
 
-The **standard** itself (`ANSI_Z1_4` or `ISO_2859_1`) is a company-wide setting, not per-item — it lives on `companySettings.samplingStandard`, defaulting to ANSI Z1.4. A company can also require **four-eyes** sign-off on inspections via `companySettings.enforceInspectionFourEyes`, so the person who records a sample can't be the one who dispositions the lot.
+The **standard** itself (`ANSI_Z1_4` or `ISO_2859_1`) is a company-wide setting, not per-item. It lives on `companySettings.samplingStandard`, defaulting to ANSI Z1.4. A company can also require **four-eyes** sign-off on inspections via `companySettings.enforceInspectionFourEyes`, so the person who records a sample can't be the one who dispositions the lot.
 
 ## Inspection templates and step types
 
-Sampling decides *how many* to inspect. An **inspection template** decides *what to check on each one*. Templates are built from ordered steps, and every step has a **type** that determines what the inspector is asked to do (`procedureStepType`, `shared.models.ts:207`):
+Sampling decides *how many* to inspect. An **inspection template** decides *what to check on each one*. Templates are built from ordered steps, and every step has a **type** that determines what the inspector is asked to do (`procedureStepType`):
 
 <FieldTable>
-  <Field name="Task">A do-this instruction with no captured value — a checklist line.</Field>
+  <Field name="Task">A do-this instruction with no captured value: a checklist line.</Field>
   <Field name="Measurement">A dimensional reading. Requires a **unit of measure**, and takes an optional min/max range that bounds an acceptable value.</Field>
   <Field name="Value">A free numeric or text value with no unit requirement.</Field>
   <Field name="Checkbox">A pass/acknowledge tick.</Field>
   <Field name="Timestamp">Captures the moment the step was performed.</Field>
   <Field name="Person">Captures who performed the step.</Field>
   <Field name="List">A pick from a defined set of options (the `listValues`).</Field>
-  <Field name="File">An attachment — a photo, a scan, a cert.</Field>
+  <Field name="File">An attachment: a photo, a scan, a cert.</Field>
   <Field name="Inspection">A nested inspection reference.</Field>
 </FieldTable>
 
-The step validator (`qualityDocumentStepValidator`, `quality.models.ts:591`) enforces the type-specific rules: a **Measurement** step must have a unit of measure, a **List** step must have at least one non-empty option, and when both `minValue` and `maxValue` are set the max must be greater than or equal to the min.
+The step validator (`qualityDocumentStepValidator`) enforces the type-specific rules: a **Measurement** step must have a unit of measure, a **List** step must have at least one non-empty option, and when both `minValue` and `maxValue` are set the max must be greater than or equal to the min.
 
 ## FAI, inspection documents, and balloons
 
-For first-article inspection (FAI) and dimensional sign-off, Carbon works from the drawing itself. An **inspection document** is a part's PDF drawing overlaid with numbered **balloons**, each balloon marking a characteristic to inspect (`inspectionDocumentValidator` / `balloonFeatureValidator`, `quality.models.ts:106`).
+For first-article inspection (FAI) and dimensional sign-off, Carbon works from the drawing itself. An **inspection document** is a part's PDF drawing overlaid with numbered **balloons**, each balloon marking a characteristic to inspect (`inspectionDocumentValidator` / `balloonFeatureValidator`).
 
 Each balloon feature carries:
 
 <FieldTable>
-  <Field name="balloonNumber" required>The number stamped on the drawing next to the characteristic — the reference an inspector reads off.</Field>
+  <Field name="balloonNumber" required>The number stamped on the drawing next to the characteristic: the reference an inspector reads off.</Field>
   <Field name="description" required>What the characteristic is (a bore diameter, a hole position, a surface finish).</Field>
   <Field name="nominalValue">The target value.</Field>
   <Field name="tolerancePlus / toleranceMinus">The allowed deviation above and below nominal.</Field>
@@ -106,6 +191,32 @@ Each balloon feature carries:
 Balloons anchor to a region of a specific PDF page (normalized 0–1 coordinates, so they stay put at any zoom) and each balloon can carry a step **type** from the same `procedureStepType` set, so a ballooned characteristic can be a Measurement, a Checkbox, and so on. Carbon can also auto-detect balloons from the drawing and turn detected regions into features. Because a balloon, its geometry, and its inspection feature must be created together or not at all, saves go through a single atomic RPC (`saveInspectionDocumentAtomic`) rather than separate writes.
 
 Inspection plans live under **Quality → Inspection → Inspection Plans**. The editor has no Save button: each change saves itself a moment after you stop editing, and the toolbar shows **Saving…**, **Saved**, or **Could not save**.
+
+### Plan versions
+
+An inspection plan has versions. The **Inspection Plans** list groups plans by part and shows each plan at its latest version. The editor shows a **V1**, **V2** … version menu beside the title, listing every version with its status.
+
+<StatusFlow entity="qualityDocument">
+  <Status name="Draft">The version being written. Only a Draft can be edited. New plans start as a Draft, including plans made from a model's PMI.</Status>
+  <Status name="Active" accent>The published version. Item receipt assignments and method operations point at it.</Status>
+  <Status name="Archived" terminal>A version a later Publish replaced. It can be reactivated.</Status>
+</StatusFlow>
+
+- **New Version** (in the version menu) copies the version you are on into a new Draft, numbered one past the plan's highest version: its characteristics, balloons, sampling, parameters and work instructions. The drawing or model file is shared, not copied.
+- **Publish** on a Draft makes it Active and archives the Active version. It needs no approval. It also moves every item's **Receipt** assignment and every method operation that used another version of the plan onto this one. Job operations, quote operations and existing lots keep the version they had. **Reactivate** on an Archived version does the same.
+- A lot reads its plan live, so locking Active and Archived versions is what keeps a lot's characteristics fixed. On a locked version the grids are read-only and the add buttons are hidden.
+- A Draft can be assigned to an item's **Receipt** slot or a method operation before it is published, so a plan can be tried on real lots while it is still being written. A lot reads its plan live, so edits to that Draft reach its open lots; Publish the Draft to fix the characteristics.
+- A version that any lot used cannot be deleted, because its characteristics hold the lots' measurements. Publish a new version to replace it.
+
+### Parameters
+
+Parameters are fixed key/value pairs the inspector reads before measuring: "Ambient temp" / "20 ±2 °C", "Fixture" / "F-12". In the plan editor, open the **Parameters** tab beside **Characteristics** and use **Add Parameter**. The grid has **Key** and **Value**, kept in the order you enter them. A row with no key is not saved.
+
+### Work instructions
+
+The **Instructions** tab holds rich text with images: how to fixture the part, which gauge to zero first. It saves itself a second after you stop typing, and shows read-only on an Active or Archived version.
+
+When a lot has a plan, its inspection grid in the ERP and the measurement matrix on the shop floor show **Characteristics**, **Parameters** and **Instructions** tabs. Both read the plan live. A plan with none shows "This inspection plan has no parameters." or "This inspection plan has no work instructions."
 
 ### Plans from a model's PMI
 
@@ -129,7 +240,7 @@ When an inspection runs, each characteristic has a **Gauge** cell. The list offe
 
 <Cards>
   <Card title="Quality" href="/docs/reference/quality">
-    The module overview — issues, dispositions, and where inbound inspection fits.
+    The module overview: issues, dispositions, and where inbound inspection fits.
   </Card>
   <Card title="Issues and NCRs" href="/docs/reference/quality">
     A rejected lot can open an issue automatically; this is how issues are driven to closure.
@@ -145,25 +256,34 @@ When an inspection runs, each characteristic has a **Gauge** cell. The list offe
 <AgentContext>
 ## Troubleshooting
 
-Exact errors and the sampling/disposition preconditions from the inbound-inspection validators, the sampling engine, and the reject-to-NCR flow.
+Exact errors and the sampling/disposition preconditions from the inspection validators, the sampling engine, manual inspections, plan versions and the reject-to-NCR flow.
 
 ### "Status is required" / "Decision is required"
 Recording a sample needs a result (**Passed**/**Failed**); dispositioning the lot needs a decision (**Accept**, **Reject**, or **Partial**). The corresponding field wasn't selected.
 
 ### "Inspection id mismatch"
-The inspection id in the URL doesn't match the `inspectionId` on the submitted form — a stale page or a crossed request. Reload the inspection and try again.
+The inspection id in the URL doesn't match the `inspectionId` on the submitted form: a stale page or a crossed request. Reload the inspection and try again.
 
 ### "Inspection not found"
-The sample or disposition references an inspection that doesn't exist in this company. It was likely deleted or belongs to another company — reload the list.
+The sample or disposition references an inspection that doesn't exist in this company. It was likely deleted or belongs to another company. Reload the list.
 
 ### "Failed to save sample" / "Failed to accept lot" / "Failed to reject lot" / "Failed to mark partial"
-The underlying transaction failed (inspection missing, an entity conflict, or a permission denial). Retry; if it persists the lot may already be in a terminal state — see below.
+The underlying transaction failed (inspection missing, an entity conflict, or a permission denial). Retry; if it persists the lot may already be in a terminal state (see below).
+
+### "Enter the accepted quantity: more than 0 and less than the lot size"
+Partial on an untracked receipt lot needs an accepted quantity above 0 and below the lot size. To accept the whole lot, use **Accept Lot**. An accepted quantity of 0 is refused with "That is the whole lot rejected. Use Reject Lot instead." The rest of the lot stays held, in the rejected storage unit when the location has one, until the lot's NCR is Closed.
+
+### The inspection page shows a Cancelled lot
+The lot's receipt was voided while the lot was Pending or In Progress, or the manual inspection was cancelled. A Cancelled lot keeps its recorded results but takes no samples or decisions. A cancelled manual lot gave its units back the status they had before it.
 
 ### A terminal lot won't take more samples
-Once a lot is **Passed**, **Failed**, or **Partial** it's terminal and locks — no further samples can be recorded and the status won't recompute. Only Pending/In Progress lots accept samples. To re-inspect you'd need a fresh inspection.
+Once a lot is **Passed**, **Failed**, **Partial** or **Cancelled** it's closed and locks: no further samples can be recorded and the status won't recompute. Only Pending/In Progress lots accept samples. To inspect Available or On Hold units again, create a manual inspection of them; a serial can be sampled again in a new lot.
 
 ### The lot passed or failed on its own after one bad sample
-Accept/reject is derived by the sampling engine, not chosen by hand. For All / First N / Percentage plans the acceptance number is 0 and the rejection number is 1, so a single defect fails the lot; AQL plans look up the accept/reject numbers from the ANSI Z1.4 / ISO 2859-1 code-letter tables by lot size, inspection level, and severity. Lot passes when sampled defects are within the acceptance number; it fails once defects exceed the rejection number.
+Accept/reject is derived by the sampling engine, not chosen by hand. For All / First N / Percentage rules the acceptance number is 0 and the rejection number is 1, so a single defect fails the lot; AQL rules look up the accept/reject numbers from the ANSI Z1.4 / ISO 2859-1 code-letter tables by lot size, inspection level, and severity. Lot passes when sampled defects are within the acceptance number; it fails once defects exceed the rejection number.
+
+### A receipt posted but no inspection lot opened
+The part has no inspection plan assigned to **Receipt** on its **Quality** tab, or the receipt is an outside processing or sales return receipt. There is no item-level "requires inspection" flag; the Receipt assignment is the only gate.
 
 ### "Lot rejected. Configure at least one Issue Type and a default user location to auto-create an NCR."
 The reject succeeded but the automatic NCR couldn't be created: the company has no issue types, or your user has no default location. Set up an issue type and a default location, or create the NCR manually. The lot is still rejected either way.
@@ -171,6 +291,33 @@ The reject succeeded but the automatic NCR couldn't be created: the company has 
 ### "Lot rejected, but failed to create NCR" / "… failed to create NCR tasks" / "… failed to load it for NCR"
 The lot was rejected but a later step of the auto-NCR pipeline failed (inserting the issue, seeding its workflow tasks, or reloading the lot for the NCR title). The rejection stands; the NCR may need to be created or completed manually.
 
+### "Only Available or On Hold entities can be inspected: …"
+A manual inspection was asked to cover a unit that is Rejected, Consumed, Reserved or otherwise not Available or On Hold. Remove that unit from **Tracked Entities**.
+
+### "These entities are already in an open inspection: …"
+A picked unit is in another open manual lot, or in its receipt line's open lot. Decide or cancel that lot first.
+
+### "Every tracked entity must be of the same item" / "This inspection plan is not for this item" / "Only an active inspection plan can be used"
+A manual inspection covers one item, against an Active version of one of that item's own plans. Publish the plan's Draft, or pick another plan.
+
+### "This inspection has recorded results. Cancel it instead."
+Delete Inspection is only for a manual lot that recorded nothing. The lot has a sample verdict, a measurement, a gauge, a disposition or a linked issue. Use **Cancel Inspection**, which keeps what was recorded.
+
+### "Only a manual inspection can be cancelled or deleted" / "Inspection is closed"
+Receipt and job-operation lots can't be cancelled or deleted, and a closed lot can't be either. A receipt lot is cancelled by voiding its receipt.
+
+### "This inspection was already decided"
+On the shop floor, Accept and Reject decide a receipt or manual lot once. Someone else decided it first. Reload the lot.
+
+### "This inspection plan version is Active. Make a new version to change it."
+Only a Draft version can be edited. Use **New Version** in the version menu, edit the Draft, then **Publish** it. The same message names Archived for an archived version.
+
+### "The inspection plan changed. Reload it and try again."
+The plan changed under the editor (another user published or edited it). Reload the plan.
+
+### "This plan version has inspections, so it cannot be deleted. Publish a new version to replace it."
+A lot used this version, and its characteristics hold the lot's measurements. Publish a new version instead.
+
 ### Permission-gated: recording samples or dispositioning a lot
-All inbound-inspection actions require `quality` **update** and employee role, enforced again by row-level security. A blocked action means your role lacks the quality update permission.
+Recording samples and dispositioning a lot require `quality` **update** (and, in the ERP, the employee role), enforced again by row-level security. Creating a manual inspection needs `quality` **create**, cancelling one needs **update**, deleting one needs **delete**. The shop floor queue itself needs no quality permission. A blocked action means your role lacks that quality permission.
 </AgentContext>

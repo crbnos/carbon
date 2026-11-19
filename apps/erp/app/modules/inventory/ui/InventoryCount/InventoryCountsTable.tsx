@@ -219,11 +219,9 @@ const InventoryCountsTable = memo(
             text={t`Are you sure you want to delete ${selected.inventoryCountId}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelected(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelected(null);
             }}
           />
         )}

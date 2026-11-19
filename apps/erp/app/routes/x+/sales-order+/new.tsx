@@ -17,7 +17,10 @@ import { SalesOrderForm } from "~/modules/sales/ui/SalesOrder";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Sales Order");
 
 export const handle: Handle = {
   breadcrumb: msg`Orders`,

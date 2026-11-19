@@ -19,7 +19,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -45,12 +45,14 @@ import type { Customer } from "../../types";
 type CustomerFormProps = {
   initialValues: z.infer<typeof customerValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const CustomerForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: CustomerFormProps) => {
   const { t } = useLingui();
@@ -67,7 +69,7 @@ const CustomerForm = ({
   const handledSuccessRef = useRef(false);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       if (handledSuccessRef.current) return;
@@ -101,7 +103,7 @@ const CustomerForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create customer: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type, setCustomers]);
+  }, [fetcher.data, fetcher.state, onClose, open, t, type, setCustomers]);
 
   // Once the company has a tax code, tax comes from the customer's tax code.
   // The bare percent stays as the fallback for a customer with no code, so
@@ -113,10 +115,12 @@ const CustomerForm = ({
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
 
+  const Wrapper = type === "card" ? "div" : Fragment;
+
   return (
-    <div>
+    <Wrapper>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard open={open} onClose={onClose}>
           <ModalCardContent size="medium">
             <ValidatedForm
               method="post"
@@ -126,7 +130,9 @@ const CustomerForm = ({
               fetcher={fetcher}
             >
               <ModalCardHeader>
-                <ModalCardTitle>
+                <ModalCardTitle
+                  aria-level={type === "card" && !isEditing ? 1 : undefined}
+                >
                   {isEditing ? (
                     <Trans>Customer Overview</Trans>
                   ) : (
@@ -230,7 +236,7 @@ const CustomerForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-    </div>
+    </Wrapper>
   );
 };
 

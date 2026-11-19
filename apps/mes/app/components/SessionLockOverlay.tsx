@@ -59,6 +59,7 @@ const overlayValidator = z.object({
  * rejected code is cleared so the user can retype without stale digits.
  */
 function UnlockCodeField({ result }: { result?: UnlockResult }) {
+  const { t } = useLingui();
   const [, setCode] = useControlField<string>("code");
   const lastResult = useRef(result);
 
@@ -68,7 +69,14 @@ function UnlockCodeField({ result }: { result?: UnlockResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" autoFocus />;
+  return (
+    <InputOTP
+      name="code"
+      label=""
+      aria-label={t`Authenticator code`}
+      autoFocus
+    />
+  );
 }
 
 export default function SessionLockOverlay({

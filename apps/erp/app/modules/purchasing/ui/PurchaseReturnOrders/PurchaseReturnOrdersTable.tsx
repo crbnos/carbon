@@ -262,11 +262,9 @@ const PurchaseReturnOrdersTable = memo(
             text={t`Are you sure you want to delete ${selectedPurchaseReturnOrder.purchaseReturnOrderId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchaseReturnOrderModal.onClose();
-              setSelectedPurchaseReturnOrder(null);
             }}
             onSubmit={() => {
               deletePurchaseReturnOrderModal.onClose();
-              setSelectedPurchaseReturnOrder(null);
             }}
           />
         )}

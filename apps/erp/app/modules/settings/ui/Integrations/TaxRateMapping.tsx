@@ -233,15 +233,14 @@ export function TaxRateMapping({
         </MappingSection>
       </DrawerBody>
 
-      {showMatchDrawer && (
-        <MatchByRateDrawer
-          proposals={proposals}
-          codesById={codesById}
-          formatRate={formatRate}
-          canUpdate={canUpdate}
-          onClose={() => setShowMatchDrawer(false)}
-        />
-      )}
+      <MatchByRateDrawer
+        open={showMatchDrawer}
+        proposals={proposals}
+        codesById={codesById}
+        formatRate={formatRate}
+        canUpdate={canUpdate}
+        onClose={() => setShowMatchDrawer(false)}
+      />
     </>
   );
 }
@@ -456,12 +455,14 @@ function TaxCodeMappingRowForm({
  * dimension MatchByNameDrawer).
  */
 function MatchByRateDrawer({
+  open,
   proposals,
   codesById,
   formatRate,
   canUpdate,
   onClose
 }: {
+  open: boolean;
   proposals: TaxCodeMatchProposalRow[];
   codesById: Map<string, CarbonTaxCodeOption>;
   formatRate: (rate: number) => string;
@@ -509,7 +510,7 @@ function MatchByRateDrawer({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

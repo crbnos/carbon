@@ -18,6 +18,8 @@ import {
   InputRightAddon,
   inlineEditorClassName,
   LabelWithHelp,
+  reactNodeToString,
+  useInlineTriggerLabel,
   VStack
 } from "@carbon/react";
 import type { ChangeEvent, ReactNode } from "react";
@@ -110,6 +112,12 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
         onChange(nextValue);
       }
     };
+    // "Edit Due Date", not a bare "Edit": the label is a sibling span, so it
+    // does not name the button.
+    const inlineTriggerLabel = useInlineTriggerLabel(
+      !!value,
+      reactNodeToString(label).trim()
+    );
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
     const inlineField = useInlineField({
@@ -128,6 +136,10 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
           <InlineTrigger
             isEmpty={!value}
             placeholder={inlineField.placeholder}
+            // The field and its value: "Edit Customer PO: 4500012".
+            aria-label={
+              value ? `${inlineTriggerLabel}: ${value}` : inlineTriggerLabel
+            }
             isDisabled={isReadOnly || isDisabled}
             onClick={() => setInlineMode(false)}
           >

@@ -62,16 +62,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const machineTime = await getUnattributedMachineTime(client, id, companyId);
   if (machineTime.error) {
-    logger.error("Failed to load machine time", {
-      companyId,
-      id,
-      error: machineTime.error
-    });
     throw redirect(
       `${path.to.unattributedMachineTimes}?${getParams(request)}`,
       await flash(
         request,
-        error(machineTime.error, "Failed to load machine time")
+        error(machineTime.error, "Failed to load machine time", { id })
       )
     );
   }

@@ -71,7 +71,9 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   accountDefault: {
     salesTaxPayableAccount: "taxReceivedAccount",
     purchaseTaxPayableAccount: "taxPaidAccount"
-  }
+  },
+  // 2026-11 (inspection plan name): the column named the plan, not a drawing.
+  inspectionDocument: { drawingNumber: "name" }
 };
 
 /** A live table's column list under its CURRENT column names. */

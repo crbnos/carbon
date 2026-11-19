@@ -129,6 +129,7 @@ export function WorkflowBuilder({
   }, []);
 
   const canvas = (
+    // biome-ignore lint/a11y/noStaticElementInteractions: canvas container that filters keydown for React Flow and accepts palette drag-and-drop; React Flow renders the interactive nodes
     <div
       className="relative h-full"
       onKeyDown={onKeyDown}

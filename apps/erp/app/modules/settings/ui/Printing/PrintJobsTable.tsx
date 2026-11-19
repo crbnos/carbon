@@ -241,6 +241,7 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
   const { jobs, count, nextCursor } = props;
   const { t } = useLingui();
   const [viewContent, setViewContent] = useState<ViewContent | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const fetcher = useAction({
     onSuccess: ({ data }) => {
       if (!data) return;
@@ -251,6 +252,7 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
             contentType: data.contentType as string,
             printJobId: data.printJobId as string
           });
+          setIsViewOpen(true);
         }
       } else if ("printJobId" in data) {
         toast.success(t`Reprint job created`);
@@ -453,9 +455,9 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
       />
       {viewContent && (
         <Modal
-          open
+          open={isViewOpen}
           onOpenChange={(open) => {
-            if (!open) setViewContent(null);
+            if (!open) setIsViewOpen(false);
           }}
         >
           <ModalContent size="large">
@@ -478,7 +480,7 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
               ) : null}
             </ModalBody>
             <ModalFooter>
-              <Button variant="secondary" onClick={() => setViewContent(null)}>
+              <Button variant="secondary" onClick={() => setIsViewOpen(false)}>
                 <Trans>Close</Trans>
               </Button>
             </ModalFooter>

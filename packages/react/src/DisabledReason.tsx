@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { reactNodeToString } from "./utils/react";
 
 /** First reason whose condition holds, or undefined when nothing blocks. */
 function getDisabledReason(
@@ -20,14 +21,24 @@ type DisabledReasonProps = {
 };
 
 // A disabled <button> fires no pointer events, so the focusable span carries
-// the tooltip and gives keyboard users a tab stop to read it.
+// the tooltip and gives keyboard users a tab stop to read it. It is a group
+// named by the reason, so the reason is read with the control it blocks.
 function DisabledReason({ reason, className, children }: DisabledReasonProps) {
   if (!reason) return <>{children}</>;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span tabIndex={0} className={cn("inline-flex", className)}>
+        <span
+          tabIndex={0}
+          role="group"
+          aria-label={
+            typeof reason === "string"
+              ? reason
+              : reactNodeToString(reason) || undefined
+          }
+          className={cn("inline-flex", className)}
+        >
           {children}
         </span>
       </TooltipTrigger>

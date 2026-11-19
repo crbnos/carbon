@@ -4,7 +4,7 @@
 
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRead } from "@carbon/logger/middleware.server";
+import { oncePerRead } from "@carbon/logger/context.server";
 import { companyPlanCacheKey, Edition, isInternalEmail } from "@carbon/utils";
 import * as cookie from "cookie";
 import { CarbonEdition, DOMAIN } from "../config/env";

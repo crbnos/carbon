@@ -2,12 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
+import { toBaseAmount } from "@carbon/database/accounting-currency";
+import { round } from "@carbon/database/precision";
 import {
   applyRate,
   deriveRate,
   equals,
   memoAmounts,
-  round
+  moneyFormatOptions
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
@@ -16,6 +19,16 @@ import { zfd } from "zod-form-data";
 // which also re-exports shared.service/shared.server — those transitively pull in
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
 import { incoterms, itemType, methodType } from "../shared/shared.models";
+
+/** The classes a purchase or purchase order G/L Account line may be coded to.
+ *  Revenue is left out: a supplier's credit belongs on a credit memo, not a
+ *  debit to sales. */
+export const purchaseLineAccountClasses = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Expense"
+] as const;
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -657,6 +670,10 @@ export function isPaymentLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+/** The account type a supplier payment may be paid from besides an Asset. */
+export const CARD_ACCOUNT_TYPE =
+  "Credit Card" satisfies Database["public"]["Enums"]["accountType"];
+
 export const paymentValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -688,7 +705,11 @@ export const paymentValidator = z
     rentalAgreementId: zfd.text(z.string().optional()),
     // A contract deposit: how a progress or performance-based payment is
     // received (contract financing).
-    customerContractId: zfd.text(z.string().optional())
+    customerContractId: zfd.text(z.string().optional()),
+    // A supplier prepayment names the purchase order it is held against;
+    // post-payment books its unapplied cash on the supplier prepayment
+    // account (an asset) instead of inside payables.
+    purchaseOrderId: zfd.text(z.string().optional())
   })
   .refine(
     (d) =>
@@ -701,12 +722,15 @@ export const paymentValidator = z
   )
   .refine(
     (d) =>
-      [d.salesOrderId, d.rentalAgreementId, d.customerContractId].filter(
-        Boolean
-      ).length <= 1,
+      [
+        d.salesOrderId,
+        d.rentalAgreementId,
+        d.customerContractId,
+        d.purchaseOrderId
+      ].filter(Boolean).length <= 1,
     {
       message:
-        "A deposit is held against one sales order, rental agreement or contract",
+        "A deposit is held against one sales order, rental agreement, contract or purchase order",
       path: ["rentalAgreementId"]
     }
   )
@@ -718,22 +742,29 @@ export const paymentValidator = z
       message: "Only a customer payment can be a deposit",
       path: ["rentalAgreementId"]
     }
-  );
+  )
+  .refine((d) => Boolean(d.supplierId) || !d.purchaseOrderId, {
+    message: "Only a supplier payment can be a prepayment",
+    path: ["purchaseOrderId"]
+  });
 
-// A sales order or rental agreement a customer payment can be a deposit for
-// (a Receipt) or a refund of (a Disbursement), as the payment form's "Deposit
-// for" picker lists them. Loaded company-wide with the customer on each row —
-// the form narrows to the selected customer, which can change before the
-// payment is saved. `open` is whether a NEW deposit may be taken against it
-// (an open order / a Draft or Active agreement); a refund can name any document
-// that already holds a deposit, closed or not.
+// A document a payment can be a deposit for or a refund of, as the payment
+// form's "Deposit for" / "Prepayment for" picker lists them: a sales order,
+// rental agreement or contract of a customer, or a purchase order of a
+// supplier. Loaded company-wide with the party on each row — the form narrows
+// to the selected party, which can change before the payment is saved. `open`
+// is whether a NEW deposit may be taken against it (an open order / a Draft or
+// Active agreement); a refund can name any document that already holds a
+// deposit, closed or not.
 export type DepositDocument = {
   id: string;
   readableId: string;
-  customerId: string;
-  kind: "salesOrder" | "rentalAgreement" | "customerContract";
+  /** The customer, or for a purchase order the supplier. */
+  partyId: string;
+  kind: "salesOrder" | "rentalAgreement" | "customerContract" | "purchaseOrder";
   status: string;
   open: boolean;
+  refundableCurrencyCodes?: string[];
 };
 
 // ----------------------------------------------------------------------
@@ -904,4 +935,78 @@ export function isInvoicePayable(
     Number.isFinite(Number(balance)) &&
     Number(balance ?? 0) > 0
   );
+}
+
+/**
+ * The lines that take a payment's journal from `before` to `after`: per
+ * account, description, target and role, what changed. Pure.
+ */
+export function paymentJournalDifference<
+  T extends {
+    accountId: string;
+    description: string;
+    amount: number;
+    documentLineReference?: string | null;
+    journalLineReference?: string | null;
+    accountDefaultRole?: string | null;
+  }
+>(before: T[], after: T[]): T[] {
+  const key = (line: T) =>
+    [
+      line.accountId,
+      line.description,
+      line.documentLineReference ?? "",
+      // journalLineReference is new on every build: not part of the key.
+      line.accountDefaultRole ?? ""
+    ].join("|");
+  const net = new Map<string, { line: T; amount: number }>();
+  for (const [lines, sign] of [
+    [after, 1],
+    [before, -1]
+  ] as const) {
+    for (const line of lines) {
+      const entry = net.get(key(line)) ?? { line, amount: 0 };
+      entry.amount = toBaseAmount(entry.amount + sign * Number(line.amount), 1);
+      net.set(key(line), entry);
+    }
+  }
+  return [...net.values()]
+    .filter((entry) => entry.amount !== 0)
+    .map((entry) => ({ ...entry.line, amount: entry.amount }));
+}
+
+export const invoiceLineAccountValidator = z.object({
+  accountId: z.string().min(1, { message: "Account is required" })
+});
+
+export const purchaseInvoiceRoundingValidator = z.object({
+  targetTotal: zfd.numeric(z.number({ error: "Amount to match is required" }))
+});
+
+/** A rounding adjustment never exceeds 100 minor units (1.00 USD, 100 JPY). */
+export const MAX_ROUNDING_MINOR_UNITS = 100;
+
+/** The rounding line amount that brings an invoice whose other lines total
+ *  `totalWithoutRounding` to `targetTotal`, or a refusal when the gap is too
+ *  large to be rounding. Amounts are in the invoice's currency. */
+export function purchaseInvoiceRoundingAmount(
+  totalWithoutRounding: number,
+  targetTotal: number,
+  decimals: number
+): { amount: number } | { refusal: string } {
+  // Against the total as the invoice shows it (rounded half away from zero,
+  // like the view), or a half-unit remainder tips the new total one unit over.
+  const amount = round(
+    targetTotal - round(totalWithoutRounding, decimals),
+    decimals
+  );
+  const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
+  if (Math.abs(amount) > max) {
+    const format = new Intl.NumberFormat("en-US", moneyFormatOptions(decimals))
+      .format;
+    return {
+      refusal: `The difference of ${format(amount)} is more than ${format(max)}, too large for a rounding adjustment. Correct the invoice lines instead.`
+    };
+  }
+  return { amount };
 }

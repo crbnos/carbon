@@ -107,7 +107,7 @@ const MaintenanceDispatchForm = ({
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Edit Maintenance Dispatch</Trans>
             ) : (
@@ -134,6 +134,7 @@ const MaintenanceDispatchForm = ({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  label={t`Description`}
                   autoFocus={!isEditing}
                   initialValue={content}
                   onUpload={onUploadImage}

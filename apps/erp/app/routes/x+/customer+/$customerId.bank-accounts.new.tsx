@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
+import { data, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import { customerBankAccountValidator } from "~/modules/sales/sales.models";
 import { upsertCustomerBankAccount } from "~/modules/sales/sales.service";
@@ -73,10 +74,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function NewCustomerBankAccountRoute() {
-  const navigate = useNavigate();
   const { company } = useUser();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
+  const dialog = useRouteDialog(path.to.customerBankAccounts(customerId));
 
   const initialValues = {
     customerId,
@@ -95,7 +96,8 @@ export default function NewCustomerBankAccountRoute() {
   return (
     <CustomerBankAccountForm
       initialValues={initialValues}
-      onClose={() => navigate(path.to.customerBankAccounts(customerId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

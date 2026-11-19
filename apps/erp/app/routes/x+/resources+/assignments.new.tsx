@@ -7,10 +7,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { trainingAssignmentValidator } from "~/modules/resources/resources.models";
 import { getTrainingsList } from "~/modules/resources/resources.service";
 import type { TrainingListItem } from "~/modules/resources/types";
@@ -57,7 +58,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewTrainingAssignmentRoute() {
   const { trainings } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.trainingAssignments);
 
   const initialValues = {
     id: undefined,
@@ -71,7 +72,8 @@ export default function NewTrainingAssignmentRoute() {
     <TrainingAssignmentForm
       initialValues={initialValues}
       trainings={trainings}
-      onClose={() => navigate(path.to.trainingAssignments)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

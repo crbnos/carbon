@@ -60,6 +60,18 @@ describe("stripPerTenantTables", () => {
       [table("searchIndexRegistry"), table("auditLogArchive")].join("\n")
     );
   });
+
+  it("drops Storage's iceberg tables, which only single-tenant Storage creates", () => {
+    const source = [
+      table("buckets_analytics"),
+      table("iceberg_namespaces"),
+      table("iceberg_tables"),
+      table("objects")
+    ].join("\n");
+    expect(stripPerTenantTables(source)).toBe(
+      [table("buckets_analytics"), table("objects")].join("\n")
+    );
+  });
 });
 
 describe("splitConstants", () => {

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Button, cn, PrefetchLink } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { LuPanelRight } from "react-icons/lu";
 import type { LinkProps } from "react-router";
@@ -33,18 +34,22 @@ const Hyperlink = ({
           {children}
         </span>
         {props.to && props.to !== "#" && (
+          // A button's look on a plain <span>: a <button> inside the <a> is
+          // interactive content nested in a link, and the link already does
+          // what "Open" says. Hidden from the accessibility tree so the link's
+          // name stays the record's name. pointer-events-none so clicks fall
+          // through to the anchor: a plain click navigates in-tab, a Cmd/Ctrl
+          // (or middle) click opens a new tab.
           <Button
+            asChild
             rightIcon={<LuPanelRight />}
             variant="secondary"
-            // pointer-events-none so clicks fall through to the anchor: a plain
-            // click navigates in-tab, a Cmd/Ctrl (or middle) click opens a new tab.
-            // A real <button> here would otherwise swallow the anchor's native
-            // modifier-click behavior and always open in the same tab.
-            className="flex-shrink-0 md:opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline pointer-events-none max-md:hidden"
+            className="flex-shrink-0 md:opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 group-focus-within/hyperlink:opacity-100 focus-visible:opacity-100 no-underline pointer-events-none max-md:hidden"
             size="sm"
-            tabIndex={-1}
           >
-            Open
+            <span aria-hidden="true">
+              <Trans>Open</Trans>
+            </span>
           </Button>
         )}
       </PrefetchLink>

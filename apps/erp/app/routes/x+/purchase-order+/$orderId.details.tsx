@@ -144,6 +144,9 @@ export default function PurchaseOrderBasicRoute() {
     receiptPromisedDate:
       orderData?.purchaseOrderDelivery.receiptPromisedDate ?? "",
     deliveryDate: orderData?.purchaseOrderDelivery.deliveryDate ?? "",
+    shippedDate: orderData?.purchaseOrderDelivery.shippedDate ?? "",
+    expectedReceiptDate:
+      orderData?.purchaseOrderDelivery.expectedReceiptDate ?? "",
     notes: orderData?.purchaseOrderDelivery.notes ?? "",
     dropShipment: orderData?.purchaseOrderDelivery.dropShipment ?? false,
     customerId: orderData?.purchaseOrderDelivery.customerId ?? "",

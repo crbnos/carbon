@@ -7,18 +7,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { flags } from "@carbon/env/flags.server";
-import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteSubsidiary,
   getSubsidiary
 } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
@@ -84,14 +82,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("companyGroupId", companyGroupId)
     .maybeSingle();
   if (subsidiary.error || !subsidiary.data) {
-    logger.error("Subsidiary not found in the caller's company group", {
-      companyGroupId,
-      subsidiaryId: id,
-      error: subsidiary.error
-    });
     throw redirect(
       path.to.companies,
-      await flash(request, error(subsidiary.error, "Subsidiary not found"))
+      await flash(
+        request,
+        error(subsidiary.error, "Subsidiary not found", {
+          companyGroupId,
+          subsidiaryId: id
+        })
+      )
     );
   }
 
@@ -112,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteSubsidiaryRoute() {
   const { id } = useParams();
   const { subsidiary } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.companies);
 
   if (!id || !subsidiary) return null;
 
@@ -121,7 +120,8 @@ export default function DeleteSubsidiaryRoute() {
       action={path.to.deleteCompany(id)}
       name={subsidiary.name}
       text={`Are you sure you want to delete ${subsidiary.name}? Any child companies will be promoted to this company's parent level. This cannot be undone.`}
-      onCancel={() => navigate(path.to.companies)}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

@@ -2,43 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { formatDate, isEoriCountry, pluralize } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { isEoriCountry } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
-import { AddressBlock } from "../../components";
+import { type DocumentBlock, makeText, quoteTexts } from "../../../template";
+import { AddressRows, useTextRows } from "../textRows";
 import { useTw } from "../tw";
 import type { QuoteData } from "./types";
 
-export function PartiesBlock({ data }: { data: QuoteData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: QuoteData;
+}) {
   const tw = useTw();
-  const {
-    quote,
-    quoteCustomerDetails,
-    payment,
-    paymentTerms,
-    shipment,
-    maxLeadTime,
-    locale
-  } = data;
-  const {
-    customerName,
-    customerAddressLine1,
-    customerAddressLine2,
-    customerCity,
-    customerStateProvince,
-    customerPostalCode,
-    customerCountryCode,
-    customerCountryName,
-    customerTaxId,
-    customerVatNumber,
-    customerEori,
-    contactName,
-    contactEmail
-  } = quoteCustomerDetails;
-
-  const paymentTerm = paymentTerms?.find(
-    (pt) => pt.id === payment?.paymentTermId
-  );
+  const t = makeText(quoteTexts.parties, block, data.vars);
+  const { customerCountryCode } = data.quoteCustomerDetails;
+  const { row, boldRow } = useTextRows(t);
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
@@ -46,66 +27,30 @@ export function PartiesBlock({ data }: { data: QuoteData }) {
         {/* LEFT — To (customer) */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            To
+            {t("to")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
-            <AddressBlock
-              name={customerName}
-              addressLine1={customerAddressLine1}
-              addressLine2={customerAddressLine2}
-              city={customerCity}
-              stateProvince={customerStateProvince}
-              postalCode={customerPostalCode}
-              country={customerCountryName ?? customerCountryCode}
-            />
-            {customerTaxId && !isEoriCountry(customerCountryCode) ? (
-              <Text>Tax ID: {customerTaxId}</Text>
-            ) : null}
-            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
-            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
-            {contactName ? <Text>Contact: {contactName}</Text> : null}
-            {contactEmail ? <Text>Email: {contactEmail}</Text> : null}
+            <AddressRows t={t} prefix="customer" />
+            {isEoriCountry(customerCountryCode) ? null : row("taxId")}
+            {row("vat")}
+            {row("eori")}
+            {row("contact")}
+            {row("email")}
           </View>
         </View>
 
         {/* RIGHT — Quote Details */}
         <View style={tw("w-1/2 p-3")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Quote Details
+            {t("quoteDetails")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
-            <Text>
-              Date:{" "}
-              {formatDate(
-                today(getLocalTimeZone()).toString(),
-                undefined,
-                locale
-              )}
-            </Text>
-            {quote.expirationDate ? (
-              <Text style={tw("font-bold")}>
-                Expires: {formatDate(quote.expirationDate, undefined, locale)}
-              </Text>
-            ) : null}
-            {quote.customerReference ? (
-              <Text>Reference: {quote.customerReference}</Text>
-            ) : null}
-            {maxLeadTime > 0 ? (
-              <Text>
-                Max Lead Time: {maxLeadTime} {pluralize(maxLeadTime, "day")}
-              </Text>
-            ) : null}
-            {paymentTerm ? (
-              <Text>Payment Terms: {paymentTerm.name}</Text>
-            ) : null}
-            {shipment?.incoterm ? (
-              <Text>
-                Incoterm: {shipment.incoterm}
-                {shipment.incotermLocation
-                  ? ` — ${shipment.incotermLocation}`
-                  : ""}
-              </Text>
-            ) : null}
+            {row("date")}
+            {boldRow("expires")}
+            {row("reference")}
+            {row("maxLeadTime")}
+            {row("paymentTerms")}
+            {row("incoterm")}
           </View>
         </View>
       </View>

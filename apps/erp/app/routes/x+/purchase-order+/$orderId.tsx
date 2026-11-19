@@ -8,10 +8,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getCompanyTimeZone } from "@carbon/database";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   canApproveRequest,
   canCancelRequest,
-  getLatestApprovalRequestForDocument
+  getLatestApprovalRequestForDocument,
+  isCompanyAdmin
 } from "@carbon/ee/approvals.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -24,7 +26,11 @@ import {
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
@@ -34,9 +40,11 @@ import {
 import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
+  getPendingPurchaseOrderForceDeleteRequest,
   getPurchaseOrder,
   getPurchaseOrderApproval,
   getPurchaseOrderDelivery,
+  getPurchaseOrderForceDeleteReceipts,
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
@@ -45,11 +53,14 @@ import {
 } from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
+  PurchaseOrderForceDeleteBanner,
   PurchaseOrderHeader,
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchase-order");
@@ -95,12 +106,15 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale
   });
-  return respond(args.request, result).redirect(
-    path.to.purchaseOrder(orderId),
-    {
-      message: `Approval request ${input.data.decision.toLowerCase()} successfully`
-    }
-  );
+  // A rejection whose approved version could not be put back still stands;
+  // it is flashed as a failure so the approver sees the order needs fixing.
+  const warning = result.data?.warning;
+  return respond(
+    args.request,
+    warning ? { error: { message: warning } } : result
+  ).redirect(path.to.purchaseOrder(orderId), {
+    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+  });
 }
 
 const toAttachments = (docs: FileObject[], folder: string) =>
@@ -113,6 +127,9 @@ const toAttachments = (docs: FileObject[], folder: string) =>
         : null,
     path: `${folder}/${d.name}`
   }));
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(getPurchaseOrderDisplayId(data?.purchaseOrder), "Purchase Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
@@ -160,6 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const taxDate =
     purchaseOrder.data?.orderDate ??
     datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const db = getDatabaseClient();
   const [
     supplier,
     interaction,
@@ -167,6 +185,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companySettings,
     approval,
     currency,
+    isAdmin,
+    forceDeleteRequest,
+    forceDeleteReceipts,
     resolvedTax
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
@@ -197,6 +218,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           purchaseOrder.data.currencyCode
         )
       : null,
+    // The Admin force-delete override (`$orderId.force-delete.tsx`).
+    isCompanyAdmin(serviceRole, companyId, userId),
+    getPendingPurchaseOrderForceDeleteRequest(db, {
+      companyId,
+      purchaseOrderId: orderId
+    }),
+    // The receipts a force delete reverses, named in its modal and banner.
+    getPurchaseOrderForceDeleteReceipts(db, {
+      companyId,
+      purchaseOrderId: orderId
+    }),
     resolveLineTaxes(client, companyId, {
       source: "purchase",
       supplierId: purchaseOrder.data?.supplierId,
@@ -328,6 +360,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     approvalNeedsSignature,
     canReopen,
     canDelete,
+    isAdmin,
+    forceDeleteRequest,
+    forceDeleteReceipts: forceDeleteReceipts.map(
+      (receipt) => receipt.readableId
+    ),
     defaultCc,
     resolvedAttachments,
     resolvedTax: resolvedTax.data,
@@ -351,6 +388,7 @@ export default function PurchaseOrderRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
+                    <PurchaseOrderForceDeleteBanner />
                     <RecordOutlet />
                   </VStack>
                 </div>

@@ -7,7 +7,9 @@ import {
   invoiceSettlementValidator,
   isInvoicePayable,
   memoValidator,
+  paymentJournalDifference,
   paymentValidator,
+  purchaseInvoiceRoundingAmount,
   purchaseInvoiceSupplierChange,
   resolveMemoTaxAmounts,
   salesInvoiceCustomerChange,
@@ -399,5 +401,88 @@ describe("resolveMemoTaxAmounts", () => {
         codeRate: 0
       })
     ).toEqual({ netAmount: 120, taxAmount: 0, amount: 120 });
+  });
+});
+
+describe("paymentJournalDifference", () => {
+  const line = (
+    accountId: string,
+    description: string,
+    amount: number,
+    documentLineReference: string | null = null
+  ) => ({ accountId, description, amount, documentLineReference });
+
+  it("is what unapplying one invoice changes", () => {
+    const before = [
+      line("bank", "Bank / Cash", 100),
+      line("ar", "Accounts Receivable", 70, "inv1"),
+      line("ar", "Accounts Receivable", 30, "inv2")
+    ];
+    const after = [
+      line("bank", "Bank / Cash", 100),
+      line("ar", "Accounts Receivable", 30, "inv2"),
+      line("ar", "Accounts Receivable (on-account credit)", 70)
+    ];
+    expect(paymentJournalDifference(before, after)).toEqual([
+      line("ar", "Accounts Receivable (on-account credit)", 70),
+      line("ar", "Accounts Receivable", -70, "inv1")
+    ]);
+  });
+
+  it("ignores the line references a rebuild draws again", () => {
+    expect(
+      paymentJournalDifference(
+        [{ ...line("bank", "Bank / Cash", 10), journalLineReference: "a" }],
+        [{ ...line("bank", "Bank / Cash", 10), journalLineReference: "b" }]
+      )
+    ).toEqual([]);
+  });
+
+  it("is empty when nothing changed", () => {
+    const lines = [line("bank", "Bank / Cash", 10)];
+    expect(paymentJournalDifference(lines, lines)).toEqual([]);
+  });
+});
+
+describe("purchaseInvoiceRoundingAmount", () => {
+  it("returns the cent that brings a 93.46 invoice to a 93.47 charge", () => {
+    expect(purchaseInvoiceRoundingAmount(93.46, 93.47, 2)).toEqual({
+      amount: 0.01
+    });
+  });
+
+  it("takes a cent off when the invoice is above the charge", () => {
+    expect(purchaseInvoiceRoundingAmount(93.47, 93.46, 2)).toEqual({
+      amount: -0.01
+    });
+  });
+
+  it("is zero when the totals already match", () => {
+    expect(
+      purchaseInvoiceRoundingAmount(75.53 + 5.29 + 12.64, 93.46, 2)
+    ).toEqual({ amount: 0 });
+  });
+
+  it("measures from the total as shown, so a half-unit remainder adds nothing", () => {
+    // 10.125 already shows as 10.13; a 0.01 line would make it 10.14.
+    expect(purchaseInvoiceRoundingAmount(10.125, 10.13, 2)).toEqual({
+      amount: 0
+    });
+  });
+
+  it("allows exactly 100 minor units and refuses more", () => {
+    expect(purchaseInvoiceRoundingAmount(10, 11, 2)).toEqual({ amount: 1 });
+    expect(purchaseInvoiceRoundingAmount(10, 11.01, 2)).toHaveProperty(
+      "refusal"
+    );
+  });
+
+  it("scales the limit to the currency's decimals", () => {
+    expect(purchaseInvoiceRoundingAmount(1000, 1100, 0)).toEqual({
+      amount: 100
+    });
+    expect(purchaseInvoiceRoundingAmount(1000, 1101, 0)).toHaveProperty(
+      "refusal"
+    );
   });
 });

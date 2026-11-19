@@ -7,7 +7,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
@@ -38,17 +38,12 @@ const ItemGroupsTable = memo((props: ItemGroupsTableProps) => {
         accessorKey: "name",
         header: t`Name`,
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() =>
-              navigate(
-                `${path.to.itemPostingGroup(
-                  row.original.id
-                )}?${params.toString()}`
-              )
-            }
-            className="cursor-pointer"
-          />
+          <Link
+            to={`${path.to.itemPostingGroup(row.original.id)}?${params.toString()}`}
+            className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Enumerable value={row.original.name} className="cursor-pointer" />
+          </Link>
         ),
         meta: { mobile: "P1" }
       },
@@ -60,7 +55,7 @@ const ItemGroupsTable = memo((props: ItemGroupsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [navigate, params, customColumns, t]);
+  }, [params, customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof rows)[number]) => {

@@ -11,18 +11,17 @@ import {
   DEFAULT_DOCUMENT_SETTINGS,
   documentSettingsSchema,
   documentTemplateTypeSchema,
+  isFigureProblem,
   sectionConfigSchema,
-  themeSchema
+  themeSchema,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { getPreferenceHeaders, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import {
-  buildPreviewProps,
-  getCompany,
-  resolveSections
-} from "~/modules/settings/settings.service";
+import { templatePreviewProps } from "~/modules/settings/document-edit.pdf";
+import { resolveSections } from "~/modules/settings/settings.service";
 
 /**
  * Renders a sample of the document with the draft block layout, server-side.
@@ -46,12 +45,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const settingsParsed = documentSettingsSchema.safeParse(
     JSON.parse(String(formData.get("settings") ?? "{}"))
   );
+  // A template has no values of its own: they belong to one record's edits.
   const settings = settingsParsed.success
-    ? settingsParsed.data
+    ? { ...settingsParsed.data, valueEdits: undefined }
     : { ...DEFAULT_DOCUMENT_SETTINGS };
 
   if (!parsed.success || !theme.success) {
     return new Response("Invalid template", { status: 400 });
+  }
+
+  const figureProblems = validateTemplateText({
+    documentType,
+    blocks: parsed.data,
+    settings
+  }).filter(isFigureProblem);
+  if (figureProblems.length > 0) {
+    return new Response(figureProblems.map((p) => p.message).join("\n"), {
+      status: 400
+    });
   }
 
   const headerSectionId = String(formData.get("headerSectionId") ?? "") || null;
@@ -78,34 +89,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const { locale } = getPreferenceHeaders(request);
-
   await ensureFont(settings.fontFamily);
 
-  const { Component, sample } = DOCUMENT_PDFS[documentType];
-
-  // When a record is picked, render the draft layout against its live data.
-  // Otherwise fall back to sample data with the real company branding.
-  const previewId = String(formData.get("previewId") ?? "") || null;
-  const real = previewId
-    ? await buildPreviewProps(
-        client,
-        companyId,
-        documentType,
-        previewId,
-        locale
-      )
-    : null;
-
-  let baseProps: Record<string, unknown>;
-  if (real) {
-    baseProps = real;
-  } else {
-    // Use the real company so the preview shows the actual logo / branding;
-    // everything else (line items, totals) stays sample data.
-    const company = await getCompany(client, companyId);
-    baseProps = { ...sample, company: company.data ?? sample.company, locale };
-  }
+  const { Component } = DOCUMENT_PDFS[documentType];
+  const baseProps = await templatePreviewProps(request, client, {
+    companyId,
+    documentType,
+    previewId: String(formData.get("previewId") ?? "") || null,
+    locale: getPreferenceHeaders(request).locale
+  });
 
   // Tracking-label preview: render against the picked stock (the layout scales
   // to any size). Overrides the sample's fixed size.

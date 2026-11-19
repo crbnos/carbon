@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { IconButton } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useLayoutEffect, useRef, useState } from "react";
 import { LuArrowUp, LuSquare } from "react-icons/lu";
 
@@ -20,6 +21,7 @@ export function AgentInput({
   onSend: (text: string) => void;
   onStop: () => void;
 }) {
+  const { t } = useLingui();
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -41,6 +43,7 @@ export function AgentInput({
   return (
     <div className="flex items-end gap-2 rounded-lg border bg-card p-1.5">
       <textarea
+        aria-label={t`Message`}
         ref={ref}
         value={value}
         onChange={(e) => setValue(e.target.value)}

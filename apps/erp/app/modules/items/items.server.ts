@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ServerFnError } from "@carbon/api/errors";
+import { raisedMessage, ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -20,6 +20,7 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { loadBuildable } from "@carbon/planning";
 import {
   chunkArray,
   datetime,
@@ -29,6 +30,8 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
+import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
   booleanField,
@@ -92,10 +95,11 @@ const itemIdsInput = z.array(z.string()).min(1);
  * Change items' tracking type.
  *
  * @remarks
- * Writes `itemTrackingType` on every item, then carries the serial and batch
- * flags onto the open jobs, receipts, shipments and stock transfers that copied
- * them (`cascadeItemTrackingType`). A failed carry-over leaves the items
- * changed and returns an error.
+ * Writes `itemTrackingType` on every item. In the same statement the database
+ * (`sync_item_tracking_type_change`) gives the new serial and batch flags to
+ * the Draft and Planned jobs, and the Draft receipts, shipments and stock
+ * transfers, that copied them. It refuses the change while an item has stock
+ * the new type cannot use, or is on a released job that is not finished.
  *
  * @mcp
  */
@@ -107,7 +111,6 @@ export const setItemTrackingType = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { ids, itemTrackingType }) {
-    const companyId = ctx.company.id;
     const update = await ctx.asCaller.supabase
       .from("item")
       .update({
@@ -116,20 +119,15 @@ export const setItemTrackingType = defineServiceFn({
         updatedAt: datetime.timestamp()
       })
       .in("id", ids)
-      .eq("companyId", companyId);
+      .eq("companyId", ctx.company.id);
     if (update.error) {
-      return ctx.error("internal", update.error.message, update.error);
-    }
-
-    try {
-      await service.cascadeItemTrackingType(ctx.asSystem.pg, {
-        itemIds: ids,
-        companyId,
-        newType: itemTrackingType,
-        userId: ctx.auditUserId
-      });
-    } catch (err) {
-      return ctx.error("internal", "Failed to cascade tracking flags", err);
+      const refusal = raisedMessage(update.error);
+      if (refusal) return ctx.error("rule", refusal, update.error);
+      return ctx.error(
+        "internal",
+        "Failed to change the tracking type",
+        update.error
+      );
     }
     return { ids };
   }
@@ -1128,6 +1126,12 @@ export const createMethodVersion = defineServiceFn({
  * or updates the parts it names and rewrites the method's materials. The
  * method's item is then mapped to the Onshape document, version and element
  * (replacing its earlier mapping), stamped with the sync time.
+ *
+ * It writes nothing into a Draft a change notice holds, or into a released
+ * (Production) revision when release control enforces it, as the Onshape
+ * panel refuses them (`loadMethodWriteRefusals`): a refused method given is
+ * a `rule` error and nothing is written; a refused sub-assembly keeps its
+ * BOM and is listed in `skipped` as `<part number>: <reason>`.
  */
 export const syncOnshapeMethod = defineServiceFn({
   input: z.object({
@@ -1162,7 +1166,8 @@ export const syncOnshapeMethod = defineServiceFn({
       service.syncMakeMethod
     );
     if (synced.error) {
-      return ctx.error("internal", "Failed to sync onshape data", synced.error);
+      // Below 500 the sync refused, in words for the person.
+      return postingFailure(ctx, synced.error, "Failed to sync onshape data");
     }
 
     const cleared = await ctx.asSystem.supabase
@@ -1195,7 +1200,7 @@ export const syncOnshapeMethod = defineServiceFn({
       });
     }
 
-    return { itemId };
+    return { itemId, skipped: synced.data.skipped };
   }
 });
 
@@ -1350,7 +1355,9 @@ export const recalculateItemCost = defineServiceFn({
             "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
           )
           .in("makeMethodId", makeMethodIds)
-          .eq("companyId", companyId),
+          .eq("companyId", companyId)
+          // Corrections are exceptional work, not part of the standard cost.
+          .is("methodCorrectionId", null),
         client
           .from("workCenters")
           .select("id, active, laborRate, machineRate, overheadRate, processes")
@@ -6122,6 +6129,12 @@ export const createUnitOfMeasure = defineServiceFn({
   input: z.looseObject({
     code: z.string().min(1).max(10),
     name: z.string().min(1).max(50),
+    active: z
+      .boolean()
+      .describe(
+        "Inactive units stay out of the unit pickers. Defaults to true."
+      )
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6141,6 +6154,48 @@ export const createUnitOfMeasure = defineServiceFn({
 });
 
 /**
+ * Turn units of measure on or off
+ *
+ * @remarks
+ * Every company holds Carbon's standard units of measure; the units of the
+ * other measurement system start inactive. An inactive unit stays out of the
+ * unit pickers, and records that use it keep it. Each (EA) is always active and
+ * is left unchanged.
+ *
+ * @param ids - Ids of the units to change.
+ * @param active - true to turn the units on, false to turn them off.
+ * @returns `updated`, the ids of the units changed.
+ *
+ * @mcp
+ */
+export const updateUnitsOfMeasureActive = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string().min(1)).min(1),
+    active: z.boolean()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    const result = await service.updateUnitsOfMeasureActive(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        ids: input.ids,
+        active: input.active,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update units of measure",
+        result.error
+      );
+    }
+    return { updated: (result.data ?? []).map((unit) => unit.id) };
+  }
+});
+
+/**
  * Update a unit of measure
  *
  * @remarks
@@ -6153,6 +6208,10 @@ export const updateUnitOfMeasure = defineServiceFn({
     .looseObject({
       code: z.string().min(1).max(10),
       name: z.string().min(1).max(50),
+      active: z
+        .boolean()
+        .describe("Inactive units stay out of the unit pickers.")
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -6992,6 +7051,31 @@ export const createItemDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for an item (part/material/tool/consumable/service) document
+ *
+ * @remarks
+ * A signed link to a file on the item's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `items_getItemFiles` lists it, or the name given
+ * to `items_createItemDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not there is not
+ * found.
+ *
+ * @mcp read
+ */
+export const getItemDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "parts" },
+  async run(ctx, { itemId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "parts",
+      entityId: itemId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for a CAD model
  *
  * @remarks
@@ -7121,5 +7205,78 @@ export const updateItemThumbnail = defineServiceFn({
         updatedBy: ctx.auditUserId
       })
     );
+  }
+});
+
+/**
+ * Get how many of an item can be made now and what limits it
+ *
+ * @remarks
+ * Answers "how many can we make?" and "what is short?" for one item at one
+ * location, through every level of its active make methods. Subassemblies in
+ * stock are used before they are built; a component shared by several
+ * subassemblies is counted once; required quantities include each item's
+ * scrap allowance, as a job's do. Available stock is on hand less what open
+ * jobs, sales orders and project materials have committed.
+ * `quantityBuildable` is the answer; `quantityBuildableFromOnHand` is what
+ * using committed stock too would allow. Both count only what more can be
+ * started. What is already being made is beside them: `jobs` lists the
+ * item's open jobs at the location (jobs made for a sales order included),
+ * the most urgent first, with the good units each has left to finish
+ * (`quantityRemaining`). `hasAllParts` says whether stock covers everything
+ * the job still has to issue (stock goes first to the jobs it can finish); it
+ * is null when a job material's unit differs from its item's stock unit.
+ * `quantityReadyToFinish` and `quantityWaitingOnParts` split
+ * `quantityInProduction` on that, and `jobShortages` lists what the waiting
+ * jobs lack, to buy or to make (`isMade`). `components` lists every item
+ * below, the most limiting first: `quantityBuildableAlone` is how many that
+ * component alone allows, and `quantityShort` what is missing at
+ * `targetQuantity`. A Make to Order line's subassembly is built, not drawn
+ * from stock, as a job builds it. When `unitMismatches` (a BOM line's unit
+ * differs from its item's stock unit) or `cycleItems` (the BOM contains
+ * itself) is not empty, the quantities are null and the BOM must be corrected
+ * first. Writes nothing.
+ *
+ * @param itemId - The item to make.
+ * @param locationId - The location whose stock is counted.
+ * @param targetQuantity - Explode the BOM at this quantity to list what is short. Default: one more than can be made.
+ *
+ * @mcp read
+ */
+export const getBuildableQuantity = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1),
+    targetQuantity: z.number().int().positive().optional()
+  }),
+  permission: { view: "parts" },
+
+  async run(ctx, { itemId, locationId, targetQuantity }) {
+    try {
+      // The calculation reads by company, so another company's location (or
+      // a mistyped one) would answer with no stock rather than refuse. Checked
+      // first: the lookup is one primary-key read, the calculation is not.
+      const location = await ctx.asSystem.pg
+        .selectFrom("location")
+        .select("id")
+        .where("id", "=", locationId)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst();
+      if (!location) return ctx.error("notFound", "Location not found");
+
+      const result = await loadBuildable(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        itemId,
+        locationId,
+        targetQuantity
+      });
+      return result ?? ctx.error("notFound", "Item not found");
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to calculate buildable quantity",
+        error
+      );
+    }
   }
 });

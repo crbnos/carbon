@@ -182,6 +182,16 @@ export default function DefaultAttachmentsPanel({
                   f.metadata?.size != null
                     ? Math.round(f.metadata.size / 1024)
                     : null;
+                const openFile = () => {
+                  if (isPreviewable) {
+                    window.open(
+                      path.to.file.previewFile(`private/${filePath}`),
+                      "_blank"
+                    );
+                  } else {
+                    onDownload(f.name);
+                  }
+                };
 
                 return (
                   <Tr key={f.name}>
@@ -189,15 +199,14 @@ export default function DefaultAttachmentsPanel({
                       <HStack className="gap-2 min-w-0 w-full">
                         <DocumentIcon type={type} />
                         <span
+                          role="button"
+                          tabIndex={0}
                           className="font-medium truncate cursor-pointer min-w-0 flex-1"
-                          onClick={() => {
-                            if (isPreviewable) {
-                              window.open(
-                                path.to.file.previewFile(`private/${filePath}`),
-                                "_blank"
-                              );
-                            } else {
-                              onDownload(f.name);
+                          onClick={openFile}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openFile();
                             }
                           }}
                         >

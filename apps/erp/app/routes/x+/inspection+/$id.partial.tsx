@@ -2,43 +2,47 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import invariant from "tiny-invariant";
-import { dispositionInspection } from "~/modules/quality/quality.service";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "quality",
-    role: "employee"
-  });
-  const { id } = params;
-  invariant(id, "id is required");
+// The accepted quantity is required for an untracked lot only; the service
+// function refuses its absence there.
+const partial = z.object({
+  acceptedQuantity: zfd.numeric(z.number().min(0).optional()),
+  nonConformanceTypeId: zfd.text(z.string().optional()),
+  createNcr: zfd.text(z.string().optional()),
+  reason: zfd.text(z.string().optional())
+});
 
-  const result = await dispositionInspection(getDatabaseClient(), {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(partial).request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.quality.partialInspection({
     id,
-    decision: "Partial",
-    companyId,
-    dispositionedBy: userId,
-    // ERP verdict carries no production posting — Receipt lots only.
-    requireSource: "Receipt"
+    acceptedQuantity: input.data.acceptedQuantity,
+    nonConformanceTypeId: input.data.nonConformanceTypeId,
+    createNcr: input.data.createNcr !== "false",
+    reason: input.data.reason
   });
-
-  if (result.error) {
-    throw redirect(
-      path.to.inspection(id),
-      await flash(request, error(result.error, "Failed to mark partial"))
-    );
+  if (result.error) return result;
+  if (!result.data.issueId) {
+    return respond(args.request, result).redirect(path.to.inspection(id), {
+      message: "Lot marked partial"
+    });
   }
-
-  throw redirect(
-    path.to.inspection(id),
-    await flash(request, success("Lot marked partial"))
+  return respond(args.request, result).redirect(
+    path.to.issue(result.data.issueId),
+    {
+      message:
+        "ncrOpened" in result.data
+          ? "Lot marked partial — NCR opened"
+          : "Lot marked partial"
+    }
   );
 }

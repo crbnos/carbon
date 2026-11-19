@@ -58,7 +58,8 @@ import type { action as exchangeRateAction } from "~/routes/x+/purchase-order+/$
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderAmendable,
+  isPurchaseOrderEditLocked,
   isPurchaseOrderPromisedDateEditable
 } from "../../purchasing.models";
 import type { PurchaseOrder, SupplierQuote } from "../../types";
@@ -135,8 +136,11 @@ const PurchaseOrderProperties = () => {
       : routeData?.purchaseOrder?.assignee;
 
   const canUpdate = permissions.can("update", "purchasing");
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
   const isDisabled = !canUpdate || isLocked;
+  // A released order never changes who it buys from or in what currency.
+  const isPartyDisabled =
+    isDisabled || isPurchaseOrderAmendable(routeData?.purchaseOrder?.status);
   // The promise moves with the supplier until everything is received.
   const isPromisedDateDisabled =
     !canUpdate ||
@@ -239,7 +243,7 @@ const PurchaseOrderProperties = () => {
         <Supplier
           name="supplierId"
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isPartyDisabled}
           onlyApproved={supplierApprovalRequired}
           onChange={(value) => {
             if (value?.value) {
@@ -449,7 +453,7 @@ const PurchaseOrderProperties = () => {
           label={t`Currency`}
           inline
           value={routeData?.purchaseOrder?.currencyCode ?? ""}
-          isReadOnly={isDisabled}
+          isReadOnly={isPartyDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("currencyCode", value.value);

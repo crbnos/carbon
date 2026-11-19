@@ -15,16 +15,20 @@ import {
   IntegrationSecretUnavailableError,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import { identityValue } from "../panel/standard-sources";
 import { normalizeConfiguration } from "../panel/status";
 import { apiCallPathKey, isBilledCall } from "./api-call-key";
 import {
   getOnshapeIntegration,
-  isOnshapeIntegrationId,
+  getOnshapePanelIntegration,
   ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
 import { type OnshapeDocument, OnshapeWVMType } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
-import type { OnshapeOAuthIntegrationId } from "./integration-id";
+import {
+  isOnshapePanelIntegrationId,
+  type OnshapeOAuthIntegrationId
+} from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
 import {
   type WorkspaceSourceStates,
@@ -95,7 +99,7 @@ const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
   // Not currentmicroversion or the element lists: the export skips compare
   // their microversions (`getWorkspaceSourceStates`), and a cached value would
-  // skip a changed export.
+  // skip a changed export or hide a new drawing from the assembly review.
   /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)(?!.*\/elements)/,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
@@ -632,19 +636,17 @@ export class OnshapeClient {
       parentId?: string | null;
       elementType?: number;
       elementId?: string | null;
-      properties?: Array<{ name?: string; value?: unknown }>;
+      properties?: Array<{
+        propertyId?: string;
+        name?: string;
+        value?: unknown;
+      }>;
       children?: RawItem[];
     };
     const pkg = await this.request<{ items?: RawItem[] }>(
       "GET",
       `/api/v10/releasepackages/${releaseId}?detailed=true`
     );
-    const text = (item: RawItem, name: string) => {
-      const value = item.properties?.find((p) => p.name === name)?.value;
-      return typeof value === "string" && value.trim() !== ""
-        ? value.trim()
-        : null;
-    };
     const out: OnshapeReleasePackageItem[] = [];
     const walk = (items: RawItem[], parentId: string | null) => {
       for (const item of items) {
@@ -655,8 +657,9 @@ export class OnshapeClient {
           elementType:
             typeof item.elementType === "number" ? item.elementType : -1,
           elementId: item.elementId ?? null,
-          partNumber: text(item, "Part number"),
-          revision: text(item, "Revision")
+          // Onshape's own properties: the release records name them.
+          partNumber: identityValue(item.properties ?? [], "partNumber"),
+          revision: identityValue(item.properties ?? [], "revision")
         });
         walk(item.children ?? [], item.id);
       }
@@ -719,14 +722,30 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * A drawing's references, resolved in bulk; `parseDrawingReferences`
+   * (`panel/drawings.ts`) reads the answer.
+   */
+  async resolveAppElementReferences(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<unknown> {
+    return this.request<unknown>(
+      "GET",
+      `/api/v10/appelements/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/resolvereferences`
+    );
+  }
+
+  /** `topLevelOnly`: the assembly's own lines, under the same headers. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
     elementId: string,
-    configuration?: string | null
+    configuration?: string | null,
+    { topLevelOnly = false }: { topLevelOnly?: boolean } = {}
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=${!topLevelOnly}&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
     );
   }
 
@@ -779,17 +798,15 @@ export class OnshapeClient {
   }
 
   /**
-   * What an app element (a drawing) references, resolved in bulk:
-   * `{ resolvedReferences: [{ targetDocumentId, targetElementId, idTag, … }] }`,
-   * read by `parseDrawingReferences` (`panel/drawings.ts`).
+   * Every part of a document in its default configuration: one call where
+   * `getPartsInElement` takes one per Part Studio.
    */
-  async resolveAppElementReferences(
-    document: OnshapeDocument,
-    elementId: string
-  ): Promise<unknown> {
-    return this.request<unknown>(
+  async getPartsInDocument(
+    document: OnshapeDocument
+  ): Promise<Array<OnshapeElementPart & { elementId?: string }>> {
+    return this.request<Array<OnshapeElementPart & { elementId?: string }>>(
       "GET",
-      `/api/v10/appelements/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/resolvereferences`
+      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}`
     );
   }
 
@@ -1000,26 +1017,17 @@ export async function getOnshapeClient(
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string,
-  /** Omitted or a sync id: the company's active sync connection. */
+  /** Omitted or sync id: the sync connection; panel id: the active panel. */
   requestedIntegrationId?: OnshapeOAuthIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
-  // Either sync connection — the public app or a Government private app.
-  // Past authorization they are the same API, just on a different host.
-  // The panel's connection must be active: uninstalling only sets
-  // `active = false` and leaves the tokens, so without the filter an
-  // uninstalled panel kept reading Onshape.
-  const integration =
-    requestedIntegrationId && !isOnshapeIntegrationId(requestedIntegrationId)
-      ? await client
-          .from("companyIntegration")
-          .select("*")
-          .eq("id", requestedIntegrationId)
-          .eq("companyId", companyId)
-          .eq("active", true)
-          .maybeSingle()
-      : await getOnshapeIntegration(client, companyId);
+  // The public and Government apps are one API past authorization, on another
+  // host. Uninstalling only sets `active = false` and keeps the tokens, so the
+  // panel's connection must be active.
+  const integration = isOnshapePanelIntegrationId(requestedIntegrationId)
+    ? await getOnshapePanelIntegration(client, companyId, { activeOnly: true })
+    : await getOnshapeIntegration(client, companyId);
 
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
@@ -1157,7 +1165,7 @@ export async function getOnshapeClient(
       const lease = await acquireLease(leaseKey, REFRESH_LEASE_MS);
 
       if (lease.status === "unavailable") {
-        logger.warn("Refreshing the Onshape token without a lock", {
+        logger.warning("Refreshing the Onshape token without a lock", {
           companyId,
           integrationId
         });

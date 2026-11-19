@@ -174,6 +174,7 @@ const ContractInvoices = ({
                       <Tr>
                         <Td>
                           <IconButton
+                            aria-expanded={isOpen}
                             aria-label={isOpen ? t`Hide lines` : t`Show lines`}
                             icon={
                               isOpen ? <LuChevronDown /> : <LuChevronRight />

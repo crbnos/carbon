@@ -42,6 +42,7 @@ type RentalAgreementChargeFormProps = {
   /** Where the form posts when it is opened from a page rather than as its
    *  own route; it then also closes on submit. */
   action?: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -50,6 +51,7 @@ const RentalAgreementChargeForm = ({
   currencyCode,
   lineOptions,
   action,
+  open = true,
   onClose
 }: RentalAgreementChargeFormProps) => {
   const { t } = useLingui();
@@ -64,7 +66,7 @@ const RentalAgreementChargeForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

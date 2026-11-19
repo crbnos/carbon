@@ -5,6 +5,14 @@
 import type { OnshapeElementPart } from "../lib/client";
 import type { OnshapeBomNode } from "./bom";
 import type {
+  DrawingDocument,
+  DrawingSource,
+  DrawingTarget,
+  DrawingTie,
+  OnshapeDrawing,
+  SkippedDrawing
+} from "./drawings";
+import type {
   ItemMethodType,
   ItemReplenishmentSystem,
   ItemSourcingType,
@@ -40,6 +48,11 @@ import { isModelReleaseItem } from "./releases";
 import { compareRevisions } from "./revision";
 import type { StandardFieldId } from "./standard-fields";
 import { standardField } from "./standard-fields";
+import {
+  identityValue,
+  releaseSources,
+  standardSources
+} from "./standard-sources";
 import {
   externalIdForAssembly,
   externalIdForBomLine,
@@ -1304,16 +1317,34 @@ export type AssemblyPlanItem = MappedRowPlan & {
   /** "Show Assembly only" in Onshape: the push writes no BOM for it. */
   shownAsUnit?: true;
   /**
-   * The files an assembly push can export onto this row's item. Absent on a
-   * row that takes none: standard content, released in Carbon, or linked to
-   * another source.
+   * The files the review can pick for this row. Absent on a row that takes
+   * none: standard content, released in Carbon, or linked to another source.
    */
   assets?: AssemblyRowAssets;
+};
+
+/** A drawing the review names on a row. */
+export type AssemblyRowDrawing = {
+  elementId: string;
+  name: string;
+  /** The item already has this drawing's PDF from its current state. */
+  current?: true;
+  /** The item has this drawing's PDF from an earlier state; a push replaces it. */
+  outOfDate?: true;
+  /** The item has this PDF but its state was not read; a push exports it. */
+  unchecked?: true;
 };
 
 export type AssemblyRowAssets = {
   /** The row's STEP export; null when its source cannot export. */
   model: ModelExport | null;
+  /** The item already has the model of its source's current state. */
+  modelCurrent?: true;
+  /** The item's model is an earlier Onshape export; a push replaces it. */
+  modelOutOfDate?: true;
+  /** The model's source state was not read; a push exports it. */
+  modelUnchecked?: true;
+  drawings: AssemblyRowDrawing[];
 };
 
 export type AssemblyPlanMethodStatus =
@@ -1361,6 +1392,10 @@ export type AssemblyPlanRoot = MappedRowPlan & {
   current?: ItemFieldSnapshot | null;
   changes?: OwnedFieldChange[];
   released?: { revision: string };
+  /** Drawings only: its model goes with every push. Absent when released. */
+  assets?: AssemblyRowAssets;
+  /** The root item already has this assembly's model from its current state. */
+  modelCurrent?: true;
 };
 
 /**
@@ -1380,7 +1415,7 @@ export type AssemblyPlan = {
   root: AssemblyPlanRoot;
   items: AssemblyPlanItem[];
   methods: AssemblyPlanMethod[];
-  /** BOM rows the push cannot place ("<name>: no part number in Onshape"). */
+  /** BOM rows the push cannot place or fill ("<name>: no part number in Onshape"). */
   skipped: string[];
   options: PlanOptions;
   depth: AssemblyPlanDepth;
@@ -1389,6 +1424,10 @@ export type AssemblyPlan = {
     subAssemblies: string[];
     partCount: number;
   };
+  /** Drawings in the source documents that attach to no row. */
+  skippedDrawings?: SkippedDrawing[];
+  /** Onshape files the review could not read or check. */
+  fileWarnings?: string[];
 };
 
 export function flattenNodes(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
@@ -1422,7 +1461,8 @@ export function buildAssemblyPlan({
   reusableDraftByItemId = new Map(),
   mapping,
   rootProperties = null,
-  released = new Map()
+  released = new Map(),
+  assemblyElementIds
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -1457,6 +1497,8 @@ export function buildAssemblyPlan({
   /** Element metadata; BOM rows carry their own. */
   rootProperties?: OnshapePropertyValue[] | null;
   released?: ReadonlyMap<string, ReleasedRevision>;
+  /** The open document's assemblies; absent when they could not be read. */
+  assemblyElementIds?: ReadonlySet<string>;
 }): AssemblyPlan {
   const rowsByReadableId = new Map<string, PlanItemRow[]>();
   // A link to any revision of a part is a link to that part.
@@ -1568,14 +1610,16 @@ export function buildAssemblyPlan({
           itemId: rootItem.id,
           ...(rootConflict ? { conflict: true } : {}),
           current: currentItemFields(rootItem),
-          proposed: null
+          proposed: null,
+          assets: { model: null, drawings: [] }
         }
     : {
         ...rootIdentity,
         ...planCreatedItem(rootIdentity, rootResolved, options),
         ...nonEmpty("unmappedProperties", rootResolved?.unmapped ?? []),
         action: "create",
-        itemId: null
+        itemId: null,
+        assets: { model: null, drawings: [] }
       };
 
   // As apply's `linkChildParts`: a row takes "everyPush" values when linked to
@@ -1625,7 +1669,9 @@ export function buildAssemblyPlan({
         ? !!existing && linkedId === existing.id
         : (numbersBySource.get(externalId)?.size ?? 0) === 1 &&
           (!existing || (!!linkedItemIds && !linkedItemIds.has(existing.id)));
-    return linksHere ? { model: modelExportFor(node) } : undefined;
+    return linksHere
+      ? { model: modelExportFor(node), drawings: [] }
+      : undefined;
   };
 
   const planItems: AssemblyPlanItem[] = [];
@@ -1665,6 +1711,17 @@ export function buildAssemblyPlan({
         proposed: null
       });
       continue;
+    }
+    // An empty sub-assembly reads like a part; only its element type differs.
+    if (
+      !madePartNumbers.has(node.partNumber) &&
+      !node.shownAsUnit &&
+      node.itemSource?.elementId &&
+      assemblyElementIds?.has(node.itemSource.elementId)
+    ) {
+      skipped.push(
+        `${node.partNumber}: Onshape's BOM shows this sub-assembly with no components, so this push writes no BOM for it. Push it from its own Onshape tab.`
+      );
     }
     const assets = rowAssets(node.partNumber, existing);
     if (existing) {
@@ -1845,36 +1902,331 @@ export type ModelExportRow = ModelExport & {
 };
 
 /**
- * The STEP models to export onto the items of the rows that offer one.
- * `modelRows` picks rows by part number; absent, every row that offers a
- * model and is not `excluded`. The root is never a row here: its model goes
- * with every push. `linkFor` names a row's item and the key of its link to
- * that source, or null when the row has no item linked to it: its model
- * counts as `unlinked`.
+ * The root, then the first BOM row of each part number. Rows without files are
+ * targets too, so elimination never ties a drawing of one to a neighbour.
+ */
+export function assemblyDrawingTargets(
+  plan: AssemblyPlan,
+  nodes: OnshapeBomNode[]
+): DrawingTarget[] {
+  const targets: DrawingTarget[] = [
+    {
+      id: plan.root.partNumber,
+      kind: "assembly",
+      documentId: plan.documentId,
+      wvm: plan.wv,
+      wvmId: plan.wvId,
+      elementId: plan.elementId,
+      configuration: normalizeConfiguration(plan.configuration)
+    }
+  ];
+  const seen = new Set<string>([plan.root.partNumber]);
+  for (const node of flattenNodes(nodes)) {
+    if (!node.partNumber || seen.has(node.partNumber)) continue;
+    seen.add(node.partNumber);
+    const source = modelExportFor(node);
+    if (!source) continue;
+    targets.push({
+      id: source.partNumber,
+      kind: source.kind,
+      documentId: source.documentId,
+      wvm: source.wvm,
+      wvmId: source.wvmId,
+      elementId: source.elementId,
+      ...(source.partId ? { partId: source.partId } : {}),
+      configuration: source.configuration
+    });
+  }
+  return targets;
+}
+
+/** The root's document and each document of a row that takes files. */
+export function assemblyDrawingDocuments(
+  plan: AssemblyPlan
+): DrawingDocument[] {
+  const documents = new Map<string, DrawingDocument>();
+  const add = (document: DrawingDocument) => {
+    const key = [document.documentId, document.wvm, document.wvmId].join(
+      "\u001f"
+    );
+    if (!documents.has(key)) documents.set(key, document);
+  };
+  if (plan.root.assets) {
+    add({ documentId: plan.documentId, wvm: plan.wv, wvmId: plan.wvId });
+  }
+  for (const item of plan.items) {
+    const model = item.assets?.model;
+    if (model) {
+      add({
+        documentId: model.documentId,
+        wvm: model.wvm,
+        wvmId: model.wvmId
+      });
+    }
+  }
+  return [...documents.values()];
+}
+
+/**
+ * A tie to a row that takes no files is dropped: that item's own push brings
+ * its drawings. Returns the ties kept, for the current-file check.
+ */
+export function withAssemblyDrawings(
+  plan: AssemblyPlan,
+  tied: { ties: DrawingTie[]; skipped: SkippedDrawing[] },
+  warnings: string[] = []
+): { plan: AssemblyPlan; ties: DrawingTie[] } {
+  const byPartNumber = new Map<string, OnshapeDrawing[]>();
+  for (const tie of tied.ties) {
+    for (const partNumber of tie.targetIds) {
+      const list = byPartNumber.get(partNumber) ?? [];
+      list.push(tie.drawing);
+      byPartNumber.set(partNumber, list);
+    }
+  }
+  const kept = new Map<OnshapeDrawing, string[]>();
+  const withDrawings = <
+    T extends { partNumber: string; assets?: AssemblyRowAssets }
+  >(
+    row: T
+  ): T => {
+    const listed = byPartNumber.get(row.partNumber);
+    if (!row.assets || !listed) return row;
+    const drawings = listed.filter(
+      (drawing, index) =>
+        listed.findIndex((other) => other.elementId === drawing.elementId) ===
+        index
+    );
+    for (const drawing of drawings) {
+      kept.set(drawing, [...(kept.get(drawing) ?? []), row.partNumber]);
+    }
+    return {
+      ...row,
+      assets: {
+        ...row.assets,
+        drawings: drawings.map((drawing) => ({
+          elementId: drawing.elementId,
+          name: drawing.name
+        }))
+      }
+    };
+  };
+  return {
+    plan: {
+      ...plan,
+      root: withDrawings(plan.root),
+      items: plan.items.map(withDrawings),
+      ...nonEmpty("skippedDrawings", tied.skipped),
+      ...nonEmpty("fileWarnings", warnings)
+    },
+    ties: [...kept].map(([drawing, targetIds]) => ({ drawing, targetIds }))
+  };
+}
+
+/** Keys a drawing on its row, for `withCurrentFiles`. */
+export function rowDrawingKey(partNumber: string, elementId: string): string {
+  return `${partNumber}\u001f${elementId}`;
+}
+
+/**
+ * Marks each row's current, out-of-date and unchecked files: `models` keyed by
+ * part number, `drawings` by `rowDrawingKey`.
+ */
+export function withCurrentFiles(
+  plan: AssemblyPlan,
+  current: {
+    models: ReadonlySet<string>;
+    drawings: ReadonlySet<string>;
+    outOfDate?: {
+      models: ReadonlySet<string>;
+      drawings: ReadonlySet<string>;
+    };
+    unchecked?: {
+      models: ReadonlySet<string>;
+      drawings: ReadonlySet<string>;
+    };
+    rootModel?: boolean;
+  }
+): AssemblyPlan {
+  const mark = <T extends { partNumber: string; assets?: AssemblyRowAssets }>(
+    row: T
+  ): T => {
+    if (!row.assets) return row;
+    const model = row.assets.model
+      ? current.models.has(row.partNumber)
+        ? { modelCurrent: true as const }
+        : current.outOfDate?.models.has(row.partNumber)
+          ? { modelOutOfDate: true as const }
+          : current.unchecked?.models.has(row.partNumber)
+            ? { modelUnchecked: true as const }
+            : {}
+      : {};
+    return {
+      ...row,
+      assets: {
+        ...row.assets,
+        ...model,
+        drawings: row.assets.drawings.map((drawing) => {
+          const key = rowDrawingKey(row.partNumber, drawing.elementId);
+          if (current.drawings.has(key)) {
+            return { ...drawing, current: true as const };
+          }
+          if (current.outOfDate?.drawings.has(key)) {
+            return { ...drawing, outOfDate: true as const };
+          }
+          if (current.unchecked?.drawings.has(key)) {
+            return { ...drawing, unchecked: true as const };
+          }
+          return drawing;
+        })
+      }
+    };
+  };
+  const root = mark(plan.root);
+  return {
+    ...plan,
+    root:
+      current.rootModel && !root.released
+        ? { ...root, modelCurrent: true as const }
+        : root,
+    items: plan.items.map(mark)
+  };
+}
+
+/** A row that takes drawing PDFs: its item and the source it shows. */
+export type DrawingTargetRow = DrawingSource & {
+  itemId: string;
+  partNumber: string;
+};
+
+/**
+ * The picked rows' models and drawing targets on their linked items. `root`
+ * takes drawings only, since its model goes with every push.
  */
 export function assemblyAssetRows(input: {
   plan: AssemblyPlan;
   modelRows?: ReadonlySet<string>;
+  drawingRows?: ReadonlySet<string>;
   excluded?: ReadonlySet<string>;
+  root?: DrawingTargetRow | null;
   linkFor: (
     partNumber: string,
     source: ModelExport
   ) => { itemId: string; externalId: string } | null;
-}): { models: ModelExportRow[]; unlinked: number } {
+}): {
+  models: ModelExportRow[];
+  drawingTargets: DrawingTargetRow[];
+  drawings: number;
+  unlinked: number;
+  current: { models: number; drawings: number };
+} {
   const models: ModelExportRow[] = [];
+  const drawingTargets: DrawingTargetRow[] = [];
+  const current = { models: 0, drawings: 0 };
+  let drawings = 0;
   let unlinked = 0;
+  const pickedDrawings = (row: {
+    partNumber: string;
+    assets?: AssemblyRowAssets;
+  }) =>
+    !input.drawingRows || input.drawingRows.has(row.partNumber)
+      ? (row.assets?.drawings ?? [])
+      : [];
+  const takeDrawings = (
+    offered: AssemblyRowDrawing[],
+    target: DrawingTargetRow
+  ) => {
+    if (offered.length === 0) return;
+    drawingTargets.push(target);
+    drawings += offered.length;
+    current.drawings += offered.filter((drawing) => drawing.current).length;
+  };
+
+  const rootOffered = pickedDrawings(input.plan.root);
+  if (input.root) takeDrawings(rootOffered, input.root);
+  else unlinked += rootOffered.length;
+
   for (const item of input.plan.items) {
     const model = item.assets?.model;
     if (!model || input.excluded?.has(item.partNumber)) continue;
-    if (input.modelRows && !input.modelRows.has(item.partNumber)) continue;
+    const wantsModel = !input.modelRows || input.modelRows.has(item.partNumber);
+    const offered = pickedDrawings(item);
+    if (!wantsModel && offered.length === 0) continue;
     const link = input.linkFor(item.partNumber, model);
-    if (link) {
-      models.push({ ...model, ...link });
-    } else {
-      unlinked++;
+    if (!link) {
+      unlinked += (wantsModel ? 1 : 0) + offered.length;
+      continue;
     }
+    if (wantsModel) {
+      if (item.assets?.modelCurrent) current.models++;
+      models.push({ ...model, ...link });
+    }
+    takeDrawings(offered, { ...model, itemId: link.itemId });
   }
-  return { models, unlinked };
+  return { models, drawingTargets, drawings, unlinked, current };
+}
+
+/** The rows' models and tied drawings the review checks for current files. */
+export function assemblyCurrentFileRows(input: {
+  plan: AssemblyPlan;
+  ties: DrawingTie[];
+  itemIdFor: (partNumber: string) => string | null;
+}): {
+  models: Array<ModelExport & { itemId: string }>;
+  drawings: Array<
+    DrawingDocument & {
+      drawingElementId: string;
+      name: string;
+      microversionId: string | null;
+      targets: DrawingTargetRow[];
+    }
+  >;
+} {
+  const { plan } = input;
+  const rows = new Map<string, DrawingTargetRow>();
+  const rootItemId = input.itemIdFor(plan.root.partNumber);
+  if (plan.root.assets && rootItemId) {
+    rows.set(plan.root.partNumber, {
+      kind: "assembly",
+      documentId: plan.documentId,
+      wvm: plan.wv,
+      wvmId: plan.wvId,
+      elementId: plan.elementId,
+      configuration: normalizeConfiguration(plan.configuration),
+      itemId: rootItemId,
+      partNumber: plan.root.partNumber
+    });
+  }
+  const models: Array<ModelExport & { itemId: string }> = [];
+  for (const item of plan.items) {
+    const model = item.assets?.model;
+    const itemId = input.itemIdFor(item.partNumber);
+    if (!model || !itemId) continue;
+    models.push({ ...model, itemId });
+    rows.set(item.partNumber, { ...model, itemId });
+  }
+  return {
+    models,
+    drawings: input.ties.flatMap(({ drawing, targetIds }) => {
+      const targets = targetIds.flatMap((id) => {
+        const row = rows.get(id);
+        return row ? [row] : [];
+      });
+      return targets.length === 0
+        ? []
+        : [
+            {
+              documentId: drawing.documentId,
+              wvm: drawing.wvm,
+              wvmId: drawing.wvmId,
+              drawingElementId: drawing.elementId,
+              name: drawing.name,
+              microversionId: drawing.microversionId,
+              targets
+            }
+          ];
+    })
+  };
 }
 
 /**
@@ -1923,6 +2275,8 @@ export type ReleasePlanItem = MappedRowPlan & {
   /** Part Studio items: the part the export translates; without one, none. */
   partId?: string | null;
   configuration?: string | null;
+  /** Onshape marked it obsolete; shown only, the push still writes it. */
+  obsolete?: true;
   action: ReleasePlanItemAction;
   baseItemId: string | null;
   baseRevision: string | null;
@@ -1935,6 +2289,8 @@ export type ReleasePlanItem = MappedRowPlan & {
   changes?: OwnedFieldChange[];
   /** Released assemblies only; a reused item's Active method is refused. */
   methodStatus: "draft" | "active" | "new" | "missing" | null;
+  /** Reuse only: why a change notice stops the push writing this revision. */
+  locked?: string;
   /**
    * Drawings only: the release's model item with the drawing's number, else
    * the model the package lists, with `itemId` when Carbon has it outside the
@@ -2012,6 +2368,7 @@ export function buildReleasePlan({
 }): ReleasePlan {
   const descriptionModes =
     mapping?.descriptionModes ?? DEFAULT_DESCRIPTION_MODES;
+  const sources = releaseSources(standardSources(mapping?.map ?? []));
   const resolve = (
     properties: OnshapePropertyValue[] | null | undefined,
     matchByName: boolean
@@ -2100,9 +2457,12 @@ export function buildReleasePlan({
     const node = bomNodeByPartNumber.get(item.partNumber);
     const properties = propertiesByPartNumber?.get(item.partNumber);
     const onshapeText = {
-      name: propertyText(properties, "Name") ?? node?.name ?? null,
+      name:
+        identityValue(properties ?? [], "name", sources) ?? node?.name ?? null,
       description:
-        propertyText(properties, "Description") ?? node?.description ?? null
+        identityValue(properties ?? [], "description", sources) ??
+        node?.description ??
+        null
     };
     const existingLetter = letterRowFor(item.partNumber, item.revision);
     if (existingLetter) {
@@ -2248,16 +2608,6 @@ export function buildReleasePlan({
   };
 }
 
-function propertyText(
-  properties: OnshapePropertyValue[] | undefined,
-  name: string
-): string | null {
-  const value = properties?.find((property) => property.name === name)?.value;
-  if (typeof value !== "string") return null;
-  const text = value.trim();
-  return text === "" ? null : text;
-}
-
 function releaseIdentity(item: PanelReleaseItem) {
   return {
     partNumber: item.partNumber,
@@ -2267,7 +2617,8 @@ function releaseIdentity(item: PanelReleaseItem) {
     versionId: item.versionId,
     partId: item.partId ?? null,
     // Raw: the export sends it back to Onshape as the revision gave it.
-    configuration: item.configuration ?? null
+    configuration: item.configuration ?? null,
+    ...(item.obsolete ? { obsolete: true as const } : {})
   };
 }
 

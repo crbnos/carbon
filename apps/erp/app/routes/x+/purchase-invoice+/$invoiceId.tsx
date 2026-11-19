@@ -4,12 +4,18 @@
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
+import { useLoaderData, useParams } from "react-router";
+import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   getCurrencyByCode,
@@ -17,6 +23,7 @@ import {
 } from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
+  getDocumentForceDeleteData,
   getPurchaseInvoice,
   getPurchaseInvoiceDelivery,
   getPurchaseInvoiceLines
@@ -30,7 +37,9 @@ import {
   getSupplierInteractionDocuments
 } from "~/modules/purchasing/purchasing.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
@@ -53,13 +62,14 @@ export const handle: Handle = {
   module: "invoicing"
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.purchaseInvoice?.invoiceId, "Purchase Invoice");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
       view: "invoicing"
-    }
-  );
+    });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -92,7 +102,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     orgHasCredits,
     currency,
     rampMapping,
-    resolvedTax
+    resolvedTax,
+    forceDelete
   ] = await Promise.all([
     purchaseInvoice.data?.supplierId
       ? getSupplier(client, purchaseInvoice.data.supplierId)
@@ -120,6 +131,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       source: "purchase",
       supplierId: purchaseInvoice.data?.supplierId,
       date: taxDate
+    }),
+    // The Admin force-delete override (`force-delete+`).
+    getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
+      companyId,
+      userId,
+      documentType: "purchaseInvoice",
+      documentId: invoiceId
     })
   ]);
 
@@ -138,7 +156,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     orgHasCredits,
     rampMapping: rampMapping?.data ?? null,
     resolvedTax: resolvedTax.data,
-    taxDate
+    taxDate,
+    ...forceDelete
   };
 }
 
@@ -150,6 +169,7 @@ export default function PurchaseInvoiceRoute() {
   const params = useParams();
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
+  const data = useLoaderData<typeof loader>();
 
   return (
     <PanelProvider>
@@ -162,6 +182,13 @@ export default function PurchaseInvoiceRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
+                    <DocumentForceDeleteBanner
+                      documentType="purchaseInvoice"
+                      documentId={invoiceId}
+                      readableId={data.purchaseInvoice.invoiceId ?? invoiceId}
+                      status={data.purchaseInvoice.status ?? "Draft"}
+                      forceDelete={data}
+                    />
                     <RecordOutlet />
                   </VStack>
                 </div>

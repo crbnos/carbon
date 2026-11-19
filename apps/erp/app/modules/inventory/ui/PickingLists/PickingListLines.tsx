@@ -32,11 +32,12 @@ import {
   TooltipContent,
   TooltipTrigger,
   TrackedEntityPicker,
+  useDisclosure,
   useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -54,6 +55,7 @@ import { isPickingListLocked } from "../../inventory.models";
 import type {
   getPickingList,
   getPickingListLines,
+  PickingListLiveBin,
   PickingListRecommendation
 } from "../../inventory.service";
 import { ShortPickModal } from "./ShortPickModal";
@@ -98,12 +100,16 @@ type PickingListLineData = NonNullable<
   Awaited<ReturnType<typeof getPickingListLines>>["data"]
 >;
 
+type PickingListLine = PickingListLineData[number] & {
+  liveStorageUnits?: PickingListLiveBin[];
+};
+
 type RecommendationsPromise = Promise<
   Record<string, PickingListRecommendation[]>
 >;
 
 type PickingListLinesProps = {
-  pickingListLines: PickingListLineData;
+  pickingListLines: PickingListLine[];
   pickingListId: string;
   pickingList: PickingListData;
   recommendations: RecommendationsPromise;
@@ -117,7 +123,7 @@ type Kit = {
   jobReadableId: string | null;
   operationName: string | null;
   workCenterName: string | null;
-  lines: PickingListLineData;
+  lines: PickingListLine[];
 };
 
 const PickingListLines = ({
@@ -142,8 +148,22 @@ const PickingListLines = ({
       }
       groups.get(key)!.lines.push(line);
     }
+    for (const kit of groups.values()) {
+      kit.lines.sort(
+        (a, b) =>
+          (a.item?.readableId ?? "").localeCompare(
+            b.item?.readableId ?? "",
+            undefined,
+            { numeric: true }
+          ) || a.id.localeCompare(b.id)
+      );
+    }
     return Array.from(groups.values()).sort((a, b) => {
-      const job = (a.jobReadableId ?? "").localeCompare(b.jobReadableId ?? "");
+      const job = (a.jobReadableId ?? "").localeCompare(
+        b.jobReadableId ?? "",
+        undefined,
+        { numeric: true }
+      );
       if (job !== 0) return job;
       return (a.operationName ?? "").localeCompare(b.operationName ?? "");
     });
@@ -299,7 +319,7 @@ function PickingListLineItem({
   isLocked,
   recommendations
 }: {
-  line: PickingListLineData[number];
+  line: PickingListLine;
   lineNumber?: number;
   pickingListId: string;
   isLast: boolean;
@@ -313,8 +333,8 @@ function PickingListLineItem({
   // A refused pick is toasted by useAction.
   const fetcher = useAction();
   const isPending = fetcher.state !== "idle";
-  const [shortOpen, setShortOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const shortModal = useDisclosure();
+  const picker = useDisclosure();
   const trackedFetcher = useFetcher<{
     entities: TrackedEntityOption[];
     trackingType: "Serial" | "Batch";
@@ -325,7 +345,7 @@ function PickingListLineItem({
   }>();
 
   const openPicker = () => {
-    setPickerOpen(true);
+    picker.onOpen();
     trackedFetcher.load(path.to.pickingListTracked(pickingListId, line.id));
   };
 
@@ -340,7 +360,7 @@ function PickingListLineItem({
       method: "post",
       action: path.to.pickingListTracked(pickingListId, line.id)
     });
-    setPickerOpen(false);
+    picker.onClose();
   };
 
   const unpickTracked = (trackedEntityId: string) => {
@@ -387,14 +407,13 @@ function PickingListLineItem({
   const isTracked =
     item?.itemTrackingType === "Serial" || item?.itemTrackingType === "Batch";
   const isBatch = item?.itemTrackingType === "Batch";
-  const source = (line as { storageUnit?: { name?: string } }).storageUnit
-    ?.name;
+  const liveBins = line.liveStorageUnits ?? [];
+  // Once picked, the stock is at lineside and its warehouse bin may be empty:
+  // the line then names the bin it was picked from.
+  const pickedFrom = quantityPicked > 0 ? line.storageUnit?.name : undefined;
   // Warehouse on-hand available (incl. the unassigned/null bin). A null source
   // bin is NOT a shortage if there's on-hand sitting in the unassigned bin.
-  const availableQuantity = Number(
-    (line as { availableQuantity?: number }).availableQuantity ?? 0
-  );
-  const isShortStock = availableQuantity <= 0;
+  const isShortStock = liveBins.length === 0;
   // Only lots that were actually PICKED (quantityPicked > 0) count as picked —
   // not mere allocations.
   const pickedLots = (
@@ -508,10 +527,20 @@ function PickingListLineItem({
           </Button>
         ) : (
           <>
+            {quantityPicked > 0 && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                isDisabled={!canPick || isPending}
+                onClick={() => pick(0)}
+              >
+                <Trans>Unpick</Trans>
+              </Button>
+            )}
             <Button
               variant="secondary"
               isDisabled={!canPick || isPending}
-              onClick={() => setShortOpen(true)}
+              onClick={shortModal.onOpen}
             >
               <Trans>Short</Trans>
             </Button>
@@ -550,7 +579,9 @@ function PickingListLineItem({
         </span>
         <ItemThumbnail
           size="xl"
-          thumbnailPath={null}
+          thumbnailPath={
+            line.item?.thumbnailPath ?? line.item?.modelUpload?.thumbnailPath
+          }
           type={(item?.type as "Part") ?? "Part"}
         />
         <VStack spacing={0} className="flex-1 min-w-0">
@@ -587,11 +618,16 @@ function PickingListLineItem({
       </HStack>
 
       <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 @3xl:shrink-0 @3xl:flex-nowrap max-md:gap-3">
-        {source ? (
-          <div className="text-base font-medium whitespace-nowrap">
-            {source}
-          </div>
-        ) : isShortStock && !isPicked ? (
+        <div className="text-base font-medium">
+          {isPicked && pickedFrom
+            ? pickedFrom
+            : liveBins.length > 0
+              ? liveBins
+                  .map((bin) => bin.name ?? t`Location not known`)
+                  .join(", ")
+              : (pickedFrom ?? <Trans>Location not known</Trans>)}
+        </div>
+        {isShortStock && !isPicked && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
@@ -610,7 +646,7 @@ function PickingListLineItem({
               </Trans>
             </TooltipContent>
           </Tooltip>
-        ) : null}
+        )}
         {pickedLots.length > 0 && (
           <HStack spacing={1} className="max-w-[280px] flex-wrap justify-end">
             {pickedLots.map((lot) => (
@@ -660,42 +696,34 @@ function PickingListLineItem({
         {actions}
       </div>
 
-      {shortOpen && (
-        <ShortPickModal
-          pickingListId={pickingListId}
-          lineId={line.id}
-          itemName={itemName}
-          quantityToPick={quantityToPick}
-          quantityPicked={quantityPicked}
-          unitOfMeasureCode={unitOfMeasureCode}
-          onClose={() => setShortOpen(false)}
-        />
-      )}
+      <ShortPickModal
+        open={shortModal.isOpen}
+        pickingListId={pickingListId}
+        lineId={line.id}
+        itemName={itemName}
+        quantityToPick={quantityToPick}
+        quantityPicked={quantityPicked}
+        unitOfMeasureCode={unitOfMeasureCode}
+        onClose={shortModal.onClose}
+      />
 
-      {pickerOpen && (
-        <TrackedEntityPicker
-          trackingType={
-            item?.itemTrackingType === "Serial" ? "Serial" : "Batch"
-          }
-          entities={trackedFetcher.data?.entities ?? []}
-          quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
-          title={`Pick ${itemName}`}
-          description={
-            item?.itemTrackingType === "Serial"
-              ? t`Choose a serial number`
-              : t`Choose a batch number`
-          }
-          nearExpiryWarningDays={
-            trackedFetcher.data?.nearExpiryWarningDays ?? 0
-          }
-          expiredEntityPolicy={
-            trackedFetcher.data?.expiredEntityPolicy ?? "Warn"
-          }
-          defaultOrder={trackedFetcher.data?.defaultOrder}
-          onSelect={pickTracked}
-          onClose={() => setPickerOpen(false)}
-        />
-      )}
+      <TrackedEntityPicker
+        open={picker.isOpen}
+        trackingType={item?.itemTrackingType === "Serial" ? "Serial" : "Batch"}
+        entities={trackedFetcher.data?.entities ?? []}
+        quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
+        title={`Pick ${itemName}`}
+        description={
+          item?.itemTrackingType === "Serial"
+            ? t`Choose a serial number`
+            : t`Choose a batch number`
+        }
+        nearExpiryWarningDays={trackedFetcher.data?.nearExpiryWarningDays ?? 0}
+        expiredEntityPolicy={trackedFetcher.data?.expiredEntityPolicy ?? "Warn"}
+        defaultOrder={trackedFetcher.data?.defaultOrder}
+        onSelect={pickTracked}
+        onClose={picker.onClose}
+      />
     </div>
   );
 }

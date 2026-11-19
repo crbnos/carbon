@@ -31,6 +31,7 @@ import type { StockMovement } from "../../types";
 
 type StockMovementCorrectionModalProps = {
   movement: StockMovement;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -44,9 +45,28 @@ type StockMovementCorrectionModalProps = {
 // descendants of its own, so a client-side sum could silently submit an
 // unintended delta.
 const StockMovementCorrectionModal = ({
+  open = true,
+  onClose,
+  ...props
+}: StockMovementCorrectionModalProps) => {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <StockMovementCorrectionBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+};
+
+const StockMovementCorrectionBody = ({
   movement,
   onClose
-}: StockMovementCorrectionModalProps) => {
+}: Omit<StockMovementCorrectionModalProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
 
@@ -78,80 +98,73 @@ const StockMovementCorrectionModal = ({
   const isLoaded = effectiveQuantity !== null;
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        {isLoaded ? (
-          <ValidatedForm
-            validator={stockMovementCorrectionValidator}
-            method="post"
-            action={correctionPath}
-            defaultValues={{ correctedQuantity: effectiveQuantity }}
-            fetcher={submitFetcher}
-          >
-            <ModalHeader>
-              <ModalTitle>{t`Correct Stock Movement`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={4}>
-                <HStack spacing={2} className="text-sm">
-                  <Enumerable value={movement.entryType} />
-                  <span className="text-muted-foreground">
-                    <DateTime value={movement.postingDate} variant="date" />
-                  </span>
-                  <Badge variant="secondary">
-                    {t`Current quantity`}: {effectiveQuantity}
-                  </Badge>
-                </HStack>
-                <p className="text-sm text-muted-foreground">
-                  {t`Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period.`}
-                </p>
-                <Number
-                  name="correctedQuantity"
-                  label={t`Corrected Quantity`}
-                  helperText={t`Signed quantity — negative for outbound movements`}
-                />
-                <TextArea name="comment" label={t`Reason`} />
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <HStack>
-                <Submit
-                  isDisabled={
-                    !permissions.can("update", "inventory") ||
-                    submitFetcher.state !== "idle"
-                  }
-                >
-                  {t`Correct`}
-                </Submit>
-                <Button variant="secondary" onClick={onClose}>
-                  {t`Cancel`}
-                </Button>
+    <>
+      {isLoaded ? (
+        <ValidatedForm
+          validator={stockMovementCorrectionValidator}
+          method="post"
+          action={correctionPath}
+          defaultValues={{ correctedQuantity: effectiveQuantity }}
+          fetcher={submitFetcher}
+        >
+          <ModalHeader>
+            <ModalTitle>{t`Correct Stock Movement`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={4}>
+              <HStack spacing={2} className="text-sm">
+                <Enumerable value={movement.entryType} />
+                <span className="text-muted-foreground">
+                  <DateTime value={movement.postingDate} variant="date" />
+                </span>
+                <Badge variant="secondary">
+                  {t`Current quantity`}: {effectiveQuantity}
+                </Badge>
               </HStack>
-            </ModalFooter>
-          </ValidatedForm>
-        ) : (
-          <>
-            <ModalHeader>
-              <ModalTitle>{t`Correct Stock Movement`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <HStack
-                spacing={2}
-                className="justify-center py-8 text-muted-foreground"
+              <p className="text-sm text-muted-foreground">
+                {t`Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period.`}
+              </p>
+              <Number
+                name="correctedQuantity"
+                label={t`Corrected Quantity`}
+                helperText={t`Signed quantity — negative for outbound movements`}
+              />
+              <TextArea name="comment" label={t`Reason`} />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack>
+              <Submit
+                isDisabled={
+                  !permissions.can("update", "inventory") ||
+                  submitFetcher.state !== "idle"
+                }
               >
-                <Spinner />
-                <span>{t`Loading current quantity…`}</span>
-              </HStack>
-            </ModalBody>
-          </>
-        )}
-      </ModalContent>
-    </Modal>
+                {t`Correct`}
+              </Submit>
+              <Button variant="secondary" onClick={onClose}>
+                {t`Cancel`}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ValidatedForm>
+      ) : (
+        <>
+          <ModalHeader>
+            <ModalTitle>{t`Correct Stock Movement`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <HStack
+              spacing={2}
+              className="justify-center py-8 text-muted-foreground"
+            >
+              <Spinner />
+              <span>{t`Loading current quantity…`}</span>
+            </HStack>
+          </ModalBody>
+        </>
+      )}
+    </>
   );
 };
 

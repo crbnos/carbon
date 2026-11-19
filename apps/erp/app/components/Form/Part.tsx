@@ -4,8 +4,8 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { ItemReplenishmentSystem } from "~/modules/items/types";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
 import { useParts } from "~/stores";
@@ -18,8 +18,7 @@ type PartSelectProps = Omit<ComboboxProps, "options"> & {
 
 const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
   const parts = useParts();
-  const newPartsModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
@@ -40,7 +39,7 @@ const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
   );
 
   const emptyMessage = useEmptyState("part", {
-    onCreate: () => newPartsModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -52,22 +51,22 @@ const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
         {...props}
         label={props?.label ?? "Part"}
         onCreateOption={(option) => {
-          newPartsModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newPartsModal.isOpen && (
+      {create.item !== null && (
         <PartForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newPartsModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
             revision: "0",
-            name: created,
+            name: create.item,
             description: "",
             itemTrackingType: "Inventory" as "Inventory",
             replenishmentSystem: itemReplenishmentSystem ?? "Buy and Make",

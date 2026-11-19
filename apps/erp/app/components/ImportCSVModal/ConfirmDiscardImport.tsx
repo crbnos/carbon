@@ -23,15 +23,17 @@ import { Trans } from "@lingui/react/macro";
  * payment-term and shipping-method forms.
  */
 export function ConfirmDiscardImport({
+  open = true,
   onCancel,
   onDiscard
 }: {
+  open?: boolean;
   onCancel: () => void;
   onDiscard: () => void;
 }) {
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

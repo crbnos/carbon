@@ -7,12 +7,14 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
 import type { Company } from "../../../types";
 
-type JobOperationStep = Database["public"]["Tables"]["jobOperationStep"]["Row"];
+export type JobOperationStep =
+  Database["public"]["Tables"]["jobOperationStep"]["Row"];
 
 export type JobOperationWithSteps =
   Database["public"]["Tables"]["jobOperation"]["Row"] & {
@@ -33,6 +35,12 @@ export interface JobTravelerMaterial {
 
 /** Everything a Job Traveler block renderer might need. */
 export interface JobTravelerData {
+  /** The printed document title. */
+  documentTitle: string;
+  /** The printed document number; absent when the user hid it. */
+  documentNumber?: string;
+  /** The printed sales order under the number; absent without a sales order. */
+  documentSubId?: string;
   company: Company;
   locale?: string;
   job: Database["public"]["Views"]["jobs"]["Row"];
@@ -55,6 +63,7 @@ export interface JobTravelerData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
 }
 

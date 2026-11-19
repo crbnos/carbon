@@ -104,6 +104,7 @@ import type {
   SalesOrderLineType
 } from "../../types";
 import { PriceTraceModal } from "../Pricing/PriceTraceModal";
+import { DeliveryDateCheckAlert } from "./DeliveryDateCheckAlert";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -111,12 +112,14 @@ type SalesOrderLineFormProps = {
     assetName?: string;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SalesOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -169,6 +172,10 @@ const SalesOrderLineForm = ({
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
+  );
+  // Held so the delivery date check can offer its earliest date.
+  const [promisedDate, setPromisedDate] = useState<string | null>(
+    initialValues.promisedDate || null
   );
   const [isPriceResolving, setIsPriceResolving] = useState(false);
   const [itemData, setItemData] = useState<{
@@ -530,6 +537,7 @@ const SalesOrderLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             isCollapsible={isEditing}
             defaultCollapsed={false}
@@ -798,11 +806,19 @@ const SalesOrderLineForm = ({
                             {/* A service is promised for the day it starts, so
                                 the server copies the start date across. */}
                             {!isService && (
-                              <DatePicker
-                                name="promisedDate"
-                                label={t`Promised Date`}
-                                termId="sales-order-line-promised-date"
-                              />
+                              <>
+                                <DatePicker
+                                  name="requestedDate"
+                                  label={t`Requested Date`}
+                                />
+                                <DatePicker
+                                  name="promisedDate"
+                                  label={t`Promised Date`}
+                                  termId="sales-order-line-promised-date"
+                                  value={promisedDate ?? undefined}
+                                  onChange={setPromisedDate}
+                                />
+                              </>
                             )}
                             {isService && (
                               <>
@@ -867,6 +883,20 @@ const SalesOrderLineForm = ({
                         <CustomFormFields table="salesOrderLine" />
                       </div>
 
+                      {!isService && (
+                        <DeliveryDateCheckAlert
+                          orderId={orderId}
+                          lineId={initialValues.id}
+                          lineType={lineType}
+                          itemId={itemData.itemId}
+                          methodType={itemData.methodType}
+                          quantity={saleQuantity}
+                          locationId={locationId}
+                          promisedDate={promisedDate}
+                          onUseEarliestDate={setPromisedDate}
+                        />
+                      )}
+
                       {lineType !== "Comment" && (
                         <div className="w-full">
                           <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">
@@ -917,6 +947,7 @@ const SalesOrderLineForm = ({
                                   ))}
 
                                 <IconButton
+                                  aria-expanded={costsDisclosure.isOpen}
                                   icon={<LuChevronRight />}
                                   aria-label={
                                     costsDisclosure.isOpen
@@ -1103,6 +1134,7 @@ const SalesOrderLineForm = ({
                                 </Badge>
                               )}
                               <IconButton
+                                aria-expanded={assetCostsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   assetCostsDisclosure.isOpen

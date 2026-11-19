@@ -4,31 +4,33 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  packingSlipTexts,
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PackingSlipData,
+  PackingSlipDocumentType,
   PackingSlipRentalUnit
 } from "./blocks/packingSlip";
 import {
   buildPackingSlipVars,
   packingSlipBlockRegistry
 } from "./blocks/packingSlip";
-import { Template } from "./components";
 
 interface PackingSlipProps extends PDF {
+  valueCollector?: ValueCollector;
   customer:
     | Database["public"]["Tables"]["customer"]["Row"]
     | Database["public"]["Tables"]["supplier"]["Row"];
   customerReference?: string;
-  customerReferenceLabel?: string;
   sourceDocument?: string;
   sourceDocumentId?: string;
   shipment: Database["public"]["Tables"]["shipment"]["Row"];
@@ -42,14 +44,16 @@ interface PackingSlipProps extends PDF {
   thumbnails?: Record<string, string | null>;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
+  /** Which title prints, and what the customer reference is called. */
+  documentType?: PackingSlipDocumentType;
 }
 
 const PackingSlipPDF = ({
+  valueCollector,
   company,
   customer,
   meta,
   customerReference,
-  customerReferenceLabel,
   sourceDocument,
   sourceDocumentId,
   shipment,
@@ -58,7 +62,7 @@ const PackingSlipPDF = ({
   terms,
   paymentTerm,
   shippingMethod,
-  title = "Packing Slip",
+  documentType = "packingSlip",
   locale,
   trackedEntities,
   rentalUnits,
@@ -66,20 +70,38 @@ const PackingSlipPDF = ({
   template,
   sections = {}
 }: PackingSlipProps) => {
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("packingSlip", template);
+  const resolved = resolveTemplate("packingSlip", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildPackingSlipVars({
-    shipment,
-    customer,
-    shippingAddress,
-    company
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPackingSlipVars({
+      shipment,
+      customer,
+      customerReference,
+      sourceDocument,
+      sourceDocumentId,
+      shippingAddress,
+      shippingMethod,
+      paymentTerm,
+      company,
+      locale
+    })
+  );
+  const chrome = documentChrome({
+    texts: packingSlipTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
+  const { dt, documentNumber, headerOptions } = chrome;
+  const documentTitle = dt(
+    documentType === "deliveryTicket"
+      ? "rentalTitle"
+      : documentType === "receivingReport"
+        ? "receivingReportTitle"
+        : "title"
+  );
 
   const registration = resolveRegistrationLine({
     company,
@@ -90,12 +112,13 @@ const PackingSlipPDF = ({
   });
 
   const data: PackingSlipData = {
-    title,
+    documentTitle,
+    documentNumber,
     company,
     locale,
     customer,
     customerReference,
-    customerReferenceLabel,
+    documentType,
     sourceDocument,
     sourceDocumentId,
     shipment,
@@ -109,54 +132,23 @@ const PackingSlipPDF = ({
     thumbnails,
     theme,
     sections,
+    values,
     vars,
     headerOptions
   };
 
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "packing slip",
-        subject: meta?.subject ?? "Packing Slip"
-      }}
-      footerLabel={registration.label}
+    <DocumentPage
+      chrome={{ ...chrome, documentTitle }}
+      template={resolved}
+      meta={meta}
+      keywords="packing slip"
       footerDocumentId={shipment?.shipmentId}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
+      footerLabel={registration.label}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = packingSlipBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={packingSlipBlockRegistry}
+      data={data}
+    />
   );
 };
 

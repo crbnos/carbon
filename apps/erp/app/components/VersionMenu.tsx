@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { LuCheck, LuChevronDown, LuCirclePlus } from "react-icons/lu";
 import { useNavigate } from "react-router";
 
@@ -25,6 +25,7 @@ type VersionMenuProps<T> = {
   renderLabel: (version: T) => ReactNode;
   renderStatus?: (version: T) => ReactNode;
   label?: ReactNode;
+  variant?: ComponentProps<typeof Button>["variant"];
   onNewVersion?: () => void;
   isNewVersionDisabled?: boolean;
 };
@@ -37,6 +38,7 @@ export function VersionMenu<T>({
   renderLabel,
   renderStatus,
   label,
+  variant = "ghost",
   onNewVersion,
   isNewVersionDisabled
 }: VersionMenuProps<T>) {
@@ -45,7 +47,7 @@ export function VersionMenu<T>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" rightIcon={<LuChevronDown />}>
+        <Button variant={variant} rightIcon={<LuChevronDown />}>
           {label ?? <Trans>Versions</Trans>}
         </Button>
       </DropdownMenuTrigger>

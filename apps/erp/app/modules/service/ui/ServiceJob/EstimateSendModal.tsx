@@ -27,24 +27,46 @@ import type { action as sendAction } from "~/routes/x+/service-job+/$jobId.estim
 import { path } from "~/utils/path";
 import { serviceJobEstimateSendFormValidator } from "../../service.models";
 
+type EstimateSendModalProps = {
+  open?: boolean;
+  jobId: string;
+  serviceJobId: string;
+  customerId: string;
+  customerContactId: string | null;
+  onClose: () => void;
+};
+
 /**
  * Sends a job's estimate, as Finalize sends a quote: the estimate becomes
  * Sent and the job waits for the customer's answer. With Email the estimate
  * PDF goes to the chosen contact.
  */
 export function EstimateSendModal({
+  open = true,
+  onClose,
+  ...props
+}: EstimateSendModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <EstimateSendBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function EstimateSendBody({
   jobId,
   serviceJobId,
   customerId,
   customerContactId,
   onClose
-}: {
-  jobId: string;
-  serviceJobId: string;
-  customerId: string;
-  customerContactId: string | null;
-  onClose: () => void;
-}) {
+}: Omit<EstimateSendModalProps, "open">) {
   const { t } = useLingui();
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
@@ -62,78 +84,66 @@ export function EstimateSendModal({
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      validator={serviceJobEstimateSendFormValidator}
+      action={path.to.serviceJobEstimateSend(jobId)}
+      defaultValues={{
+        notification: notificationType,
+        customerContact: customerContactId ?? undefined,
+        cc: []
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={serviceJobEstimateSendFormValidator}
-          action={path.to.serviceJobEstimateSend(jobId)}
-          defaultValues={{
-            notification: notificationType,
-            customerContact: customerContactId ?? undefined,
-            cc: []
-          }}
-          fetcher={fetcher}
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Send Estimate {serviceJobId}</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The estimate is marked Sent and the job waits for the customer's
+              answer.
+            </Trans>
+          </p>
+          {canEmail && (
+            <SelectControlled
+              label={t`Send Via`}
+              name="notification"
+              options={[
+                { label: t`None`, value: "None" },
+                { label: t`Email`, value: "Email" }
+              ]}
+              value={notificationType}
+              onChange={(option) => {
+                if (option?.value === "Email" || option?.value === "None")
+                  setNotificationType(option.value);
+              }}
+            />
+          )}
+          {notificationType === "Email" && (
+            <>
+              <CustomerContact name="customerContact" customer={customerId} />
+              <EmailRecipients name="cc" label={t`CC`} type="employee" />
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          isDisabled={isSubmitting}
+          isLoading={isSubmitting}
         >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Send Estimate {serviceJobId}</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  The estimate is marked Sent and the job waits for the
-                  customer's answer.
-                </Trans>
-              </p>
-              {canEmail && (
-                <SelectControlled
-                  label={t`Send Via`}
-                  name="notification"
-                  options={[
-                    { label: t`None`, value: "None" },
-                    { label: t`Email`, value: "Email" }
-                  ]}
-                  value={notificationType}
-                  onChange={(option) => {
-                    if (option?.value === "Email" || option?.value === "None")
-                      setNotificationType(option.value);
-                  }}
-                />
-              )}
-              {notificationType === "Email" && (
-                <>
-                  <CustomerContact
-                    name="customerContact"
-                    customer={customerId}
-                  />
-                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              isDisabled={isSubmitting}
-              isLoading={isSubmitting}
-            >
-              <Trans>Send</Trans>
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          <Trans>Send</Trans>
+        </Button>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

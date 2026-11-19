@@ -5,9 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getMaterialDimensionList } from "~/modules/items/items.service";
 import type { MaterialDimension as MaterialDimensionType } from "~/modules/items/types";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
@@ -38,8 +38,7 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
     Awaited<ReturnType<typeof getMaterialDimensionList>>
   >(props.formId ? path.to.api.materialDimensions(props.formId) : null);
 
-  const newDimensionModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(() => {
@@ -63,7 +62,7 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
 
   const emptyMessage = useEmptyState(
     "materialDimension",
-    props.formId ? { onCreate: () => newDimensionModal.onOpen() } : undefined
+    props.formId ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -85,19 +84,19 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newDimensionModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newDimensionModal.isOpen && (
+      {create.item !== null && (
         <MaterialDimensionForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newDimensionModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
-          initialValues={{ name: created, materialFormId: props.formId! }}
+          initialValues={{ name: create.item, materialFormId: props.formId! }}
         />
       )}
     </>

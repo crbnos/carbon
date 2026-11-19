@@ -132,6 +132,57 @@ export const FIXED_ASSETS: FixedAssetSpec[] = [
       { monthsBack: 1, unitsProduced: 420 }
     ],
     depreciationCharge: 1008
+  },
+  {
+    key: "fleet-1",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Ground Control Station (Rental Unit 1)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "GCS-100-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 38000,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "GCS-100", serial: "GCS-100-RNT-001" }
+  },
+  {
+    key: "fleet-2",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Ground Control Station (Rental Unit 2)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "GCS-100-RNT-002",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 38000,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "GCS-100", serial: "GCS-100-RNT-002" }
+  },
+  {
+    key: "fleet-3",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "ISR-4 Tactical UAS System (Rental Unit 3)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "ISR4-SYS-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 280000,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "ISR4-SYS", serial: "ISR4-SYS-RNT-001" }
   }
 ];
 

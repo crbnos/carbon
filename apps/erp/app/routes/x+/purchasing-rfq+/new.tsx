@@ -13,7 +13,10 @@ import type { PurchasingRFQStatusType } from "~/modules/purchasing/types";
 import { PurchasingRFQForm } from "~/modules/purchasing/ui/PurchasingRfq";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Purchasing RFQ");
 
 export const handle: Handle = {
   breadcrumb: msg`RFQs`,

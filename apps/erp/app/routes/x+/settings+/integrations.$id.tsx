@@ -69,11 +69,15 @@ import {
   WEBHOOK_SIGNING_SECRET_KEY
 } from "@carbon/ee/integrations/secrets";
 import {
-  getConflictingOnshapeIntegration,
+  getConflictingOnshapeConnection,
+  isOnshapeCustomerAppIntegrationId,
   isOnshapeIntegrationId,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID
 } from "@carbon/ee/onshape";
-import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
+import {
+  beginOnshapeAuthorization,
+  isOnshapeOAuthIntegrationId
+} from "@carbon/ee/onshape.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
@@ -82,7 +86,7 @@ import { validationError, validator } from "@carbon/form";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Badge } from "@carbon/react";
+import { Badge, useRouteDialog } from "@carbon/react";
 import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
@@ -95,7 +99,6 @@ import {
   data,
   Link,
   useLoaderData,
-  useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
@@ -328,7 +331,9 @@ async function getAccountMappingTabData(
   // what loaded and log the cause.
   for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
-      console.error("Failed to load account mapping data:", result.error);
+      logger.error("Failed to load account mapping data", {
+        error: result.error
+      });
     }
   }
 
@@ -408,7 +413,9 @@ async function getDimensionSyncTabData(
   // loaded and log the cause.
   for (const result of [dimensionsResult, mappingsResult, unmappedResult]) {
     if (result.error) {
-      console.error("Failed to load dimension sync data:", result.error);
+      logger.error("Failed to load dimension sync data", {
+        error: result.error
+      });
     }
   }
 
@@ -434,7 +441,7 @@ async function getDimensionSyncTabData(
       }))
     });
   } catch (err) {
-    console.error("Failed to resolve dimension value labels:", err);
+    logger.error("Failed to resolve dimension value labels", { error: err });
   }
 
   const mappings = mappingRows.map((mapping) => ({
@@ -795,7 +802,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (operations.error) {
       // Don't block the settings drawer on an inbox failure — render the
       // tab empty and log the cause.
-      console.error("Failed to load sync operations:", operations.error);
+      logger.error("Failed to load sync operations", {
+        error: operations.error
+      });
     }
 
     let tieOut: {
@@ -933,7 +942,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             Object.assign(flattenedMetadata, freshStatus);
           }
         } else {
-          logger.warn(
+          logger.warning(
             "Stripe Connect account is no longer linked; hiding stale connection state",
             { companyId, stripeAccountId }
           );
@@ -1025,10 +1034,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // stays empty.)
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error(
-        "Failed to fetch QuickBooks Online accounts for settings:",
+      logger.error("Failed to fetch QuickBooks Online accounts for settings", {
         error
-      );
+      });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -1054,7 +1062,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // returned by listChartOfAccounts.
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error("Failed to fetch Rillet accounts for settings:", error);
+      logger.error("Failed to fetch Rillet accounts for settings", { error });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -1446,6 +1454,20 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // Fetch existing metadata so we merge form settings without
   // overwriting credentials and syncConfig
   const existing = await getIntegration(client, integrationId, companyId);
+
+  // A switched-off integration (`active: false` on its config) shows a
+  // disabled Install button; this refuses the same install posted directly. A
+  // company that already has it installed can still save and uninstall.
+  if (!integration.active && existing.data?.active !== true) {
+    throw redirect(
+      path.to.integrations,
+      await flash(
+        request,
+        error(null, `${integration.name} isn't available on this platform`)
+      )
+    );
+  }
+
   const existingMetadata =
     (existing.data?.metadata as Record<string, unknown>) ?? {};
 
@@ -1457,27 +1479,31 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     metadata = foldRampCredentials(metadata);
   }
 
-  // Onshape Government is configured BEFORE it is authorized: the admin enters
-  // their private OAuth app here, and the save then sends them through that
-  // app's consent screen (below). Re-authorize whenever there is no token yet or
-  // the app it was issued by changed — a token is only good for the client and
-  // tenant that issued it.
+  // Onshape Government (the sync and the panel) is configured BEFORE it is
+  // authorized: the admin enters their private OAuth app here, and the save
+  // then sends them through that app's consent screen (below). Re-authorize
+  // whenever there is no token yet or the app it was issued by changed — a
+  // token is only good for the client and tenant that issued it.
+  const onshapeCustomerApp = isOnshapeCustomerAppIntegrationId(integrationId)
+    ? integrationId
+    : null;
   const onshapeAppChanged =
-    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    onshapeCustomerApp !== null &&
     (["baseUrl", "clientId"] as const).some(
       (key) => metadata[key] !== existingMetadata[key]
     );
   const onshapeNeedsAuthorization =
-    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    onshapeCustomerApp !== null &&
     (!existingMetadata.credentials ||
       onshapeAppChanged ||
       (typeof metadata.clientSecret === "string" &&
         metadata.clientSecret.trim().length > 0));
 
-  // A company holds one Onshape connection at a time; two would leave every
-  // background job guessing which tenant to talk to.
-  if (isOnshapeIntegrationId(integrationId) && !existing.data?.active) {
-    const conflict = await getConflictingOnshapeIntegration(
+  // A company holds one Onshape sync connection and one panel connection at a
+  // time; two would leave every background job (or the panel) guessing which
+  // tenant to talk to.
+  if (isOnshapeOAuthIntegrationId(integrationId) && !existing.data?.active) {
+    const conflict = await getConflictingOnshapeConnection(
       client,
       companyId,
       integrationId
@@ -1559,7 +1585,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     // Email's Server mail and Gmail have no credential to enter.
     (FORM_SECRET_INTEGRATIONS.has(integrationId) &&
       !picksCredentialFreeEmail(integrationId, metadata)) ||
-    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
+    onshapeCustomerApp !== null
   ) {
     const alreadyVaulted = existing.data?.secretRef != null;
     // The optional webhook signing secret is not a credential: it must not
@@ -1584,7 +1610,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // A connected Government app whose tenant or client changed: its tokens were
+  // A connected private app whose tenant or client changed: its tokens were
   // issued by the OLD app for the OLD host. Clear them now rather than when
   // consent completes — an abandoned or failed consent would otherwise leave
   // them live, sent to the new host by every job. The upsert below only drops
@@ -1611,10 +1637,6 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         }
       );
     } catch (clearError) {
-      logger.error("Could not clear the previous Onshape credentials", {
-        companyId,
-        error: clearError
-      });
       return data(
         {},
         await flash(
@@ -1661,17 +1683,14 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
       try {
         await onInstall(companyId);
       } catch (hookError) {
-        logger.error("onInstall hook failed for integration", {
-          integrationId,
-          error: hookError
-        });
         throw redirect(
           path.to.integrations,
           await flash(
             request,
             error(
               hookError,
-              `Installed ${integration.name}, but setup hook failed`
+              `Installed ${integration.name}, but setup hook failed`,
+              { integrationId }
             )
           )
         );
@@ -1714,16 +1733,17 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // and need a reconnect, so surface a registration failure instead of flashing
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
-  if (onshapeNeedsAuthorization) {
+  if (onshapeCustomerApp && onshapeNeedsAuthorization) {
     const started = await beginOnshapeAuthorization(request, {
-      integrationId: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+      integrationId: onshapeCustomerApp,
       userId,
       companyId
     });
     await invalidateIntegrationHealthCache(integrationId, companyId);
     if (!started.ok) {
-      logger.error("Could not start Onshape Government authorization", {
+      logger.error("Could not start the Onshape private app authorization", {
         companyId,
+        integrationId,
         reason: started.reason
       });
       throw redirect(
@@ -1732,7 +1752,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
           request,
           error(
             started.reason,
-            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, client ID and client secret."
+            `Saved ${integration.name} settings, but couldn't start the connection. Check the Onshape URL, client ID and client secret.`
           )
         )
       );
@@ -1816,7 +1836,7 @@ export default function IntegrationRoute() {
     devices
   } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.integrations);
   const [searchParams] = useSearchParams();
   const { id: integrationId } = useParams();
 
@@ -1992,7 +2012,8 @@ export default function IntegrationRoute() {
             onActionStarted: mountActions.onActionStarted
           }
         : {})}
-      onClose={() => navigate(path.to.integrations)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

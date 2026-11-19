@@ -23,6 +23,7 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -44,7 +45,6 @@ import {
 import {
   Link,
   useFetcher,
-  useNavigate,
   useNavigation,
   useParams,
   useSubmit
@@ -52,7 +52,12 @@ import {
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import Confirm from "~/components/Modals/Confirm/Confirm";
-import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import {
+  useDrawerItem,
+  useOptimisticLocation,
+  usePermissions,
+  useRouteData
+} from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
@@ -128,7 +133,6 @@ export default function SalesReturnOrderExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -178,115 +182,116 @@ export default function SalesReturnOrderExplorer() {
           </Button>
         </div>
       </VStack>
-      {chooseSourceDisclosure.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) chooseSourceDisclosure.onClose();
-          }}
-        >
-          <ModalContent size="small">
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Add Line Item</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>Choose how to add lines to this return.</Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={2}>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!canAddFromShipment}
-                  onClick={onChooseFromShipment}
-                >
-                  <LuFileInput className="mt-0.5 size-5 text-muted-foreground shrink-0" />
-                  <VStack spacing={0} className="min-w-0">
-                    <span className="text-sm font-medium">
-                      <Trans>Add from shipment</Trans>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {canAddFromShipment ? (
-                        <Trans>
-                          Select posted shipment lines to this customer to
-                          return.
-                        </Trans>
-                      ) : (
-                        <Trans>
-                          Set a customer on this return to add from a shipment.
-                        </Trans>
-                      )}
-                    </span>
-                  </VStack>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!canAddFromShipment}
-                  onClick={onChooseFromAssets}
-                >
-                  <LuWrench className="mt-0.5 size-5 text-muted-foreground shrink-0" />
-                  <VStack spacing={0} className="min-w-0">
-                    <span className="text-sm font-medium">
-                      <Trans>Add from assets</Trans>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {canAddFromShipment ? (
-                        <Trans>
-                          Select the customer's units to service or replace
-                          under warranty.
-                        </Trans>
-                      ) : (
-                        <Trans>
-                          Set a customer on this return to add from its assets.
-                        </Trans>
-                      )}
-                    </span>
-                  </VStack>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50"
-                  onClick={onChooseManual}
-                >
-                  <LuCirclePlus className="mt-0.5 size-5 text-muted-foreground shrink-0" />
-                  <VStack spacing={0} className="min-w-0">
-                    <span className="text-sm font-medium">
-                      <Trans>Add manually</Trans>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      <Trans>Enter an item and quantity yourself.</Trans>
-                    </span>
-                  </VStack>
-                </button>
-              </VStack>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
-      )}
-      {newLineDisclosure.isOpen && (
+      <Modal
+        open={chooseSourceDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) chooseSourceDisclosure.onClose();
+        }}
+      >
+        <ModalContent size="small">
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Add Line Item</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>Choose how to add lines to this return.</Trans>
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={2}>
+              <button
+                type="button"
+                className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canAddFromShipment}
+                onClick={onChooseFromShipment}
+              >
+                <LuFileInput className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                <VStack spacing={0} className="min-w-0">
+                  <span className="text-sm font-medium">
+                    <Trans>Add from shipment</Trans>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {canAddFromShipment ? (
+                      <Trans>
+                        Select posted shipment lines to this customer to return.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Set a customer on this return to add from a shipment.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canAddFromShipment}
+                onClick={onChooseFromAssets}
+              >
+                <LuWrench className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                <VStack spacing={0} className="min-w-0">
+                  <span className="text-sm font-medium">
+                    <Trans>Add from assets</Trans>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {canAddFromShipment ? (
+                      <Trans>
+                        Select the customer's units to service or replace under
+                        warranty.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Set a customer on this return to add from its assets.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50"
+                onClick={onChooseManual}
+              >
+                <LuCirclePlus className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                <VStack spacing={0} className="min-w-0">
+                  <span className="text-sm font-medium">
+                    <Trans>Add manually</Trans>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Enter an item and quantity yourself.</Trans>
+                  </span>
+                </VStack>
+              </button>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+      {newLineDisclosure.openCount > 0 && (
         <SalesReturnOrderLineForm
+          key={`newLineDisclosure-${newLineDisclosure.openCount}`}
+          open={newLineDisclosure.isOpen}
           initialValues={lineInitialValues}
           type="modal"
           onClose={newLineDisclosure.onClose}
         />
       )}
-      {fromDocumentDisclosure.isOpen &&
-        routeData?.salesReturnOrder?.customerId && (
-          <ReturnableLinesModal
-            customerId={routeData.salesReturnOrder.customerId}
-            salesOrderId={routeData.salesReturnOrder.salesOrderId}
-            onClose={fromDocumentDisclosure.onClose}
-          />
-        )}
-      {fromAssetsDisclosure.isOpen && (
-        <AddFromAssetsModal onClose={fromAssetsDisclosure.onClose} />
+      {routeData?.salesReturnOrder?.customerId && (
+        <ReturnableLinesModal
+          open={fromDocumentDisclosure.isOpen}
+          customerId={routeData.salesReturnOrder.customerId}
+          salesOrderId={routeData.salesReturnOrder.salesOrderId}
+          onClose={fromDocumentDisclosure.onClose}
+        />
       )}
-      {deleteLineDisclosure.isOpen && deleteLine && (
+      <AddFromAssetsModal
+        open={fromAssetsDisclosure.isOpen}
+        onClose={fromAssetsDisclosure.onClose}
+      />
+      {deleteLine && (
         <ConfirmDelete
           action={path.to.deleteSalesReturnOrderLine(orderId, deleteLine.id!)}
+          isOpen={deleteLineDisclosure.isOpen}
           name={deleteLine.item?.readableIdWithRevision ?? t`Line`}
           text={t`Are you sure you want to delete this return order line? This cannot be undone.`}
           onCancel={onDeleteCancel}
@@ -309,19 +314,22 @@ function SalesReturnOrderLineItem({
   onDelete
 }: SalesReturnOrderLineItemProps) {
   const { t } = useLingui();
+  const lineName = line.item?.readableIdWithRevision;
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
   const submit = useSubmit();
   const navigation = useNavigation();
   const dispositionFetcher = useFetcher<{ success: boolean }>();
-  const [nextStep, setNextStep] = useState<
-    (typeof salesReturnOrderNextStepActions)[number] | null
-  >(null);
+  const {
+    item: nextStep,
+    isOpen: isNextStepOpen,
+    open: openNextStep,
+    close: closeNextStep
+  } = useDrawerItem<(typeof salesReturnOrderNextStepActions)[number]>();
 
   const returnTypeLabels = {
     "Return to Stock": t`Return to Stock`,
@@ -407,12 +415,6 @@ function SalesReturnOrderLineItem({
       ? getLinkToItemDetails(lineItemType as ItemType, line.itemId)
       : null;
 
-  const onLineClick = () => {
-    if (!isSelected) {
-      navigate(path.to.salesReturnOrderLine(orderId, line.id!));
-    }
-  };
-
   return (
     <VStack spacing={0} className="border-b">
       <HStack
@@ -420,35 +422,48 @@ function SalesReturnOrderLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={onLineClick}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
-          <VStack spacing={0} className="min-w-0">
-            <span className="font-semibold line-clamp-1">
-              {line.item?.readableIdWithRevision}
-            </span>
-            {distinctItemText(
-              line.item?.readableIdWithRevision,
-              line.item?.name
-            ) && (
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.item?.name}
+        {/* The link is stretched over the row; the buttons sit beside it. */}
+        <PrefetchLink
+          to={path.to.salesReturnOrderLine(orderId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.item?.thumbnailPath}
+              type="Part"
+            />
+            <VStack spacing={0} className="min-w-0">
+              <span className="font-semibold line-clamp-1">
+                {line.item?.readableIdWithRevision}
               </span>
-            )}
-            {isServiceLine && (
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {returnTypeLabels[line.returnType]}
-              </span>
-            )}
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+              {distinctItemText(
+                line.item?.readableIdWithRevision,
+                line.item?.name
+              ) && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {line.item?.name}
+                </span>
+              )}
+              {isServiceLine && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {returnTypeLabels[line.returnType]}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             <IconButton
-              aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
+              aria-label={
+                disclosure.isOpen
+                  ? t`Hide details for ${lineName}`
+                  : t`Show details for ${lineName}`
+              }
+              aria-expanded={disclosure.isOpen}
               className={cn(
-                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -462,8 +477,8 @@ function SalesReturnOrderLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"
@@ -520,7 +535,7 @@ function SalesReturnOrderLineItem({
                     disabled={!permissions.can("create", "sales")}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setNextStep("Replace");
+                      openNextStep("Replace");
                     }}
                   >
                     <DropdownMenuIcon icon={<LuGitCompare />} />
@@ -533,7 +548,7 @@ function SalesReturnOrderLineItem({
                     disabled={!permissions.can("update", "sales")}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setNextStep("Scrap");
+                      openNextStep("Scrap");
                     }}
                   >
                     <DropdownMenuIcon icon={<LuTrash />} />
@@ -548,7 +563,7 @@ function SalesReturnOrderLineItem({
                     }
                     onClick={(e) => {
                       e.stopPropagation();
-                      setNextStep("Change to Service");
+                      openNextStep("Change to Service");
                     }}
                   >
                     <DropdownMenuIcon icon={<LuReceipt />} />
@@ -602,8 +617,9 @@ function SalesReturnOrderLineItem({
           text={nextStepCopy.text}
           confirmText={nextStepCopy.confirmText}
           confirmVariant={nextStep === "Scrap" ? "destructive" : "primary"}
-          onCancel={() => setNextStep(null)}
-          onSubmit={() => setNextStep(null)}
+          isOpen={isNextStepOpen}
+          onCancel={closeNextStep}
+          onSubmit={closeNextStep}
         >
           <input type="hidden" name="action" value={nextStep} />
         </Confirm>

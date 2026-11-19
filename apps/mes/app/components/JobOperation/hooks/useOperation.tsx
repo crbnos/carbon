@@ -26,7 +26,7 @@ import type {
   ProductionEvent,
   TrackedEntity
 } from "~/services/types";
-import { path } from "~/utils/path";
+import { path, TRAVELER_PARAM } from "~/utils/path";
 
 export function useOperation({
   operation,
@@ -64,6 +64,8 @@ export function useOperation({
 }) {
   const [params] = useUrlParams();
   const trackedEntityParam = params.get("trackedEntityId");
+  // A traveler scan names the unit in the operator's hands: no prompt for it.
+  const fromTraveler = params.get(TRAVELER_PARAM) !== null;
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
@@ -316,12 +318,24 @@ export function useOperation({
       return;
     }
 
+    // Exactly one unit can be worked here (one left, or the only unit a
+    // correction or rework operation was scoped to): there is nothing to
+    // choose, so select it instead of asking for a scan.
+    if (uncompletedEntities.length === 1) {
+      const onlyUnit = uncompletedEntities[0]!;
+      arrivalPromptedRef.current = true;
+      heldEntityRef.current = onlyUnit.id;
+      if (trackedEntityParam !== onlyUnit.id) onAdvanceToUnit?.(onlyUnit);
+      return;
+    }
+
     // Prompt scan/select once on arrival — even when a stale/auto-seeded
     // ?trackedEntityId is present, which would otherwise read as "already working
     // a unit".
     if (!arrivalPromptedRef.current) {
       arrivalPromptedRef.current = true;
       heldEntityRef.current = selectedIsIncomplete ? trackedEntityParam : null;
+      if (fromTraveler && selectedIsIncomplete) return;
       serialModal.onOpen();
       return;
     }
@@ -344,7 +358,8 @@ export function useOperation({
     trackedEntityParam,
     operationId,
     isFirstOperation,
-    requiresSerialTracking
+    requiresSerialTracking,
+    fromTraveler
   ]);
 
   return {

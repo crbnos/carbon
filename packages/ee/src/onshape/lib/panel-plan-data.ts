@@ -18,10 +18,15 @@ import type {
 import { parsePushDefaults } from "../panel/preferences";
 import { parseDescriptionModes, parsePropertyMap } from "../panel/properties";
 import {
+  type StandardSources,
+  standardSources
+} from "../panel/standard-sources";
+import {
   type ReleasedRevision,
   releasedRevisionsByPartNumber
 } from "../panel/status";
 import { selectInBatches } from "./batched-filter";
+import { getOnshapePanelIntegration } from "./connection";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
 // The plan and apply routes reach the panel's pure helpers through this barrel.
@@ -46,12 +51,7 @@ export async function loadPlanOptions(
       .select("code, name")
       .eq("companyId", companyId)
       .order("name"),
-    client
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("companyId", companyId)
-      .maybeSingle()
+    getOnshapePanelIntegration(client, companyId)
   ]);
   return {
     unitsOfMeasure: (units.data ?? []).map((unit) => ({
@@ -60,6 +60,24 @@ export async function loadPlanOptions(
     })),
     defaults: parsePushDefaults(integration.data?.metadata)
   };
+}
+
+/**
+ * Where a push reads part number, revision, name, description, Item and
+ * Quantity. Throws on a failed read: falling back to Onshape's own properties
+ * would match parts to other items. Service role, as `loadPlanOptions`.
+ */
+export async function loadStandardSources(
+  client: Client,
+  companyId: string
+): Promise<StandardSources> {
+  const integration = await getOnshapePanelIntegration(client, companyId);
+  if (integration.error) {
+    throw new Error(
+      `Failed to read the Onshape property map: ${integration.error}`
+    );
+  }
+  return standardSources(parsePropertyMap(integration.data?.metadata));
 }
 
 /**
@@ -278,6 +296,9 @@ export async function loadMethodLineOwnership(
         )
         .eq("companyId", companyId)
         .in("makeMethodId", batch)
+        // A correction's materials are not BOM lines: Onshape never owns,
+        // pairs or removes them.
+        .is("methodCorrectionId", null)
     ),
     selectInBatches(ids, (batch) =>
       serviceRole
@@ -413,15 +434,10 @@ export async function loadPlanMapping(
   companyId: string,
   readableIds: string[]
 ): Promise<PlanMappingContext> {
-  const integration = await client
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapePanelIntegration(client, companyId);
   if (integration.error) {
     throw new Error(
-      `Failed to read the Onshape property map: ${integration.error.message}`
+      `Failed to read the Onshape property map: ${integration.error}`
     );
   }
   const metadata = integration.data?.metadata;

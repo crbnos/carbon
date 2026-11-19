@@ -17,7 +17,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
-  Switch
+  Switch,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -84,7 +85,7 @@ const PivotControlBar = ({
 
   // Transient interaction state only (like modal open/close) — all report
   // state lives in the URL per the pivot param contract.
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const saveModal = useDisclosure();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const dimensionById = useMemo(
@@ -230,8 +231,8 @@ const PivotControlBar = ({
   };
 
   const viewMenu = (
-    <ActionMenu>
-      <DropdownMenuItem onClick={() => setSaveModalOpen(true)}>
+    <ActionMenu label={t`Saved view actions`}>
+      <DropdownMenuItem onClick={saveModal.onOpen}>
         <DropdownMenuIcon icon={<LuBookmarkPlus />} />
         <Trans>Save view</Trans>
       </DropdownMenuItem>
@@ -518,16 +519,16 @@ const PivotControlBar = ({
         </AppBarAction>
         <AppBarAction>{viewMenu}</AppBarAction>
       </HStack>
-      {saveModalOpen && (
-        <SaveViewModal
-          reportKey={reportKey}
-          state={state}
-          view={activeView}
-          onClose={() => setSaveModalOpen(false)}
-        />
-      )}
-      {deleteModalOpen && activeView && (
+      <SaveViewModal
+        open={saveModal.isOpen}
+        reportKey={reportKey}
+        state={state}
+        view={activeView}
+        onClose={saveModal.onClose}
+      />
+      {activeView && (
         <ConfirmDelete
+          isOpen={deleteModalOpen}
           action={path.to.deleteReportView(activeView.id)}
           name={activeView.name}
           text={t`Are you sure you want to delete the "${activeView.name}" view? This cannot be undone.`}

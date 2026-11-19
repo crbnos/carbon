@@ -347,7 +347,15 @@ const ConsumablesTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const itemId = item.row.original.readableIdWithRevision;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${itemId}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -644,11 +652,9 @@ const ConsumablesTable = memo(
             text={t`Are you sure you want to delete ${selectedItem.readableIdWithRevision!}? This cannot be undone.`}
             onCancel={() => {
               deleteItemModal.onClose();
-              setSelectedItem(null);
             }}
             onSubmit={() => {
               deleteItemModal.onClose();
-              setSelectedItem(null);
             }}
           />
         )}

@@ -7,12 +7,12 @@ import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import {
   type ActionFunctionArgs,
   data,
-  type LoaderFunctionArgs,
-  useNavigate
+  type LoaderFunctionArgs
 } from "react-router";
 import { projectIssueValidator } from "~/modules/projects/projects.models";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
@@ -66,6 +66,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
 /** Inventory → Issue to Project: the modal with a charge number picker. */
 export default function IssueToProjectRoute() {
-  const navigate = useNavigate();
-  return <IssueMaterialModal onClose={() => navigate(path.to.inventory)} />;
+  const dialog = useRouteDialog(path.to.inventory);
+  return <IssueMaterialModal open={dialog.open} onClose={dialog.close} />;
 }

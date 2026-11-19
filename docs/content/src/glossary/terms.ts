@@ -1351,6 +1351,11 @@ export const terms = {
     term: msg`Planning Horizon (Days)`,
     definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
   },
+  "delivery-date-check": {
+    term: msg`Delivery Date Check`,
+    definition: msg`Warns when a sales order line's promised date can't be met, and suggests the earliest date that can.`,
+    href: "/docs/reference/sales-orders#delivery-date-check"
+  },
   "planning-action": {
     term: msg`Planning action`,
     definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
@@ -1485,9 +1490,9 @@ export const terms = {
   },
 
   // ── Quality: Inspection document (InspectionDocumentForm) ───────────────
-  "inspection-document-drawing-number": {
-    term: msg`Drawing Number`,
-    definition: msg`The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing.`
+  "inspection-document-name": {
+    term: msg`Inspection Name`,
+    definition: msg`What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation.`
   },
 
   // ── Quality: Issue (IssueForm + IssueProperties) ────────────────────────
@@ -1642,6 +1647,10 @@ export const terms = {
     term: msg`Supplier Status`,
     definition: msg`The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors.`
   },
+  "supplier-stage": {
+    term: msg`Supplier Stage`,
+    definition: msg`Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use.`
+  },
   "supplier-type-field": {
     term: msg`Supplier Type`,
     definition: msg`The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings.`
@@ -1749,8 +1758,8 @@ export const terms = {
     definition: msg`The specific operation on the job above that this PO line is purchasing; only operations marked outside-processing are selectable.`
   },
   "purchase-order-line-required-date": {
-    term: msg`Requested Date`,
-    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
+    term: msg`Required Date`,
+    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
   },
   "purchase-order-line-delivery-location": {
     term: msg`Delivery Location`,
@@ -1775,12 +1784,20 @@ export const terms = {
 
   // ── Purchasing: PO delivery (PurchaseOrderDeliveryForm) ─────────────────
   "purchase-order-delivery-requested-date": {
-    term: msg`Requested Date`,
-    definition: msg`When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date.`
+    term: msg`Receipt Requested Date`,
+    definition: msg`When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date.`
   },
   "purchase-order-delivery-promised-date": {
-    term: msg`Promised Date`,
+    term: msg`Receipt Promised Date`,
     definition: msg`When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection.`
+  },
+  "purchase-order-delivery-shipped-date": {
+    term: msg`Shipped Date`,
+    definition: msg`When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized.`
+  },
+  "purchase-order-delivery-expected-receipt-date": {
+    term: msg`Expected Receipt Date`,
+    definition: msg`When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date.`
   },
   "purchase-order-delivery-actual-date": {
     term: msg`Delivery Date`,

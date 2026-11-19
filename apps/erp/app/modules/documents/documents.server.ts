@@ -180,9 +180,13 @@ export const cancelModelOptimize = defineServiceFn({
             : {},
           signal: AbortSignal.timeout(5000)
         }
-      ).catch(() => {
+      ).catch((error) => {
         // The row is already Failed. A missed cancel only means the compute
         // finishes and flips it to Success, and that artifact is real.
+        logger.warning("Failed to cancel the assembler optimise job", {
+          modelUploadId,
+          error
+        });
       });
     }
 
@@ -259,6 +263,30 @@ export const getDocument = defineServiceFn({
         input.documentId as never
       )
     );
+  }
+});
+
+/**
+ * Get a download link for a document's file.
+ *
+ * @remarks
+ * Returns a `/download/<token>` link on this instance, as the documents list
+ * gives each row; the response carries a link, never the file. The document
+ * is read as the caller first, so a document the caller cannot see is not
+ * found. Opening the link needs no sign-in: it downloads the file and records
+ * the download in the document's history. The link expires after `expiresIn`
+ * seconds (an hour); ask again for a new one. Each download checks again that
+ * the user the link names may read the document: the caller, or for an API
+ * key its creator. A document an API key sees but its creator does not opens
+ * the "unavailable" page.
+ *
+ * @mcp read
+ */
+export const getDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ documentId: z.string().min(1) }),
+  permission: { view: "documents" },
+  async run(ctx, { documentId }) {
+    return service.documentDownloadUrl(ctx, documentId);
   }
 });
 

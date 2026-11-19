@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { customerAssetValidator } from "~/modules/service/service.models";
@@ -42,7 +42,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewCustomerAssetRoute() {
   const { customerId } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <CustomerAssetForm
@@ -51,7 +51,8 @@ export default function NewCustomerAssetRoute() {
         serialNumber: "",
         customerId: customerId ?? ""
       }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

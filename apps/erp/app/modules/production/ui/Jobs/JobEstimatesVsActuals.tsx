@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
   Badge,
+  Button,
   Card,
   CardAction,
   CardContent,
@@ -51,6 +52,7 @@ import type { z } from "zod";
 import { EmployeeAvatar, EmployeeAvatarGroup } from "~/components";
 import { MethodIcon, TimeTypeIcon } from "~/components/Icons";
 import { useCurrencyFormatter, usePercentFormatter, useUser } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
@@ -105,6 +107,11 @@ const JobEstimatesVsActuals = ({
   const { carbon } = useCarbon();
   const { jobId } = useParams();
   const { t } = useLingui();
+  const [tab, setTab] = usePersistentPageTab(
+    "estimates-vs-actual",
+    ["processes", "materials"],
+    "processes"
+  );
   const user = useUser();
   if (!jobId) throw new Error("Could not find jobId");
 
@@ -325,7 +332,7 @@ const JobEstimatesVsActuals = ({
   );
 
   return (
-    <Tabs defaultValue="processes" className="w-full">
+    <Tabs value={tab} onValueChange={setTab} className="w-full">
       <Card>
         <HStack className="justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0">
           <CardHeader>
@@ -377,17 +384,19 @@ const JobEstimatesVsActuals = ({
                         >
                           {ratio(actual.total, estimated.total)}
                         </span>
-                        <Link
-                          to={`${path.to.jobProductionEvents(
-                            jobId
-                          )}?filter=jobOperationId:eq:${operation.id}`}
-                        >
-                          <IconButton
-                            variant="ghost"
-                            icon={<LuCircleChevronRight />}
+                        <Button asChild isIcon variant="ghost">
+                          <Link
+                            to={`${path.to.jobProductionEvents(
+                              jobId
+                            )}?filter=jobOperationId:eq:${operation.id}`}
                             aria-label={t`View Production Events`}
-                          />
-                        </Link>
+                          >
+                            <LuCircleChevronRight
+                              aria-hidden
+                              className="size-4"
+                            />
+                          </Link>
+                        </Button>
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span>
@@ -585,17 +594,19 @@ const JobEstimatesVsActuals = ({
                                   </PopoverContent>
                                 </Popover>
                               )}
-                              <Link
-                                to={`${path.to.jobProductionEvents(
-                                  jobId
-                                )}?filter=jobOperationId:eq:${operation.id}`}
-                              >
-                                <IconButton
-                                  variant="ghost"
-                                  icon={<LuCircleChevronRight />}
+                              <Button asChild isIcon variant="ghost">
+                                <Link
+                                  to={`${path.to.jobProductionEvents(
+                                    jobId
+                                  )}?filter=jobOperationId:eq:${operation.id}`}
                                   aria-label={t`View Production Events`}
-                                />
-                              </Link>
+                                >
+                                  <LuCircleChevronRight
+                                    aria-hidden
+                                    className="size-4"
+                                  />
+                                </Link>
+                              </Button>
                             </HStack>
                           </Td>
                         </Tr>
@@ -687,19 +698,21 @@ const JobEstimatesVsActuals = ({
                                       </PopoverContent>
                                     </Popover>
                                   )}
-                                  <Link
-                                    to={`${path.to.jobProductionEvents(
-                                      jobId
-                                    )}?filter=jobOperationId:eq:${
-                                      operation.id
-                                    }&filter=type:eq:${type}`}
-                                  >
-                                    <IconButton
-                                      variant="ghost"
-                                      icon={<LuCircleChevronRight />}
+                                  <Button asChild isIcon variant="ghost">
+                                    <Link
+                                      to={`${path.to.jobProductionEvents(
+                                        jobId
+                                      )}?filter=jobOperationId:eq:${
+                                        operation.id
+                                      }&filter=type:eq:${type}`}
                                       aria-label={t`View Production Events`}
-                                    />
-                                  </Link>
+                                    >
+                                      <LuCircleChevronRight
+                                        aria-hidden
+                                        className="size-4"
+                                      />
+                                    </Link>
+                                  </Button>
                                 </HStack>
                               </Td>
                             </Tr>

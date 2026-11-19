@@ -15,6 +15,7 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
   LuPackageCheck,
@@ -28,6 +29,7 @@ import {
   useParams,
   useSubmit
 } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
@@ -43,6 +45,7 @@ const SalesReturnOrderHeader = () => {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const documentEdit = useDocumentEditModal("salesReturnOrder", id);
 
   const { toggleExplorer, toggleProperties } = usePanels();
 
@@ -172,6 +175,17 @@ const SalesReturnOrderHeader = () => {
                 </Button>
               </RecordAction>
             )}
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
+                </Button>
+              </RecordAction>
+            )}
 
             {status === "Draft" && (
               <RecordAction slot="primary">
@@ -291,52 +305,48 @@ const SalesReturnOrderHeader = () => {
         }
       />
 
-      {confirmDisclosure.isOpen && (
-        <Confirm
-          action={path.to.salesReturnOrderConfirm(id)}
-          title={t`Confirm ${salesReturnOrder.salesReturnOrderId}`}
-          text={t`Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines.`}
-          confirmText={t`Confirm`}
-          onCancel={confirmDisclosure.onClose}
-          onSubmit={confirmDisclosure.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.salesReturnOrderConfirm(id)}
+        isOpen={confirmDisclosure.isOpen}
+        title={t`Confirm ${salesReturnOrder.salesReturnOrderId}`}
+        text={t`Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines.`}
+        confirmText={t`Confirm`}
+        onCancel={confirmDisclosure.onClose}
+        onSubmit={confirmDisclosure.onClose}
+      />
 
-      {cancelDisclosure.isOpen && (
-        <Confirm
-          action={path.to.salesReturnOrderStatus(id)}
-          title={t`Cancel ${salesReturnOrder.salesReturnOrderId}`}
-          text={t`Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents.`}
-          confirmText={t`Cancel RMA`}
-          confirmVariant="destructive"
-          onCancel={cancelDisclosure.onClose}
-          onSubmit={cancelDisclosure.onClose}
-        >
-          <input type="hidden" name="status" value="Cancelled" />
-        </Confirm>
-      )}
+      <Confirm
+        action={path.to.salesReturnOrderStatus(id)}
+        isOpen={cancelDisclosure.isOpen}
+        title={t`Cancel ${salesReturnOrder.salesReturnOrderId}`}
+        text={t`Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents.`}
+        confirmText={t`Cancel RMA`}
+        confirmVariant="destructive"
+        onCancel={cancelDisclosure.onClose}
+        onSubmit={cancelDisclosure.onClose}
+      >
+        <input type="hidden" name="status" value="Cancelled" />
+      </Confirm>
 
-      {creditDisclosure.isOpen && (
-        <SalesReturnOrderCreditModal
-          currencyCode={salesReturnOrder.currencyCode ?? undefined}
-          onClose={creditDisclosure.onClose}
-        />
-      )}
+      <SalesReturnOrderCreditModal
+        open={creditDisclosure.isOpen}
+        currencyCode={salesReturnOrder.currencyCode ?? undefined}
+        onClose={creditDisclosure.onClose}
+      />
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesReturnOrder(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={salesReturnOrder.salesReturnOrderId!}
-          text={t`Are you sure you want to delete ${salesReturnOrder.salesReturnOrderId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteSalesReturnOrder(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={salesReturnOrder.salesReturnOrderId!}
+        text={t`Are you sure you want to delete ${salesReturnOrder.salesReturnOrderId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteDisclosure.onClose();
+        }}
+      />
+      {documentEdit.modal}
     </>
   );
 };

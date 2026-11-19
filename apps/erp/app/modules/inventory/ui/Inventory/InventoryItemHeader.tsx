@@ -53,21 +53,25 @@ const InventoryItemHeader = ({
             isIcon
             variant="ghost"
             className="max-md:hidden"
+            aria-label={t`Close`}
             onClick={() =>
               navigate(`${path.to.inventory}?${params.toString()}`)
             }
           >
-            <LuX className="w-4 h-4" />
+            <LuX className="w-4 h-4" aria-hidden />
           </Button>
-          <span className="flex items-center font-semibold text-center">
-            <span className="max-md:hidden">{itemReadableId}</span>{" "}
+          <div className="flex items-center font-semibold text-center">
+            <h2 className="max-md:hidden">{itemReadableId}</h2>{" "}
             <Link
               to={getLinkToItemDetails(itemType, itemId)}
               className="ml-2 max-md:hidden"
             >
-              <LuExternalLink />
+              <LuExternalLink aria-hidden />
+              <span className="sr-only">
+                <Trans>Open item details</Trans>
+              </span>
             </Link>
-          </span>
+          </div>
           <DetailsTopbar links={links} preserveParams />
         </div>
       </VStack>

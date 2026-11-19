@@ -17,7 +17,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute
+  useRouteDialog
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -85,17 +85,18 @@ export default function DeleteStorageTypeRoute() {
 
   const { storageType, usageCount, sampleUnits } =
     useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
 
   if (!storageType) return null;
 
-  const onCancel = () => closeRoute();
+  const onCancel = () => dialog.close();
 
   if (usageCount === 0) {
     return (
       <ConfirmDelete
         action={path.to.deleteStorageType(id)}
+        isOpen={dialog.open}
         name={storageType.name}
         text={t`Are you sure you want to delete the storage type: ${storageType.name}? This cannot be undone.`}
         onCancel={onCancel}
@@ -109,6 +110,7 @@ export default function DeleteStorageTypeRoute() {
       name={storageType.name}
       usageCount={usageCount}
       sampleUnits={sampleUnits}
+      open={dialog.open}
       onCancel={onCancel}
     />
   );
@@ -119,6 +121,7 @@ type CascadeConfirmDeleteProps = {
   name: string;
   usageCount: number;
   sampleUnits: { id: string; name: string }[];
+  open: boolean;
   onCancel: () => void;
 };
 
@@ -127,6 +130,7 @@ function CascadeConfirmDelete({
   name,
   usageCount,
   sampleUnits,
+  open,
   onCancel
 }: CascadeConfirmDeleteProps) {
   const { t } = useLingui();
@@ -136,7 +140,7 @@ function CascadeConfirmDelete({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

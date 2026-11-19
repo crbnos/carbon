@@ -95,7 +95,11 @@ const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
                       </p>
                       {canUpdate && (
                         <IconButton
-                          aria-label={t`Edit ability`}
+                          aria-label={
+                            process?.name
+                              ? t`Edit ${process.name}`
+                              : t`Edit ability`
+                          }
                           variant="ghost"
                           icon={<LuPencil />}
                           onClick={() => navigate(editPath)}

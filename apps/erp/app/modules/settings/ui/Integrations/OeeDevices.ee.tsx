@@ -13,6 +13,8 @@ import {
   Table,
   Tbody,
   Td,
+  Th,
+  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -280,6 +282,7 @@ function OeeDeviceList({
               <LuSearch className="size-4 text-muted-foreground" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search devices`}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t`Search devices`}
@@ -303,6 +306,18 @@ function OeeDeviceList({
         </p>
       ) : (
         <Table full>
+          {/* No visible header: the rows read as device → work center. The
+              header row names the columns for assistive technology. */}
+          <Thead className="sr-only">
+            <Tr>
+              <Th>
+                <Trans>Device</Trans>
+              </Th>
+              <Th>
+                <Trans>Work Center</Trans>
+              </Th>
+            </Tr>
+          </Thead>
           <Tbody>
             {groups.map((group) => (
               <Fragment key={group.key}>
@@ -380,6 +395,7 @@ function OeeDeviceTableRow({
     ? workCenter.locationTimezone || companyTimeZone
     : null;
   const siteTimezone = device.siteTimezone;
+  const deviceName = device.name;
   const timezoneMismatch =
     siteTimezone !== null &&
     locationTimezone !== null &&
@@ -446,6 +462,7 @@ function OeeDeviceTableRow({
               value={workCenterId}
               options={options}
               placeholder={t`Not mapped`}
+              aria-label={t`Work center for ${deviceName}`}
               isClearable
               isLoading={isSaving}
               isReadOnly={!canUpdate}

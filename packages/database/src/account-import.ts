@@ -167,6 +167,8 @@ export type AccountReference = { table: string; column: string } & (
 export const REFERENCE_POLICY: readonly AccountReference[] = [
   { table: "shippingMethod", column: "carrierAccountId", policy: "repoint" },
   { table: "purchaseOrderLine", column: "accountId", policy: "repoint" },
+  // A rejected amendment can restore this saved line after the import.
+  { table: "purchaseOrderLineVersion", column: "accountId", policy: "repoint" },
   { table: "salesOrderLine", column: "accountId", policy: "repoint" },
   { table: "supplierQuoteLine", column: "accountId", policy: "repoint" },
   // A Posted row's journal stays on the old account, so only Planned rows
@@ -285,6 +287,7 @@ const CLASS_OF_TYPE: Record<AccountType, AccountClass> = {
   Investments: "Asset",
   "Accounts Payable": "Liability",
   "Other Current Liability": "Liability",
+  "Credit Card": "Liability",
   "Long Term Liability": "Liability",
   Tax: "Liability",
   "Equity - No Close": "Equity",

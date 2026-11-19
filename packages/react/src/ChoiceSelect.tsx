@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { LuCheck, LuChevronDown } from "react-icons/lu";
 import { Checkbox } from "./Checkbox";
+import { usePickerLabel } from "./Form/useFormControl";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import {
   Select,
@@ -100,6 +101,8 @@ function ChoiceSelectSingle<V extends string>({
   align = "start",
   "aria-label": ariaLabel
 }: SingleProps<V>) {
+  // Named after its field, not the value it shows.
+  const fieldLabel = usePickerLabel(ariaLabel);
   const selected = options.find((o) => o.value === value);
 
   return (
@@ -111,7 +114,7 @@ function ChoiceSelectSingle<V extends string>({
       {/* The trigger renders a div (not a span) so SelectTrigger's
           `[&>span]:line-clamp-1` rule doesn't kick in and turn the inline
           icon+title row into a block. */}
-      <SelectTrigger className={className} aria-label={ariaLabel}>
+      <SelectTrigger className={className} aria-label={fieldLabel}>
         {selected ? (
           <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
             {selected.icon && (
@@ -180,6 +183,7 @@ function ChoiceSelectMulti<V extends string>({
   align = "start",
   "aria-label": ariaLabel
 }: MultiProps<V>) {
+  const fieldLabel = usePickerLabel(ariaLabel);
   const [open, setOpen] = useState(false);
   const selectedSet = new Set(value);
   const selected = options.filter((o) => selectedSet.has(o.value));
@@ -203,7 +207,7 @@ function ChoiceSelectMulti<V extends string>({
           type="button"
           role="combobox"
           aria-expanded={open}
-          aria-label={ariaLabel}
+          aria-label={fieldLabel}
           disabled={disabled}
           className={cn(
             "flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm",

@@ -5,8 +5,11 @@
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("mes", "model", "optimize-cancel");
 
 // Cancels an in-flight (or stuck) eager optimise — backs the model tab's
 // progress Cancel (parity with the ERP api+/model.optimize-cancel route).
@@ -57,10 +60,14 @@ export async function action({ request }: ActionFunctionArgs) {
           : {},
         signal: AbortSignal.timeout(5000)
       }
-    ).catch(() => {
+    ).catch((error) => {
       // Best-effort — the row is already stamped Failed. A missed cancel just
       // means the compute finishes anyway and flips the row to Success, which
       // is harmless (the artifact is real).
+      logger.warning("Failed to cancel the optimize job in the assembler", {
+        modelUploadId,
+        error
+      });
     });
   }
 

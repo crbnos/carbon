@@ -164,7 +164,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Sales Invoice</Trans>
             ) : (

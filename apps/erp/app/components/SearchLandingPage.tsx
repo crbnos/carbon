@@ -53,6 +53,7 @@ export function SearchLandingPage({
           </div>
           <div className="flex flex-col items-center gap-1.5 text-center">
             <Heading
+              as="h1"
               size="h1"
               className="tracking-tight text-balance font-semibold"
             >

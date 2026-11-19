@@ -68,6 +68,7 @@ function DirectionAwareTabs({
         >
           {tabs.map((tab) => (
             <button
+              type="button"
               key={tab.id}
               disabled={tab.disabled}
               onClick={() => handleTabClick(tab.id)}

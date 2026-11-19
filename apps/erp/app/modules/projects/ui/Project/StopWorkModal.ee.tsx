@@ -38,9 +38,11 @@ import { path } from "~/utils/path";
  * government contracting sees the upgrade dialog instead.
  */
 export default function StopWorkModal({
+  open = true,
   projectId,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   onClose: () => void;
 }) {
@@ -49,7 +51,7 @@ export default function StopWorkModal({
   if (isGated) {
     return (
       <UpgradeOverlayDialog
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}
@@ -75,13 +77,15 @@ export default function StopWorkModal({
     );
   }
 
-  return <StopWorkForm projectId={projectId} onClose={onClose} />;
+  return <StopWorkForm open={open} projectId={projectId} onClose={onClose} />;
 }
 
 function StopWorkForm({
+  open,
   projectId,
   onClose
 }: {
+  open: boolean;
   projectId: string;
   onClose: () => void;
 }) {
@@ -92,7 +96,7 @@ function StopWorkForm({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

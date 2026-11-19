@@ -5,8 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   generateLeaseInvoicesNow,
@@ -15,8 +14,6 @@ import {
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "lease-invoice");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -31,14 +28,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const lease = await getLease(client, id, companyId);
   if (lease.error || !lease.data) {
-    logger.error("lease not found for invoicing", {
-      companyId,
-      leaseId: id,
-      error: lease.error
-    });
     throw redirect(
       path.to.leases,
-      await flash(request, error(lease.error, "Lease not found"))
+      await flash(
+        request,
+        error(lease.error, "Lease not found", { leaseId: id })
+      )
     );
   }
   if (lease.data.status === "Draft" || lease.data.status === "Cancelled") {
@@ -59,16 +54,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId
     }));
   } catch (err) {
-    logger.error("lease invoices were not drafted", {
-      companyId,
-      leaseId: id,
-      error: err
-    });
     throw redirect(
       requestReferrer(request) ?? path.to.leaseDetails(id),
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to draft invoices"))
+        error(err, "Failed to draft invoices", {
+          leaseId: id
+        })
       )
     );
   }

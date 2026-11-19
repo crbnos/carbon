@@ -16,6 +16,11 @@ import { useFetcher, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { Enumerable } from "~/components/Enumerable";
+import {
+  type DocumentForceDeleteData,
+  DocumentForceDeleteMenuItem,
+  DocumentForceDeleteModal
+} from "~/components/ForceDelete/DocumentForceDelete";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -28,14 +33,15 @@ const PaymentHeader = () => {
   const { paymentId } = useParams();
   if (!paymentId) throw new Error("paymentId not found");
 
-  const routeData = useRouteData<{ payment: Payment }>(
-    path.to.payment(paymentId)
-  );
+  const routeData = useRouteData<
+    { payment: Payment } & DocumentForceDeleteData
+  >(path.to.payment(paymentId));
 
   const permissions = usePermissions();
   const post = useFetcher();
   const voidModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
 
   const payment = routeData?.payment;
   if (!payment) throw new Error("Could not find payment in routeData");
@@ -87,25 +93,35 @@ const PaymentHeader = () => {
           ) : null
         ]}
         menuItems={
-          isPosted ? (
-            <DropdownMenuItem
-              disabled={!canMutate}
-              destructive
-              onClick={voidModal.onOpen}
-            >
-              <DropdownMenuIcon icon={<LuTicketX />} />
-              <Trans>Void</Trans>
-            </DropdownMenuItem>
-          ) : isDraft ? (
-            <DropdownMenuItem
-              shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!canDelete}
-              destructive
-              onClick={deleteModal.onOpen}
-            >
-              <DropdownMenuIcon icon={<LuTrash />} />
-              <Trans>Delete Payment</Trans>
-            </DropdownMenuItem>
+          isPosted || isDraft || routeData?.isAdmin ? (
+            <>
+              {isPosted && (
+                <DropdownMenuItem
+                  disabled={!canMutate}
+                  destructive
+                  onClick={voidModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuTicketX />} />
+                  <Trans>Void</Trans>
+                </DropdownMenuItem>
+              )}
+              {isDraft && (
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
+                  disabled={!canDelete}
+                  destructive
+                  onClick={deleteModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  <Trans>Delete Payment</Trans>
+                </DropdownMenuItem>
+              )}
+              <DocumentForceDeleteMenuItem
+                forceDelete={routeData}
+                canDelete={canDelete}
+                onClick={forceDeleteModal.onOpen}
+              />
+            </>
           ) : undefined
         }
         actions={
@@ -128,25 +144,32 @@ const PaymentHeader = () => {
         }
       />
 
-      {voidModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.paymentVoid(payment.id)}
-          name={payment.paymentId}
-          title={t`Void ${payment.paymentId}`}
-          text={t`Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone.`}
-          deleteText={t`Void`}
-          onCancel={voidModal.onClose}
-          onSubmit={voidModal.onClose}
-        />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.paymentDelete(payment.id)}
-          isOpen={deleteModal.isOpen}
-          name={payment.paymentId}
-          text={t`Are you sure you want to delete ${payment.paymentId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
+      <ConfirmDelete
+        isOpen={voidModal.isOpen}
+        action={path.to.paymentVoid(payment.id)}
+        name={payment.paymentId}
+        title={t`Void ${payment.paymentId}`}
+        text={t`Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone.`}
+        deleteText={t`Void`}
+        onCancel={voidModal.onClose}
+        onSubmit={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.paymentDelete(payment.id)}
+        name={payment.paymentId}
+        text={t`Are you sure you want to delete ${payment.paymentId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
+      {routeData?.isAdmin && (
+        <DocumentForceDeleteModal
+          documentType="payment"
+          documentId={payment.id}
+          readableId={payment.paymentId ?? payment.id}
+          status={status ?? "Draft"}
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
         />
       )}
     </>

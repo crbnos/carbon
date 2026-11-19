@@ -15,6 +15,19 @@ export const AUTOSAVE_DELAY_MS = 500;
 
 export const newFeatureId = () => `ift_${nanoid()}`;
 export const newBalloonId = () => `bbn_${nanoid()}`;
+export const newParameterId = () => `idp_${nanoid()}`;
+
+export type ParameterRow = { id: string; key: string; value: string };
+
+/**
+ * The parameters a save sends: the whole list in order, trimmed. A row with
+ * no key is still being typed, so it stays in the browser.
+ */
+export function sendableParameters(rows: ParameterRow[]): ParameterRow[] {
+  return rows
+    .filter((r) => r.key.trim().length > 0)
+    .map((r) => ({ id: r.id, key: r.key.trim(), value: r.value.trim() }));
+}
 
 type MergeableRow = {
   featureId: string;

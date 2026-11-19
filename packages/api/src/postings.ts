@@ -101,7 +101,10 @@ export const issueInput = z.discriminatedUnion("type", [
     materialId: z.string().optional(),
     // Assembly view: when issuing an unplanned part (no materialId), scope the new
     // jobMaterial to this step so it surfaces on that step in the operator view.
-    jobOperationStepId: z.string().optional()
+    jobOperationStepId: z.string().optional(),
+    // An item scan: refuse an issue that takes the material above what the
+    // job requires. The check runs under the material's lock.
+    refuseOverIssue: z.boolean().optional()
   }),
   z.object({
     type: z.literal("scrapTrackedEntity"),
@@ -110,6 +113,35 @@ export const issueInput = z.discriminatedUnion("type", [
     parentTrackedEntityId: z.string(),
     scrapReasonId: z.string(),
     makeReplacement: z.boolean().optional()
+  }),
+  // Scrap untracked parts at an operation (a material's own part, or parts
+  // inside a kit) and replace them from the shelf. Retried with the same key,
+  // it books once.
+  z.object({
+    type: z.literal("scrapJobPart"),
+    jobOperationId: z.string(),
+    // A tracked part names the serial or batch that was used; an untracked
+    // one, the item.
+    lines: z
+      .array(
+        z.union([
+          z.object({
+            materialId: z.string(),
+            trackedEntityId: z.string(),
+            quantity: z.number().positive()
+          }),
+          z.object({
+            materialId: z.string(),
+            itemId: z.string(),
+            quantity: z.number().positive()
+          })
+        ])
+      )
+      .min(1),
+    scrapReasonId: z.string(),
+    replacement: z.enum(["Shelf", "Water Spider"]),
+    notes: z.string().optional(),
+    idempotencyKey: z.string().min(1)
   }),
   z.object({
     type: z.literal("mergeTrackedEntities"),
@@ -147,7 +179,15 @@ export const issueInput = z.discriminatedUnion("type", [
     jobOperationStepId: z.string().optional(),
     unitNumber: z.number().int().positive().optional(),
     overrideExpired: z.boolean().optional(),
-    overrideReason: z.string().optional()
+    overrideReason: z.string().optional(),
+    // Sent by the MES traveler scan. The posting then locks the job material
+    // and refuses the issue when the requirement is already filled, so two
+    // scans at once cannot both fill the same requirement.
+    travelerScan: z.boolean().optional(),
+    // Sent by the Issue dialog after the operator confirms an issue past the
+    // requirement. Without it the posting refuses that issue with
+    // `overIssue: true` in the error body.
+    allowOverIssue: z.boolean().optional()
   }),
   z.object({
     type: z.literal("unconsumeTrackedEntities"),
@@ -471,6 +511,36 @@ export const triggerReworkInput = z.object({
   inspectionId: z.string().optional()
 });
 
+/**
+ * Sends units through one of the job's corrections: the correction's
+ * operations (and materials) are added after the triggering operation, scoped
+ * to the units, then the unit re-inspects there or continues.
+ */
+export const triggerCorrectionInput = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1),
+  reason: z.string().min(1),
+  quantity: z.number().positive(),
+  trackedEntityIds: z.array(z.string()).optional(),
+  inspectionId: z.string().optional()
+});
+
+/**
+ * Reject a receipt or manual inspection lot as the ERP's Reject Lot does: the
+ * verdict, the inventory write-off of an untracked Inventory item, and an
+ * optional NCR. MES sends it, since the write-off and NCR are ERP code.
+ * `requireOpen` refuses a lot that is already dispositioned (MES rejects
+ * once); the ERP leaves it off so a failed write-off can be retried.
+ */
+export const rejectInspectionInput = z.object({
+  id: z.string(),
+  nonConformanceTypeId: z.string().nullish(),
+  createNcr: z.boolean().default(true),
+  reason: z.string().trim().max(2000).nullish(),
+  requireOpen: z.boolean().optional()
+});
+
 export const rescheduleInput = z.object({ jobId: z.string() });
 
 export const postMaintenanceEventInput = z.object({
@@ -735,6 +805,7 @@ export const MES_POSTINGS = {
     "maintenanceDispatchUnissue",
     "mergeTrackedEntities",
     "partToOperation",
+    "scrapJobPart",
     "scrapTrackedEntity",
     "serviceJobInventory",
     "serviceJobTrackedEntities",
@@ -760,6 +831,8 @@ export const MES_POSTINGS = {
   "batch-operations": ["complete"],
   recalculate: ["jobRequirements"],
   "trigger-rework": null,
+  "trigger-correction": null,
+  "reject-inspection": null,
   "save-timesheet-entry": null,
   "submit-timesheet-week": null,
   "post-timesheet": null

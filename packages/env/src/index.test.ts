@@ -49,3 +49,67 @@ describe("module load", { timeout: 30_000 }, () => {
     expect(env.getMESUrl()).toBe(expected);
   });
 });
+
+describe("internalSupabaseUrl", { timeout: 30_000 }, () => {
+  const signed =
+    "https://api.example.com/storage/v1/object/sign/co/a.pdf?token=t";
+
+  it("moves a public link onto the in-cluster address", async () => {
+    vi.stubEnv("SUPABASE_URL", "https://api.example.com");
+    vi.stubEnv("SUPABASE_INTERNAL_URL", "http://storage-gateway:8000");
+    const env = await import("./index");
+    expect(env.internalSupabaseUrl(signed)).toBe(
+      "http://storage-gateway:8000/storage/v1/object/sign/co/a.pdf?token=t"
+    );
+  });
+
+  it("leaves the link alone when no internal address is set", async () => {
+    vi.stubEnv("SUPABASE_URL", "https://api.example.com");
+    vi.stubEnv("SUPABASE_INTERNAL_URL", "");
+    const env = await import("./index");
+    expect(env.internalSupabaseUrl(signed)).toBe(signed);
+  });
+});
+
+describe("rebaseUrl", { timeout: 30_000 }, () => {
+  it.each([
+    [
+      "a base given with a trailing slash",
+      "http://gw:8000/storage/v1/object/sign/a.pdf?token=t&download=A%2BB.pdf",
+      "http://gw:8000/",
+      "https://api.example.com",
+      "https://api.example.com/storage/v1/object/sign/a.pdf?token=t&download=A%2BB.pdf"
+    ],
+    [
+      "a public address behind a path",
+      "http://gw:8000/storage/v1/object/sign/a.pdf?token=t",
+      "http://gw:8000",
+      "https://example.com/supabase/",
+      "https://example.com/supabase/storage/v1/object/sign/a.pdf?token=t"
+    ],
+    [
+      "a link on another host",
+      "https://elsewhere.test/storage/v1/object/sign/a.pdf",
+      "http://gw:8000",
+      "https://api.example.com",
+      "https://elsewhere.test/storage/v1/object/sign/a.pdf"
+    ],
+    [
+      "a link outside the base's path",
+      "http://gw:8000/supabase-other/a.pdf",
+      "http://gw:8000/supabase",
+      "https://api.example.com",
+      "http://gw:8000/supabase-other/a.pdf"
+    ],
+    [
+      "a url that does not parse",
+      "/storage/v1/object/sign/a.pdf",
+      "http://gw:8000",
+      "https://api.example.com",
+      "/storage/v1/object/sign/a.pdf"
+    ]
+  ])("handles %s", async (_, url, from, to, expected) => {
+    const { rebaseUrl } = await import("./index");
+    expect(rebaseUrl(url, from, to)).toBe(expected);
+  });
+});

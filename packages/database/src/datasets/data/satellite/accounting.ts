@@ -133,6 +133,57 @@ export const FIXED_ASSETS: FixedAssetSpec[] = [
       { monthsBack: 1, unitsProduced: 420 }
     ],
     depreciationCharge: 1008
+  },
+  {
+    key: "fleet-1",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Reaction Wheel 0.010 Nm (Rental Unit 1)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "RW-010-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 14500,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "RW-010", serial: "RW-010-RNT-001" }
+  },
+  {
+    key: "fleet-2",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "Reaction Wheel 0.010 Nm (Rental Unit 2)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "RW-010-RNT-002",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 14500,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "RW-010", serial: "RW-010-RNT-002" }
+  },
+  {
+    key: "fleet-3",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "ESPA-Class Smallsat Bus (Engineering Model) (Rental Unit 3)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "SAT-1000-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 990000,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "SAT-1000", serial: "SAT-1000-RNT-001" }
   }
 ];
 

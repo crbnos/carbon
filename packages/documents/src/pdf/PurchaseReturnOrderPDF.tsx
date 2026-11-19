@@ -4,12 +4,12 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  purchaseReturnOrderTexts,
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import {
@@ -17,6 +17,8 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchaseReturnOrderData,
   PurchaseReturnOrderPdfLine,
@@ -26,9 +28,9 @@ import {
   buildPurchaseReturnOrderVars,
   purchaseReturnOrderBlockRegistry
 } from "./blocks/purchaseReturnOrder";
-import { Template } from "./components";
 
 interface PurchaseReturnOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   purchaseReturnOrder: Database["public"]["Views"]["purchaseReturnOrders"]["Row"];
   purchaseReturnOrderLines: PurchaseReturnOrderPdfLine[];
   /** Company location the goods ship back from (the header's `locationId`). */
@@ -48,6 +50,7 @@ interface PurchaseReturnOrderPDFProps extends PDF {
 }
 
 const PurchaseReturnOrderPDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -59,8 +62,7 @@ const PurchaseReturnOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Return to Supplier"
+  sections = {}
 }: PurchaseReturnOrderPDFProps) => {
   const currencyCode =
     purchaseReturnOrder.currencyCode ?? company.baseCurrencyCode;
@@ -69,15 +71,29 @@ const PurchaseReturnOrderPDF = ({
   // getRateFormatter. The total row stays on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("purchaseReturnOrder", template);
+  const resolved = resolveTemplate("purchaseReturnOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildPurchaseReturnOrderVars({
-    purchaseReturnOrder,
-    supplierAddress,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPurchaseReturnOrderVars({
+      purchaseReturnOrder,
+      purchaseReturnOrderLines,
+      supplierAddress,
+      shipFromAddress,
+      company,
+      currencyCode,
+      locale,
+      numberFormatter
+    })
+  );
+  const chrome = documentChrome({
+    texts: purchaseReturnOrderTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
+  const { dt, documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -86,11 +102,6 @@ const PurchaseReturnOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: PurchaseReturnOrderData = {
     company,
@@ -106,54 +117,28 @@ const PurchaseReturnOrderPDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle,
+    documentNumber,
+    supplierRmaLine: dt.prints("supplierRmaNumber")
+      ? dt("supplierRmaNumber")
+      : undefined
   };
 
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "supplier return, purchase return order",
-        subject: meta?.subject ?? "Return to Supplier"
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="supplier return, purchase return order"
       footerDocumentId={purchaseReturnOrder?.purchaseReturnOrderId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = purchaseReturnOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={purchaseReturnOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 

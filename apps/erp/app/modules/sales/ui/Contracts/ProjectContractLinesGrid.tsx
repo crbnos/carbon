@@ -15,7 +15,7 @@ import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { LuPencil, LuPlus, LuReceipt, LuTrash } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { Empty, Table } from "~/components";
@@ -33,6 +33,7 @@ import {
 } from "~/components/Setup";
 import {
   useCurrencyDecimals,
+  useDrawerItem,
   usePercentFormatter,
   usePermissions,
   useQuantityFormatter,
@@ -139,8 +140,14 @@ const ProjectContractLinesGrid = ({
     lineDefaults.load(path.to.newContractLine(contractId));
     addLine.onOpen();
   };
-  const [editing, setEditing] = useState<ContractLine | null>(null);
-  const [deleting, setDeleting] = useState<ContractLine | null>(null);
+  const editing = useDrawerItem<ContractLine>();
+  const { open: openEdit } = editing;
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<ContractLine>();
 
   const billingMethodLabels = useBillingMethodLabels("Project");
   const revenueMethodLabels = useMemo<Record<RevenueMethod, string>>(
@@ -480,7 +487,7 @@ const ProjectContractLinesGrid = ({
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            onClick={() => setEditing(line)}
+            onClick={() => openEdit(line)}
           >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Details</Trans>
@@ -499,7 +506,7 @@ const ProjectContractLinesGrid = ({
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "sales")}
-            onClick={() => setDeleting(line)}
+            onClick={() => openDelete(line)}
           >
             <MenuIcon icon={<LuTrash />} />
             <Trans>Delete Line</Trans>
@@ -507,7 +514,7 @@ const ProjectContractLinesGrid = ({
         </>
       );
     },
-    [lines, permissions, navigate, contractId]
+    [lines, permissions, navigate, contractId, openDelete, openEdit]
   );
 
   const gridColumns = useMemo(
@@ -580,42 +587,48 @@ const ProjectContractLinesGrid = ({
         </>
       )}
 
-      {addLine.isOpen && lineDefaults.state === "idle" && lineDefaults.data && (
-        <ContractLineForm
-          type="modal"
-          initialValues={{
-            ...newContractLineFormValues(contract),
-            // The form types percent points.
-            taxPercent: round(
-              (lineDefaults.data.resolvedTax?.taxPercent ?? 0) * 100
-            ),
-            taxCodeId: lineDefaults.data.resolvedTax?.taxCodeId ?? undefined
-          }}
-          currencyCode={currencyCode}
-          billingBasis="Project"
-          onClose={addLine.onClose}
-        />
-      )}
+      {addLine.openCount > 0 &&
+        lineDefaults.state === "idle" &&
+        lineDefaults.data && (
+          <ContractLineForm
+            key={`addLine-${addLine.openCount}`}
+            open={addLine.isOpen}
+            type="modal"
+            initialValues={{
+              ...newContractLineFormValues(contract),
+              // The form types percent points.
+              taxPercent: round(
+                (lineDefaults.data.resolvedTax?.taxPercent ?? 0) * 100
+              ),
+              taxCodeId: lineDefaults.data.resolvedTax?.taxCodeId ?? undefined
+            }}
+            currencyCode={currencyCode}
+            billingBasis="Project"
+            onClose={addLine.onClose}
+          />
+        )}
 
-      {editing && (
+      {editing.item && (
         <ContractLineForm
           type="modal"
-          key={editing.id}
-          title={contractLineName(editing)}
+          key={`editing-${editing.key}`}
+          open={editing.isOpen}
+          title={contractLineName(editing.item)}
           currencyCode={currencyCode}
           billingBasis="Project"
-          initialValues={contractLineFormValues(editing)}
-          onClose={() => setEditing(null)}
+          initialValues={contractLineFormValues(editing.item)}
+          onClose={editing.close}
         />
       )}
 
       {deleting && (
         <ConfirmDelete
           action={path.to.deleteContractLine(contractId, deleting.id)}
+          isOpen={isDeleting}
           name={contractLineName(deleting)}
           text={t`Are you sure you want to remove ${contractLineName(deleting)} from this contract?`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </div>

@@ -6,9 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
+import { data } from "react-router";
 import { procedureValidator } from "~/modules/production/production.models";
 import { upsertProcedure } from "~/modules/production/production.service";
 import ProcedureForm from "~/modules/production/ui/Procedures/ProcedureForm";
@@ -78,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewProcedureRoute() {
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.procedures);
   const initialValues = {
     name: "",
     version: 0,
@@ -89,7 +90,8 @@ export default function NewProcedureRoute() {
     <ProcedureForm
       initialValues={initialValues}
       type="new"
-      onClose={() => navigate(path.to.procedures)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

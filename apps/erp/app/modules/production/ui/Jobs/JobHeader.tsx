@@ -75,6 +75,10 @@ import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { Location, StorageUnit } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -107,6 +111,7 @@ import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
   getDefaultSerialCompleteQuantity,
+  getFinishedQuantity,
   getFinishedUnreceivedQuantity,
   getSerialCompleteChoice,
   type JobReceiptSnapshot,
@@ -143,6 +148,7 @@ const JobHeader = () => {
   const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
+  const documentEdit = useDocumentEditModal("jobTraveler", jobId);
 
   const { company } = useUser();
   const location = useOptimisticLocation();
@@ -454,6 +460,9 @@ const JobHeader = () => {
                       <Trans>Job Traveler</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                   <DropdownMenuRadioGroup
                     value={currentValue}
                     onValueChange={(option) => {
@@ -603,50 +612,51 @@ const JobHeader = () => {
           </>
         }
       />
-      {releaseModal.isOpen && (
+      {releaseModal.openCount > 0 && (
         <JobStartModal
+          key={`releaseModal-${releaseModal.openCount}`}
+          open={releaseModal.isOpen}
           job={routeData?.job}
           onClose={releaseModal.onClose}
           release={release}
         />
       )}
-      {cancelModal.isOpen && (
-        <JobCancelModal
-          job={routeData?.job}
-          onClose={cancelModal.onClose}
-          cancel={cancel}
-        />
-      )}
-      {completeModal.isOpen && (
+      <JobCancelModal
+        open={cancelModal.isOpen}
+        job={routeData?.job}
+        onClose={cancelModal.onClose}
+        cancel={cancel}
+      />
+      {completeModal.openCount > 0 && (
         <JobCompleteModal
+          key={`completeModal-${completeModal.openCount}`}
+          open={completeModal.isOpen}
           job={routeData?.job}
           onClose={completeModal.onClose}
           fetcher={complete}
         />
       )}
-      {expediteModal.isOpen && (
-        <JobExpediteModal
-          job={routeData?.job}
-          onClose={expediteModal.onClose}
-          fetcher={expediteFetcher}
-        />
-      )}
-      {deleteJobModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJob(jobId)}
-          isOpen={deleteJobModal.isOpen}
-          name={routeData?.job?.jobId!}
-          text={`Are you sure you want to delete ${routeData?.job
-            ?.jobId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteJobModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteJobModal.onClose();
-          }}
-        />
-      )}
+      <JobExpediteModal
+        open={expediteModal.isOpen}
+        job={routeData?.job}
+        onClose={expediteModal.onClose}
+        fetcher={expediteFetcher}
+      />
+      <ConfirmDelete
+        action={path.to.deleteJob(jobId)}
+        isOpen={deleteJobModal.isOpen}
+        name={routeData?.job?.jobId!}
+        text={`Are you sure you want to delete ${routeData?.job
+          ?.jobId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteJobModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteJobModal.onClose();
+        }}
+      />
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };
@@ -692,14 +702,17 @@ const getExplorePath = (jobId: string, type: string) => {
 };
 
 export function JobStartModal({
+  open = true,
   job,
   onClose,
   release
 }: {
+  open?: boolean;
   job?: Job;
   release: JobRelease;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const { carbon } = useCarbon();
   const [suppliers] = useSuppliers();
   const companySettings = useCompanySettings();
@@ -999,14 +1012,14 @@ export function JobStartModal({
   };
 
   useMount(() => {
-    validate();
+    if (open) validate();
   });
 
   if (!job) return null;
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1083,6 +1096,7 @@ export function JobStartModal({
                               {operation.description}
                             </span>
                             <Select
+                              aria-label={t`Supplier process for ${operation.description}`}
                               size="sm"
                               value={
                                 selectedSupplierProcessByOperationId[
@@ -1113,6 +1127,9 @@ export function JobStartModal({
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
                           existingPurchaseOrdersBySupplierId[supplierId] ?? [];
+                        const supplierName =
+                          suppliers.find((s) => s.id === supplierId)?.name ??
+                          "";
                         return (
                           <div
                             key={supplierId}
@@ -1121,6 +1138,7 @@ export function JobStartModal({
                             <SupplierAvatar supplierId={supplierId} />
 
                             <Select
+                              aria-label={t`Purchase order for ${supplierName}`}
                               size="sm"
                               value={purchaseOrderId}
                               isReadOnly={
@@ -1268,10 +1286,12 @@ export function JobStartModal({
 }
 
 function JobCancelModal({
+  open = true,
   job,
   onClose,
   cancel
 }: {
+  open?: boolean;
   job?: Job;
   cancel: ReturnType<typeof useAction<typeof cancelAction>>;
   onClose: () => void;
@@ -1280,7 +1300,7 @@ function JobCancelModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1324,10 +1344,12 @@ function JobCancelModal({
 }
 
 function JobExpediteModal({
+  open = true,
   job,
   onClose,
   fetcher
 }: {
+  open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<{
     expedite: {
@@ -1353,7 +1375,7 @@ function JobExpediteModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1443,10 +1465,12 @@ async function getJobReceipts(
 }
 
 function JobCompleteModal({
+  open = true,
   job,
   onClose,
   fetcher
 }: {
+  open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
@@ -1559,20 +1583,25 @@ function JobCompleteModal({
         .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
-        const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
-          if (curr.status === "Available") {
-            return acc + curr.quantity;
-          }
-          return acc;
-        }, 0);
-
         const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        // Only a serial completion to inventory receives issued units.
+        const issuedEntityIds = new Set(
+          makeMethod.data?.requiresSerialTracking && !completesToFixedAsset
+            ? (receipts?.issuedTrackedEntityIds ?? [])
+            : []
+        );
+        const availableQuantity = getFinishedQuantity(
+          trackedEntities.data,
+          issuedEntityIds
+        );
+
         // Only unlock the quantity when the receipts are known: without them
         // the dialog could offer a unit the job already received.
         const choice = makeMethod.data?.requiresSerialTracking
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
               receivedEntityIds: receipts ? receivedEntityIds : null,
+              issuedEntityIds,
               // complete_job_to_inventory numbers what the completion takes
               // whenever the item has a sequence. A failed read keeps the
               // quantity locked.
@@ -1595,7 +1624,8 @@ function JobCompleteModal({
             getDefaultSerialCompleteQuantity({
               finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
                 trackedEntities.data,
-                receivedEntityIds
+                receivedEntityIds,
+                issuedEntityIds
               ),
               jobQuantity: job?.quantity ?? 0,
               priorReceivedQuantity: currentReceivedQuantity,
@@ -1621,7 +1651,7 @@ function JobCompleteModal({
   };
 
   useMount(() => {
-    if (!job) return;
+    if (!job || !open) return;
     getJobData();
   });
 
@@ -1650,7 +1680,7 @@ function JobCompleteModal({
   if (!job) return null;
 
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent size={hasLeftover ? "large" : "medium"}>
         {loading ? (
           <ModalBody>

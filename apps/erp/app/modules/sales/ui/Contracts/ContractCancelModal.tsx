@@ -45,6 +45,7 @@ type PreviewResponse = {
 type ContractCancelModalProps = {
   contract: Contract;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -52,10 +53,27 @@ type ContractCancelModalProps = {
  *  The end date is previewed — the cancellation runs and rolls back on the
  *  server — to learn whether any billed time after it can be credited. */
 const ContractCancelModal = ({
+  open = true,
+  onClose,
+  ...props
+}: ContractCancelModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="medium">
+      <ContractCancelBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ContractCancelBody = ({
   contract,
   action,
   onClose
-}: ContractCancelModalProps) => {
+}: Omit<ContractCancelModalProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const today = useCompanyToday();
@@ -95,105 +113,96 @@ const ContractCancelModal = ({
   const canCredit = permissions.can("create", "invoicing");
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={customerContractCancelValidator}
+      method="post"
+      action={action}
+      fetcher={fetcher}
+      defaultValues={{
+        customerContractId: id,
+        endDate: defaultEndDate,
+        creditUnusedTime: false
       }}
+      onSubmit={onClose}
     >
-      <ModalContent size="medium">
-        <ValidatedForm
-          validator={customerContractCancelValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            customerContractId: id,
-            endDate: defaultEndDate,
-            creditUnusedTime: false
-          }}
-          onSubmit={onClose}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Cancel {contract.customerContractId}</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                The contract ends on the end date and does not renew. Planned
-                invoices after it are removed.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="customerContractId" value={id} />
-            <VStack spacing={4}>
-              <DatePicker
-                name="endDate"
-                label={t`End Date`}
-                onChange={(date) => setEndDate(date ?? "")}
-              />
-              {endDate && (
-                <div className={cn("w-full", isPreviewing && "opacity-60")}>
-                  {isRefused ? (
-                    <Alert variant="destructive">
-                      <LuCircleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        <Trans>The contract cannot be cancelled then</Trans>
-                      </AlertTitle>
-                      <AlertDescription>{previewError}</AlertDescription>
-                    </Alert>
-                  ) : preview ? (
-                    <VStack spacing={4}>
-                      <p className="text-sm text-muted-foreground">
-                        {removed === 0 ? (
-                          <Trans>No planned invoices are removed.</Trans>
-                        ) : removed === 1 ? (
-                          <Trans>1 planned invoice is removed.</Trans>
-                        ) : (
-                          <Trans>{removed} planned invoices are removed.</Trans>
-                        )}
-                      </p>
-                      {preview.creditAvailable && (
-                        <Boolean
-                          name="creditUnusedTime"
-                          label={t`Credit unused time (${credit})`}
-                          description={
-                            canCredit
-                              ? t`Drafts a credit memo for the time already invoiced after the end date.`
-                              : t`Crediting needs permission to create invoices.`
-                          }
-                          isDisabled={!canCredit}
-                          bordered
-                        />
-                      )}
-                    </VStack>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>Previewing the cancellation…</Trans>
-                    </p>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Cancel {contract.customerContractId}</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            The contract ends on the end date and does not renew. Planned
+            invoices after it are removed.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="customerContractId" value={id} />
+        <VStack spacing={4}>
+          <DatePicker
+            name="endDate"
+            label={t`End Date`}
+            onChange={(date) => setEndDate(date ?? "")}
+          />
+          {endDate && (
+            <div className={cn("w-full", isPreviewing && "opacity-60")}>
+              {isRefused ? (
+                <Alert variant="destructive">
+                  <LuCircleAlert className="h-4 w-4" />
+                  <AlertTitle>
+                    <Trans>The contract cannot be cancelled then</Trans>
+                  </AlertTitle>
+                  <AlertDescription>{previewError}</AlertDescription>
+                </Alert>
+              ) : preview ? (
+                <VStack spacing={4}>
+                  <p className="text-sm text-muted-foreground">
+                    {removed === 0 ? (
+                      <Trans>No planned invoices are removed.</Trans>
+                    ) : removed === 1 ? (
+                      <Trans>1 planned invoice is removed.</Trans>
+                    ) : (
+                      <Trans>{removed} planned invoices are removed.</Trans>
+                    )}
+                  </p>
+                  {preview.creditAvailable && (
+                    <Boolean
+                      name="creditUnusedTime"
+                      label={t`Credit unused time (${credit})`}
+                      description={
+                        canCredit
+                          ? t`Drafts a credit memo for the time already invoiced after the end date.`
+                          : t`Crediting needs permission to create invoices.`
+                      }
+                      isDisabled={!canCredit}
+                      bordered
+                    />
                   )}
-                </div>
+                </VStack>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  <Trans>Previewing the cancellation…</Trans>
+                </p>
               )}
-              <TextArea name="reason" label={t`Reason`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Close</Trans>
-            </Button>
-            <Submit
-              variant="destructive"
-              isDisabled={
-                !endDate || isRefused || !permissions.can("update", "sales")
-              }
-            >
-              <Trans>Cancel Contract</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+            </div>
+          )}
+          <TextArea name="reason" label={t`Reason`} />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Close</Trans>
+        </Button>
+        <Submit
+          variant="destructive"
+          isDisabled={
+            !endDate || isRefused || !permissions.can("update", "sales")
+          }
+        >
+          <Trans>Cancel Contract</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

@@ -132,13 +132,11 @@ describe.skipIf(!url)(
       expect(await createPlan(id("item"))).toBeNull();
 
       const plans = await client.query(
-        `SELECT "drawingNumber", "storagePath" FROM "inspectionDocument"
+        `SELECT "name", "storagePath" FROM "inspectionDocument"
        WHERE "companyId" = $1 AND "partId" = $2 AND "modelUploadId" = $3`,
         [companyId, id("item"), model]
       );
-      expect(plans.rows).toEqual([
-        { drawingNumber: id("BRK"), storagePath: null }
-      ]);
+      expect(plans.rows).toEqual([{ name: id("BRK"), storagePath: null }]);
 
       const features = await client.query(
         `SELECT "label", "pmiItemId", "pageNumber", "type", "nominalValue"
@@ -167,17 +165,17 @@ describe.skipIf(!url)(
       await begin();
       await insertItem(id("item"), id("BRK"));
       await client.query(
-        `INSERT INTO "inspectionDocument" ("id", "companyId", "partId", "drawingNumber", "createdBy")
+        `INSERT INTO "inspectionDocument" ("id", "companyId", "partId", "name", "createdBy")
        VALUES ($1, $2, $3, $4, 'system')`,
         [id("pdf-plan"), companyId, id("item"), id("BRK")]
       );
 
       const planId = await createPlan(id("item"));
       const plan = await client.query(
-        `SELECT "drawingNumber" FROM "inspectionDocument" WHERE "id" = $1`,
+        `SELECT "name" FROM "inspectionDocument" WHERE "id" = $1`,
         [planId]
       );
-      expect(plan.rows[0].drawingNumber).toBe(`${id("BRK")} (1)`);
+      expect(plan.rows[0].name).toBe(`${id("BRK")} (1)`);
     });
 
     it("deletes the items' unused PMI plans before an item delete, and keeps the rest", async () => {
@@ -195,7 +193,7 @@ describe.skipIf(!url)(
       );
       // A plan made by hand (no model) is never touched.
       await client.query(
-        `INSERT INTO "inspectionDocument" ("id", "companyId", "partId", "drawingNumber", "createdBy")
+        `INSERT INTO "inspectionDocument" ("id", "companyId", "partId", "name", "createdBy")
        VALUES ($1, $2, $3, 'Manual', 'system')`,
         [id("manual"), companyId, id("item")]
       );

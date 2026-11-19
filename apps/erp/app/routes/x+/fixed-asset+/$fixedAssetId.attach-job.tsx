@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { useRouteDialog } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { fixedAssetAttachJobValidator } from "~/modules/accounting/accounting.models";
 import {
   getFixedAsset,
@@ -52,9 +53,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // The jobs the function accepts: open, not for a sales order, and not
-  // already building an asset. There is no production service for this
-  // shape, so the filter lives here.
+  // The jobs the function accepts: open, not for a sales order, not
+  // consuming to a project, and not already building an asset. There is no
+  // production service for this shape, so the filter lives here.
   const jobs = await client
     .from("job")
     .select(
@@ -64,6 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .is("salesOrderLineId", null)
     .is("fixedAssetClassId", null)
     .is("fixedAssetId", null)
+    .eq("consumeToProject", false)
     .not("status", "in", "(Completed,Cancelled,Closed)")
     .order("jobId");
 
@@ -120,13 +122,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to attach the job")
-        )
-      )
+      await flash(request, error(result.error, "Failed to attach the job"))
     );
   }
 
@@ -138,7 +134,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function AttachJobToFixedAssetRoute() {
   const { jobs } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
-  return <FixedAssetAttachJobForm jobs={jobs} onClose={() => navigate(-1)} />;
+  return (
+    <FixedAssetAttachJobForm
+      jobs={jobs}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
 }

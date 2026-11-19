@@ -9,7 +9,7 @@ import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
 import { Onshape, OnshapeGovernment } from "./onshape/config";
-import { OnshapeV2 } from "./onshape/config-v2";
+import { OnshapeV2, OnshapeV2Government } from "./onshape/config-v2";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -83,6 +83,7 @@ export const integrations = [
   Onshape,
   OnshapeGovernment,
   OnshapeV2,
+  OnshapeV2Government,
   PaperlessParts,
   QuickBooks,
   Ramp,
@@ -106,7 +107,7 @@ export {
   Onshape,
   OnshapeGovernment
 } from "./onshape/config";
-export { OnshapeV2 } from "./onshape/config-v2";
+export { OnshapeV2, OnshapeV2Government } from "./onshape/config-v2";
 export type { OnshapeDocument } from "./onshape/lib";
 // Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
 // without naming either integration id.
@@ -119,17 +120,25 @@ export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";
 export {
   describeBomPayload,
   flattenBomTree,
-  metadataProperty,
   missingBomColumnsMessage,
   parseBomTree,
   withoutProperties
 } from "./onshape/panel/bom";
 export type {
   DrawingDocument,
+  DrawingReference,
   DrawingSource,
-  DrawingTarget
+  DrawingTarget,
+  DrawingTie,
+  OnshapeDrawing,
+  SkippedDrawing
 } from "./onshape/panel/drawings";
-export { bomAssemblySources } from "./onshape/panel/drawings";
+export {
+  bomAssemblySources,
+  parseDrawingReferences,
+  skippedDrawingText,
+  tieDrawings
+} from "./onshape/panel/drawings";
 export type { OnshapePanelContext } from "./onshape/panel/messages";
 export {
   PANEL_SESSION_MESSAGE,
@@ -147,7 +156,9 @@ export type {
   AssemblyPlanMethodStatus,
   AssemblyPlanRoot,
   AssemblyRowAssets,
+  AssemblyRowDrawing,
   ChangeNoticeEdit,
+  DrawingTargetRow,
   ItemEdit,
   ItemFieldChange,
   ItemFieldSnapshot,
@@ -180,6 +191,9 @@ export type {
 } from "./onshape/panel/plan";
 export {
   assemblyAssetRows,
+  assemblyCurrentFileRows,
+  assemblyDrawingDocuments,
+  assemblyDrawingTargets,
   BOM_LINE_ITEM_TYPES,
   bomLineItemType,
   buildAssemblyPlan,
@@ -217,7 +231,10 @@ export {
   proposeItem,
   proposeMappedItem,
   reconcileMethodForReplenishment,
-  VALID_METHOD_TYPES_BY_REPLENISHMENT
+  rowDrawingKey,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT,
+  withAssemblyDrawings,
+  withCurrentFiles
 } from "./onshape/panel/plan";
 export type { OnshapePushDefaults } from "./onshape/panel/preferences";
 export {
@@ -248,6 +265,7 @@ export {
   MAPPABLE_VALUE_TYPES,
   MAPPING_MODES,
   mappedFieldValues,
+  mapsPartProperties,
   mergeCustomFieldValues,
   parseDescriptionModes,
   parseProperties,
@@ -294,6 +312,30 @@ export {
   translationErrors,
   untranslatedOptions
 } from "./onshape/panel/standard-fields";
+export type {
+  BomColumnField,
+  BomLineField,
+  IdentityField,
+  OnshapePropertyField,
+  StandardSources
+} from "./onshape/panel/standard-sources";
+export {
+  BOM_LINE_FIELDS,
+  bomColumnIds,
+  DEFAULT_STANDARD_SOURCES,
+  hasIdentityOverride,
+  IDENTITY_FIELDS,
+  IDENTITY_VALUE_TYPES,
+  identityValue,
+  isIdentityProperty,
+  ONSHAPE_PROPERTIES,
+  onshapePropertyField,
+  releaseSources,
+  sourceLabel,
+  standardSourceErrors,
+  standardSources,
+  withIdentitySources
+} from "./onshape/panel/standard-sources";
 export type {
   PanelAssemblyLineInput,
   PanelAssemblyLineStatus,

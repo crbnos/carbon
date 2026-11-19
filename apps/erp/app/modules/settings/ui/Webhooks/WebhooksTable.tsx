@@ -322,6 +322,7 @@ fetch(url, {
 };
 
 function WebhookDocs({ open, onClose }: WebhookDocsProps) {
+  const { t } = useLingui();
   const webhookTables = useWebhookTables();
   const [activeTable, setActiveTable] = useState<string>("quote");
   const { company } = useUser();
@@ -354,7 +355,11 @@ function WebhookDocs({ open, onClose }: WebhookDocsProps) {
                   value={activeTable}
                   onValueChange={(val) => setActiveTable(val)}
                 >
-                  <SelectTrigger id="table" className="min-w-[200px]">
+                  <SelectTrigger
+                    id="table"
+                    className="min-w-[200px]"
+                    aria-label={t`Table`}
+                  >
                     <SelectValue placeholder="Select a table" />
                   </SelectTrigger>
                   <SelectContent>

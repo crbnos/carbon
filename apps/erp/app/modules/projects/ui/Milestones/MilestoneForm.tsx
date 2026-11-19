@@ -22,6 +22,7 @@ import { DatePicker, Hidden, Input, Submit } from "~/components/Form";
 import { projectMilestoneValidator } from "../../projects.models";
 
 type MilestoneFormProps = {
+  open?: boolean;
   action: string;
   initialValues: z.infer<typeof projectMilestoneValidator>;
   onClose: () => void;
@@ -29,6 +30,7 @@ type MilestoneFormProps = {
 
 /** Creates or edits a milestone in a drawer. It stays open on a refusal. */
 const MilestoneForm = ({
+  open = true,
   action,
   initialValues,
   onClose
@@ -40,7 +42,7 @@ const MilestoneForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

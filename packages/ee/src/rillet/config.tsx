@@ -151,6 +151,7 @@ function SetupInstructions({ companyId }: { companyId: string }) {
 function Logo(props: ComponentProps<"svg">) {
   return (
     <svg
+      aria-hidden="true"
       {...props}
       viewBox="0 0 124 27"
       fill="none"

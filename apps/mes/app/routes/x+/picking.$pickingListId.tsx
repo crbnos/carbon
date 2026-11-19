@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { PrintButton } from "@carbon/printing/ui";
 import type {
   TrackedEntityOption,
   TrackedEntityPickOrder,
@@ -39,15 +40,17 @@ import {
   TooltipTrigger,
   TrackedEntityPicker,
   toast,
+  useDisclosure,
   useViewport,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   type ComponentProps,
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import {
@@ -59,7 +62,7 @@ import {
   LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
@@ -74,6 +77,7 @@ import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -83,15 +87,40 @@ export const handle: Handle = {
       table: "pickingListLine",
       column: "pickingListId",
       param: "pickingListId"
+    },
+    {
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.pickingList?.lines ?? [])
+              .map((line: { itemId?: string | null }) => line.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ]
 };
 
+const itemIdOrder = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base"
+});
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.pickingList?.pickingListId, "Picking List");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
   const pickingListId = params.pickingListId!;
 
-  const result = await getPickingListForExecution(client, pickingListId);
+  const result = await getPickingListForExecution(
+    client,
+    pickingListId,
+    companyId
+  );
 
   if (result.error || !result.data) {
     throw new Response("Picking list not found", { status: 404 });
@@ -151,6 +180,15 @@ export default function PickingExecutionRoute() {
       }
       groups.get(key)!.lines.push(line);
     }
+    for (const kit of groups.values()) {
+      kit.lines.sort((a, b) => {
+        const aId =
+          (a.item as { readableId?: string } | null)?.readableId ?? "";
+        const bId =
+          (b.item as { readableId?: string } | null)?.readableId ?? "";
+        return itemIdOrder.compare(aId, bId) || a.id.localeCompare(b.id);
+      });
+    }
     return Array.from(groups.values()).sort((a, b) => {
       const job = (a.jobReadableId ?? "").localeCompare(b.jobReadableId ?? "");
       if (job !== 0) return job;
@@ -171,7 +209,7 @@ export default function PickingExecutionRoute() {
   const completedCount = lines.filter((l) => isLineResolved(l)).length;
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1 min-h-0">
       <MesAppBar
         title={pickingList.pickingListId}
         subtitle={<Trans>Picking</Trans>}
@@ -181,7 +219,9 @@ export default function PickingExecutionRoute() {
         <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card max-md:hidden">
           <div className="flex items-center gap-2 px-2">
             <SidebarTrigger />
-            <Heading size="h4">{pickingList.pickingListId}</Heading>
+            <Heading as="h1" size="h4">
+              {pickingList.pickingListId}
+            </Heading>
             <PickingListStatus status={pickingList.status} />
           </div>
           <div className="flex items-center gap-3 px-3">
@@ -191,12 +231,13 @@ export default function PickingExecutionRoute() {
             <PickingListControls
               pickingListId={pickingList.id}
               status={pickingList.status}
+              locationId={pickingList.locationId ?? undefined}
             />
           </div>
         </header>
       )}
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
         <div className="w-full max-w-5xl mx-auto pb-16">
           <VStack spacing={4} className="w-full">
             {kits.map((kit, index) => (
@@ -212,7 +253,7 @@ export default function PickingExecutionRoute() {
             ))}
           </VStack>
         </div>
-      </main>
+      </div>
       {isPhone && (
         <div
           ref={bottomBarRef}
@@ -225,6 +266,7 @@ export default function PickingExecutionRoute() {
           <PickingListControls
             pickingListId={pickingList.id}
             status={pickingList.status}
+            locationId={pickingList.locationId ?? undefined}
             size="lg"
             finishVariant="primary"
             className="min-w-0 flex-1 [&_button]:w-full [&_button]:h-12"
@@ -246,12 +288,14 @@ type FinishStatusResponse = {
 function PickingListControls({
   pickingListId,
   status,
+  locationId,
   size = "md",
   finishVariant = "secondary",
   className
 }: {
   pickingListId: string;
   status: string;
+  locationId: string | undefined;
   size?: "md" | "lg";
   finishVariant?: "primary" | "secondary";
   className?: string;
@@ -261,16 +305,18 @@ function PickingListControls({
   const [acknowledgeLines, setAcknowledgeLines] = useState<
     UnresolvedPickingListLine[] | null
   >(null);
+  const [isAcknowledgeOpen, setIsAcknowledgeOpen] = useState(false);
 
   useEffect(() => {
     if (!fetcher.data) return;
     // 'warn' policy → server asks the operator to confirm the shortfall.
     if (fetcher.data.needsAcknowledgement && fetcher.data.unresolvedLines) {
       setAcknowledgeLines(fetcher.data.unresolvedLines);
+      setIsAcknowledgeOpen(true);
       return;
     }
     if (fetcher.data.success === true) {
-      setAcknowledgeLines(null);
+      setIsAcknowledgeOpen(false);
       return;
     }
     if (fetcher.data.success === false) {
@@ -297,11 +343,36 @@ function PickingListControls({
     });
   };
 
-  if (isPickingListLocked(status)) return null;
+  // Travelers can be reprinted after the list finishes; a cancelled list has
+  // no units to travel with.
+  const printTravelers =
+    status === "Cancelled" ? null : (
+      <PrintButton
+        sourceDocument="PickingList"
+        sourceDocumentId={pickingListId}
+        locationId={locationId}
+        context="inventory"
+        size={size}
+        label={<Trans>Print travelers</Trans>}
+        fileRoutes={{
+          pdf: path.to.file.pickingListTravelersPdf,
+          zpl: path.to.file.pickingListTravelersZpl
+        }}
+      />
+    );
+
+  if (isPickingListLocked(status)) {
+    return printTravelers ? (
+      <HStack spacing={2} className={className}>
+        {printTravelers}
+      </HStack>
+    ) : null;
+  }
 
   return (
     <>
       <HStack spacing={2} className={className}>
+        {printTravelers}
         {status === "Draft" && (
           <Button
             size={size}
@@ -328,9 +399,10 @@ function PickingListControls({
       </HStack>
       {acknowledgeLines && (
         <IncompletePickAcknowledgeModal
+          open={isAcknowledgeOpen}
           lines={acknowledgeLines}
           isSubmitting={isSubmitting}
-          onCancel={() => setAcknowledgeLines(null)}
+          onCancel={() => setIsAcknowledgeOpen(false)}
           onAcknowledge={() => setStatus("Completed", true)}
         />
       )}
@@ -342,11 +414,13 @@ function PickingListControls({
 // policy: lists the still-unpicked material and lets the operator acknowledge &
 // finish (which flags the list Partial) or back out and keep picking.
 function IncompletePickAcknowledgeModal({
+  open,
   lines,
   isSubmitting,
   onCancel,
   onAcknowledge
 }: {
+  open: boolean;
   lines: UnresolvedPickingListLine[];
   isSubmitting: boolean;
   onCancel: () => void;
@@ -354,7 +428,7 @@ function IncompletePickAcknowledgeModal({
 }) {
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}
@@ -472,7 +546,10 @@ function PickingKitCard({
       </CardHeader>
       <CardContent>
         <BarProgress progress={progress} className="mb-4" />
-        <div className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0">
+        <div
+          role="list"
+          className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0"
+        >
           {kit.lines.map((line, index) => (
             <PickLineItem
               key={line.id}
@@ -505,11 +582,12 @@ function PickLineItem({
   isLocked: boolean;
   recommendations: RecommendationsPromise;
 }) {
+  const { t } = useLingui();
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const isSubmitting = fetcher.state !== "idle";
-  const [shortOpen, setShortOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const shortModal = useDisclosure();
+  const picker = useDisclosure();
   const trackedFetcher = useFetcher<{
     entities: TrackedEntityOption[];
     trackingType: "Serial" | "Batch";
@@ -524,6 +602,38 @@ function PickLineItem({
       toast.error(fetcher.data.message ?? "Failed to update pick line");
     }
   }, [fetcher.data]);
+
+  // Pick and Unpick swap the line's buttons (and disable them mid-submit), so
+  // keyboard focus would fall to <body>. Once the submission settles, put focus
+  // back on the line's primary control and announce the result.
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const pendingResultRef = useRef<{
+    message: string;
+    refocus: boolean;
+  } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const expectResult = (message: string, refocus?: boolean) => {
+    pendingResultRef.current = {
+      message,
+      refocus:
+        refocus ??
+        !!controlsRef.current?.contains(document.activeElement ?? null)
+    };
+  };
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !pendingResultRef.current) return;
+    const { message, refocus } = pendingResultRef.current;
+    pendingResultRef.current = null;
+    if (fetcher.data?.success === false) return;
+    setAnnouncement(message);
+    if (refocus) {
+      // The primary action (Pick / Scan / Unpick) is the line's last button.
+      const buttons = controlsRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not(:disabled)"
+      );
+      buttons?.[buttons.length - 1]?.focus();
+    }
+  }, [fetcher.state, fetcher.data]);
 
   const lineItem = line.item as {
     name: string;
@@ -576,11 +686,10 @@ function PickLineItem({
     const n = Number(line.quantityToPick ?? 0) / (perAssembly * factor);
     return Number.isInteger(n) ? n : null;
   })();
-  const source = (line.storageUnit as { name?: string } | null)?.name;
-  const availableQuantity = Number(
-    (line as { availableQuantity?: number }).availableQuantity ?? 0
+  const liveStorageUnits = line.liveStorageUnits.filter(
+    (unit) => unit.quantity > 0
   );
-  const isShortStock = availableQuantity <= 0;
+  const isShortStock = liveStorageUnits.length === 0;
   const quantityToPick = Number(line.quantityToPick ?? 0);
   const quantityPicked = Number(line.quantityPicked ?? 0);
   const isTracked =
@@ -597,11 +706,22 @@ function PickLineItem({
   ).filter((t) => Number(t.quantityPicked ?? 0) > 0);
 
   const isFullyPicked = quantityToPick > 0 && quantityPicked >= quantityToPick;
+  // Once picked, the stock is at lineside and its warehouse bin may be empty:
+  // the line then names the bin it was picked from.
+  const pickedFrom =
+    quantityPicked > 0
+      ? (line.storageUnit as { name?: string } | null)?.name
+      : undefined;
   const isShort = line.status === "Short";
   const isCancelled = line.status === "Cancelled";
   const isResolved = isFullyPicked || isShort || isCancelled;
 
   const pick = (quantity: number) => {
+    expectResult(
+      quantity > 0
+        ? t`Picked ${quantity}${unitSuffix} ${itemName}`
+        : t`Unpicked ${itemName}`
+    );
     const formData = new FormData();
     formData.append("pickingListLineId", line.id);
     formData.append("quantity", String(quantity));
@@ -612,11 +732,17 @@ function PickLineItem({
   };
 
   const openPicker = () => {
-    setPickerOpen(true);
+    picker.onOpen();
     trackedFetcher.load(path.to.pickingTracked(pickingListId, line.id));
   };
 
   const pickTracked = (selection: TrackedEntitySelection) => {
+    // The picker dialog had focus; its Scan trigger may be gone once the line
+    // is fully picked, so always land back on the line's controls.
+    expectResult(
+      t`Picked ${selection.quantity}${unitSuffix} ${itemName}`,
+      true
+    );
     const formData = new FormData();
     formData.append("trackedEntityId", selection.trackedEntityId);
     formData.append("quantity", String(selection.quantity));
@@ -627,10 +753,11 @@ function PickLineItem({
       method: "post",
       action: path.to.pickingTracked(pickingListId, line.id)
     });
-    setPickerOpen(false);
+    picker.onClose();
   };
 
   const unpickTracked = (trackedEntityId: string) => {
+    expectResult(t`Unpicked ${itemName}`, true);
     const formData = new FormData();
     formData.append("trackedEntityId", trackedEntityId);
     formData.append("unpick", "true");
@@ -651,8 +778,13 @@ function PickLineItem({
             : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
-      {quantityPicked}/{quantityToPick}
-      {unitSuffix}
+      <span className="sr-only">
+        {t`Picked ${quantityPicked} of ${quantityToPick}${unitSuffix}`}
+      </span>
+      <span aria-hidden="true">
+        {quantityPicked}/{quantityToPick}
+        {unitSuffix}
+      </span>
     </Badge>
   ) : (
     <Badge
@@ -665,13 +797,23 @@ function PickLineItem({
             : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
-      {isShort ? quantityPicked : quantityToPick}
-      {unitSuffix}
+      <span className="sr-only">
+        {isShort
+          ? t`Picked (short): ${quantityPicked}${unitSuffix} of ${quantityToPick}${unitSuffix}`
+          : isFullyPicked
+            ? t`Required: ${quantityToPick}${unitSuffix}, picked: ${quantityPicked}${unitSuffix}`
+            : t`Required: ${quantityToPick}${unitSuffix}`}
+      </span>
+      <span aria-hidden="true">
+        {isShort ? quantityPicked : quantityToPick}
+        {unitSuffix}
+      </span>
     </Badge>
   );
 
   return (
     <div
+      role="listitem"
       className={cn(
         "flex flex-col gap-4 p-4 border-b transition-opacity duration-150",
         "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
@@ -683,12 +825,15 @@ function PickLineItem({
       <div className="flex items-start justify-between gap-4 min-w-0 sm:flex-1">
         <HStack spacing={4} className="min-w-0 flex-1 max-md:space-x-3">
           <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+            {lineNumber != null ? (
+              <span className="sr-only">{t`Line`} </span>
+            ) : null}
             {lineNumber}
           </span>
           <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
             <ItemThumbnail
               size="xl"
-              thumbnailPath={null}
+              thumbnailPath={item?.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
           </div>
@@ -722,13 +867,28 @@ function PickLineItem({
         <div className="shrink-0 sm:hidden">{quantityBadge}</div>
       </div>
 
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
+
       {/* Controls — source, count (desktop), and pick actions */}
-      <div className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0">
-        {source ? (
-          <div className="text-base font-medium whitespace-nowrap">
-            {source}
-          </div>
-        ) : isShortStock && !isFullyPicked ? (
+      <div
+        ref={controlsRef}
+        className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0"
+      >
+        <div className="flex flex-wrap justify-end gap-x-2 text-base font-medium">
+          {isFullyPicked && pickedFrom
+            ? pickedFrom
+            : liveStorageUnits.length > 0
+              ? liveStorageUnits.map((unit, index) => (
+                  <span key={unit.id ?? `unassigned-${index}`}>
+                    {unit.name ?? t`Location not known`}
+                    {liveStorageUnits.length > 1 ? ` (${unit.quantity})` : ""}
+                  </span>
+                ))
+              : (pickedFrom ?? <Trans>Location not known</Trans>)}
+        </div>
+        {isShortStock && !isFullyPicked ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
@@ -826,6 +986,7 @@ function PickLineItem({
                 onClick={openPicker}
                 isDisabled={isSubmitting}
                 className="flex-1 sm:flex-none"
+                aria-label={t`Scan ${itemName}`}
               >
                 <Trans>Scan</Trans>
               </Button>
@@ -840,17 +1001,32 @@ function PickLineItem({
             isLoading={isSubmitting}
             isDisabled={isSubmitting}
             className="flex-1 sm:flex-none"
+            aria-label={t`Unpick ${itemName}`}
           >
             <Trans>Unpick</Trans>
           </Button>
         ) : (
           <HStack spacing={1} className="flex-1 justify-end sm:flex-none">
+            {quantityPicked > 0 && (
+              <Button
+                size="lg"
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                onClick={() => pick(0)}
+                isDisabled={isSubmitting}
+                className="flex-1 sm:flex-none max-md:h-12"
+                aria-label={t`Unpick ${itemName}`}
+              >
+                <Trans>Unpick</Trans>
+              </Button>
+            )}
             <Button
               size="lg"
               variant="secondary"
-              onClick={() => setShortOpen(true)}
+              onClick={shortModal.onOpen}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
+              aria-label={t`Mark ${itemName} short`}
             >
               <Trans>Short</Trans>
             </Button>
@@ -861,6 +1037,7 @@ function PickLineItem({
               isLoading={isSubmitting}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
+              aria-label={t`Pick ${itemName}`}
             >
               <Trans>Pick</Trans>
             </Button>
@@ -868,39 +1045,31 @@ function PickLineItem({
         )}
       </div>
 
-      {shortOpen && (
-        <ShortPickModal
-          pickingListId={pickingListId}
-          lineId={line.id}
-          itemName={itemName}
-          quantityToPick={quantityToPick}
-          quantityPicked={quantityPicked}
-          unitOfMeasureCode={unitOfMeasureCode}
-          onClose={() => setShortOpen(false)}
-        />
-      )}
+      <ShortPickModal
+        open={shortModal.isOpen}
+        pickingListId={pickingListId}
+        lineId={line.id}
+        itemName={itemName}
+        quantityToPick={quantityToPick}
+        quantityPicked={quantityPicked}
+        unitOfMeasureCode={unitOfMeasureCode}
+        onClose={shortModal.onClose}
+      />
 
-      {pickerOpen && (
-        <TrackedEntityPicker
-          size="lg"
-          trackingType={
-            item?.itemTrackingType === "Serial" ? "Serial" : "Batch"
-          }
-          entities={trackedFetcher.data?.entities ?? []}
-          quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
-          title={`Pick ${itemName}`}
-          description="Choose a lot to pick — expiring/oldest first."
-          nearExpiryWarningDays={
-            trackedFetcher.data?.nearExpiryWarningDays ?? 0
-          }
-          expiredEntityPolicy={
-            trackedFetcher.data?.expiredEntityPolicy ?? "Warn"
-          }
-          defaultOrder={trackedFetcher.data?.defaultOrder}
-          onSelect={pickTracked}
-          onClose={() => setPickerOpen(false)}
-        />
-      )}
+      <TrackedEntityPicker
+        open={picker.isOpen}
+        size="lg"
+        trackingType={item?.itemTrackingType === "Serial" ? "Serial" : "Batch"}
+        entities={trackedFetcher.data?.entities ?? []}
+        quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
+        title={`Pick ${itemName}`}
+        description="Choose a lot to pick — expiring/oldest first."
+        nearExpiryWarningDays={trackedFetcher.data?.nearExpiryWarningDays ?? 0}
+        expiredEntityPolicy={trackedFetcher.data?.expiredEntityPolicy ?? "Warn"}
+        defaultOrder={trackedFetcher.data?.defaultOrder}
+        onSelect={pickTracked}
+        onClose={picker.onClose}
+      />
     </div>
   );
 }

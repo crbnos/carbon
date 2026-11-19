@@ -8,11 +8,14 @@ import { View } from "@react-pdf/renderer";
 import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  jobTravelerTexts,
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   JobTravelerData,
   JobTravelerMaterial
@@ -23,7 +26,6 @@ import {
   MaterialsBlock
 } from "./blocks/jobTraveler";
 import { tw } from "./blocks/jobTraveler/tw";
-import { Template } from "./components";
 
 type JobOperationStep = Database["public"]["Tables"]["jobOperationStep"]["Row"];
 
@@ -47,29 +49,39 @@ interface JobTravelerProps extends PDF {
   materials?: JobTravelerMaterial[];
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
+  valueCollector?: ValueCollector;
 }
 
-type PageContentProps = Omit<
-  JobTravelerProps,
-  "meta" | "title" | "jobMakeMethod"
-> & {
+type PageContentProps = Omit<JobTravelerProps, "meta" | "jobMakeMethod"> & {
   methodRevision?: string | null;
 };
 
 /** Build the data bag every Job Traveler block renderer reads from. */
-function buildData(
-  props: PageContentProps,
-  template: DocumentTemplate
-): JobTravelerData {
+function buildData(props: PageContentProps, template: DocumentTemplate) {
   const { sections = {} } = props;
-  const vars = buildJobTravelerVars(props);
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(template.headerSectionId
-      ? (sections[template.headerSectionId]?.config ?? {})
-      : {})
-  };
-  return {
+  const values = documentValues(
+    template.settings.valueEdits,
+    props.valueCollector
+  );
+  const vars = values.document(buildJobTravelerVars(props));
+  const {
+    dt,
+    documentTitle,
+    documentNumber,
+    headerOptions,
+    visibleBlocks: printed
+  } = documentChrome({
+    texts: jobTravelerTexts.document,
+    template,
+    vars,
+    sections
+  });
+  const data: JobTravelerData = {
+    documentTitle,
+    documentNumber,
+    documentSubId: dt.prints("salesOrderPrefix")
+      ? dt("salesOrderPrefix")
+      : undefined,
     company: props.company,
     locale: props.locale,
     job: props.job,
@@ -87,8 +99,10 @@ function buildData(
     theme: template.theme,
     sections,
     vars,
+    values,
     headerOptions
   };
+  return { data, dt, printed };
 }
 
 /**
@@ -98,15 +112,10 @@ function buildData(
  */
 export const JobTravelerPageContent = (props: PageContentProps) => {
   const resolved = resolveTemplate("jobTraveler", props.template ?? null);
-  const data = buildData(props, resolved);
-  const showHeader = resolved.headerSectionId !== null;
+  const { data, dt, printed } = buildData(props, resolved);
   // `includeOperations` is an opt-out company setting (undefined = shown).
-  const showOperations = data.includeOperations !== false;
-  const visibleBlocks = resolved.blocks.filter(
-    (block) =>
-      block.visible &&
-      !(block.type === "header" && !showHeader) &&
-      !(block.type === "operations" && !showOperations)
+  const visibleBlocks = printed.filter(
+    (block) => block.type !== "operations" || data.includeOperations !== false
   );
 
   return (
@@ -116,7 +125,7 @@ export const JobTravelerPageContent = (props: PageContentProps) => {
         if (!render) return null;
         return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
       })}
-      {data.includeMaterials ? <MaterialsBlock data={data} /> : null}
+      {data.includeMaterials ? <MaterialsBlock data={data} text={dt} /> : null}
     </View>
   );
 };
@@ -137,43 +146,37 @@ const JobTravelerPDF = ({
   includeMaterials,
   includeOperations,
   materials,
-  title = "Job Traveler",
   template,
-  sections = {}
+  sections = {},
+  valueCollector
 }: JobTravelerProps) => {
   const resolved = resolveTemplate("jobTraveler", template ?? null);
-  const vars = buildJobTravelerVars({ job, item, customer, company });
-
-  const headerSection = resolved.headerSectionId
-    ? sections[resolved.headerSectionId]?.content
-    : undefined;
-  const footerSection = resolved.footerSectionId
-    ? sections[resolved.footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
+  const vars = documentValues(resolved.settings.valueEdits).document(
+    buildJobTravelerVars({
+      job,
+      item,
+      customer,
+      company,
+      jobOperations,
+      batchNumber,
+      methodRevision: jobMakeMethod?.version?.toString(),
+      locale
+    })
+  );
+  const chrome = documentChrome({
+    texts: jobTravelerTexts.document,
+    template: resolved,
+    vars,
+    sections
+  });
 
   return (
-    <Template
-      theme={resolved.theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "job traveler, manufacturing",
-        subject: meta?.subject ?? "Job Traveler"
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="job traveler, manufacturing"
       footerDocumentId={job?.jobId}
-      showFooter={resolved.footerSectionId !== null}
-      showPageNumbers={resolved.settings.showPageNumbers}
-      pageNumberFormat={resolved.settings.pageNumberFormat}
-      showRegistrationLine={resolved.settings.showRegistrationLine}
-      fontFamily={resolved.settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
     >
       <JobTravelerPageContent
         company={company}
@@ -192,8 +195,9 @@ const JobTravelerPDF = ({
         methodRevision={jobMakeMethod?.version?.toString()}
         template={template}
         sections={sections}
+        valueCollector={valueCollector}
       />
-    </Template>
+    </DocumentPage>
   );
 };
 

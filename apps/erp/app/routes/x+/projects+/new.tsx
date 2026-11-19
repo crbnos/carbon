@@ -8,6 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { redirect, WBS_TEMPLATES } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -15,8 +16,7 @@ import {
   type ActionFunctionArgs,
   data,
   type LoaderFunctionArgs,
-  useLoaderData,
-  useNavigate
+  useLoaderData
 } from "react-router";
 import {
   COST_OBJECTIVE_REQUIRED,
@@ -110,7 +110,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewProjectRoute() {
   const { t } = useLingui();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.projects);
   const { copyFromProjects, copyFromProjectId } =
     useLoaderData<typeof loader>();
 
@@ -134,7 +134,8 @@ export default function NewProjectRoute() {
           }))
         ]
       }}
-      onClose={() => navigate(path.to.projects)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

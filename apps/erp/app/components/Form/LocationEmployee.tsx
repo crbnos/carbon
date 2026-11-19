@@ -59,6 +59,7 @@ export const useLocationEmployees = (locationId?: string) => {
                       name={employee.name ?? undefined}
                       path={employee.avatarUrl}
                       size="xs"
+                      decorative
                     />
                     <span>{employee.name}</span>
                   </div>

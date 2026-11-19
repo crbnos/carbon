@@ -1466,6 +1466,27 @@ export function periodPostingRefusal(
   return null;
 }
 
+/** Why a close task cannot be marked done or skipped by hand, or null. */
+export function closeTaskChangeRefusal(
+  task: { taskType: string; severity: string | null },
+  periodCloseStatus: string,
+  change: "complete" | "skip"
+): string | null {
+  // A Closed period's checklist records how it closed.
+  if (periodCloseStatus === "Closed") {
+    return "The period is closed. Reopen it before you change its checklist.";
+  }
+  // Auto tasks reflect a live evaluator and are completed by the close.
+  if (change === "complete" && task.taskType === "Auto") {
+    return "Automated tasks are evaluated by the system and cannot be completed manually";
+  }
+  // Blocker tasks guard hard invariants: resolve them, never skip them.
+  if (change === "skip" && task.severity === "Blocker") {
+    return "Blocker tasks cannot be skipped; resolve the underlying issue first";
+  }
+  return null;
+}
+
 /** Why a period cannot be deleted, or null: only an Open period with no
  *  journals posted to it can go. */
 export function periodDeletionRefusal(

@@ -36,7 +36,8 @@ pnpm --filter @carbon/env test
 - **`schema`, `validateEnv(source)`, `formatReport(report)`** — the declaration and the startup report
 - **`getEnv(name)`** — reads one schema variable (its own name, then its aliases)
 - **Deployment:** `APP_URL` (this app's origin; alias `VERCEL_URL`), `APP_ENV` (alias `VERCEL_ENV`, defaults to `NODE_ENV`)
-- **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`
+- **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `SUPABASE_INTERNAL_URL` (server clients only; defaults to `SUPABASE_URL`)
+- **`internalSupabaseUrl(url)`** — a `SUPABASE_URL` address moved onto `SUPABASE_INTERNAL_URL` (`rebaseUrl` underneath). Server clients are built on `SUPABASE_URL`, so the links they sign can be handed out as is; this is for what the server itself requests: the clients' own calls (`packages/auth/src/lib/supabase/client.ts`), email attachments (`sendCompanyEmail`), the staged backup and the assembler (`internalizeStorageUrl`)
 - **Redis/Jobs:** `REDIS_URL`, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)
@@ -48,7 +49,7 @@ pnpm --filter @carbon/env test
 
 - **Feature flags (`@carbon/env/flags` + `@carbon/env/flags.server`):** spec `.ai/specs/2026-10-28-feature-flags.md`.
   - `./flags` is browser-safe: the registry `FLAGS` (each flag's default and whether it goes to the browser), `flagDefault`, `BrowserFlagKey`. Add a flag there first; a key not in `FLAGS` is a type error. The default is the safe value: it is what an instance does with no flags source.
-  - `./flags.server`: `initFlags({ store, waitUntil, onWarning })` (called once in each app's `entry.server.tsx`), `flags.bool(key, { companyId, email? })` (never throws, default from `FLAGS`; rules match the email in lower case), `evaluateBrowserFlags` (for the layout loaders), `parseHeaders`, and the `FlagsStore` interface that `@carbon/kv`'s `redisFlagsStore` implements (this package cannot import `@carbon/kv`).
+  - `./flags.server`: `initFlags({ store, waitUntil })` (called once in each app's `entry.server.tsx`; its warnings log under `env.flags`), `flags.bool(key, { companyId, email? })` (never throws, default from `FLAGS`; rules match the email in lower case), `evaluateBrowserFlags` (for the layout loaders), `parseHeaders`, and the `FlagsStore` interface that `@carbon/kv`'s `redisFlagsStore` implements (this package cannot import `@carbon/kv`).
   - `CARBON_FLAGS_ENDPOINT` (`https:` polls through Redis, `http:` only on localhost; `data:` loads once; any other scheme is refused with a warning) and `CARBON_FLAGS_HEADERS` (OTEL headers format, secret).
   - Read flags only through `flags.*`, `evaluateBrowserFlags` and `useFeatureFlags()` (`@carbon/react`), never with an OpenFeature client: the wrapper requires `companyId` and takes each default from `FLAGS`. Flags are booleans until one needs another type.
 

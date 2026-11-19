@@ -6,9 +6,10 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { fetchAllRecords } from "@carbon/database";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 
@@ -66,8 +67,7 @@ export default function SupplierNewSupplierPartRoute() {
 
   const { excludeItemIds, currencyCode } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.supplierParts(supplierId));
+  const dialog = useRouteDialog(path.to.supplierParts(supplierId));
 
   const initialValues = {
     itemId: "",
@@ -88,7 +88,8 @@ export default function SupplierNewSupplierPartRoute() {
       type="Part"
       initialValues={initialValues}
       unitOfMeasureCode=""
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

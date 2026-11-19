@@ -8,9 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertEnforcementRule } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
+import { data } from "react-router";
 import { salesRuleValidator } from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
@@ -55,14 +56,15 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewSalesRuleRoute() {
-  const navigate = useNavigate();
   // navigate(-1) breaks when the page was opened directly (no history entry
   // to pop). Always navigate forward to the parent list route — closes the
   // drawer regardless of how the user got here.
+  const dialog = useRouteDialog(path.to.salesRules);
   return (
     <SalesRuleForm
       initialValues={{}}
-      onClose={() => navigate(path.to.salesRules)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

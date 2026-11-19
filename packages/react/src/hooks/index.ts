@@ -25,16 +25,20 @@ import useMount from "./useMount";
 import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
+import { usePaneResize } from "./usePaneResize";
 import { usePlan } from "./usePlan";
 import { useRevalidator } from "./useRevalidator";
 import { useRouteData } from "./useRouteData";
+import { useRouteDialog } from "./useRouteDialog";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
+import { useSlidingHoverCard } from "./useSlidingHoverCard";
 import { useThemePreview } from "./useThemePreview";
 import {
   setThemePreview,
   ThemeStyleProvider,
+  useSavedThemeValue,
   useShellThemeStyle,
   useThemeContent,
   useThemeStyle,
@@ -70,14 +74,18 @@ export {
   useOptimisticLocation,
   useOptimisticMode,
   useOutsideClick,
+  usePaneResize,
   usePlan,
   useRevalidator,
   useRouteData,
+  useRouteDialog,
+  useSavedThemeValue,
   useScanPending,
   useShellThemeStyle,
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,
+  useSlidingHoverCard,
   useThemeContent,
   useThemePreview,
   useThemeStyle,

@@ -34,22 +34,8 @@ import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
 import { logTimeValidator } from "../../projects.models";
 
-/**
- * Logs time on one element for the signed-in user. The charge number is
- * fixed to the element. A posting refusal shows in the modal, which stays
- * open.
- */
-export function LogTimeModal({
-  projectId,
-  element,
-  laborCategories,
-  defaultLaborCategoryId,
-  action = path.to.projectLogTime,
-  hiddenFields,
-  defaultHours,
-  onLogged,
-  onClose
-}: {
+type LogTimeModalProps = {
+  open?: boolean;
   projectId: string;
   element: { id: string; readableId: string; name: string };
   laborCategories: { id: string; name: string }[];
@@ -63,7 +49,39 @@ export function LogTimeModal({
   /** Called once the time is logged, before the modal closes. */
   onLogged?: () => void;
   onClose: () => void;
-}) {
+};
+
+/**
+ * Logs time on one element for the signed-in user. The charge number is
+ * fixed to the element. A posting refusal shows in the modal, which stays
+ * open.
+ */
+export function LogTimeModal({
+  open = true,
+  onClose,
+  ...props
+}: LogTimeModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <LogTimeBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function LogTimeBody({
+  projectId,
+  element,
+  laborCategories,
+  defaultLaborCategoryId,
+  action = path.to.projectLogTime,
+  hiddenFields,
+  defaultHours,
+  onLogged,
+  onClose
+}: Omit<LogTimeModalProps, "open">) {
   const { t } = useLingui();
   const today = useCompanyToday();
   // DCAA mode (5a): a date before the entry window needs a late reason.
@@ -81,88 +99,82 @@ export function LogTimeModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={logTimeValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            entryDate: today,
-            projectId,
-            projectElementId: element.id,
-            laborCategoryId:
-              defaultLaborCategoryId &&
-              laborCategories.some((c) => c.id === defaultLaborCategoryId)
-                ? defaultLaborCategoryId
-                : (laborCategories[0]?.id ?? ""),
-            hours: defaultHours,
-            note: "",
-            lateReason: ""
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Log Time</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <span className="font-mono">{element.readableId}</span>{" "}
-              {element.name}
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="projectId" />
-            <Hidden name="projectElementId" />
-            {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
-              <Hidden key={name} name={name} value={value} />
-            ))}
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              <DatePicker name="entryDate" label={t`Date`} />
-              <NumberField
-                name="hours"
-                label={t`Hours`}
-                minValue={0}
-                maxValue={24}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-              />
-              <Select
-                name="laborCategoryId"
-                label={t`Labor Category`}
-                termId="labor-category"
-                options={laborCategories.map((c) => ({
-                  value: c.id,
-                  label: c.name
-                }))}
-              />
-              <TextArea name="note" label={t`Note`} />
-              {isDcaa && (
-                <TextArea
-                  name="lateReason"
-                  label={t`Reason for late entry`}
-                  placeholder={t`Needed when the date is before the entry window`}
-                />
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Log Time</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      validator={logTimeValidator}
+      method="post"
+      action={action}
+      fetcher={fetcher}
+      defaultValues={{
+        entryDate: today,
+        projectId,
+        projectElementId: element.id,
+        laborCategoryId:
+          defaultLaborCategoryId &&
+          laborCategories.some((c) => c.id === defaultLaborCategoryId)
+            ? defaultLaborCategoryId
+            : (laborCategories[0]?.id ?? ""),
+        hours: defaultHours,
+        note: "",
+        lateReason: ""
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Log Time</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <span className="font-mono">{element.readableId}</span> {element.name}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="projectId" />
+        <Hidden name="projectElementId" />
+        {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
+          <Hidden key={name} name={name} value={value} />
+        ))}
+        <VStack spacing={4}>
+          {errorMessage && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <DatePicker name="entryDate" label={t`Date`} />
+          <NumberField
+            name="hours"
+            label={t`Hours`}
+            minValue={0}
+            maxValue={24}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+          />
+          <Select
+            name="laborCategoryId"
+            label={t`Labor Category`}
+            termId="labor-category"
+            options={laborCategories.map((c) => ({
+              value: c.id,
+              label: c.name
+            }))}
+          />
+          <TextArea name="note" label={t`Note`} />
+          {isDcaa && (
+            <TextArea
+              name="lateReason"
+              label={t`Reason for late entry`}
+              placeholder={t`Needed when the date is before the entry window`}
+            />
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          <Trans>Log Time</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

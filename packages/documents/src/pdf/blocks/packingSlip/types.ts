@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
@@ -23,18 +24,25 @@ export type PackingSlipRentalUnit = {
   quantity?: string;
 };
 
+export type PackingSlipDocumentType =
+  | "packingSlip"
+  | "deliveryTicket"
+  | "receivingReport";
+
 /** Everything a Packing Slip block renderer might need. */
 export interface PackingSlipData {
-  /** "Packing Slip", or "Delivery Ticket" for a rental shipment. */
-  title: string;
+  /** The printed document title: the packing slip or the rental delivery ticket title. */
+  documentTitle: string;
+  /** The number printed in the header, from the template's document texts. */
+  documentNumber?: string;
   company: Company;
   locale: string;
   customer:
     | Database["public"]["Tables"]["customer"]["Row"]
     | Database["public"]["Tables"]["supplier"]["Row"];
   customerReference?: string;
-  /** What `customerReference` is called; "Customer PO #" by default. */
-  customerReferenceLabel?: string;
+  /** A Receiving Report calls `customerReference` the contract number. */
+  documentType: PackingSlipDocumentType;
   sourceDocument?: string;
   sourceDocumentId?: string;
   shipment: Database["public"]["Tables"]["shipment"]["Row"];
@@ -50,6 +58,7 @@ export interface PackingSlipData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
 }
 

@@ -61,9 +61,10 @@ const Badge = forwardRef<HTMLDivElement, BadgeProps>(
 );
 Badge.displayName = "Badge";
 
+/** An icon-only button: like `IconButton`, it must say what it removes ("Remove Acme"). */
 const BadgeCloseButton = forwardRef<
   ElementRef<"button">,
-  ComponentPropsWithoutRef<"button">
+  ComponentPropsWithoutRef<"button"> & { "aria-label": string }
 >(({ className, ...props }, ref) => (
   <button
     className={cn(
@@ -72,7 +73,7 @@ const BadgeCloseButton = forwardRef<
     )}
     {...props}
   >
-    <LuX className="h-3 w-3" />
+    <LuX aria-hidden className="h-3 w-3" />
   </button>
 ));
 BadgeCloseButton.displayName = "BadgeCloseButton";

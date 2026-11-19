@@ -12,7 +12,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { LuPlus, LuRefreshCw, LuTrash } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
@@ -24,7 +24,7 @@ import {
   setupGridHeight,
   useCellSave
 } from "~/components/Setup";
-import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { useCurrencyDecimals, useDrawerItem, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import LeasePaymentForm from "./LeasePaymentForm";
 import type { Lease, LeaseLine, LeasePayment } from "./types";
@@ -70,7 +70,8 @@ const LeasePaymentsGrid = ({
 
   const addPayment = useDisclosure();
   const regenerate = useDisclosure();
-  const [deleting, setDeleting] = useState<PaymentRow | null>(null);
+  const deleting = useDrawerItem<PaymentRow>();
+  const openDeleting = deleting.open;
 
   const assetName = useMemo(
     () => new Map(lines.map((line) => [line.id, line.description])),
@@ -196,13 +197,13 @@ const LeasePaymentsGrid = ({
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={!canEdit}
-        onClick={() => setDeleting(row)}
+        onClick={() => openDeleting(row)}
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Delete Payment</Trans>
       </MenuItem>
     ),
-    [canEdit]
+    [canEdit, openDeleting]
   );
 
   const gridColumns = useMemo(
@@ -290,8 +291,9 @@ const LeasePaymentsGrid = ({
         )}
       </div>
 
-      {addPayment.isOpen && lines[0] && (
+      {lines[0] && (
         <LeasePaymentForm
+          open={addPayment.isOpen}
           initialValues={{
             leaseId,
             leaseLineId: lines[0].id,
@@ -307,27 +309,27 @@ const LeasePaymentsGrid = ({
         />
       )}
 
-      {deleting && (
+      {deleting.item && (
         <ConfirmDelete
-          action={path.to.leasePaymentDelete(leaseId, deleting.id)}
-          name={t`payment ${deleting.number}`}
-          text={t`Are you sure you want to delete payment ${deleting.number}?`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          action={path.to.leasePaymentDelete(leaseId, deleting.item.id)}
+          name={t`payment ${deleting.item.number}`}
+          text={t`Are you sure you want to delete payment ${deleting.item.number}?`}
+          isOpen={deleting.isOpen}
+          onCancel={deleting.close}
+          onSubmit={deleting.close}
         />
       )}
 
-      {regenerate.isOpen && (
-        <Confirm
-          action={path.to.leasePaymentsRegenerate(leaseId)}
-          title={t`Regenerate payments from the terms?`}
-          text={t`Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced.`}
-          confirmText={t`Regenerate`}
-          confirmVariant="destructive"
-          onCancel={regenerate.onClose}
-          onSubmit={regenerate.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.leasePaymentsRegenerate(leaseId)}
+        title={t`Regenerate payments from the terms?`}
+        text={t`Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced.`}
+        confirmText={t`Regenerate`}
+        confirmVariant="destructive"
+        isOpen={regenerate.isOpen}
+        onCancel={regenerate.onClose}
+        onSubmit={regenerate.onClose}
+      />
     </SetupSection>
   );
 };

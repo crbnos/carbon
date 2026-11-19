@@ -19,7 +19,11 @@ export const CarbonContext = createContext<StoreApi<ICarbonStore> | null>(null);
 
 let __hmrStore: StoreApi<ICarbonStore> | null = null;
 
+// Browser only: on the server this would hold the last request's session for
+// every later request, and keep that render's whole route tree alive across
+// dev reloads.
 export const setCarbonHmrStore = (store: StoreApi<ICarbonStore>) => {
+  if (typeof document === "undefined") return;
   __hmrStore = store;
 };
 

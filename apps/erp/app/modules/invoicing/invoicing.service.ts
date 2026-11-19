@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  ForbiddenError,
   InvalidInputError,
   NotFoundError,
   ServerFnError
@@ -10,11 +11,12 @@ import {
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { withStripe } from "@carbon/api/stock-stripes";
-import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
+  fetchAllByIds,
   fetchAllFromTable,
+  fetchAllRecords,
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
@@ -22,10 +24,16 @@ import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   DOCUMENT_JOURNAL_STATUSES,
   OPEN_ITEM_JOURNAL_STATUSES,
+  PRE_CUTOVER_JOURNAL_STATUSES,
   REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
   TAX_PAID_POSTING_DESCRIPTION
 } from "@carbon/database/accounting-posting";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import {
   addMovement,
   applyContractMovement,
@@ -37,8 +45,8 @@ import {
   normalizePosition
 } from "@carbon/database/contract-position";
 import {
-  type InvoiceDocumentIds,
   loadDepositScope,
+  loadPurchaseInvoiceDocumentIds,
   loadSalesInvoiceDocumentIds
 } from "@carbon/database/deposit-scope";
 import {
@@ -51,8 +59,12 @@ import {
   readAccountingCutoverDate,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
-import type { AccountClass } from "@carbon/database/ledger";
-import { accountTypeFromClass } from "@carbon/database/ledger";
+import type { AccountClass, AccountType } from "@carbon/database/ledger";
+import {
+  accountTypeFromClass,
+  debitSigned,
+  isAccountClass
+} from "@carbon/database/ledger";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
 import type { MemoJournalLine } from "@carbon/database/posting";
 import {
@@ -62,6 +74,7 @@ import {
   type PaymentJournalFeeInput,
   type PaymentJournalLine
 } from "@carbon/database/posting";
+import { withInspectionRelease } from "@carbon/database/quality";
 import type * as rows from "@carbon/database/rows";
 import {
   inOrder,
@@ -85,6 +98,8 @@ import {
 } from "@carbon/database/tax-ledger";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
@@ -97,6 +112,7 @@ import {
   renderSalesInvoicePdf
 } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
 import {
   expectedConnectInvoiceTotal,
@@ -113,6 +129,7 @@ import {
 import type { Violation } from "@carbon/utils";
 import {
   addDays,
+  allocateDepositRefund,
   allocatePaymentFunding,
   allocateSalesHeaderShipping,
   allocateVarianceAcrossLayers,
@@ -129,8 +146,11 @@ import {
   chunkArray,
   classifyIntercompanyPostingLines,
   credit,
+  DEPOSIT_DESCRIPTIONS,
   datetime,
   debit,
+  depositAppliedDescription,
+  depositDescription,
   distributeRoundingResidual,
   EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
@@ -140,13 +160,17 @@ import {
   type FundingPaymentRow,
   type FundingRequest,
   type FundingScope,
+  type FundingScopeIds,
   type FundingSource,
   fundingScopeOf,
   getBillableQuantity,
   getRemainingQuantityToInvoice,
+  HistoricalDepositReconciliationError,
   invoiceRemainingAmounts,
   isBillableLeaseStatus,
   isEffectiveSettlement,
+  isPendingSettlement,
+  type LegacyDepositRefund,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
   RECEIVABLE_POSTING_DESCRIPTIONS,
@@ -156,12 +180,15 @@ import {
   reduceInvoiceSettlements,
   remainingFundingSources,
   requireAffected,
+  reserveLegacyDepositRefunds,
   round,
   roundSalesPostingAmounts,
   type SalesPostingMetadata,
   SCALE,
   type ScheduleRow,
   type SettlementBalanceRow,
+  SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION,
   searchFilter,
   splitLineTax,
   spreadStraightLine,
@@ -172,7 +199,7 @@ import {
   type VarianceAllocation
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -187,6 +214,11 @@ import {
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  postReceipt,
+  RECEIPT_VOID_STOCK_MOVED_ERROR,
+  removeUnpickedPutAways
+} from "~/modules/inventory/inventory.service";
+import {
   buildProjectCipRow,
   reverseProjectCipRows,
   writeProjectCipRows
@@ -197,11 +229,25 @@ import {
   reverseProjectLedgerRows
 } from "~/modules/projects/project-posting";
 import {
+  PURCHASE_ORDER_RELEASED_STATUSES,
+  purchaseOrderStatusAfterReversal
+} from "~/modules/purchasing/purchasing.models";
+import {
+  deletePurchaseInvoiceReleasingLeases,
+  type ForceDeleteReversalAccounting,
+  forceDeleteReceiptRefusal,
+  getCompanyAdminIds,
+  getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
-  insertSupplierInteraction
+  insertSupplierInteraction,
+  type PurchaseOrderForceDeleteReceipt,
+  purchaseOrderFundsGate,
+  restorePurchaseOrderReceived,
+  reverseReceiptsByAdjustment
 } from "~/modules/purchasing/purchasing.service";
 import {
+  deleteSalesInvoiceReleasingRentals,
   getCustomer,
   getCustomerContact,
   getCustomerLocation,
@@ -211,11 +257,16 @@ import {
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
+  type ForceDeleteDocumentType,
+  forceDeleteNotificationId
+} from "~/modules/shared/shared.models";
+import {
   type AverageCostChange,
   allocateJournalLineIds,
   applyAverageCostChanges,
   assertNoMigrationClearing,
   assertPostable,
+  bookAdjustment,
   calculateCOGS,
   copyJournalLineDimensions,
   currencyDecimals,
@@ -224,6 +275,7 @@ import {
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   loadContractPositions,
@@ -238,6 +290,7 @@ import {
   purchaseTaxLedgerLines,
   refuseUnlessOwned,
   refuseVoidBeforeCutover,
+  resolveAccountingPeriod,
   resolveInventoryAccount,
   SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   salesInvoiceStandIns,
@@ -252,10 +305,11 @@ import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { searchTerms, withSearchLines } from "~/utils/search";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getExchangeRate, getTaxCode } from "../accounting/accounting.service";
 import { toTaxCodeInput } from "../accounting/accounting.utils";
 import { getEmployeeJob } from "../people/people.service";
+import { OPEN_PURCHASE_ORDER_STATUSES } from "../purchasing/purchasing.models";
 import { OPEN_SALES_ORDER_STATUSES } from "../sales/sales.models";
 import {
   getCustomerPayment,
@@ -284,12 +338,20 @@ import type {
   salesInvoiceValidator
 } from "./invoicing.models";
 import {
+  CARD_ACCOUNT_TYPE,
   type DepositDocument,
   isPurchaseInvoiceLocked,
   isSalesInvoiceLocked,
+  paymentJournalDifference,
+  purchaseInvoiceRoundingAmount,
+  purchaseLineAccountClasses,
   resolveMemoTaxAmounts,
   type stripeCustomerActions
 } from "./invoicing.models";
+import {
+  ORDER_LINE_CHARGE_FIELDS,
+  type SalesInvoicePostFacts
+} from "./invoicing.utils";
 import {
   type InvoiceProjectCharges,
   loadInvoiceProjectCharges
@@ -303,7 +365,7 @@ const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt,customerName,invoiceCustomerName" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -459,6 +521,30 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
+  // Invoiced only once approved and released (or since closed), within the
+  // approved amount.
+  const funds = await getPurchaseOrderFundsRefusal(
+    client,
+    companyId,
+    [purchaseOrderId],
+    "invoice"
+  );
+  if (funds.error) {
+    return {
+      data: null,
+      error: new ServerFnError(
+        "Failed to read the purchase order",
+        500,
+        {},
+        {
+          cause: funds.error
+        }
+      )
+    };
+  }
+  if (funds.data) {
+    return { data: null, error: new ServerFnError(funds.data, 400) };
+  }
   return invokePosting(
     { client, db, companyId, userId },
     "convert",
@@ -751,6 +837,30 @@ export async function getSalesInvoices(
   return query;
 }
 
+export async function getSalesInvoiceCustomerNames(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceIds: string[]
+) {
+  return client.rpc("get_sales_invoice_customer_names", {
+    company_id: companyId,
+    invoice_ids: invoiceIds
+  });
+}
+
+export async function getInvoiceLineGlCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceType: "sales" | "purchase",
+  invoiceIds: string[]
+) {
+  return client.rpc("get_invoice_line_gl_codes", {
+    company_id: companyId,
+    invoice_type: invoiceType,
+    invoice_ids: invoiceIds
+  });
+}
+
 export async function getSalesInvoiceShipment(
   client: SupabaseClient<Database>,
   salesInvoiceId: string
@@ -783,6 +893,280 @@ export async function getSalesInvoiceLine(
     .select("*")
     .eq("id", salesInvoiceLineId)
     .single();
+}
+
+/** Invoice statuses whose quantity `quantityToInvoice` does not count yet. */
+const UNPOSTED_INVOICE_STATUSES = new Set(["Draft", "Pending"]);
+
+/**
+ * What a draft sales invoice's post checks (`salesInvoicePostChecks`) read
+ * beyond the invoice: each order line it bills (ordered, left to invoice,
+ * what other unposted invoices bill, whether a contract bills it, and each
+ * flat charge with what others already billed of it), each order's shipping
+ * no other invoice bills, and today's rate for the invoice's currency.
+ * "Other" means every non-voided invoice of the order but this one, drafts
+ * included, counted as `billedSalesOrderCharges` counts them when an order
+ * is invoiced.
+ *
+ * The order and contract tables need `sales_view`, which an invoicing user
+ * may not hold, so the caller passes the service role rather than tie the
+ * checks to a second module's permission; every read is scoped to the
+ * company. It reads only the orders, order lines and contract lines of the
+ * order lines this invoice's own lines link to, from ids the server loaded,
+ * never from the request, and returns only whether a contract bills each
+ * one: keep it that way, since whatever it returns reaches the browser.
+ */
+export async function getSalesInvoicePostFacts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceId: string,
+  currencyCode: string | null,
+  lines: { salesOrderId: string | null; salesOrderLineId: string | null }[]
+): Promise<
+  | { data: SalesInvoicePostFacts; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const orderIds = [
+    ...new Set(lines.flatMap((line) => line.salesOrderId ?? []))
+  ];
+  const orderLineIds = [
+    ...new Set(lines.flatMap((line) => line.salesOrderLineId ?? []))
+  ];
+  const none = { data: [], error: null };
+
+  const [rate, orderLines, contractLines, orders, orderShipments, otherLines] =
+    await Promise.all([
+      currencyCode
+        ? getExchangeRate(client, companyId, currencyCode)
+        : Promise.resolve({ data: null, error: null }),
+      // Every id list is batched (`fetchAllByIds`): one too long for a single
+      // `.in()` fails at the gateway, and the checks would silently go.
+      orderLineIds.length > 0
+        ? fetchAllByIds<{
+            id: string;
+            unitPrice: number | null;
+            saleQuantity: number | null;
+            quantityToInvoice: number | null;
+            addOnCost: number | null;
+            nonTaxableAddOnCost: number | null;
+            shippingCost: number | null;
+          }>(orderLineIds, (batch) =>
+            client
+              .from("salesOrderLine")
+              .select(
+                "id, unitPrice, saleQuantity, quantityToInvoice, addOnCost, nonTaxableAddOnCost, shippingCost"
+              )
+              .in("id", batch)
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none),
+      // The order lines a contract made from the order still bills: one that
+      // ended before it billed leaves the line to an invoice.
+      orderLineIds.length > 0
+        ? fetchAllByIds<{
+            salesOrderLineId: string | null;
+            customerContract: { status: string };
+          }>(orderLineIds, (batch) =>
+            client
+              .from("customerContractLine")
+              .select(
+                "salesOrderLineId, customerContract!customerContractLine_contract_fkey!inner(status)"
+              )
+              .in("salesOrderLineId", batch)
+              .in("customerContract.status", ["Draft", "Active"])
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none),
+      orderIds.length > 0
+        ? fetchAllByIds<{ id: string; salesOrderId: string }>(
+            orderIds,
+            (batch) =>
+              client
+                .from("salesOrder")
+                .select("id, salesOrderId")
+                .in("id", batch)
+                .eq("companyId", companyId)
+                .order("id")
+          )
+        : Promise.resolve(none),
+      orderIds.length > 0
+        ? fetchAllByIds<{ id: string; shippingCost: number | null }>(
+            orderIds,
+            (batch) =>
+              client
+                .from("salesOrderShipment")
+                .select("id, shippingCost")
+                .in("id", batch)
+                .eq("companyId", companyId)
+                .order("id")
+          )
+        : Promise.resolve(none),
+      // Every line of the orders' other invoices: paged, since a long-running
+      // order can pass the 1,000 rows one read returns.
+      orderIds.length > 0
+        ? fetchAllByIds<{
+            invoiceId: string;
+            salesOrderId: string | null;
+            salesOrderLineId: string | null;
+            quantity: number | null;
+            addOnCost: number | null;
+            nonTaxableAddOnCost: number | null;
+            shippingCost: number | null;
+            salesInvoice: { status: string };
+          }>(orderIds, (batch) =>
+            client
+              .from("salesInvoiceLine")
+              .select(
+                "invoiceId, salesOrderId, salesOrderLineId, quantity, addOnCost, nonTaxableAddOnCost, shippingCost, salesInvoice!salesInvoiceLine_invoiceId_fkey!inner(status)"
+              )
+              .in("salesOrderId", batch)
+              .neq("invoiceId", invoiceId)
+              .neq("salesInvoice.status", "Voided")
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none)
+    ]);
+  const failed =
+    orderLines.error ??
+    contractLines.error ??
+    orders.error ??
+    orderShipments.error ??
+    otherLines.error;
+  if (failed) return { data: null, error: failed as PostgrestError };
+
+  const billingLines = otherLines.data ?? [];
+  const otherInvoiceIds = [
+    ...new Set(billingLines.map((line) => line.invoiceId))
+  ];
+  const otherShipments =
+    otherInvoiceIds.length > 0
+      ? await fetchAllByIds<{ id: string; shippingCost: number | null }>(
+          otherInvoiceIds,
+          (batch) =>
+            client
+              .from("salesInvoiceShipment")
+              .select("id, shippingCost")
+              .in("id", batch)
+              .eq("companyId", companyId)
+              .order("id")
+        )
+      : none;
+  if (otherShipments.error) return { data: null, error: otherShipments.error };
+
+  const billedByLine = new Map<
+    string,
+    Record<(typeof ORDER_LINE_CHARGE_FIELDS)[number], number> & {
+      unpostedQuantity: number;
+      invoices: Set<string>;
+    }
+  >();
+  for (const line of billingLines) {
+    if (!line.salesOrderLineId) continue;
+    const billed = billedByLine.get(line.salesOrderLineId) ?? {
+      addOnCost: 0,
+      nonTaxableAddOnCost: 0,
+      shippingCost: 0,
+      unpostedQuantity: 0,
+      invoices: new Set<string>()
+    };
+    billed.invoices.add(line.invoiceId);
+    for (const field of ORDER_LINE_CHARGE_FIELDS) {
+      billed[field] += line[field] ?? 0;
+    }
+    // A posted invoice's quantity is in `quantityToInvoice` already; a Draft's
+    // and a Pending one's (its post still running) is not.
+    if (UNPOSTED_INVOICE_STATUSES.has(line.salesInvoice.status)) {
+      billed.unpostedQuantity += line.quantity ?? 0;
+    }
+    billedByLine.set(line.salesOrderLineId, billed);
+  }
+
+  // An invoice's own shipping counts against every order it bills from.
+  const shippingByInvoice = new Map(
+    (otherShipments.data ?? []).map((row) => [row.id, row.shippingCost ?? 0])
+  );
+  const billedShippingByOrder = new Map<string, number>();
+  const counted = new Set<string>();
+  for (const line of billingLines) {
+    if (!line.salesOrderId) continue;
+    const key = `${line.salesOrderId}:${line.invoiceId}`;
+    if (counted.has(key)) continue;
+    counted.add(key);
+    billedShippingByOrder.set(
+      line.salesOrderId,
+      (billedShippingByOrder.get(line.salesOrderId) ?? 0) +
+        (shippingByInvoice.get(line.invoiceId) ?? 0)
+    );
+  }
+
+  const contractBilled = new Set(
+    (contractLines.data ?? []).flatMap((line) => line.salesOrderLineId ?? [])
+  );
+
+  const orderShippingById = new Map(
+    (orderShipments.data ?? []).map((row) => [row.id, row.shippingCost ?? 0])
+  );
+
+  if (rate.error) {
+    logger.warning("Could not read today's exchange rate for the post checks", {
+      companyId,
+      invoiceId,
+      currencyCode,
+      error: rate.error
+    });
+  }
+
+  return {
+    data: {
+      orderLines: (orderLines.data ?? []).map((line) => {
+        const billed = billedByLine.get(line.id);
+        return {
+          salesOrderLineId: line.id,
+          // Null when the order line was never priced: not an agreed $0.
+          unitPrice: line.unitPrice,
+          orderedQuantity: line.saleQuantity ?? 0,
+          remainingQuantity: line.quantityToInvoice ?? 0,
+          unpostedQuantity: billed?.unpostedQuantity ?? 0,
+          otherInvoices: billed?.invoices.size ?? 0,
+          billedByContract: contractBilled.has(line.id),
+          charges: {
+            addOnCost: {
+              charge: line.addOnCost ?? 0,
+              billed: billed?.addOnCost ?? 0
+            },
+            nonTaxableAddOnCost: {
+              charge: line.nonTaxableAddOnCost ?? 0,
+              billed: billed?.nonTaxableAddOnCost ?? 0
+            },
+            shippingCost: {
+              charge: line.shippingCost ?? 0,
+              billed: billed?.shippingCost ?? 0
+            }
+          }
+        };
+      }),
+      // The invoice's shipping covers the orders in this order: a stable one,
+      // so the same invoice always names the same order.
+      orders: [...(orders.data ?? [])]
+        .sort((a, b) => a.salesOrderId.localeCompare(b.salesOrderId))
+        .map((order) => ({
+          salesOrderId: order.id,
+          readableId: order.salesOrderId,
+          unbilledShipping: Math.max(
+            0,
+            (orderShippingById.get(order.id) ?? 0) -
+              (billedShippingByOrder.get(order.id) ?? 0)
+          )
+        })),
+      // A missing rate is an error from `get_exchange_rate`, never 1: the
+      // check then decides nothing rather than guess.
+      currentExchangeRate: rate.error ? null : rate.data
+    },
+    error: null
+  };
 }
 
 export async function updatePurchaseInvoiceExchangeRate(
@@ -1950,13 +2334,14 @@ export async function getInvoiceSettlements(
   type Settlement = Database["public"]["Tables"]["invoiceSettlement"]["Row"] & {
     salesInvoice: { invoiceId: string } | null;
     purchaseInvoice: { invoiceId: string } | null;
+    targetPayment: { paymentId: string } | null;
     targetMemo: { memoId: string } | null;
     targetReimbursement: { reimbursementId: string } | null;
   };
   return fetchAllFromTable<Settlement>(
     client,
     "invoiceSettlement",
-    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:reimbursement!invoiceSettlement_targetReimbursementId_fkey(reimbursementId)",
+    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:reimbursement!invoiceSettlement_targetReimbursementId_fkey(reimbursementId), targetPayment:payment!invoiceSettlement_targetPaymentId_fkey(paymentId)",
     (query) =>
       query
         .eq("companyId", companyId)
@@ -1999,9 +2384,11 @@ export type InvoiceSettlementForInvoice = {
   sourceExchangeRate: number | null;
   appliedDate: string;
   source: InvoiceSettlementSource;
+  /** Applied by a Draft payment: it takes effect when the payment posts. */
+  pending: boolean;
 };
 
-// Posted settlements against a specific invoice — BOTH cash payments and applied
+// Posted settlements, and those pending a Draft payment's post, against a specific invoice — BOTH cash payments and applied
 // credit/debit memos. Used by the "Applied" panel on the sales/purchase invoice
 // detail page. Page the embedded parents with their applications so large histories
 // retain every source without oversized ID lookups.
@@ -2062,17 +2449,16 @@ export async function getInvoiceSettlementsForInvoice(
 
   const merged: InvoiceSettlementForInvoice[] = [];
   for (const a of apps.data ?? []) {
-    if (
-      !isEffectiveSettlement({
-        paymentId: a.paymentId,
-        memoId: a.memoId,
-        appliedViaPaymentId: a.appliedViaPaymentId,
-        paymentStatus: a.payment?.status ?? null,
-        memoStatus: a.memo?.status ?? null,
-        viaStatus: a.appliedViaPayment?.status ?? null
-      })
-    )
-      continue;
+    const effectiveness = {
+      paymentId: a.paymentId,
+      memoId: a.memoId,
+      appliedViaPaymentId: a.appliedViaPaymentId,
+      paymentStatus: a.payment?.status ?? null,
+      memoStatus: a.memo?.status ?? null,
+      viaStatus: a.appliedViaPayment?.status ?? null
+    };
+    const pending = isPendingSettlement(effectiveness);
+    if (!pending && !isEffectiveSettlement(effectiveness)) continue;
     let source: InvoiceSettlementSource | null = null;
     if (a.paymentId && a.payment) {
       const p = a.payment;
@@ -2108,13 +2494,14 @@ export async function getInvoiceSettlementsForInvoice(
       targetExchangeRate: Number(a.targetExchangeRate),
       sourceExchangeRate: Number(a.sourceExchangeRate),
       appliedDate: a.appliedDate,
-      source
+      source,
+      pending
     });
   }
 
   const bySource = new Map<string, InvoiceSettlementForInvoice>();
   for (const row of merged) {
-    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}`;
+    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}:${row.pending}`;
     const previous = bySource.get(key);
     if (!previous) {
       bySource.set(key, { ...row });
@@ -2289,6 +2676,7 @@ export async function getSettlementRelatedItems(
   args: {
     journalId: string | null;
     targets: {
+      targetPaymentId?: string | null;
       targetSalesInvoiceId: string | null;
       targetPurchaseInvoiceId: string | null;
       targetMemoId: string | null;
@@ -2308,7 +2696,7 @@ export async function getSettlementRelatedItems(
     ? await client
         .from("invoiceSettlement")
         .select(
-          "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId"
+          "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId, targetPaymentId"
         )
         .eq("companyId", companyId)
         .eq("appliedViaPaymentId", args.appliedViaPaymentId)
@@ -2334,6 +2722,7 @@ export async function getSettlementRelatedItems(
   );
   const creditIds = unique(viaRows.map((row) => row.memoId));
   const memoIds = unique([...targets.map((t) => t.targetMemoId), ...creditIds]);
+  const paymentIds = unique(targets.map((t) => t.targetPaymentId));
   const reimbursementIds = unique(targets.map((t) => t.targetReimbursementId));
 
   const [
@@ -2342,6 +2731,7 @@ export async function getSettlementRelatedItems(
     purchaseInvoices,
     memos,
     reimbursements,
+    payments,
     salesReturnOrder,
     purchaseReturnOrder,
     rentalAgreement
@@ -2386,6 +2776,14 @@ export async function getSettlementRelatedItems(
           .eq("companyId", companyId)
           .order("reimbursementId")
       : null,
+    paymentIds.length > 0
+      ? client
+          .from("payment")
+          .select("id, paymentId, status")
+          .in("id", paymentIds)
+          .eq("companyId", companyId)
+          .order("paymentId")
+      : null,
     args.salesReturnOrderId
       ? client
           .from("salesReturnOrder")
@@ -2418,6 +2816,7 @@ export async function getSettlementRelatedItems(
     purchaseInvoices,
     memos,
     reimbursements,
+    payments,
     salesReturnOrder,
     purchaseReturnOrder,
     rentalAgreement
@@ -2441,6 +2840,7 @@ export async function getSettlementRelatedItems(
     memos: allMemos.filter((memo) => !credits.has(memo.id)),
     credits: allMemos.filter((memo) => credits.has(memo.id)),
     reimbursements: reimbursements?.data ?? [],
+    payments: payments?.data ?? [],
     salesReturnOrder: salesReturnOrder?.data ?? null,
     purchaseReturnOrder: purchaseReturnOrder?.data ?? null,
     rentalAgreement: rentalAgreement?.data ?? null
@@ -2516,6 +2916,11 @@ async function getOpenInvoicesForParty(
     Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
     "invoiceId" | "rentalAgreementId" | "salesOrderId" | "customerContractId"
   >;
+  type PurchaseLineRow = {
+    invoiceId: string;
+    purchaseOrderId: string | null;
+    purchaseOrderLine: { purchaseOrderId: string; companyId: string } | null;
+  };
   type ContractInvoiceRow = { id: string; customerContractId: string | null };
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
@@ -2553,6 +2958,7 @@ async function getOpenInvoicesForParty(
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
   const documentLines: DocumentLineRow[] = [];
+  const purchaseLines: PurchaseLineRow[] = [];
   const contractInvoices: ContractInvoiceRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
@@ -2561,7 +2967,8 @@ async function getOpenInvoicesForParty(
       batchSettlements,
       batchControls,
       batchDocumentLines,
-      batchContractInvoices
+      batchContractInvoices,
+      batchPurchaseLines
     ] = await Promise.all([
       fetchAllFromTable<SettlementRow>(
         client,
@@ -2628,18 +3035,37 @@ async function getOpenInvoicesForParty(
                 .or("customerContractId.not.is.null")
                 .order("id")
           )
-        : { data: [] as ContractInvoiceRow[], error: null }
+        : { data: [] as ContractInvoiceRow[], error: null },
+      // The purchase orders each purchase invoice bills: a supplier prepayment
+      // funds only an invoice of its own order.
+      isAR
+        ? { data: [] as PurchaseLineRow[], error: null }
+        : fetchAllFromTable<PurchaseLineRow>(
+            client,
+            "purchaseInvoiceLine",
+            "invoiceId, purchaseOrderId, purchaseOrderLine:purchaseOrderLineId(purchaseOrderId, companyId)",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("invoiceId", batch)
+                .or(
+                  "purchaseOrderId.not.is.null,purchaseOrderLineId.not.is.null"
+                )
+                .order("id")
+          )
     ]);
     const error =
       batchSettlements.error ??
       batchControls.error ??
       batchDocumentLines.error ??
-      batchContractInvoices.error;
+      batchContractInvoices.error ??
+      batchPurchaseLines.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
     documentLines.push(...(batchDocumentLines.data ?? []));
     contractInvoices.push(...(batchContractInvoices.data ?? []));
+    purchaseLines.push(...(batchPurchaseLines.data ?? []));
   }
   // A delivery invoice of a contract's own sales order bills the contract.
   const lineOrderIds = [
@@ -2666,17 +3092,32 @@ async function getOpenInvoicesForParty(
       rentalAgreementIds: string[];
       salesOrderIds: string[];
       customerContractIds: string[];
+      purchaseOrderIds: string[];
     }
   >();
   const documentsOf = (invoiceId: string) => {
     const documents = documentsByInvoice.get(invoiceId) ?? {
       rentalAgreementIds: [],
       salesOrderIds: [],
-      customerContractIds: []
+      customerContractIds: [],
+      purchaseOrderIds: []
     };
     documentsByInvoice.set(invoiceId, documents);
     return documents;
   };
+  for (const line of purchaseLines) {
+    const documents = documentsOf(line.invoiceId);
+    const purchaseOrderId =
+      line.purchaseOrderId ??
+      (line.purchaseOrderLine?.companyId === companyId
+        ? line.purchaseOrderLine.purchaseOrderId
+        : null);
+    if (
+      purchaseOrderId &&
+      !documents.purchaseOrderIds.includes(purchaseOrderId)
+    )
+      documents.purchaseOrderIds.push(purchaseOrderId);
+  }
   const addContract = (invoiceId: string, contractId: string | null) => {
     if (!contractId) return;
     const documents = documentsOf(invoiceId);
@@ -2747,7 +3188,9 @@ async function getOpenInvoicesForParty(
               documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
             salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? [],
             customerContractIds:
-              documentsByInvoice.get(i.id)?.customerContractIds ?? []
+              documentsByInvoice.get(i.id)?.customerContractIds ?? [],
+            purchaseOrderIds:
+              documentsByInvoice.get(i.id)?.purchaseOrderIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2999,19 +3442,328 @@ export async function getPaymentCurrencyConfiguration(
   };
 }
 
+/**
+ * The documents each target invoice bills, by side: a sales invoice's rental
+ * agreements, sales orders and contracts; a purchase invoice's purchase
+ * orders. Read only when a deposit is in play (`needed`), so an ordinary
+ * payment pays no extra query.
+ */
+async function loadInvoiceDocumentIds(
+  trx: Trx,
+  companyId: string,
+  isAR: boolean,
+  invoiceIds: string[],
+  needed: boolean
+): Promise<Map<string, Partial<FundingScopeIds>>> {
+  if (!needed) return new Map();
+  return isAR
+    ? loadSalesInvoiceDocumentIds(trx, companyId, invoiceIds)
+    : loadPurchaseInvoiceDocumentIds(trx, companyId, invoiceIds);
+}
+
+type LegacyRefundPayment = Pick<
+  PaymentRow,
+  | "id"
+  | "customerId"
+  | "currencyCode"
+  | "totalAmount"
+  | "exchangeRate"
+  | "postingDate"
+  | "paymentDate"
+  | "salesOrderId"
+  | "rentalAgreementId"
+  | "customerContractId"
+>;
+type LegacyRefundSettlement = FundingConsumptionRow & {
+  targetPaymentId: string | null;
+};
+type LegacyRefundLine = {
+  documentId: string | null;
+  accountId: string | null;
+  amount: number;
+};
+
+function legacyDepositRefundFacts(
+  payments: LegacyRefundPayment[],
+  settlements: LegacyRefundSettlement[],
+  lines: LegacyRefundLine[],
+  decimals: ReadonlyMap<string, number>
+) {
+  const accounts = new Map<string, string>();
+  for (const line of lines) {
+    if (!line.documentId || !line.accountId) continue;
+    const previous = accounts.get(line.documentId);
+    if (previous && previous !== line.accountId)
+      throw new HistoricalDepositReconciliationError(
+        "Reconcile historical deposit accounts before using remaining deposits"
+      );
+    accounts.set(line.documentId, line.accountId);
+  }
+  const refunds: LegacyDepositRefund[] = [];
+  for (const payment of payments) {
+    const applications = settlements.filter(
+      (row) => row.paymentId === payment.id
+    );
+    if (applications.some((row) => row.targetPaymentId)) continue;
+    const currencyDecimals = requireCurrencyDecimals(
+      new Map(decimals),
+      payment.currencyCode
+    );
+    const scope = fundingScopeOf(payment);
+    if (!scope) continue;
+    const principal = toDocumentAmount(
+      Number(payment.totalAmount) -
+        applications.reduce(
+          (sum, row) =>
+            sum +
+            (row.sourcePaymentId
+              ? 0
+              : (row.sourceAmount ??
+                toDocumentAmount(
+                  Number(row.appliedAmount) - Number(row.fxGainLossAmount ?? 0),
+                  Number(payment.exchangeRate),
+                  currencyDecimals
+                ))),
+          0
+        ),
+      1,
+      currencyDecimals
+    );
+    if (principal === 0) continue;
+    const carryingBase = round(
+      -lines
+        .filter((line) => line.documentId === payment.id)
+        .reduce((sum, line) => sum + Number(line.amount), 0)
+    );
+    const accountId = accounts.get(payment.id);
+    if (!accountId || principal < 0 || carryingBase < 0)
+      throw new HistoricalDepositReconciliationError(
+        `Reconcile historical deposit refund ${payment.id} before using this document's remaining deposit`
+      );
+    refunds.push({
+      paymentId: payment.id,
+      postingDate: payment.postingDate ?? payment.paymentDate,
+      currencyCode: payment.currencyCode,
+      scope,
+      principal,
+      carryingBase,
+      accountId
+    });
+  }
+  return { refunds, accounts };
+}
+
+// Read only original Payment journals. Their Superseded lines remain the
+// historical evidence after cutover; Opening Balance lines would count twice.
+async function readLegacyDepositRefunds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  customerId: string,
+  currencyCode: string,
+  sourceIds: string[],
+  decimals: ReadonlyMap<string, number>,
+  scope?: FundingScope
+) {
+  if (!sourceIds.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  let query = db
+    .selectFrom("payment")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("customerId", "=", customerId)
+    .where("paymentType", "=", "Disbursement")
+    .where("status", "=", "Posted")
+    .where("currencyCode", "=", currencyCode)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("payment as original")
+          .select("original.id")
+          .where("original.companyId", "=", companyId)
+          .where("original.id", "in", sourceIds)
+          .whereRef(
+            "original.salesOrderId",
+            "is not distinct from",
+            "payment.salesOrderId"
+          )
+          .whereRef(
+            "original.rentalAgreementId",
+            "is not distinct from",
+            "payment.rentalAgreementId"
+          )
+          .whereRef(
+            "original.customerContractId",
+            "is not distinct from",
+            "payment.customerContractId"
+          )
+      )
+    )
+    .where((eb) =>
+      eb.or([
+        eb("salesOrderId", "is not", null),
+        eb("rentalAgreementId", "is not", null),
+        eb("customerContractId", "is not", null)
+      ])
+    );
+  if (scope) query = query.where(`${scope.type}Id`, "=", scope.id);
+  const payments = await query.execute();
+  if (!payments.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  const ids = payments.map((payment) => payment.id);
+  const [settlements, lines] = await Promise.all([
+    db
+      .selectFrom("invoiceSettlement")
+      .select([
+        "paymentId",
+        "sourcePaymentId",
+        "sourceAmount",
+        "appliedAmount",
+        "fxGainLossAmount",
+        "targetPaymentId"
+      ])
+      .where("companyId", "=", companyId)
+      .where("paymentId", "in", ids)
+      .execute(),
+    db
+      .selectFrom("journalLine as line")
+      .innerJoin("journal as j", (join) =>
+        join
+          .onRef("j.id", "=", "line.journalId")
+          .onRef("j.companyId", "=", "line.companyId")
+      )
+      .select(["line.documentId", "line.accountId", "line.amount"])
+      .where("line.companyId", "=", companyId)
+      .where("line.documentId", "in", [...ids, ...sourceIds])
+      .where("line.documentType", "=", "Payment")
+      .where("line.description", "=", CUSTOMER_DEPOSIT_DESCRIPTION)
+      .where("j.sourceType", "=", "Payment")
+      .where("j.status", "in", [
+        ...OPEN_ITEM_JOURNAL_STATUSES,
+        ...PRE_CUTOVER_JOURNAL_STATUSES
+      ])
+      .execute()
+  ]);
+  return legacyDepositRefundFacts(payments, settlements, lines, decimals);
+}
+
+async function readClientLegacyDepositRefunds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string,
+  currencyCode: string | undefined,
+  sourceIds: string[],
+  decimals: ReadonlyMap<string, number>,
+  scopes: readonly FundingScope[],
+  historyClient: SupabaseClient<Database>
+) {
+  if (!scopes.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  const payments = await fetchAllFromTable<LegacyRefundPayment>(
+    client,
+    "payment",
+    "id, customerId, currencyCode, totalAmount, exchangeRate, postingDate, paymentDate, salesOrderId, rentalAgreementId, customerContractId",
+    (query) => {
+      query = query
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .eq("paymentType", "Disbursement")
+        .eq("status", "Posted")
+        .or(
+          "salesOrderId.not.is.null,rentalAgreementId.not.is.null,customerContractId.not.is.null"
+        );
+      if (currencyCode) query = query.eq("currencyCode", currencyCode);
+      return query.order("id");
+    }
+  );
+  if (payments.error) throw new Error(payments.error.message);
+  const scopeIds = new Set(scopes.map((scope) => `${scope.type}:${scope.id}`));
+  const relevantPayments = (payments.data ?? []).filter((payment) => {
+    const scope = fundingScopeOf(payment);
+    return scope && scopeIds.has(`${scope.type}:${scope.id}`);
+  });
+  if (!relevantPayments.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  const ids = relevantPayments.map((payment) => payment.id);
+  const [settlements, lines] = await Promise.all([
+    fetchAllByIds<LegacyRefundSettlement>(ids, (batch) =>
+      client
+        .from("invoiceSettlement")
+        .select(
+          "paymentId, sourcePaymentId, sourceAmount, appliedAmount, fxGainLossAmount, targetPaymentId"
+        )
+        .eq("companyId", companyId)
+        .in("paymentId", batch)
+        .order("id")
+    ),
+    fetchAllByIds<LegacyRefundLine>([...ids, ...sourceIds], (batch) =>
+      historyClient
+        .from("journalLine")
+        .select(
+          "documentId, accountId, amount, journal:journal!inner(status, sourceType)"
+        )
+        .eq("companyId", companyId)
+        .eq("journal.companyId", companyId)
+        .in("documentId", batch)
+        .eq("documentType", "Payment")
+        .eq("description", CUSTOMER_DEPOSIT_DESCRIPTION)
+        .eq("journal.sourceType", "Payment")
+        .in("journal.status", [
+          ...OPEN_ITEM_JOURNAL_STATUSES,
+          ...PRE_CUTOVER_JOURNAL_STATUSES
+        ])
+        .order("id")
+    )
+  ]);
+  if (settlements.error) throw new Error(settlements.error.message);
+  if (lines.error) throw new Error(lines.error.message);
+  return legacyDepositRefundFacts(
+    relevantPayments,
+    settlements.data ?? [],
+    lines.data ?? [],
+    decimals
+  );
+}
+
+function reserveLegacyRefundFunding(
+  sources: FundingSource[],
+  payments: readonly FundingPaymentRow[],
+  history: { refunds: LegacyDepositRefund[]; accounts: Map<string, string> },
+  decimals: ReadonlyMap<string, number>
+) {
+  if (!history.refunds.length) return sources;
+  return reserveLegacyDepositRefunds({
+    sources,
+    refunds: history.refunds,
+    decimals,
+    sourceFacts: new Map(
+      payments.map((payment) => [
+        payment.id,
+        {
+          currencyCode: payment.currencyCode,
+          accountId: history.accounts.get(payment.id) ?? null
+        }
+      ])
+    )
+  });
+}
+
 async function loadOnAccountSources(
   client: SupabaseClient<Database>,
   companyId: string,
   party: PaymentPartyOf,
-  currencyCode?: string
+  currencyCode?: string,
+  historyClient: SupabaseClient<Database> = client,
+  includeDeposits = true
 ) {
   type OnAccountPaymentRow = FundingPaymentRow & {
     rentalAgreementId: string | null;
     salesOrderId: string | null;
     customerContractId: string | null;
+    purchaseOrderId: string | null;
     depositAgreement: { readableId: string } | null;
     depositOrder: { readableId: string } | null;
     depositContract: { readableId: string } | null;
+    prepaymentOrder: { readableId: string } | null;
   };
   const [payments, company] = await Promise.all([
     fetchAllFromTable<OnAccountPaymentRow>(
@@ -3019,7 +3771,7 @@ async function loadOnAccountSources(
       "payment",
       // A deposit's document comes along with its readable id so the composer
       // can say which document the deposit is reserved for.
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId)",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, purchaseOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId), prepaymentOrder:purchaseOrder!payment_purchaseOrder_fkey(readableId:purchaseOrderId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -3061,8 +3813,7 @@ async function loadOnAccountSources(
       query = query
         .eq("companyId", companyId)
         .eq("payment.companyId", companyId)
-        .eq("payment.status", "Posted")
-        .eq("payment.paymentType", party.paymentType);
+        .eq("payment.status", "Posted");
       query =
         party.paymentType === "Receipt"
           ? query.eq("payment.customerId", party.customerId)
@@ -3076,26 +3827,49 @@ async function loadOnAccountSources(
     (a) => a.payment?.status === "Posted"
   );
   const isAR = party.paymentType === "Receipt";
-  return {
-    sources: remainingFundingSources(
-      (payments.data ?? []).map((payment) => {
-        const scope = isAR ? fundingScopeOf(payment) : null;
-        return {
-          ...payment,
-          scope: scope && {
-            ...scope,
-            readableId:
-              (scope.type === "rentalAgreement"
-                ? payment.depositAgreement?.readableId
-                : scope.type === "customerContract"
-                  ? payment.depositContract?.readableId
+  const sources = remainingFundingSources(
+    (payments.data ?? []).map((payment) => {
+      const scope = fundingScopeOf(payment);
+      return {
+        ...payment,
+        scope: scope && {
+          ...scope,
+          readableId:
+            (scope.type === "rentalAgreement"
+              ? payment.depositAgreement?.readableId
+              : scope.type === "customerContract"
+                ? payment.depositContract?.readableId
+                : scope.type === "purchaseOrder"
+                  ? payment.prepaymentOrder?.readableId
                   : payment.depositOrder?.readableId) ?? null
-          }
-        };
-      }),
-      effective,
-      decimals,
-      isAR
+        }
+      };
+    }),
+    effective,
+    decimals,
+    isAR
+  );
+  if (!includeDeposits) return { sources: onAccountOnly(sources), decimals };
+  const history = isAR
+    ? await readClientLegacyDepositRefunds(
+        client,
+        companyId,
+        party.customerId!,
+        currencyCode,
+        payments.data.map((payment) => payment.id),
+        decimals,
+        payments.data
+          .map((payment) => fundingScopeOf(payment))
+          .filter((scope): scope is FundingScope => scope !== null),
+        historyClient
+      )
+    : { refunds: [], accounts: new Map<string, string>() };
+  return {
+    sources: reserveLegacyRefundFunding(
+      sources,
+      payments.data,
+      history,
+      decimals
     ),
     decimals
   };
@@ -3110,21 +3884,23 @@ export async function getAvailableOnAccountCreditSources(
   client: SupabaseClient<Database>,
   companyId: string,
   party: PaymentPartyOf,
-  currencyCode: string
+  currencyCode: string,
+  historyClient: SupabaseClient<Database> = client
 ): Promise<{
   data: {
     sources: FundingSource[];
     availableDocumentAmount: number;
     availableBaseAmount: number;
   } | null;
-  error: { message: string } | null;
+  error: { message: string; code?: string } | null;
 }> {
   try {
     const { sources, decimals } = await loadOnAccountSources(
       client,
       companyId,
       party,
-      currencyCode
+      currencyCode,
+      historyClient
     );
     // `sources` keeps deposits (each carries its `scope`) for the allocator;
     // the totals are on-account credit only, which any invoice can draw on.
@@ -3144,6 +3920,8 @@ export async function getAvailableOnAccountCreditSources(
       error: null
     };
   } catch (error) {
+    if (error instanceof HistoricalDepositReconciliationError)
+      return { data: null, error: ruleError(error.message) };
     return {
       data: null,
       error: {
@@ -3165,7 +3943,14 @@ export async function getAvailableOnAccountCredit(
   party: PaymentPartyOf
 ): Promise<number> {
   try {
-    const { sources } = await loadOnAccountSources(client, companyId, party);
+    const { sources } = await loadOnAccountSources(
+      client,
+      companyId,
+      party,
+      undefined,
+      client,
+      false
+    );
     return round(
       onAccountOnly(sources).reduce((sum, p) => sum + p.remainingBase, 0)
     );
@@ -3200,6 +3985,7 @@ export async function upsertPayment(
           salesOrderId: payment.salesOrderId ?? null,
           rentalAgreementId: payment.rentalAgreementId ?? null,
           customerContractId: payment.customerContractId ?? null,
+          purchaseOrderId: payment.purchaseOrderId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -3210,11 +3996,14 @@ export async function upsertPayment(
     .from("payment")
     .update({
       ...sanitize(payment),
+      // An edit may fix why the last post failed; the next post says again.
+      postError: null,
       customerId: payment.customerId ?? null,
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
       rentalAgreementId: payment.rentalAgreementId ?? null,
       customerContractId: payment.customerContractId ?? null,
+      purchaseOrderId: payment.purchaseOrderId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.
@@ -3227,18 +4016,51 @@ export async function upsertPayment(
 
 // RLS DELETE policy on payment restricts to status='Draft'.
 export async function deletePayment(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
 ) {
   return requireAffected(
-    client
-      .from("payment")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .select("id")
+    db
+      .transaction()
+      .execute(async (trx) => {
+        // Only a Draft is deleted (as the RLS policy has it); its own
+        // settlements cascade.
+        const data = await trx
+          .deleteFrom("payment")
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Draft")
+          .returning("id")
+          .execute();
+        if (data.length > 0) await releasePaymentMappings(trx, companyId, id);
+        return { data, error: null as unknown };
+      })
+      .catch((error: unknown) => ({ data: null, error }))
   );
+}
+
+/**
+ * Removes the integration mappings that name a payment being deleted: its
+ * provider payment, alone or as `<id>:<settlement key>`, and the Ramp card
+ * transactions it claimed (`<id>:<transaction id>`). A mapping left behind
+ * blocks the provider from restaging it, and keeps a claimed card
+ * transaction from ever being booked.
+ */
+export async function releasePaymentMappings(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  paymentId: string
+): Promise<void> {
+  const prefix = `${paymentId.replace(/[\\%_]/g, "\\$&")}:%`;
+  await trx
+    .deleteFrom("externalIntegrationMapping")
+    .where("companyId", "=", companyId)
+    .where("entityType", "in", ["payment", "cardBillPayment"])
+    .where((eb) =>
+      eb.or([eb("entityId", "=", paymentId), eb("entityId", "like", prefix)])
+    )
+    .execute();
 }
 
 export async function upsertInvoiceSettlement(
@@ -4070,17 +4892,22 @@ export async function replaceInvoiceSettlements(
       await priorQuery.orderBy("id").forUpdate().execute()
     ).map((p) => ({
       ...p,
-      // A customer deposit funds only invoices of its own document.
-      scope: isAR ? fundingScopeOf(p) : null
+      // A deposit or prepayment funds only invoices of its own document.
+      scope: fundingScopeOf(p)
     }));
-    const currentScope: FundingScope | null = isAR
-      ? await loadDepositScope(trx, args.companyId, payment)
-      : null;
+    const currentScope: FundingScope | null = await loadDepositScope(
+      trx,
+      args.companyId,
+      payment
+    );
     // Only read the invoices' documents when a deposit is in play.
-    const invoiceDocuments =
-      currentScope || priorPayments.some((p) => p.scope)
-        ? await loadSalesInvoiceDocumentIds(trx, args.companyId, ids)
-        : new Map<string, InvoiceDocumentIds>();
+    const invoiceDocuments = await loadInvoiceDocumentIds(
+      trx,
+      args.companyId,
+      isAR,
+      ids,
+      Boolean(currentScope || priorPayments.some((p) => p.scope))
+    );
     const sourceIds = priorPayments.map((p) => p.id);
     const consumption = sourceIds.length
       ? await trx
@@ -4173,11 +5000,20 @@ export async function replaceInvoiceSettlements(
         ),
         scope: currentScope
       },
-      priorSources: remainingFundingSources(
+      priorSources: reserveLegacyRefundFunding(
+        remainingFundingSources(priorPayments, consumption, decimals, isAR),
         priorPayments,
-        consumption,
-        decimals,
         isAR
+          ? await readLegacyDepositRefunds(
+              trx,
+              args.companyId,
+              partyId,
+              payment.currencyCode,
+              sourceIds,
+              decimals
+            )
+          : { refunds: [], accounts: new Map<string, string>() },
+        decimals
       ),
       requests: [...requests.values()],
       currencyDecimals,
@@ -4937,7 +5773,7 @@ export async function getApTieOut(
     .single();
 }
 
-export async function getArOpenByCustomer(
+export function getArOpenByCustomer(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -4948,7 +5784,7 @@ export async function getArOpenByCustomer(
   });
 }
 
-export async function getApOpenBySupplier(
+export function getApOpenBySupplier(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -4966,7 +5802,49 @@ export type AgingOptions = {
   bucketDays?: [number, number, number];
 };
 
-export async function getArAging(
+function parseBuckets(raw: string | null): [number, number, number] {
+  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
+  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
+    return [parts[0], parts[1], parts[2]];
+  }
+  return [30, 60, 90];
+}
+
+/** A `YYYY-MM-DD` calendar date, or null for anything else. */
+function parseIsoDate(raw: string | null): string | null {
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  try {
+    return parseDate(raw).toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The AR/AP aging pages, the receivables/payables workbenches and their CSV
+ * downloads all read the same three query params, so they parse them here:
+ * `asOfDate` (default: today in the company's time zone), `agingMethod` and
+ * `bucketDays` ("30,60,90"). A bad value falls back to the default — a stale
+ * bookmark must not 500.
+ */
+export async function getAgingParams(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  request: Request
+) {
+  const url = new URL(request.url);
+  const asOfDate =
+    parseIsoDate(url.searchParams.get("asOfDate")) ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const agingMethod: "dueDate" | "documentDate" =
+    url.searchParams.get("agingMethod") === "documentDate"
+      ? "documentDate"
+      : "dueDate";
+  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
+  return { asOfDate, agingMethod, bucketDays };
+}
+
+export function getArAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
@@ -4983,7 +5861,7 @@ export async function getArAging(
   });
 }
 
-export async function getApAging(
+export function getApAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
@@ -4999,60 +5877,187 @@ export async function getApAging(
     _bucket3: b3
   });
 }
-// Documents a customer payment can be a deposit for — or a refund of: every
-// open sales order and Draft/Active rental agreement (a new deposit), plus
-// every document a posted deposit receipt already references (a refund of a
-// Closed agreement's deposit) and any ids the caller must keep listed. Loaded
-// company-wide with the customer on each row because the form's customer can
-// change before the payment is saved; the picker narrows to that customer.
+
+/**
+ * What Draft payments apply to each purchase invoice, in base: the invoice is
+ * paid by it only once the payment posts. A memo counts when it is Posted and
+ * applied through a Draft payment.
+ */
+export async function getApPendingPayments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<Map<string, number>> {
+  // Driven from the few Draft payments (a partial index), joined to their
+  // settlements by each indexed column, so no company-wide settlement scan.
+  const settled = [
+    "appliedAmount",
+    "discountAmount",
+    "writeOffAmount",
+    "targetPurchaseInvoiceId"
+  ] as const;
+  const cash = db
+    .selectFrom("payment as p")
+    .innerJoin("invoiceSettlement as s", (join) =>
+      join
+        .onRef("s.paymentId", "=", "p.id")
+        .onRef("s.companyId", "=", "p.companyId")
+    )
+    .select(settled.map((column) => `s.${column}` as const))
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Draft")
+    .where("s.targetPurchaseInvoiceId", "is not", null);
+  const memos = db
+    .selectFrom("payment as p")
+    .innerJoin("invoiceSettlement as s", (join) =>
+      join
+        .onRef("s.appliedViaPaymentId", "=", "p.id")
+        .onRef("s.companyId", "=", "p.companyId")
+    )
+    .innerJoin("memo as m", (join) =>
+      join
+        .onRef("m.id", "=", "s.memoId")
+        .onRef("m.companyId", "=", "s.companyId")
+    )
+    .select(settled.map((column) => `s.${column}` as const))
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Draft")
+    .where("m.status", "=", "Posted")
+    .where("s.targetPurchaseInvoiceId", "is not", null);
+  const rows = await db
+    .selectFrom(cash.unionAll(memos).as("pending"))
+    .select([
+      "pending.targetPurchaseInvoiceId as invoiceId",
+      sql<number>`SUM(pending."appliedAmount" + pending."discountAmount" + pending."writeOffAmount")`.as(
+        "pendingInBase"
+      )
+    ])
+    .groupBy("pending.targetPurchaseInvoiceId")
+    .execute();
+  return new Map(
+    rows.map((row) => [row.invoiceId!, Number(row.pendingInBase)])
+  );
+}
+
+export function getAgingUnappliedPayments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  asOfDate: string,
+  side: "ar" | "ap"
+) {
+  return client.rpc("get_aging_unapplied_payments", {
+    _company_id: companyId,
+    _as_of_date: asOfDate,
+    _side: side
+  });
+}
+
+// Documents a payment can be a deposit for — or a refund of: every open sales
+// order and Draft/Active rental agreement (a new customer deposit), every open
+// purchase order (a new supplier prepayment), plus every document a posted
+// deposit already references (a refund of a Closed agreement's deposit, of a
+// completed order's prepayment) and any ids the caller must keep listed. Loaded
+// company-wide with the party on each row because the form's party can change
+// before the payment is saved; the picker narrows to that party.
 export async function getDepositDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
-  keepSalesOrderIds: (string | null | undefined)[] = []
+  keepSalesOrderIds: (string | null | undefined)[] = [],
+  keepPurchaseOrderIds: (string | null | undefined)[] = []
 ): Promise<DepositDocument[]> {
-  const [deposits, rentalAgreements, openOrders, contracts] = await Promise.all(
-    [
-      client
-        .from("payment")
-        .select("salesOrderId")
+  const [
+    deposits,
+    rentalAgreements,
+    openOrders,
+    contracts,
+    prepayments,
+    openPurchaseOrders
+  ] = await Promise.all([
+    client
+      .from("payment")
+      .select("salesOrderId")
+      .eq("companyId", companyId)
+      .eq("paymentType", "Receipt")
+      .eq("status", "Posted")
+      .not("salesOrderId", "is", null),
+    fetchAllFromTable<
+      Pick<
+        Database["public"]["Tables"]["rentalAgreement"]["Row"],
+        "id" | "rentalAgreementId" | "customerId" | "status"
+      >
+    >(
+      client,
+      "rentalAgreement",
+      "id, rentalAgreementId, customerId, status",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .order("rentalAgreementId", { ascending: false })
+          .order("id")
+    ),
+    fetchAllFromTable<{
+      id: string;
+      salesOrderId: string;
+      customerId: string;
+      status: string;
+    }>(client, "salesOrder", "id, salesOrderId, customerId, status", (query) =>
+      query
         .eq("companyId", companyId)
-        .eq("paymentType", "Receipt")
-        .eq("status", "Posted")
-        .not("salesOrderId", "is", null),
+        .in("status", [...OPEN_SALES_ORDER_STATUSES])
+        .order("salesOrderId", { ascending: false })
+    ),
+    // A contract deposit receives a progress or performance-based payment.
+    fetchAllFromTable<
+      Pick<
+        Database["public"]["Tables"]["customerContract"]["Row"],
+        "id" | "customerContractId" | "customerId" | "status"
+      >
+    >(
+      client,
+      "customerContract",
+      "id, customerContractId, customerId, status",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .order("customerContractId", { ascending: false })
+          .order("id")
+    ),
+    fetchAllRecords(() =>
       client
-        .from("rentalAgreement")
-        .select("id, rentalAgreementId, customerId, status")
-        .eq("companyId", companyId)
-        .order("rentalAgreementId", { ascending: false }),
-      fetchAllFromTable<{
-        id: string;
-        salesOrderId: string;
-        customerId: string;
-        status: string;
-      }>(
-        client,
-        "salesOrder",
-        "id, salesOrderId, customerId, status",
-        (query) =>
-          query
-            .eq("companyId", companyId)
-            .in("status", [...OPEN_SALES_ORDER_STATUSES])
-            .order("salesOrderId", { ascending: false })
-      ),
-      // A contract deposit receives a progress or performance-based payment.
-      client
-        .from("customerContract")
-        .select("id, customerContractId, customerId, status")
-        .eq("companyId", companyId)
-        .order("customerContractId", { ascending: false })
-    ]
-  );
+        .rpc("get_supplier_prepayment_refund_currencies", {
+          _company_id: companyId
+        })
+        .order("purchaseOrderId")
+    ),
+    fetchAllFromTable<{
+      id: string;
+      purchaseOrderId: string;
+      supplierId: string;
+      status: string;
+    }>(
+      client,
+      "purchaseOrder",
+      "id, purchaseOrderId, supplierId, status",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .in("status", [...OPEN_PURCHASE_ORDER_STATUSES])
+          .order("purchaseOrderId", { ascending: false })
+    )
+  ]);
   const firstError =
     deposits.error ??
     rentalAgreements.error ??
     openOrders.error ??
-    contracts.error;
+    contracts.error ??
+    prepayments.error ??
+    openPurchaseOrders.error;
   if (firstError) throw new Error(firstError.message);
+  const refundableCurrencies = new Map(
+    (prepayments.data ?? []).map((order) => [
+      order.purchaseOrderId,
+      order.refundableCurrencyCodes
+    ])
+  );
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
     ...new Set(
@@ -5062,19 +6067,47 @@ export async function getDepositDocuments(
       ].filter((id): id is string => Boolean(id) && !listed.has(id!))
     )
   ];
-  const closedOrders = missingOrderIds.length
-    ? await client
-        .from("salesOrder")
-        .select("id, salesOrderId, customerId, status")
+  const listedPurchase = new Set(
+    (openPurchaseOrders.data ?? []).map((order) => order.id)
+  );
+  const missingPurchaseOrderIds = [
+    ...new Set(
+      [
+        ...(prepayments.data ?? []).map((p) => p.purchaseOrderId),
+        ...keepPurchaseOrderIds
+      ].filter((id): id is string => Boolean(id) && !listedPurchase.has(id!))
+    )
+  ];
+  const [closedOrders, closedPurchaseOrders] = await Promise.all([
+    missingOrderIds.length
+      ? client
+          .from("salesOrder")
+          .select("id, salesOrderId, customerId, status")
+          .eq("companyId", companyId)
+          .in("id", missingOrderIds)
+      : { data: [], error: null },
+    fetchAllByIds<{
+      id: string;
+      purchaseOrderId: string;
+      supplierId: string;
+      status: string;
+    }>(missingPurchaseOrderIds, (batch) =>
+      client
+        .from("purchaseOrder")
+        .select("id, purchaseOrderId, supplierId, status")
         .eq("companyId", companyId)
-        .in("id", missingOrderIds)
-    : { data: [], error: null };
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
   if (closedOrders.error) throw new Error(closedOrders.error.message);
+  if (closedPurchaseOrders.error)
+    throw new Error(closedPurchaseOrders.error.message);
   return [
     ...(rentalAgreements.data ?? []).map((agreement) => ({
       id: agreement.id,
       readableId: agreement.rentalAgreementId,
-      customerId: agreement.customerId,
+      partyId: agreement.customerId,
       kind: "rentalAgreement" as const,
       status: agreement.status,
       open: agreement.status === "Draft" || agreement.status === "Active"
@@ -5082,7 +6115,7 @@ export async function getDepositDocuments(
     ...(contracts.data ?? []).map((contract) => ({
       id: contract.id,
       readableId: contract.customerContractId,
-      customerId: contract.customerId,
+      partyId: contract.customerId,
       kind: "customerContract" as const,
       status: contract.status,
       open: contract.status === "Draft" || contract.status === "Active"
@@ -5091,23 +6124,37 @@ export async function getDepositDocuments(
       (order) => ({
         id: order.id,
         readableId: order.salesOrderId,
-        customerId: order.customerId,
+        partyId: order.customerId,
         kind: "salesOrder" as const,
         status: order.status,
         open: listed.has(order.id)
       })
-    )
+    ),
+    ...[
+      ...(openPurchaseOrders.data ?? []),
+      ...(closedPurchaseOrders.data ?? [])
+    ].map((order) => ({
+      id: order.id,
+      readableId: order.purchaseOrderId,
+      partyId: order.supplierId,
+      kind: "purchaseOrder" as const,
+      status: order.status,
+      open: listedPurchase.has(order.id),
+      refundableCurrencyCodes: refundableCurrencies.get(order.id) ?? []
+    }))
   ];
 }
 
 /**
- * Checks the document a customer payment names as its deposit (a Receipt) or
- * the deposit it refunds (a Disbursement): it must be this company's and the
- * payment's customer's, and a NEW deposit can only be taken against an open
- * document — an open sales order, or a Draft/Active rental agreement. The
+ * Checks the document a payment names as its deposit or the deposit it
+ * refunds: it must be this company's and the payment's party's, and a NEW
+ * deposit can only be taken against an open document — an open sales or
+ * purchase order, or a Draft/Active rental agreement or contract. A customer
+ * deposit is taken by a Receipt and refunded by a Disbursement; a supplier
+ * prepayment is taken by a Disbursement and refunded by a Receipt. The
  * payment's own saved link stays valid after its document closes, as the
- * "Deposit for" picker keeps it listed. Returns the error for the picker's
- * field, or null when the reference is fine (or absent).
+ * picker keeps it listed. Returns the error for the picker's field, or null
+ * when the reference is fine (or absent).
  */
 export async function checkDepositDocument(
   client: SupabaseClient<Database>,
@@ -5115,18 +6162,45 @@ export async function checkDepositDocument(
   payment: {
     paymentType: "Receipt" | "Disbursement";
     customerId?: string | null;
+    supplierId?: string | null;
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
     customerContractId?: string | null;
+    purchaseOrderId?: string | null;
   },
   saved: {
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
     customerContractId?: string | null;
+    purchaseOrderId?: string | null;
   } = {}
 ): Promise<string | null> {
   const { salesOrderId, rentalAgreementId, customerContractId, customerId } =
     payment;
+  if (payment.purchaseOrderId) {
+    // The validator already requires a supplier for a prepayment.
+    if (!payment.supplierId)
+      return "Only a supplier payment can be a prepayment";
+    const order = await client
+      .from("purchaseOrder")
+      .select("supplierId, status")
+      .eq("id", payment.purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (order.error) throw new Error(order.error.message);
+    if (!order.data) return "The purchase order was not found";
+    if (order.data.supplierId !== payment.supplierId)
+      return "The purchase order belongs to a different supplier";
+    if (
+      payment.paymentType !== "Disbursement" ||
+      payment.purchaseOrderId === saved.purchaseOrderId ||
+      (OPEN_PURCHASE_ORDER_STATUSES as readonly string[]).includes(
+        order.data.status
+      )
+    )
+      return null;
+    return `The purchase order is ${order.data.status} and cannot take a new prepayment`;
+  }
   if (!salesOrderId && !rentalAgreementId && !customerContractId) return null;
   // The validator already requires a customer for a deposit.
   if (!customerId) return "Only a customer payment can be a deposit";
@@ -5582,8 +6656,7 @@ export async function sendPostedSalesInvoice(
       companyId,
       companyGroupId: ctx.company.groupId,
       invoiceId,
-      locale,
-      storageUrl: SUPABASE_URL ?? ""
+      locale
     });
     const file = await renderSalesInvoicePdf(document.pdfProps);
     const fileName = storedDocumentPdfName(
@@ -8589,7 +9662,8 @@ export function leaseSettlementJournalLines(
   });
 }
 const postSalesInvoiceLogger = getLogger(
-  "server-functions",
+  "erp",
+  "invoicing",
   "post-sales-invoice"
 );
 
@@ -8616,7 +9690,12 @@ export async function postSalesInvoice(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  postSalesInvoiceLogger.info({ type, invoiceId, userId, companyId });
+  postSalesInvoiceLogger.info("Posting a sales invoice", {
+    type,
+    invoiceId,
+    userId,
+    companyId
+  });
   if (type === "post")
     await assertPostable(db, "salesInvoice", invoiceId, companyId);
   try {
@@ -10113,49 +11192,12 @@ export async function postSalesInvoice(
           invoiceHeader.postingDate,
           SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR
         );
-        // Get journal entries to reverse
-        const journalEntries = await documentJournalLines(db, companyId, {
-          documentId: invoiceId,
-          documentType: "Invoice"
-        });
-
-        // A Rental line's revenue legs reference the rental agreement, not the
-        // invoice, so the query above misses them; a contract line's
-        // revenue legs (and FX reclass) reference the contract. They share
-        // the posting journal and the journal line reference of their
-        // invoice line's AR leg, which is how they are found.
         const rentalLineIds = salesInvoiceLines.data
           .filter((line) => line.invoiceLineType === "Rental")
           .map((line) => line.id);
         const contractInvoiceLines = salesInvoiceLines.data.filter(
           (line) => !!line.customerContractLineId
         );
-        type JournalLineRecord = rows.Tables["journalLine"]["Row"];
-        let rentalJournalEntries: JournalLineRecord[] = [];
-        if (
-          (rentalLineIds.length > 0 || contractInvoiceLines.length > 0) &&
-          journalEntries.length > 0
-        ) {
-          const journalIds = [
-            ...new Set(
-              journalEntries.map((entry: JournalLineRecord) => entry.journalId)
-            )
-          ];
-          const references = [
-            ...new Set(
-              journalEntries
-                .map((entry: JournalLineRecord) => entry.journalLineReference)
-                .filter(
-                  (reference: string | null): reference is string => !!reference
-                )
-            )
-          ];
-          rentalJournalEntries = await documentJournalLines(db, companyId, {
-            documentType: ["Rental Agreement", "Contract"],
-            journalId: journalIds,
-            journalLineReference: references
-          });
-        }
 
         // Get shipments created from this invoice
         const { data: invoiceShipments } = await many(
@@ -10233,40 +11275,6 @@ export async function postSalesInvoice(
           }
         }
 
-        // Create reversing journal entries
-        const reversedJournalEntries = [
-          ...journalEntries,
-          ...rentalJournalEntries
-        ];
-        const reversingJournalEntries: Omit<
-          rows.Tables["journalLine"]["Insert"],
-          "journalId"
-        >[] = reversedJournalEntries.map((entry) => ({
-          accountId: entry.accountId,
-          // A reversed stand-in line names the same default, so the enable
-          // re-points both sides together.
-          accountDefaultRole: entry.accountDefaultRole,
-          description: `VOID: ${entry.description}`,
-          // A reversal is a sign flip of an already-posted value, which is
-          // exact — no rounding to do.
-          amount: -entry.amount,
-          quantity: -entry.quantity,
-          ...(entry.documentType === "Rental Agreement" ||
-          entry.documentType === "Contract"
-            ? {
-                documentType: entry.documentType,
-                documentId: entry.documentId
-              }
-            : {
-                documentType: "Invoice" as const,
-                documentId: invoiceHeader.id
-              }),
-          externalDocumentId: entry.externalDocumentId,
-          documentLineReference: entry.documentLineReference,
-          journalLineReference: entry.journalLineReference,
-          companyId
-        }));
-
         // Create reversing item ledger entries
         const reversingItemLedgerEntries: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
@@ -10308,6 +11316,77 @@ export async function postSalesInvoice(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Locked before the journal is read, as a line account change locks
+          // it before it adds lines: those are reversed with the rest, never
+          // left on a voided invoice.
+          await trx
+            .selectFrom("salesInvoice")
+            .select("id")
+            .where("id", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+          const journalEntries = await documentJournalLines(trx, companyId, {
+            documentId: invoiceId,
+            documentType: "Invoice"
+          });
+
+          // A Rental line's revenue legs reference the rental agreement, not
+          // the invoice, so the query above misses them; a contract line's
+          // revenue legs (and FX reclass) reference the contract. They share
+          // the posting journal and the journal line reference of their
+          // invoice line's AR leg, which is how they are found.
+          const rentalJournalEntries =
+            (rentalLineIds.length > 0 || contractInvoiceLines.length > 0) &&
+            journalEntries.length > 0
+              ? await documentJournalLines(trx, companyId, {
+                  documentType: ["Rental Agreement", "Contract"],
+                  journalId: [
+                    ...new Set(journalEntries.map((entry) => entry.journalId))
+                  ],
+                  journalLineReference: [
+                    ...new Set(
+                      journalEntries
+                        .map((entry) => entry.journalLineReference)
+                        .filter((reference): reference is string => !!reference)
+                    )
+                  ]
+                })
+              : [];
+
+          const reversedJournalEntries = [
+            ...journalEntries,
+            ...rentalJournalEntries
+          ];
+          const reversingJournalEntries: Omit<
+            rows.Tables["journalLine"]["Insert"],
+            "journalId"
+          >[] = reversedJournalEntries.map((entry) => ({
+            accountId: entry.accountId,
+            // A reversed stand-in line names the same default, so the enable
+            // re-points both sides together.
+            accountDefaultRole: entry.accountDefaultRole,
+            description: `VOID: ${entry.description}`,
+            // A reversal is a sign flip of an already-posted value, which is
+            // exact — no rounding to do.
+            amount: -entry.amount,
+            quantity: -entry.quantity,
+            ...(entry.documentType === "Rental Agreement" ||
+            entry.documentType === "Contract"
+              ? {
+                  documentType: entry.documentType,
+                  documentId: entry.documentId
+                }
+              : {
+                  documentType: "Invoice" as const,
+                  documentId: invoiceHeader.id
+                }),
+            externalDocumentId: entry.externalDocumentId,
+            documentLineReference: entry.documentLineReference,
+            journalLineReference: entry.journalLineReference,
+            companyId
+          }));
+
           if (invoiceLineIds.length > 0) {
             // Re-checked under lock: a run may have posted since the check
             // above, and its rows must never be dropped. Every row left is
@@ -12486,6 +13565,7 @@ export function paymentKind(
     | "rentalAgreementId"
     | "salesOrderId"
     | "customerContractId"
+    | "purchaseOrderId"
   >
 ) {
   // An employee payee is a reimbursement payout: always cash OUT against the
@@ -12514,16 +13594,20 @@ export function paymentKind(
     isAR,
     cashIn,
     isRefund,
-    // A payment that references a sales order, rental agreement or customer
-    // contract is a customer deposit: its unapplied cash is a liability on
-    // the prepayment account rather than on-account receivable credit. A
-    // contract deposit is how a progress payment is received. The builder
-    // ignores the flag for supplier payments.
-    isDeposit: Boolean(
-      payment.rentalAgreementId ??
-        payment.salesOrderId ??
-        payment.customerContractId
-    ),
+    // A customer payment that references a sales order, rental agreement or
+    // customer contract is a customer deposit: its unapplied cash is a
+    // liability on the prepayment account rather than on-account receivable
+    // credit. A contract deposit is how a progress payment is received. A
+    // supplier payment that references a purchase order is a supplier
+    // prepayment: an asset on the supplier prepayment account rather than an
+    // on-account debit inside payables.
+    isDeposit: isAR
+      ? Boolean(
+          payment.rentalAgreementId ??
+            payment.salesOrderId ??
+            payment.customerContractId
+        )
+      : !isReimbursement && Boolean(payment.purchaseOrderId),
     partyId,
     targetColumn: isReimbursement
       ? ("targetReimbursementId" as const)
@@ -12558,15 +13642,37 @@ export function paymentKind(
       "Opening Balance"
     ] as readonly string[],
     // A source's unapplied cash was booked EITHER as on-account credit or,
-    // for a customer deposit, on the prepayment account; the description
-    // says which.
-    sourceDescriptions: (isAR
-      ? [onAccountCreditDescription(true), CUSTOMER_DEPOSIT_DESCRIPTION]
-      : [onAccountCreditDescription(false)]) as readonly string[]
+    // for a deposit, on the side's prepayment account; the description says
+    // which.
+    sourceDescriptions: [
+      onAccountCreditDescription(isAR),
+      depositDescription(isAR)
+    ] as readonly string[]
   };
 }
 
 export type PaymentKind = ReturnType<typeof paymentKind>;
+
+/**
+ * The class of the account a payment moves its money through, or null when
+ * the payment cannot use it. Any Asset account can; a supplier payment can
+ * also use a Credit Card account, which is a liability.
+ */
+export function paymentAccountClass(
+  account: { class: string | null; accountType: string | null },
+  kind: Pick<PaymentKind, "isAR" | "isReimbursement">
+): "Asset" | "Liability" | null {
+  if (account.class === "Asset") return "Asset";
+  if (
+    account.class === "Liability" &&
+    account.accountType === CARD_ACCOUNT_TYPE &&
+    !kind.isAR &&
+    !kind.isReimbursement
+  ) {
+    return "Liability";
+  }
+  return null;
+}
 
 const TARGET_DESCRIPTIONS = [
   ...new Set<string>([
@@ -12699,7 +13805,7 @@ export function readSourceControlLines(
     .where("line.description", "in", [
       onAccountCreditDescription(true),
       onAccountCreditDescription(false),
-      CUSTOMER_DEPOSIT_DESCRIPTION
+      ...DEPOSIT_DESCRIPTIONS
     ])
     .where("journal.sourceType", "in", ["Payment", "Opening Balance"])
     .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
@@ -12717,8 +13823,8 @@ export type SourceControlLine = {
  *  deposit, and its stand-in role. */
 export type SourceControls = {
   accountById: Map<string, string>;
-  /** Sources whose credit is a deposit (booked on the prepayment account):
-   *  released as a liability under the deposit description. */
+  /** Sources whose credit is a deposit (booked on the side's prepayment
+   *  account): released from that account under the deposit description. */
   depositIds: Set<string>;
   roleById: Map<string, OptionalDefaultRole | null>;
 };
@@ -12743,7 +13849,7 @@ export function foldSourceControls(
     if (!line.accountId) {
       throw new Error("Funding source is missing its original control account");
     }
-    const lineIsDeposit = line.description === CUSTOMER_DEPOSIT_DESCRIPTION;
+    const lineIsDeposit = line.description === depositDescription(kind.isAR);
     const originalAccount = controls.accountById.get(line.documentId);
     if (
       originalAccount &&
@@ -12898,6 +14004,7 @@ export function paymentControlAccount(
 
 /** One settlement of the payment, as the posting stores it. */
 export type PaymentApplication = {
+  targetPaymentId?: string | null;
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   targetMemoId: string | null;
@@ -12942,7 +14049,10 @@ export function assemblePaymentJournal(args: {
   /** The current cash the funding allocation left unapplied, in base. */
   newOnAccountBase: number;
   fee?: PaymentJournalFeeInput;
+  legacyCustomerDepositRefund?: boolean;
   journalLineReference: string;
+  /** The class of `payment.bankAccount` (`paymentAccountClass`). */
+  bankAccountClass: "Asset" | "Liability";
 }): {
   lines: PaymentJournalLineWithRole[];
   input: BuildPaymentJournalInput;
@@ -12994,9 +14104,11 @@ export function assemblePaymentJournal(args: {
     totalAmount: Number(payment.totalAmount),
     exchangeRate: Number(payment.exchangeRate),
     bankAccount: payment.bankAccount,
+    bankAccountClass: args.bankAccountClass,
     journalLineReference: args.journalLineReference,
     applications,
     newOnAccountBase: args.newOnAccountBase,
+    legacyCustomerDepositRefund: args.legacyCustomerDepositRefund,
     fee: args.fee,
     accounts: {
       // For a reimbursement this drives ONLY the new on-account remainder:
@@ -13012,7 +14124,9 @@ export function assemblePaymentJournal(args: {
       fxLossAccountId: defaults.realizedExchangeLossAccount
     },
     isDeposit: kind.isDeposit,
-    depositAccountId: defaults.prepaymentAccount
+    depositAccountId: kind.isAR
+      ? defaults.prepaymentAccount
+      : defaults.supplierPrepaymentAccount
   };
 
   const controlDescription = kind.isReimbursement
@@ -13022,7 +14136,7 @@ export function assemblePaymentJournal(args: {
       : "Accounts Payable";
   const creditAppliedDescriptions = [
     `${kind.isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
-    CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+    depositAppliedDescription(kind.isAR)
   ];
   // The builder releases prior credit one line per account.
   const sourceRoleByAccount = new Map<string, OptionalDefaultRole | null>();
@@ -13121,6 +14235,122 @@ function principal(value: number | null, label: string): number {
   return Number(value);
 }
 
+/**
+ * Locks the accounting period that holds `date` and returns its id. A closed
+ * or locked period is refused by name, with `remedy` appended.
+ */
+async function lockOpenPeriodFor(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  date: string,
+  remedy: string
+): Promise<string> {
+  const period = await trx
+    .selectFrom("accountingPeriod")
+    .select([
+      sql<string>`"startDate"::text`.as("startDate"),
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId)
+    .where("startDate", "<=", date)
+    .where("endDate", ">=", date)
+    .orderBy("startDate")
+    .forUpdate()
+    .executeTakeFirst();
+  if (period && (period.closeStatus !== "Open" || period.closedAt !== null)) {
+    const name = new Date(`${period.startDate}T00:00:00Z`).toLocaleString(
+      "en-US",
+      { month: "long", year: "numeric", timeZone: "UTC" }
+    );
+    const state =
+      period.closeStatus === "Locked" && period.closedAt === null
+        ? "locked"
+        : "closed";
+    throw new InvalidInputError(
+      `${date} is in the ${name} accounting period, which is ${state}. ${remedy}`
+    );
+  }
+  // Creates the period when none holds the date yet.
+  return getCurrentAccountingPeriod(companyId, trx, date);
+}
+
+/**
+ * Prior credit is counted as it stands today. A void or a force delete
+ * releases the credit a payment consumed, with a journal dated the day it
+ * ran, so on an earlier date that credit was still spent. A payment dated
+ * before such a release cannot draw on the party's prior credit.
+ */
+async function refuseCreditReleasedAfter(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    paymentId: string;
+    party: { customerId: string } | { supplierId: string };
+    currencyCode: string;
+    postingDate: string;
+  }
+): Promise<void> {
+  const { companyId, postingDate } = args;
+  const release = await trx
+    .selectFrom("payment as p")
+    .innerJoin("journalLine as l", (join) =>
+      join
+        .onRef("l.documentId", "=", "p.id")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .innerJoin("journal as j", (join) =>
+      join
+        .onRef("j.id", "=", "l.journalId")
+        .onRef("j.companyId", "=", "l.companyId")
+    )
+    .select(sql<string | null>`max(j."postingDate")::text`.as("releasedOn"))
+    .where("p.companyId", "=", companyId)
+    .where((eb) =>
+      "customerId" in args.party
+        ? eb("p.customerId", "=", args.party.customerId)
+        : eb("p.supplierId", "=", args.party.supplierId)
+    )
+    .where("p.currencyCode", "=", args.currencyCode)
+    .where("p.id", "!=", args.paymentId)
+    .where("l.documentType", "=", "Payment")
+    .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .where("j.postingDate", ">", postingDate)
+    // A payment's own journals are its posting, a void and a force delete's
+    // unapply; an invoice that spends a prepayment writes its own source.
+    .where("j.sourceType", "=", "Payment")
+    .where((eb) =>
+      eb.or([
+        eb("p.journalId", "is", null),
+        eb("j.id", "!=", eb.ref("p.journalId"))
+      ])
+    )
+    .executeTakeFirst();
+  if (release?.releasedOn) {
+    throw new InvalidInputError(
+      `Prior credit was released on ${release.releasedOn} by a voided or unapplied payment, after the payment date ${postingDate}. Date the payment on or after ${release.releasedOn} to use it.`
+    );
+  }
+}
+
+/**
+ * A payment cannot settle a document that posted after its payment date: the
+ * settlement and its journal would predate what they settle.
+ */
+function refuseDocumentsAfter(
+  documents: { postingDate: string | null }[],
+  postingDate: string
+): void {
+  const later = documents.find(
+    (document) => document.postingDate && document.postingDate > postingDate
+  );
+  if (later) {
+    throw new InvalidInputError(
+      `A document this payment settles posted on ${later.postingDate}, after the payment date ${postingDate}. Date the payment on or after ${later.postingDate}.`
+    );
+  }
+}
+
 /** The endpoint's single commit boundary; every monetary snapshot is read under locks. */
 export function postPaymentTransaction(
   db: Kysely<KyselyDatabase>,
@@ -13128,6 +14358,25 @@ export function postPaymentTransaction(
 ): Promise<{ journalId: string | null }> {
   const { companyId, paymentId, userId, today, fee, type } = args;
   return db.transaction().execute(async (trx) => {
+    // Activation locks settings before rebuilding payments; use the same order.
+    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+    const postingStatus = postingStatusFor(cutoverDate);
+    const reference = await trx
+      .selectFrom("payment")
+      .select("purchaseOrderId")
+      .where("id", "=", paymentId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    // A PO delete locks the order before its FK updates linked draft payments.
+    const purchaseOrder = reference?.purchaseOrderId
+      ? await trx
+          .selectFrom("purchaseOrder")
+          .select("supplierId")
+          .where("id", "=", reference.purchaseOrderId)
+          .where("companyId", "=", companyId)
+          .forShare()
+          .executeTakeFirst()
+      : null;
     const payment = await trx
       .selectFrom("payment")
       .selectAll()
@@ -13136,6 +14385,11 @@ export function postPaymentTransaction(
       .forUpdate()
       .executeTakeFirst();
     if (!payment) throw new NotFoundError("Payment not found");
+    if (payment.purchaseOrderId !== reference?.purchaseOrderId) {
+      throw new InvalidInputError(
+        "The payment's purchase order changed. Try again."
+      );
+    }
     if (type === "post" && payment.status === "Posted") {
       return { journalId: payment.journalId };
     }
@@ -13146,37 +14400,64 @@ export function postPaymentTransaction(
       throw new Error(`Cannot ${type} payment in status ${payment.status}`);
     }
 
+    // A payment posts on its payment date; a void reverses it on the day it
+    // is voided.
+    const postingDate = type === "post" ? payment.paymentDate : today;
+    if (type === "post" && isBeforeCutover(postingDate, cutoverDate)) {
+      throw new InvalidInputError(
+        `The payment date ${postingDate} is before your accounting cutover on ${cutoverDate}. Change the payment date to ${cutoverDate} or later.`
+      );
+    }
+
     // Every payment posts a journal: Provisional before the company's
     // accounting cutover, Posted after it. FOR SHARE holds the cutover until
     // commit. A Provisional journal has no accounting period.
-    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
-    const postingStatus = postingStatusFor(cutoverDate);
     const timestamp = datetime.timestamp();
-    let accountingPeriodId: string | null = null;
-    if (postingStatus === "Posted") {
-      accountingPeriodId = await getCurrentAccountingPeriod(
-        companyId,
-        trx,
-        today
-      );
-      // The reader also checks period status, but the row lock protects the
-      // posting against a concurrent close/lock after that read.
-      const period = await trx
-        .selectFrom("accountingPeriod")
-        .select(["id", "closeStatus"])
-        .where("id", "=", accountingPeriodId)
-        .where("companyId", "=", companyId)
-        .forShare()
-        .executeTakeFirst();
-      if (
-        !period ||
-        period.closeStatus === "Closed" ||
-        period.closeStatus === "Locked"
-      )
-        throw new Error("Accounting period is closed or locked");
-    }
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await lockOpenPeriodFor(
+            trx,
+            companyId,
+            postingDate,
+            type === "post"
+              ? "Reopen it or change the payment date."
+              : "Reopen it before voiding."
+          )
+        : null;
 
     if (type === "void") {
+      const scope = fundingScopeOf(payment);
+      if (payment.customerId && payment.paymentType === "Receipt" && scope) {
+        const currency = await trx
+          .selectFrom("currency")
+          .innerJoin(
+            "company",
+            "company.companyGroupId",
+            "currency.companyGroupId"
+          )
+          .select("currency.decimalPlaces")
+          .where("company.id", "=", companyId)
+          .where("currency.code", "=", payment.currencyCode)
+          .executeTakeFirstOrThrow();
+        const history = await readLegacyDepositRefunds(
+          trx,
+          companyId,
+          payment.customerId,
+          payment.currencyCode,
+          [payment.id],
+          new Map([[payment.currencyCode, currency.decimalPlaces]]),
+          scope
+        );
+        if (
+          history.refunds.some(
+            (refund) =>
+              refund.scope.type === scope.type && refund.scope.id === scope.id
+          )
+        )
+          throw new Error(
+            "Void or reconcile historical deposit refunds before voiding this advance"
+          );
+      }
       const consumers = await settlementQuery(trx, companyId)
         .where("s.sourcePaymentId", "=", paymentId)
         .execute();
@@ -13204,7 +14485,7 @@ export function postPaymentTransaction(
               ),
               accountingPeriodId,
               description: `VOID Payment ${payment.paymentId}`,
-              postingDate: today,
+              postingDate,
               companyId,
               sourceType: "Payment",
               status: postingStatus,
@@ -13273,7 +14554,10 @@ export function postPaymentTransaction(
               .onRef("journal.companyId", "=", "journalLine.companyId")
           )
           .selectAll("journalLine")
-          .where("journalLine.journalId", "=", payment.journalId)
+          // Every journal line of the payment: its posting, and any unapply
+          // a force delete posted since (`unapplyForceDeleteSettlements`).
+          .where("journalLine.documentType", "=", "Payment")
+          .where("journalLine.documentId", "=", paymentId)
           .where("journalLine.companyId", "=", companyId)
           .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
           .orderBy("journalLine.id")
@@ -13370,6 +14654,7 @@ export function postPaymentTransaction(
     }
     const decimals = currency.decimalPlaces;
     assertCurrencyDecimals(decimals);
+    const isDepositRefund = isDeposit && isRefund;
     if (
       company.baseCurrencyCode === payment.currencyCode &&
       Number(payment.exchangeRate) !== 1
@@ -13388,10 +14673,14 @@ export function postPaymentTransaction(
       )
       .orderBy("id")
       .execute();
+    if (isDepositRefund && drafts.length) {
+      throw new Error("A deposit refund cannot also settle invoices or memos");
+    }
     const targetColumn = kind.targetColumn;
     for (const draft of drafts) {
       if (
         !draft[targetColumn] ||
+        draft.targetPaymentId ||
         (isReimbursement
           ? // A reimbursement payout carries no other target, no memo/prior-
             // credit funding source (an employee has neither), and no trade
@@ -13452,7 +14741,8 @@ export function postPaymentTransaction(
               "currencyCode",
               "exchangeRate",
               "amount",
-              "payableAccountId"
+              "payableAccountId",
+              "postingDate"
             ])
             .where("companyId", "=", companyId)
             .where("id", "in", targetIds)
@@ -13476,7 +14766,8 @@ export function postPaymentTransaction(
                     "customerId as partyId",
                     "status",
                     "currencyCode",
-                    "exchangeRate"
+                    "exchangeRate",
+                    "postingDate"
                   ])
                   .where("companyId", "=", companyId)
                   .where("id", "in", targetIds)
@@ -13490,7 +14781,8 @@ export function postPaymentTransaction(
                     "supplierId as partyId",
                     "status",
                     "currencyCode",
-                    "exchangeRate"
+                    "exchangeRate",
+                    "postingDate"
                   ])
                   .where("companyId", "=", companyId)
                   .where("id", "in", targetIds)
@@ -13536,6 +14828,7 @@ export function postPaymentTransaction(
       throw new NotFoundError(
         "Payment target invoice not found in this company"
       );
+    refuseDocumentsAfter(invoices, postingDate);
     const totalById = new Map(
       totals.map((row) => [row.id, Number(row.totalAmount)])
     );
@@ -13597,16 +14890,13 @@ export function postPaymentTransaction(
         invoice.currencyCode !== payment.currencyCode
       )
         throw new Error("Invoice party/currency does not match payment");
-      if (
-        invoice.status !==
-        (isReimbursement
-          ? "Posted"
-          : isRefund
-            ? "Posted"
-            : isAR
-              ? "Submitted"
-              : "Open")
-      ) {
+      const payableStatuses =
+        isReimbursement || isRefund
+          ? ["Posted"]
+          : isAR
+            ? ["Submitted", "Partially Paid", "Overdue"]
+            : ["Open", "Partially Paid", "Overdue"];
+      if (!payableStatuses.includes(invoice.status)) {
         throw new Error(
           `Cannot settle invoice ${invoice.id} in status ${invoice.status}`
         );
@@ -13668,6 +14958,7 @@ export function postPaymentTransaction(
     if (memos.length !== memoIds.length) {
       throw new NotFoundError("Staged memo not found in this company");
     }
+    refuseDocumentsAfter(memos, postingDate);
     const memoConsumption = memoIds.length
       ? (
           await settlementQuery(trx, companyId)
@@ -13778,7 +15069,7 @@ export function postPaymentTransaction(
     // An employee holds no on-account credit: a reimbursement payout is always
     // funded by the current disbursement, never by a prior overpayment.
     const sources =
-      isRefund || isReimbursement
+      (isRefund && !isDepositRefund) || isReimbursement
         ? []
         : await trx
             .selectFrom("payment")
@@ -13789,6 +15080,8 @@ export function postPaymentTransaction(
             .where(isAR ? "customerId" : "supplierId", "=", partyId)
             .where("currencyCode", "=", payment.currencyCode)
             .where("id", "!=", paymentId)
+            // Credit posted after the payment date did not exist yet.
+            .where("postingDate", "<=", postingDate)
             .orderBy("id")
             .forUpdate()
             .execute();
@@ -13812,29 +15105,52 @@ export function postPaymentTransaction(
             .execute()
         ).filter(isEffectiveSettlement)
       : [];
-    // A customer deposit funds only invoices of its own rental agreement or
-    // sales order, and a deposit payment applies to nothing else — re-derived
-    // here so a crafted Draft cannot spend one document's deposit on another.
-    const priorSources = remainingFundingSources(
-      sources.map((source) => ({
-        ...source,
-        scope: isAR ? fundingScopeOf(source) : null
-      })),
-      consumed,
-      new Map([[payment.currencyCode, decimals]]),
+    // A deposit funds only invoices of its own rental agreement, sales order,
+    // contract or purchase order, and a deposit payment applies to nothing
+    // else — re-derived here so a crafted Draft cannot spend one document's
+    // deposit on another.
+    const sourceDecimals = new Map([[payment.currencyCode, decimals]]);
+    const priorSources = reserveLegacyRefundFunding(
+      remainingFundingSources(
+        sources.map((source) => ({ ...source, scope: fundingScopeOf(source) })),
+        consumed,
+        sourceDecimals,
+        isAR
+      ),
+      sources,
       isAR
+        ? await readLegacyDepositRefunds(
+            trx,
+            companyId,
+            partyId,
+            payment.currencyCode,
+            sourceIds,
+            sourceDecimals
+          )
+        : { refunds: [], accounts: new Map<string, string>() },
+      sourceDecimals
     );
+    if (
+      payment.purchaseOrderId &&
+      purchaseOrder?.supplierId !== payment.supplierId
+    ) {
+      throw new InvalidInputError(
+        "The purchase order belongs to a different supplier or no longer exists"
+      );
+    }
     const currentScope =
-      isAR && !isRefund && !isReimbursement
+      !isRefund && !isReimbursement
         ? await loadDepositScope(trx, companyId, payment)
         : null;
-    const invoiceDocuments =
-      isAR &&
+    const invoiceDocuments = await loadInvoiceDocumentIds(
+      trx,
+      companyId,
+      isAR,
+      targetIds,
       !isRefund &&
-      !isReimbursement &&
-      (currentScope || priorSources.some((source) => source.scope))
-        ? await loadSalesInvoiceDocumentIds(trx, companyId, targetIds)
-        : new Map<string, InvoiceDocumentIds>();
+        !isReimbursement &&
+        Boolean(currentScope || priorSources.some((source) => source.scope))
+    );
     const requestByTarget = new Map<string, FundingRequest>();
     for (const draft of drafts.filter((row) => row.paymentId === paymentId)) {
       const targetId = draft[targetColumn]!;
@@ -13882,7 +15198,7 @@ export function postPaymentTransaction(
     const allocation = allocatePaymentFunding({
       currentPayment: {
         paymentId,
-        postingDate: today,
+        postingDate,
         exchangeRate: Number(payment.exchangeRate),
         remainingDocument: Number(payment.totalAmount),
         remainingBase: toBaseAmount(
@@ -13908,16 +15224,79 @@ export function postPaymentTransaction(
       throw new Error("Accounting defaults are required before posting");
     }
     const party = (await readPaymentParties(trx, companyId, [kind]))(kind);
-    const normalized = allocation.applications.map((application) => ({
-      ...application,
-      targetSalesInvoiceId:
-        !isRefund && !isReimbursement && isAR ? application.targetId : null,
-      targetPurchaseInvoiceId:
-        !isRefund && !isReimbursement && !isAR ? application.targetId : null,
-      targetMemoId: isRefund && !isReimbursement ? application.targetId : null,
-      targetReimbursementId: isReimbursement ? application.targetId : null
-    }));
+    let normalized: Array<PaymentApplication & { targetId: string }> =
+      allocation.applications.map((application) => ({
+        ...application,
+        targetPaymentId: null,
+        targetSalesInvoiceId:
+          !isRefund && !isReimbursement && isAR ? application.targetId : null,
+        targetPurchaseInvoiceId:
+          !isRefund && !isReimbursement && !isAR ? application.targetId : null,
+        targetMemoId:
+          isRefund && !isReimbursement ? application.targetId : null,
+        targetReimbursementId: isReimbursement ? application.targetId : null
+      }));
+    if (isDepositRefund) {
+      const scope = await loadDepositScope(trx, companyId, payment);
+      if (!scope) throw new Error("A deposit refund requires its document");
+      normalized = allocateDepositRefund({
+        scope,
+        sources: priorSources,
+        requestedDocumentPrincipal: Number(payment.totalAmount),
+        currencyDecimals: decimals
+      }).map((application) => {
+        if (!sourceControls.depositIds.has(application.sourcePaymentId)) {
+          throw new Error(
+            "Refund source is missing its original deposit account"
+          );
+        }
+        return {
+          targetId: application.sourcePaymentId,
+          targetPaymentId: application.sourcePaymentId,
+          targetSalesInvoiceId: null,
+          targetPurchaseInvoiceId: null,
+          targetMemoId: null,
+          targetReimbursementId: null,
+          sourcePaymentId: application.sourcePaymentId,
+          sourceAmount: application.sourceAmount,
+          appliedAmount: application.carryingBase,
+          sourceExchangeRate: application.sourceExchangeRate,
+          targetExchangeRate: application.sourceExchangeRate,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          fxGainLossAmount: 0
+        };
+      });
+    }
+    if (normalized.some((application) => application.sourcePaymentId)) {
+      await refuseCreditReleasedAfter(trx, {
+        companyId,
+        paymentId,
+        party: isAR ? { customerId: partyId } : { supplierId: partyId },
+        currencyCode: payment.currencyCode,
+        postingDate
+      });
+    }
+    const paidThrough = await trx
+      .selectFrom("account")
+      .select(["class", "accountType"])
+      .where("id", "=", payment.bankAccount)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .executeTakeFirst();
+    const bankAccountClass = paidThrough
+      ? paymentAccountClass(paidThrough, kind)
+      : null;
+    if (!bankAccountClass) {
+      throw new InvalidInputError(
+        isAR || isReimbursement
+          ? "Pay from an active Asset account, such as a bank or cash account"
+          : "Pay from an active Asset account, such as a bank or cash account, or a Credit Card account"
+      );
+    }
     const assembled = assemblePaymentJournal({
+      bankAccountClass,
       payment,
       kind,
       companyId,
@@ -13931,14 +15310,16 @@ export function postPaymentTransaction(
       targets: targetControls,
       sources: sourceControls,
       applications: normalized,
-      newOnAccountBase: allocation.sourceRemainders[0]!.remainingBase,
+      newOnAccountBase: isDepositRefund
+        ? 0
+        : allocation.sourceRemainders[0]!.remainingBase,
       fee,
       journalLineReference: nanoid()
     });
     const { accounts } = assembled.input;
     const journalLines = assembled.lines;
     const expectedAccountClasses: Array<[string | null | undefined, string]> = [
-      [payment.bankAccount, "Asset"],
+      [payment.bankAccount, bankAccountClass],
       [accounts.controlAccountId, isAR ? "Asset" : "Liability"],
       [accounts.discountAccountId, isAR ? "Revenue" : "Expense"],
       [accounts.writeOffAccountId, isAR ? "Expense" : "Revenue"],
@@ -13946,8 +15327,25 @@ export function postPaymentTransaction(
       [accounts.fxLossAccountId, "Expense"],
       [fee?.accountId, "Expense"]
     ];
-    if (isDeposit && isAR) {
-      expectedAccountClasses.push([defaults.prepaymentAccount, "Liability"]);
+    // A customer deposit is a liability; a supplier prepayment an asset.
+    const depositClass = isAR ? "Liability" : "Asset";
+    if (isDeposit && !isRefund) {
+      const depositAccount = isAR
+        ? defaults.prepaymentAccount
+        : defaults.supplierPrepaymentAccount;
+      // Migration 20260711155312 and seedCompany fall back to the receivables
+      // account for a chart with no 1150, which would book the prepayment as
+      // a customer receivable. Refuse until the default names its own account.
+      if (
+        !isAR &&
+        (depositAccount === defaults.receivablesAccount ||
+          depositAccount === defaults.intercompanyReceivablesAccount)
+      ) {
+        throw new Error(
+          "Set Supplier Prepayments in Account Defaults to its own asset account before posting a prepayment"
+        );
+      }
+      expectedAccountClasses.push([depositAccount, depositClass]);
     }
     for (const application of assembled.input.applications) {
       expectedAccountClasses.push(
@@ -13955,7 +15353,7 @@ export function postPaymentTransaction(
         [
           application.sourceControlAccountId,
           application.sourceIsDeposit
-            ? "Liability"
+            ? depositClass
             : isAR
               ? "Asset"
               : "Liability"
@@ -13976,13 +15374,9 @@ export function postPaymentTransaction(
       .where("active", "=", true)
       .where("isGroup", "=", false)
       .execute();
-    if (
-      postingAccounts.length !== accountIds.length ||
-      postingAccounts.find((account) => account.id === payment.bankAccount)
-        ?.class !== "Asset"
-    ) {
+    if (postingAccounts.length !== accountIds.length) {
       throw new Error(
-        "Payment accounts must be active posting accounts in this company group, with an Asset bank account"
+        "Payment accounts must be active posting accounts in this company group"
       );
     }
     const classById = new Map(
@@ -14021,7 +15415,7 @@ export function postPaymentTransaction(
             ...application,
             paymentId,
             companyId,
-            appliedDate: today,
+            appliedDate: postingDate,
             createdBy: userId
           }))
         )
@@ -14030,7 +15424,7 @@ export function postPaymentTransaction(
     // One set-based UPDATE preserves memo row identities and avoids query-per-row writes.
     if (normalizedMemos.length) {
       await sql`UPDATE "invoiceSettlement" s SET "appliedAmount"=v."appliedAmount", "sourceAmount"=v."sourceAmount",
-        "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${today}::date, "updatedBy"=${userId}
+        "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${postingDate}::date, "updatedBy"=${userId}
         FROM jsonb_to_recordset(${JSON.stringify(
           normalizedMemos
         )}::jsonb) AS v(id text,"appliedAmount" numeric,"sourceAmount" numeric,"sourceExchangeRate" numeric,"targetExchangeRate" numeric)
@@ -14044,7 +15438,7 @@ export function postPaymentTransaction(
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
         accountingPeriodId,
         description: `Payment ${payment.paymentId}`,
-        postingDate: today,
+        postingDate,
         companyId,
         sourceType: "Payment",
         status: postingStatus,
@@ -14092,7 +15486,8 @@ export function postPaymentTransaction(
       .updateTable("payment")
       .set({
         status: "Posted",
-        postingDate: today,
+        postingDate,
+        postError: null,
         journalId,
         postedAt: timestamp,
         postedBy: userId,
@@ -14127,6 +15522,7 @@ export function storedOnAccountRemainder(
   applications: PaymentApplication[],
   cashIn: boolean
 ): number {
+  if (applications.some((application) => application.targetPaymentId)) return 0;
   let remaining = toBaseAmount(
     Number(payment.totalAmount),
     Number(payment.exchangeRate)
@@ -14193,6 +15589,20 @@ export async function rebuildPaymentJournals(
     companyGroupId,
     defaults
   );
+  // A card account is a liability; every other payment account an asset.
+  const cardAccountIds = new Set(
+    (
+      await trx
+        .selectFrom("account")
+        .select("id")
+        .where("companyGroupId", "=", companyGroupId)
+        .where("id", "in", [
+          ...new Set(payments.map((payment) => payment.bankAccount))
+        ])
+        .where("class", "=", "Liability")
+        .execute()
+    ).map((account) => account.id)
+  );
 
   const settlements = await trx
     .selectFrom("invoiceSettlement")
@@ -14233,6 +15643,47 @@ export async function rebuildPaymentJournals(
     readTargetControlLines(trx, companyId, targetIds),
     readSourceControlLines(trx, companyId, sourceIds)
   ]);
+  const activeSourceIds = new Set(sourceLines.map((line) => line.documentId));
+  const exhaustedRefundSourceIds = [
+    ...new Set(
+      settlements.flatMap((row) =>
+        row.targetPaymentId && !activeSourceIds.has(row.targetPaymentId)
+          ? [row.targetPaymentId]
+          : []
+      )
+    )
+  ];
+  if (exhaustedRefundSourceIds.length) {
+    // A fully refunded deposit has no opening item at cutover. Rebuilding its
+    // refund still needs the account of the source's superseded own journal.
+    const historicalSourceLines = await trx
+      .selectFrom("payment as source")
+      .innerJoin("journal as journal", (join) =>
+        join
+          .onRef("journal.id", "=", "source.journalId")
+          .onRef("journal.companyId", "=", "source.companyId")
+      )
+      .innerJoin("journalLine as line", (join) =>
+        join
+          .onRef("line.journalId", "=", "journal.id")
+          .onRef("line.companyId", "=", "source.companyId")
+          .onRef("line.documentId", "=", "source.id")
+      )
+      .select([
+        "line.documentId",
+        "line.accountId",
+        "line.description",
+        "line.accountDefaultRole"
+      ])
+      .where("source.companyId", "=", companyId)
+      .where("source.id", "in", exhaustedRefundSourceIds)
+      .where("line.documentType", "=", "Payment")
+      .where("line.description", "in", [...DEPOSIT_DESCRIPTIONS])
+      .where("journal.sourceType", "=", "Payment")
+      .where("journal.status", "=", "Superseded")
+      .execute();
+    sourceLines.push(...historicalSourceLines);
+  }
   // The on-account and deposit lines of the payments built here, for the
   // later payments they fund.
   const builtSourceLines: SourceControlLine[] = [];
@@ -14248,6 +15699,7 @@ export async function rebuildPaymentJournals(
     const ownTargets = new Set(rows.map((row) => row[kind.targetColumn]));
     const ownSources = new Set(rows.map((row) => row.sourcePaymentId));
     const applications: PaymentApplication[] = rows.map((row) => ({
+      targetPaymentId: row.targetPaymentId,
       targetSalesInvoiceId: row.targetSalesInvoiceId,
       targetPurchaseInvoiceId: row.targetPurchaseInvoiceId,
       targetMemoId: row.targetMemoId,
@@ -14263,6 +15715,9 @@ export async function rebuildPaymentJournals(
     }));
 
     const { lines } = assemblePaymentJournal({
+      bankAccountClass: cardAccountIds.has(payment.bankAccount)
+        ? "Liability"
+        : "Asset",
       payment,
       kind,
       companyId,
@@ -14286,6 +15741,12 @@ export async function rebuildPaymentJournals(
         kind.cashIn
       ),
       fee: feeByPaymentId.get(payment.id),
+      legacyCustomerDepositRefund:
+        payment.status !== "Draft" &&
+        kind.isAR &&
+        kind.isDeposit &&
+        !kind.cashIn &&
+        applications.every((application) => !application.targetPaymentId),
       journalLineReference: nanoid()
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
@@ -14352,7 +15813,9 @@ const PAYMENT_BUILDER_DESCRIPTIONS = new Set([
   onAccountCreditDescription(true),
   onAccountCreditDescription(false),
   CUSTOMER_DEPOSIT_DESCRIPTION,
-  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION
 ]);
 
 /**
@@ -14436,15 +15899,33 @@ export async function postPayment(
     .today(await getCompanyTimeZone(db, companyId))
     .toString();
 
-  const result = await postPaymentTransaction(db, {
-    type,
-    paymentId,
-    companyId,
-    userId,
-    today,
-    fee
-  });
-  return { success: true, ...result };
+  try {
+    const result = await postPaymentTransaction(db, {
+      type,
+      paymentId,
+      companyId,
+      userId,
+      today,
+      fee
+    });
+    return { success: true, ...result };
+  } catch (error) {
+    // The transaction rolled back, so the reason is kept on the Draft outside
+    // it, for the payment page to show until a post succeeds.
+    if (type === "post") {
+      await db
+        .updateTable("payment")
+        .set({
+          postError:
+            error instanceof Error ? error.message : "The payment did not post"
+        })
+        .where("id", "=", paymentId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .execute();
+    }
+    throw error;
+  }
 }
 type Enums = Database["public"]["Enums"];
 
@@ -14784,7 +16265,10 @@ export type PurchaseInvoicePostingLine = LineBase &
     | {
         kind: "glAccount";
         purchaseOrderLineId: string | null;
-        account: { id: string; name: string };
+        /** The debit is signed by its class, so a balance sheet account (an
+         *  Equity draw, a Liability paid down) balances. An account with no
+         *  class posts as an expense, as every G/L line once did. */
+        account: { id: string; name: string; class: AccountClass | null };
         costCenterId: string | null;
         projectId: string | null;
         projectElementId?: string | null;
@@ -15659,7 +17143,12 @@ export function buildPurchaseInvoicePostingLines(
             description: glProjectCharge
               ? "Project Account"
               : line.account.name,
-            amount: round(debit("asset", total)),
+            amount: round(
+              debitSigned(
+                glProjectCharge ? "Expense" : (line.account.class ?? "Expense"),
+                total
+              )
+            ),
             ...keys
           },
           meta
@@ -15966,7 +17455,8 @@ export function calculatePurchasePostingAmounts(input: {
   });
 }
 const postPurchaseInvoiceLogger = getLogger(
-  "server-functions",
+  "erp",
+  "invoicing",
   "post-purchase-invoice"
 );
 
@@ -16043,7 +17533,12 @@ export async function postPurchaseInvoice(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  postPurchaseInvoiceLogger.info({ type, invoiceId, userId, skipReceiptPost });
+  postPurchaseInvoiceLogger.info("Posting a purchase invoice", {
+    type,
+    invoiceId,
+    userId,
+    skipReceiptPost
+  });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "purchaseInvoice", invoiceId, companyId);
@@ -16094,7 +17589,7 @@ export async function postPurchaseInvoice(
         );
       }
 
-      const [originalItemLedger, originalJournalLines, originalCostLedger] =
+      const [originalItemLedger, postedJournalLines, originalCostLedger] =
         await inOrder([
           () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
           () =>
@@ -16347,28 +17842,6 @@ export async function postPurchaseInvoice(
         purchaseOrderStatusUpdatesVoid[purchaseOrderId] = status;
       }
 
-      const reversingJournalLines: Omit<
-        Database["public"]["Tables"]["journalLine"]["Insert"],
-        "journalId"
-      >[] = originalJournalLines.map((entry) => ({
-        accountId: entry.accountId,
-        // A reversed stand-in line names the same default, so the enable
-        // re-points both sides together.
-        accountDefaultRole: entry.accountDefaultRole,
-        accrual: entry.accrual,
-        description: `VOID: ${entry.description}`,
-        // A reversal is a sign flip of an already-posted value, which is
-        // exact — no rounding to do.
-        amount: -entry.amount,
-        quantity: -entry.quantity,
-        documentType: entry.documentType,
-        documentId: entry.documentId,
-        externalDocumentId: entry.externalDocumentId,
-        documentLineReference: entry.documentLineReference,
-        journalLineReference: entry.journalLineReference,
-        companyId
-      }));
-
       const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
         originalItemLedger.data.map((entry) => ({
           postingDate: today,
@@ -16440,7 +17913,8 @@ export async function postPurchaseInvoice(
       const receivedItemIdsVoid = new Set(
         originalItemLedger.data.map((entry) => entry.itemId)
       );
-      const averageCostChangesVoid: AverageCostChange[] = [
+      // The journal's write-ups are added under the invoice lock below.
+      const stockAverageCostChangesVoid: AverageCostChange[] = [
         ...originalItemLedger.data.map((entry) => ({
           itemId: entry.itemId,
           quantity: -Number(entry.quantity),
@@ -16456,17 +17930,7 @@ export async function postPurchaseInvoice(
                 }
               ]
             : []
-        ),
-        ...originalJournalLines.flatMap((entry) => {
-          const itemId = entry.documentLineReference
-            ? itemIdByLineReferenceVoid.get(entry.documentLineReference)
-            : undefined;
-          return itemId &&
-            entry.accountId &&
-            inventoryAccountsVoid.has(entry.accountId)
-            ? [{ itemId, quantity: 0, value: -Number(entry.amount) }]
-            : [];
-        })
+        )
       ];
 
       const reversingCostLedger: Database["public"]["Tables"]["costLedger"]["Insert"][] =
@@ -16487,14 +17951,66 @@ export async function postPurchaseInvoice(
           postingDate: today
         }));
 
-      // A Provisional journal has no accounting period.
+      // A Provisional journal has no accounting period. Whether the void
+      // writes a journal can be read here: a line account change adds lines
+      // only to a posting that has some.
       const accountingPeriodIdVoid =
-        postingStatus === "Posted" && reversingJournalLines.length > 0
+        postingStatus === "Posted" && postedJournalLines.length > 0
           ? await getCurrentAccountingPeriod(companyId, db, today)
           : null;
 
       await db.transaction().execute(async (trx) => {
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+        // Locked before the journal is read, as a line account change locks
+        // it before it adds lines: those are reversed with the rest, never
+        // left on a voided invoice.
+        await trx
+          .selectFrom("purchaseInvoice")
+          .select("id")
+          .where("id", "=", invoiceId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .execute();
+        const originalJournalLines = await documentJournalLines(
+          trx,
+          companyId,
+          { documentId: invoiceId, documentType: "Invoice" }
+        );
+        const reversingJournalLines: Omit<
+          Database["public"]["Tables"]["journalLine"]["Insert"],
+          "journalId"
+        >[] = originalJournalLines.map((entry) => ({
+          accountId: entry.accountId,
+          // A reversed stand-in line names the same default, so the enable
+          // re-points both sides together.
+          accountDefaultRole: entry.accountDefaultRole,
+          accrual: entry.accrual,
+          description: `VOID: ${entry.description}`,
+          // A reversal is a sign flip of an already-posted value, which is
+          // exact — no rounding to do.
+          amount: -entry.amount,
+          quantity: -entry.quantity,
+          documentType: entry.documentType,
+          documentId: entry.documentId,
+          externalDocumentId: entry.externalDocumentId,
+          documentLineReference: entry.documentLineReference,
+          journalLineReference: entry.journalLineReference,
+          companyId
+        }));
+        const averageCostChangesVoid: AverageCostChange[] = [
+          ...stockAverageCostChangesVoid,
+          ...originalJournalLines.flatMap((entry) => {
+            const itemId = entry.documentLineReference
+              ? itemIdByLineReferenceVoid.get(entry.documentLineReference)
+              : undefined;
+            return itemId &&
+              entry.accountId &&
+              inventoryAccountsVoid.has(entry.accountId)
+              ? [{ itemId, quantity: 0, value: -Number(entry.amount) }]
+              : [];
+          })
+        ];
+
         await updateRowsById(
           trx,
           "purchaseOrderLine",
@@ -16506,17 +18022,29 @@ export async function postPurchaseInvoice(
             })
           )
         );
-        await updateRowsById(
-          trx,
-          "purchaseOrder",
-          companyId,
-          Object.entries(purchaseOrderStatusUpdatesVoid).map(
-            ([id, status]) => ({
-              id,
-              data: { status }
-            })
-          )
-        );
+        // Only a released order follows its lines: a void never releases an
+        // order that is closed or waiting for approval. One update per status.
+        const voidOrderIdsByStatus = new Map<
+          (typeof purchaseOrderStatusUpdatesVoid)[string],
+          string[]
+        >();
+        for (const [id, status] of Object.entries(
+          purchaseOrderStatusUpdatesVoid
+        )) {
+          voidOrderIdsByStatus.set(status, [
+            ...(voidOrderIdsByStatus.get(status) ?? []),
+            id
+          ]);
+        }
+        for (const [status, ids] of voidOrderIdsByStatus) {
+          await trx
+            .updateTable("purchaseOrder")
+            .set({ status })
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+            .execute();
+        }
 
         for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
           await trx
@@ -16805,8 +18333,28 @@ export async function postPurchaseInvoice(
       throw new NotFoundError("Purchase invoice not found");
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
+
+    // Funds are released only against approved, released purchase orders
+    // whose totals are within their approved amounts. Here, not in the
+    // service function, so every caller of the posting (the Ramp bill sync
+    // included) is held to it. Posting would otherwise also set an
+    // unapproved order's status to a released one.
+    const fundsRefused = await purchaseOrderFundsGate(
+      ctx,
+      purchaseInvoiceLines.data.map((line) => line.purchaseOrderId),
+      {
+        intent: "invoice",
+        purchaseOrderLineIds: purchaseInvoiceLines.data.map(
+          (line) => line.purchaseOrderLineId
+        )
+      }
+    );
+    // 422: a rule refusal, in the gate's own words, for every caller.
+    if (fundsRefused) throw new ServerFnError(fundsRefused.message, 422);
+
     if (purchaseInvoiceDelivery.error)
       throw new Error("Failed to fetch purchase invoice delivery");
+
     if (dimensions.error) {
       postPurchaseInvoiceLogger.error("Failed to fetch dimensions", {
         error: dimensions.error
@@ -17241,7 +18789,7 @@ export async function postPurchaseInvoice(
             db,
             "account",
             { companyGroupId: companyGroupId!, id: glAccountIds },
-            { columns: ["id", "name", "isGroup"] }
+            { columns: ["id", "name", "class", "isGroup"] }
           )
         : [];
 
@@ -17480,7 +19028,7 @@ export async function postPurchaseInvoice(
         const item = items.data.find((item) => item.id === invoiceLine.itemId);
         const itemTrackingType = item?.itemTrackingType ?? "Inventory";
 
-        postPurchaseInvoiceLogger.debug({
+        postPurchaseInvoiceLogger.debug("Resolved the invoice line item", {
           invoiceLineItemId: invoiceLine.itemId,
           foundItem: item,
           itemTrackingType,
@@ -17726,9 +19274,56 @@ export async function postPurchaseInvoice(
         : null;
 
     const createdReceiptIds: string[] = [];
+    const invoicePurchaseOrderIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderId)
+      .filter((id): id is string => Boolean(id));
+    const invoicePurchaseOrderLineIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // The gate above ran before this transaction. Lock the invoice's orders
+      // and check again: an edit that sent one back to approval in between
+      // either committed first (and is refused here) or waits on this lock,
+      // since a re-submit locks the order before it changes the status.
+      if (
+        invoicePurchaseOrderIds.length > 0 ||
+        invoicePurchaseOrderLineIds.length > 0
+      ) {
+        await trx
+          .selectFrom("purchaseOrder")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or([
+              eb("id", "in", [...invoicePurchaseOrderIds, ""]),
+              eb("id", "in", (sub) =>
+                sub
+                  .selectFrom("purchaseOrderLine")
+                  .select("purchaseOrderId")
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", [...invoicePurchaseOrderLineIds, ""])
+              )
+            ])
+          )
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const lockedFundsRefused = await purchaseOrderFundsGate(
+          ctx,
+          invoicePurchaseOrderIds,
+          {
+            intent: "invoice",
+            purchaseOrderLineIds: invoicePurchaseOrderLineIds
+          }
+        );
+        if (lockedFundsRefused) {
+          throw new ServerFnError(lockedFundsRefused.message, 422);
+        }
+      }
+
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
         const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<
@@ -17845,6 +19440,8 @@ export async function postPurchaseInvoice(
           status = "To Invoice";
         }
 
+        // Only a released order follows its lines: a Closed one stays
+        // closed, and one waiting for approval is never released by a post.
         await trx
           .updateTable("purchaseOrder")
           .set({
@@ -17852,6 +19449,7 @@ export async function postPurchaseInvoice(
           })
           .where("id", "=", purchaseOrderId)
           .where("companyId", "=", companyId)
+          .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
           .execute();
       }
 
@@ -18264,4 +19862,3362 @@ export async function postPurchaseInvoice(
     }
     throw err;
   }
+}
+
+// ─── Admin force delete: invoices, receipts and payments ───
+//
+// The building blocks of `requestDocumentForceDelete` and
+// `decideDocumentForceDelete` (invoicing.server.ts). Approving voids a posted
+// document through its own void, then deletes it here, in the approval's
+// transaction.
+
+/** A document a force delete names, as it is now. */
+export type ForceDeleteDocument = {
+  documentType: ForceDeleteDocumentType;
+  id: string;
+  readableId: string;
+  status: string;
+  /**
+   * What approving does first: `void` it (it is posted), `delete` it straight
+   * away (Draft or Voided), or refuse while it is `busy` being posted.
+   */
+  step: "void" | "delete" | "busy";
+  /** When it was posted (null while Draft); decides the cutover side. */
+  postingDate: string | null;
+  /** Receipt only: where it came from, and whether a purchase invoice made it. */
+  sourceDocument?: string | null;
+  sourceDocumentId?: string | null;
+  invoiced?: boolean;
+};
+
+function forceDeleteStep(
+  status: string,
+  { busy = [] }: { busy?: string[] } = {}
+): ForceDeleteDocument["step"] {
+  if (status === "Draft" || status === "Voided") return "delete";
+  if (busy.includes(status)) return "busy";
+  return "void";
+}
+
+/**
+ * The document, or null when it is not the company's. `lock` takes it FOR
+ * UPDATE, so it cannot be posted or voided under the approval.
+ */
+export async function getForceDeleteDocument(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    documentType,
+    documentId,
+    lock = false
+  }: {
+    companyId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    lock?: boolean;
+  }
+): Promise<ForceDeleteDocument | null> {
+  switch (documentType) {
+    case "purchaseInvoice": {
+      const query = db
+        .selectFrom("purchaseInvoice")
+        .select(["id", "invoiceId", "status", "postingDate"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.invoiceId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] })
+      };
+    }
+    case "salesInvoice": {
+      const query = db
+        .selectFrom("salesInvoice")
+        .select(["id", "invoiceId", "status", "postingDate"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.invoiceId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] })
+      };
+    }
+    case "receipt": {
+      const query = db
+        .selectFrom("receipt")
+        .select([
+          "id",
+          "receiptId",
+          "status",
+          "postingDate",
+          "sourceDocument",
+          "sourceDocumentId",
+          "invoiced"
+        ])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.receiptId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] }),
+        sourceDocument: row.sourceDocument ?? null,
+        sourceDocumentId: row.sourceDocumentId ?? null,
+        invoiced: !!row.invoiced
+      };
+    }
+    case "payment": {
+      const query = db
+        .selectFrom("payment")
+        .select(["id", "paymentId", "status", "postingDate"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.paymentId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status)
+      };
+    }
+  }
+}
+
+/**
+ * Why the document cannot be force deleted right now, or null. Force delete
+ * is the emergency override: it unapplies what is applied to the document,
+ * voids it, and reverses it by journal when the void refuses, so the only
+ * refusal is a document still being posted.
+ */
+export async function getForceDeleteRefusal(
+  _db: Kysely<KyselyDatabase> | KyselyTx,
+  { document }: { companyId: string; document: ForceDeleteDocument }
+): Promise<string | null> {
+  if (document.step === "busy") {
+    return `${document.readableId} is being posted. Try again in a moment.`;
+  }
+  return null;
+}
+
+function forceDeleteReceipt(
+  document: ForceDeleteDocument
+): PurchaseOrderForceDeleteReceipt {
+  return {
+    id: document.id,
+    readableId: document.readableId,
+    status: document.status as PurchaseOrderForceDeleteReceipt["status"],
+    postingDate: document.postingDate
+  };
+}
+
+/** A payment or memo applied to (or drawing on) a force deleted document. */
+export type ForceDeleteSettlement = {
+  id: string;
+  paymentId: string | null;
+  memoId: string | null;
+  /** The payment's or memo's number. */
+  readableId: string;
+  status: string;
+};
+
+/**
+ * What a force delete unapplies before it voids the document:
+ * - an invoice: every payment and memo applied to it;
+ * - a payment: every other payment's application that draws on it (its
+ *   credit or deposit funds them, or it is a refund's target).
+ * The payments themselves stay as they are, Posted ones as unapplied credit.
+ */
+export async function getForceDeleteSettlements(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  { companyId, document }: { companyId: string; document: ForceDeleteDocument }
+): Promise<ForceDeleteSettlement[]> {
+  if (document.documentType === "receipt") return [];
+  const rows = await db
+    .selectFrom("invoiceSettlement as s")
+    .leftJoin("payment as p", (join) =>
+      join
+        .onRef("p.id", "=", "s.paymentId")
+        .onRef("p.companyId", "=", "s.companyId")
+    )
+    .leftJoin("memo as m", (join) =>
+      join
+        .onRef("m.id", "=", "s.memoId")
+        .onRef("m.companyId", "=", "s.companyId")
+    )
+    .select([
+      "s.id",
+      "s.paymentId",
+      "s.memoId",
+      "p.paymentId as paymentReadableId",
+      "p.status as paymentStatus",
+      "m.memoId as memoReadableId",
+      "m.status as memoStatus"
+    ])
+    .where("s.companyId", "=", companyId)
+    .where((eb) =>
+      document.documentType === "purchaseInvoice"
+        ? eb("s.targetPurchaseInvoiceId", "=", document.id)
+        : document.documentType === "salesInvoice"
+          ? eb("s.targetSalesInvoiceId", "=", document.id)
+          : eb.and([
+              eb.or([
+                eb("s.sourcePaymentId", "=", document.id),
+                eb("s.targetPaymentId", "=", document.id)
+              ]),
+              eb.or([
+                eb("s.paymentId", "is", null),
+                eb("s.paymentId", "<>", document.id)
+              ])
+            ])
+    )
+    .orderBy("s.id")
+    .execute();
+  return rows.map((row) => ({
+    id: row.id,
+    paymentId: row.paymentId,
+    memoId: row.memoId,
+    readableId:
+      (row.paymentId ? row.paymentReadableId : row.memoReadableId) ?? row.id,
+    status: (row.paymentId ? row.paymentStatus : row.memoStatus) ?? "Unknown"
+  }));
+}
+
+/**
+ * Unapplies the document's settlements (`getForceDeleteSettlements`), in
+ * its own transaction, before the force delete voids the document: a
+ * payment's void refuses while others draw on it, and an invoice's paid
+ * share must leave its payments first.
+ *
+ * A Posted payment's journal is a function of the payment and its
+ * settlements (`buildPaymentJournal`), so the unapply builds it again with
+ * the settlements and without them, and posts the difference today: the
+ * invoice's control, discount, write-off and FX lines come off and the cash
+ * goes back to the payment's unapplied (on-account or deposit) credit. A
+ * later void of the payment reverses every journal line of the payment,
+ * this one too. Memo applications book no journal, and a Draft or Voided
+ * payment's rows are only removed.
+ *
+ * Sets `app.force_delete` so the advance-application guard
+ * (`prevent_invalid_deposit_refund`) lets the rows go.
+ */
+export async function unapplyForceDeleteSettlements(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    accounting
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    accounting: ForceDeleteReversalAccounting;
+  }
+): Promise<ForceDeleteSettlement[]> {
+  return withTransaction(db, async (trx) => {
+    const settlements = await getForceDeleteSettlements(trx, {
+      companyId,
+      document
+    });
+    if (settlements.length === 0) return [];
+    await sql`SELECT set_config('app.force_delete', 'on', true)`.execute(trx);
+    const { postingStatus, accountingPeriodId } = accounting.accounting;
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+    const paymentIds = [
+      ...new Set(settlements.flatMap((row) => row.paymentId ?? []))
+    ];
+    const payments =
+      paymentIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("payment")
+            .selectAll()
+            .where("companyId", "=", companyId)
+            .where("id", "in", paymentIds)
+            .where("status", "=", "Posted")
+            .orderBy("id")
+            .forUpdate()
+            .execute();
+
+    for (const payment of payments) {
+      const ids = settlements
+        .filter((row) => row.paymentId === payment.id)
+        .map((row) => row.id);
+      const before = await rebuildPaymentJournal(
+        trx,
+        payment,
+        companyId,
+        postingStatus
+      );
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .execute();
+      const after = await rebuildPaymentJournal(
+        trx,
+        payment,
+        companyId,
+        postingStatus
+      );
+      const difference = paymentJournalDifference(before.lines, after.lines);
+      if (difference.length === 0) continue;
+
+      const journal = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+          accountingPeriodId,
+          description: `Unapply Payment ${payment.paymentId} (force delete of ${document.readableId})`,
+          postingDate: accounting.today,
+          companyId,
+          sourceType: "Payment",
+          status: postingStatus,
+          postedAt: datetime.timestamp(),
+          postedBy: userId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const lines = await trx
+        .insertInto("journalLine")
+        .values(
+          difference.map((line) => ({
+            journalId: journal.id,
+            accountId: line.accountId,
+            amount: line.amount,
+            quantity: 1,
+            description: line.description,
+            documentType: "Payment" as const,
+            documentId: payment.id,
+            documentLineReference: line.documentLineReference ?? null,
+            journalLineReference: line.journalLineReference,
+            accountDefaultRole: line.accountDefaultRole,
+            companyId
+          }))
+        )
+        .returning("id")
+        .execute();
+      const dimensions = after.dimensions.flatMap((dimension) =>
+        lines.map((line) => ({
+          journalLineId: line.id,
+          ...dimension,
+          companyId
+        }))
+      );
+      if (dimensions.length) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensions)
+          .execute();
+      }
+    }
+
+    // Memo applications, and those of Draft or Voided payments: no journal.
+    await trx
+      .deleteFrom("invoiceSettlement")
+      .where("companyId", "=", companyId)
+      .where(
+        "id",
+        "in",
+        settlements.map((row) => row.id)
+      )
+      .execute();
+    return settlements;
+  });
+}
+
+/**
+ * Voids a posted document through its own void, in its own posting (each
+ * opens its own transaction, so this runs before the approval's). `refusal`
+ * is the void's refusal, in words for the person. `adjustOut` is a receipt
+ * from a purchase order whose void refused only because its stock was moved
+ * since, or because it predates the accounting cutover: the approval adjusts
+ * its stock out instead (`deleteForceDeleteDocument`), as a purchase order
+ * force delete does.
+ */
+export async function voidForceDeleteDocument(
+  ctx: ServiceContext,
+  document: ForceDeleteDocument
+): Promise<
+  | { refusal: null; adjustOut: boolean }
+  | { refusal: string; adjustOut: false; internal?: unknown }
+> {
+  const voided =
+    document.documentType === "purchaseInvoice"
+      ? await invokePosting(
+          ctx,
+          "post-purchase-invoice",
+          { type: "void" as const, invoiceId: document.id },
+          postPurchaseInvoice
+        )
+      : document.documentType === "salesInvoice"
+        ? await invokePosting(
+            ctx,
+            "post-sales-invoice",
+            { type: "void" as const, invoiceId: document.id },
+            postSalesInvoice
+          )
+        : document.documentType === "payment"
+          ? await invokePosting(
+              ctx,
+              "post-payment",
+              { type: "void" as const, paymentId: document.id },
+              postPayment
+            )
+          : await invokePosting(
+              ctx,
+              "post-receipt",
+              { type: "void" as const, receiptId: document.id },
+              postReceipt
+            );
+  if (!voided.error) return { refusal: null, adjustOut: false };
+  if (
+    document.documentType === "receipt" &&
+    document.sourceDocument === "Purchase Order" &&
+    (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
+      voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
+  ) {
+    return { refusal: null, adjustOut: true };
+  }
+  if (voided.error.status >= 500) {
+    return {
+      refusal: `${document.readableId} could not be voided: ${voided.error.message}`,
+      adjustOut: false,
+      internal: voided.error
+    };
+  }
+  return {
+    refusal: `${document.readableId} could not be voided: ${voided.error.message}`,
+    adjustOut: false
+  };
+}
+
+/**
+ * Deletes the document inside the approval's transaction, which holds it
+ * locked. It must be Draft or Voided by now, except a purchase order
+ * receipt its void left for adjusting out (`reversal` set): that is reversed
+ * here first (`reverseReceiptsByAdjustment`), and what it received is given
+ * back to its order (`restorePurchaseOrderReceived`).
+ *
+ * Sets `app.force_delete` for the transaction, so the Draft-only delete
+ * guards of the invoices step aside. Removes what still names the document
+ * and counts for nothing: settlements of Voided payments and memos, and the
+ * receipts a voided purchase invoice created (marked Voided: its void
+ * reversed their stock).
+ *
+ * Throws `InvalidInputError` when the document is no longer in a state the
+ * delete can take.
+ */
+export async function deleteForceDeleteDocument(
+  trx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal,
+    reversedByJournal = false
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    /** A purchase order receipt the void left for adjusting out. */
+    reversal: ForceDeleteReversalAccounting | null;
+    /** `reverseDocumentByJournal` already took its postings back. */
+    reversedByJournal?: boolean;
+  }
+): Promise<void> {
+  const { documentType } = document;
+  const adjustOut =
+    documentType === "receipt" &&
+    document.status === "Posted" &&
+    reversal !== null &&
+    !reversedByJournal;
+  if (document.step !== "delete" && !adjustOut && !reversedByJournal) {
+    throw new InvalidInputError(
+      `${document.readableId} is ${document.status}: it was not voided`
+    );
+  }
+
+  await sql`SELECT set_config('app.force_delete', 'on', true)`.execute(trx);
+  const now = datetime.timestamp();
+
+  switch (documentType) {
+    case "purchaseInvoice": {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("targetPurchaseInvoiceId", "=", document.id)
+        .execute();
+      await trx
+        .updateTable("receipt")
+        .set({ status: "Voided", updatedBy: userId, updatedAt: now })
+        .where("companyId", "=", companyId)
+        .where("sourceDocument", "=", "Purchase Invoice")
+        .where("sourceDocumentId", "=", document.id)
+        .where("status", "=", "Posted")
+        .execute();
+      await deletePurchaseInvoiceReleasingLeases(trx, {
+        companyId,
+        invoiceId: document.id,
+        userId,
+        voided: true
+      });
+      return;
+    }
+    case "salesInvoice": {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("targetSalesInvoiceId", "=", document.id)
+        .execute();
+      await deleteSalesInvoiceReleasingRentals(trx, {
+        companyId,
+        invoiceId: document.id,
+        userId,
+        voided: true
+      });
+      return;
+    }
+    case "payment": {
+      // Its own settlements cascade; rows of other (Voided) payments that
+      // name it as their source or target are removed first.
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where((eb) =>
+          eb.or([
+            eb("sourcePaymentId", "=", document.id),
+            eb("targetPaymentId", "=", document.id)
+          ])
+        )
+        .execute();
+      await trx
+        .deleteFrom("payment")
+        .where("id", "=", document.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await releasePaymentMappings(trx, companyId, document.id);
+      return;
+    }
+    case "receipt": {
+      if (adjustOut && reversal) {
+        const purchaseOrderId = document.sourceDocumentId;
+        if (!purchaseOrderId) {
+          throw new InvalidInputError(
+            `${document.readableId} names no purchase order`
+          );
+        }
+        const order = await trx
+          .selectFrom("purchaseOrder")
+          .select("purchaseOrderId")
+          .where("id", "=", purchaseOrderId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        const receipt = forceDeleteReceipt(document);
+        const reversible = await forceDeleteReceiptRefusal(trx, {
+          companyId,
+          receipts: [receipt],
+          afterVoid: true
+        });
+        if (reversible.refusal !== null) {
+          // Its stock was used, or it issued to a project or received an
+          // asset: no plan finds the stock, so it is reversed by journal.
+          await reverseDocumentByJournal(trx, {
+            companyId,
+            userId,
+            document,
+            reversal
+          });
+          await trx
+            .deleteFrom("receipt")
+            .where("id", "=", document.id)
+            .where("companyId", "=", companyId)
+            .execute();
+          return;
+        }
+        await reverseReceiptsByAdjustment(trx, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          purchaseOrderReadableId: order?.purchaseOrderId ?? purchaseOrderId,
+          receipts: [receipt],
+          removals: reversible.plan.removals,
+          reversal
+        });
+        await restorePurchaseOrderReceived(trx, {
+          companyId,
+          userId,
+          receiptId: document.id,
+          purchaseOrderId
+        });
+      }
+      await trx
+        .deleteFrom("receipt")
+        .where("id", "=", document.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      return;
+    }
+  }
+}
+
+/**
+ * Claims a Pending request for `userId`'s approval (status Approving), so a
+ * cancel or reject cannot run while its void commits. A claim the same Admin
+ * left, or one older than ten minutes (a failed approval that never released
+ * it), is taken again. Returns false when the request is not claimable; the
+ * caller reads it again for the reason.
+ */
+export async function claimForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    documentType,
+    userId
+  }: {
+    companyId: string;
+    requestId: string;
+    documentType: ForceDeleteDocumentType;
+    userId: string;
+  }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("forceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", documentType)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/**
+ * Gives back a claim left for more than ten minutes (an approval that
+ * stopped), so the request can be cancelled, rejected or approved again.
+ */
+export async function releaseExpiredForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("forceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
+/** Gives a claim back (Pending) after the approval refused or failed. */
+export async function releaseForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("forceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
+/** A document's open force delete request, for its page. */
+export type DocumentForceDeleteRequest = {
+  id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
+  /**
+   * An Approving claim older than ten minutes: its approval stopped, and
+   * any other Admin may approve again (`claimForceDeleteRequest`).
+   */
+  claimExpired: boolean;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  documentStatus: string;
+};
+
+export async function getPendingForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    documentType,
+    documentId
+  }: {
+    companyId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+  }
+): Promise<DocumentForceDeleteRequest | null> {
+  const request = await db
+    .selectFrom("forceDeleteRequest")
+    .select([
+      "id",
+      "status",
+      "reason",
+      "requestedBy",
+      "requestedAt",
+      "documentStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
+    ])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", documentType)
+    .where("documentId", "=", documentId)
+    .where("status", "in", ["Pending", "Approving"])
+    .executeTakeFirst();
+  return request
+    ? { ...request, requestedAt: String(request.requestedAt) }
+    : null;
+}
+
+/**
+ * Tells about a document force delete: `Requested` goes to every Admin but
+ * the one who asked; `Approved` / `Rejected` go to the one who asked. Never
+ * throws.
+ */
+export async function notifyDocumentForceDelete(
+  ctx: ServiceContext,
+  {
+    event,
+    documentType,
+    documentId,
+    requestId,
+    requestedBy
+  }: {
+    event: "Requested" | "Approved" | "Rejected";
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    requestId: string;
+    requestedBy: string;
+  }
+) {
+  const companyId = ctx.company.id;
+  try {
+    const userIds =
+      event === "Requested"
+        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+            (id) => id !== requestedBy
+          )
+        : requestedBy === ctx.auditUserId
+          ? []
+          : [requestedBy];
+    if (userIds.length === 0) return;
+    await trigger("notify", {
+      event:
+        event === "Requested"
+          ? NotificationEvent.ApprovalRequested
+          : event === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+      companyId,
+      documentId: forceDeleteNotificationId(
+        documentType,
+        documentId,
+        requestId
+      ),
+      documentType: "documentForceDelete",
+      recipient: { type: "users", userIds },
+      from: ctx.auditUserId
+    });
+  } catch (e) {
+    logger.error("Failed to notify about a force delete", { error: e });
+  }
+}
+
+/** Best-effort: a failed audit write never undoes the override. */
+export async function auditDocumentForceDelete(
+  ctx: ServiceContext,
+  entry: {
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    requestId: string;
+    operation: "INSERT" | "UPDATE" | "DELETE";
+    diff: Record<string, { old: unknown; new: unknown }>;
+  }
+) {
+  try {
+    await insertAuditLogEntries(ctx.asSystem.supabase, ctx.company.id, [
+      {
+        tableName: "forceDeleteRequest",
+        entityType: entry.documentType,
+        entityId: entry.documentId,
+        recordId: entry.requestId,
+        operation: entry.operation,
+        actorId: ctx.auditUserId,
+        diff: entry.diff
+      }
+    ]);
+  } catch (err) {
+    logger.warning("audit write skipped for a force delete", { error: err });
+  }
+}
+
+/**
+ * What a document's page loads for the force delete override: whether the
+ * user is an Admin (who sees the menu item) and the open request (the
+ * banner).
+ */
+export async function getDocumentForceDeleteData(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+  }
+): Promise<{
+  isAdmin: boolean;
+  forceDeleteRequest: DocumentForceDeleteRequest | null;
+}> {
+  // The override is an extra on the page: a failed lookup leaves it off
+  // rather than failing the document's page.
+  try {
+    const [isAdmin, forceDeleteRequest] = await Promise.all([
+      isCompanyAdmin(client, args.companyId, args.userId),
+      getPendingForceDeleteRequest(db, args)
+    ]);
+    return { isAdmin, forceDeleteRequest };
+  } catch (error) {
+    logger.error("Failed to load the force delete override", {
+      documentType: args.documentType,
+      documentId: args.documentId,
+      error
+    });
+    return { isAdmin: false, forceDeleteRequest: null };
+  }
+}
+
+// ─── Force delete: reverse by journal (the void refused) ───
+
+/** The journal source type a document's force delete reversal posts under. */
+const FORCE_DELETE_SOURCE_TYPE = {
+  purchaseInvoice: "Purchase Invoice",
+  salesInvoice: "Sales Invoice",
+  receipt: "Purchase Receipt",
+  payment: "Payment"
+} as const;
+
+/**
+ * The journal source types of a document's own postings. Whole journals are
+ * negated only when they are one of these: the Opening Balance journal also
+ * carries a pre-cutover document's open lines, beside every other document's,
+ * and only the document's own lines of it are taken back
+ * (`reverseBeforeCutover`).
+ */
+const FORCE_DELETE_OWN_SOURCE_TYPES: Record<
+  ForceDeleteDocumentType,
+  Database["public"]["Enums"]["journalEntrySourceType"][]
+> = {
+  purchaseInvoice: ["Purchase Invoice"],
+  salesInvoice: ["Sales Invoice"],
+  receipt: ["Purchase Receipt", "Sales Return Receipt"],
+  payment: ["Payment"]
+};
+
+/** The journal line document types a document's own postings carry. */
+const FORCE_DELETE_JOURNAL_DOCUMENT_TYPES: Record<
+  ForceDeleteDocumentType,
+  Database["public"]["Enums"]["journalLineDocumentType"][]
+> = {
+  purchaseInvoice: ["Invoice", "Purchase Invoice"],
+  salesInvoice: ["Invoice"],
+  receipt: ["Receipt", "Purchase Receipt"],
+  payment: ["Payment"]
+};
+
+/**
+ * Takes a posted document's postings back when its own void refused (a
+ * partial inspection, a credit memo on its return, stock used since, a
+ * capitalized asset, the accounting cutover), inside the force delete's
+ * transaction, so the document can be deleted:
+ *
+ * 1. One journal, today, negates every line of every journal that carries
+ *    the document's lines (its posting, and for a payment any unapply).
+ *    Before the cutover there are none (the opening balance carries the
+ *    document): an invoice writes its open amount off to the customer or
+ *    supplier write-off account, a payment negates its posting built again.
+ * 2. Stock the document (and its inspections) moved is moved back by
+ *    adjustment, even below zero, into the same journal against inventory
+ *    adjustment variance. The negated journal already took the stock's
+ *    original value off inventory, so that value is added back per item
+ *    (the document's cost ledger), leaving inventory at the carrying value
+ *    actually relieved and the difference in variance. Its inspections are
+ *    cancelled, Put Aways removed and serials/batches drained, as a void
+ *    does.
+ * 3. What the document gave its source comes back: a purchase order's
+ *    received or invoiced quantities and status; a capitalized asset's
+ *    value from this invoice moves back out of the asset account
+ *    (acquisition cost lowered, its CIP rows removed).
+ * 4. The document is marked Voided, for the delete that follows.
+ */
+export async function reverseDocumentByJournal(
+  trx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<void> {
+  await withTransaction(trx, async (tx) => {
+    const { today, cutoverDate } = reversal;
+    const { postingStatus, accountingPeriodId } = reversal.accounting;
+    await assertPostingStatusUnchanged(tx, companyId, postingStatus);
+    const description = `FORCE DELETE ${document.readableId}`;
+
+    let journalId: string | null = null;
+    const getJournalId = async () => {
+      if (journalId) return journalId;
+      const journal = await tx
+        .insertInto("journal")
+        .values({
+          journalEntryId: await getNextSequence(tx, "journalEntry", companyId),
+          accountingPeriodId,
+          description,
+          postingDate: today,
+          companyId,
+          sourceType: FORCE_DELETE_SOURCE_TYPE[document.documentType],
+          status: postingStatus,
+          postedAt: datetime.timestamp(),
+          postedBy: userId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      journalId = journal.id;
+      return journalId;
+    };
+
+    const beforeCutover =
+      !!document.postingDate &&
+      isBeforeCutover(document.postingDate, cutoverDate);
+
+    // 1. The document's postings, negated. A payment from before the cutover
+    // is negated from its posting built again (`reverseBeforeCutover`), which
+    // already reflects any unapply since, so its journals are not read.
+    const originals =
+      document.documentType === "payment" && beforeCutover
+        ? []
+        : await tx
+            .selectFrom("journalLine")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "journalLine.journalId")
+                .onRef("journal.companyId", "=", "journalLine.companyId")
+            )
+            .selectAll("journalLine")
+            .where("journalLine.companyId", "=", companyId)
+            .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+            .where(
+              "journal.sourceType",
+              "in",
+              FORCE_DELETE_OWN_SOURCE_TYPES[document.documentType]
+            )
+            .where("journalLine.journalId", "in", (eb) =>
+              eb
+                .selectFrom("journalLine as own")
+                .select("own.journalId")
+                .where("own.companyId", "=", companyId)
+                .where("own.documentId", "=", document.id)
+                .where(
+                  "own.documentType",
+                  "in",
+                  FORCE_DELETE_JOURNAL_DOCUMENT_TYPES[document.documentType]
+                )
+            )
+            .orderBy("journalLine.id")
+            .execute();
+
+    if (originals.length > 0) {
+      const id = await getJournalId();
+      const ids = await allocateJournalLineIds(tx as Trx, originals.length);
+      await tx
+        .insertInto("journalLine")
+        .values(
+          originals.map((line, index) => ({
+            id: ids[index]!,
+            journalId: id,
+            accountId: line.accountId,
+            accountDefaultRole: line.accountDefaultRole,
+            accrual: line.accrual,
+            amount: -Number(line.amount),
+            quantity: -Number(line.quantity ?? 0),
+            description: `FORCE DELETE: ${line.description ?? ""}`,
+            documentType: line.documentType,
+            documentId: line.documentId,
+            externalDocumentId: line.externalDocumentId,
+            documentLineReference: line.documentLineReference,
+            journalLineReference: line.journalLineReference,
+            companyId
+          }))
+        )
+        .execute();
+      await copyJournalLineDimensions(tx as Trx, {
+        companyId,
+        reversals: originals.map((line, index) => ({
+          originalLineId: line.id,
+          reversingLineId: ids[index]!
+        }))
+      });
+      // The invoice's tax-ledger rows, negated with its journal, as a void
+      // negates them.
+      if (
+        document.documentType === "salesInvoice" ||
+        document.documentType === "purchaseInvoice"
+      ) {
+        await negateDocumentTaxLedger(tx as Trx, {
+          companyId,
+          documentType:
+            document.documentType === "salesInvoice"
+              ? "Sales Invoice"
+              : "Purchase Invoice",
+          documentId: document.id,
+          journalId: id,
+          postingDate: today,
+          createdBy: userId
+        });
+      }
+    }
+    if (beforeCutover) {
+      await reverseBeforeCutover(tx, {
+        companyId,
+        document,
+        getJournalId,
+        postingStatus,
+        varianceAccount:
+          reversal.accounting.accountDefaults.inventoryAdjustmentVarianceAccount
+      });
+    }
+
+    // 2. Stock.
+    await reverseDocumentStock(tx, {
+      companyId,
+      userId,
+      document,
+      reversal,
+      description,
+      getJournalId,
+      addBackOriginalValue: originals.length > 0
+    });
+
+    // 3. Sources.
+    if (
+      document.documentType === "receipt" &&
+      document.sourceDocument === "Purchase Order" &&
+      document.sourceDocumentId
+    ) {
+      await restorePurchaseOrderReceived(tx, {
+        companyId,
+        userId,
+        receiptId: document.id,
+        purchaseOrderId: document.sourceDocumentId
+      });
+    }
+    if (document.documentType === "salesInvoice") {
+      await restoreSalesOrderInvoiced(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id
+      });
+    }
+    if (document.documentType === "purchaseInvoice") {
+      await restorePurchaseOrderInvoiced(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id
+      });
+      await reverseCapitalizedCip(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id,
+        getJournalId
+      });
+    }
+
+    // 4. Voided, for the delete.
+    const table = {
+      purchaseInvoice: "purchaseInvoice",
+      salesInvoice: "salesInvoice",
+      receipt: "receipt",
+      payment: "payment"
+    } as const;
+    await tx
+      .updateTable(table[document.documentType])
+      .set({
+        status: "Voided",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", document.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/** A line of the force delete journal, signed by its account's type. */
+async function accountTypes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  accountIds: string[]
+): Promise<Map<string, AccountType>> {
+  const ids = [...new Set(accountIds)];
+  if (ids.length === 0) return new Map();
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const rows = await db
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("companyGroupId", "=", company.companyGroupId as string)
+    .where("id", "in", ids)
+    .execute();
+  return new Map(
+    rows.flatMap((row) =>
+      row.class && isAccountClass(row.class)
+        ? [[row.id, accountTypeFromClass(row.class as AccountClass)] as const]
+        : []
+    )
+  );
+}
+
+/**
+ * A document from before the cutover: its own journal is Superseded and the
+ * Opening Balance journal carries what it left open, among every other
+ * document's balances. Only its own lines of that journal are negated (its
+ * open receivable or payable, deferred revenue, GR/IR...), and the difference
+ * goes to the customer or supplier write-off account (inventory adjustment
+ * variance for a receipt), as the write-off of what it left open. A payment
+ * negates its posting built again instead, as its void does.
+ */
+async function reverseBeforeCutover(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    document,
+    getJournalId,
+    postingStatus,
+    varianceAccount
+  }: {
+    companyId: string;
+    document: ForceDeleteDocument;
+    getJournalId: () => Promise<string>;
+    postingStatus: AutomaticJournalStatus;
+    varianceAccount: string;
+  }
+): Promise<void> {
+  if (document.documentType === "payment") {
+    const payment = await tx
+      .selectFrom("payment")
+      .selectAll()
+      .where("id", "=", document.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    const rebuilt = await rebuildPaymentJournal(
+      tx as Trx,
+      payment,
+      companyId,
+      postingStatus
+    );
+    if (rebuilt.lines.length === 0) return;
+    const id = await getJournalId();
+    await tx
+      .insertInto("journalLine")
+      .values(
+        rebuilt.lines.map((line) => ({
+          journalId: id,
+          accountId: line.accountId,
+          amount: -line.amount,
+          quantity: line.quantity,
+          description: `FORCE DELETE: ${line.description}`,
+          documentType: "Payment" as const,
+          documentId: document.id,
+          documentLineReference: line.documentLineReference ?? null,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    return;
+  }
+
+  const opening = await tx
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .selectAll("journalLine")
+    .where("journalLine.companyId", "=", companyId)
+    .where("journalLine.documentId", "=", document.id)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .where("journal.sourceType", "=", "Opening Balance")
+    .orderBy("journalLine.id")
+    .execute();
+  if (opening.length === 0) return;
+
+  let offsetAccount = varianceAccount;
+  let offsetDescription = "Inventory Adjustment Variance Account";
+  if (document.documentType !== "receipt") {
+    const isSales = document.documentType === "salesInvoice";
+    const defaults = await tx
+      .selectFrom("accountDefault")
+      .select(["customerWriteOffAccount", "supplierWriteOffAccount"])
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    const writeOff = isSales
+      ? defaults.customerWriteOffAccount
+      : defaults.supplierWriteOffAccount;
+    if (!writeOff) {
+      throw new InvalidInputError(
+        `Map the ${isSales ? "customer" : "supplier"} write-off account in the accounting defaults to force delete ${document.readableId}`
+      );
+    }
+    offsetAccount = writeOff;
+    offsetDescription = isSales
+      ? "Bad Debt Expense"
+      : "Vendor Write-Off Income";
+  }
+
+  const accountOf = (line: (typeof opening)[number]) => {
+    if (!line.accountId) {
+      throw new Error(`Opening balance line ${line.id} has no account`);
+    }
+    return line.accountId;
+  };
+  const types = await accountTypes(tx, companyId, [
+    ...opening.map(accountOf),
+    offsetAccount
+  ]);
+  const typeOf = (accountId: string) => {
+    const type = types.get(accountId);
+    if (!type) throw new Error(`Account ${accountId} has no class`);
+    return type;
+  };
+  // Debit-signed total of the negated lines; the offset takes the rest.
+  const debitTotal = opening.reduce(
+    (sum, line) => sum + debit(typeOf(accountOf(line)), -Number(line.amount)),
+    0
+  );
+  const offset = toBaseAmount(-debitTotal, 1);
+  const id = await getJournalId();
+  const journalLineReference = nanoid();
+  await tx
+    .insertInto("journalLine")
+    .values([
+      ...opening.map((line) => ({
+        journalId: id,
+        accountId: line.accountId,
+        accountDefaultRole: line.accountDefaultRole,
+        amount: -Number(line.amount),
+        quantity: -Number(line.quantity ?? 0),
+        description: `FORCE DELETE: ${line.description ?? ""}`,
+        documentType: line.documentType,
+        documentId: line.documentId,
+        documentLineReference: line.documentLineReference,
+        journalLineReference,
+        companyId
+      })),
+      ...(offset === 0
+        ? []
+        : [
+            {
+              journalId: id,
+              accountId: offsetAccount,
+              // `debit` turns a debit-signed value into the stored amount.
+              amount: debit(typeOf(offsetAccount), offset),
+              quantity: 1,
+              description: `FORCE DELETE: ${offsetDescription}`,
+              documentType: opening[0]!.documentType,
+              documentId: document.id,
+              journalLineReference,
+              companyId
+            }
+          ])
+    ])
+    .execute();
+}
+
+/**
+ * Moves back the stock the document moved (its own item ledger rows and,
+ * for a receipt, its inspections' transfers and write-offs), netted per
+ * item, location, storage unit, serial/batch and project, by adjustment into
+ * the force delete journal against inventory adjustment variance. A serial
+ * or batch no longer on hand moves untracked. With `addBackOriginalValue`
+ * (the document's posting was negated, taking its stock value off
+ * inventory) that value goes back per item from the document's cost ledger.
+ */
+async function reverseDocumentStock(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal,
+    description,
+    getJournalId,
+    addBackOriginalValue
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting;
+    description: string;
+    getJournalId: () => Promise<string>;
+    addBackOriginalValue: boolean;
+  }
+): Promise<void> {
+  if (document.documentType === "payment") return;
+  const inspections =
+    document.documentType === "receipt"
+      ? await tx
+          .selectFrom("inspection")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("sourceDocument", "=", "Receipt")
+          .where("sourceDocumentId", "=", document.id)
+          .execute()
+      : [];
+  const ledgerDocumentIds = [document.id, ...inspections.map((row) => row.id)];
+  const rows = await tx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "locationId",
+      "storageUnitId",
+      "trackedEntityId",
+      "projectId",
+      "documentType",
+      "quantity"
+    ])
+    .where("companyId", "=", companyId)
+    .where("documentId", "in", ledgerDocumentIds)
+    .execute();
+
+  await withInspectionRelease(tx as Trx, async () => {
+    if (document.documentType === "receipt") {
+      await removeUnpickedPutAways(tx as Trx, companyId, document.id);
+      await tx
+        .updateTable("inspection")
+        .set({
+          status: "Cancelled",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("companyId", "=", companyId)
+        .where("sourceDocument", "=", "Receipt")
+        .where("sourceDocumentId", "=", document.id)
+        .where("status", "<>", "Cancelled")
+        .execute();
+    }
+    if (rows.length === 0) return;
+
+    const net = new Map<
+      string,
+      {
+        itemId: string;
+        locationId: string | null;
+        storageUnitId: string | null;
+        trackedEntityId: string | null;
+        projectId: string | null;
+        documentType: (typeof rows)[number]["documentType"];
+        quantity: number;
+      }
+    >();
+    for (const row of rows) {
+      const key = [
+        row.itemId,
+        row.locationId,
+        row.storageUnitId,
+        row.trackedEntityId,
+        row.projectId
+      ].join("|");
+      const entry = net.get(key) ?? {
+        itemId: row.itemId,
+        locationId: row.locationId ?? null,
+        storageUnitId: row.storageUnitId ?? null,
+        trackedEntityId: row.trackedEntityId ?? null,
+        projectId: row.projectId ?? null,
+        documentType: row.documentType,
+        quantity: 0
+      };
+      entry.quantity += Number(row.quantity);
+      net.set(key, entry);
+    }
+    const positions = [...net.values()].filter(
+      (position) => Math.abs(position.quantity) > 1e-9
+    );
+    const itemIds = [...new Set(rows.map((row) => row.itemId))];
+    const trackedIds = [
+      ...new Set(rows.flatMap((row) => row.trackedEntityId ?? []))
+    ];
+    const [items, itemCosts, entities] = await Promise.all([
+      tx
+        .selectFrom("item")
+        .select(["id", "itemTrackingType", "replenishmentSystem"])
+        .where("companyId", "=", companyId)
+        .where("id", "in", itemIds)
+        .execute(),
+      tx
+        .selectFrom("itemCost")
+        .select([
+          "itemId",
+          "costingMethod",
+          "unitCost",
+          "standardCost",
+          "itemPostingGroupId"
+        ])
+        .where("companyId", "=", companyId)
+        .where("itemId", "in", itemIds)
+        .execute(),
+      trackedIds.length === 0
+        ? Promise.resolve([])
+        : tx
+            .selectFrom("trackedEntity")
+            .select(["id", "status"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", trackedIds)
+            .execute()
+    ]);
+    const gone = new Set(
+      entities
+        .filter((entity) =>
+          ["Consumed", "Scrapped"].includes(String(entity.status))
+        )
+        .map((entity) => entity.id)
+    );
+
+    for (const position of positions) {
+      const item = items.find((row) => row.id === position.itemId);
+      const itemCost = itemCosts.find((row) => row.itemId === position.itemId);
+      if (!item || !itemCost) {
+        throw new Error(`Item ${position.itemId} has no item or cost record`);
+      }
+      const quantity = -position.quantity;
+      await bookAdjustment(tx as Trx, {
+        ledger: {
+          postingDate: reversal.today,
+          itemId: position.itemId,
+          quantity,
+          locationId: position.locationId,
+          storageUnitId: position.storageUnitId,
+          trackedEntityId:
+            position.trackedEntityId && !gone.has(position.trackedEntityId)
+              ? position.trackedEntityId
+              : null,
+          entryType: quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
+          documentId: document.id,
+          comment: description,
+          projectId: position.projectId,
+          companyId,
+          createdBy: userId
+        },
+        item: {
+          itemTrackingType: item.itemTrackingType,
+          replenishmentSystem: item.replenishmentSystem,
+          itemPostingGroupId: itemCost.itemPostingGroupId
+        },
+        itemCost: {
+          costingMethod: itemCost.costingMethod,
+          unitCost:
+            itemCost.unitCost === null ? null : Number(itemCost.unitCost),
+          standardCost:
+            itemCost.standardCost === null
+              ? null
+              : Number(itemCost.standardCost)
+        },
+        accounting: {
+          ...reversal.accounting,
+          offsetAccount: null,
+          description,
+          getJournalId
+        }
+      });
+    }
+
+    if (trackedIds.length > 0) {
+      await tx
+        .updateTable("trackedEntity")
+        .set({ quantity: 0, status: "Consumed" })
+        .where("companyId", "=", companyId)
+        .where("id", "in", trackedIds)
+        .where("status", "not in", ["Scrapped", "Rejected"])
+        .execute();
+      await tx
+        .updateTable("trackedEntity")
+        .set({ quantity: 0 })
+        .where("companyId", "=", companyId)
+        .where("id", "in", trackedIds)
+        .where("status", "in", ["Scrapped", "Rejected"])
+        .execute();
+    }
+
+    // The negated posting took the stock's original value off inventory; the
+    // adjustments took its carrying value off again. Add the original back.
+    if (addBackOriginalValue) {
+      const costs = await tx
+        .selectFrom("costLedger")
+        .select(["itemId", (eb) => eb.fn.sum<number>("cost").as("cost")])
+        .where("companyId", "=", companyId)
+        .where("documentId", "=", document.id)
+        .where("itemLedgerType", "<>", "Negative Adjmt.")
+        .where("itemLedgerType", "<>", "Positive Adjmt.")
+        .groupBy("itemId")
+        .execute();
+      const lines = costs.flatMap((row) => {
+        const value = toBaseAmount(Number(row.cost ?? 0), 1);
+        if (value === 0) return [];
+        const item = items.find((candidate) => candidate.id === row.itemId);
+        const inventory = resolveInventoryAccount(
+          item?.replenishmentSystem ?? null,
+          reversal.accounting.accountDefaults
+        );
+        const magnitude = Math.abs(value);
+        const inventorySide = value > 0 ? "debit" : "credit";
+        return [
+          {
+            accountId: inventory.account,
+            amount:
+              inventorySide === "debit"
+                ? debit("asset", magnitude)
+                : credit("asset", magnitude),
+            description: `FORCE DELETE: ${inventory.description}`
+          },
+          {
+            accountId:
+              reversal.accounting.accountDefaults
+                .inventoryAdjustmentVarianceAccount,
+            amount:
+              inventorySide === "debit"
+                ? credit("expense", magnitude)
+                : debit("expense", magnitude),
+            description: "FORCE DELETE: Inventory Adjustment Variance Account"
+          }
+        ];
+      });
+      if (lines.length > 0) {
+        const id = await getJournalId();
+        await tx
+          .insertInto("journalLine")
+          .values(
+            lines.map((line) => ({
+              journalLineReference: nanoid(),
+              ...line,
+              journalId: id,
+              quantity: 1,
+              documentType:
+                FORCE_DELETE_JOURNAL_DOCUMENT_TYPES[document.documentType][0]!,
+              documentId: document.id,
+              companyId
+            }))
+          )
+          .execute();
+      }
+    }
+  });
+  if (document.documentType === "receipt") {
+    await sql`SELECT public.refresh_receipt_inspection_status(${document.id})`.execute(
+      tx
+    );
+  }
+}
+
+/**
+ * Gives back to the purchase orders what a purchase invoice invoiced, as its
+ * void does: each line's `quantityInvoiced` drops by the invoice line's
+ * quantity and `invoicedComplete` follows the billable quantity; the order's
+ * status is set again while it is released.
+ */
+async function restorePurchaseOrderInvoiced(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId
+  }: { companyId: string; userId: string; invoiceId: string }
+): Promise<void> {
+  const invoiceLines = await tx
+    .selectFrom("purchaseInvoiceLine")
+    .select(["purchaseOrderLineId", "quantity"])
+    .where("companyId", "=", companyId)
+    .where("invoiceId", "=", invoiceId)
+    .where("purchaseOrderLineId", "is not", null)
+    .execute();
+  if (invoiceLines.length === 0) return;
+  const orderLines = await tx
+    .selectFrom("purchaseOrderLine")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("purchaseOrderId", "in", (eb) =>
+      eb
+        .selectFrom("purchaseOrderLine as l")
+        .select("l.purchaseOrderId")
+        .where("l.companyId", "=", companyId)
+        .where(
+          "l.id",
+          "in",
+          invoiceLines.map((line) => line.purchaseOrderLineId as string)
+        )
+    )
+    .forUpdate()
+    .execute();
+  const invoicedByLine = new Map<string, number>();
+  for (const line of invoiceLines) {
+    const id = line.purchaseOrderLineId as string;
+    invoicedByLine.set(
+      id,
+      (invoicedByLine.get(id) ?? 0) + Number(line.quantity ?? 0)
+    );
+  }
+  const now = datetime.timestamp();
+  const updated = orderLines.map((line) => {
+    const invoiced = invoicedByLine.get(line.id);
+    if (invoiced === undefined) return line;
+    const quantityInvoiced = getInvoicedPurchaseQuantityAfterVoid(
+      Number(line.quantityInvoiced ?? 0),
+      invoiced
+    );
+    return {
+      ...line,
+      quantityInvoiced,
+      invoicedComplete: quantityInvoiced >= getBillableQuantity(line as never)
+    };
+  });
+  const changes = updated.filter((line) => invoicedByLine.has(line.id));
+  if (changes.length > 0) {
+    await updateRowsById(
+      tx as Kysely<KyselyDatabase>,
+      "purchaseOrderLine",
+      companyId,
+      changes.map((line) => ({
+        id: line.id,
+        data: {
+          quantityInvoiced: line.quantityInvoiced,
+          invoicedComplete: line.invoicedComplete,
+          updatedBy: userId,
+          updatedAt: now
+        }
+      }))
+    );
+  }
+  const orderIds = [...new Set(updated.map((line) => line.purchaseOrderId))];
+  for (const purchaseOrderId of orderIds) {
+    const status = purchaseOrderStatusAfterReversal(
+      updated
+        .filter((line) => line.purchaseOrderId === purchaseOrderId)
+        .map((line) => ({
+          purchaseOrderLineType: line.purchaseOrderLineType,
+          purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+          quantityReceived: Number(line.quantityReceived ?? 0),
+          quantityInvoiced: Number(line.quantityInvoiced ?? 0)
+        }))
+    );
+    await tx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+      .execute();
+  }
+}
+
+/**
+ * Gives back to the sales orders what a sales invoice invoiced, as its void
+ * does: each order line's `quantityInvoiced` drops by the invoice line's
+ * quantity, `invoicedComplete` follows, and the order's status is set again
+ * from its lines. The shipments the invoice created are Voided, and the
+ * order's shipments lose their invoiced flag while it is not fully invoiced.
+ */
+async function restoreSalesOrderInvoiced(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId
+  }: { companyId: string; userId: string; invoiceId: string }
+): Promise<void> {
+  const now = datetime.timestamp();
+  const [invoice, invoiceLines] = await Promise.all([
+    tx
+      .selectFrom("salesInvoice")
+      .select("shipmentId")
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    tx
+      .selectFrom("salesInvoiceLine")
+      .select(["salesOrderLineId", "quantity"])
+      .where("companyId", "=", companyId)
+      .where("invoiceId", "=", invoiceId)
+      .where("salesOrderLineId", "is not", null)
+      .execute()
+  ]);
+
+  await tx
+    .updateTable("shipment")
+    .set({
+      status: "Voided",
+      invoiced: false,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("companyId", "=", companyId)
+    .where("sourceDocument", "=", "Sales Invoice")
+    .where("sourceDocumentId", "=", invoiceId)
+    .execute();
+  if (invoice?.shipmentId) {
+    await tx
+      .updateTable("shipment")
+      .set({ invoiced: false, updatedBy: userId, updatedAt: now })
+      .where("id", "=", invoice.shipmentId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  if (invoiceLines.length === 0) return;
+
+  const invoicedByLine = new Map<string, number>();
+  for (const line of invoiceLines) {
+    const id = line.salesOrderLineId as string;
+    invoicedByLine.set(
+      id,
+      (invoicedByLine.get(id) ?? 0) + Number(line.quantity ?? 0)
+    );
+  }
+  const orderLines = await tx
+    .selectFrom("salesOrderLine")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("salesOrderId", "in", (eb) =>
+      eb
+        .selectFrom("salesOrderLine as l")
+        .select("l.salesOrderId")
+        .where("l.companyId", "=", companyId)
+        .where("l.id", "in", [...invoicedByLine.keys()])
+    )
+    .forUpdate()
+    .execute();
+  const updated = orderLines.map((line) => {
+    const invoiced = invoicedByLine.get(line.id);
+    const saleQuantity = Number(line.saleQuantity ?? 0);
+    if (invoiced === undefined || saleQuantity <= 0) return line;
+    const quantityInvoiced = Math.max(
+      0,
+      Number(line.quantityInvoiced ?? 0) - invoiced
+    );
+    return {
+      ...line,
+      quantityInvoiced,
+      invoicedComplete: quantityInvoiced >= saleQuantity
+    };
+  });
+  const changes = updated.filter((line, index) => line !== orderLines[index]);
+  if (changes.length > 0) {
+    await updateRowsById(
+      tx as Kysely<KyselyDatabase>,
+      "salesOrderLine",
+      companyId,
+      changes.map((line) => ({
+        id: line.id,
+        data: {
+          quantityInvoiced: line.quantityInvoiced,
+          invoicedComplete: line.invoicedComplete,
+          updatedBy: userId,
+          updatedAt: now
+        }
+      }))
+    );
+  }
+  for (const salesOrderId of new Set(
+    changes.map((line) => line.salesOrderId)
+  )) {
+    const lines = updated.filter((line) => line.salesOrderId === salesOrderId);
+    const allInvoiced = lines.every(
+      (line) => line.salesOrderLineType === "Comment" || line.invoicedComplete
+    );
+    const allShipped = lines.every(
+      (line) =>
+        line.salesOrderLineType === "Comment" ||
+        line.salesOrderLineType === "Service" ||
+        line.sentComplete
+    );
+    const status: Database["public"]["Enums"]["salesOrderStatus"] =
+      allInvoiced && allShipped
+        ? "Completed"
+        : allInvoiced
+          ? "To Ship"
+          : allShipped
+            ? "To Invoice"
+            : "To Ship and Invoice";
+    if (!allInvoiced) {
+      await tx
+        .updateTable("shipment")
+        .set({ invoiced: false })
+        .where("sourceDocumentId", "=", salesOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await tx
+      .updateTable("salesOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", salesOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+}
+
+/**
+ * A purchase invoice's cost on a fixed asset: its CIP rows go and the
+ * asset's acquisition cost drops by them. For an asset capitalized since,
+ * that value moved from the CIP account into the asset account, so it moves
+ * back (Dr the account the invoice line debited, Cr the asset class's asset
+ * account), and the negated invoice posting then takes it off CIP.
+ * Depreciation already posted on it stays.
+ */
+async function reverseCapitalizedCip(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId,
+    getJournalId
+  }: {
+    companyId: string;
+    userId: string;
+    invoiceId: string;
+    getJournalId: () => Promise<string>;
+  }
+): Promise<void> {
+  const cipRows = await tx
+    .selectFrom("fixedAssetCipCost as c")
+    .innerJoin("fixedAsset as a", (join) =>
+      join
+        .onRef("a.id", "=", "c.fixedAssetId")
+        .onRef("a.companyId", "=", "c.companyId")
+    )
+    .leftJoin("fixedAssetClass as k", (join) =>
+      join
+        .onRef("k.id", "=", "a.fixedAssetClassId")
+        .onRef("k.companyId", "=", "a.companyId")
+    )
+    .select([
+      "c.id",
+      "c.fixedAssetId",
+      "c.amount",
+      "c.journalId",
+      "c.sourceDocumentLineId",
+      "a.status",
+      "a.acquisitionCost",
+      "k.assetAccountId"
+    ])
+    .where("c.companyId", "=", companyId)
+    .where("c.sourceDocumentId", "=", invoiceId)
+    .execute();
+  if (cipRows.length === 0) return;
+
+  // A capitalized asset moved this cost from its CIP class's account into
+  // its asset class's account: the capitalization transfer names the CIP
+  // class it left (`fromClassId`). Both accounts are resolved before anything
+  // is written, and a cost with no account to move back refuses.
+  const capitalized = cipRows.filter(
+    (row) => row.status !== "Under Construction"
+  );
+  if (capitalized.length > 0) {
+    const transfers = await tx
+      .selectFrom("fixedAssetTransfer as t")
+      .innerJoin("fixedAssetClass as k", (join) =>
+        join
+          .onRef("k.id", "=", "t.fromClassId")
+          .onRef("k.companyId", "=", "t.companyId")
+      )
+      .select(["t.fixedAssetId", "t.createdAt", "k.assetAccountId"])
+      .where("t.companyId", "=", companyId)
+      .where("t.type", "=", "Capitalization")
+      .where(
+        "t.fixedAssetId",
+        "in",
+        capitalized.map((row) => row.fixedAssetId)
+      )
+      .orderBy("t.createdAt", "desc")
+      .execute();
+    const cipAccountByAsset = new Map<string, string>();
+    for (const transfer of transfers) {
+      if (
+        transfer.assetAccountId &&
+        !cipAccountByAsset.has(transfer.fixedAssetId)
+      ) {
+        cipAccountByAsset.set(transfer.fixedAssetId, transfer.assetAccountId);
+      }
+    }
+    const lines = capitalized.flatMap((row) => {
+      const cipAccount = cipAccountByAsset.get(row.fixedAssetId);
+      const assetAccount = row.assetAccountId;
+      if (!cipAccount || !assetAccount) {
+        throw new InvalidInputError(
+          "A fixed asset this invoice paid for was capitalized, and its construction-in-progress account could not be found. Reverse the capitalization first."
+        );
+      }
+      const magnitude = Math.abs(Number(row.amount));
+      if (magnitude === 0) return [];
+      return [
+        {
+          accountId: cipAccount,
+          amount: debit("asset", magnitude),
+          description: "FORCE DELETE: Construction in Progress"
+        },
+        {
+          accountId: assetAccount,
+          amount: credit("asset", magnitude),
+          description: "FORCE DELETE: Fixed Asset"
+        }
+      ];
+    });
+    if (lines.length > 0) {
+      const id = await getJournalId();
+      await tx
+        .insertInto("journalLine")
+        .values(
+          lines.map((line) => ({
+            journalLineReference: nanoid(),
+            ...line,
+            journalId: id,
+            quantity: 1,
+            documentType: "Invoice" as const,
+            documentId: invoiceId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+  }
+
+  const costByAsset = new Map<string, number>();
+  for (const row of cipRows) {
+    costByAsset.set(
+      row.fixedAssetId,
+      (costByAsset.get(row.fixedAssetId) ?? 0) + Number(row.amount)
+    );
+  }
+  const now = datetime.timestamp();
+  for (const [fixedAssetId, cost] of costByAsset) {
+    await tx
+      .updateTable("fixedAsset")
+      .set((eb) => ({
+        acquisitionCost: sql`GREATEST(0, ${eb.ref("acquisitionCost")} - ${cost})`,
+        updatedBy: userId,
+        updatedAt: now
+      }))
+      .where("id", "=", fixedAssetId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  await tx
+    .deleteFrom("fixedAssetCipCost")
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      cipRows.map((row) => row.id)
+    )
+    .execute();
+}
+
+/**
+ * Takes a sales invoice's recognized revenue back before its void, which
+ * refuses while any of its schedule rows is Posted: one journal, today,
+ * reverses each Posted row (Dr the revenue account it credited, Cr the
+ * deferred account it debited), and the rows leave their runs. The runs stay
+ * Posted, smaller by this invoice; the void then removes the rest.
+ */
+export async function reverseRecognizedRevenue(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<number> {
+  if (document.documentType !== "salesInvoice") return 0;
+  return withTransaction(db, async (tx) => {
+    const schedules = await tx
+      .selectFrom("revenueRecognitionSchedule")
+      .select(["id", "amount", "debitAccountId", "creditAccountId"])
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Posted")
+      .where("salesInvoiceLineId", "in", (eb) =>
+        eb
+          .selectFrom("salesInvoiceLine")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("invoiceId", "=", document.id)
+      )
+      .forUpdate()
+      .execute();
+    if (schedules.length === 0) return 0;
+    const { postingStatus, accountingPeriodId } = reversal.accounting;
+    await assertPostingStatusUnchanged(tx, companyId, postingStatus);
+    const types = await accountTypes(
+      tx,
+      companyId,
+      schedules.flatMap((row) => [row.debitAccountId, row.creditAccountId])
+    );
+    const journal = await tx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequence(tx, "journalEntry", companyId),
+        accountingPeriodId,
+        description: `FORCE DELETE ${document.readableId}: recognized revenue`,
+        postingDate: reversal.today,
+        companyId,
+        sourceType: "Sales Invoice",
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const lines = schedules.flatMap((row) => {
+      const magnitude = Math.abs(Number(row.amount));
+      if (magnitude === 0 || !row.debitAccountId || !row.creditAccountId) {
+        return [];
+      }
+      const revenueType = types.get(row.creditAccountId) ?? "revenue";
+      const deferredType = types.get(row.debitAccountId) ?? "liability";
+      return [
+        {
+          accountId: row.creditAccountId,
+          amount: debit(revenueType, magnitude),
+          description: "FORCE DELETE: Recognized Revenue"
+        },
+        {
+          accountId: row.debitAccountId,
+          amount: credit(deferredType, magnitude),
+          description: "FORCE DELETE: Deferred Revenue"
+        }
+      ];
+    });
+    if (lines.length > 0) {
+      await tx
+        .insertInto("journalLine")
+        .values(
+          lines.map((line) => ({
+            journalLineReference: nanoid(),
+            ...line,
+            journalId: journal.id,
+            quantity: 1,
+            documentType: "Invoice" as const,
+            documentId: document.id,
+            companyId
+          }))
+        )
+        .execute();
+    }
+    const ids = schedules.map((row) => row.id);
+    await tx
+      .deleteFrom("revenueRecognitionRunLine")
+      .where("companyId", "=", companyId)
+      .where("scheduleId", "in", ids)
+      .execute();
+    await tx
+      .deleteFrom("revenueRecognitionSchedule")
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute();
+    return schedules.length;
+  });
+}
+
+/** Role readers (`classifyAccountingPostingRole`) match descriptions exactly,
+ *  so the prefixed change lines take no role. */
+export const LINE_ACCOUNT_CHANGE_PREFIX = "Account change: ";
+
+export const LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+export type InvoiceLineLeg = {
+  id: string;
+  accountId: string | null;
+  accountClass: AccountClass | null;
+  /** Natural-balance signed, as stored. */
+  amount: number;
+  quantity: number;
+  description: string | null;
+  documentType: Database["public"]["Enums"]["journalLineDocumentType"] | null;
+  documentId: string | null;
+  externalDocumentId: string | null;
+  documentLineReference: string | null;
+  journalLineReference: string;
+  accountDefaultRole: string | null;
+  postingDate: string;
+  dimensions: Readonly<Record<string, string>>;
+};
+
+export type InvoiceLinePositionTarget = {
+  accountId: string;
+  quantity: number;
+  documentLineReference: string | null;
+  /** Debit-signed: a revenue credit is negative. */
+  amount: number;
+  dimensions: Readonly<Record<string, string | null>>;
+};
+
+export type InvoiceLinePosition = {
+  /** The group's leg on the account; the change copies its keys and dimensions. */
+  leg: InvoiceLineLeg & { accountId: string; accountClass: AccountClass };
+  /** What the group holds on the account, debit-signed. */
+  amount: number;
+  postingDate: string;
+  /** Every leg of the group, on any account. */
+  groupLegIds: string[];
+  /** The other accounts the group holds an amount on (shipping, tax, AR). */
+  otherAccountIds: string[];
+};
+
+const legValue = (leg: InvoiceLineLeg) =>
+  leg.accountClass ? debitSigned(leg.accountClass, Number(leg.amount)) : 0;
+
+/** A position, or why there is none: no group holds the line's amount on
+ *  the account (`missing`), or several do and nothing tells them apart
+ *  (`ambiguous`). */
+export type InvoiceLinePositionMatch =
+  | { position: InvoiceLinePosition; refusal: null }
+  | { position: null; refusal: "missing" | "ambiguous" };
+
+/**
+ * The `journalLineReference` group holding the line's amount on
+ * `target.accountId`. No journal line links to its invoice line, so the group
+ * is matched on what the posting copies from the line (quantity, order line
+ * reference, dimensions) and on the amount the posting computed, and must
+ * still hold that amount there. Every group is checked the same way, a sole
+ * one too: a group that differs is another line's.
+ */
+export function findInvoiceLinePosition(
+  legs: readonly InvoiceLineLeg[],
+  target: InvoiceLinePositionTarget
+): InvoiceLinePositionMatch {
+  const missing = { position: null, refusal: "missing" } as const;
+  if (equals(target.amount, 0)) return missing;
+  const onAccount = (leg: InvoiceLineLeg) =>
+    leg.accountId === target.accountId && leg.accountClass !== null;
+
+  // Net of the posting, every change into and out of the group, and a void.
+  const held = new Map<string, number>();
+  for (const leg of legs) {
+    if (!onAccount(leg)) continue;
+    held.set(
+      leg.journalLineReference,
+      round((held.get(leg.journalLineReference) ?? 0) + legValue(leg))
+    );
+  }
+
+  // A dimension the leg lacks was inactive or empty when it posted.
+  const matchesDimensions = (leg: InvoiceLineLeg) =>
+    Object.entries(target.dimensions).every(
+      ([entityType, value]) =>
+        !(entityType in leg.dimensions) ||
+        leg.dimensions[entityType] === (value ?? undefined)
+    );
+
+  const groups = new Set<string>();
+  const candidates = legs.filter((leg) => {
+    if (!onAccount(leg)) return false;
+    if (leg.description?.startsWith("VOID: ")) return false;
+    if (!equals(Number(leg.quantity), round(target.quantity))) return false;
+    if ((leg.documentLineReference ?? null) !== target.documentLineReference) {
+      return false;
+    }
+    if (!matchesDimensions(leg)) return false;
+    const value = legValue(leg);
+    if (!equals(value, target.amount)) return false;
+    if (!equals(held.get(leg.journalLineReference) ?? 0, value)) return false;
+    if (groups.has(leg.journalLineReference)) return false;
+    groups.add(leg.journalLineReference);
+    return true;
+  });
+  if (candidates.length > 1) return { position: null, refusal: "ambiguous" };
+  const leg = candidates[0];
+  if (!leg?.accountId || !leg.accountClass) return missing;
+
+  const group = legs.filter(
+    (row) => row.journalLineReference === leg.journalLineReference
+  );
+  const others = new Map<string, number>();
+  for (const row of group) {
+    if (!row.accountId || row.accountId === target.accountId) continue;
+    others.set(
+      row.accountId,
+      round((others.get(row.accountId) ?? 0) + legValue(row))
+    );
+  }
+  return {
+    position: {
+      leg: { ...leg, accountId: leg.accountId, accountClass: leg.accountClass },
+      amount: held.get(leg.journalLineReference) ?? 0,
+      postingDate: group
+        .map((row) => row.postingDate)
+        .reduce((a, b) => (b < a ? b : a)),
+      groupLegIds: group.map((row) => row.id),
+      otherAccountIds: [...others]
+        .filter(([, value]) => !equals(value, 0))
+        .map(([accountId]) => accountId)
+    },
+    refusal: null
+  };
+}
+
+/** Refuses a new account another leg of the line's posting holds an amount
+ *  on (a sales line's shipping account, say): the group would then hold both
+ *  there, and no later read could tell the line's share apart. */
+export function lineAccountChangeTargetRefusal(
+  position: Pick<InvoiceLinePosition, "otherAccountIds">,
+  to: { id: string; number: string | null; name: string | null }
+): string | null {
+  if (!position.otherAccountIds.includes(to.id)) return null;
+  const label = [to.number, to.name].filter(Boolean).join(" ") || to.id;
+  return `This line's posting already has another amount on ${label}, so the line cannot move there. Choose another account.`;
+}
+
+export type LineAccountChangeLine = Omit<
+  Database["public"]["Tables"]["journalLine"]["Insert"],
+  "id" | "journalId"
+>;
+
+/** Both lines carry the group's document keys, so a void of the invoice
+ *  reverses them with the posting, and a later change finds the new line as
+ *  it found the posting. */
+export function buildLineAccountChangeLines(
+  position: InvoiceLinePosition,
+  to: { accountId: string; accountClass: AccountClass },
+  companyId: string
+): LineAccountChangeLine[] {
+  const { leg, amount } = position;
+  const keys = {
+    description: `${LINE_ACCOUNT_CHANGE_PREFIX}${leg.description ?? ""}`,
+    documentType: leg.documentType,
+    documentId: leg.documentId,
+    externalDocumentId: leg.externalDocumentId,
+    documentLineReference: leg.documentLineReference,
+    journalLineReference: leg.journalLineReference,
+    companyId
+  };
+  return [
+    {
+      ...keys,
+      accountId: leg.accountId,
+      // A stand-in line's role goes with its reversal, as a void's does.
+      accountDefaultRole: leg.accountDefaultRole,
+      amount: debitSigned(leg.accountClass, -amount),
+      quantity: -Number(leg.quantity)
+    },
+    {
+      ...keys,
+      accountId: to.accountId,
+      amount: debitSigned(to.accountClass, amount),
+      quantity: Number(leg.quantity)
+    }
+  ];
+}
+
+type PeriodNameFields = {
+  fiscalYear: number | null;
+  periodNumber: number | null;
+  startDate: string;
+  endDate: string;
+};
+
+/** "FY2026 · Period 3", as the period close screen names a period. */
+export function accountingPeriodName(period: PeriodNameFields): string {
+  return period.fiscalYear && period.periodNumber
+    ? `FY${period.fiscalYear} · Period ${period.periodNumber}`
+    : `${period.startDate} to ${period.endDate}`;
+}
+
+/** Why a posted invoice cannot be changed in its period, or null when the
+ *  period is Open. `action` finishes "Reopen it before …". */
+export function lineAccountChangePeriodRefusal(
+  period: PeriodNameFields & {
+    closeStatus: string;
+    closedAt: string | Date | null;
+  },
+  action = "changing the account"
+): string | null {
+  const name = accountingPeriodName(period);
+  if (period.closeStatus === "Closed" || period.closedAt) {
+    return `Accounting period ${name} is closed. Reopen it before ${action}.`;
+  }
+  if (period.closeStatus === "Locked") {
+    return `Accounting period ${name} is locked. Unlock it before ${action}.`;
+  }
+  return null;
+}
+
+export const changeInvoiceLineAccountInput = z.object({
+  side: z.enum(["sales", "purchase"]),
+  invoiceId: z.string().min(1),
+  lineId: z.string().min(1),
+  accountId: z.string().min(1)
+});
+
+const LINE_ACCOUNT_SIDES = {
+  sales: {
+    label: "Sales Invoice",
+    sourceType: "Sales Invoice",
+    accountClasses: ["Revenue"]
+  },
+  purchase: {
+    label: "Purchase Invoice",
+    sourceType: "Purchase Invoice",
+    accountClasses: purchaseLineAccountClasses
+  }
+} as const;
+
+const isPostedInvoice = (invoice: {
+  status: string;
+  postingDate: string | null;
+}) =>
+  !!invoice.postingDate &&
+  !["Draft", "Pending", "Voided"].includes(invoice.status);
+
+type LineAccountFacts = {
+  invoice: {
+    id: string;
+    invoiceId: string;
+    status: string;
+    postingDate: string | null;
+  };
+  /** The accounts the line's amount may sit on, in the order to look. */
+  accountIds: string[];
+  target: Omit<InvoiceLinePositionTarget, "accountId">;
+};
+
+async function salesLineAccountFacts(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string,
+  lineId: string,
+  lock: boolean
+): Promise<LineAccountFacts> {
+  const invoice = await db
+    .selectFrom("salesInvoice")
+    .select(["id", "invoiceId", "status", "postingDate"])
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .$if(lock, (query) => query.forUpdate())
+    .executeTakeFirst();
+  if (!invoice) throw new NotFoundError("Sales invoice not found");
+
+  const [lines, shipment] = await inOrder([
+    () => many(db, "salesInvoiceLine", { invoiceId, companyId }),
+    () =>
+      maybeSingle(
+        db,
+        "salesInvoiceShipment",
+        { companyId, id: invoiceId },
+        { columns: ["shippingCost"] }
+      )
+  ]);
+  if (lines.error) throw new Error("Failed to fetch sales invoice lines");
+  if (shipment.error) throw new Error("Failed to fetch sales invoice shipment");
+  const line = lines.data.find((row) => row.id === lineId);
+  if (!line) throw new NotFoundError("Sales invoice line not found");
+  if (line.invoiceLineType === "Comment") {
+    throw new InvalidInputError("A comment line posts nothing to change.");
+  }
+  if (postingLineRevenue(line).book !== "sales") {
+    throw new InvalidInputError(
+      "Only a line whose revenue posted to the Sales account can change account. Deferred, contract, rental, service job and fixed asset lines post through accounts their schedules and assets read."
+    );
+  }
+
+  const allocations = allocateSalesHeaderShipping(
+    lines.data,
+    shipment.data?.shippingCost ?? 0
+  );
+  const amounts = roundSalesPostingAmounts({
+    ...line,
+    allocatedHeaderShipping: allocations.get(line.id) ?? 0
+  });
+  return {
+    invoice: {
+      ...invoice,
+      postingDate: invoice.postingDate ? String(invoice.postingDate) : null
+    },
+    accountIds: line.accountId ? [line.accountId] : [],
+    target: {
+      quantity: line.quantity,
+      documentLineReference: line.salesOrderLineId
+        ? journalReference.to.salesInvoice(line.salesOrderLineId)
+        : null,
+      amount: debitSigned("Revenue", amounts.salesRevenueBase),
+      dimensions: {
+        Item: line.itemId ?? null,
+        Location: line.locationId ?? null,
+        Project: line.projectId ?? null
+      }
+    }
+  };
+}
+
+async function purchaseLineAccountFacts(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string,
+  lineId: string,
+  lock: boolean
+): Promise<LineAccountFacts> {
+  const invoice = await db
+    .selectFrom("purchaseInvoice")
+    .select(["id", "invoiceId", "status", "postingDate", "exchangeRate"])
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .$if(lock, (query) => query.forUpdate())
+    .executeTakeFirst();
+  if (!invoice) throw new NotFoundError("Purchase invoice not found");
+
+  const [lines, delivery] = await inOrder([
+    () => many(db, "purchaseInvoiceLine", { invoiceId, companyId }),
+    () =>
+      maybeSingle(
+        db,
+        "purchaseInvoiceDelivery",
+        { companyId, id: invoiceId },
+        { columns: ["supplierShippingCost"] }
+      )
+  ]);
+  if (lines.error) throw new Error("Failed to fetch purchase invoice lines");
+  if (delivery.error) {
+    throw new Error("Failed to fetch purchase invoice delivery");
+  }
+  const line = lines.data.find((row) => row.id === lineId);
+  if (!line) throw new NotFoundError("Purchase invoice line not found");
+  if (line.invoiceLineType !== "G/L Account" || !line.accountId) {
+    throw new InvalidInputError(
+      "Only a G/L Account line can change account. Item, fixed asset and lease lines post through inventory, asset and lease accounts."
+    );
+  }
+
+  // Split the lines' tax as the posting did, on its date: the recoverable
+  // share went to Tax Paid, not to the line's account.
+  const taxCodes = await loadTaxCodes(
+    db,
+    companyId,
+    lines.data.map((row) => row.taxCodeId),
+    invoice.postingDate ? String(invoice.postingDate) : null
+  );
+  const amounts = calculatePurchasePostingAmounts({
+    lines: withPurchaseTax(lines.data, taxCodes),
+    exchangeRate: invoice.exchangeRate ?? 1,
+    supplierShippingCost: delivery.data?.supplierShippingCost ?? 0
+  }).find((row) => row.id === line.id);
+  if (!amounts) throw new Error("Failed to compute the line's posted amount");
+  return {
+    invoice: {
+      ...invoice,
+      postingDate: invoice.postingDate ? String(invoice.postingDate) : null
+    },
+    accountIds: [line.accountId],
+    target: {
+      quantity: amounts.inventoryQuantity,
+      documentLineReference: line.purchaseOrderLineId
+        ? journalReference.to.purchaseInvoice(line.purchaseOrderLineId)
+        : null,
+      // The posting debits the line's account.
+      amount: round(amounts.totalBaseCost),
+      dimensions: {
+        Location: line.locationId ?? null,
+        CostCenter: line.costCenterId ?? null,
+        Project: line.projectId ?? null,
+        ProjectElement: line.projectElementId ?? null
+      }
+    }
+  };
+}
+
+async function invoiceLineLegs(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string,
+  sourceType: "Sales Invoice" | "Purchase Invoice"
+): Promise<InvoiceLineLeg[]> {
+  const rows = await db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .leftJoin("account", "account.id", "journalLine.accountId")
+    .select([
+      "journalLine.id",
+      "journalLine.accountId",
+      "journalLine.amount",
+      "journalLine.quantity",
+      "journalLine.description",
+      "journalLine.documentType",
+      "journalLine.documentId",
+      "journalLine.externalDocumentId",
+      "journalLine.documentLineReference",
+      "journalLine.journalLineReference",
+      "journalLine.accountDefaultRole",
+      sql<string>`"journal"."postingDate"::text`.as("postingDate"),
+      "account.class as accountClass"
+    ])
+    .where("journalLine.companyId", "=", companyId)
+    .where("journalLine.documentType", "=", "Invoice")
+    .where("journalLine.documentId", "=", invoiceId)
+    .where("journal.sourceType", "=", sourceType)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .execute();
+  if (rows.length === 0) return [];
+
+  const dimensionRows = await db
+    .selectFrom("journalLineDimension")
+    .innerJoin("dimension", "dimension.id", "journalLineDimension.dimensionId")
+    .select([
+      "journalLineDimension.journalLineId",
+      "journalLineDimension.valueId",
+      "dimension.entityType"
+    ])
+    .where("journalLineDimension.companyId", "=", companyId)
+    .where(
+      "journalLineDimension.journalLineId",
+      "in",
+      rows.map((row) => row.id)
+    )
+    .execute();
+  const dimensions = new Map<string, Record<string, string>>();
+  for (const row of dimensionRows) {
+    const values = dimensions.get(row.journalLineId) ?? {};
+    values[row.entityType] = row.valueId;
+    dimensions.set(row.journalLineId, values);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    accountClass: isAccountClass(row.accountClass) ? row.accountClass : null,
+    amount: Number(row.amount),
+    quantity: Number(row.quantity),
+    dimensions: dimensions.get(row.id) ?? {}
+  }));
+}
+
+/**
+ * Tries the line's own account, then, for a sales line, every account the
+ * posting credited as its Sales Account. Sales posting never reads the line's
+ * account (convert copies the order line's into it), so it holds the amount
+ * only once a change moved it there.
+ */
+export function locateInvoiceLinePosition(
+  legs: readonly InvoiceLineLeg[],
+  side: "sales" | "purchase",
+  lineAccountIds: readonly string[],
+  target: Omit<InvoiceLinePositionTarget, "accountId">
+): InvoiceLinePositionMatch {
+  const accountIds = new Set(lineAccountIds);
+  if (side === "sales") {
+    for (const leg of legs) {
+      if (leg.description === "Sales Account" && leg.accountId) {
+        accountIds.add(leg.accountId);
+      }
+    }
+  }
+  for (const accountId of accountIds) {
+    const match = findInvoiceLinePosition(legs, { ...target, accountId });
+    // A tie on any account ends the search: the line's group may be either.
+    if (match.refusal !== "missing") return match;
+  }
+  return { position: null, refusal: "missing" };
+}
+
+const LINE_POSITION_REFUSALS = {
+  missing:
+    "This line's posted amount could not be found on its account, so it cannot change account. Record a journal entry to correct it instead.",
+  ambiguous:
+    "Another line of this invoice posted the same amount with the same quantity and dimensions, so this line's posting cannot be told apart from it. Record a journal entry to correct it instead."
+} as const;
+
+/** Runs every refusal that does not depend on the new account. `lock` reads
+ *  the invoice FOR UPDATE: pass it only inside the change's transaction. */
+async function readInvoiceLinePosition(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  args: { side: "sales" | "purchase"; invoiceId: string; lineId: string },
+  lock: boolean
+): Promise<{ facts: LineAccountFacts; position: InvoiceLinePosition }> {
+  const { side, invoiceId, lineId } = args;
+  const facts =
+    side === "sales"
+      ? await salesLineAccountFacts(db, companyId, invoiceId, lineId, lock)
+      : await purchaseLineAccountFacts(db, companyId, invoiceId, lineId, lock);
+  if (!isPostedInvoice(facts.invoice)) {
+    throw new InvalidInputError(
+      facts.invoice.status === "Voided"
+        ? "A voided invoice's lines cannot change account."
+        : "Only a posted invoice's lines can change account. Edit the line while the invoice is a Draft."
+    );
+  }
+  // Before the cutover another system kept the books: the invoice's journal
+  // was superseded by the opening balance.
+  await refuseVoidBeforeCutover(
+    db,
+    companyId,
+    facts.invoice.postingDate,
+    LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR
+  );
+
+  // The project ledger holds a charged line's cost against the project's
+  // account, which replaced the line's own.
+  const projectCharge = await db
+    .selectFrom("projectLedger")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("documentId", "=", invoiceId)
+    .where("documentLineId", "=", lineId)
+    .executeTakeFirst();
+  if (projectCharge) {
+    throw new InvalidInputError(
+      "This line is charged to a project, which posted it to the project's account. Record a journal entry to correct it instead."
+    );
+  }
+
+  const legs = await invoiceLineLegs(
+    db,
+    companyId,
+    invoiceId,
+    LINE_ACCOUNT_SIDES[side].sourceType
+  );
+  const match = locateInvoiceLinePosition(
+    legs,
+    side,
+    facts.accountIds,
+    facts.target
+  );
+  if (!match.position) {
+    throw new InvalidInputError(LINE_POSITION_REFUSALS[match.refusal]);
+  }
+  const { position } = match;
+
+  const eliminated = await db
+    .selectFrom("intercompanyEliminationLine")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("journalLineId", "in", position.groupLegIds)
+    .executeTakeFirst();
+  if (eliminated) {
+    throw new InvalidInputError(
+      "Intercompany eliminations read this line's posted account, so it cannot change. Record a journal entry to correct it instead."
+    );
+  }
+
+  return { facts, position };
+}
+
+export const invoiceLinePostedAccountInput = z.object({
+  side: z.enum(["sales", "purchase"]),
+  invoiceId: z.string().min(1),
+  lineId: z.string().min(1)
+});
+
+export type InvoiceLinePostedAccount = {
+  invoiceId: string;
+  lineId: string;
+  accountId: string;
+  accountNumber: string | null;
+  accountName: string | null;
+  /** The amount on the account, unsigned. */
+  amount: number;
+  postingDate: string;
+};
+
+/** The journal match `changeInvoiceLineAccount` moves, never the line's
+ *  `accountId`; refused with the change's own messages. */
+export async function getInvoiceLinePostedAccount(
+  ctx: ServiceContext,
+  raw: z.input<typeof invoiceLinePostedAccountInput>
+): Promise<InvoiceLinePostedAccount> {
+  const args = invoiceLinePostedAccountInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const { position } = await readInvoiceLinePosition(
+    db,
+    ctx.company.id,
+    args,
+    false
+  );
+  const account = await db
+    .selectFrom("account")
+    .select(["number", "name"])
+    .where("id", "=", position.leg.accountId)
+    .where("companyGroupId", "=", ctx.company.groupId)
+    .executeTakeFirst();
+  return {
+    invoiceId: args.invoiceId,
+    lineId: args.lineId,
+    accountId: position.leg.accountId,
+    accountNumber: account?.number ?? null,
+    accountName: account?.name ?? null,
+    amount: Math.abs(position.amount),
+    postingDate: position.postingDate
+  };
+}
+
+/** One journal dated on the original posting, in its period, which must be
+ *  Open; then the line records the new account. */
+export async function changeInvoiceLineAccount(
+  ctx: ServiceContext,
+  raw: z.input<typeof changeInvoiceLineAccountInput>
+) {
+  const { side, invoiceId, lineId, accountId } =
+    changeInvoiceLineAccountInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { label, sourceType, accountClasses } = LINE_ACCOUNT_SIDES[side];
+
+  const postingStatus = await journalPostingStatus(db, companyId);
+
+  return db.transaction().execute(async (trx) => {
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+    // Reads the invoice FOR UPDATE: a second change, or a void, waits.
+    const { facts, position } = await readInvoiceLinePosition(
+      trx,
+      companyId,
+      { side, invoiceId, lineId },
+      true
+    );
+
+    const to = await trx
+      .selectFrom("account")
+      .select(["id", "number", "name", "class", "active", "isGroup"])
+      .where("id", "=", accountId)
+      .where("companyGroupId", "=", ctx.company.groupId)
+      .executeTakeFirst();
+    const toClass = accountClasses.find((c) => c === to?.class);
+    if (!to || !to.active || to.isGroup || !toClass) {
+      throw new InvalidInputError(
+        `Choose an active ${new Intl.ListFormat("en", { type: "disjunction" }).format(accountClasses)} account that is not a group.`
+      );
+    }
+    if (position.leg.accountId === to.id) {
+      throw new InvalidInputError(
+        "The line is already posted to this account."
+      );
+    }
+    const targetRefusal = lineAccountChangeTargetRefusal(position, to);
+    if (targetRefusal) throw new InvalidInputError(targetRefusal);
+
+    // A Provisional journal has no period.
+    const postingDate = position.postingDate;
+    let accountingPeriodId: string | null = null;
+    if (postingStatus === "Posted") {
+      const period = await trx
+        .selectFrom("accountingPeriod")
+        .select([
+          "closeStatus",
+          "closedAt",
+          "fiscalYear",
+          "periodNumber",
+          sql<string>`"startDate"::text`.as("startDate"),
+          sql<string>`"endDate"::text`.as("endDate")
+        ])
+        .where("companyId", "=", companyId)
+        .where("startDate", "<=", postingDate)
+        .where("endDate", ">=", postingDate)
+        .orderBy("startDate")
+        // FOR UPDATE, as `resolveAccountingPeriod` locks it next: two
+        // changes that each held a share lock would deadlock on the upgrade.
+        .forUpdate()
+        .executeTakeFirst();
+      const refusal = period ? lineAccountChangePeriodRefusal(period) : null;
+      if (refusal) throw new InvalidInputError(refusal);
+      accountingPeriodId = (
+        await resolveAccountingPeriod(trx, companyId, postingDate, "historical")
+      ).id;
+    }
+
+    const lines = buildLineAccountChangeLines(
+      position,
+      { accountId: to.id, accountClass: toClass },
+      companyId
+    );
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        description: `Account change ${label} ${facts.invoice.invoiceId}`,
+        postingDate,
+        companyId,
+        sourceType,
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+    const lineIds = await allocateJournalLineIds(trx, lines.length);
+    await trx
+      .insertInto("journalLine")
+      .values(
+        lines.map((line, index) => ({
+          ...line,
+          id: lineIds[index]!,
+          journalId: journal.id,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    // Both lines take the posted line's dimensions. One call each: the helper
+    // maps an original line to a single copy.
+    for (const changeLineId of lineIds) {
+      await copyJournalLineDimensions(trx, {
+        companyId,
+        reversals: [
+          { originalLineId: position.leg.id, reversingLineId: changeLineId }
+        ]
+      });
+    }
+
+    const lineUpdate = {
+      accountId: to.id,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    };
+    const recorded =
+      side === "sales"
+        ? await trx
+            .updateTable("salesInvoiceLine")
+            .set(lineUpdate)
+            .where("id", "=", lineId)
+            .where("invoiceId", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : await trx
+            .updateTable("purchaseInvoiceLine")
+            .set(lineUpdate)
+            .where("id", "=", lineId)
+            .where("invoiceId", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+    if (Number(recorded.numUpdatedRows) !== 1) {
+      throw new Error("Failed to record the line's new account");
+    }
+
+    return {
+      invoiceId,
+      lineId,
+      journalId: journal.id,
+      journalEntryId,
+      fromAccountId: position.leg.accountId,
+      toAccountId: to.id,
+      amount: Math.abs(position.amount),
+      postingDate
+    };
+  });
+}
+
+export const ROUNDING_LINE_DESCRIPTION = "Rounding";
+
+export const adjustPurchaseInvoiceRoundingInput = z.object({
+  invoiceId: z.string().min(1),
+  targetTotal: z.number().finite()
+});
+
+export const ROUNDING_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+/** Statuses whose lines are never changed for rounding. */
+const ROUNDING_REFUSED_STATUSES: Record<string, string> = {
+  Pending: "The invoice is being posted. Try again in a moment.",
+  Voided: "A voided invoice cannot be adjusted for rounding."
+};
+
+/**
+ * Brings a purchase invoice's total to `targetTotal` (the amount the supplier
+ * actually charged) with one G/L line on the company's default rounding
+ * account. The invoice's other lines, inventory lines included, keep their
+ * prices, so receipts and purchase orders are untouched. Setting the same
+ * total again changes nothing; a total the other lines already match removes
+ * the rounding line.
+ *
+ * On a posted invoice it also posts the change as one journal, dated on the
+ * invoice's posting date in its period (which must be Open): the rounding
+ * account against the invoice's own Accounts Payable account, keyed to the
+ * invoice, so payments and balances read the new total and a void reverses
+ * it. A decrease is refused when it would take the total below what is
+ * already paid.
+ */
+export async function adjustPurchaseInvoiceRounding(
+  ctx: ServiceContext,
+  raw: z.input<typeof adjustPurchaseInvoiceRoundingInput>
+) {
+  const { invoiceId, targetTotal } =
+    adjustPurchaseInvoiceRoundingInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const postingStatus = await journalPostingStatus(db, companyId);
+
+  return withTransaction(db, async (trx) => {
+    // FOR UPDATE: a void locks the invoice before it reads the journal it
+    // reverses, so it reverses an adjustment that committed first.
+    const invoice = await trx
+      .selectFrom("purchaseInvoice")
+      .select([
+        "id",
+        "invoiceId",
+        "status",
+        "currencyCode",
+        "exchangeRate",
+        sql<string | null>`"postingDate"::text`.as("postingDate")
+      ])
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!invoice) throw new NotFoundError("Purchase invoice not found");
+    const refusedStatus = invoice.status
+      ? ROUNDING_REFUSED_STATUSES[invoice.status]
+      : undefined;
+    if (refusedStatus) throw new InvalidInputError(refusedStatus);
+    const posted = invoice.status !== "Draft";
+    if (posted) {
+      // A posted invoice's adjustment posts a journal.
+      if (!ctx.can({ update: "accounting" })) {
+        throw new ForbiddenError(
+          "Adjusting a posted invoice needs accounting update permission."
+        );
+      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+      await refuseVoidBeforeCutover(
+        trx,
+        companyId,
+        invoice.postingDate,
+        ROUNDING_BEFORE_CUTOVER_ERROR
+      );
+    }
+
+    const [defaults, decimals, lines, delivery] = await Promise.all([
+      trx
+        .selectFrom("accountDefault")
+        .select("roundingAccount")
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      sharedPostings.currencyDecimals(trx, companyId, invoice.currencyCode),
+      trx
+        .selectFrom("purchaseInvoiceLine")
+        .select([
+          "id",
+          "invoiceLineType",
+          "accountId",
+          "description",
+          "purchaseOrderLineId",
+          "quantity",
+          "unitPrice",
+          "shippingCost",
+          "taxAmount",
+          "sortOrder"
+        ])
+        .where("invoiceId", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("purchaseInvoiceDelivery")
+        .select("supplierShippingCost")
+        .where("id", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+    ]);
+
+    const roundingAccountId = defaults?.roundingAccount;
+    if (!roundingAccountId) {
+      throw new InvalidInputError(
+        "Set a Rounding Account in the account defaults first."
+      );
+    }
+
+    // The account alone is not enough: a company may use its rounding
+    // account for ordinary expense lines, which this must never rewrite.
+    const isRoundingLine = (line: (typeof lines)[number]) =>
+      line.invoiceLineType === "G/L Account" &&
+      line.accountId === roundingAccountId &&
+      line.description === ROUNDING_LINE_DESCRIPTION &&
+      !line.purchaseOrderLineId;
+    const roundingLines = lines.filter(isRoundingLine);
+    if (roundingLines.length > 1) {
+      throw new InvalidInputError(
+        "The invoice has more than one line on the rounding account. Remove all but one first."
+      );
+    }
+    const roundingLine = roundingLines[0];
+
+    // The same arithmetic as the `purchaseInvoices` view's document total,
+    // which balances and settlements read: base line amounts (each at its own
+    // rate) plus header freight, converted back at the invoice's rate.
+    const rate = Number(invoice.exchangeRate);
+    let baseWithoutRounding =
+      Number(delivery?.supplierShippingCost ?? 0) / (rate === 0 ? 1 : rate);
+    for (const line of lines) {
+      if (line === roundingLine) continue;
+      baseWithoutRounding +=
+        Number(line.quantity) * Number(line.unitPrice ?? 0) +
+        Number(line.shippingCost ?? 0) +
+        Number(line.taxAmount ?? 0);
+    }
+    const totalWithoutRounding = baseWithoutRounding * rate;
+
+    const result = purchaseInvoiceRoundingAmount(
+      totalWithoutRounding,
+      targetTotal,
+      decimals
+    );
+    if ("refusal" in result) throw new InvalidInputError(result.refusal);
+    const { amount } = result;
+
+    // What the posting booked for the rounding line, in base currency, and
+    // what it books now: a posted invoice moves by the difference.
+    const previousBase = roundingLine
+      ? Number(roundingLine.quantity) * Number(roundingLine.unitPrice ?? 0)
+      : 0;
+    const nextBase = amount / (rate === 0 ? 1 : rate);
+
+    if (amount === 0) {
+      if (roundingLine) {
+        await trx
+          .deleteFrom("purchaseInvoiceLine")
+          .where("id", "=", roundingLine.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    } else if (roundingLine) {
+      await trx
+        .updateTable("purchaseInvoiceLine")
+        .set({
+          quantity: 1,
+          supplierUnitPrice: amount,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", roundingLine.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      const sortOrder =
+        lines.reduce((max, line) => Math.max(max, line.sortOrder ?? 0), 0) + 1;
+      await trx
+        .insertInto("purchaseInvoiceLine")
+        .values({
+          invoiceId,
+          companyId,
+          invoiceLineType: "G/L Account",
+          accountId: roundingAccountId,
+          description: ROUNDING_LINE_DESCRIPTION,
+          quantity: 1,
+          supplierUnitPrice: amount,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
+          sortOrder,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    if (!posted) return { amount };
+
+    const journal = await postPurchaseInvoiceRoundingJournal(trx, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId,
+      invoice: {
+        id: invoice.id,
+        invoiceId: invoice.invoiceId,
+        postingDate: invoice.postingDate
+      },
+      roundingAccountId,
+      previousBase,
+      nextBase,
+      postingStatus
+    });
+    return { amount, ...journal };
+  });
+}
+
+/** The posting's own signs for a G/L line and its payable: a debit to the
+ *  rounding account (signed by its class) against a credit to payables. An
+ *  amount below zero reverses both. Lines carry the payable's document keys
+ *  and share one `journalLineReference`, as a posted G/L line does. */
+export function buildRoundingJournalLines(args: {
+  amount: number;
+  rounding: { accountId: string; name: string; accountClass: AccountClass };
+  payable: {
+    accountId: string;
+    accountDefaultRole: string | null;
+    externalDocumentId: string | null;
+  };
+  invoiceId: string;
+  companyId: string;
+  journalLineReference: string;
+}) {
+  const keys = {
+    quantity: 1,
+    documentType: "Invoice" as const,
+    documentId: args.invoiceId,
+    externalDocumentId: args.payable.externalDocumentId,
+    documentLineReference: null,
+    journalLineReference: args.journalLineReference,
+    companyId: args.companyId
+  };
+  return [
+    {
+      ...keys,
+      accountId: args.rounding.accountId,
+      description: args.rounding.name,
+      amount: debitSigned(args.rounding.accountClass, args.amount)
+    },
+    {
+      ...keys,
+      accountId: args.payable.accountId,
+      accountDefaultRole: args.payable.accountDefaultRole,
+      // Role readers find payables by this description.
+      description: "Accounts Payable",
+      amount: debitSigned("Liability", -args.amount)
+    }
+  ];
+}
+
+/** Posts the change in a posted invoice's rounding line. Refuses a closed or
+ *  locked period, and a decrease below what is already paid. */
+async function postPurchaseInvoiceRoundingJournal(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    invoice: { id: string; invoiceId: string; postingDate: string | null };
+    roundingAccountId: string;
+    previousBase: number;
+    nextBase: number;
+    postingStatus: Awaited<ReturnType<typeof journalPostingStatus>>;
+  }
+): Promise<{ journalId?: string; journalEntryId?: string }> {
+  const { companyId, userId, invoice } = args;
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const baseDecimals = await sharedPostings.currencyDecimals(
+    trx,
+    companyId,
+    company.baseCurrencyCode
+  );
+  const delta = round(args.nextBase - args.previousBase, baseDecimals);
+  if (delta === 0) return {};
+
+  const postingDate = invoice.postingDate;
+  if (!postingDate) throw new Error("The posted invoice has no posting date");
+
+  const lines = await documentJournalLines(trx, companyId, {
+    documentId: invoice.id,
+    documentType: "Invoice"
+  });
+  const payable = lines.find((line) => line.description === "Accounts Payable");
+  if (!payable) {
+    throw new InvalidInputError(
+      "The invoice has no posted Accounts Payable line to adjust."
+    );
+  }
+
+  if (delta < 0) {
+    // A decrease cannot take the total below what payments and memos have
+    // already settled.
+    const totals = await trx
+      .selectFrom("purchaseInvoices")
+      .select(["balance"])
+      .where("id", "=", invoice.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (Number(totals?.balance ?? 0) + delta < 0) {
+      throw new InvalidInputError(
+        "The invoice is already paid past the lower total. Use a credit memo instead."
+      );
+    }
+  }
+
+  const rounding = await trx
+    .selectFrom("account")
+    .select(["id", "name", "class"])
+    .where("id", "=", args.roundingAccountId)
+    .where("companyGroupId", "=", args.companyGroupId)
+    .executeTakeFirstOrThrow();
+  if (!isAccountClass(rounding.class)) {
+    throw new InvalidInputError("The Rounding Account has no class.");
+  }
+
+  // A Provisional journal has no period.
+  let accountingPeriodId: string | null = null;
+  if (args.postingStatus === "Posted") {
+    const period = await trx
+      .selectFrom("accountingPeriod")
+      .select([
+        "closeStatus",
+        "closedAt",
+        "fiscalYear",
+        "periodNumber",
+        sql<string>`"startDate"::text`.as("startDate"),
+        sql<string>`"endDate"::text`.as("endDate")
+      ])
+      .where("companyId", "=", companyId)
+      .where("startDate", "<=", postingDate)
+      .where("endDate", ">=", postingDate)
+      .orderBy("startDate")
+      .forUpdate()
+      .executeTakeFirst();
+    const refusal = period
+      ? lineAccountChangePeriodRefusal(period, "adjusting the invoice")
+      : null;
+    if (refusal) throw new InvalidInputError(refusal);
+    accountingPeriodId = (
+      await resolveAccountingPeriod(trx, companyId, postingDate, "historical")
+    ).id;
+  }
+
+  const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
+  const journal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId,
+      description: `Rounding Purchase Invoice ${invoice.invoiceId}`,
+      postingDate,
+      companyId,
+      sourceType: "Purchase Invoice",
+      status: args.postingStatus,
+      postedAt: datetime.timestamp(),
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  const journalLines = buildRoundingJournalLines({
+    amount: delta,
+    rounding: {
+      accountId: rounding.id,
+      name: rounding.name,
+      accountClass: rounding.class
+    },
+    payable: {
+      accountId: payable.accountId!,
+      accountDefaultRole: payable.accountDefaultRole,
+      externalDocumentId: payable.externalDocumentId
+    },
+    invoiceId: invoice.id,
+    companyId,
+    journalLineReference: nanoid()
+  });
+  const lineIds = await allocateJournalLineIds(trx, journalLines.length);
+  await trx
+    .insertInto("journalLine")
+    .values(
+      journalLines.map((line, index) => ({
+        ...line,
+        id: lineIds[index]!,
+        journalId: journal.id,
+        createdBy: userId
+      }))
+    )
+    .execute();
+  // Both lines take the payable's dimensions (supplier type, location).
+  for (const lineId of lineIds) {
+    await copyJournalLineDimensions(trx, {
+      companyId,
+      reversals: [{ originalLineId: payable.id, reversingLineId: lineId }]
+    });
+  }
+
+  return { journalId: journal.id, journalEntryId };
 }

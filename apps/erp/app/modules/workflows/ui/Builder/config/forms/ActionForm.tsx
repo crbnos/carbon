@@ -243,7 +243,11 @@ function NotifyAboutField({
         onValueChange={handleTypeChange}
         disabled={isReadOnly}
       >
-        <SelectTrigger className="w-full" disabled={isReadOnly}>
+        <SelectTrigger
+          aria-label={t`About`}
+          className="w-full"
+          disabled={isReadOnly}
+        >
           <SelectValue placeholder={t`Pick a record type…`} />
         </SelectTrigger>
         <SelectContent>

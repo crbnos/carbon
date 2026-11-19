@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, HStack, VStack } from "@carbon/react";
-import { useNavigate, useParams } from "react-router";
+import { cn, HStack, PrefetchLink, VStack } from "@carbon/react";
+import { useParams } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { useLocations } from "~/components/Form/Location";
 import { useOptimisticLocation, useRouteData } from "~/hooks";
@@ -70,7 +70,6 @@ function ExplorerLine({
   location: string | undefined;
 }) {
   const optimisticLocation = useOptimisticLocation();
-  const navigate = useNavigate();
 
   const to = path.to.leaseLine(lease.id!, line.id);
   const isSelected = optimisticLocation.pathname === to;
@@ -81,23 +80,27 @@ function ExplorerLine({
         "group w-full p-2 items-center border-b hover:bg-accent/30 cursor-pointer relative",
         isSelected && "bg-accent/60 hover:bg-accent/50"
       )}
-      onClick={() => {
-        if (!isSelected) navigate(to);
-      }}
     >
-      <HStack spacing={2} className="flex-grow min-w-0 pr-24">
-        <ItemThumbnail
-          thumbnailPath={line.fixedAsset?.item?.thumbnailPath}
-          type="Part"
-        />
-        <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">{line.description}</span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {[line.serialNumber, location].filter(Boolean).join(" · ")}
-          </span>
-        </VStack>
-      </HStack>
-      <HStack spacing={1} className="absolute right-2">
+      <PrefetchLink
+        to={to}
+        className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+      >
+        <HStack spacing={2} className="flex-grow min-w-0 pr-24">
+          <ItemThumbnail
+            thumbnailPath={line.fixedAsset?.item?.thumbnailPath}
+            type="Part"
+          />
+          <VStack spacing={0} className="min-w-0">
+            <span className="font-semibold line-clamp-1">
+              {line.description}
+            </span>
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {[line.serialNumber, location].filter(Boolean).join(" · ")}
+            </span>
+          </VStack>
+        </HStack>
+      </PrefetchLink>
+      <HStack spacing={1} className="pointer-events-none absolute right-2 z-10">
         <LeaseStatus
           status={lease.status === "Draft" ? "Draft" : line.status}
         />

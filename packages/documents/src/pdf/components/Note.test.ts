@@ -4,7 +4,7 @@
 
 import type { JSONContent } from "@carbon/react";
 import { describe, expect, it } from "vitest";
-import { keepListItemTogether } from "./Note";
+import { keepListItemTogether, makeConvert, markStyle } from "./Note";
 
 const text = (value: string): JSONContent => ({ type: "text", text: value });
 const paragraph = (...content: JSONContent[]): JSONContent => ({
@@ -58,5 +58,52 @@ describe("keepListItemTogether", () => {
       paragraph(text(`Step ${i + 1}`))
     );
     expect(keepListItemTogether(listItem(...paragraphs))).toBe(false);
+  });
+});
+
+describe("markStyle", () => {
+  it("prints bold, underline and strikethrough", () => {
+    expect(markStyle([{ type: "bold" }], false)).toEqual({
+      fontWeight: "bold"
+    });
+    expect(markStyle([{ type: "underline" }], false)).toEqual({
+      textDecoration: "underline"
+    });
+    expect(markStyle([{ type: "strike" }], false)).toEqual({
+      textDecoration: "line-through"
+    });
+    expect(markStyle([{ type: "bold" }, { type: "underline" }], false)).toEqual(
+      {
+        fontWeight: "bold",
+        textDecoration: "underline"
+      }
+    );
+  });
+
+  it("prints italic only with an italic face", () => {
+    expect(markStyle([{ type: "italic" }], true)).toEqual({
+      fontStyle: "italic"
+    });
+  });
+
+  it("leaves plain text and marks a PDF cannot show alone", () => {
+    expect(markStyle(undefined, false)).toBeNull();
+    expect(markStyle([], false)).toBeNull();
+    expect(markStyle([{ type: "italic" }], false)).toBeNull();
+  });
+});
+
+describe("a rich-text run", () => {
+  const convert = makeConvert({} as never, false);
+
+  it("prints marked text with its style and plain text as it is", () => {
+    const bold = convert({
+      type: "text",
+      text: "Net 30",
+      marks: [{ type: "bold" }]
+    }) as { props: { style: unknown; children: unknown } };
+    expect(bold.props.style).toEqual({ fontWeight: "bold" });
+    expect(bold.props.children).toBe("Net 30");
+    expect(convert({ type: "text", text: "Net 30" })).toBe("Net 30");
   });
 });

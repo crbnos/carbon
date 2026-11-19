@@ -54,12 +54,15 @@ const ApprovalRuleCard = memo(
       qualityDocument: t`Quality Document`,
       supplier: t`Supplier`,
       changeOrder: t`Change Notice`,
-      projectChangeRequest: t`Project Change Request`
+      projectChangeRequest: t`Project Change Request`,
+      purchaseOrderForceDelete: t`Purchase Order Force Delete`,
+      documentForceDelete: t`Force Delete`
     };
     const documentTypeLabel = documentTypeLabels[documentType];
 
     const canEdit = permissions.can("update", "settings");
-    const canDelete = permissions.can("update", "settings");
+    // The delete route needs settings delete; offer it only to those who hold it.
+    const canDelete = permissions.can("delete", "settings");
 
     const handleEdit = useCallback(() => {
       if (!rule.id) return;

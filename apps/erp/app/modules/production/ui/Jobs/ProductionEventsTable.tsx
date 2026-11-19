@@ -210,7 +210,6 @@ const ProductionEventsTable = memo(
     };
 
     const onDeleteCancel = () => {
-      setSelectedEvent(null);
       deleteModal.onClose();
     };
 
@@ -294,10 +293,10 @@ const ProductionEventsTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Production Events`}
         />
-        {deleteModal.isOpen && selectedEvent && (
+        {selectedEvent && (
           <ConfirmDelete
             action={path.to.deleteProductionEvent(selectedEvent.id)}
-            isOpen
+            isOpen={deleteModal.isOpen}
             name={`${
               selectedEvent.jobOperation?.description ?? "Operation"
             } by ${

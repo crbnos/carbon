@@ -51,6 +51,7 @@ import type {
   ProjectElementSpec,
   ProjectStateName
 } from "../types.ts";
+import { seedRentalAgreements } from "./rentals.ts";
 
 // Mirrors get-accounting-period.ts so seeded periods get the same (fiscalYear,
 // periodNumber) key the app computes.
@@ -416,7 +417,24 @@ export async function runTier9(ctx: Ctx): Promise<void> {
       spec.disposal === undefined
         ? undefined
         : resolveDate(ctx.anchor, spec.disposal.dateOffset);
+    // A fleet unit is a capitalized serial: Consumed, tagged with its asset.
+    const fleetItem = spec.fleet
+      ? need(ctx.refs.items, spec.fleet.item, "item")
+      : undefined;
+    const fleetSerialId =
+      spec.fleet && fleetItem
+        ? await insertId(ctx, "trackedEntity", {
+            itemId: fleetItem.id,
+            readableId: spec.fleet.serial,
+            quantity: 1,
+            status: "Consumed",
+            sourceDocument: "Item",
+            sourceDocumentId: fleetItem.id
+          })
+        : undefined;
     const fa = await insertId(ctx, "fixedAsset", {
+      itemId: fleetItem?.id,
+      trackedEntityId: fleetSerialId,
       fixedAssetId,
       fixedAssetClassId,
       locationId: need(ctx.refs.locations, spec.location, "location"),
@@ -444,6 +462,13 @@ export async function runTier9(ctx: Ctx): Promise<void> {
       saleProceeds: spec.disposal?.saleProceeds
     });
     ctx.refs.documents[`fixedAsset:${spec.key}`] = fa;
+    if (fleetSerialId) {
+      await client.query(
+        `UPDATE "trackedEntity" SET "attributes" = $1 WHERE "id" = $2 AND "companyId" = $3`,
+        [JSON.stringify({ "Fixed Asset": fa }), fleetSerialId, companyId]
+      );
+      ctx.refs.misc[`fleet-serial:${spec.key}`] = fleetSerialId;
+    }
     if (spec.depreciationCharge) {
       runLines.push({ fixedAssetId: fa, amount: spec.depreciationCharge });
     }
@@ -472,6 +497,8 @@ export async function runTier9(ctx: Ctx): Promise<void> {
       });
     }
   }
+
+  await seedRentalAgreements(ctx);
 
   ctx.log("AR / AP billing addresses");
   await upsertBillingAddress(

@@ -37,6 +37,7 @@ import {
   LuGitBranchPlus,
   LuHandCoins,
   LuLoaderCircle,
+  LuShieldAlert,
   LuTrash,
   LuTruck,
   LuUndo2,
@@ -46,11 +47,17 @@ import { Link, useFetcher, useNavigation, useParams } from "react-router";
 import { RevisionSuffix } from "~/components";
 import type { ResolvedAttachmentItem } from "~/components/AttachmentsList";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
+  useCompanySettings,
+  useDrawerItem,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired,
@@ -65,12 +72,14 @@ import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import {
   canCreatePurchaseOrderRevision,
-  isPurchaseOrderLocked
+  isPurchaseOrderLocked,
+  isPurchaseOrderMissingPromisedDate
 } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 import ApprovalSignatureModal from "./ApprovalSignatureModal";
 import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
+import { PurchaseOrderForceDeleteModal } from "./PurchaseOrderForceDelete";
 import PurchasingStatus from "./PurchasingStatus";
 import {
   usePurchaseOrder,
@@ -100,12 +109,14 @@ function RelatedDocsErrorTooltip({
 const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
+  const documentEdit = useDocumentEditModal("purchaseOrder", orderId);
 
   const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const { t } = useLingui();
   const supplierApprovalRequired = useSupplierApprovalRequired();
+  const companySettings = useCompanySettings();
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
@@ -114,6 +125,8 @@ const PurchaseOrderHeader = () => {
     approvalNeedsSignature: boolean;
     canReopen: boolean;
     canDelete: boolean;
+    isAdmin: boolean;
+    forceDeleteRequest: { id: string } | null;
     defaultCc: string[];
     supplier: { status: string | null; name: string | null } | null;
     resolvedAttachments: Promise<ResolvedAttachmentItem[]>;
@@ -174,10 +187,10 @@ const PurchaseOrderHeader = () => {
 
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
   const cancelModal = useDisclosure();
   const createRevisionModal = useDisclosure();
-  const [approvalDecision, setApprovalDecision] =
-    useState<ApprovalDecision | null>(null);
+  const approval = useDrawerItem<ApprovalDecision>();
   const [isSignaturePromptOpen, setIsSignaturePromptOpen] = useState(false);
 
   const relatedDocsErrorMessage = t`Couldn't load related documents. Refresh before creating a new one to avoid duplicates.`;
@@ -224,6 +237,15 @@ const PurchaseOrderHeader = () => {
   const isInvoiceStep = ["To Invoice", "To Receive and Invoice"].includes(
     status
   );
+  // A closed order still bills what it received; it is just not the next
+  // step. One closed with nothing received (cancelled before release) has
+  // nothing to bill.
+  const canInvoice =
+    isInvoiceStep ||
+    (status === "Closed" &&
+      (routeData?.lines ?? []).some(
+        (line) => Number(line.quantityReceived ?? 0) > 0
+      ));
   const finalizeSlot = isFinalizable ? "primary" : "overflow";
   const shipSlot = isReceiveStep && requiresShipment ? "primary" : "overflow";
   const receiveSlot =
@@ -291,6 +313,19 @@ const PurchaseOrderHeader = () => {
         <DropdownMenuIcon icon={<LuTrash />} />
         <Trans>Delete Purchase Order</Trans>
       </DropdownMenuItem>
+      {routeData?.isAdmin && (
+        <DropdownMenuItem
+          disabled={
+            !!routeData?.forceDeleteRequest ||
+            !permissions.can("delete", "purchasing")
+          }
+          destructive
+          onClick={forceDeleteModal.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuShieldAlert />} />
+          <Trans>Force Delete (Admin)</Trans>
+        </DropdownMenuItem>
+      )}
     </>
   );
   const statusBadges = (
@@ -357,6 +392,9 @@ const PurchaseOrderHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -465,7 +503,7 @@ const PurchaseOrderHeader = () => {
                     onClick={() =>
                       routeData?.approvalNeedsSignature
                         ? setIsSignaturePromptOpen(true)
-                        : setApprovalDecision("Approved")
+                        : approval.open("Approved")
                     }
                   >
                     <Trans>Approve</Trans>
@@ -480,7 +518,7 @@ const PurchaseOrderHeader = () => {
                       approvalFetcher.formData?.get("decision") === "Rejected"
                     }
                     isDisabled={approvalFetcher.state !== "idle"}
-                    onClick={() => setApprovalDecision("Rejected")}
+                    onClick={() => approval.open("Rejected")}
                   >
                     <Trans>Reject</Trans>
                   </Button>
@@ -579,7 +617,7 @@ const PurchaseOrderHeader = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          disabled={!isInvoiceStep || isInvoicing}
+                          disabled={!canInvoice || isInvoicing}
                           onClick={() => {
                             invoice(routeData?.purchaseOrder);
                           }}
@@ -615,7 +653,7 @@ const PurchaseOrderHeader = () => {
                         leftIcon={<LuCreditCard />}
                         isLoading={isInvoicing}
                         isDisabled={
-                          relatedDocsError || !isInvoiceStep || isInvoicing
+                          relatedDocsError || !canInvoice || isInvoicing
                         }
                         variant={invoiceVariant}
                         onClick={() => {
@@ -685,74 +723,88 @@ const PurchaseOrderHeader = () => {
         }
       />
 
-      {finalizeDisclosure.isOpen && (
-        <PurchaseOrderFinalizeModal
-          fetcher={statusFetcher}
-          purchaseOrder={routeData?.purchaseOrder}
-          onClose={finalizeDisclosure.onClose}
-          defaultCc={routeData?.defaultCc ?? []}
-          resolvedAttachments={resolvedAttachments}
+      <PurchaseOrderFinalizeModal
+        fetcher={statusFetcher}
+        purchaseOrder={routeData?.purchaseOrder}
+        open={finalizeDisclosure.isOpen}
+        onClose={finalizeDisclosure.onClose}
+        defaultCc={routeData?.defaultCc ?? []}
+        resolvedAttachments={resolvedAttachments}
+        refusal={
+          companySettings?.requirePromisedDateToFinalizePurchaseOrder &&
+          isPurchaseOrderMissingPromisedDate(
+            routeData?.lines ?? [],
+            routeData?.purchaseOrder?.receiptPromisedDate
+          )
+            ? t`Add a promised date before you finalize this purchase order.`
+            : null
+        }
+      />
+      <ConfirmDelete
+        action={path.to.deletePurchaseOrder(orderId)}
+        isOpen={deleteModal.isOpen}
+        name={orderLabel}
+        text={t`Are you sure you want to delete ${orderLabel}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      {routeData?.isAdmin && (
+        <PurchaseOrderForceDeleteModal
+          purchaseOrderReadableId={
+            routeData?.purchaseOrder?.purchaseOrderId ?? orderLabel
+          }
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
         />
       )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchaseOrder(orderId)}
-          isOpen={deleteModal.isOpen}
-          name={orderLabel}
-          text={t`Are you sure you want to delete ${orderLabel}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
-      {cancelModal.isOpen && (
-        <Confirm
-          action={path.to.purchaseOrderStatus(orderId)}
-          title={t`Cancel Purchase Order`}
-          text={t`Are you sure you want to cancel ${orderLabel}? This will close the order.`}
-          confirmText={t`Cancel Order`}
-          confirmVariant="destructive"
-          cancelText={t`Back`}
-          onCancel={cancelModal.onClose}
-          onSubmit={cancelModal.onClose}
-        >
-          <input type="hidden" name="status" value="Closed" />
-        </Confirm>
-      )}
-      {createRevisionModal.isOpen && (
-        <Confirm
-          action={path.to.purchaseOrderStatus(orderId)}
-          title={t`Create PO Revision`}
-          text={t`${orderLabel} will be reopened for editing as revision ${
-            (routeData?.purchaseOrder?.revisionId ?? 0) + 1
-          }. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
-          confirmText={t`Create Revision`}
-          onCancel={createRevisionModal.onClose}
-          onSubmit={createRevisionModal.onClose}
-        >
-          <input type="hidden" name="status" value="Draft" />
-          <input type="hidden" name="createRevision" value="true" />
-        </Confirm>
-      )}
-      {approvalDecision && routeData?.approvalRequest?.id && (
+      <Confirm
+        action={path.to.purchaseOrderStatus(orderId)}
+        title={t`Cancel Purchase Order`}
+        text={t`Are you sure you want to cancel ${orderLabel}? This will close the order.`}
+        confirmText={t`Cancel Order`}
+        confirmVariant="destructive"
+        cancelText={t`Back`}
+        isOpen={cancelModal.isOpen}
+        onCancel={cancelModal.onClose}
+        onSubmit={cancelModal.onClose}
+      >
+        <input type="hidden" name="status" value="Closed" />
+      </Confirm>
+      <Confirm
+        action={path.to.purchaseOrderStatus(orderId)}
+        title={t`Create PO Revision`}
+        text={t`${orderLabel} will be reopened for editing as revision ${
+          (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+        }. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
+        confirmText={t`Create Revision`}
+        isOpen={createRevisionModal.isOpen}
+        onCancel={createRevisionModal.onClose}
+        onSubmit={createRevisionModal.onClose}
+      >
+        <input type="hidden" name="status" value="Draft" />
+        <input type="hidden" name="createRevision" value="true" />
+      </Confirm>
+      {approval.item && routeData?.approvalRequest?.id && (
         <PurchaseOrderApprovalModal
           purchaseOrder={routeData?.purchaseOrder}
           approvalRequestId={routeData.approvalRequest.id}
-          decision={approvalDecision}
+          decision={approval.item}
           fetcher={approvalFetcher}
-          onClose={() => setApprovalDecision(null)}
+          open={approval.isOpen}
+          onClose={approval.close}
           defaultCc={routeData?.defaultCc ?? []}
         />
       )}
-      {isSignaturePromptOpen && (
-        <ApprovalSignatureModal
-          onClose={() => setIsSignaturePromptOpen(false)}
-        />
-      )}
+      <ApprovalSignatureModal
+        open={isSignaturePromptOpen}
+        onClose={() => setIsSignaturePromptOpen(false)}
+      />
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

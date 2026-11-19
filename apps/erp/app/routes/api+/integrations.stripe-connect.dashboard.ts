@@ -12,7 +12,7 @@ import { redirect, redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-const logger = getLogger("stripe-connect");
+const logger = getLogger("erp", "stripe-connect");
 
 async function handle({ request }: { request: Request }) {
   const { client, companyId } = await requirePermissions(request, {

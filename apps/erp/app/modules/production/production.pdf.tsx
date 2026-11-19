@@ -5,6 +5,8 @@
 import type { Database } from "@carbon/database";
 import type { JobTravelerMaterial } from "@carbon/documents/pdf";
 import {
+  buildJobTravelerVars,
+  documentChrome,
   ensureFont,
   Footer,
   getSafeFontFamily,
@@ -12,10 +14,13 @@ import {
 } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  interpolateContent,
-  resolveTemplate,
-  toDocumentTemplate
+  type DocumentEdit,
+  type DocumentTemplate,
+  documentValues,
+  jobTravelerTexts,
+  type ValueCollector
 } from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -35,7 +40,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -61,12 +65,17 @@ export async function renderJobTravelerPdf(
     companyId,
     jobId,
     jobMakeMethodId,
-    locale
+    locale,
+    edit,
+    valueCollector
   }: {
     companyId: string;
     jobId: string;
     jobMakeMethodId?: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<{ body: Buffer; fileName: string }> {
   const job = await getJob(client, jobId);
@@ -112,7 +121,7 @@ export async function renderJobTravelerPdf(
     companySettings,
     customer,
     methodTree,
-    documentTemplate,
+    templateConfig,
     operations,
     items
   ] = await Promise.all([
@@ -125,7 +134,11 @@ export async function renderJobTravelerPdf(
       .eq("companyId", companyId)
       .maybeSingle(),
     getJobMethodTree(client, jobId),
-    getDocumentTemplate(client, companyId, "jobTraveler"),
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "jobTraveler", documentId: jobId },
+      edit
+    ),
     getJobOperationsByMethodIds(client, makeMethodIds, companyId),
     client
       .from("item")
@@ -153,16 +166,6 @@ export async function renderJobTravelerPdf(
   }
   // Without its template the traveler prints the default one, which leaves
   // out work instructions; say so rather than print it silently.
-  if (documentTemplate.error) {
-    logger.error(
-      "Failed to load the Job Traveler template; using the default",
-      {
-        companyId,
-        jobId,
-        error: documentTemplate.error
-      }
-    );
-  }
   if (customer.error) {
     logger.error("Failed to load the job's customer", {
       companyId,
@@ -262,32 +265,42 @@ export async function renderJobTravelerPdf(
     })
   );
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "jobTraveler"
-  );
-  const resolved = resolveTemplate("jobTraveler", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
-  const footerSectionContent = resolved.footerSectionId
-    ? sections[resolved.footerSectionId]?.content
-    : undefined;
-  const footerContent = footerSectionContent
-    ? interpolateContent(footerSectionContent, {
-        "job.number": job.data.jobId ?? "",
-        "company.name": company.data.name ?? ""
+  // The page body reads the template's texts itself (JobTravelerPageContent);
+  // these are the ones outside it. They read the same values as the page's body.
+  const values = documentValues(templateConfig.settings.valueEdits);
+  const varsOf = (data: (typeof makeMethodsWithData)[number]) =>
+    values.document(
+      buildJobTravelerVars({
+        job: job.data,
+        item: data.item,
+        customer: customer.data,
+        company: company.data as any,
+        jobOperations: data.operations,
+        batchNumber: data.batchNumber,
+        methodRevision: data.makeMethod.version?.toString(),
+        locale
       })
-    : undefined;
-  const showFooter = resolved.footerSectionId !== null;
+    );
+  const chromeOf = (data: (typeof makeMethodsWithData)[number]) =>
+    documentChrome({
+      texts: jobTravelerTexts.document,
+      template: templateConfig,
+      vars: varsOf(data),
+      sections
+    });
+  const [firstPage] = makeMethodsWithData;
+  const documentTitle = firstPage ? chromeOf(firstPage).documentTitle : "";
 
   const styles = StyleSheet.create({
     body: {
-      fontFamily: getSafeFontFamily(resolved.settings.fontFamily),
+      fontFamily: getSafeFontFamily(templateConfig.settings.fontFamily),
       padding: "20px 40px 50px 40px",
       color: "#000000",
       backgroundColor: "#FFFFFF"
@@ -296,14 +309,15 @@ export async function renderJobTravelerPdf(
 
   const stream = await renderToStream(
     <Document
-      title="Job Traveler"
+      title={documentTitle}
       author="Carbon"
-      subject="Job Traveler"
+      subject={documentTitle}
       keywords="job traveler, manufacturing"
     >
       {makeMethodsWithData.map((data, index) => (
         <Page key={data.makeMethod.id} size="A4" style={styles.body}>
           <JobTravelerPageContent
+            valueCollector={valueCollector}
             company={company.data as any}
             job={job.data}
             jobOperations={data.operations}
@@ -321,15 +335,11 @@ export async function renderJobTravelerPdf(
             template={templateConfig}
             sections={sections}
           />
-          {showFooter && (
-            <Footer
-              documentId={job.data.jobId}
-              content={footerContent}
-              showPageNumbers={resolved.settings.showPageNumbers}
-              pageNumberFormat={resolved.settings.pageNumberFormat}
-              showRegistrationLine={resolved.settings.showRegistrationLine}
-            />
-          )}
+          <TravelerFooter
+            chrome={chromeOf(data)}
+            documentId={job.data.jobId}
+            settings={templateConfig.settings}
+          />
         </Page>
       ))}
     </Document>
@@ -347,4 +357,31 @@ export async function renderJobTravelerPdf(
   });
 
   return { body, fileName: `${company.data.name} - ${job.data.jobId}.pdf` };
+}
+
+/** The footer of one make method's page, when the template has one. */
+function TravelerFooter({
+  chrome,
+  documentId,
+  settings
+}: {
+  chrome: Pick<
+    ReturnType<typeof documentChrome>,
+    "showFooter" | "footerContent" | "footerText"
+  >;
+  documentId: string | null | undefined;
+  settings: DocumentTemplate["settings"];
+}) {
+  if (!chrome.showFooter) return null;
+  return (
+    <Footer
+      documentId={documentId}
+      content={chrome.footerContent}
+      showPageNumbers={settings.showPageNumbers}
+      pageNumberFormat={settings.pageNumberFormat}
+      showRegistrationLine={settings.showRegistrationLine}
+      pageLabel={chrome.footerText.pageLabel}
+      ofLabel={chrome.footerText.ofLabel}
+    />
+  );
 }

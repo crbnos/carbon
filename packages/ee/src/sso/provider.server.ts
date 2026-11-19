@@ -137,8 +137,8 @@ export async function getGoTrueSsoProvider(
  *
  * The URLs are un-prefixed on purpose: GoTrue self-declares its SP entityID
  * and ACS from API_EXTERNAL_URL (no /auth/v1 prefix) and validates each
- * assertion's Destination against that exact URL — Kong routes /sso/ for this
- * (kong.yml auth-v1-sso).
+ * assertion's Destination against that exact URL — the dev API gateway routes
+ * /sso/ for this (packages/dev/docker/envoy/lds.template.yaml).
  */
 export function getSamlSpUrls(): { acsUrl: string; metadataUrl: string } {
   const base = `${SUPABASE_URL}/sso/saml`;

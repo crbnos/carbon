@@ -69,6 +69,7 @@ export function VariableMenuPopover({
         className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0"
       >
         <input
+          aria-label={t`Search variables`}
           // The popup exists to be typed into, and it only opens on an explicit request.
           autoFocus
           className="h-10 w-full border-b border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"

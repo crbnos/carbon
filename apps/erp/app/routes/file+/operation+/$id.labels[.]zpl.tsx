@@ -100,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Generate ZPL for each item
   const zplCommands = items.map((item) =>
-    generateProductLabelZPL(item, labelSize, template, logo)
+    generateProductLabelZPL(item, labelSize, template, logo, companyLogo)
   );
   const zplOutput = zplCommands.join("\n");
 

@@ -196,6 +196,7 @@ export function UsedInTree({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search where used`}
               placeholder={t`Search...`}
               value={filterText}
               onChange={(e) => setFilterTextInternal(e.target.value)}
@@ -309,6 +310,8 @@ export function RevisionsItem({
           tooltipKey={hasSizesInsteadOfRevisions ? "sizes" : "revisions"}
         >
           <button
+            aria-expanded={isExpanded}
+            type="button"
             className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
             onClick={(e) => {
               e.stopPropagation();
@@ -402,8 +405,8 @@ export function RevisionsItem({
                           size="sm"
                           variant="secondary"
                           icon={<LuEllipsisVertical />}
-                          aria-label={t`Edit`}
-                          className="absolute right-2 top-1 flex-shrink-0 md:opacity-0 group-hover/used-in:opacity-100 data-[state=open]:opacity-100"
+                          aria-label={t`Options for ${child.documentReadableId}`}
+                          className="absolute right-2 top-1 flex-shrink-0 md:opacity-0 group-hover/used-in:opacity-100 group-focus-within/used-in:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -449,14 +452,15 @@ export function RevisionsItem({
         </div>
       )}
 
-      {revisionDisclosure.isOpen && selectedRevision && (
+      {selectedRevision && (
         <RevisionForm
-          initialValues={selectedRevision!}
+          initialValues={selectedRevision}
+          open={revisionDisclosure.isOpen}
           onClose={revisionDisclosure.onClose}
           hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
       )}
-      {defaultDisclosure.isOpen && selectedRevision && (
+      {selectedRevision && (
         <Confirm
           action={path.to.defaultRevision(selectedRevision.id!)}
           confirmText={t`Make Default`}
@@ -470,11 +474,8 @@ export function RevisionsItem({
               ? t`This will replace all method materials of other sizes with this size.`
               : t`This will replace all method materials of other revisions with this revision.`
           }
-          isOpen
-          onSubmit={() => {
-            defaultDisclosure.onClose();
-            setSelectedRevision(null);
-          }}
+          isOpen={defaultDisclosure.isOpen}
+          onSubmit={defaultDisclosure.onClose}
           onCancel={defaultDisclosure.onClose}
         />
       )}
@@ -513,6 +514,8 @@ export function UsedInItem({
     <>
       <UsedInGroupTooltip tooltipKey={node.key}>
         <button
+          aria-expanded={isExpanded}
+          type="button"
           className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
           onClick={(e) => {
             e.stopPropagation();

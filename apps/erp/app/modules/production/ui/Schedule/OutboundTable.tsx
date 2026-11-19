@@ -342,6 +342,7 @@ const OutboundTable = memo(
         headerActions={
           <HStack spacing={2}>
             <Combobox
+              aria-label={t`Location`}
               asButton
               size="sm"
               value={locationId}
@@ -351,6 +352,7 @@ const OutboundTable = memo(
               }}
             />
             <Combobox
+              aria-label={t`Horizon`}
               asButton
               size="sm"
               value={horizon}

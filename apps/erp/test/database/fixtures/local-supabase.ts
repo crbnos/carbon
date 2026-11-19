@@ -3,6 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { existsSync, readFileSync } from "node:fs";
+import {
+  createServiceContext,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { it } from "vitest";
@@ -42,15 +46,22 @@ export function localAnonClient(): SupabaseClient<Database> | null {
   return localClient("SUPABASE_ANON_KEY");
 }
 
+/** A local caller whose permissions come from its API key. */
+export function localApiKeyClient(rawKey: string): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_ANON_KEY", {"carbon-key": rawKey});
+}
+
 function localClient(
-  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY"
+  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY",
+  headers: Record<string, string> = {}
 ): SupabaseClient<Database> | null {
   const env = localEnv();
   const port = env?.PORT_API;
   const key = env?.[keyName];
   if (!port || !key) return null;
   return createClient<Database>(`http://localhost:${port}`, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: {headers}
   });
 }
 
@@ -62,4 +73,29 @@ export function postgrestTest(
 ): void {
   const client = hasLocalDatabase ? localServiceRoleClient() : null;
   it.skipIf(!client)(name, () => fn(client!), 60_000);
+}
+
+/**
+ * A system service context whose caller and service-role clients are the
+ * local PostgREST and whose `pg` is the fixture's connection, so a test can
+ * run an operation (`production.server.ts`, …) as a route does. An operation
+ * that holds a transaction while it reads again (the purchase order edit
+ * lock) needs `pg` from `connectLocalTestDatabase({ maxConnections: 2 })`.
+ */
+export function operationContext(
+  f: { db: unknown; companyId: string; groupId: string },
+  client: SupabaseClient<Database>,
+  onBehalfOf: string,
+  pg: unknown = f.db
+): ServiceContext {
+  return createServiceContext({
+    actor: { type: "system", onBehalfOf },
+    company: { id: f.companyId, groupId: f.groupId },
+    caller: client as never,
+    system: () => client as never,
+    pg: () => pg as never,
+    kv: () => {
+      throw new Error("No kv in a database test");
+    }
+  });
 }

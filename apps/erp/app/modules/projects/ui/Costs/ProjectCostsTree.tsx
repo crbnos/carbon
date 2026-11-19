@@ -6,6 +6,7 @@ import {
   Badge,
   cn,
   LabelWithHelp,
+  PrefetchLink,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -14,7 +15,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo, useRef } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Empty } from "~/components";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useCurrencyFormatter } from "~/hooks";
@@ -85,7 +86,6 @@ export default function ProjectCostsTree({
   footer
 }: ProjectCostsTreeProps) {
   const { t } = useLingui();
-  const navigate = useNavigate();
   const { elementId: openElementId } = useParams();
   const parentRef = useRef<HTMLDivElement>(null);
   const formatMoney = useCurrencyFormatter();
@@ -115,8 +115,15 @@ export default function ProjectCostsTree({
         <span className={FIGURE_CELL}>{money(figures.committed)}</span>
         {burden !== 0 ? (
           <Tooltip>
+            {/* relative z-10: above the row's stretched name link, or the
+                link covers it and the tooltip never opens. */}
             <TooltipTrigger asChild>
-              <span className={cn(FIGURE_CELL, "underline decoration-dotted")}>
+              <span
+                className={cn(
+                  FIGURE_CELL,
+                  "relative z-10 underline decoration-dotted"
+                )}
+              >
                 {money(actual)}
               </span>
             </TooltipTrigger>
@@ -214,18 +221,17 @@ export default function ProjectCostsTree({
               const row = node.data;
               const isOpen = row.id === openElementId;
               return (
+                // The name is a link stretched over the row; the chevron sits
+                // above it, so the row is reachable and says where it goes.
                 <div
                   className={cn(
-                    "flex h-9 cursor-pointer items-center pr-4 text-sm",
+                    "relative flex h-9 cursor-pointer items-center pr-4 text-sm",
                     isOpen || state.selected
                       ? "bg-accent/70"
                       : "hover:bg-accent/40"
                   )}
-                  onClick={() =>
-                    navigate(path.to.projectCostsElement(projectId, row.id))
-                  }
                 >
-                  <div className="flex h-9 shrink-0 items-center pl-2">
+                  <div className="relative z-10 flex h-9 shrink-0 items-center pl-2">
                     {Array.from({ length: node.level }).map((_, index) => (
                       <LevelLine key={index} isSelected={state.selected} />
                     ))}
@@ -256,7 +262,12 @@ export default function ProjectCostsTree({
                     <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
                       {row.readableId}
                     </span>
-                    <span className="truncate">{row.name}</span>
+                    <PrefetchLink
+                      to={path.to.projectCostsElement(projectId, row.id)}
+                      className="truncate outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+                    >
+                      {row.name}
+                    </PrefetchLink>
                     {isGovernmentContracting && row.isPreproduction && (
                       <Badge variant="secondary" className="shrink-0">
                         <Trans>Preproduction</Trans>

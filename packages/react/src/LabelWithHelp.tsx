@@ -6,7 +6,9 @@ import { getEntry, type TermId } from "@carbon/content/glossary";
 import { docUrl } from "@carbon/content/links";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { LuInfo } from "react-icons/lu";
+import { useOptionalFormControlContext } from "./Form/FormControl";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
 import { cn } from "./utils/cn";
@@ -27,6 +29,12 @@ type LabelWithHelpProps = {
    * headers, card-attribute keys).
    */
   variant?: "stacked" | "inline";
+  /**
+   * Outside a form field: the id to give the definition so a control can
+   * reference it from `aria-describedby` (a radio group labelled by this
+   * label). The ⓘ and the definition then leave the name, as in a field.
+   */
+  definitionId?: string;
 };
 
 export function LabelWithHelp({
@@ -35,11 +43,23 @@ export function LabelWithHelp({
   children,
   className,
   tooltipDelayDuration = 200,
-  variant = "stacked"
+  variant = "stacked",
+  definitionId
 }: LabelWithHelpProps) {
   // Hooks must run unconditionally — call useLingui before any early return.
   const { t, i18n } = useLingui();
-  if (termId === undefined && text === undefined) return <>{children}</>;
+  // In a form field the definition is the control's description, not part
+  // of its name: the label's ⓘ and sr-only copy are hidden from the name, and
+  // the copy is referenced by the control's aria-describedby instead.
+  const field = useOptionalFormControlContext();
+  const hasHelp = termId !== undefined || text !== undefined;
+  const describesControl = field !== undefined || definitionId !== undefined;
+  const registerDefinition = field?.registerDefinition;
+  useEffect(
+    () => (hasHelp && registerDefinition ? registerDefinition() : undefined),
+    [hasHelp, registerDefinition]
+  );
+  if (!hasHelp) return <>{children}</>;
   const entry = termId === undefined ? undefined : getEntry(termId);
 
   const translatedTerm = entry === undefined ? "" : i18n._(entry.term);
@@ -59,6 +79,7 @@ export function LabelWithHelp({
         <button
           type="button"
           tabIndex={-1}
+          aria-hidden={describesControl ? true : undefined}
           aria-label={
             entry === undefined
               ? t`About this field`
@@ -108,7 +129,15 @@ export function LabelWithHelp({
 
   // sr-only mirror so screen readers reach the full definition without needing
   // to activate the tooltip trigger.
-  const srOnly = <span className="sr-only">{translatedDefinition}</span>;
+  const srOnly = (
+    <span
+      className="sr-only"
+      id={field?.definitionId ?? definitionId}
+      aria-hidden={describesControl ? true : undefined}
+    >
+      {translatedDefinition}
+    </span>
+  );
 
   if (isInline) {
     return (

@@ -206,9 +206,11 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
                   }
 
                   summary.skipped++;
-                  logger.info(
-                    `[stripe-connect-pull-sweep] ${companyId}: skipped ${invoice.id}: ${result.reason}`
-                  );
+                  logger.info("Skipped a Stripe invoice", {
+                    companyId,
+                    invoiceId: invoice.id,
+                    reason: result.reason
+                  });
                 }
 
                 // Advance on `created`, the same field the list query filters
@@ -219,10 +221,11 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
               } catch (err) {
                 summary.errors++;
                 anyError = true;
-                logger.error(
-                  "[stripe-connect-pull-sweep] {companyId}: error processing {invoiceId}",
-                  { companyId, invoiceId: invoice.id, error: err }
-                );
+                logger.error("Failed to process a Stripe invoice", {
+                  companyId,
+                  invoiceId: invoice.id,
+                  error: err
+                });
               }
             }
 
@@ -235,7 +238,12 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
               summary.cursorAdvancedTo = newCursor;
             } else if (anyError) {
               logger.warn(
-                `[stripe-connect-pull-sweep] ${companyId}: ${summary.errors} error(s); holding cursor at ${since} for retry`
+                "Stripe pull sweep had errors; holding the cursor for retry",
+                {
+                  companyId,
+                  errors: summary.errors,
+                  since
+                }
               );
             }
 
@@ -243,10 +251,10 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
           }
         );
       } catch (err) {
-        logger.error(
-          "[stripe-connect-pull-sweep] {targetCompanyId}: sweep failed",
-          { targetCompanyId: target.companyId, error: err }
-        );
+        logger.error("Stripe pull sweep failed", {
+          companyId: target.companyId,
+          error: err
+        });
         result = {
           companyId: target.companyId,
           invoicesFound: 0,

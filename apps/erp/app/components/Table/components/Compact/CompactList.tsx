@@ -24,13 +24,14 @@ import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile/useAppBarOverride";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
-import type { InfiniteRows } from "../../types";
+import type { InfiniteRows, ServerExportLinks } from "../../types";
 import { findScrollParent, useInfiniteScroll } from "../../useInfiniteScroll";
 import { useVirtualRows } from "../../useVirtualRows";
 import type { DownloadProps } from "../Download";
 import type { ColumnFilter } from "../Filter/types";
 import { InfiniteStatus } from "../InfiniteStatus";
 import { RowLimitNote } from "../RowLimitNote";
+import { rowLabelOf } from "../SyntheticColumns";
 import { CompactEmpty, CompactLoading, CompactNoResults } from "./CompactEmpty";
 import { CompactRow } from "./CompactRow";
 import { CompactToolbar } from "./CompactToolbar";
@@ -89,7 +90,10 @@ export type CompactListProps<T> = {
   isTableEmpty: boolean;
   hasFilters: boolean;
   clearFilters: () => void;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   csvExport?: DownloadProps;
+  serverExport?: ServerExportLinks;
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderActions?: (selectedRows: T[]) => ReactNode;
@@ -140,7 +144,10 @@ export function CompactList<T>({
   isTableEmpty,
   hasFilters,
   clearFilters,
+  hasRememberedChanges,
+  onResetRememberedState,
   csvExport,
+  serverExport,
   importCSV,
   renderContextMenu,
   renderActions,
@@ -299,6 +306,7 @@ export function CompactList<T>({
       withSort={withSort}
       headerActions={headerActions}
       csvExport={csvExport}
+      serverExport={serverExport}
       importCSV={importCSV}
       menuItems={mobileMenuItems}
       onSelect={
@@ -307,7 +315,9 @@ export function CompactList<T>({
           : undefined
       }
       // Like desktop: a genuinely empty list has no toolbar.
-      hideControls={isTableEmpty}
+      hideControls={isTableEmpty && !hasRememberedChanges}
+      hasRememberedChanges={hasRememberedChanges}
+      onResetRememberedState={onResetRememberedState}
     />
   );
 
@@ -375,7 +385,8 @@ export function CompactList<T>({
           selecting
             ? {
                 selected: row.getIsSelected(),
-                onToggle: () => row.toggleSelected()
+                onToggle: () => row.toggleSelected(),
+                label: rowLabelOf(row, table.options.meta?.getRowLabel)
               }
             : undefined
         }

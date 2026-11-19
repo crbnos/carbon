@@ -14,7 +14,10 @@ import type { SalesRFQStatusType } from "~/modules/sales/types";
 import { SalesRFQForm } from "~/modules/sales/ui/SalesRFQ";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("RFQ");
 
 export const handle: Handle = {
   breadcrumb: msg`RFQs`,

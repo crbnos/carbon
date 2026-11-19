@@ -80,8 +80,9 @@ Sourcing drives method type (`sourcingType` case, ~L73-89):
 - `Ship from Inventory` → `Pull from Inventory`
 - `Specified` → leave `defaultMethodType` as-is
 
-(`itemTrackingType` is a separate operation, `setItemTrackingType`, that
-cascades via `cascadeItemTrackingType`.)
+(`itemTrackingType` is a separate operation, `setItemTrackingType`; the
+database statement handler `sync_item_tracking_type_change` carries it onto
+open documents, or refuses it.)
 
 ## Cascade + derivation (items.service.ts)
 
@@ -89,7 +90,7 @@ cascades via `cascadeItemTrackingType`.)
   internal helper `cascadeSourcingAndMethodTypeToMethodMaterials(trx, args)`
   (~L2790, not exported) inside one Kysely transaction.
   <!-- The old cache name `cascadeItemSourcingAndMethodType` does NOT exist;
-       it was renamed to this pair. It is modeled on `cascadeItemTrackingType`. -->
+       it was renamed to this pair. -->
 - The cascade mirrors the item's `sourcingType`/`methodType` onto every
   `methodMaterial` referencing it, **but only where the make method is `Draft`**
   (`makeMethod.status = 'Draft'`); Active/Archived methods are frozen. For

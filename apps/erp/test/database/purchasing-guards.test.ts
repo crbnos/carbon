@@ -7,14 +7,9 @@
 // purchasing operations: an API or MCP caller reaches the operation, not the
 // route, so the operation is what has to refuse.
 
-import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
-import { expect, it, vi } from "vitest";
-import {
-  connectLocalTestDatabase,
-  hasLocalDatabase
-} from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { expect, vi } from "vitest";
+import { fixture, test } from "./fixtures/purchasing";
 
 // Approval rules are a commercial feature, off in the community edition that
 // an unset CARBON_EDITION reads as. Set before @carbon/env is imported.
@@ -25,168 +20,6 @@ vi.hoisted(() => {
 const purchasing = await import(
   "../../app/modules/purchasing/purchasing.server"
 );
-
-const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const test = (name: string, fn: () => Promise<void>) =>
-  it.skipIf(!client)(name, fn, 60_000);
-
-type Setup = {
-  status?: "Draft" | "Needs Approval" | "To Receive";
-  /** The company's approval rule for purchase orders, from 0. */
-  approver?: string | null;
-  pendingRequest?: boolean;
-  createdFromPlanning?: boolean;
-  skipApprovalForPlanningPurchaseOrders?: boolean;
-};
-
-// Two companies. The first has a supplier, a part and one purchase order for
-// 5 × 8 = 40, optionally needing approval with a pending request by "system".
-async function fixture(setup: Setup = {}) {
-  const db = await connectLocalTestDatabase();
-  const p = `pgtest-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
-  const companyId = `${p}-company`;
-  const otherCompanyId = `${p}-other`;
-  const groupId = `${p}-group`;
-  // Its own group: companies of one group trade with each other, and their
-  // intercompany suppliers refuse the cleanup's delete.
-  const otherGroupId = `${p}-other-group`;
-  const ids = {
-    supplier: `${p}-supplier`,
-    interaction: `${p}-interaction`,
-    item: `${p}-item`,
-    order: `${p}-po`,
-    request: `${p}-request`
-  };
-
-  await db.transaction().execute(async (trx) => {
-    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-    await sql`
-      INSERT INTO "companyGroup" (id, name, "createdBy") VALUES
-        (${groupId}, ${p}, 'system'),
-        (${otherGroupId}, ${`${p}-other`}, 'system')
-    `.execute(trx);
-    await sql`
-      INSERT INTO "company" (id, name, "companyGroupId", "baseCurrencyCode") VALUES
-        (${companyId}, ${p}, ${groupId}, 'USD'),
-        (${otherCompanyId}, ${`${p}-other`}, ${otherGroupId}, 'USD')
-    `.execute(trx);
-    await sql`
-      UPDATE "companySettings"
-      SET "skipApprovalForPlanningPurchaseOrders" = ${setup.skipApprovalForPlanningPurchaseOrders ?? true}
-      WHERE id = ${companyId}
-    `.execute(trx);
-    await sql`
-      INSERT INTO "supplier" (id, name, "readableId", "companyId", "createdBy")
-      VALUES (${ids.supplier}, 'One', 'S1', ${companyId}, 'system')
-    `.execute(trx);
-    await sql`
-      INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
-      VALUES ('EA', 'Each', ${companyId}, 'system')
-    `.execute(trx);
-    await sql`
-      INSERT INTO "item" (id, "readableId", name, type, "replenishmentSystem", "defaultMethodType",
-        "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
-      VALUES (${ids.item}, 'P-1', 'Part', 'Part', 'Buy', 'Pull from Inventory', 'Inventory', 'EA',
-        ${companyId}, 'system')
-    `.execute(trx);
-    await sql`
-      INSERT INTO "supplierInteraction" (id, "companyId", "supplierId")
-      VALUES (${ids.interaction}, ${companyId}, ${ids.supplier})
-    `.execute(trx);
-    await sql`
-      INSERT INTO "purchaseOrder" (id, "purchaseOrderId", "supplierId", "supplierInteractionId",
-        status, "createdFromPlanning", "currencyCode", "exchangeRate", "companyId", "createdBy")
-      VALUES (${ids.order}, 'PO-T', ${ids.supplier}, ${ids.interaction},
-        ${setup.status ?? "Draft"}, ${setup.createdFromPlanning ?? false}, 'USD', 1,
-        ${companyId}, 'system')
-    `.execute(trx);
-    // The order's interceptor makes these; the fixture runs with it off.
-    await sql`
-      INSERT INTO "purchaseOrderDelivery" (id, "companyId") VALUES (${ids.order}, ${companyId})
-    `.execute(trx);
-    await sql`
-      INSERT INTO "purchaseOrderPayment" (id, "companyId") VALUES (${ids.order}, ${companyId})
-    `.execute(trx);
-    await sql`
-      INSERT INTO "purchaseOrderLine" ("purchaseOrderId", "purchaseOrderLineType", "itemId",
-        "purchaseQuantity", "supplierUnitPrice", "exchangeRate", "conversionFactor",
-        "companyId", "createdBy")
-      VALUES (${ids.order}, 'Part', ${ids.item}, 5, 8, 1, 1, ${companyId}, 'system')
-    `.execute(trx);
-    if (setup.approver !== undefined) {
-      await sql`
-        INSERT INTO "approvalRule" ("documentType", "defaultApproverId", "lowerBoundAmount",
-          "companyId", "createdBy")
-        VALUES ('purchaseOrder', ${setup.approver}, 0, ${companyId}, 'system')
-      `.execute(trx);
-    }
-    if (setup.pendingRequest) {
-      await sql`
-        INSERT INTO "approvalRequest" (id, "documentType", "documentId", amount, "requestedBy",
-          "companyId", "createdBy")
-        VALUES (${ids.request}, 'purchaseOrder', ${ids.order}, 40, 'system', ${companyId}, 'system')
-      `.execute(trx);
-    }
-  });
-
-  const contextAs = (userId: string, company = companyId, pg = db) =>
-    createServiceContext({
-      actor: { type: "system", onBehalfOf: userId },
-      company: {
-        id: company,
-        groupId: company === companyId ? groupId : otherGroupId
-      },
-      caller: client!,
-      system: () => client!,
-      pg: () => pg,
-      kv: () => {
-        throw new Error("No operation here reads the cache");
-      }
-    });
-
-  return {
-    db,
-    companyId,
-    otherCompanyId,
-    ids,
-    contextAs,
-    order: () =>
-      db
-        .selectFrom("purchaseOrder")
-        .select(["status"])
-        .where("id", "=", ids.order)
-        .executeTakeFirst(),
-    requests: () =>
-      db
-        .selectFrom("approvalRequest")
-        .select(["id", "status", "amount"])
-        .where("documentId", "=", ids.order)
-        .orderBy("requestedAt")
-        .execute(),
-    async cleanup() {
-      await db.transaction().execute(async (trx) => {
-        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-        await trx
-          .deleteFrom("company")
-          .where("id", "in", [companyId, otherCompanyId])
-          .execute();
-        await trx
-          .deleteFrom("companyGroup")
-          .where("id", "in", [groupId, otherGroupId])
-          .execute();
-        for (const id of [companyId, otherCompanyId]) {
-          await sql`DROP TABLE IF EXISTS ${sql.id(`searchIndex_${id}`)}`.execute(
-            trx
-          );
-          await sql`DROP TABLE IF EXISTS ${sql.id(`auditLog_${id}`)}`.execute(
-            trx
-          );
-        }
-      });
-      await db.destroy();
-    }
-  };
-}
 
 test("a delete that fails leaves the approval requests pending", async () => {
   const f = await fixture({ status: "Needs Approval", pendingRequest: true });
@@ -409,7 +242,7 @@ test("a planning order skips approval only when the company allows it", async ()
   }
 });
 
-test("a header update writes only header fields, and not on a finalized order", async () => {
+test("a header update writes only header fields, and not on a completed order", async () => {
   const draft = await fixture();
   const header = (f: typeof draft) =>
     f.db
@@ -438,16 +271,16 @@ test("a header update writes only header fields, and not on a finalized order", 
     await draft.cleanup();
   }
 
-  const released = await fixture({ status: "To Receive" });
+  const completed = await fixture({ status: "Completed" });
   try {
     const result = await purchasing.updatePurchaseOrder(
-      released.contextAs("system"),
-      { id: released.ids.order, supplierReference: "REF-2" }
+      completed.contextAs("system"),
+      { id: completed.ids.order, supplierReference: "REF-2" }
     );
     expect(result.error).toMatchObject({ category: "rule" });
-    expect((await header(released))?.supplierReference).toBeNull();
+    expect((await header(completed))?.supplierReference).toBeNull();
   } finally {
-    await released.cleanup();
+    await completed.cleanup();
   }
 });
 

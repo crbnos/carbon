@@ -61,6 +61,7 @@ function TruncatedTooltipText({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: hover/focus handlers only re-measure truncation for the tooltip; the text is not a control */}
         <span
           ref={triggerRef}
           className={cn("min-w-0", className)}

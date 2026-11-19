@@ -11,24 +11,21 @@ import {
 } from "@carbon/ee/contract-financing";
 import {
   approveFinancingRequest,
-  FinancingError,
+  financingRefusal,
   getFinancingRequest,
   overrideRequestLine,
   submitFinancingRequest,
   withdrawFinancingRequest
 } from "@carbon/ee/contract-financing.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { data, useLoaderData, useParams } from "react-router";
 import ContractFinancingRequest from "~/modules/sales/ui/Contracts/ContractFinancingRequest.ee";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "contract-financing-request");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -166,26 +163,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } catch (err) {
     if (err instanceof Response) throw err;
-    if (
-      !(err instanceof FinancingError) &&
-      !(err instanceof EntitlementError)
-    ) {
-      logger.error("Failed to change the financing request", {
-        companyId,
-        requestId,
-        error: err
-      });
-    }
+    const refusal = financingRefusal(err);
     return data(
       { success: false },
       await flash(
         request,
-        error(
-          err,
-          err instanceof FinancingError
-            ? err.message
-            : "Failed to change the request"
-        )
+        refusal === null
+          ? error(err, "Failed to change the request", { requestId })
+          : error(null, refusal)
       )
     );
   }
@@ -194,13 +179,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ContractFinancingRequestRoute() {
   const { request } = useLoaderData<typeof loader>();
   const { id } = useParams();
-  const navigate = useNavigate();
   if (!id) throw new Error("Could not find id");
+  const dialog = useRouteDialog(path.to.contractFinancing(id));
   return (
     <ContractFinancingRequest
       contractId={id}
       request={request}
-      onClose={() => navigate(path.to.contractFinancing(id))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -5,9 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { NonNettableBadge } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import { getPickingListLine } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
@@ -43,6 +45,7 @@ export default function PickingListLineDetailRoute() {
 
   const { pickingListLine } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const nonNettable = useNonNettableStorageUnits();
 
   if (!pickingListLine) return null;
 
@@ -100,8 +103,12 @@ export default function PickingListLineDetailRoute() {
           </div>
           <div>
             <span className="text-muted-foreground">Storage Unit</span>
-            <p className="font-medium">
+            <p className="flex items-center gap-2 font-medium">
               {pickingListLine.storageUnit?.name ?? "N/A"}
+              {pickingListLine.storageUnitId &&
+                nonNettable.has(pickingListLine.storageUnitId) && (
+                  <NonNettableBadge />
+                )}
             </p>
           </div>
           <div>

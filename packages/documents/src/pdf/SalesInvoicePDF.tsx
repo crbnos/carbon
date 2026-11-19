@@ -4,12 +4,12 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  resolveTemplate,
+  salesInvoiceTexts,
+  type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
@@ -20,9 +20,11 @@ import {
 import type { TaxSummaryEntry } from "../utils/tax-summary";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
-import { Template } from "./components";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 
 interface SalesInvoicePDFProps extends PDF {
+  valueCollector?: ValueCollector;
   salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"];
   salesInvoiceLines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][];
   salesOrderIds?: string[];
@@ -34,6 +36,7 @@ interface SalesInvoicePDFProps extends PDF {
     | null;
   paymentTerms: { id: string; name: string }[];
   shippingMethods: { id: string; name: string }[];
+  shippingTerms: { id: string; name: string }[];
   terms: JSONContent;
   thumbnails?: Record<string, string | null>;
   /** Stored layout. When omitted, the default Sales Invoice layout is used. */
@@ -51,6 +54,7 @@ interface SalesInvoicePDFProps extends PDF {
 }
 
 const SalesInvoicePDF = ({
+  valueCollector,
   accountsReceivableBillingAddress,
   company,
   companySettings,
@@ -63,6 +67,7 @@ const SalesInvoicePDF = ({
   terms,
   paymentTerms,
   shippingMethods,
+  shippingTerms,
   thumbnails,
   locale,
   currencyDecimals,
@@ -70,8 +75,7 @@ const SalesInvoicePDF = ({
   sections = {},
   taxSummary = [],
   invoiceMessages = [],
-  sellerRegistration = null,
-  title = "Invoice"
+  sellerRegistration = null
 }: SalesInvoicePDFProps) => {
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -79,15 +83,33 @@ const SalesInvoicePDF = ({
   // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("salesInvoice", template);
+  const resolved = resolveTemplate("salesInvoice", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildSalesInvoiceVars({
-    salesInvoice,
-    salesInvoiceLocations,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildSalesInvoiceVars({
+      salesInvoice,
+      salesInvoiceLines,
+      salesInvoiceLocations,
+      salesInvoiceShipment,
+      salesOrderIds,
+      paymentTerms,
+      shippingMethods,
+      shippingTerms,
+      company,
+      currencyCode,
+      locale,
+      numberFormatter
+    })
+  );
+  const chrome = documentChrome({
+    texts: salesInvoiceTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -99,10 +121,6 @@ const SalesInvoicePDF = ({
 
   // Header layout now lives on the global header section's config (not the
   // block), so every document shares one header configuration.
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: SalesInvoiceData = {
     company,
@@ -116,6 +134,7 @@ const SalesInvoicePDF = ({
     accountsReceivableBillingAddress,
     paymentTerms,
     shippingMethods,
+    shippingTerms,
     terms,
     thumbnails,
     theme,
@@ -123,61 +142,28 @@ const SalesInvoicePDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
     headerOptions,
     taxSummary,
     invoiceMessages,
-    sellerRegistration
+    sellerRegistration,
+    documentTitle,
+    documentNumber
   };
 
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  // The header/footer selectors are the single control for the top header and
-  // the footer band. "None" (null id) removes them entirely; the built-in
-  // default id keeps them. This drives both the company Header block and the
-  // structural footer (registration line + page numbers).
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "sales invoice",
-        subject: meta?.subject ?? "Invoice"
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="sales invoice"
       footerDocumentId={salesInvoice?.invoiceId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = salesInvoiceBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={salesInvoiceBlockRegistry}
+      data={data}
+    />
   );
 };
 

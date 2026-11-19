@@ -7,6 +7,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -29,20 +30,28 @@ import {
   getSeededDiscounts
 } from "~/modules/invoicing/invoicing.service";
 import { PaymentForm } from "~/modules/invoicing/ui";
+import { heldAdvanceCovering } from "~/modules/invoicing/ui/Payment/payment-logic";
 import { getCompany } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "payments");
 
 // Loader pre-fills the form. Query params:
 //   customerId  -> seeds counterparty + paymentType=Receipt
 //   supplierId  -> seeds counterparty + paymentType=Disbursement
-//   invoiceId   -> one or more; their open balances are summed into the total
-//                  and (on submit) one application is seeded per invoice
+//   invoiceId   -> one or more; their open balances, less any advance held
+//                  for their orders, are summed into the total and (on
+//                  submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
 //   salesOrderId / rentalAgreementId / customerContractId -> seeds the
 //                  deposit document
+//   purchaseOrderId -> seeds the supplier prepayment's order
 //   financingRequestId -> the contract financing request the payment receives
+export const meta = newRecordMeta("Payment");
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -57,6 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const salesOrderId = url.searchParams.get("salesOrderId");
   const rentalAgreementId = url.searchParams.get("rentalAgreementId");
   const customerContractId = url.searchParams.get("customerContractId");
+  const purchaseOrderId = url.searchParams.get("purchaseOrderId");
   // A contract financing request this payment receives.
   const financingRequestId = url.searchParams.get("financingRequestId");
 
@@ -68,13 +78,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [company, defaults, depositDocuments] = await Promise.all([
     getCompany(client, companyId),
     getDefaultAccounts(client, companyId),
-    getDepositDocuments(client, companyId, [salesOrderId])
+    getDepositDocuments(client, companyId, [salesOrderId], [purchaseOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";
 
   let currencyCode = company.data?.baseCurrencyCode ?? "";
   let exchangeRate = 1;
   let totalAmount = amount ? Number(amount) : 0;
+  let heldAdvance = 0;
 
   // Resolved before seeding: the discount window is evaluated as of this date.
   const paymentDate = datetime
@@ -102,28 +113,51 @@ export async function loader({ request }: LoaderFunctionArgs) {
             error(null, "Selected invoices must use the same currency")
           )
         );
-      const configuration = await getPaymentCurrencyConfiguration(
-        client,
-        companyId,
-        currencyCode
-      );
-      // Net of any early-payment discount the invoice's terms grant as of the
-      // payment date, so a "2/10 net 30" invoice paid today pre-fills the
-      // discounted cash amount.
-      const discounts = await getSeededDiscounts(
-        client,
-        companyId,
-        companyGroupId,
-        currencyCode,
-        paymentDate,
-        selected
+      const api = await carbon(request);
+      const [configuration, discounts, funding] = await Promise.all([
+        getPaymentCurrencyConfiguration(client, companyId, currencyCode),
+        // Net of any early-payment discount the invoice's terms grant as of
+        // the payment date, so a "2/10 net 30" invoice paid today pre-fills
+        // the discounted cash amount.
+        getSeededDiscounts(
+          client,
+          companyId,
+          companyGroupId,
+          currencyCode,
+          paymentDate,
+          selected
+        ),
+        api.invoicing.getAvailableOnAccountCreditSources({
+          party:
+            paymentType === "Receipt"
+              ? { paymentType, customerId: partyId }
+              : { paymentType, supplierId: partyId },
+          currencyCode
+        })
+      ]);
+      // The prefill still works without the party's prior funding, at the full
+      // balance: say so, or an advance paid twice has no trace.
+      if (funding.error) {
+        logger.warning("Seeding a payment without the party's held advances", {
+          companyId,
+          partyId,
+          error: funding.error
+        });
+      }
+      const due = selected.map((inv) => ({
+        ...inv,
+        cashDue: inv.remainingDocument - (discounts.get(inv.id ?? "") ?? 0)
+      }));
+      // A prepayment or deposit already held for an invoice's order is cash
+      // the party has paid: asking for it again would leave it stranded on the
+      // prepayment account. Seeding the applications draws it for the rest.
+      heldAdvance = heldAdvanceCovering(
+        due,
+        funding.data?.sources ?? [],
+        configuration.currencyDecimals
       );
       totalAmount = toDocumentAmount(
-        selected.reduce(
-          (sum, inv) =>
-            sum + inv.remainingDocument - (discounts.get(inv.id ?? "") ?? 0),
-          0
-        ),
+        due.reduce((sum, inv) => sum + inv.cashDue, 0) - heldAdvance,
         1,
         configuration.currencyDecimals
       );
@@ -145,9 +179,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       memo: "",
       salesOrderId: salesOrderId ?? "",
       rentalAgreementId: rentalAgreementId ?? "",
-      customerContractId: customerContractId ?? ""
+      customerContractId: customerContractId ?? "",
+      purchaseOrderId: supplierId ? (purchaseOrderId ?? "") : ""
     },
     seedInvoiceIds: invoiceIds,
+    heldAdvance,
     depositDocuments,
     financingRequestId
   };
@@ -198,6 +234,7 @@ export default function NewPaymentRoute() {
   const {
     initialValues,
     seedInvoiceIds,
+    heldAdvance,
     depositDocuments,
     financingRequestId
   } = useLoaderData<typeof loader>();
@@ -205,7 +242,7 @@ export default function NewPaymentRoute() {
     <NewRecordPage>
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={1}>
             <Trans>New Payment</Trans>
           </CardTitle>
           <CardDescription>
@@ -220,6 +257,7 @@ export default function NewPaymentRoute() {
           <PaymentForm
             initialValues={initialValues}
             seedInvoiceIds={seedInvoiceIds}
+            heldAdvance={heldAdvance}
             depositDocuments={depositDocuments}
             financingRequestId={financingRequestId ?? undefined}
           />

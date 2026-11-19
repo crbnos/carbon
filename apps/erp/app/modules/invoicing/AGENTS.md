@@ -18,13 +18,42 @@ there too. `project-charges.ts` (plain, server-only) is the purchase invoice's p
 their receipt already charged to a project (the invoice then writes only the price
 variance).
 
-`invoicing.reports.ts` is pure calendar/aggregation math (`previousPeriod`, `aggregateSpend`)
-with no route consumer yet — only its own test. `ui/SalesInvoice/` has no `index.ts` and is NOT
+`invoicing.reports.ts` holds pure report helpers (`previousPeriod`, `aggregateSpend`,
+`agingCsvTable`, `daysPastDue`); the aging CSV and Excel routes use its export helper.
+`ui/SalesInvoice/` has no `index.ts` and is NOT
 in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder (`Charge`,
 `Dashboard`, `Memo`, `Payment`, `PurchaseInvoice`, `Reimbursement`, `Workbench`) is barrel-exported.
 
 ## Key Domain Concepts
 
+- **Force delete (Admin override): invoices, receipts, payments.** This is the purchase order force delete (`purchasing/AGENTS.md`) for purchase invoices, sales invoices, receipts and payments. It is an emergency override for when a user error has broken the normal process: it cleans up what holds the document instead of refusing.
+  - **Storage:** one table, `forceDeleteRequest` (`documentType`, `documentId` with no FK, `documentReadableId`, `documentStatus`; `serviceOnly()`). The `approvalRequest` type is `documentForceDelete`, in `adminApprovedDocumentTypes`.
+  - **Operations:** `requestDocumentForceDelete`, `decideDocumentForceDelete` and `cancelDocumentForceDelete` (`invoicing.server.ts`). Permission is keyed by `documentType`. The route is `force-delete+/$documentType.$documentId.tsx`; the UI is `components/ForceDelete/DocumentForceDelete.tsx`, and the loaders spread `getDocumentForceDeleteData`.
+  - **Claiming:** approving first claims the request (status `Approving`, `claimForceDeleteRequest`), so a cancel or reject cannot run while committed steps run. A refusal or failure releases the claim back to Pending; a claim left for ten minutes can be taken again.
+  - **Step 1, each part committing on its own:**
+    - `unapplyForceDeleteSettlements` unapplies what is applied to the document: an invoice's payments and memos, or the other payments a payment funds or refunds. A Posted payment's journal is built again (`rebuildPaymentJournal`) with and without the settlements; `paymentJournalDifference` is posted today, and the payment keeps the cash as unapplied credit.
+    - `reverseRecognizedRevenue` reverses a sales invoice's Posted revenue schedule rows.
+    - The document's own void runs (`voidForceDeleteDocument`).
+    - The payment void reverses every `journalLine` of the payment, unapply journals included.
+  - **Step 2, one transaction:** if the void refused, `reverseDocumentByJournal` runs:
+    1. It negates every journal carrying the document's lines, and an invoice's tax-ledger rows with them (`negateDocumentTaxLedger`, as a void does). Before the cutover there are none to negate: an invoice writes its open amount off, and a payment negates its rebuilt posting.
+    2. It moves the stock back by adjustment, even negative, with its inspections cancelled under `withInspectionRelease`, and adds the original value back from its cost ledger.
+    3. It restores PO received and invoiced quantities, and moves a capitalized asset's CIP value back.
+    4. It marks the document Voided.
+
+    Then `deleteForceDeleteDocument` sets `app.force_delete` (the invoice delete guards and `prevent_invalid_deposit_refund` return early on it) and deletes the document.
+  - **Refused only** while the document is being posted.
+  - **Notifications:** the `documentId` is `<documentType>:<documentId>:<requestId>`.
+- **Changing a posted line's GL account** (`.ai/specs/2026-11-14-invoice-line-gl-reclass.md`) — `changeSalesInvoiceLineAccount` / `changePurchaseInvoiceLineAccount` (`update: ["invoicing", "accounting"]`, no approval) call `changeInvoiceLineAccount` (`invoicing.service.ts`), one Kysely transaction:
+  - Eligible: a sales line whose revenue posted to the Sales account (`postingLineRevenue(line).book === "sales"`), a purchase **G/L Account** line not charged to a project (a `projectLedger` row with `documentLineId` = the line refuses). The new account is an active, non-group account of the group: Revenue (sales), or one of `purchaseLineAccountClasses` (Asset, Liability, Equity, Expense; purchase). The change journal signs each leg by its own account's class.
+  - Finding the amount: no journal line names its invoice line, so `locateInvoiceLinePosition` tries the accounts the amount may be on (the line's `accountId`, then for a sales line the posting's "Sales Account" legs) and `findInvoiceLinePosition` matches the line's group (`journalLineReference`) on each: the quantity, the order line reference, the dimensions and the amount the posting computed, keeping only a group still holding that amount there. A sole group is checked like several. No match refuses the change (`missing`), and two or more matches refuse it too (`ambiguous`): it never moves a group it cannot prove is the line's.
+  - The journal: `sourceType` the invoice's own, description `Account change <Sales|Purchase> Invoice <id>`, dated on the original posting's date in its period, which must be Open (`lineAccountChangePeriodRefusal` names a Locked or Closed one). Two lines prefixed `Account change: ` (`LINE_ACCOUNT_CHANGE_PREFIX`), copying the original line's document keys and dimensions, so a void reverses them and the role readers ignore them. Then the line's `accountId` is set. Both invoice voids lock the invoice `FOR UPDATE` inside their transaction and read the journal they reverse after it, the lock the change takes before it adds lines: a void reverses a change that committed first, and waits for one in flight.
+  - Refused before the cutover date (`LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR`), for a Draft, Pending or Voided invoice, when an `intercompanyEliminationLine` reads the group, and for a new account another leg of the group already holds an amount on, such as the line's shipping account (`lineAccountChangeTargetRefusal`, naming the account): the group would hold both there and no later read could find the line's share. The UI is `ui/InvoiceLineAccount/ChangeInvoiceLineAccount.tsx` in both line forms' header `CardAction`; the routes are `$invoiceId.$lineId.account.tsx`.
+  - The dialog shows the account the amount is on now: `getSalesInvoiceLinePostedAccount` / `getPurchaseInvoiceLinePostedAccount` (`view: ["invoicing", "accounting"]`, not `@mcp`) call `getInvoiceLinePostedAccount`, which runs the change's own match and refusals (`readInvoiceLinePosition`). Read when the dialog opens, from `api+/{sales,purchase}-invoice.$invoiceId.$lineId.account.ts`. Never `salesInvoiceLine.accountId`: sales posting does not read it, and convert copies the order line's account into it.
+  - A synced invoice keeps its original account in the accounting provider.
+- **Adjusting a purchase invoice for rounding** — `adjustPurchaseInvoiceRounding` (`update: "invoicing"`, `@mcp`; the header menu's "Adjust for Rounding") brings the total to the amount the supplier charged with one G/L line described `Rounding` (`ROUNDING_LINE_DESCRIPTION`) on `accountDefault.roundingAccount`, capped at 100 minor units (`purchaseInvoiceRoundingAmount`). Other lines, inventory lines included, keep their prices. The same total again changes nothing; the other lines' own total removes the line.
+  - On a posted invoice (any status but Draft, Pending or Voided) it also needs `update: accounting` (`ctx.can`) and posts the change in base currency as one journal (`postPurchaseInvoiceRoundingJournal`): `sourceType` `Purchase Invoice`, description `Rounding Purchase Invoice <id>`, dated on the invoice's posting date in its period, which must be Open (`lineAccountChangePeriodRefusal`). Two lines (`buildRoundingJournalLines`): a debit to the rounding account signed by its class, and a credit described `Accounts Payable` on the invoice's own payable account and role, both with `documentType` `Invoice` and the invoice's keys and dimensions, so balances, payments and the role readers count it and a void reverses it. Refused before the cutover (`ROUNDING_BEFORE_CUTOVER_ERROR`) and for a lower total than is already settled.
+  - Why it exists: a Ramp card charge a cent off the bill. Ramp keeps the bill Carbon pushed (create-once), so the accountant also edits the bill in Ramp; the synced card payment then settles the adjusted invoice. A synced payment over the open balance is refused with a message pointing here (`upsertLocalPaymentDraft`, `@carbon/ee`). A bill already synced to an accounting provider keeps its original total there.
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
   in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no
@@ -81,9 +110,10 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `!isReimbursement && cashIn !== isAR`, so a three-way party can't be misread as a refund.
   `totalAmount` may be 0 — a payment can be a pure credit application.
 - **`invoiceSettlement`** — source is exactly one of `paymentId`/`memoId`; target exactly one of
-  FOUR (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
-  `targetReimbursementId` — the fourth added by `20260923231244`, which widened
-  `invoiceSettlement_target_check`). **`appliedAmount`, `discountAmount` and `writeOffAmount` are
+  FIVE (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
+  `targetReimbursementId`, `targetPaymentId`). `targetPaymentId` links an advance refund
+  to its original payment; the managed `prevent_invalid_deposit_refund` interceptor
+  validates its party, currency, document scope and effective funding under source locks. **`appliedAmount`, `discountAmount` and `writeOffAmount` are
   company BASE currency; `sourceAmount` is the exact principal in the funding source's DOCUMENT
   currency** (per the `COMMENT ON COLUMN` statements in
   `20260908021155_accounting_posting_corrections.sql`) — getting that pair backwards is a live
@@ -163,8 +193,16 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 ## Validation Commands
 
+Sales and Purchase Invoice lists offer direct server CSV and Excel downloads
+from `x+/invoicing+/invoice-export.server.ts` and four thin file routes. The
+table sends its active filters, sorts, and saved-view export columns; the
+server reads the list registry page by page and applies its name/GL-code
+enrichment. Purchase exports also resolve Supplier and Invoice Supplier names
+in a company-scoped batch per page. These downloads bypass the generic
+background CSV job.
+
 ```bash
-pnpm --filter erp exec vitest run app/modules/invoicing   # scoped: 9 files / 166 tests
+pnpm --filter erp exec vitest run app/modules/invoicing   # scoped
 pnpm exec turbo run typecheck --filter=erp
 pnpm --filter erp test                                    # the whole app's vitest suite
 ```
@@ -181,7 +219,7 @@ pnpm --filter erp test                                    # the whole app's vite
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
-| `invoiceSettlement` | Applications: one source × one of four targets; base-currency reliefs + generated `fxGainLossAmount` |
+| `invoiceSettlement` | Applications: one source × one of five targets; base-currency reliefs + generated `fxGainLossAmount` |
 | `charge` / `chargeLine` | Card charges (`chargeType`: Charge/Credit/Payment/Cashback/Repayment) |
 | `reimbursement` / `reimbursementLine` / `reimbursementLineDimension` | Employee expense payable, coding lines, dimension tags |
 | `paymentTerm`, `currency`, `company` | Due-date, decimals, and base-currency resolution |
@@ -210,6 +248,8 @@ guarded by `requireUnlockedBulk`, not validators.
 ## Key Service Functions
 
 - `getPurchaseInvoices` / `getSalesInvoices` — the list reads. A search reads the list through the SQL function `search<List>(company_id, terms)` in place of the view (`searchTerms`, `~/utils/search`), so every word must occur in the document or its lines, case, spaces and punctuation ignored. The function finds the matching ids from the company's headers and lines in one pass; a filter on a per-row text took about 700 ms at 1,800 orders. A search on the table on screen also reads `searchLines` (`withSearchLines`: only with `forScreen` and a search word; an export, a bulk action and the API never do), so the rows with a matching line open to those lines. Every row can be opened, collapsed by default; without a search it loads its lines on open from `api+/document-lines.$list.$id.ts` (`useLineItemRows`, `~/components/LineItemRows`). Each line and party lookup in the SQL functions also matches the document's `companyId`, because these list routes read with `bypassRls`. `searchLines` is a computed field of the list view and `search<List>` matches the same line values (migration `*_deep-list-search.sql`), so a row matched on a line value always has a line to show; `select=*` never reads `searchLines`. The supplier and customer names come through a LEFT JOIN, so an invoicing-only user still sees every invoice.
+- `getSalesInvoiceCustomerNames` — batched invoice-scoped names for the sales-invoice list and CSV; the RPC requires `invoicing_view` without granting customer-table access. The view's appended name columns remain in the `getSalesInvoices` response for API callers; the list overwrites them with the authorized RPC values so invoice-only users receive names without customer-table access.
+- `getInvoiceLineGlCodes` — batched, company-scoped line account numbers for both invoice lists and CSV exports. Ordinary sales lines without an assigned account use `accountDefault.salesAccount`; specialized sales lines and unassigned purchase lines add no code. These are line coding values, not a list of every posted journal account.
 - `insertSalesInvoice` / `insertPurchaseInvoice` — allocate the sequence via
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
@@ -218,6 +258,19 @@ guarded by `requireUnlockedBulk`, not validators.
 - `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
   `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
   discounts batch-load their terms in one query, never per invoice.
+- `getDepositDocuments` pages rental agreements and customer contracts with stable id tie-breakers.
+  Supplier refund currencies come from `get_supplier_prepayment_refund_currencies`, a caller-RLS
+  SQL aggregate returning one row per referenced purchase order, including exhausted saved links.
+- `postPaymentTransaction` locks company settings, a linked purchase order, the payment,
+  then funding sources; it rechecks the order reference after locking the payment.
+  Activation takes the same settings-first order. Journal, normalized settlements and payment
+  status commit together. `rebuildPaymentJournals` alone opts historical customer refunds into
+  legacy reconstruction; new refunds must allocate original advances. Funding readers, draft
+  allocation and posting also reserve historical customer refunds that have no source applications:
+  oldest eligible original advances first, only when their original account and carrying value
+  match the refund's unchanged journal. Incompatible history refuses with a reconciliation message.
+  Voided history is ignored; attributed modern refunds are not counted twice. The database
+  interceptor protects historical document principal and original-account carrying capacity too.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos
@@ -228,9 +281,36 @@ guarded by `requireUnlockedBulk`, not validators.
 - `getOpenSalesInvoicesForCustomer` / `getOpenPurchaseInvoicesForSupplier` /
   `getOpenReimbursementsForEmployee` — payable targets, one per payee kind.
 - `getArAging` / `getApAging` / `getArTieOut` / `getApTieOut` / `getArOpenByCustomer` /
-  `getApOpenBySupplier` — drive `x+/reports+/{ar,ap}-aging.tsx`,
-  `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`) and `_index.tsx`
-  (`InvoicingDashboard`).
+  `getApOpenBySupplier` / `getAgingUnappliedPayments` — drive `x+/reports+/{ar,ap}-aging.tsx`,
+  `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`), `_index.tsx`
+  (`InvoicingDashboard`) and the CSV/Excel aging downloads.
+  `getApOpenBySupplier` also returns `supplierReference` (the supplier's own
+  invoice number, shown as "Supplier Invoice Number"); it is NULL on memo rows
+  even though the generated type says `string`. Both open-document RPCs return
+  `transactionDate` (invoice issued date, falling back to posting date; memo
+  date) and signed `originalInBase` for the aging detail rows and CSV. The
+  workbench and CSV compute days past due from `dateDue` and the selected
+  `asOfDate`; memos have no due date. The final bucket is labeled from the day
+  after `bucket3` (for example, `91+` for a 90-day cutoff).
+- `getAgingParams(client, companyId, request)` — the one parser of the aging
+  query params (`asOfDate`, `agingMethod`, `bucketDays`) for the report,
+  workbench and export routes.
+  The page loaders keep their own permission (`invoicing` for the workbenches,
+  `accounting` + employee for the reports); the CSV and Excel routes share
+  `x+/reports+/aging.server.ts`, which admits a viewer of either module because
+  the download holds exactly what either page shows. The invoicing workbench passes
+  the CSV route URL to the Table's download control; the aging report pages offer
+  CSV and Excel in one Export menu. Each export row is an open document or
+  unapplied payment with its counterparty repeated; the Excel
+  download uses the same rows and adds formulas for document and grand totals.
+  The report pages keep document-only columns in an expanded table with its own
+  header. Exports include open documents even when their counterparty's net
+  aging row is zero, and translate headings from the request locale. The aging,
+  open-document, and payment reads return query
+  builders: the export routes page them with `fetchAllRecords` and stable unique
+  ordering. After the export permission check, they batch party-name lookups
+  with `fetchAllByIds` through a service-role client, scoped to `companyId`;
+  customer and supplier RLS otherwise require sales or purchasing permission.
 - `updateReimbursement` (Draft-scoped UPDATE) / `upsertReimbursementLines` (Kysely,
   delete-then-reinsert; bind dimensions by `sequence`, never by returned row order) /
   `getPaymentCurrencyConfiguration` (base currency + `currency.decimalPlaces`; throws when the
@@ -240,15 +320,17 @@ guarded by `requireUnlockedBulk`, not validators.
 
 Every route action that composes writes calls one `defineServiceFn` operation through
 `carbon(request)` (`api.invoicing.postSalesInvoice(input)`); the API and MCP publish the ones
-tagged `@mcp` (all below except the two `*Field` updates) as `invoicing_<name>`:
+tagged `@mcp` (all below except the two `*Field` updates and the two `*LinePostedAccount` reads) as `invoicing_<name>`:
 
 - Sales invoices: `updateSalesInvoiceField`, `postSalesInvoice`, `voidSalesInvoice`,
   `sendSalesInvoice`, `deleteDraftSalesInvoice`; `createSalesInvoiceLine` /
-  `updateSalesInvoiceLine` / `deleteDraftSalesInvoiceLine`
+  `updateSalesInvoiceLine` / `deleteDraftSalesInvoiceLine` /
+  `changeSalesInvoiceLineAccount` / `getSalesInvoiceLinePostedAccount`
 - Purchase invoices: `createPurchaseInvoice`, `updatePurchaseInvoiceField`,
   `postPurchaseInvoice`, `voidPurchaseInvoice`, `deleteDraftPurchaseInvoice`,
   `mapPurchaseInvoiceLines`; `deleteDraftPurchaseInvoiceLine`
-- Purchase invoice lines: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine`
+- Purchase invoice lines: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine` /
+  `changePurchaseInvoiceLineAccount` / `getPurchaseInvoiceLinePostedAccount`
 - Payments: `createPayment`, `postPayment`, `voidPayment`
 - Memos: `postMemo`, `voidMemo`, `deleteDraftMemo`
 - Charges: `voidCharge`

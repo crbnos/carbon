@@ -9,6 +9,7 @@ import {
   storage,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { isUniqueViolation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
@@ -16,6 +17,8 @@ import {
   itemDocumentPath,
   stripSpecialCharacters
 } from "./onshape-source-keys";
+
+const logger = getLogger("jobs", "onshape-attach");
 
 // Carbon-side attachment of Onshape released assets to an item. Lives in
 // @carbon/jobs (not @carbon/ee): it needs the service-role client + document
@@ -382,10 +385,11 @@ export async function attachOnshapeAssetsToItem(
               })
           : { error: { message: "the prior model file is not in storage" } };
         if (copied.error && !/already exists/i.test(copied.error.message)) {
-          console.error(
-            `attachOnshapeAssetsToItem: failed to copy prior model ${priorModel.id} for preservation`,
-            copied.error
-          );
+          logger.error("Failed to copy the prior model for preservation", {
+            companyId,
+            modelUploadId: priorModel.id,
+            error: copied.error
+          });
         } else {
           try {
             const preservedId = await upsertSyncedDocument(carbon, {
@@ -406,10 +410,11 @@ export async function attachOnshapeAssetsToItem(
             documentIds.push(preservedId);
             preservedPriorModelAsDocument = true;
           } catch (preserveError) {
-            console.error(
-              `attachOnshapeAssetsToItem: failed to preserve prior model ${priorModel.id} as a document`,
-              preserveError
-            );
+            logger.error("Failed to preserve the prior model as a document", {
+              companyId,
+              modelUploadId: priorModel.id,
+              error: preserveError
+            });
           }
         }
       }

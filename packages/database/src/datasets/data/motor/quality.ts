@@ -191,7 +191,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 20 at AQL 1.0 / level II → code letter C, n = 5.
 const NOMEX_PLAN = {
-  drawingNumber: "SPEC-INS-410 Rev B",
+  name: "SPEC-INS-410 Rev B",
   aql: 1.0,
   features: [
     {
@@ -273,7 +273,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:terminal-blocks",
     receipt: "receipt:copperline-restock",
     item: "TRM-BLK-6P",
-    drawingNumber: "CW-TB6-35 Rev C",
+    name: "CW-TB6-35 Rev C",
     aql: 1.0,
     features: [
       {
@@ -353,6 +353,27 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:shaft-journal",
     job: "floor-shaft",
     status: "Pending",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-MAG45-2609"],
+    workCenter: "CMM Inspection Bench",
+    assignee: "self",
+    notes:
+      "Surface-flux and demagnetization-curve check of the held magnet lot.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-MAG45-2609"],
+    workCenter: "CMM Inspection Bench",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
     samples: []
   }
 ];

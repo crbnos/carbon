@@ -252,35 +252,39 @@ export default function AccountImportReview({
               </Tr>
             </Thead>
             <Tbody>
-              {plan.replacements.map((replacement) => (
-                <Tr key={replacement.accountId}>
-                  <Td>{label(accounts[replacement.accountId])}</Td>
-                  <Td>
-                    {replacement.companyIds
-                      .map((id) => companyName.get(id) ?? id)
-                      .join(", ")}
-                  </Td>
-                  <Td>
-                    <Combobox
-                      size="sm"
-                      options={rowOptions}
-                      value={
-                        replacement.targetLine === null
-                          ? undefined
-                          : String(replacement.targetLine)
-                      }
-                      isReadOnly={isDisabled}
-                      placeholder={t`Pick an account`}
-                      onChange={(value) =>
-                        onTarget(
-                          replacement.accountId,
-                          value ? Number(value) : null
-                        )
-                      }
-                    />
-                  </Td>
-                </Tr>
-              ))}
+              {plan.replacements.map((replacement) => {
+                const accountLabel = label(accounts[replacement.accountId]);
+                return (
+                  <Tr key={replacement.accountId}>
+                    <Td>{accountLabel}</Td>
+                    <Td>
+                      {replacement.companyIds
+                        .map((id) => companyName.get(id) ?? id)
+                        .join(", ")}
+                    </Td>
+                    <Td>
+                      <Combobox
+                        size="sm"
+                        options={rowOptions}
+                        value={
+                          replacement.targetLine === null
+                            ? undefined
+                            : String(replacement.targetLine)
+                        }
+                        isReadOnly={isDisabled}
+                        placeholder={t`Pick an account`}
+                        aria-label={t`Replacement for ${accountLabel}`}
+                        onChange={(value) =>
+                          onTarget(
+                            replacement.accountId,
+                            value ? Number(value) : null
+                          )
+                        }
+                      />
+                    </Td>
+                  </Tr>
+                );
+              })}
             </Tbody>
           </Table>
         </SetupSection>

@@ -362,23 +362,32 @@ const Documents = ({
             {allFiles.map((file) => {
               const type = getDocumentType(file.name);
               const isPreviewable = ["PDF", "Image"].includes(type);
+              const openFile = () => {
+                if (["PDF", "Image"].includes(type)) {
+                  window.open(
+                    path.to.file.previewFile(
+                      `${"private"}/${getReadPath(file)}`
+                    ),
+                    "_blank"
+                  );
+                } else {
+                  download(file);
+                }
+              };
               return (
                 <Tr key={file.id}>
                   <Td>
                     <HStack>
                       <DocumentIcon type={type} />
                       <span
+                        role="button"
+                        tabIndex={0}
                         className="font-medium"
-                        onClick={() => {
-                          if (["PDF", "Image"].includes(type)) {
-                            window.open(
-                              path.to.file.previewFile(
-                                `${"private"}/${getReadPath(file)}`
-                              ),
-                              "_blank"
-                            );
-                          } else {
-                            download(file);
+                        onClick={openFile}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openFile();
                           }
                         }}
                       >

@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -78,6 +79,9 @@ export default function ChartOfAccountsRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Chart of Accounts</Trans>
+      </h1>
       <ChartOfAccountsTableFilters
         fiscalStartMonth={fiscalStartMonth}
         search={search}

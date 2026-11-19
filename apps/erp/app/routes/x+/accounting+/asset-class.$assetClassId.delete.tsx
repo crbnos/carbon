@@ -5,9 +5,10 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteFixedAssetClass,
@@ -68,19 +69,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteAssetClassRoute() {
   const { assetClassId } = useParams();
   const { assetClass } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.assetClasses);
 
   if (!assetClass) return null;
   if (!assetClassId) throw new Error("assetClassId is not found");
-
-  const onCancel = () => navigate(path.to.assetClasses);
 
   return (
     <ConfirmDelete
       action={path.to.deleteAssetClass(assetClassId)}
       name={assetClass.name}
       text={`Are you sure you want to delete the asset class: ${assetClass.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

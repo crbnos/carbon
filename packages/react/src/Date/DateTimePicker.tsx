@@ -13,12 +13,14 @@ import { useRef } from "react";
 import { LuBan, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
+import { useClearLabel, useFormControl } from "../Form/useFormControl";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
 import { InlineTrigger } from "../InlineTrigger";
 import { InputGroup } from "../Input";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
   PopoverFooter,
   PopoverTrigger
@@ -52,6 +54,8 @@ const DateTimePicker = (
     /** Inline mode: what the empty field reads, "Add due date". */
     inlinePlaceholder?: ReactNode;
     helperText?: string;
+    /** The field's name for assistive tech; defaults to `label`. */
+    "aria-label"?: string;
   }
 ) => {
   const { t } = useLingui();
@@ -63,10 +67,36 @@ const DateTimePicker = (
     shouldCloseOnSelect: false
   });
   const ref = useRef<HTMLDivElement>(null);
+  // Opened from an anchor, not a Radix trigger: holds the calendar button so
+  // focus can return to it on close.
+  const anchorRef = useRef<HTMLDivElement>(null);
+  // Set when the popover closes from a click or focus outside it: focus then
+  // stays where the user put it, as Radix does for a trigger. A click on
+  // nothing focusable (a sheet's overlay) still returns it to the button.
+  const closedFromOutside = useRef(false);
   // The same options must reach `useDatePicker`, not just the state: it builds
   // `fieldProps`, so without them the visible field ignores what the state says.
+  // The label is drawn by the form field, not here, so name the group with it
+  // directly (as DatePicker does).
+  const fieldName =
+    props["aria-label"] ??
+    (typeof props.label === "string" ? props.label : undefined);
+  const clearLabel = useClearLabel(fieldName);
+  // Inside a FormControl the field's error, helper text and glossary
+  // definition describe it.
+  const { ariaProps } = useFormControl(props);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker({ ...props, ...timeOptions }, state, ref);
+    useDatePicker(
+      {
+        ...props,
+        ...timeOptions,
+        label: undefined,
+        "aria-label": fieldName,
+        "aria-describedby": ariaProps["aria-describedby"]
+      },
+      state,
+      ref
+    );
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -113,27 +143,52 @@ const DateTimePicker = (
                     <LuBan className="!text-destructive-foreground ml-auto shrink-0 self-center" />
                   )}
                 </div>
+                {/* Anchor (not Trigger) so the calendar button isn't wrapped
+                    in a second <button>; react-aria's buttonProps open it. */}
                 {props.withButton !== false && (
-                  <div
-                    className={cn(
-                      "flex-shrink-0 -mr-px",
-                      props.size === "sm" ? "mt-[-3px]" : "-mt-px"
-                    )}
-                  >
-                    <PopoverTrigger tabIndex={-1}>
+                  <PopoverAnchor asChild>
+                    <div
+                      ref={anchorRef}
+                      className={cn(
+                        "flex-shrink-0 -mr-px",
+                        props.size === "sm" ? "mt-[-3px]" : "-mt-px"
+                      )}
+                    >
                       <FieldButton
                         {...buttonProps}
                         isPressed={state.isOpen}
                         size={props.size}
                       />
-                    </PopoverTrigger>
-                  </div>
+                    </div>
+                  </PopoverAnchor>
                 )}
               </InputGroup>
             </>
           )}
         </HStack>
-        <PopoverContent align="end" {...dialogProps}>
+        <PopoverContent
+          align="end"
+          {...dialogProps}
+          onInteractOutside={() => {
+            closedFromOutside.current = true;
+          }}
+          onCloseAutoFocus={
+            props.inline
+              ? undefined
+              : (event) => {
+                  const fromOutside = closedFromOutside.current;
+                  closedFromOutside.current = false;
+                  const focused = document.activeElement;
+                  if (fromOutside && focused && focused !== document.body) {
+                    return;
+                  }
+                  const button = anchorRef.current?.querySelector("button");
+                  if (!button) return;
+                  event.preventDefault();
+                  button.focus();
+                }
+          }
+        >
           <Calendar {...calendarProps} />
           <div className="pt-3">
             <TimeCombobox
@@ -146,7 +201,11 @@ const DateTimePicker = (
           </div>
           {props.inline && (
             <PopoverFooter>
-              <Button onClick={() => state.setValue(null)} variant="secondary">
+              <Button
+                onClick={() => state.setValue(null)}
+                variant="secondary"
+                aria-label={clearLabel}
+              >
                 Clear
               </Button>
             </PopoverFooter>

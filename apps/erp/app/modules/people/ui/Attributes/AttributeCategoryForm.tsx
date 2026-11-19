@@ -24,11 +24,13 @@ import { attributeCategoryValidator } from "../../people.models";
 
 type AttributeCategoryFormProps = {
   initialValues: z.infer<typeof attributeCategoryValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
 const AttributeCategoryForm = ({
   initialValues,
+  open = true,
   onClose
 }: AttributeCategoryFormProps) => {
   const { t } = useLingui();
@@ -40,7 +42,7 @@ const AttributeCategoryForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

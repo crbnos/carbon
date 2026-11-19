@@ -521,12 +521,17 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
 - `attachJob` (`fixedAssetId`, `jobId`): asset's class must be CIP and its
   status Draft / Under Construction; the job must not be in
   `CLOSED_JOB_STATUSES` (Completed / Cancelled / Closed), must have no
-  `salesOrderLineId` and no asset target. Sets `job.fixedAssetId` (guarded on
-  the job still having no target) and sweeps the job's current WIP balance:
+  `salesOrderLineId`, no asset target and not consume to its project (its
+  cost is the project's, and `complete_job_to_inventory` refuses such a job
+  with an asset target; the attach-job route lists none). Sets `job.fixedAssetId` (guarded on
+  the job still having no target) and sweeps the job's current WIP balance
+  (SQL `job_wip_balance`: the job's own WIP lines and its outside processing receipts):
   Dr CIP asset / Cr WIP (`'Asset Transfer'`, both lines `documentId = jobId`,
   the transfer in `documentLineReference`), one `fixedAssetCipCost` row
   (`'Job'`) and one transfer (`sourceType 'Job'`), asset → `Under Construction`
-  with `acquisitionCost += balance` (nothing is swept when the balance is 0; before
+  with `acquisitionCost += balance` (nothing is swept when the balance is 0 or
+  below — a negative balance stays in WIP for the close; the job is locked
+  `FOR UPDATE` and its status checked again before the WIP read; before
   the accounting cutover the balance is read from the job's Provisional WIP lines). An unset asset location is filled from the job.
 - `capitalizeCip` (`fixedAssetId`, `toClassId`, `inServiceDate`): asset must be
   `Under Construction` in a CIP class, target must not be CIP, and the asset

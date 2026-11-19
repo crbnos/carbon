@@ -3,31 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
-  type LineItemsBlock as LineItemsBlockType
+  type LineItemsBlock as LineItemsBlockType,
+  makeText,
+  purchaseOrderTexts
 } from "../../../template";
-import {
-  getLineDescriptionDetails,
-  getLineSupplierPartId,
-  getLineTotal
-} from "../../../utils/purchase-order";
-import { formatTaxPercent } from "../../../utils/shared";
 import { Note } from "../../components";
+import { Cell, TextCell } from "../Cell";
+import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
-
-const INDIRECT_TYPES = new Set([
-  "Service",
-  "G/L Account",
-  "Fixed Asset",
-  "Comment"
-]);
-const isIndirect = (t: string | null | undefined) =>
-  !!t && INDIRECT_TYPES.has(t);
+import { buildPurchaseOrderLineVars } from "./vars";
 
 /**
  * The purchase order's line table. Each row prints the item ID (an indirect
@@ -42,17 +31,25 @@ export function LineItemsBlock({
   data: PurchaseOrderData;
 }) {
   const tw = useTw();
-  const {
-    purchaseOrder,
-    purchaseOrderLines,
-    thumbnails,
-    numberFormatter,
-    rateFormatter,
-    theme,
-    locale
-  } = data;
+  const { purchaseOrderLines, thumbnails, theme } = data;
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
+  const t = makeText(purchaseOrderTexts.lineItems, block, data.vars);
+  const w = columnWidths(
+    [
+      { key: "number", width: 4 },
+      { key: "description", width: 22 },
+      { key: "qty", width: 8 },
+      { key: "uom", width: 7 },
+      { key: "required", width: 10 },
+      { key: "unitPrice", width: 12 },
+      { key: "netValue", width: 12 },
+      { key: "taxValue", width: 12 },
+      { key: "total", width: 13 }
+    ],
+    t.shows,
+    "description"
+  );
   let rowIndex = 0;
 
   return (
@@ -64,36 +61,42 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        <Text style={tw("w-[4%] text-center")}>#</Text>
-        <Text style={tw("w-[22%]")}>Description</Text>
-        <Text style={tw("w-[8%] text-center")}>Qty</Text>
-        <Text style={tw("w-[7%] text-center")}>UOM</Text>
-        <View style={tw("w-[10%] items-center")}>
-          <Text>Required</Text>
-        </View>
-        <Text style={tw("w-[12%] text-center")}>Unit Price</Text>
-        <Text style={tw("w-[12%] text-center")}>Net Value</Text>
-        <Text style={tw("w-[12%] text-center")}>Tax Value</Text>
-        <Text style={tw("w-[13%] text-center")}>Total</Text>
+        <TextCell width={w.number} style={tw("text-center")}>
+          {t("number")}
+        </TextCell>
+        <TextCell width={w.description}>{t("description")}</TextCell>
+        <TextCell width={w.qty} style={tw("text-center")}>
+          {t("qty")}
+        </TextCell>
+        <TextCell width={w.uom} style={tw("text-center")}>
+          {t("uom")}
+        </TextCell>
+        <Cell width={w.required} style={tw("items-center")}>
+          <Text>{t("required")}</Text>
+        </Cell>
+        <TextCell width={w.unitPrice} style={tw("text-center")}>
+          {t("unitPrice")}
+        </TextCell>
+        <TextCell width={w.netValue} style={tw("text-center")}>
+          {t("netValue")}
+        </TextCell>
+        <TextCell width={w.taxValue} style={tw("text-center")}>
+          {t("taxValue")}
+        </TextCell>
+        <TextCell width={w.total} style={tw("text-center")}>
+          {t("total")}
+        </TextCell>
       </View>
 
       {purchaseOrderLines.map((line) => {
         const isEven = rowIndex % 2 === 0;
         rowIndex++;
 
-        const netValue =
-          (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
-        const taxPercentLabel = formatTaxPercent(line.taxPercent, locale);
-        // An indirect line prints its description, not its item ID, so the
-        // number only repeats the line when it equals that description.
-        const supplierPartId = opts.showSupplierPartId
-          ? getLineSupplierPartId(
-              line,
-              isIndirect(line.purchaseOrderLineType)
-                ? line.description
-                : line.itemReadableId
-            )
-          : null;
+        const row = data.values.row(
+          "line",
+          line.id,
+          buildPurchaseOrderLineVars(line, rowIndex, data)
+        );
 
         return (
           <View key={line.id}>
@@ -112,42 +115,37 @@ export function LineItemsBlock({
               ]}
             >
               <View style={tw("flex flex-row")}>
-                <Text style={tw("w-[4%] text-center text-gray-400")}>
-                  {line.purchaseOrderLineType === "Comment" ? "" : rowIndex}
-                </Text>
-                <View style={tw("w-[22%] pr-2")}>
-                  {isIndirect(line.purchaseOrderLineType) ? (
+                <TextCell
+                  width={w.number}
+                  style={tw("text-center text-gray-400")}
+                >
+                  {t("numberCell", row)}
+                </TextCell>
+                <Cell width={w.description} style={tw("pr-2")}>
+                  {t.prints("descriptionCell", row) ? (
                     <Text style={{ ...tw("text-gray-900"), ...overflow }}>
-                      {line.description ?? ""}
-                    </Text>
-                  ) : (
-                    <>
-                      {line.itemReadableId ? (
-                        <Text style={{ ...tw("text-gray-900"), ...overflow }}>
-                          {line.itemReadableId}
-                        </Text>
-                      ) : null}
-                      <Text
-                        style={{
-                          ...tw("text-[7px] text-gray-600 mt-0.5"),
-                          ...overflow
-                        }}
-                      >
-                        {getLineDescriptionDetails(line)}
-                      </Text>
-                    </>
-                  )}
-                  {supplierPartId &&
-                  (!isIndirect(line.purchaseOrderLineType) ||
-                    line.purchaseOrderLineType === "Service") ? (
-                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
-                      Supplier Part ID: {supplierPartId}
+                      {t("descriptionCell", row)}
                     </Text>
                   ) : null}
-                  {purchaseOrder.purchaseOrderType === "Outside Processing" &&
-                  line.jobOperationDescription ? (
+                  {t.prints("detailsCell", row) ? (
+                    <Text
+                      style={{
+                        ...tw("text-[7px] text-gray-600 mt-0.5"),
+                        ...overflow
+                      }}
+                    >
+                      {t("detailsCell", row)}
+                    </Text>
+                  ) : null}
+                  {opts.showSupplierPartId &&
+                  t.prints("supplierPartCell", row) ? (
                     <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
-                      {line.jobOperationDescription}
+                      {t("supplierPartCell", row)}
+                    </Text>
+                  ) : null}
+                  {t.prints("operationCell", row) ? (
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                      {t("operationCell", row)}
                     </Text>
                   ) : null}
                   {opts.showThumbnails &&
@@ -162,60 +160,56 @@ export function LineItemsBlock({
                       />
                     </View>
                   ) : null}
-                  {(line.supplierShippingCost ?? 0) > 0 ? (
+                  {t.prints("shipping", row) ? (
                     <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
-                      Shipping:{" "}
-                      {numberFormatter.format(line.supplierShippingCost ?? 0)}
+                      {t("shipping", row)}
                     </Text>
                   ) : null}
-                </View>
-                <Text style={tw("w-[8%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : line.purchaseQuantity}
-                </Text>
-                <Text style={tw("w-[7%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : line.purchaseUnitOfMeasureCode}
-                </Text>
-                <Text style={tw("w-[10%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment" ||
-                  !line.requiredDate
-                    ? ""
-                    : formatDate(line.requiredDate, undefined, locale)}
-                </Text>
-                <Text style={tw("w-[12%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : rateFormatter.format(line.supplierUnitPrice ?? 0)}
-                </Text>
-                <Text style={tw("w-[12%] text-center text-gray-600")}>
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : numberFormatter.format(netValue)}
-                </Text>
-                <View style={tw("w-[12%]")}>
-                  {line.purchaseOrderLineType !== "Comment" ? (
-                    <View style={tw("flex flex-col items-center")}>
-                      <Text style={tw("text-gray-600")}>
-                        {numberFormatter.format(line.supplierTaxAmount ?? 0)}
-                      </Text>
-                      {taxPercentLabel ? (
-                        <Text style={tw("text-[6px] text-gray-400")}>
-                          {taxPercentLabel}
-                        </Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-                <Text
-                  style={tw("w-[13%] text-center text-gray-800 font-medium")}
+                </Cell>
+                <TextCell width={w.qty} style={tw("text-center text-gray-600")}>
+                  {t("qtyCell", row)}
+                </TextCell>
+                <TextCell width={w.uom} style={tw("text-center text-gray-600")}>
+                  {t("uomCell", row)}
+                </TextCell>
+                <TextCell
+                  width={w.required}
+                  style={tw("text-center text-gray-600")}
                 >
-                  {line.purchaseOrderLineType === "Comment"
-                    ? ""
-                    : numberFormatter.format(getLineTotal(line))}
-                </Text>
+                  {t("requiredCell", row)}
+                </TextCell>
+                <TextCell
+                  width={w.unitPrice}
+                  style={tw("text-center text-gray-600")}
+                >
+                  {t("unitPriceCell", row)}
+                </TextCell>
+                <TextCell
+                  width={w.netValue}
+                  style={tw("text-center text-gray-600")}
+                >
+                  {t("netValueCell", row)}
+                </TextCell>
+                <Cell width={w.taxValue}>
+                  <View style={tw("flex flex-col items-center")}>
+                    {t.prints("taxValueCell", row) ? (
+                      <Text style={tw("text-gray-600")}>
+                        {t("taxValueCell", row)}
+                      </Text>
+                    ) : null}
+                    {t.prints("taxPercentCell", row) ? (
+                      <Text style={tw("text-[6px] text-gray-400")}>
+                        {t("taxPercentCell", row)}
+                      </Text>
+                    ) : null}
+                  </View>
+                </Cell>
+                <TextCell
+                  width={w.total}
+                  style={tw("text-center text-gray-800 font-medium")}
+                >
+                  {t("totalCell", row)}
+                </TextCell>
               </View>
             </View>
             {Object.keys(line.externalNotes ?? {}).length > 0 ? (

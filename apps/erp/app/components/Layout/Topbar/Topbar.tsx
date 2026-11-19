@@ -24,7 +24,7 @@ const Topbar = () => {
   if (isPhone) return null;
 
   return (
-    <div className="h-[var(--topbar-height)] grid grid-cols-[1fr_auto] bg-card border-b border-border text-foreground px-4 top-0 sticky z-10 items-center">
+    <header className="h-[var(--topbar-height)] grid grid-cols-[1fr_auto] bg-card border-b border-border text-foreground px-4 top-0 sticky z-10 items-center">
       <div className="flex-1 hidden md:block">
         <Breadcrumbs />
       </div>
@@ -49,7 +49,7 @@ const Topbar = () => {
 
         <AvatarMenu />
       </HStack>
-    </div>
+    </header>
   );
 };
 

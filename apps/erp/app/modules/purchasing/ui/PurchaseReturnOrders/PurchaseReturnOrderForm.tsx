@@ -129,7 +129,7 @@ const PurchaseReturnOrderForm = ({
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Supplier Return</Trans>
             ) : (

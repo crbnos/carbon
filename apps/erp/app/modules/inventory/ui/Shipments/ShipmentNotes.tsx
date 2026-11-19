@@ -20,7 +20,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -33,6 +33,7 @@ const ShipmentNotes = ({
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;
 }) => {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -103,6 +104,7 @@ const ShipmentNotes = ({
             <TabsContent value="internal">
               {permissions.can("update", "inventory") ? (
                 <Editor
+                  label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -120,6 +122,7 @@ const ShipmentNotes = ({
             <TabsContent value="external">
               {permissions.can("update", "inventory") ? (
                 <Editor
+                  label={t`External notes`}
                   initialValue={(externalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {

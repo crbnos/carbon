@@ -5,9 +5,10 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteCostCenter,
@@ -73,19 +74,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteCostCenterRoute() {
   const { costCenterId } = useParams();
   const { costCenter } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.costCenters);
 
   if (!costCenter) return null;
   if (!costCenterId) throw new Error("costCenterId is not found");
-
-  const onCancel = () => navigate(path.to.costCenters);
 
   return (
     <ConfirmDelete
       action={path.to.deleteCostCenter(costCenterId)}
       name={costCenter.name}
       text={`Are you sure you want to delete the cost center: ${costCenter.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

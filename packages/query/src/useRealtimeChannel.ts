@@ -9,7 +9,7 @@ import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef } from "react";
 
-const log = getLogger("react", "realtime-channel");
+const log = getLogger("query", "realtime-channel");
 
 // Browsers throttle a hidden tab's timers hard after five minutes, so the
 // socket's heartbeat can no longer vouch for it. Before that a joined channel

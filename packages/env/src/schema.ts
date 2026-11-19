@@ -125,7 +125,8 @@ export const schema = define({
     group: "core",
     type: z.enum(["single", "multi"]),
     description:
-      "single for a deployment one customer owns (BYOC, self-hosted); multi (default) for Carbon Cloud"
+      "single for a deployment one customer owns (BYOC, self-hosted); multi (default) for Carbon Cloud",
+    browser: true
   },
   MAINTENANCE_MODE: {
     group: "core",
@@ -306,8 +307,8 @@ export const schema = define({
   },
   BOT_PROTECTION: {
     group: "auth",
-    description: "Login bot check: botid or turnstile",
-    type: z.enum(["botid", "turnstile"])
+    description: "Login bot check: botid, turnstile or none",
+    type: z.enum(["botid", "turnstile", "none"])
   },
   CLOUDFLARE_TURNSTILE_SITE_KEY: {
     group: "auth",

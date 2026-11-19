@@ -32,7 +32,12 @@ import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuListChecks, LuRotateCcw, LuSave } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuListChecks,
+  LuRotateCcw,
+  LuSave
+} from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -442,7 +447,7 @@ const PaymentApplyTable = ({
       ),
     []
   );
-  const onSave = () => {
+  const onSave = (post: boolean) => {
     if (preview.error) return;
     const applications = buildApplications(rows, {
       targets,
@@ -451,6 +456,7 @@ const PaymentApplyTable = ({
     });
     const formData = new FormData();
     formData.set("applications", JSON.stringify(applications));
+    if (post) formData.set("intent", "post");
     fetcher.submit(formData, {
       method: "post",
       action: path.to.paymentApplicationsSet(paymentId)
@@ -458,6 +464,7 @@ const PaymentApplyTable = ({
   };
 
   const isSaving = fetcher.state !== "idle";
+  const canSave = canEdit && !overApplied && !overSettled && !preview.error;
 
   return (
     <Card className="w-full">
@@ -521,10 +528,16 @@ const PaymentApplyTable = ({
               )}
             </p>
             <p className="text-sm text-muted-foreground mt-1 text-pretty">
-              <Trans>
-                This counterparty has nothing outstanding — the payment will be
-                recorded on-account.
-              </Trans>
+              {paymentScope ? (
+                <Trans>
+                  Unapplied cash is held as an advance for this document.
+                </Trans>
+              ) : (
+                <Trans>
+                  This counterparty has nothing outstanding — the payment will
+                  be recorded on-account.
+                </Trans>
+              )}
             </p>
           </div>
         ) : (
@@ -588,7 +601,15 @@ const PaymentApplyTable = ({
                   className="mt-1 flex items-baseline justify-between text-xs text-muted-foreground"
                 >
                   <span>
-                    {document ? (
+                    {deposit.scope?.type === "purchaseOrder" ? (
+                      document ? (
+                        <Trans>
+                          Prepayment for {document} (its invoices only)
+                        </Trans>
+                      ) : (
+                        <Trans>Prepayment (its order's invoices only)</Trans>
+                      )
+                    ) : document ? (
                       <Trans>Deposit for {document} (its invoices only)</Trans>
                     ) : (
                       <Trans>Deposit (its document's invoices only)</Trans>
@@ -635,16 +656,25 @@ const PaymentApplyTable = ({
               </span>
             )}
           </span>
-          <Button
-            leftIcon={<LuSave />}
-            onClick={onSave}
-            isLoading={isSaving}
-            isDisabled={
-              !canEdit || overApplied || overSettled || Boolean(preview.error)
-            }
-          >
-            <Trans>Save applications</Trans>
-          </Button>
+          <HStack>
+            <Button
+              variant="secondary"
+              leftIcon={<LuSave />}
+              onClick={() => onSave(false)}
+              isLoading={isSaving && fetcher.formData?.get("intent") !== "post"}
+              isDisabled={isSaving || !canSave}
+            >
+              <Trans>Save applications</Trans>
+            </Button>
+            <Button
+              leftIcon={<LuCheckCheck />}
+              onClick={() => onSave(true)}
+              isLoading={isSaving && fetcher.formData?.get("intent") === "post"}
+              isDisabled={isSaving || !canSave}
+            >
+              <Trans>Save and Post</Trans>
+            </Button>
+          </HStack>
         </HStack>
       </CardFooter>
     </Card>

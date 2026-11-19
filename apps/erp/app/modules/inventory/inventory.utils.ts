@@ -17,7 +17,8 @@ type TrackedEntityStatus = Database["public"]["Enums"]["trackedEntityStatus"];
 
 /**
  * The tracked-entity statuses a shipment of this source may ship. A return to
- * a customer ships returned stock, On Hold until it leaves. A return to a
+ * a customer ships what came back on the return: returned stock, On Hold
+ * until it leaves, and a serviced unit, Available at the depot. A return to a
  * supplier ships good stock or the units an inspection or issue rejected —
  * sending rejects back is the point of the return. Everything else ships
  * Available stock only. `assignShipmentLineEntity`, `ShipmentLines` and
@@ -26,7 +27,7 @@ type TrackedEntityStatus = Database["public"]["Enums"]["trackedEntityStatus"];
 export function shippableEntityStatuses(
   sourceDocument: string | null | undefined
 ): TrackedEntityStatus[] {
-  if (sourceDocument === "Sales Return Order") return ["On Hold"];
+  if (sourceDocument === "Sales Return Order") return ["On Hold", "Available"];
   if (sourceDocument === "Purchase Return Order") {
     return ["Available", "Rejected"];
   }
@@ -409,4 +410,126 @@ export function spreadBatchCount(
     left = round(left - take);
     return { lineId: part.id, countedQuantity: take };
   });
+}
+
+/**
+ * The tracked-entity list has one column per batch property label, across
+ * items: "Heat number" on three materials is one column, and its filter finds
+ * a heat on any of them. The column id (and URL filter key) is the label as a
+ * slug, so it holds no ":" (the filter separator) and survives a new item.
+ */
+export const BATCH_PROPERTY_COLUMN_PREFIX = "property.";
+
+export function batchPropertyColumnKey(label: string) {
+  const slug = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${BATCH_PROPERTY_COLUMN_PREFIX}${slug}`;
+}
+
+export type BatchPropertyDataType =
+  Database["public"]["Enums"]["configurationParameterDataType"];
+
+export type BatchPropertyColumn = {
+  key: string;
+  label: string;
+  /** "text" when the items' properties of this label disagree. */
+  dataType: BatchPropertyDataType;
+  listOptions: string[];
+  /** The `batchProperty` rows behind the column, one per item. */
+  properties: { id: string; itemId: string }[];
+};
+
+/** Groups an item's batch property definitions into list columns by label. */
+export function batchPropertyColumns(
+  properties: {
+    id: string;
+    itemId: string;
+    label: string;
+    dataType: BatchPropertyDataType;
+    listOptions: string[] | null;
+  }[]
+): BatchPropertyColumn[] {
+  const byKey = new Map<string, BatchPropertyColumn>();
+  for (const property of properties) {
+    const key = batchPropertyColumnKey(property.label);
+    if (key === BATCH_PROPERTY_COLUMN_PREFIX) continue;
+    const column = byKey.get(key);
+    if (!column) {
+      byKey.set(key, {
+        key,
+        label: property.label.trim(),
+        dataType: property.dataType,
+        listOptions: [...(property.listOptions ?? [])],
+        properties: [{ id: property.id, itemId: property.itemId }]
+      });
+      continue;
+    }
+    column.properties.push({ id: property.id, itemId: property.itemId });
+    if (column.dataType !== property.dataType) column.dataType = "text";
+    for (const option of property.listOptions ?? []) {
+      if (!column.listOptions.includes(option)) column.listOptions.push(option);
+    }
+  }
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
+}
+
+/** A row's value for a property column: the one its item's property holds. */
+export function batchPropertyValue(
+  column: BatchPropertyColumn,
+  row: { itemId: string | null; attributes: unknown }
+): unknown {
+  const attributes = (row.attributes ?? {}) as Record<string, unknown>;
+  const property = column.properties.find((p) => p.itemId === row.itemId);
+  return property ? attributes[property.id] : undefined;
+}
+
+/** A row's CSV value for a property column: the value as text, or empty. */
+export function batchPropertyExportValue(
+  column: BatchPropertyColumn,
+  row: { itemId: string | null; attributes: unknown }
+): string | null {
+  const value = batchPropertyValue(column, row);
+  return value === undefined || value === null ? null : String(value);
+}
+
+/** A filter value quoted for a PostgREST `or` / `and` list. */
+function postgrestValue(value: string) {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * The PostgREST `or` filter for a property column filter: the value on any of
+ * the label's items. A yes/no property that was never set reads "No", like
+ * the switch on the receipt. `between` is `from,to`, either side open.
+ */
+export function batchPropertyFilter(
+  column: BatchPropertyColumn,
+  operator: string,
+  value: string
+): string {
+  const clauses = column.properties.map(({ id, itemId }) => {
+    const path = `attributes->>${id}`;
+    if (operator === "between") {
+      const [from, to] = value.split(",");
+      const bounds = [
+        from ? `${path}.gte.${postgrestValue(from)}` : null,
+        to ? `${path}.lte.${postgrestValue(to)}` : null
+      ].filter(Boolean);
+      return bounds.length > 0
+        ? `and(${bounds.join(",")})`
+        : `${path}.not.is.null`;
+    }
+    const values = operator === "in" ? value.split(",") : [value];
+    const matches = [`${path}.in.(${values.map(postgrestValue).join(",")})`];
+    if (column.dataType === "boolean" && values.includes("false")) {
+      matches.push(`and(itemId.eq.${postgrestValue(itemId)},${path}.is.null)`);
+    }
+    return matches.join(",");
+  });
+  return clauses.join(",");
 }

@@ -98,6 +98,7 @@ export default function MultiValueCombobox({
                   <BadgeCloseButton
                     type="button"
                     tabIndex={-1}
+                    aria-label={t`Remove ${opt.label}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -125,6 +126,7 @@ export default function MultiValueCombobox({
         <div className="flex items-center gap-2 border-b border-border px-3 h-10">
           <LuSearch className="size-4 shrink-0 text-muted-foreground" />
           <input
+            aria-label={t`Search`}
             ref={inputRef}
             type="text"
             value={search}

@@ -13,10 +13,11 @@ import {
 } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  resolveTemplate,
+  type DocumentEdit,
   templateShowsThumbnails,
-  toDocumentTemplate
+  type ValueCollector
 } from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -30,7 +31,6 @@ import {
   getAccountsPayableBillingAddress,
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -81,12 +81,17 @@ export async function renderPurchaseOrderPdf(
     companyId,
     companyGroupId,
     purchaseOrderId,
-    locale
+    locale,
+    edit,
+    valueCollector
   }: {
     companyId: string;
     companyGroupId: string;
     purchaseOrderId: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -98,7 +103,7 @@ export async function renderPurchaseOrderPdf(
     purchaseOrderLocations,
     terms,
     paymentTerms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -108,7 +113,11 @@ export async function renderPurchaseOrderPdf(
     getPurchaseOrderLocations(client, purchaseOrderId),
     getPurchasingTerms(client, companyId),
     getPaymentTermsList(client, companyId),
-    getDocumentTemplate(client, companyId, "purchaseOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "purchaseOrder", documentId: purchaseOrderId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -147,10 +156,6 @@ export async function renderPurchaseOrderPdf(
     throw new Error("Failed to load purchase order");
   }
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "purchaseOrder"
-  );
   const showThumbnails = templateShowsThumbnails(
     templateConfig,
     "purchaseOrder"
@@ -190,13 +195,12 @@ export async function renderPurchaseOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = resolveTemplate("purchaseOrder", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -222,6 +226,7 @@ export async function renderPurchaseOrderPdf(
   const body = await collect(
     await renderToStream(
       <PurchaseOrderPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         accountsPayableBillingAddress={
@@ -257,12 +262,17 @@ export async function renderPurchaseReturnOrderPdf(
     companyId,
     companyGroupId,
     purchaseReturnOrderId,
-    locale
+    locale,
+    edit,
+    valueCollector
   }: {
     companyId: string;
     companyGroupId: string;
     purchaseReturnOrderId: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -271,14 +281,22 @@ export async function renderPurchaseReturnOrderPdf(
     purchaseReturnOrder,
     purchaseReturnOrderLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getPurchaseReturnOrder(client, purchaseReturnOrderId),
     getPurchaseReturnOrderLines(client, purchaseReturnOrderId, companyId),
     getPurchasingTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "purchaseReturnOrder")
+    getPrintedTemplate(
+      client,
+      {
+        companyId,
+        documentType: "purchaseReturnOrder",
+        documentId: purchaseReturnOrderId
+      },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -371,17 +389,12 @@ export async function renderPurchaseReturnOrderPdf(
       }
     : null;
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "purchaseReturnOrder"
-  );
-  const resolved = resolveTemplate("purchaseReturnOrder", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -390,6 +403,7 @@ export async function renderPurchaseReturnOrderPdf(
   const body = await collect(
     await renderToStream(
       <PurchaseReturnOrderPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         locale={locale}
@@ -404,7 +418,6 @@ export async function renderPurchaseReturnOrderPdf(
         shipFromAddress={shipFromAddress}
         supplierAddress={supplierAddress}
         terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
-        title="Return to Supplier"
         template={templateConfig}
         sections={sections}
       />
@@ -423,11 +436,16 @@ export async function renderPurchasingRfqPdf(
   {
     companyId,
     purchasingRfqId,
-    locale
+    locale,
+    edit,
+    valueCollector
   }: {
     companyId: string;
     purchasingRfqId: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -436,14 +454,18 @@ export async function renderPurchasingRfqPdf(
     purchasingRfq,
     purchasingRfqLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getPurchasingRFQ(client, purchasingRfqId),
     getPurchasingRFQLines(client, purchasingRfqId),
     getPurchasingTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "purchasingRfq")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "purchasingRfq", documentId: purchasingRfqId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -475,10 +497,6 @@ export async function renderPurchasingRfqPdf(
     throw new Error("Failed to load request for quote");
   }
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "purchasingRfq"
-  );
   const showThumbnails = templateShowsThumbnails(
     templateConfig,
     "purchasingRfq"
@@ -525,17 +543,17 @@ export async function renderPurchasingRfqPdf(
       }
     : null;
 
-  const resolved = resolveTemplate("purchasingRfq", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   const body = await collect(
     await renderToStream(
       <PurchasingRfqPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         locale={locale}

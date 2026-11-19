@@ -17,7 +17,7 @@ import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
@@ -52,6 +52,7 @@ export function ColumnCard<T extends Item = Item>({
   disableColumnDrag = false,
   CardComponent = ItemCard
 }: ColumnCardProps<T>) {
+  const { t } = useLingui();
   const [params] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const itemsIds = useMemo(() => {
@@ -77,7 +78,7 @@ export function ColumnCard<T extends Item = Item>({
       column
     },
     attributes: {
-      roleDescription: `Column: ${column.title}`
+      roleDescription: t`Column: ${column.title}`
     }
   });
 
@@ -124,7 +125,11 @@ export function ColumnCard<T extends Item = Item>({
       >
         <div className="flex flex-grow items-start space-x-2">
           {!column.isBlocked && (column.active || !isDateView) ? (
-            <PulsingDot inactive={!column.active} className="mt-2" />
+            <PulsingDot
+              inactive={!column.active}
+              label={column.active ? t`Active` : t`Inactive`}
+              className="mt-2"
+            />
           ) : null}
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
@@ -157,7 +162,7 @@ export function ColumnCard<T extends Item = Item>({
         </div>
         {!disableColumnDrag && (
           <IconButton
-            aria-label={`Move column: ${column.title}`}
+            aria-label={t`Move column: ${column.title}`}
             icon={<LuGripVertical />}
             variant={"ghost"}
             {...attributes}

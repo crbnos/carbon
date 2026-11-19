@@ -69,7 +69,6 @@ function InputOTPSlot({
 }
 function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
   return (
-    // biome-ignore lint/a11y/useAriaPropsForRole: suppressed due to migration
     <div data-slot="input-otp-separator" role="separator" {...props}>
       <LuMinus />
     </div>

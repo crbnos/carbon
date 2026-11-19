@@ -18,6 +18,7 @@ import {
   buildCreditApplications,
   type ExistingApplication,
   fundingRequests,
+  heldAdvanceCovering,
   initialPaymentKind,
   type OpenInvoice,
   type PaymentApplication,
@@ -83,6 +84,130 @@ describe("payment kind", () => {
       expect(paymentDocumentCurrency(currency, base)).toBe(expected);
     }
   );
+});
+
+describe("advance held for a seeded invoice's order", () => {
+  const po1 = { type: "purchaseOrder" as const, id: "po-1" };
+  const held = (
+    remainingDocument: number,
+    scope: FundingScope | null,
+    overrides: Partial<FundingSource> = {}
+  ): FundingSource => ({
+    paymentId: "advance",
+    postingDate: "2026-09-01",
+    exchangeRate: 1,
+    remainingDocument,
+    remainingBase: remainingDocument,
+    scope,
+    ...overrides
+  });
+
+  it("covers the order's invoice up to what is still held", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
+        [held(300, po1)],
+        2
+      )
+    ).toBe(300);
+  });
+
+  it("never covers more than the invoice is due", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 250, purchaseOrderIds: ["po-1"] }],
+        [held(300, po1)],
+        2
+      )
+    ).toBe(250);
+  });
+
+  it("is spent once across invoices of the same order", () => {
+    expect(
+      heldAdvanceCovering(
+        [
+          { cashDue: 200, purchaseOrderIds: ["po-1"] },
+          { cashDue: 200, purchaseOrderIds: ["po-1"] }
+        ],
+        [held(300, po1)],
+        2
+      )
+    ).toBe(300);
+  });
+
+  it("covers a sales order's invoice from the order's deposit", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, salesOrderIds: ["so-1"] }],
+        [held(300, { type: "salesOrder", id: "so-1" })],
+        2
+      )
+    ).toBe(300);
+  });
+
+  it("leaves another order's advance and on-account credit alone", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
+        [
+          held(300, { type: "purchaseOrder", id: "po-2" }),
+          held(500, null, { paymentId: "on-account" })
+        ],
+        2
+      )
+    ).toBe(0);
+  });
+
+  // A rental deposit is refundable security; a contract deposit is liquidated
+  // at the contract's rate. Neither is applied in full by default.
+  it.each([
+    ["rentalAgreement", { rentalAgreementIds: ["doc"] }],
+    ["customerContract", { customerContractIds: ["doc"] }]
+  ] as const)("leaves a %s deposit for the user to apply", (type, billed) => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, ...billed }],
+        [held(300, { type, id: "doc" })],
+        2
+      )
+    ).toBe(0);
+  });
+
+  it("leaves cash that, with the advance, settles the invoice in full", () => {
+    const sources = [held(300, po1)];
+    const covered = heldAdvanceCovering(
+      [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
+      sources,
+      2
+    );
+    const { applications } = allocatePaymentFunding({
+      currentPayment: held(1000 - covered, null, {
+        paymentId: "current",
+        postingDate: "2026-09-07"
+      }),
+      priorSources: sources,
+      requests: [
+        {
+          targetId: "invoice",
+          targetExchangeRate: 1,
+          remainingDocument: 1000,
+          remainingBase: 1000,
+          requestedDocumentPrincipal: 1000,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          purchaseOrderIds: ["po-1"]
+        }
+      ],
+      currencyDecimals: 2,
+      isAR: false
+    });
+    expect(
+      applications.map((a) => [a.sourcePaymentId, a.sourceAmount])
+    ).toEqual([
+      [null, 700],
+      ["advance", 300]
+    ]);
+  });
 });
 
 describe("apply to invoices", () => {
@@ -686,6 +811,17 @@ describe("applications history", () => {
         sourceRates: [1.2, 1.1]
       }
     ]);
+  });
+
+  it("counts a refund of a prior advance as cash applied by the refund", () => {
+    const refunds = [
+      split({
+        targetSalesInvoiceId: null,
+        targetPaymentId: "advance",
+        sourcePaymentId: "advance"
+      })
+    ];
+    expect(unappliedPaymentCash(44, refunds)).toBe(0);
   });
 
   it("counts only this payment's own cash against its unapplied amount", () => {

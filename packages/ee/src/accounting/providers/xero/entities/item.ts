@@ -3,10 +3,13 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+
+const logger = getLogger("ee", "accounting", "xero");
 
 // Type for rows returned from item queries with cost/price joins
 type ItemRow = {
@@ -212,8 +215,13 @@ export class ItemSyncer extends BaseEntitySyncer<
     // (name/price sync) so item sync is never blocked.
     const remote = await this.fetchRemote(existingRemoteId);
     if (remote?.IsTrackedAsInventory) {
-      console.warn(
-        `[XeroItemSyncer] Xero item ${local.code} (${existingRemoteId}) is still tracked as inventory. Bills/invoices referencing it will post inventory/COGS in Xero, double-counting Carbon's valuation. Zero its stock and untrack it in Xero (Products & Services → the item → untick "I track this item"), then retry.`
+      logger.warning(
+        'Xero item is still tracked as inventory. Bills/invoices referencing it will post inventory/COGS in Xero, double-counting Carbon\'s valuation. Zero its stock and untrack it in Xero (Products & Services → the item → untick "I track this item"), then retry.',
+        {
+          companyId: this.companyId,
+          itemCode: local.code,
+          remoteId: existingRemoteId
+        }
       );
     }
 

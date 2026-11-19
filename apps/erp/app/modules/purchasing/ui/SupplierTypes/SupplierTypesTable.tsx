@@ -8,7 +8,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
@@ -37,11 +37,12 @@ const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
         accessorKey: "name",
         header: t`Supplier Type`,
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id as string)}
-            className="cursor-pointer"
-          />
+          <Link
+            to={row.original.id as string}
+            className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Enumerable value={row.original.name} className="cursor-pointer" />
+          </Link>
         ),
         meta: {
           mobile: "P1",
@@ -50,7 +51,7 @@ const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [navigate, customColumns, t]);
+  }, [customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: SupplierType) => {

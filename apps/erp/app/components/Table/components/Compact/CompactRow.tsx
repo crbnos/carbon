@@ -35,7 +35,7 @@ function renderCell<T>(row: Row<T>, column: Column<T, unknown> | undefined) {
 type CompactRowProps<T> = {
   row: Row<T>;
   slots: CompactSlots<T>;
-  selection?: { selected: boolean; onToggle: () => void };
+  selection?: { selected: boolean; onToggle: () => void; label?: string };
   expansion?: { expanded: boolean; onToggle: () => void };
   className?: string;
 };
@@ -170,7 +170,9 @@ export function CompactRow<T>({
       {selection ? (
         <button
           type="button"
-          aria-label={t`Select row`}
+          aria-label={
+            selection.label ? t`Select ${selection.label}` : t`Select row`
+          }
           className="absolute inset-0"
           onClick={selection.onToggle}
         />

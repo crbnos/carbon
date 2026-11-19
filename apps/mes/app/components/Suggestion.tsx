@@ -164,6 +164,7 @@ const Suggestion = () => {
           <TextAreaControlled
             name="suggestion"
             label=""
+            aria-label={t`Suggestion`}
             value={suggestion}
             onChange={(value) => setSuggestion(value)}
             placeholder={t`Ideas, suggestions or problems?`}
@@ -173,6 +174,7 @@ const Suggestion = () => {
               {attachment.name}
               <BadgeCloseButton
                 type="button"
+                aria-label={t`Remove ${attachment.name}`}
                 onClick={() => {
                   setAttachment(null);
                 }}
@@ -184,6 +186,7 @@ const Suggestion = () => {
           <VStack spacing={2}>
             <HStack spacing={2}>
               <Checkbox
+                aria-label={t`Submit anonymously`}
                 isChecked={anonymous}
                 onCheckedChange={(checked) => setAnonymous(checked === true)}
               />
@@ -194,6 +197,7 @@ const Suggestion = () => {
             {CARBON_SLACK_ENABLED && (
               <HStack spacing={2}>
                 <Checkbox
+                  aria-label={t`Send to Carbon`}
                   isChecked={sendToCarbon}
                   onCheckedChange={(checked) =>
                     setSendToCarbon(checked === true)
@@ -209,6 +213,7 @@ const Suggestion = () => {
             <PopoverTrigger asChild>
               <button
                 type="button"
+                aria-label={t`Emoji: ${emoji}`}
                 className="inline-flex items-center justify-center rounded-md h-10 w-10 text-2xl hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0"
               >
                 {emoji}
@@ -255,7 +260,7 @@ const Suggestion = () => {
             </Button>
             <File
               accept="image/*"
-              aria-label="Attach File"
+              aria-label={t`Attach file`}
               className="px-2"
               isDisabled={!!attachment}
               variant="secondary"
@@ -290,7 +295,9 @@ const Suggestion = () => {
       <PopoverTrigger ref={popoverTriggerRef} asChild>
         <NavRailItem icon={<LuMailbox />} label={t`Suggestion`} />
       </PopoverTrigger>
-      <PopoverContent className="w-[380px] ">{form}</PopoverContent>
+      <PopoverContent className="w-[380px] " aria-label={t`Suggestion`}>
+        {form}
+      </PopoverContent>
     </Popover>
   );
 };

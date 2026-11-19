@@ -5,9 +5,10 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteFixedAsset,
@@ -65,19 +66,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteFixedAssetRoute() {
   const { fixedAssetId } = useParams();
   const { asset } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.fixedAsset(fixedAssetId!));
 
   if (!asset) return null;
   if (!fixedAssetId) throw new Error("fixedAssetId is not found");
-
-  const onCancel = () => navigate(path.to.fixedAsset(fixedAssetId));
 
   return (
     <ConfirmDelete
       action={path.to.deleteFixedAsset(fixedAssetId)}
       name={asset.fixedAssetId}
       text={`Are you sure you want to delete ${asset.fixedAssetId}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

@@ -21,6 +21,7 @@ import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
+  LuCoins,
   LuHandCoins,
   LuShoppingCart,
   LuTicketX,
@@ -28,6 +29,11 @@ import {
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  type DocumentForceDeleteData,
+  DocumentForceDeleteMenuItem,
+  DocumentForceDeleteModal
+} from "~/components/ForceDelete/DocumentForceDelete";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -49,6 +55,7 @@ import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
 import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
+import PurchaseInvoiceRoundingModal from "./PurchaseInvoiceRoundingModal";
 import PurchaseInvoiceVoidModal from "./PurchaseInvoiceVoidModal";
 
 const PurchaseInvoiceHeader = () => {
@@ -59,7 +66,9 @@ const PurchaseInvoiceHeader = () => {
   const { company } = useUser();
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
+  const roundingModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "purchaseInvoice",
     // @ts-expect-error TS2322 - TODO: fix type
@@ -82,16 +91,18 @@ const PurchaseInvoiceHeader = () => {
 
   const [items] = useItems();
   const [suppliers] = useSuppliers();
-  const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
-    orgHasCredits: boolean;
-    rampMapping: {
-      id: string;
-      externalId: string | null;
-      metadata: { deepLink?: string } | null;
-    } | null;
-  }>(path.to.purchaseInvoice(invoiceId));
+  const routeData = useRouteData<
+    {
+      purchaseInvoice: PurchaseInvoice;
+      purchaseInvoiceLines: PurchaseInvoiceLine[];
+      orgHasCredits: boolean;
+      rampMapping: {
+        id: string;
+        externalId: string | null;
+        metadata: { deepLink?: string } | null;
+      } | null;
+    } & DocumentForceDeleteData
+  >(path.to.purchaseInvoice(invoiceId));
   const rampMapping = routeData?.rampMapping ?? null;
   const rampDeepLink = rampMapping?.metadata?.deepLink ?? null;
 
@@ -206,10 +217,29 @@ const PurchaseInvoiceHeader = () => {
     invoiceId,
     balance: purchaseInvoice.balance
   });
-  const isDraft = routeData?.purchaseInvoice?.status === "Draft";
+  const status = routeData?.purchaseInvoice?.status;
+  const isDraft = status === "Draft";
+  // A posted invoice can be adjusted too; that posts a journal.
+  const canAdjustRounding =
+    !!status && status !== "Pending" && status !== "Voided";
   const menuItems = (
     <>
       {auditLogTrigger}
+      {canAdjustRounding && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={
+              !permissions.can("update", "invoicing") ||
+              (!isDraft && !permissions.can("update", "accounting"))
+            }
+            onClick={roundingModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuCoins />} />
+            <Trans>Adjust for Rounding</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
       {isPosted && (
         <>
           <DropdownMenuSeparator />
@@ -237,6 +267,11 @@ const PurchaseInvoiceHeader = () => {
         <DropdownMenuIcon icon={<LuTrash />} />
         <Trans>Delete Purchase Invoice</Trans>
       </DropdownMenuItem>
+      <DocumentForceDeleteMenuItem
+        forceDelete={routeData}
+        canDelete={permissions.can("delete", "invoicing")}
+        onClick={forceDeleteModal.onOpen}
+      />
     </>
   );
   const statusBadges = (
@@ -378,29 +413,52 @@ const PurchaseInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
-        <PurchaseInvoicePostModal
+      <PurchaseInvoicePostModal
+        isOpen={postingModal.isOpen}
+        invoiceId={invoiceId}
+        onClose={postingModal.onClose}
+        linesToReceive={linesNotAssociatedWithPO}
+      />
+      <PurchaseInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      {roundingModal.isOpen && (
+        <PurchaseInvoiceRoundingModal
+          open
           invoiceId={invoiceId}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToReceive={linesNotAssociatedWithPO}
+          isPosted={!isDraft}
+          currencyCode={
+            purchaseInvoice.currencyCode ?? company.baseCurrencyCode
+          }
+          // The view's total is in base currency; the invoice is matched in its own.
+          total={
+            (purchaseInvoice.totalAmount ?? 0) *
+            (purchaseInvoice.exchangeRate ?? 1)
+          }
+          onClose={roundingModal.onClose}
         />
       )}
-      {voidModal.isOpen && (
-        <PurchaseInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchaseInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.purchaseInvoice?.invoiceId ?? "purchase invoice"}
-          text={t`Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deletePurchaseInvoice(invoiceId)}
+        name={routeData?.purchaseInvoice?.invoiceId ?? "purchase invoice"}
+        text={t`Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      {routeData?.isAdmin && (
+        <DocumentForceDeleteModal
+          documentType="purchaseInvoice"
+          documentId={invoiceId}
+          readableId={purchaseInvoice.invoiceId ?? invoiceId}
+          status={purchaseInvoice.status ?? "Draft"}
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
         />
       )}
       {auditLogDrawer}

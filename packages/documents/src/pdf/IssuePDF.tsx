@@ -2,14 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  issueTexts,
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   ActionTask,
   Associations,
@@ -19,9 +21,9 @@ import type {
   ListItem
 } from "./blocks/issue";
 import { buildIssueVars, issueBlockRegistry } from "./blocks/issue";
-import { Template } from "./components";
 
 interface IssuePDFProps extends PDF {
+  valueCollector?: ValueCollector;
   nonConformance: IssueData["nonConformance"];
   nonConformanceTypes: IssueData["nonConformanceTypes"];
   actionTasks: ActionTask[];
@@ -37,6 +39,7 @@ interface IssuePDFProps extends PDF {
 }
 
 const IssuePDF = ({
+  valueCollector,
   company,
   meta,
   nonConformance,
@@ -50,21 +53,31 @@ const IssuePDF = ({
   jobOperationStepRecords = [],
   operationToJobId = {},
   locale,
-  title = "Issue Report",
   template,
   sections = {}
 }: IssuePDFProps) => {
   const resolved = resolveTemplate("issue", template ?? null);
-  const vars = buildIssueVars({ nonConformance, company });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(resolved.headerSectionId
-      ? (sections[resolved.headerSectionId]?.config ?? {})
-      : {})
-  };
+  const values = documentValues(resolved.settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildIssueVars({
+      nonConformance,
+      nonConformanceTypes,
+      assignees,
+      company,
+      locale
+    })
+  );
+  const chrome = documentChrome({
+    texts: issueTexts.document,
+    template: resolved,
+    vars,
+    sections
+  });
+  const { dt, documentTitle, documentNumber, headerOptions } = chrome;
 
   const data: IssueData = {
+    documentTitle,
+    documentNumber,
     company,
     locale,
     nonConformance,
@@ -79,52 +92,21 @@ const IssuePDF = ({
     operationToJobId,
     theme: resolved.theme,
     sections,
+    values,
     vars,
     headerOptions
   };
 
-  const headerSection = resolved.headerSectionId
-    ? sections[resolved.headerSectionId]?.content
-    : undefined;
-  const footerSection = resolved.footerSectionId
-    ? sections[resolved.footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = resolved.headerSectionId !== null;
-  const visibleBlocks = resolved.blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={resolved.theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "issue report",
-        subject: meta?.subject ?? "Issue Report"
-      }}
-      footerLabel={`Issue #${nonConformance.nonConformanceId}`}
-      showFooter={resolved.footerSectionId !== null}
-      showPageNumbers={resolved.settings.showPageNumbers}
-      pageNumberFormat={resolved.settings.pageNumberFormat}
-      showRegistrationLine={resolved.settings.showRegistrationLine}
-      fontFamily={resolved.settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = issueBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="issue report"
+      footerLabel={dt("issueNumber")}
+      registry={issueBlockRegistry}
+      data={data}
+    />
   );
 };
 

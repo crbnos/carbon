@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -93,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function FixedAssetDetailsRoute() {
   const { asset } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: asset.id,
@@ -127,7 +127,8 @@ export default function FixedAssetDetailsRoute() {
 
   return (
     <FixedAssetForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       key={initialValues.id}
       initialValues={initialValues}
     />

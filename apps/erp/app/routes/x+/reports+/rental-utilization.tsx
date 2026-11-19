@@ -234,6 +234,7 @@ export default function RentalUtilizationRoute() {
       </span>
       <DatePicker
         size="sm"
+        aria-label={t`From date`}
         value={parseDate(from)}
         onChange={(value) => setParams({ from: value?.toString() ?? from })}
       />
@@ -242,12 +243,14 @@ export default function RentalUtilizationRoute() {
       </span>
       <DatePicker
         size="sm"
+        aria-label={t`To date`}
         value={parseDate(to)}
         onChange={(value) => setParams({ to: value?.toString() ?? to })}
       />
       <Combobox
         size="sm"
         className="w-48"
+        aria-label={t`Fixed asset class`}
         options={classes}
         value={fixedAssetClassId ?? undefined}
         placeholder={t`All classes`}

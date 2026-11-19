@@ -17,10 +17,11 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast
+  toast,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
@@ -78,7 +79,7 @@ export function IntegrationCard({
         }
       ).modes?.find((m) => m.id === installed.installMode)
     : undefined;
-  const [showModeDialog, setShowModeDialog] = useState(false);
+  const modeDialog = useDisclosure();
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
@@ -202,9 +203,7 @@ export function IntegrationCard({
               <InstallButton
                 integration={integration}
                 isDisabled={comingSoon || !!conflictsWith}
-                onInstall={
-                  needsModeChoice ? () => setShowModeDialog(true) : undefined
-                }
+                onInstall={needsModeChoice ? modeDialog.onOpen : undefined}
               />
             )}
           </>
@@ -221,14 +220,13 @@ export function IntegrationCard({
           />
         )}
       </CardFooter>
-      {showModeDialog && (
-        <InstallModeDialog
-          integrationName={integration.name}
-          modes={modes}
-          onClose={() => setShowModeDialog(false)}
-          onChoose={(mode) => startOAuthConnect(integration.id, mode)}
-        />
-      )}
+      <InstallModeDialog
+        open={modeDialog.isOpen}
+        integrationName={integration.name}
+        modes={modes}
+        onClose={modeDialog.onClose}
+        onChoose={(mode) => startOAuthConnect(integration.id, mode)}
+      />
     </Card>
   );
 }

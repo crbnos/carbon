@@ -25,7 +25,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuChevronLeft, LuEllipsisVertical } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { Controls } from "~/components/JobOperation/components/Controls";
 import { MesAppBar } from "~/components/MesAppBar";
 
@@ -65,7 +65,6 @@ export function WorkRecordShell({
   children: ReactNode;
 }) {
   const { t } = useLingui();
-  const navigate = useNavigate();
   const renderMenu = ({
     className,
     size,
@@ -108,16 +107,19 @@ export function WorkRecordShell({
             <div className="flex items-center gap-0 max-md:hidden">
               <SidebarTrigger />
               <Button
+                asChild
                 variant="ghost"
                 leftIcon={<LuChevronLeft />}
-                onClick={() => navigate(back.to)}
                 className="pl-2"
               >
-                {back.label}
+                <Link to={back.to}>{back.label}</Link>
               </Button>
             </div>
             <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x max-md:w-full">
-              <TabsList className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1">
+              <TabsList
+                aria-label={t`Record sections`}
+                className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1"
+              >
                 {tabs.map((item) => (
                   <TabsTrigger
                     key={item.value}
@@ -135,7 +137,10 @@ export function WorkRecordShell({
 
       <div className="[grid-area:context] flex shrink-0 flex-wrap lg:flex-nowrap items-center justify-start px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-x-2 gap-y-1 md:gap-x-4 w-full min-w-0">
         <HStack className="min-w-22 shrink-0 justify-between max-md:hidden">
-          <Heading size="h4">{recordId}</Heading>
+          {/* The page's h1 at md and up; MesAppBar holds it on phones. */}
+          <Heading as="h1" size="h4">
+            {recordId}
+          </Heading>
           {renderMenu({ align: "start" })}
         </HStack>
         <HStack className="flex w-full lg:w-auto min-w-0 lg:flex-1 justify-start lg:justify-end items-center gap-3 overflow-x-auto lg:overflow-hidden scrollbar-hide scroll-fade-x [&>*]:shrink-0 lg:[&>*]:shrink max-md:flex-wrap max-md:overflow-visible max-md:gap-y-1 max-md:mask-none max-md:[&>*]:shrink">

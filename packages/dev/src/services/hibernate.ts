@@ -2,18 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync
-} from "node:fs";
-import { createServer } from "node:http";
-import { homedir } from "node:os";
-import { setTimeout as sleep } from "node:timers/promises";
-import { join } from "pathe";
+  createServer,
+  type IncomingMessage,
+  type ServerResponse
+} from "node:http";
+import {
+  activityFile,
+  asleepFile,
+  isAsleepIn,
+  WAKE_TIMEOUT_MS
+} from "../../stack-state.js";
+import { httpResponds, waitUntil } from "../helpers.js";
+import { paths } from "../paths.js";
+import { setAlias } from "./portless.js";
 
 // A stack whose apps nobody is using still holds ~1 GB. The ERP and MES dev
 // servers report each request by touching `activity` (the `stackActivity` Vite
@@ -28,17 +31,10 @@ import { join } from "pathe";
 // stops them as well and listens on their ports itself (`startWaker`). That
 // wake is slower: the dev servers boot from cold.
 //
-// Keyed by slug, not worktree, so a `--borrow`ing worktree reports to the
-// stack it is actually using.
-export function stackStateDir(slug: string): string {
-  return join(homedir(), ".carbon", "stacks", slug);
-}
+// The files are stack-state.js's, which the Vite plugin reads too.
 
-export const activityFile = (dir: string) => join(dir, "activity");
-export const asleepFile = (dir: string) => join(dir, "asleep");
-
-export type StackState = "awake" | "asleep" | "deep";
-export type Step = "sleep" | "deepen" | "wake";
+type StackState = "awake" | "asleep" | "deep";
+type Step = "sleep" | "deepen" | "wake";
 
 // Exported for tests. `since` is when the current state began: a request held
 // during the stop touches `activity` after it, and that is the wake signal.
@@ -66,7 +62,7 @@ function mtime(file: string): number {
   }
 }
 
-export function watchIdle(opts: {
+function watchIdle(opts: {
   dir: string;
   idleMs: number;
   deepMs?: number;
@@ -158,48 +154,37 @@ export function watchIdle(opts: {
   };
 }
 
-// The marker holds the pid of the `crbn up` that will do the waking. One that
-// was killed leaves its marker behind with nobody to act on it.
-export function isAsleep(slug: string): boolean {
-  const marker = asleepFile(stackStateDir(slug));
-  if (!existsSync(marker)) return false;
-  try {
-    process.kill(Number(readFileSync(marker, "utf8")), 0);
-    return true;
-  } catch {
-    rmSync(marker, { force: true });
-    return false;
-  }
-}
+/** The default quiet spells, in minutes, before the containers and then the
+ *  dev servers stop (CRBN_IDLE_MINUTES, CRBN_APPS_IDLE_MINUTES). */
+export const IDLE_MINUTES = 30;
+export const APPS_IDLE_MINUTES = 120;
+
+export const isAsleep = (slug: string) => isAsleepIn(paths.stackDir(slug));
 
 // For crbn commands that need the database: ask the watching `crbn up` to
 // start the stack the same way a request does, and wait for it.
-export async function wakeIfAsleep(
-  slug: string,
-  timeoutMs = 120_000
-): Promise<boolean> {
+export async function wakeIfAsleep(slug: string): Promise<boolean> {
   if (!isAsleep(slug)) return false;
-  const dir = stackStateDir(slug);
-  writeFileSync(activityFile(dir), "");
-  const deadline = Date.now() + timeoutMs;
-  while (isAsleep(slug)) {
-    if (Date.now() > deadline) {
-      throw new Error(
-        "the stack is hibernated and did not wake — check the terminal running `crbn up`"
-      );
-    }
-    await sleep(250);
+  writeFileSync(activityFile(paths.stackDir(slug)), "");
+  const awake = async () => !isAsleep(slug);
+  if (await waitUntil(awake, { timeoutMs: WAKE_TIMEOUT_MS, intervalMs: 250 })) {
+    return true;
   }
-  return true;
+  throw new Error(
+    "the stack is hibernated and did not wake — check the terminal running `crbn up`"
+  );
 }
 
 // What a browser sees while the dev servers boot. The script keeps asking for
 // the same URL — through the moment the port is closed between this listener
 // stopping and the dev server binding it — and reloads once a response comes
 // back without the waking header.
-const WAKING_PAGE = `<!doctype html><meta charset="utf-8"><title>Waking…</title>
+const holdingPage = (
+  title: string,
+  text: string
+) => `<!doctype html><meta charset="utf-8"><title>${title}</title>
 <body style="font:15px system-ui;display:grid;place-items:center;height:100vh;margin:0;color:#666">
-<p>Waking the dev stack — this page reloads when it is ready.</p>
+<p>${text}</p>
 <script>
 let busy = false;
 setInterval(async () => {
@@ -213,35 +198,55 @@ setInterval(async () => {
 }, 1500);
 </script>`;
 
+const WAKING_PAGE = holdingPage(
+  "Waking…",
+  "Waking the dev stack — this page reloads when it is ready."
+);
+const BOOTING_PAGE = holdingPage(
+  "Starting…",
+  "Starting the dev server — the first load bundles the app and can take a minute. This page reloads when it is ready."
+);
+
+// Answers like a held app: a page that polls and reloads for a browser, a 503
+// for anything else. The `x-crbn-waking` header is what the page waits to lose.
+function holdingResponse(
+  req: IncomingMessage,
+  res: ServerResponse,
+  page: string,
+  state: "waking" | "starting"
+) {
+  const html = req.headers.accept?.includes("text/html");
+  res.writeHead(503, {
+    "content-type": html ? "text/html; charset=utf-8" : "application/json",
+    "cache-control": "no-store",
+    "retry-after": "5",
+    "x-crbn-waking": "1"
+  });
+  res.end(html ? page : `{"error":"dev stack is ${state}"}`);
+}
+
 // Stands in for a stopped dev server on its port. A request is the signal to
 // wake; it cannot be handed to the dev server (which needs this very port), so
 // a browser gets a page that waits and reloads, and anything else a 503.
 // Not traffic: Inngest's poll, and the Vite client of an open tab probing for
 // its server over a WebSocket — answering those would wake the stack the
 // moment it went to sleep.
-export function startWaker(port: number, onWake: () => void) {
+function startWaker(port: number, onWake: () => void) {
   const server = createServer((req, res) => {
     if (req.url?.startsWith("/api/inngest")) {
       res.writeHead(503).end();
       return;
     }
     onWake();
-    const html = req.headers.accept?.includes("text/html");
-    res.writeHead(503, {
-      "content-type": html ? "text/html; charset=utf-8" : "application/json",
-      "cache-control": "no-store",
-      "retry-after": "5",
-      "x-crbn-waking": "1"
-    });
-    res.end(html ? WAKING_PAGE : '{"error":"dev stack is waking"}');
+    holdingResponse(req, res, WAKING_PAGE, "waking");
   });
   server.on("upgrade", (_req, socket) => socket.destroy());
   // The dev server's process tree can hold the port for a moment after its
   // parent has exited; keep trying until it lets go.
   let stopped = false;
   let retry: NodeJS.Timeout | undefined;
-  server.on("error", () => {
-    if (stopped) return;
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (stopped || err.code !== "EADDRINUSE") return;
     retry = setTimeout(() => {
       if (!stopped) server.listen(port, "127.0.0.1");
     }, 250);
@@ -257,4 +262,143 @@ export function startWaker(port: number, onWake: () => void) {
       if (server.listening) server.close(() => resolve());
       else resolve();
     });
+}
+
+// Stands in for the dev servers while they boot. It cannot take their ports
+// (they bind those), so it listens on a free one and the portless aliases
+// point here until each app answers (`holdRoutes`).
+function startBootPage(): Promise<{
+  port: number;
+  stop: () => Promise<void>;
+}> {
+  const server = createServer((req, res) =>
+    holdingResponse(req, res, BOOTING_PAGE, "starting")
+  );
+  server.on("upgrade", (_req, socket) => socket.destroy());
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      resolve({
+        port,
+        stop: () =>
+          new Promise<void>((done) => {
+            server.closeAllConnections();
+            server.close(() => done());
+          })
+      });
+    });
+  });
+}
+
+export type Hold = { released: Promise<void>; stop: () => Promise<void> };
+
+/**
+ * Points each alias at a "starting" page while its dev server boots, and back
+ * at the dev server once it answers a request — the request that also makes
+ * Vite bundle the app. Without it the URL shows portless's 502 until then.
+ * `released` resolves once every alias points back; `stop` gives up the hold
+ * and leaves the aliases to the teardown, which removes them.
+ */
+export async function holdRoutes(
+  targets: { alias: string; port: number }[]
+): Promise<Hold> {
+  if (targets.length === 0) {
+    return { released: Promise.resolve(), stop: () => Promise.resolve() };
+  }
+  const page = await startBootPage();
+  for (const t of targets) await setAlias(t.alias, page.port);
+  let stopped = false;
+  const released = Promise.all(
+    targets.map(async (t) => {
+      await waitUntil(() => httpResponds(t.port), {
+        timeoutMs: 600_000,
+        intervalMs: 1000,
+        stopped: () => stopped
+      });
+      // Past the deadline too: portless's 502 beats a page that never reloads.
+      if (!stopped) await setAlias(t.alias, t.port);
+    })
+  ).then(() => page.stop());
+  return {
+    released,
+    stop: async () => {
+      stopped = true;
+      await released;
+    }
+  };
+}
+
+/**
+ * Hibernates an idle stack (see the top of this file): stops its containers
+ * after `idleMs` without traffic and, after `deepMs`, its dev servers, whose
+ * ports it then answers itself. Resolves to the stop, which waits for a step
+ * in progress: a wake still running would start the containers again behind
+ * the teardown that follows.
+ */
+export function superviseIdle(opts: {
+  stateDir: string;
+  idleMs: number;
+  deepMs: number;
+  appPorts: number[];
+  stopContainers: () => Promise<void>;
+  startContainers: () => Promise<void>;
+  /** Stop the dev servers; resolves once they exited. */
+  parkApps: () => Promise<void>;
+  resumeApps: () => void;
+  /** Hold the app URLs while the dev servers boot (portless only). */
+  holdUrls?: () => Promise<Hold>;
+  log: (line: string) => void;
+}): () => Promise<void> {
+  let wakers: Array<() => Promise<void>> = [];
+  let hold: Hold | undefined;
+  let stopping = false;
+  const stopWakers = async () => {
+    await Promise.all(wakers.map((stop) => stop()));
+    wakers = [];
+  };
+  const stopWatching = watchIdle({
+    dir: opts.stateDir,
+    idleMs: opts.idleMs,
+    deepMs: opts.deepMs,
+    sleep: opts.stopContainers,
+    deepen: async () => {
+      await opts.parkApps();
+      wakers = opts.appPorts.map((port) =>
+        startWaker(port, () => writeFileSync(activityFile(opts.stateDir), ""))
+      );
+    },
+    wake: async (from) => {
+      try {
+        await opts.startContainers();
+      } finally {
+        // Whatever happened to the containers, never leave the apps parked
+        // behind a listener that can no longer wake them.
+        if (from === "deep") {
+          hold = await opts.holdUrls?.();
+          await stopWakers();
+          opts.resumeApps();
+          // Awake means the dev servers answer again: until then the idle
+          // clock must not run.
+          await (hold?.released ??
+            waitUntil(
+              async () =>
+                (await Promise.all(opts.appPorts.map(httpResponds))).every(
+                  Boolean
+                ),
+              { timeoutMs: 180_000, intervalMs: 500, stopped: () => stopping }
+            ));
+          hold = undefined;
+        }
+      }
+    },
+    log: opts.log
+  });
+  return async () => {
+    stopping = true;
+    await hold?.stop();
+    await stopWatching();
+    await stopWakers();
+  };
 }

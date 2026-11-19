@@ -2,47 +2,42 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { join } from "node:path";
 import { intro, log, outro } from "@clack/prompts";
-import { config as loadDotenv } from "dotenv";
 import pc from "picocolors";
+import { loadEnvFiles } from "../env.js";
 import { recreateServices } from "../services/compose.js";
+import { currentStack } from "../stack.js";
 import { spinner } from "../ui.js";
-import { getWorktreeRoot, projectName, resolveSlug } from "../worktree.js";
 
 // `crbn reload <service...>` — recreate specific compose services so an edit to
 // docker-compose.dev.yml / .env.local (memory limit, env var, image, port) takes
-// effect, WITHOUT `crbn up` restarting the app dev servers. Wraps
-// `docker compose up -d --force-recreate <services>`.
+// effect, WITHOUT `crbn up` restarting the app dev servers.
 export async function reload(services: string[]) {
   intro("Carbon · dev reload");
 
-  const names = services.filter((s) => s && !s.startsWith("-"));
+  const names = services;
   if (names.length === 0) {
     log.error(
-      "Usage: crbn reload <service...>  (e.g. crbn reload storage kong)"
+      "Usage: crbn reload <service...>  (e.g. crbn reload storage api-gw)"
     );
     outro("");
     process.exitCode = 1;
     return;
   }
 
-  const root = await getWorktreeRoot();
-  // Mirror `crbn up`: compose interpolation reads process.env first, so root
-  // .env values referenced by docker-compose.dev.yml (e.g. the GOTRUE_SAML_*
-  // bindings on ${SAML_ENABLED}/${SAML_PRIVATE_KEY}) survive a reload instead
-  // of silently resetting to their defaults. .env.local takes precedence.
-  loadDotenv({ path: join(root, ".env.local"), override: false });
-  loadDotenv({ path: join(root, ".env"), override: false });
-  const slug = resolveSlug(root);
+  const stack = await currentStack();
+  // Compose interpolates from process.env: without the .env values the
+  // compose file references (the GOTRUE_SAML_* bindings), a reload would
+  // reset them to their defaults.
+  loadEnvFiles(stack.root, { shellWins: true });
   log.info(
-    `worktree: ${pc.cyan(slug)}  project: ${pc.cyan(projectName(slug))}`
+    `worktree: ${pc.cyan(stack.slug)}  project: ${pc.cyan(stack.project)}`
   );
 
   const s = spinner();
   s.start(`Recreating ${names.map((n) => pc.cyan(n)).join(", ")}`);
   try {
-    await recreateServices(root, slug, names);
+    await recreateServices(stack, names);
     s.stop(`Recreated ${names.map((n) => pc.cyan(n)).join(", ")}`);
     outro(pc.green("Done"));
   } catch (err) {

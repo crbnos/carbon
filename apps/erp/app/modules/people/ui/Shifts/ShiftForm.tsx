@@ -14,7 +14,7 @@ import {
   FormControl,
   FormLabel,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -39,8 +39,8 @@ type ShiftFormProps = {
 const ShiftForm = ({ initialValues }: ShiftFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -49,7 +49,7 @@ const ShiftForm = ({ initialValues }: ShiftFormProps) => {
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

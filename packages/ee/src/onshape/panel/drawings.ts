@@ -278,3 +278,10 @@ export function bomAssemblySources(nodes: OnshapeBomNode[]): DrawingSource[] {
   walk(nodes);
   return out;
 }
+
+/** A drawing the review lists but does not offer: it shows nothing pushed. */
+export type SkippedDrawing = Pick<OnshapeDrawing, "elementId" | "name">;
+
+export function skippedDrawingText(drawing: SkippedDrawing): string {
+  return `${drawing.name}: shows nothing in this push`;
+}

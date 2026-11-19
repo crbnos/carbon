@@ -13,16 +13,19 @@ import { path } from "~/utils/path";
 export function ServiceJobAddPartModal({
   serviceJobId,
   itemOptions,
+  open = true,
   onClose
 }: {
   serviceJobId: string;
   itemOptions: { value: string; label: string; helper?: string }[];
+  open?: boolean;
   onClose: () => void;
 }) {
   return (
     <MaintenanceAddPartModal
       dispatchId={serviceJobId}
       itemOptions={itemOptions}
+      open={open}
       onClose={onClose}
       action={path.to.addAndIssueServiceJobItem(serviceJobId)}
       title={<Trans>Add Part</Trans>}

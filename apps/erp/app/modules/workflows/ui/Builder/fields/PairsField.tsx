@@ -73,6 +73,7 @@ export function PairsField({
             <div key={index} className="flex w-full min-w-0 flex-col gap-1">
               <div className="flex w-full min-w-0 items-start gap-1">
                 <Input
+                  aria-label={t`Name ${index + 1}`}
                   className={cn(
                     "w-[38%] shrink-0",
                     rowIssue && "border-destructive"

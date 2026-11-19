@@ -5,18 +5,17 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Invoicing" }];
-};
+export const meta = moduleMeta("Invoicing");
 
 function InvoicingSidebar() {
   const { groups } = useInvoicingSubmodules();

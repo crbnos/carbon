@@ -19,11 +19,17 @@ export const issueBlockRegistry: Partial<
 > = {
   ...extensionBlocks,
   header: ({ data }) => <HeaderBlock data={data} />,
-  issueDetails: ({ data }) => <IssueDetailsBlock data={data} />,
-  associations: ({ data }) => <AssociationsBlock data={data} />,
-  notes: ({ data }) => <NotesBlock data={data} />,
-  actionTasks: ({ data }) => <ActionTasksBlock data={data} />,
-  reviewers: ({ data }) => <ReviewersBlock data={data} />,
+  issueDetails: ({ block, data }) => (
+    <IssueDetailsBlock block={block} data={data} />
+  ),
+  associations: ({ block, data }) => (
+    <AssociationsBlock block={block} data={data} />
+  ),
+  notes: ({ block, data }) => <NotesBlock block={block} data={data} />,
+  actionTasks: ({ block, data }) => (
+    <ActionTasksBlock block={block} data={data} />
+  ),
+  reviewers: ({ block, data }) => <ReviewersBlock block={block} data={data} />,
   customField: ({ block, data }) =>
     block.type === "customField" ? (
       <CustomFieldBlock

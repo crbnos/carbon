@@ -92,6 +92,16 @@ export function stripComponents(body: string): string {
 function stripComponentsFromProse(body: string): string {
   let out = body;
 
+  out = out.replace(
+    /<JournalStep\b([^>]*)>([\s\S]*?)<\/JournalStep>/g,
+    (_all, attributes: string, entries: string) => {
+      const number = attributes.match(/\bnumber=\{(\d+)\}/)?.[1];
+      const title = attributes.match(/\btitle="([^"]*)"/)?.[1];
+      const document = attributes.match(/\bdocument="([^"]*)"/)?.[1];
+      return `**${number ? `${number}. ` : ""}${title ?? ""}**\n${document ? `Document: ${document}\n` : ""}${entries}`;
+    }
+  );
+
   // <Term id="x">text</Term> -> text
   out = out.replace(/<Term\b[^>]*>([\s\S]*?)<\/Term>/g, "$1");
 

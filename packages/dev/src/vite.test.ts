@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   assetModuleUrl,
   clientOnlyAlias,
+  dropStalledHmrClients,
   extractIcons,
   findIconImports,
   inlineDatasetAssetGlob,
@@ -294,5 +295,43 @@ describe("assetModuleUrl", () => {
 
   it("returns null for any other module", () => {
     expect(assetModuleUrl("export const url = 1;")).toBeNull();
+  });
+});
+
+describe("dropStalledHmrClients", () => {
+  it("disconnects a client whose backlog is over 4 MB and not shrinking", () => {
+    vi.useFakeTimers();
+    try {
+      const MB = 1024 * 1024;
+      const socket = (bufferedAmount: number) => ({
+        bufferedAmount,
+        terminate: vi.fn()
+      });
+      const reading = socket(64 * 1024);
+      const slow = socket(6 * MB);
+      const stalled = socket(5 * MB);
+      const hook = dropStalledHmrClients().configureServer as (
+        server: unknown
+      ) => void;
+      hook({
+        ws: {
+          clients: new Set([
+            { socket: reading },
+            { socket: slow },
+            { socket: stalled }
+          ])
+        }
+      });
+      vi.advanceTimersByTime(5000);
+      // One look is not enough: a slow page may be draining.
+      expect(stalled.terminate).not.toHaveBeenCalled();
+      slow.bufferedAmount = 5 * MB;
+      vi.advanceTimersByTime(5000);
+      expect(stalled.terminate).toHaveBeenCalledOnce();
+      expect(slow.terminate).not.toHaveBeenCalled();
+      expect(reading.terminate).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

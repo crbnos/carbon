@@ -286,6 +286,13 @@ const JournalEntriesTable = memo(
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
+          importCSV={
+            // The import's gate: create (`importRequiresCreate`) and update.
+            permissions.can("create", "accounting") &&
+            permissions.can("update", "accounting")
+              ? [{ table: "journalEntry" as const, label: t`Journal Entries` }]
+              : undefined
+          }
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Journal Entries`}
@@ -300,11 +307,9 @@ const JournalEntriesTable = memo(
             text={t`Are you sure you want to delete ${selectedEntry.journalEntryId}?`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedEntry(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedEntry(null);
             }}
           />
         )}

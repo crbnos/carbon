@@ -125,7 +125,9 @@ export const syncExternalAccountingFunction = inngest.createFunction(
           const entityConfig = provider.getSyncConfig(type);
 
           if (!entityConfig?.enabled) {
-            log.info(`Sync disabled for ${entityType}, skipping`);
+            log.info("Sync disabled for the entity type, skipping", {
+              entityType
+            });
             disabled.push(entityType);
             continue;
           }

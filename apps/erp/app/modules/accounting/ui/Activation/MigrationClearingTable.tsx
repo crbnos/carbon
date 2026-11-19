@@ -150,6 +150,7 @@ export default function MigrationClearingTable({
                     <div className="flex items-center gap-1">
                       {accountItems.length > 0 ? (
                         <IconButton
+                          aria-expanded={isOpen}
                           aria-label={
                             isOpen
                               ? t`Hide the items on ${label}`
@@ -333,6 +334,7 @@ function itemHref(
         : path.to.memo(id);
     case "Unapplied Credit":
     case "Customer Deposit":
+    case "Supplier Prepayment":
       return id ? path.to.payment(id) : null;
     case "Work in Progress":
       return id ? path.to.job(id) : null;

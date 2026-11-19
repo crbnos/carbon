@@ -186,10 +186,13 @@ const cellClassName =
  */
 export function RecordPhoneChrome({
   menu,
-  copyValue
+  copyValue,
+  menuLabel
 }: {
   menu?: ReactNode;
   copyValue?: string;
+  /** The ⋯ trigger's name ("Actions for SO-000123"); RecordHeader passes it. */
+  menuLabel?: string;
 }) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -216,7 +219,7 @@ export function RecordPhoneChrome({
             <DropdownMenuTrigger asChild>
               <IconButton
                 className="order-last"
-                aria-label={t`More options`}
+                aria-label={menuLabel ?? t`More options`}
                 icon={<LuEllipsis />}
                 variant="ghost"
                 size="lg"
@@ -268,6 +271,9 @@ type RecordHeaderProps = {
   copyValue?: string;
   /** The ⋯ menu items: desktop beside the title, phones in the app bar. */
   menu?: ReactNode;
+  /** The ⋯ trigger's name. Defaults to "Actions for {copyValue}" (or the
+   *  title, when it is text), so it differs from other menus on the page. */
+  menuLabel?: string;
   /** Status badges: desktop after the ⋯, phones in the hero. */
   status?: ReactNode;
   /** Phones: a line under the hero title. */
@@ -297,6 +303,7 @@ export function RecordHeader({
   titleTo,
   copyValue,
   menu,
+  menuLabel,
   status,
   subtitle,
   onToggleExplorer,
@@ -307,11 +314,16 @@ export function RecordHeader({
 }: RecordHeaderProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
+  const recordName =
+    copyValue || (typeof title === "string" ? title.trim() : "");
+  const resolvedMenuLabel =
+    menuLabel ?? (recordName ? t`Actions for ${recordName}` : t`More options`);
   // An editable title is a control (a name input), not a heading.
   const heading = titleInHero ? (
     title
   ) : (
-    <Heading size="h4" className="flex items-center gap-2">
+    // The page's one h1: the phone hero takes over while this row is hidden.
+    <Heading as="h1" size="h4" className="flex items-center gap-2">
       {title}
     </Heading>
   );
@@ -323,7 +335,7 @@ export function RecordHeader({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label={t`More options`}
+              aria-label={resolvedMenuLabel}
               icon={<LuEllipsisVertical />}
               variant="secondary"
               size="sm"
@@ -346,7 +358,11 @@ export function RecordHeader({
         subtitle={subtitle}
         status={status}
       />
-      <RecordPhoneChrome menu={menu} copyValue={copyValue} />
+      <RecordPhoneChrome
+        menu={menu}
+        copyValue={copyValue}
+        menuLabel={resolvedMenuLabel}
+      />
       <div
         className={cn(
           "flex flex-shrink-0 items-center justify-between gap-x-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide max-md:hidden",

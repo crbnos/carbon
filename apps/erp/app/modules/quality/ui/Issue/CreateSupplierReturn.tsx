@@ -65,6 +65,7 @@ export function CreateSupplierReturn({
                   label: s.name
                 }))}
                 placeholder={t`Supplier (optional — auto-resolved)`}
+                aria-label={t`Supplier`}
                 onChange={(value) => setSupplierId(value ?? "")}
               />
             </div>

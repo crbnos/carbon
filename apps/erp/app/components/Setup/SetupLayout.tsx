@@ -40,7 +40,7 @@ export const SetupFrame = ({
       <header className={cn("w-full", steps && "border-b border-border")}>
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-8 md:px-8">
           <div className="flex min-w-0 flex-col gap-1">
-            <Heading size="h3" className="truncate">
+            <Heading as="h1" size="h3" className="truncate">
               {title}
             </Heading>
             {subtitle && (

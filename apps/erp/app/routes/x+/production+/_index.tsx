@@ -278,6 +278,13 @@ export default function ProductionDashboard() {
     return formatDurationMilliseconds(value);
   };
 
+  const chartLabel =
+    selectedKpi === "utilization"
+      ? t`Work center utilization by work center`
+      : selectedKpi === "estimatesVsActuals"
+        ? t`Estimated versus actual time by job`
+        : t`Completion time by job`;
+
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
 
@@ -323,6 +330,9 @@ export default function ProductionDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
+      <h1 className="sr-only">
+        <Trans>Production Dashboard</Trans>
+      </h1>
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6 max-md:grid-cols-2 max-md:gap-3">
         <MetricCard
           className="col-span-1 lg:col-span-2"
@@ -455,6 +465,7 @@ export default function ProductionDashboard() {
               <Loading isLoading={isFetching} className="w-full">
                 <ChartContainer
                   config={chartConfig}
+                  aria-label={chartLabel}
                   style={{
                     height: `${
                       (kpiFetcher.data?.data?.length ?? 5) *
@@ -934,7 +945,11 @@ function WorkCenterCards({
           {isBlocked ? (
             <span className="mt-2 size-2 shrink-0 rounded-full bg-red-500" />
           ) : (
-            <PulsingDot inactive={!hasEvents} className="mt-2 shrink-0" />
+            <PulsingDot
+              inactive={!hasEvents}
+              label={hasEvents ? t`Active` : undefined}
+              className="mt-2 shrink-0"
+            />
           )}
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm">
             <p className="truncate text-base font-medium">{workCenter.name}</p>
@@ -1066,7 +1081,11 @@ function WorkCenterCards({
           </CardHeader>
           <CardAction className="pt-2">
             {!isBlocked && (
-              <PulsingDot inactive={!hasEvents} className="mt-2" />
+              <PulsingDot
+                inactive={!hasEvents}
+                label={hasEvents ? t`Active` : undefined}
+                className="mt-2"
+              />
             )}
           </CardAction>
         </HStack>

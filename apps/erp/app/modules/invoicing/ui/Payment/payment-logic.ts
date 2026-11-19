@@ -9,6 +9,7 @@ import {
   allocatePaymentFunding,
   type FundingRequest,
   type FundingScope,
+  type FundingScopeIds,
   type FundingSource,
   fundableDocumentAmounts,
   fundingScopeCovers,
@@ -80,6 +81,53 @@ export function paymentDocumentCurrency(
   return currencyCode || baseCurrencyCode || "USD";
 }
 
+/**
+ * How much of the invoices a new payment is seeded from is covered by advances
+ * already held for the orders they bill, in document currency: a supplier's
+ * prepayment for a purchase order, or a customer's deposit for a sales order.
+ * Such an advance can settle nothing but that order's invoices, so the
+ * payment's cash is seeded net of it and seeding the applications funds the
+ * rest from the party's prior payments, oldest first.
+ *
+ * Nothing else is netted. A rental deposit is refundable security and a
+ * contract deposit is liquidated at the contract's rate, so neither is applied
+ * in full by default; on-account credit funds any invoice, so using it is the
+ * user's choice.
+ */
+export function heldAdvanceCovering(
+  invoices: ReadonlyArray<FundingScopeIds & { cashDue: number }>,
+  sources: readonly FundingSource[],
+  currencyDecimals: number
+): number {
+  const advances = sources.filter(
+    (source) =>
+      source.scope?.type === "purchaseOrder" ||
+      source.scope?.type === "salesOrder"
+  );
+  if (advances.length === 0) return 0;
+  const covered = fundableDocumentAmounts({
+    // No cash yet: only the advances are on offer.
+    currentPayment: {
+      paymentId: "",
+      postingDate: "",
+      exchangeRate: 1,
+      remainingDocument: 0,
+      remainingBase: 0
+    },
+    priorSources: advances,
+    requests: invoices.map((invoice) => ({
+      ...invoice,
+      maximumDocument: invoice.cashDue
+    })),
+    currencyDecimals
+  });
+  return toDocumentAmount(
+    covered.reduce((sum, amount) => sum + amount, 0),
+    1,
+    currencyDecimals
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Apply to invoices / memos / reimbursements
 // ---------------------------------------------------------------------------
@@ -96,10 +144,12 @@ export type OpenInvoice = {
   remainingDocument: number;
   status: string | null;
   // The documents the invoice bills: a customer deposit funds only invoices of
-  // its own rental agreement, sales order or contract.
+  // its own rental agreement, sales order or contract; a supplier prepayment
+  // only invoices of its own purchase order.
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
   customerContractIds?: string[];
+  purchaseOrderIds?: string[];
 };
 
 export type ExistingApplication = {
@@ -130,6 +180,7 @@ export type ApplyRow = {
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
   customerContractIds?: string[];
+  purchaseOrderIds?: string[];
   checked: boolean;
   appliedAmount: number;
   discountAmount: number;
@@ -244,7 +295,8 @@ export function fundingRequests(rows: ApplyRow[]): FundingRequest[] {
       writeOffAmount: r.writeOffAmount,
       rentalAgreementIds: r.rentalAgreementIds,
       salesOrderIds: r.salesOrderIds,
-      customerContractIds: r.customerContractIds
+      customerContractIds: r.customerContractIds,
+      purchaseOrderIds: r.purchaseOrderIds
     }));
 }
 
@@ -382,7 +434,8 @@ export function autoApplyRows(
     writeOffAmount: 0,
     rentalAgreementIds: r.rentalAgreementIds,
     salesOrderIds: r.salesOrderIds,
-    customerContractIds: r.customerContractIds
+    customerContractIds: r.customerContractIds,
+    purchaseOrderIds: r.purchaseOrderIds
   }));
   const result = allocatePaymentFunding({
     currentPayment,
@@ -625,6 +678,7 @@ export function aggregateApplications(splits: PaymentApplication[]) {
       a.targetPurchaseInvoiceId ??
       a.targetMemoId ??
       a.targetReimbursementId ??
+      a.targetPaymentId ??
       a.id;
     const existing = byInvoice.get(id);
     if (!existing) {
@@ -660,7 +714,11 @@ export function unappliedPaymentCash(
   return (
     paymentTotal -
     splits.reduce(
-      (s, a) => s + (a.sourcePaymentId ? 0 : Number(a.sourceAmount ?? 0)),
+      (s, a) =>
+        s +
+        (a.sourcePaymentId && !a.targetPaymentId
+          ? 0
+          : Number(a.sourceAmount ?? 0)),
       0
     )
   );

@@ -5,28 +5,47 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getStockTransfer,
-  getStockTransferLines
+  getStockTransferLines,
+  getStockTransferLiveBins
 } from "~/modules/inventory/inventory.service";
 import StockTransferDocuments from "~/modules/inventory/ui/StockTransfers/StockTransferDocuments";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";
 import StockTransferNotes from "~/modules/inventory/ui/StockTransfers/StockTransferNotes";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "inventory");
 
 export const handle: Handle = {
   realtime: [
     { table: "stockTransfer", column: "id", param: "id" },
-    { table: "stockTransferLine", column: "stockTransferId", param: "id" }
+    { table: "stockTransferLine", column: "stockTransferId", param: "id" },
+    {
+      // Stock placed in, or taken from, a bin while the transfer is open.
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.stockTransferLines ?? [])
+              .map((line: { itemId?: string | null }) => line.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
+    }
   ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Stock Transfers`, to: path.to.stockTransfers },
@@ -34,6 +53,9 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.stockTransfer?.stockTransferId, "Stock Transfer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -43,9 +65,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [stockTransfer, stockTransferLines] = await Promise.all([
+  const [stockTransfer, stockTransferLines, liveBins] = await Promise.all([
     getStockTransfer(client, id),
-    getStockTransferLines(client, id)
+    getStockTransferLines(client, id),
+    getStockTransferLiveBins(client, id, companyId)
   ]);
 
   if (stockTransfer.error) {
@@ -58,13 +81,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (liveBins.error) {
+    logger.error("Failed to read the live bins of a stock transfer", {
+      stockTransferId: id,
+      error: liveBins.error
+    });
+  }
+
   if (stockTransfer.data.companyId !== companyId) {
     throw redirect(path.to.stockTransfers);
   }
 
   return {
     stockTransfer: stockTransfer.data,
-    stockTransferLines: stockTransferLines.data ?? []
+    // Without the bins a line still shows its From, so the page loads.
+    stockTransferLines: (stockTransferLines.data ?? []).map((line) => ({
+      ...line,
+      liveStorageUnits: liveBins.error
+        ? undefined
+        : (liveBins.data.get(line.id ?? "") ?? [])
+    }))
   };
 }
 

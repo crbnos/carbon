@@ -75,9 +75,10 @@ const SelectionList = () => {
                       name={item.fullName ?? undefined}
                       path={item.avatarUrl}
                       size="sm"
+                      decorative
                     />
                   ) : (
-                    <Avatar name={item.name} path={null} size="sm" />
+                    <Avatar name={item.name} path={null} size="sm" decorative />
                   )}
 
                   <div className="flex items-center flex-grow">

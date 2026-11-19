@@ -8,7 +8,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
@@ -16,10 +16,13 @@ import { MesEmptyState } from "~/components/MesEmptyState";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 
 export const handle: Handle = {
   realtime: ["jobOperation", "productionEvent"]
 };
+
+export const meta: MetaFunction = () => pageMeta("Active");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -70,7 +73,7 @@ export default function ActiveRoute() {
       <MesAppBar title={<Trans>Active</Trans>} />
       <MesQueueHeader title={<Trans>Active</Trans>} />
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="w-full p-4 h-[var(--header-height)] max-md:h-auto max-md:pb-0">
           <div className="relative">
             <div className="flex justify-between gap-4">
@@ -79,6 +82,7 @@ export default function ActiveRoute() {
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label={t`Search active operations`}
                   placeholder={t`Search`}
                   className="pl-8"
                 />
@@ -106,7 +110,7 @@ export default function ActiveRoute() {
             title={<Trans>No active operations</Trans>}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 }

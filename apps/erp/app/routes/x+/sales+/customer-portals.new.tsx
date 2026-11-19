@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewCustomerPortalRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     customerId: ""
   };
@@ -102,7 +102,8 @@ export default function NewCustomerPortalRoute() {
   return (
     <CustomerPortalForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

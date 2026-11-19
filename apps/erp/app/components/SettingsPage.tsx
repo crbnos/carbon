@@ -29,6 +29,12 @@ export function SettingsPageHeading({
   ...props
 }: Omit<ComponentProps<typeof Heading>, "size">) {
   return (
-    <Heading size="h3" {...props} className={cn("max-md:hidden", className)} />
+    // The settings page's h1; the phone app bar names the page instead.
+    <Heading
+      as="h1"
+      size="h3"
+      {...props}
+      className={cn("max-md:hidden", className)}
+    />
   );
 }

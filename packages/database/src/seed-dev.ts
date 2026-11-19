@@ -13,7 +13,9 @@
  * reference/config data is preserved.
  *
  * An email that belongs to no company bootstraps a brand new user + company
- * first, which is what `crbn up` relies on for test@carbon.ms.
+ * first, which is what `crbn up` relies on for test@carbon.ms. Every run also
+ * adds a second Admin, `<local>+admin2@<domain>` (`devSecondAdminEmail`), so an
+ * Admin-approved request can be decided by someone other than the requester.
  *
  * After the seed commits it runs MRP and the scheduler through
  * `@carbon/jobs`'s `plan:company` (skip with `--skip-plan`).
@@ -29,7 +31,12 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { getProcessPool } from "./client.ts";
-import { bootstrap, DEV_PASSWORD } from "./datasets/bootstrap.ts";
+import {
+  bootstrap,
+  DEV_PASSWORD,
+  devSecondAdminEmail,
+  ensureDevAdmin
+} from "./datasets/bootstrap.ts";
 import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
 import { applyDataset, datasetKeys, getDataset } from "./datasets/index.ts";
 import { printSummary } from "./datasets/sql.ts";
@@ -62,6 +69,14 @@ async function main() {
     }
     const { companyId, userId } = resolved;
 
+    const secondAdminEmail = devSecondAdminEmail(email);
+    await ensureDevAdmin(client, {
+      companyId,
+      email: secondAdminEmail,
+      firstName: "Second",
+      lastName: "Admin"
+    });
+
     const dataset = getDataset(datasetKey);
     if (!dataset) throw new Error(`Seed: no such dataset: ${datasetKey}`);
 
@@ -87,6 +102,7 @@ Dev environment seeded successfully!
 ========================================
 
   Email:      ${email}
+  2nd Admin:  ${secondAdminEmail}
   Password:   ${DEV_PASSWORD} (only set when the user was just created)
   Company ID: ${companyId}
 `);

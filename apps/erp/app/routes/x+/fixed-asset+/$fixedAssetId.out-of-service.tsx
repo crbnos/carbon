@@ -8,9 +8,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { fixedAssetOutOfServiceValidator } from "~/modules/accounting/accounting.models";
 import { outOfServiceRefusal } from "~/modules/accounting/accounting.service";
 import { FixedAssetOutOfServiceForm } from "~/modules/accounting/ui/FixedAssets";
@@ -79,7 +79,9 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function FixedAssetOutOfServiceRoute() {
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
-  return <FixedAssetOutOfServiceForm onClose={() => navigate(-1)} />;
+  return (
+    <FixedAssetOutOfServiceForm open={dialog.open} onClose={dialog.close} />
+  );
 }

@@ -15,9 +15,11 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type { LoaderFunctionArgs } from "react-router";
-import { useParams, useSubmit } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { usePermissions } from "~/hooks";
+import { isSalesRfqLocked } from "~/modules/sales/sales.models";
 import {
   getOpportunity,
   getOpportunityDocuments,
@@ -25,6 +27,7 @@ import {
   getSalesRFQLines
 } from "~/modules/sales/sales.service";
 import type { SalesRFQLine } from "~/modules/sales/types";
+import { DocumentDropTargetsProvider } from "~/modules/sales/ui/Opportunity/OpportunityDocuments";
 import {
   SalesRFQExplorer,
   SalesRFQHeader,
@@ -32,6 +35,7 @@ import {
 } from "~/modules/sales/ui/SalesRFQ";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimiticDocumentDrag";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "sales-rfq");
@@ -47,6 +51,9 @@ export const handle: Handle = {
   ),
   module: "sales"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.rfqSummary?.rfqId, "Sales RFQ");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -138,6 +145,14 @@ export default function SalesRFQRoute() {
   const submit = useSubmit();
 
   const pendingItems = useOptimisticDocumentDrag();
+  const { lines, rfqSummary } = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
+  // A file adds or changes a line, so it takes what the explorer's own
+  // add-line controls take: an unlocked RFQ and sales edit rights.
+  const canDropDocuments =
+    !isSalesRfqLocked(rfqSummary?.status) &&
+    permissions.can("update", "sales") &&
+    permissions.can("create", "sales");
 
   const handleDrop = (
     document: FileObject & { path: string },
@@ -177,6 +192,7 @@ export default function SalesRFQRoute() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event;
+    if (!canDropDocuments) return;
     if (over) {
       handleDrop(
         active.data.current as unknown as FileObject & { path: string },
@@ -187,26 +203,41 @@ export default function SalesRFQRoute() {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <PanelProvider>
-        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-          <SalesRFQHeader />
-          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-            <div className="flex flex-grow overflow-hidden">
-              <ResizablePanels
-                explorer={<SalesRFQExplorer />}
-                content={
-                  <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                    <VStack spacing={4} className="p-4">
-                      <RecordOutlet />
-                    </VStack>
-                  </div>
-                }
-                properties={<SalesRFQProperties key={rfqId} />}
-              />
+      <DocumentDropTargetsProvider
+        value={
+          canDropDocuments
+            ? {
+                listTargetId: "sales-rfq-explorer",
+                lines: lines.map((line) => ({
+                  targetId: `sales-rfq-line-${line.id}`,
+                  label: line.customerPartId || line.itemReadableId || line.id
+                })),
+                onDrop: handleDrop
+              }
+            : null
+        }
+      >
+        <PanelProvider>
+          <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
+            <SalesRFQHeader />
+            <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+              <div className="flex flex-grow overflow-hidden">
+                <ResizablePanels
+                  explorer={<SalesRFQExplorer />}
+                  content={
+                    <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <VStack spacing={4} className="p-4">
+                        <RecordOutlet />
+                      </VStack>
+                    </div>
+                  }
+                  properties={<SalesRFQProperties key={rfqId} />}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </PanelProvider>
+        </PanelProvider>
+      </DocumentDropTargetsProvider>
     </DndContext>
   );
 }

@@ -5,6 +5,11 @@ CREATE OR REPLACE FUNCTION public.prevent_posted_purchase_invoice_deletion(p_tab
 AS $function$
 BEGIN
   IF p_operation = 'DELETE' THEN
+    -- An approved force delete (`decideDocumentForceDelete`) removes a posted
+    -- or voided invoice inside its own transaction.
+    IF current_setting('app.force_delete', true) = 'on' THEN
+      RETURN;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM "company" WHERE id = (p_old->>'companyId')) THEN
       RETURN;
     END IF;

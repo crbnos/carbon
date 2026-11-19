@@ -4,14 +4,23 @@
 
 import { getMESUrl } from "@carbon/env";
 import type { JSONContent } from "@carbon/react";
-import { formatFactor } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import { generateQRCode } from "../../../qr/qr-code";
-import type { OperationsBlock as OperationsBlockType } from "../../../template";
+import {
+  jobTravelerTexts,
+  makeText,
+  type OperationsBlock as OperationsBlockType
+} from "../../../template";
 import { Note } from "../../components";
 import { breakLongNotesWord } from "../../notesText";
+import { Cell, TextCell } from "../Cell";
+import { columnWidths } from "../columns";
 import { tw } from "./tw";
-import type { JobOperationWithSteps, JobTravelerData } from "./types";
+import type { JobTravelerData } from "./types";
+import {
+  buildJobTravelerOperationVars,
+  buildJobTravelerStepVars
+} from "./vars";
 
 /** Starts a timer on the operation in MES; `?type=` picks Setup, Labor or Machine. */
 function getStartPath(operationId: string) {
@@ -46,25 +55,6 @@ const SUB_SECTION_TITLE = {
   textTransform: "uppercase"
 } as const;
 
-/**
- * The sequence number printed for an operation. One that runs With Previous
- * shares the number of the operation it runs with.
- */
-function getParallelizedOrder(
-  index: number,
-  item: JobOperationWithSteps,
-  items: JobOperationWithSteps[]
-) {
-  if (item?.operationOrder !== "With Previous") return index + 1;
-  // traverse backwards to find the first non-"With Previous" item.
-  for (let i = index - 1; i >= 0; i--) {
-    if (items[i]?.operationOrder !== "With Previous") {
-      return i + 1;
-    }
-  }
-  return 1;
-}
-
 /** Routing table: seq, operation, expected times, QR actions, steps, work instructions. */
 export function OperationsBlock({
   block,
@@ -75,6 +65,16 @@ export function OperationsBlock({
 }) {
   const { jobOperations } = data;
   const includeWorkInstructions = block.showWorkInstructions ?? false;
+  const t = makeText(jobTravelerTexts.operations, block, data.vars);
+  const w = columnWidths(
+    [
+      { key: "seq", width: 100 / 12 },
+      { key: "operation", width: 800 / 12 },
+      { key: "expectedTimes", width: 25 }
+    ],
+    t.shows,
+    "operation"
+  );
 
   return (
     <View style={tw("mb-6 text-xs")}>
@@ -83,14 +83,25 @@ export function OperationsBlock({
           "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid gap-x-6"
         )}
       >
-        <Text style={tw("w-1/12 text-left")}>Seq</Text>
-        <Text style={tw("w-8/12 text-left")}>Operation</Text>
-        <Text style={tw("w-3/12 text-left")}>Expected Times</Text>
+        <TextCell width={w.seq} style={tw("text-left")}>
+          {t("seq")}
+        </TextCell>
+        <TextCell width={w.operation} style={tw("text-left")}>
+          {t("operation")}
+        </TextCell>
+        <TextCell width={w.expectedTimes} style={tw("text-left")}>
+          {t("expectedTimes")}
+        </TextCell>
       </View>
 
       {jobOperations
         .sort((a, b) => a.order - b.order)
         .map((operation, index) => {
+          const row = data.values.row(
+            "operation",
+            operation.id,
+            buildJobTravelerOperationVars(operation, index + 1, data)
+          );
           const isInside = operation.operationType !== "Outside Processing";
           // A batched operation runs on the batch's shared timer and is
           // completed with the whole batch, so its row gets no start or
@@ -128,21 +139,6 @@ export function OperationsBlock({
             );
           }
 
-          const setupTimeFormatted = formatFactor(
-            operation.setupTime,
-            operation.setupUnit
-          );
-          const laborTimeFormatted = formatFactor(
-            operation.laborTime,
-            operation.laborUnit
-          );
-          const machineTimeFormatted = formatFactor(
-            operation.machineTime,
-            operation.machineUnit
-          );
-          const hasExpectedTimes =
-            setupTimeFormatted || laborTimeFormatted || machineTimeFormatted;
-
           const workInstruction = operation.workInstruction as
             | JSONContent
             | undefined;
@@ -173,33 +169,33 @@ export function OperationsBlock({
                   )}
                   wrap={false}
                 >
-                  <Text style={tw("w-1/12 font-bold text-left")}>
-                    {getParallelizedOrder(index, operation, jobOperations)}
-                  </Text>
-                  <View style={tw("w-8/12 text-left text-[12px]")}>
-                    <Text style={tw("font-bold")}>{operation.description}</Text>
-                  </View>
-                  <View style={tw("w-3/12 text-left")}>
-                    {hasExpectedTimes ? (
-                      <View style={tw("flex flex-col gap-1")}>
-                        {setupTimeFormatted ? (
-                          <Text style={tw("text-[10px]")}>
-                            Setup: {setupTimeFormatted}
-                          </Text>
-                        ) : null}
-                        {laborTimeFormatted ? (
-                          <Text style={tw("text-[10px]")}>
-                            Labor: {laborTimeFormatted}
-                          </Text>
-                        ) : null}
-                        {machineTimeFormatted ? (
-                          <Text style={tw("text-[10px]")}>
-                            Machine: {machineTimeFormatted}
-                          </Text>
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </View>
+                  <TextCell width={w.seq} style={tw("font-bold text-left")}>
+                    {t("seqCell", row)}
+                  </TextCell>
+                  <Cell width={w.operation} style={tw("text-left text-[12px]")}>
+                    <Text style={tw("font-bold")}>
+                      {t("operationCell", row)}
+                    </Text>
+                  </Cell>
+                  <Cell width={w.expectedTimes} style={tw("text-left")}>
+                    <View style={tw("flex flex-col gap-1")}>
+                      {t.prints("expectedSetup", row) ? (
+                        <Text style={tw("text-[10px]")}>
+                          {t("expectedSetup", row)}
+                        </Text>
+                      ) : null}
+                      {t.prints("expectedLabor", row) ? (
+                        <Text style={tw("text-[10px]")}>
+                          {t("expectedLabor", row)}
+                        </Text>
+                      ) : null}
+                      {t.prints("expectedMachine", row) ? (
+                        <Text style={tw("text-[10px]")}>
+                          {t("expectedMachine", row)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </Cell>
                 </View>
 
                 <View
@@ -208,7 +204,9 @@ export function OperationsBlock({
                   )}
                 >
                   <Text style={tw("text-left pr-4")}>
-                    {batch ? `Batch ${batch.readableId}` : "Actions"}
+                    {batch
+                      ? `${t("batch")} ${t("batchValue", row)}`.trim()
+                      : t("actions")}
                   </Text>
                 </View>
 
@@ -216,20 +214,23 @@ export function OperationsBlock({
                   {openQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <Image src={openQrCode} style={tw("w-16 h-16")} />
-                      <Text style={tw("text-[10px] mt-1")}>Open in MES</Text>
+                      <Text style={tw("text-[10px] mt-1")}>
+                        {t("openInMes")}
+                      </Text>
                     </View>
                   ) : null}
                   {batch ? (
                     <Text style={tw("w-3/4 self-center text-[10px]")}>
-                      This operation runs with other jobs as one batch. Start
-                      and complete it from the batch in MES.
+                      {t("batchInstructions")}
                     </Text>
                   ) : null}
                   {isInside && setupQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={setupQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[10px] mt-1")}>Setup</Text>
+                        <Text style={tw("text-[10px] mt-1")}>
+                          {t("actionSetup")}
+                        </Text>
                       </>
                     </View>
                   ) : null}
@@ -238,7 +239,9 @@ export function OperationsBlock({
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={laborQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[10px] mt-1")}>Labor</Text>
+                        <Text style={tw("text-[10px] mt-1")}>
+                          {t("actionLabor")}
+                        </Text>
                       </>
                     </View>
                   ) : null}
@@ -246,14 +249,18 @@ export function OperationsBlock({
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={machiningQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[10px] mt-1")}>Machine</Text>
+                        <Text style={tw("text-[10px] mt-1")}>
+                          {t("actionMachine")}
+                        </Text>
                       </>
                     </View>
                   ) : null}
                   {completeQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <Image src={completeQrCode} style={tw("w-16 h-16")} />
-                      <Text style={tw("text-[10px] mt-1")}>Complete</Text>
+                      <Text style={tw("text-[10px] mt-1")}>
+                        {t("complete")}
+                      </Text>
                     </View>
                   ) : null}
                 </View>
@@ -271,7 +278,7 @@ export function OperationsBlock({
                 >
                   <View style={tw("w-1/4")} />
                   <View style={tw("w-3/4")}>
-                    <Text style={SUB_SECTION_TITLE}>Batch Notes</Text>
+                    <Text style={SUB_SECTION_TITLE}>{t("batchNotes")}</Text>
                     <Text
                       style={tw("text-[9px]")}
                       hyphenationCallback={breakLongNotesWord}
@@ -286,7 +293,9 @@ export function OperationsBlock({
                 <View style={tw("mt-2 ml-8")}>
                   {hasProcedureSteps ? (
                     <View style={tw("mb-2")}>
-                      <Text style={SUB_SECTION_TITLE}>Procedure Steps</Text>
+                      <Text style={SUB_SECTION_TITLE}>
+                        {t("procedureSteps")}
+                      </Text>
                       {operation
                         .jobOperationStep!.sort(
                           (a, b) => a.sortOrder - b.sortOrder
@@ -319,11 +328,18 @@ export function OperationsBlock({
                               />
                               <View style={tw("flex-1")}>
                                 <Text style={tw("text-[9px] font-bold")}>
-                                  {step.name}
+                                  {t(
+                                    "stepNameCell",
+                                    data.values.row(
+                                      "step",
+                                      step.id,
+                                      buildJobTravelerStepVars(step)
+                                    )
+                                  )}
                                 </Text>
                                 {hasStepDescription ? (
                                   <Note
-                                    title="Procedure Step"
+                                    title={t("procedureStep")}
                                     content={stepDescription}
                                   />
                                 ) : null}
@@ -334,7 +350,10 @@ export function OperationsBlock({
                     </View>
                   ) : null}
                   {hasWorkInstruction ? (
-                    <Note title="Work Instructions" content={workInstruction} />
+                    <Note
+                      title={t("workInstructions")}
+                      content={workInstruction}
+                    />
                   ) : null}
                 </View>
               ) : null}

@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { abilityRecertifyValidator } from "~/modules/resources/resources.models";
 import { updateAbility } from "~/modules/resources/resources.service";
@@ -56,11 +57,9 @@ export default function AbilityDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Invalid ability id");
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.ability(id));
   const routeData = useRouteData<{ ability: Ability }>(path.to.ability(id));
   const ability = routeData?.ability;
-
-  const onClose = () => navigate(path.to.ability(id));
 
   const initialValues = {
     id: ability?.id,
@@ -71,7 +70,8 @@ export default function AbilityDetailsRoute() {
   return (
     <AbilityForm
       key={initialValues.id}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

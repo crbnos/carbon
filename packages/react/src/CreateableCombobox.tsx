@@ -7,6 +7,11 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
+import {
+  useClearLabel,
+  useInlineTriggerLabel,
+  usePickerLabel
+} from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { InlineTrigger } from "./InlineTrigger";
@@ -46,6 +51,9 @@ export type CreatableComboboxProps = Omit<
   inlinePlaceholder?: ReactNode;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
+  /** The create row's text for a search, in place of "Create …". The row then
+   * shows only while searching. */
+  createOptionText?: (search: string) => string;
   itemHeight?: number;
 };
 
@@ -67,11 +75,15 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       inline,
       inlinePlaceholder,
       onCreateOption,
+      createOptionText,
       ...props
     },
     ref
   ) => {
     const { t } = useLingui();
+    const inlineTriggerLabel = useInlineTriggerLabel(!!value);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
+    const clearLabel = useClearLabel(props["aria-label"]);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -128,6 +140,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
               <InlineTrigger
+                // The field and its value: "Edit Customer: ORBSEC Defense".
+                aria-label={
+                  value && selectedOptionText
+                    ? `${inlineTriggerLabel}: ${selectedOptionText}`
+                    : inlineTriggerLabel
+                }
                 ref={ref}
                 isEmpty={!value}
                 placeholder={inlinePlaceholder ?? t`Add`}
@@ -167,6 +185,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -188,6 +207,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filterCreatableComboboxOptions}
                 selectionMode="single"
@@ -197,7 +217,8 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 onSearchChange={setSearch}
                 creatable
                 createLabel={label}
-                showCreateOptionOnEmpty
+                createText={createOptionText}
+                showCreateOptionOnEmpty={!createOptionText}
                 getItemValue={getCreatableComboboxItemValue}
                 isChecked={(item) =>
                   !!selected?.includes(item.value) || item.value === value
@@ -218,7 +239,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         {isClearable && !isReadOnly && value && (
           <IconButton
             variant={isInlinePreview ? "secondary" : "ghost"}
-            aria-label="Clear"
+            aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange?.("")}
             size={isInlinePreview ? "sm" : size}

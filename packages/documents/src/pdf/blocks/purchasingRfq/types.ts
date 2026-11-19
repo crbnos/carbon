@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
@@ -52,7 +53,10 @@ export interface PurchasingRfqData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
 }
 
 export type BlockRenderer = (args: {

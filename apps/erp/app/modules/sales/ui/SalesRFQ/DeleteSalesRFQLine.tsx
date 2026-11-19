@@ -9,9 +9,11 @@ import { path } from "~/utils/path";
 import type { SalesRFQLine } from "../../types";
 
 export default function DeleteSalesRFQLine({
+  isOpen,
   line,
   onCancel
 }: {
+  isOpen?: boolean;
   line: SalesRFQLine;
   onCancel: () => void;
 }) {
@@ -23,6 +25,7 @@ export default function DeleteSalesRFQLine({
   return (
     <ConfirmDelete
       action={path.to.deleteSalesRfqLine(rfqId, line.id)}
+      isOpen={isOpen}
       name={line.customerPartId ?? "this line"}
       text={t`Are you sure you want to delete the line: ${line.customerPartId}? This cannot be undone.`}
       onCancel={onCancel}

@@ -20,7 +20,7 @@ import {
   SelectValue,
   Spinner
 } from "@carbon/react";
-
+import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef } from "react";
 import { LuX } from "react-icons/lu";
@@ -122,6 +122,7 @@ const Select = ({
         isReadOnly={isReadOnly}
         isLoading={isLoading}
         emptyMessage={isLoading ? undefined : emptyMessage}
+        fieldLabel={label}
         inlinePlaceholder={inlineField.placeholder}
         className="w-full"
       />
@@ -157,6 +158,8 @@ export type SelectBaseProps = Omit<
   isReadOnly?: boolean;
   placeholder?: string;
   emptyMessage?: ReactNode;
+  /** Names the clear button ("Clear Shift"); defaults to `aria-label`. */
+  fieldLabel?: string;
   inline?: (
     value: string,
     options: { value: string; label: string | JSX.Element }[]
@@ -181,10 +184,13 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
       inline,
       inlinePlaceholder,
       onChange,
+      fieldLabel,
       ...props
     },
     ref
   ) => {
+    const { t } = useLingui();
+    const clearTarget = fieldLabel || props["aria-label"];
     const isInlinePreview = !!inline;
     const isNonInteractive = isReadOnly || isDisabled;
 
@@ -259,7 +265,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
         {isClearable && !isNonInteractive && value && (
           <IconButton
             variant="ghost"
-            aria-label="Clear"
+            aria-label={clearTarget ? t`Clear ${clearTarget}` : t`Clear`}
             icon={<LuX />}
             onClick={() => onChange("")}
             size={size === "sm" ? "md" : size}

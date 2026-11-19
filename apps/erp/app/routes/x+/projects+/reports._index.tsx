@@ -288,22 +288,26 @@ export default function ProjectReportsRoute() {
             </Subheading>
             <div className="overflow-hidden rounded-lg border border-border">
               {categoryReports.map((report, index) => (
-                <PrefetchLink
+                // The name is the link, stretched over the row; the pin sits
+                // above it, so the pin button isn't nested in the link.
+                <div
                   key={report.key}
-                  to={path.to.projectReport(report.key)}
                   className={
-                    "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
+                    "relative flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
                     (index > 0 ? " border-t border-border" : "")
                   }
                 >
                   <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-medium max-md:shrink-0 max-md:whitespace-nowrap">
+                  <PrefetchLink
+                    to={path.to.projectReport(report.key)}
+                    className="text-sm font-medium max-md:shrink-0 max-md:whitespace-nowrap outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+                  >
                     {report.name}
-                  </span>
+                  </PrefetchLink>
                   <span className="truncate text-sm text-muted-foreground">
                     {report.description}
                   </span>
-                  <span className="ml-auto">
+                  <span className="relative z-10 ml-auto">
                     <PinToggle
                       pinned={isPinned(report)}
                       onToggle={(next) => togglePin(report, next)}
@@ -311,7 +315,7 @@ export default function ProjectReportsRoute() {
                       unpinLabel={t`Unpin ${report.name}`}
                     />
                   </span>
-                </PrefetchLink>
+                </div>
               ))}
             </div>
           </div>

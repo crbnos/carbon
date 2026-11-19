@@ -17,8 +17,9 @@ import {
   type OpenItemType
 } from "../accounting-cutover";
 import {
-  CUSTOMER_DEPOSIT_DESCRIPTION,
+  DEPOSIT_DESCRIPTIONS,
   DOCUMENT_JOURNAL_STATUSES,
+  depositDescription,
   onAccountCreditDescription,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
 } from "../accounting-posting";
@@ -94,6 +95,7 @@ type SettlementRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   targetMemoId: string | null;
+  targetPaymentId: string | null;
   targetReimbursementId: string | null;
   appliedAmount: number;
   discountAmount: number;
@@ -137,6 +139,7 @@ async function getSettlementsBeforeCutover(
       "s.targetSalesInvoiceId",
       "s.targetPurchaseInvoiceId",
       "s.targetMemoId",
+      "s.targetPaymentId",
       "s.targetReimbursementId",
       "s.appliedAmount",
       "s.discountAmount",
@@ -453,7 +456,7 @@ async function getUnappliedPaymentItems(
       .where("line.description", "in", [
         onAccountCreditDescription(true),
         onAccountCreditDescription(false),
-        CUSTOMER_DEPOSIT_DESCRIPTION
+        ...DEPOSIT_DESCRIPTIONS
       ])
       .execute(),
     db
@@ -476,6 +479,8 @@ async function getUnappliedPaymentItems(
         "payment.exchangeRate",
         "payment.salesOrderId",
         "payment.rentalAgreementId",
+        "payment.customerContractId",
+        "payment.purchaseOrderId",
         "customer.intercompanyCompanyId as customerIntercompanyId",
         "supplier.intercompanyCompanyId as supplierIntercompanyId"
       ])
@@ -507,10 +512,13 @@ async function getUnappliedPaymentItems(
   // Base each source payment's credit released before the cutover, as
   // `remainingFundingSources` reduces a funding source.
   const consumed = new Map<string, { ar: number; ap: number }>();
+  const depositRefundPaymentIds = new Set<string>();
   // Base the payment's own applications released from its cash, as
   // `buildPaymentJournal` sums them (FX added when cash comes in).
   const ownReleased = new Map<string, { cashIn: number; cashOut: number }>();
   for (const row of settlements) {
+    if (row.targetPaymentId && row.paymentId)
+      depositRefundPaymentIds.add(row.paymentId);
     if (row.sourcePaymentId) {
       const current = consumed.get(row.sourcePaymentId) ?? { ar: 0, ap: 0 };
       current.ar += row.appliedAmount + row.fxGainLossAmount;
@@ -535,9 +543,13 @@ async function getUnappliedPaymentItems(
   const journaled = lines.map((line): DraftItem => {
     const isAR = line.customerId != null;
     const original = Number(line.amount);
-    const isDeposit = line.description === CUSTOMER_DEPOSIT_DESCRIPTION;
+    const isDeposit = line.description === depositDescription(isAR);
     return {
-      openItemType: isDeposit ? "Customer Deposit" : "Unapplied Credit",
+      openItemType: isDeposit
+        ? isAR
+          ? "Customer Deposit"
+          : "Supplier Prepayment"
+        : "Unapplied Credit",
       accountId: resolveLineAccount(line, defaults),
       basis: "natural",
       original,
@@ -551,10 +563,18 @@ async function getUnappliedPaymentItems(
 
   const legacy: DraftItem[] = [];
   for (const payment of legacyPayments) {
+    // A deposit refund consumes the original deposit above and creates no
+    // new credit of its own, even when its cash and carrying rates differ.
+    if (depositRefundPaymentIds.has(payment.id)) continue;
     const isAR = payment.customerId != null;
     const cashIn = payment.paymentType === "Receipt";
-    const isDeposit =
-      isAR && Boolean(payment.rentalAgreementId ?? payment.salesOrderId);
+    const isDeposit = isAR
+      ? Boolean(
+          payment.rentalAgreementId ??
+            payment.salesOrderId ??
+            payment.customerContractId
+        )
+      : Boolean(payment.purchaseOrderId);
     const own = ownReleased.get(payment.id);
     const unapplied = round(
       toBaseAmount(Number(payment.totalAmount), Number(payment.exchangeRate)) -
@@ -565,7 +585,9 @@ async function getUnappliedPaymentItems(
       isAR ? payment.customerIntercompanyId : payment.supplierIntercompanyId
     );
     const accountId = isDeposit
-      ? defaults.prepaymentAccount
+      ? isAR
+        ? defaults.prepaymentAccount
+        : defaults.supplierPrepaymentAccount
       : isAR
         ? isIntercompany
           ? (defaults.intercompanyReceivablesAccount ??
@@ -575,13 +597,24 @@ async function getUnappliedPaymentItems(
           ? (defaults.intercompanyPayablesAccount ?? defaults.payablesAccount)
           : defaults.payablesAccount;
     // The unapplied leg `buildPaymentJournal` books: a credit when cash came
-    // in, a debit when it went out; a deposit is a liability.
-    const accountType = isDeposit ? "liability" : isAR ? "asset" : "liability";
+    // in, a debit when it went out; a customer deposit is a liability, a
+    // supplier prepayment an asset.
+    const accountType = isDeposit
+      ? isAR
+        ? "liability"
+        : "asset"
+      : isAR
+        ? "asset"
+        : "liability";
     const original = cashIn
       ? credit(accountType, unapplied)
       : debit(accountType, unapplied);
     legacy.push({
-      openItemType: isDeposit ? "Customer Deposit" : "Unapplied Credit",
+      openItemType: isDeposit
+        ? isAR
+          ? "Customer Deposit"
+          : "Supplier Prepayment"
+        : "Unapplied Credit",
       accountId,
       basis: "natural",
       original,
@@ -590,7 +623,7 @@ async function getUnappliedPaymentItems(
       documentId: payment.id,
       documentLineReference: null,
       description: isDeposit
-        ? CUSTOMER_DEPOSIT_DESCRIPTION
+        ? depositDescription(isAR)
         : onAccountCreditDescription(isAR)
     });
   }
@@ -1054,11 +1087,21 @@ async function getInvoicedNotReceivedItems(
   return items;
 }
 
+/** The receipt lines that are a job's cost: SQL `job_receipt_line_references`,
+ *  the rule `job_wip_balance` reads. */
+function receiptLineJobs(companyId: string) {
+  return sql<{
+    jobId: string;
+    documentLineReference: string;
+  }>`job_receipt_line_references(${companyId})`.as("receiptJob");
+}
+
 /**
  * Work in progress: per job, its lines on the WIP account dated before the
- * cutover, as `close-job` sums them. Every job with a balance, whatever its
- * status, plus one item for the project and service cost on the account, so
- * the account's opening balance is all of its cost.
+ * cutover, as `job_wip_balance` sums them: the lines documented against the
+ * job and the lines of its outside processing receipts. Every job with a
+ * balance, whatever its status, plus one item for the project and service
+ * cost on the account, so the account's opening balance is all of its cost.
  */
 async function getWorkInProgressItems(
   db: CutoverDb,
@@ -1066,6 +1109,7 @@ async function getWorkInProgressItems(
   cutoverDate: string,
   defaults: AccountDefaults
 ): Promise<DraftItem[]> {
+  const lineJobId = sql<string>`coalesce("job"."id", "receiptJob"."jobId")`;
   const rows = await db
     .selectFrom("journalLine as line")
     .innerJoin("journal", (join) =>
@@ -1073,20 +1117,28 @@ async function getWorkInProgressItems(
         .onRef("journal.id", "=", "line.journalId")
         .onRef("journal.companyId", "=", "line.companyId")
     )
-    .innerJoin("job", (join) =>
+    .leftJoin("job", (join) =>
       join
         .onRef("job.id", "=", "line.documentId")
         .onRef("job.companyId", "=", "line.companyId")
     )
+    .leftJoin(receiptLineJobs(companyId), (join) =>
+      join.onRef(
+        "receiptJob.documentLineReference",
+        "=",
+        "line.documentLineReference"
+      )
+    )
     .select([
-      "job.id as jobId",
+      lineJobId.as("jobId"),
       sql<number>`sum("line"."amount")`.as("balance")
     ])
     .where("line.companyId", "=", companyId)
     .where("line.accountId", "=", defaults.workInProgressAccount)
     .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
     .where("journal.postingDate", "<", cutoverDate)
-    .groupBy("job.id")
+    .where(lineJobId, "is not", null)
+    .groupBy(lineJobId)
     .execute();
   const items: DraftItem[] = rows.map((row) => ({
     openItemType: "Work in Progress",
@@ -1119,12 +1171,20 @@ async function getWorkInProgressItems(
           .onRef("job.id", "=", "line.documentId")
           .onRef("job.companyId", "=", "line.companyId")
       )
+      .leftJoin(receiptLineJobs(companyId), (join) =>
+        join.onRef(
+          "receiptJob.documentLineReference",
+          "=",
+          "line.documentLineReference"
+        )
+      )
       .select(sql<number>`coalesce(sum("line"."amount"), 0)`.as("balance"))
       .where("line.companyId", "=", companyId)
       .where("line.accountId", "=", defaults.workInProgressAccount)
       .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
       .where("journal.postingDate", "<", cutoverDate)
       .where("job.id", "is", null)
+      .where("receiptJob.jobId", "is", null)
       .executeTakeFirst(),
     db
       .selectFrom("revenueRecognitionSchedule")

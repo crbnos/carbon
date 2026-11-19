@@ -285,7 +285,11 @@ export function IntegrationNodeForm({
           onValueChange={handlePieceChange}
           disabled={isReadOnly}
         >
-          <SelectTrigger className="w-full" disabled={isReadOnly}>
+          <SelectTrigger
+            aria-label={t`App`}
+            className="w-full"
+            disabled={isReadOnly}
+          >
             <SelectValue placeholder={t`Select an app…`} />
           </SelectTrigger>
           <SelectContent>
@@ -397,7 +401,11 @@ export function IntegrationNodeForm({
             onValueChange={handleStepChange}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="w-full" disabled={isReadOnly}>
+            <SelectTrigger
+              aria-label={t`Step`}
+              className="w-full"
+              disabled={isReadOnly}
+            >
               <SelectValue placeholder={t`Select a step…`} />
             </SelectTrigger>
             <SelectContent>

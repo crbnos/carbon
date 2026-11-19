@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { SUPABASE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   loadSalesInvoiceDocument,
@@ -15,7 +14,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
     {
-      view: "sales"
+      view: "invoicing"
     }
   );
 
@@ -29,8 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     companyGroupId,
     invoiceId: id,
-    locale,
-    storageUrl: SUPABASE_URL ?? ""
+    locale
   });
 
   const body = await renderSalesInvoicePdf(pdfProps);

@@ -83,6 +83,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           {/* Phones: a period chip with a ⌄ picker indicator,
               32pt visual with a 44pt hit area like its neighbouring buttons. */}
           <SelectTrigger
+            aria-label={t`Date range`}
             hideIcon
             className={cn(
               "md:hidden w-auto h-8 text-xs",
@@ -128,6 +129,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           {showCustom && (
             <ToggleGroupItem
               value="custom"
+              aria-label={t`Custom date range`}
               className={cn(
                 "h-7 w-7 rounded-full p-0",
                 "bg-transparent text-muted-foreground",

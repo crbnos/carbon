@@ -42,12 +42,14 @@ import { path } from "~/utils/path";
 type CustomFieldFormProps = {
   initialValues: z.infer<typeof customFieldValidator>;
   dataTypes: AttributeDataType[];
+  open?: boolean;
   onClose: () => void;
 };
 
 const CustomFieldForm = ({
   initialValues,
   dataTypes,
+  open = true,
   onClose
 }: CustomFieldFormProps) => {
   const { t } = useLingui();
@@ -82,7 +84,7 @@ const CustomFieldForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -17,7 +17,13 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
-import { LuCheck, LuChevronDown, LuTriangleAlert, LuX } from "react-icons/lu";
+import {
+  LuCheck,
+  LuChevronDown,
+  LuGauge,
+  LuTriangleAlert,
+  LuX
+} from "react-icons/lu";
 import { GaugeCalibrationStatus } from "../Gauge/GaugeStatus";
 
 // A row of the `gauges` view (every column is nullable on a view).
@@ -49,6 +55,9 @@ type InspectionGaugePickerProps = {
   value: string | null;
   isReadOnly: boolean;
   onChange: (gaugeId: string | null) => void;
+  // "cell" fills a table cell (By characteristic). "chip" is a compact pill
+  // that sits beside the progress badges in a column header (By part).
+  variant?: "cell" | "chip";
 };
 
 const isOutOfCalibration = (gauge: GaugeOption) =>
@@ -65,7 +74,8 @@ const InspectionGaugePicker = ({
   gaugeTypeName,
   value,
   isReadOnly,
-  onChange
+  onChange,
+  variant = "cell"
 }: InspectionGaugePickerProps) => {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -90,46 +100,86 @@ const InspectionGaugePicker = ({
     };
   }, [gauges, recentGaugeIds, gaugeTypeId]);
 
-  const placeholder = gaugeTypeName ?? t`Select gauge`;
+  const placeholder = gaugeTypeName ?? t`Add gauge`;
   const isInactive = selected?.gaugeStatus === "Inactive";
 
-  const label = selected ? (
-    <span className="flex min-w-0 items-center gap-1.5">
-      {isOutOfCalibration(selected) && (
+  const outOfCalibration = selected ? isOutOfCalibration(selected) : false;
+  const chipClassName = cn(
+    // Capped so a long description truncates instead of widening the column.
+    "inline-flex h-7 max-w-56 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors",
+    !value &&
+      "border-dashed border-border text-muted-foreground hover:border-solid hover:bg-accent hover:text-foreground",
+    value &&
+      !outOfCalibration &&
+      "border-border bg-muted/40 text-foreground hover:bg-accent",
+    outOfCalibration &&
+      "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
+  );
+  const chipContent = (
+    <>
+      {outOfCalibration ? (
         <LuTriangleAlert
           role="img"
-          className="size-3.5 shrink-0 text-red-500"
+          className="size-3.5 shrink-0"
           aria-label={t`Out of calibration`}
         />
+      ) : (
+        <LuGauge className="size-3.5 shrink-0" aria-hidden />
       )}
-      <span
-        className={cn(
-          "truncate font-mono text-xs",
-          isInactive && "text-muted-foreground"
-        )}
-      >
-        {selected.gaugeId}
-      </span>
-      {isInactive && (
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {t`(Inactive)`}
+      {selected ? (
+        <span className="flex min-w-0 items-baseline gap-1.5">
+          <span
+            className={cn(
+              "shrink-0 font-medium",
+              isInactive && "text-muted-foreground"
+            )}
+          >
+            {selected.gaugeId}
+          </span>
+          {selected.description && (
+            <span className="truncate text-muted-foreground">
+              {selected.description}
+            </span>
+          )}
+          {isInactive && (
+            <span className="shrink-0 text-muted-foreground">
+              {t`(Inactive)`}
+            </span>
+          )}
+        </span>
+      ) : (
+        <span className="truncate">
+          {value ? t`Unknown gauge` : placeholder}
         </span>
       )}
-    </span>
-  ) : value ? (
-    <span className="truncate text-xs text-muted-foreground">
-      {t`Unknown gauge`}
-    </span>
-  ) : (
-    <span className="truncate text-xs text-muted-foreground">
-      {placeholder}
+    </>
+  );
+
+  // The cell variant shows the same content as the chip, without its border.
+  const cellContent = (
+    <span
+      className={cn(
+        "flex min-w-0 max-w-[220px] items-center gap-1.5 text-xs",
+        !value && "text-muted-foreground",
+        outOfCalibration && "text-red-700 dark:text-red-300"
+      )}
+    >
+      {chipContent}
     </span>
   );
+
+  if (variant === "chip" && isReadOnly) {
+    return value ? (
+      <span className={cn(chipClassName, "pointer-events-none")}>
+        {chipContent}
+      </span>
+    ) : null;
+  }
 
   if (isReadOnly) {
     return (
       <div className="flex h-full min-w-[120px] items-center px-3">
-        {selected || value ? label : "—"}
+        {selected || value ? cellContent : "—"}
       </div>
     );
   }
@@ -144,7 +194,7 @@ const InspectionGaugePicker = ({
       }}
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-mono text-xs">{gauge.gaugeId}</span>
+        <span className="truncate text-xs font-medium">{gauge.gaugeId}</span>
         {gauge.description && (
           <span className="truncate text-xs text-muted-foreground">
             {gauge.description}
@@ -174,15 +224,30 @@ const InspectionGaugePicker = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t`Gauge for characteristic ${characteristicLabel}: ${currentGauge}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex h-full min-h-10 w-full min-w-[120px] items-center justify-between gap-2 px-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-        >
-          {label}
-          <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        </button>
+        {variant === "chip" ? (
+          <button
+            type="button"
+            aria-label={t`Gauge for characteristic ${characteristicLabel}: ${currentGauge}`}
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              chipClassName,
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            )}
+          >
+            {chipContent}
+            {value && <LuChevronDown className="size-3 shrink-0 opacity-60" />}
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={t`Gauge for characteristic ${characteristicLabel}: ${currentGauge}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-full min-h-10 w-full min-w-[120px] items-center justify-between gap-2 px-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          >
+            {cellContent}
+            <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent
         align="start"

@@ -13,10 +13,12 @@ import {
   useSidebar
 } from "@carbon/react";
 import {
+  type CollisionDetection,
   closestCenter,
   DndContext,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
@@ -25,11 +27,10 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { LuSearch, LuSettings2 } from "react-icons/lu";
 import { useLocation, useMatches, useNavigate } from "react-router";
 import {
-  useModules,
   useOptimisticLocation,
   usePermissions,
   useSettingsModule
@@ -39,6 +40,10 @@ import {
   ImplementationData
 } from "~/hooks/useImplementationNavItem";
 import {
+  useModuleLinks,
+  useModuleSubmodules
+} from "~/hooks/useModuleSubmodules";
+import {
   MODULE_GO_TO,
   MODULE_GO_TO_PREFIX,
   navigationEditCancelShortcut,
@@ -46,6 +51,8 @@ import {
 } from "~/shortcuts";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
+import { getModule } from "~/utils/submodule-visibility";
 import { SearchModal } from "../Topbar/Search";
 import CompanySwitcher from "./CompanySwitcher";
 import { HiddenModulesPopover } from "./HiddenModulesPopover";
@@ -53,9 +60,12 @@ import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
 import { useNavigationEditMode } from "./useNavigationEditMode";
 
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+// A row with an open tree is tall, so its center is far from its row. Follow the
+// pointer instead. The keyboard has no pointer, and a gap between rows has no row.
+const moduleUnderPointer: CollisionDetection = (args) => {
+  const collisions = pointerWithin(args);
+  return collisions.length > 0 ? collisions : closestCenter(args);
+};
 
 // Search and Customize are actions, not destinations — they keep the neutral
 // accent hover instead of the active-tinted one module links use.
@@ -93,7 +103,7 @@ const PrimaryNavigation = () => {
   const permissions = usePermissions();
   const committedModule = getModule(useLocation().pathname);
   const pendingModule = getModule(useOptimisticLocation().pathname);
-  const links = useModules();
+  const links = useModuleLinks();
   const settingsModule = useSettingsModule();
   const matchedModules = useMatches().reduce((acc, match) => {
     const handle = match.handle as { module?: string } | undefined;
@@ -154,11 +164,6 @@ const PrimaryNavigation = () => {
   // rearranged; flipping it back also clears any hover left over from either.
   const isSearchModalOpen = useUIStore((s) => s.isSearchModalOpen);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
-    useSensor(KeyboardSensor)
-  );
-
   const footer = (
     <>
       {settingsModule && !editMode.isEditing
@@ -197,9 +202,9 @@ const PrimaryNavigation = () => {
         disableHover={editMode.isEditing || isSearchModalOpen}
         // Phones switch company from the Profile sheet.
         header={isMobile ? undefined : <CompanySwitcher />}
+        sticky={canSearch ? <NavigationSearchButton /> : undefined}
         footer={footer}
       >
-        {canSearch && <NavigationSearchButton />}
         {editMode.isEditing ? null : (
           <ImplementationData>
             {(data) => {
@@ -211,24 +216,10 @@ const PrimaryNavigation = () => {
           </ImplementationData>
         )}
         {editMode.isEditing ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={editMode.handleDragEnd}
-          >
-            <SortableContext
-              items={editMode.visibleDraft.map((m) => m.key)}
-              strategy={verticalListSortingStrategy}
-            >
-              {editMode.visibleDraft.map((module) => (
-                <SortableNavItem
-                  key={module.key}
-                  module={module}
-                  onToggleHidden={editMode.toggleHidden}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+          <CustomizeModuleList
+            editMode={editMode}
+            currentModule={currentModule}
+          />
         ) : (
           links.map((link) =>
             renderLink(link, isModuleActive(link.to), MODULE_GO_TO[link.key])
@@ -249,14 +240,71 @@ const PrimaryNavigation = () => {
   );
 };
 
+// Mounted only while Customize is open, so the tree state starts fresh each time.
+const CustomizeModuleList = ({
+  editMode,
+  currentModule
+}: {
+  editMode: ReturnType<typeof useNavigationEditMode>;
+  currentModule: string;
+}) => {
+  const submodules = useModuleSubmodules();
+  const sensors = useSensors(
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor)
+  );
+  const [openModules, setOpenModules] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(
+        editMode.visibleDraft
+          .filter((m) => getModule(m.to) === currentModule)
+          .map((m) => m.key)
+      )
+  );
+  const toggleOpen = (key: string) => {
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={moduleUnderPointer}
+      onDragEnd={editMode.handleDragEnd}
+    >
+      <SortableContext
+        items={editMode.visibleDraft.map((m) => m.key)}
+        strategy={verticalListSortingStrategy}
+      >
+        {editMode.visibleDraft.map((module) => (
+          <SortableNavItem
+            key={module.key}
+            module={module}
+            groups={submodules[module.key] ?? []}
+            isOpen={openModules.has(module.key)}
+            onToggleOpen={toggleOpen}
+            onToggleHidden={editMode.toggleHidden}
+            onSetSubmodulesHidden={editMode.setSubmodulesHidden}
+            onSetSubmoduleOrder={editMode.setSubmoduleOrder}
+          />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+};
+
 // Hovering is what expands the rail, so the g-then-letter hint shows on the
-// hovered/focused row only.
+// hovered/focused row only: the row under the rail's hover card, which stays
+// on it while the pointer crosses the gap below.
 const GoToHint = ({ goToKey }: { goToKey: string }) => (
   <span
     aria-hidden
     className={cn(
       "flex items-center gap-0.5 opacity-0 transition-opacity duration-100",
-      "group-hover/item:opacity-100 group-focus-visible/item:opacity-100"
+      "group-hover/item:opacity-100 group-data-[hover-card]/item:opacity-100 group-focus-visible/item:opacity-100"
     )}
   >
     <ShortcutKey
@@ -306,7 +354,3 @@ const GlobalSearch = () => {
 };
 
 export default memo(PrimaryNavigation);
-
-export function getModule(link: string) {
-  return link.split("/")?.[2];
-}

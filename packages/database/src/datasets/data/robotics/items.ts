@@ -934,7 +934,7 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "CTRL-PCB-FPT",
     item: "PCB-CTRL-R1",
-    drawingNumber: "HX-MC-410 Rev C",
+    name: "HX-MC-410 Rev C",
     aql: 1.0,
     features: [
       {

@@ -33,6 +33,15 @@ import { useCurrencyDecimals } from "~/hooks/useCurrencies";
 import { path } from "~/utils/path";
 import { projectExpenseValidator } from "../../projects.models";
 
+type ChargeCostModalProps = {
+  open?: boolean;
+  projectId: string;
+  element: { id: string; readableId: string; name: string };
+  defaultDescription?: string;
+  defaultAmount?: number;
+  onClose: () => void;
+};
+
 /**
  * Charges a cost straight to an element (a rental, a fee, a part bought on
  * a card). It posts at once (`post-project-expense`). A cost card prefills
@@ -40,18 +49,27 @@ import { projectExpenseValidator } from "../../projects.models";
  * refusal shows in the modal, which stays open.
  */
 export function ChargeCostModal({
+  open = true,
+  onClose,
+  ...props
+}: ChargeCostModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <ChargeCostBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function ChargeCostBody({
   projectId,
   element,
   defaultDescription,
   defaultAmount,
   onClose
-}: {
-  projectId: string;
-  element: { id: string; readableId: string; name: string };
-  defaultDescription?: string;
-  defaultAmount?: number;
-  onClose: () => void;
-}) {
+}: Omit<ChargeCostModalProps, "open">) {
   const { t } = useLingui();
   const today = useCompanyToday();
   const { company } = useUser();
@@ -65,62 +83,56 @@ export function ChargeCostModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={projectExpenseValidator}
-          method="post"
-          action={path.to.projectExpense}
-          fetcher={fetcher}
-          defaultValues={{
-            projectId,
-            projectElementId: element.id,
-            entryDate: today,
-            description: defaultDescription ?? "",
-            amount: defaultAmount
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Charge Cost</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <span className="font-mono">{element.readableId}</span>{" "}
-              {element.name}
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="projectId" />
-            <Hidden name="projectElementId" />
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              <DatePicker name="entryDate" label={t`Date`} />
-              <Input name="description" label={t`Description`} />
-              <NumberField
-                name="amount"
-                label={t`Amount`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.money(currencyCode, decimals)}
-                step={INPUT_STEP.money(decimals)}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Charge</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      validator={projectExpenseValidator}
+      method="post"
+      action={path.to.projectExpense}
+      fetcher={fetcher}
+      defaultValues={{
+        projectId,
+        projectElementId: element.id,
+        entryDate: today,
+        description: defaultDescription ?? "",
+        amount: defaultAmount
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Charge Cost</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <span className="font-mono">{element.readableId}</span> {element.name}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="projectId" />
+        <Hidden name="projectElementId" />
+        <VStack spacing={4}>
+          {errorMessage && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <DatePicker name="entryDate" label={t`Date`} />
+          <Input name="description" label={t`Description`} />
+          <NumberField
+            name="amount"
+            label={t`Amount`}
+            minValue={0}
+            formatOptions={INPUT_FORMAT.money(currencyCode, decimals)}
+            step={INPUT_STEP.money(decimals)}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          <Trans>Charge</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

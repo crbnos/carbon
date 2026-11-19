@@ -133,7 +133,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
         <PopoverTrigger asChild>
           {trigger === "icon" ? (
             <Button
-              aria-label={t`Remove filter`}
+              aria-label={t`Add filter`}
               className="px-1 w-6"
               variant="secondary"
               size="sm"
@@ -170,6 +170,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
               value={input}
               onValueChange={setInput}
               placeholder={t`Search...`}
+              aria-label={t`Search filters`}
               className="h-9"
             />
             <CommandEmpty>

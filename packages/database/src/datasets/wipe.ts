@@ -43,6 +43,7 @@ const PRESERVED_TABLES = new Set([
   "returnReason",
   "scrapReason",
   "sequence",
+  "supplierStage",
   "unitOfMeasure",
   "userToCompany",
   // Accounting records with trigger-enforced immutability (Posted journals
@@ -117,7 +118,9 @@ const PARENT_CHECK_TABLES = [
   "trainingAssignment",
   // projectCostRelief_source_check: a Cost Relief schedule row OR a project
   // close journal (journal is preserved, the schedule row is not)
-  "projectCostRelief"
+  "projectCostRelief",
+  // shipmentFixedAssetLine_source_check: a sales order line OR a rental line
+  "shipmentFixedAssetLine"
 ];
 
 type ForeignKey = {
@@ -449,6 +452,14 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
       ]);
     }
   }
+
+  // Both order and line deletes update jobs; detach the line before either
+  // cascade can recheck its foreign key against an already-deleted line.
+  await client.query(
+    `UPDATE job SET "salesOrderLineId" = NULL
+     WHERE "companyId" = $1 AND "salesOrderLineId" IS NOT NULL`,
+    [companyId]
+  );
 
   // Delete lines with check constraints that would block nulling their item FKs.
   // salesOrderLine.itemId can't be set NULL (check requires it for Part/Material/Tool/etc).

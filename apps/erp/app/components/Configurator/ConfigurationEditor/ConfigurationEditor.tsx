@@ -56,9 +56,34 @@ interface ConfiguratorProps {
 export default function Configurator({
   configuration,
   open,
-  parameters: defaultParameters,
+  parameters,
   onClose
 }: ConfiguratorProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent size="xxxlarge" className="p-0 gap-0 h-[90dvh]">
+        <ConfiguratorBody
+          configuration={configuration}
+          parameters={parameters}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function ConfiguratorBody({
+  configuration,
+  parameters: defaultParameters,
+  onClose
+}: Omit<ConfiguratorProps, "open">) {
   const { t } = useLingui();
   const { code: defaultCode, defaultValue, label, returnType } = configuration;
   const isActive = !!defaultCode;
@@ -299,119 +324,106 @@ export default function Configurator({
 
   const deleteDialog = useDisclosure();
 
-  if (!open) return null;
-
   return (
     <>
-      <Modal
-        open={open}
-        onOpenChange={(open) => {
-          if (!open) {
-            onClose();
-          }
-        }}
-      >
-        <ModalContent size="xxxlarge" className="p-0 gap-0 h-[90dvh]">
-          <div className="flex items-center justify-between p-5 pr-14">
-            <ModalTitle>{t`Configure ${label}`}</ModalTitle>
-            <HStack>
-              <Badge variant={isActive ? "green" : "gray"}>
-                {isActive ? <Trans>Active</Trans> : <Trans>Inactive</Trans>}
-                <LuSquareFunction className="ml-1" />
-              </Badge>
+      <div className="flex items-center justify-between p-5 pr-14">
+        <ModalTitle>{t`Configure ${label}`}</ModalTitle>
+        <HStack>
+          <Badge variant={isActive ? "green" : "gray"}>
+            {isActive ? <Trans>Active</Trans> : <Trans>Inactive</Trans>}
+            <LuSquareFunction className="ml-1" />
+          </Badge>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    icon={<LuEllipsisVertical />}
-                    variant="secondary"
-                    size="sm"
-                    aria-label={t`Actions`}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.delete}
-                    destructive
-                    disabled={!isActive}
-                    onClick={deleteDialog.onOpen}
-                  >
-                    <LuTrash2 className="mr-2 h-4 w-4" />
-                    <Trans>Delete Rule</Trans>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </HStack>
-          </div>
-
-          <div className="flex-1 flex h-full border-t">
-            <div className="flex-1 w-2/3 border-r">
-              <div className="h-full">
-                <Editor
-                  height="100%"
-                  defaultLanguage="javascript"
-                  value={code}
-                  onChange={(value) => setCode(value || "")}
-                  theme={mode === "light" ? "vs-light" : "vs-dark"}
-                  onMount={handleEditorDidMount}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    suggest: {
-                      showProperties: true,
-                      showValues: true,
-                      preview: true
-                    },
-                    quickSuggestions: true,
-                    snippetSuggestions: "inline",
-                    formatOnType: true,
-                    formatOnPaste: true
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="w-1/3 flex flex-col bg-background">
-              <ParameterPanel
-                parameters={parameters}
-                onChange={setParameters}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                icon={<LuEllipsisVertical />}
+                variant="secondary"
+                size="sm"
+                aria-label={t`Actions`}
               />
-              <div className="p-4 border-t space-y-2">
-                <Button
-                  onClick={runCode}
-                  className="w-full"
-                  leftIcon={<LuPlay />}
-                  variant="secondary"
-                >
-                  <Trans>Run Test</Trans>
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="w-full"
-                  leftIcon={<LuSave />}
-                  variant="primary"
-                  isDisabled={fetcher.state !== "idle"}
-                  isLoading={fetcher.state !== "idle"}
-                >
-                  <Trans>Save & Close</Trans>
-                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={!isActive}
+                onClick={deleteDialog.onOpen}
+              >
+                <LuTrash2 className="mr-2 h-4 w-4" />
+                <Trans>Delete Rule</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </HStack>
+      </div>
 
-                <div className="font-mono mt-4 p-2 bg-accent rounded min-h-[100px] max-h-[300px] max-w-[395px] overflow-auto whitespace-pre-wrap">
-                  {output}
-                </div>
-              </div>
+      <div className="flex-1 flex h-full border-t">
+        <div className="flex-1 w-2/3 border-r">
+          <div className="h-full">
+            <Editor
+              height="100%"
+              defaultLanguage="javascript"
+              value={code}
+              onChange={(value) => setCode(value || "")}
+              theme={mode === "light" ? "vs-light" : "vs-dark"}
+              onMount={handleEditorDidMount}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                suggest: {
+                  showProperties: true,
+                  showValues: true,
+                  preview: true
+                },
+                quickSuggestions: true,
+                snippetSuggestions: "inline",
+                formatOnType: true,
+                formatOnPaste: true
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="w-1/3 flex flex-col bg-background">
+          <ParameterPanel parameters={parameters} onChange={setParameters} />
+          <div className="p-4 border-t space-y-2">
+            <Button
+              onClick={runCode}
+              className="w-full"
+              leftIcon={<LuPlay />}
+              variant="secondary"
+            >
+              <Trans>Run Test</Trans>
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="w-full"
+              leftIcon={<LuSave />}
+              variant="primary"
+              isDisabled={fetcher.state !== "idle"}
+              isLoading={fetcher.state !== "idle"}
+            >
+              <Trans>Save & Close</Trans>
+            </Button>
+
+            <div className="font-mono mt-4 p-2 bg-accent rounded min-h-[100px] max-h-[300px] max-w-[395px] overflow-auto whitespace-pre-wrap">
+              {output}
             </div>
           </div>
-        </ModalContent>
-      </Modal>
-      {isActive && deleteDialog.isOpen && (
+        </div>
+      </div>
+      {isActive && (
         <ConfirmDelete
           isOpen={deleteDialog.isOpen}
           action={path.to.deleteConfigurationRule(itemId, configuration.field)}
           name={label}
           text={t`Are you sure you want to deactivate the ${label} configuration rule?`}
           onCancel={deleteDialog.onClose}
-          onSubmit={onClose}
+          onSubmit={() => {
+            deleteDialog.onClose();
+            onClose();
+          }}
         />
       )}
     </>

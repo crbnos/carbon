@@ -9,12 +9,22 @@ import {
   Button,
   InputOTP,
   InputOTPGroup,
-  InputOTPSlot
+  InputOTPSlot,
+  useShortcutKeys
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { LuCheck, LuLoader, LuLogOut, LuSearch, LuX } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useConsolePinAction } from "~/hooks/useConsolePinAction";
+import { DISMISS_PIN_OVERLAY_SHORTCUT } from "~/shortcuts";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -45,6 +55,31 @@ function addRecentOperator(companyId: string, userId: string) {
 
 type Person = { id: string; name: string; avatarUrl: string | null };
 
+// While the overlay is up, everything outside it is inert: Tab stays inside
+// the dialog and assistive tech reads only the dialog (`aria-modal` alone
+// does neither reliably). Every sibling along the path to <body> is marked,
+// and only the ones this marked are released. Barcode scans still arrive:
+// the keyboard wedge listens on `window`, which inert does not affect.
+function useInertOutside(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const marked: Element[] = [];
+    let node = ref.current;
+    while (node && node !== document.body) {
+      const parent: HTMLElement | null = node.parentElement;
+      if (!parent) break;
+      for (const sibling of Array.from(parent.children)) {
+        if (sibling === node || sibling.hasAttribute("inert")) continue;
+        sibling.setAttribute("inert", "");
+        marked.push(sibling);
+      }
+      node = parent;
+    }
+    return () => {
+      for (const element of marked) element.removeAttribute("inert");
+    };
+  }, [ref]);
+}
+
 export function PinInOverlay({
   companyId,
   locationEmployeeIds,
@@ -66,22 +101,33 @@ export function PinInOverlay({
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const pinLabelId = useId();
+  const pinErrorId = useId();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  useInertOutside(overlayRef);
 
-  const pinInFetcher = useFetcher<{ error?: string }>();
-  const pinOutFetcher = useFetcher();
+  const { action: pinInFetcher, submit: submitPinInAction } =
+    useConsolePinAction({
+      onSuccess: (result) => {
+        if (result.success) onDismiss?.();
+      },
+      onError: (result) => {
+        if (result.error) setPinError(result.error);
+        setPin("");
+      }
+    });
+  const { action: pinOutFetcher, submit: submitPinOutAction } =
+    useConsolePinAction();
 
   const recentIds = useMemo(() => getRecentOperators(companyId), [companyId]);
   const isPinning = pinInFetcher.state !== "idle";
+  const changingPin = isPinning || pinOutFetcher.state !== "idle";
 
-  useEffect(() => {
-    if (!dismissable) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onDismiss?.();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [dismissable, onDismiss]);
+  useShortcutKeys({
+    shortcut: DISMISS_PIN_OVERLAY_SHORTCUT,
+    action: () => onDismiss?.(),
+    disabled: !dismissable || changingPin
+  });
 
   const submitPinIn = useCallback(
     (person: Person, pinValue: string) => {
@@ -90,25 +136,10 @@ export function PinInOverlay({
       // The server looks up name and avatar itself; only the id is trusted.
       formData.append("userId", person.id);
       if (pinValue) formData.append("pin", pinValue);
-      pinInFetcher.submit(formData, {
-        method: "POST",
-        action: path.to.consolePinIn
-      });
+      submitPinInAction(formData, path.to.consolePinIn);
     },
-    [companyId, pinInFetcher]
+    [companyId, submitPinInAction]
   );
-
-  useEffect(() => {
-    if (pinInFetcher.state === "idle" && pinInFetcher.data?.error) {
-      setPinError(pinInFetcher.data.error);
-      setPin("");
-    }
-  }, [pinInFetcher.state, pinInFetcher.data]);
-
-  // Focus search on mount
-  useEffect(() => {
-    searchRef.current?.focus();
-  }, []);
 
   const stationUser = useMemo(
     () => (sessionUserId ? people.find((p) => p.id === sessionUserId) : null),
@@ -145,28 +176,6 @@ export function PinInOverlay({
     return { recent, others, all: sorted };
   }, [people, search, recentIds, locationEmployeeIds, sessionUserId]);
 
-  // Track if we've submitted a pin-in attempt
-  const hasSubmittedPinIn = useRef(false);
-
-  // Watch for successful pin-in completion
-  useEffect(() => {
-    if (
-      pinInFetcher.state === "submitting" ||
-      pinInFetcher.state === "loading"
-    ) {
-      hasSubmittedPinIn.current = true;
-    }
-    if (
-      hasSubmittedPinIn.current &&
-      pinInFetcher.state === "idle" &&
-      !pinInFetcher.data?.error
-    ) {
-      // Fetcher completed without error — cookie is set, dismiss overlay
-      hasSubmittedPinIn.current = false;
-      onDismiss?.();
-    }
-  }, [pinInFetcher.state, pinInFetcher.data, onDismiss]);
-
   const handlePinComplete = useCallback(
     (value: string) => {
       if (selectedPerson && value.length === 4) {
@@ -178,15 +187,24 @@ export function PinInOverlay({
   );
 
   const handleBackdropClick = useCallback(() => {
-    if (dismissable) onDismiss?.();
-  }, [dismissable, onDismiss]);
+    if (dismissable && !changingPin) onDismiss?.();
+  }, [dismissable, changingPin, onDismiss]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss; Escape and the labelled close button do the same
     <div
+      ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stops clicks inside the dialog from reaching the dismissing backdrop */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t`Operator`}
+        // Radix's open-dialog marker: `hasOpenDialog()` reads it, so page
+        // shortcuts (Space = Start/Pause) stay quiet under the overlay.
+        data-state="open"
         className="w-full max-w-sm mx-4 rounded-lg border bg-card shadow-lg overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
@@ -195,9 +213,11 @@ export function PinInOverlay({
           <button
             type="button"
             onClick={onDismiss}
+            disabled={changingPin}
+            aria-label={t`Close`}
             className="absolute top-2.5 right-2.5 z-10 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <LuX className="h-4 w-4" />
+            <LuX className="h-4 w-4" aria-hidden />
           </button>
         )}
 
@@ -205,9 +225,10 @@ export function PinInOverlay({
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <LuSearch className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
-            ref={searchRef}
             type="text"
+            autoFocus
             placeholder={t`Search operators...`}
+            aria-label={t`Search operators`}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -289,7 +310,7 @@ export function PinInOverlay({
         {selectedPerson && (
           <div className="border-t px-4 py-3">
             <div className="flex flex-col items-center gap-2">
-              <p className="text-xs text-muted-foreground">
+              <p id={pinLabelId} className="text-xs text-muted-foreground">
                 <Trans>Enter PIN for {selectedPerson.name}</Trans>
               </p>
               <div className="flex items-center gap-3">
@@ -303,6 +324,9 @@ export function PinInOverlay({
                   onComplete={handlePinComplete}
                   disabled={isPinning}
                   autoFocus
+                  aria-labelledby={pinLabelId}
+                  aria-invalid={pinError ? true : undefined}
+                  aria-describedby={pinError ? pinErrorId : undefined}
                   containerClassName="[&_[data-slot=input-otp-slot]]:text-[0rem]"
                 >
                   <InputOTPGroup>
@@ -337,7 +361,13 @@ export function PinInOverlay({
                 )}
               </div>
               {pinError && (
-                <p className="text-xs text-destructive">{pinError}</p>
+                <p
+                  id={pinErrorId}
+                  role="alert"
+                  className="text-xs text-destructive"
+                >
+                  {pinError}
+                </p>
               )}
             </div>
           </div>
@@ -350,10 +380,7 @@ export function PinInOverlay({
               size="md"
               className="w-full text-destructive hover:text-destructive"
               onClick={() => {
-                pinOutFetcher.submit(null, {
-                  method: "POST",
-                  action: path.to.consolePinOut
-                });
+                submitPinOutAction(null, path.to.consolePinOut);
               }}
             >
               <LuLogOut className="mr-2 h-4 w-4" />

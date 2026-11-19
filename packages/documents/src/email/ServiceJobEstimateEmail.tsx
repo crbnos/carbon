@@ -5,7 +5,11 @@
 import { Body, Container, Heading, Preview, Section, Text } from "react-email";
 import { Logo } from "./components/Logo";
 import { notificationStyles } from "./components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 interface Props {
   companyName: string;
@@ -45,7 +49,7 @@ export const ServiceJobEstimateEmail = ({
       preview={
         <Preview>{`Estimate ${serviceJobId} from ${companyName}`}</Preview>
       }
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}

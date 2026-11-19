@@ -44,7 +44,7 @@ import { ActivityNode } from "./nodes/ActivityNode";
 import { EntityGroupNode } from "./nodes/EntityGroupNode";
 import { EntityNode } from "./nodes/EntityNode";
 import { useTraceabilityStore } from "./store";
-import { TraceabilityTable } from "./TraceabilityTable";
+import { type ActivityOrder, TraceabilityTable } from "./TraceabilityTable";
 import {
   type LineageEdge,
   type LineageNode,
@@ -182,6 +182,8 @@ function TraceabilityGraphInner({
   const spacing = useTraceabilityStore((s) => s.spacing);
   const isolate = useTraceabilityStore((s) => s.isolate);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Table view: an entity's activities by date, newest first.
+  const [activityOrder, setActivityOrder] = useState<ActivityOrder>("newest");
   const [layoutVersion, setLayoutVersion] = useState(0);
 
   useEffect(() => {
@@ -580,6 +582,7 @@ function TraceabilityGraphInner({
             rootId={rootId}
             selectedId={selectedId}
             onSelect={(id) => selectNode(id)}
+            activityOrder={activityOrder}
           />
         </div>
         <GraphToolbar
@@ -595,6 +598,8 @@ function TraceabilityGraphInner({
           onOpenSearch={() => setSearchOpen(true)}
           spacing={spacing}
           onSpacingChange={setSpacing}
+          activityOrder={activityOrder}
+          onActivityOrderChange={setActivityOrder}
         />
         <NodeSearchDialog
           open={searchOpen}

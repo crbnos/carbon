@@ -104,7 +104,7 @@ const IssueForm = ({
         className="w-full"
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? <Trans>Issue</Trans> : <Trans>New Issue</Trans>}
           </CardTitle>
           {!isEditing && (

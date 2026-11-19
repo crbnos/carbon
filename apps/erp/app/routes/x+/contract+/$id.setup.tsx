@@ -198,9 +198,11 @@ export default function ContractSetupRoute() {
           }
         />
       )}
-      {confirm.isOpen && (
-        <ContractConfirmModal contract={contract} onClose={confirm.onClose} />
-      )}
+      <ContractConfirmModal
+        contract={contract}
+        open={confirm.isOpen}
+        onClose={confirm.onClose}
+      />
     </SetupFrame>
   );
 }

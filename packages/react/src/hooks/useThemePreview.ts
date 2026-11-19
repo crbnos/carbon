@@ -6,9 +6,11 @@ import { useCallback, useEffect, useRef } from "react";
 
 /**
  * Paints a theme's variables onto `<body>` at once, ahead of the root loader.
- * The preview outranks the theme the root document puts on `<html>`, so it is
- * removed once `settled` (the save landed and the root revalidated) and on
- * unmount; left behind, it would cover the theme another page renders.
+ * Each call replaces the last: a variable it leaves out is removed, so
+ * `preview({})` ends the preview. The preview outranks the theme the root
+ * document puts on `<html>`, so it is removed once `settled` (the save landed
+ * and the root revalidated) and on unmount; left behind, it would cover the
+ * theme another page renders.
  */
 export function useThemePreview(settled: boolean) {
   const previewed = useRef(new Set<string>());
@@ -27,6 +29,12 @@ export function useThemePreview(settled: boolean) {
   useEffect(() => clear, [clear]);
 
   return useCallback((variables: Record<string, string>) => {
+    for (const key of previewed.current) {
+      if (!(key in variables)) {
+        document.body.style.removeProperty(`--${key}`);
+        previewed.current.delete(key);
+      }
+    }
     for (const [key, value] of Object.entries(variables)) {
       document.body.style.setProperty(`--${key}`, value);
       previewed.current.add(key);

@@ -10,7 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { type JSONContent, RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
@@ -27,6 +27,7 @@ import {
   PurchasingRFQProperties
 } from "~/modules/purchasing/ui/PurchasingRfq";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchasing-rfq");
@@ -42,6 +43,9 @@ export const handle: Handle = {
   ),
   module: "purchasing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.rfqSummary?.rfqId, "Purchasing RFQ");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {

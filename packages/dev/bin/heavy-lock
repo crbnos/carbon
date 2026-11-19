@@ -1,0 +1,41 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-only
+# Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+# including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+# Runs a heavy check (erp typecheck, generate:mcp) one at a time per machine,
+# across every worktree, under an OS lock (flock). Like flock(1), it holds the
+# lock and waits for the command: the command cannot hold it itself, because
+# tsc replaces its process (execve) and drops every inherited fd. The OS frees
+# the lock when this process exits, crash included.
+# Perl because Node has no flock and macOS ships no flock(1).
+# Usage: heavy-lock <command> [args...]
+
+[ $# -gt 0 ] || { echo "Usage: heavy-lock <command> [args...]" >&2; exit 2; }
+command -v perl >/dev/null 2>&1 || exec "$@"
+
+exec perl -MFcntl=:flock -e '
+  my $file = ($ENV{HOME} // "") . "/.carbon/heavy-check.flock";
+  mkdir(($ENV{HOME} // "") . "/.carbon");
+  open(my $lock, ">>", $file) or do {
+    warn "heavy-lock: cannot open $file ($!); running without the lock\n";
+    exec { $ARGV[0] } @ARGV or die "heavy-lock: cannot run $ARGV[0]: $!\n";
+  };
+  unless (flock($lock, LOCK_EX | LOCK_NB)) {
+    my $who = "another heavy check";
+    if (open(my $r, "<", $file)) { my $l = <$r>; close $r; chomp($who = $l) if $l }
+    warn "heavy-lock: waiting for $who to finish...\n";
+    flock($lock, LOCK_EX) or die "heavy-lock: $!\n";
+  }
+  truncate($lock, 0);
+  syswrite($lock, "\"@ARGV\" in $ENV{PWD} (pid $$)\n");
+  my $pid = fork() // die "heavy-lock: fork failed: $!\n";
+  if ($pid == 0) {
+    close $lock;
+    exec { $ARGV[0] } @ARGV or die "heavy-lock: cannot run $ARGV[0]: $!\n";
+  }
+  # Pass on stop signals sent to this process alone (turbo, pnpm).
+  $SIG{$_} = sub { kill $_[0], $pid } for qw(INT TERM HUP);
+  waitpid($pid, 0);
+  exit($? & 127 ? 128 + ($? & 127) : $? >> 8);
+' -- "$@"

@@ -118,34 +118,30 @@ const ProcedureHeader = () => {
           </>
         }
       />
-      {newVersionDisclosure.isOpen && (
-        <ProcedureForm
-          type="copy"
-          initialValues={{
-            name: routeData?.procedure?.name ?? "",
-            version: (routeData?.procedure?.version ?? 0) + 1,
-            processId: routeData?.procedure?.processId ?? "",
-            content: JSON.stringify(routeData?.procedure?.content) ?? "",
-            copyFromId: routeData?.procedure?.id ?? ""
-          }}
-          open={newVersionDisclosure.isOpen}
-          onClose={newVersionDisclosure.onClose}
-        />
-      )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteProcedure(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={routeData?.procedure?.name ?? "procedure"}
-          text={t`Are you sure you want to delete ${routeData?.procedure?.name}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
-        />
-      )}
+      <ProcedureForm
+        type="copy"
+        initialValues={{
+          name: routeData?.procedure?.name ?? "",
+          version: (routeData?.procedure?.version ?? 0) + 1,
+          processId: routeData?.procedure?.processId ?? "",
+          content: JSON.stringify(routeData?.procedure?.content) ?? "",
+          copyFromId: routeData?.procedure?.id ?? ""
+        }}
+        open={newVersionDisclosure.isOpen}
+        onClose={newVersionDisclosure.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.deleteProcedure(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={routeData?.procedure?.name ?? "procedure"}
+        text={t`Are you sure you want to delete ${routeData?.procedure?.name}? This cannot be undone.`}
+        onCancel={() => {
+          deleteDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteDisclosure.onClose();
+        }}
+      />
     </>
   );
 };

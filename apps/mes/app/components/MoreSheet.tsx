@@ -23,7 +23,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode, RefObject } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -100,12 +100,15 @@ export function ToolSurface({
   description,
   body,
   footer,
+  initialFocusRef,
   wrap = (children) => children
 }: {
   surface: ReturnType<typeof useToolSurface>;
   description?: ReactNode;
   body: ReactNode;
   footer: ReactNode;
+  /** Modal: focus this on open instead of the primary (last) footer action. */
+  initialFocusRef?: RefObject<HTMLElement | null>;
   wrap?: (children: ReactNode) => ReactNode;
 }) {
   if (surface.inSheet) {
@@ -126,7 +129,13 @@ export function ToolSurface({
   if (!surface.isOpen) return null;
   return (
     <Modal open onOpenChange={(open) => !open && surface.close()}>
-      <ModalContent>
+      <ModalContent
+        onOpenAutoFocus={(event) => {
+          if (!initialFocusRef?.current) return;
+          event.preventDefault();
+          initialFocusRef.current.focus();
+        }}
+      >
         {wrap(
           <>
             <ModalHeader>
@@ -260,6 +269,7 @@ export function MoreSheet({
         <div className="px-2 pb-4">
           {/* Rail items read their expanded layout from this group. */}
           <MorePageContext.Provider value={page}>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the sheet after a link inside is activated; Enter on a link fires this click too */}
             <div
               data-state="expanded"
               onClick={closeOnLink}

@@ -2,14 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { isPurchaseOrderLocked } from "~/modules/purchasing/purchasing.models";
 import {
-  deletePurchaseOrderLine,
+  isPurchaseOrderEditLocked,
+  purchaseOrderLineDeleteRefusal
+} from "~/modules/purchasing/purchasing.models";
+import {
   getPurchaseOrder,
   getPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
@@ -25,11 +28,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
 
   const purchaseOrder = await getPurchaseOrder(client, orderId);
+  const status = purchaseOrder.data?.status;
+  const releasedRefusal = purchaseOrderLineDeleteRefusal(status);
   await requireUnlocked({
     request,
-    isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
+    isLocked: isPurchaseOrderEditLocked(status) || releasedRefusal !== null,
     redirectTo: path.to.purchaseOrderDetails(orderId),
-    message: "Cannot delete lines on a confirmed purchase order."
+    message:
+      releasedRefusal ??
+      "Cannot delete lines on a purchase order in approval or completed."
   });
 
   const purchaseOrderLine = await getPurchaseOrderLine(client, lineId);
@@ -47,38 +54,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "purchasing"
-  });
-
   const { lineId, orderId } = params;
   if (!lineId) throw notFound("Could not find lineId");
   if (!orderId) throw notFound("Could not find orderId");
 
-  const purchaseOrder = await getPurchaseOrder(client, orderId);
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
-    redirectTo: path.to.purchaseOrderDetails(orderId),
-    message: "Cannot delete lines on a confirmed purchase order."
+  // The operation refuses an order in approval, released or finished, and a
+  // line that has been received or invoiced.
+  const api = await carbon(request);
+  const result = await api.purchasing.deletePurchaseOrderLine({
+    purchaseOrderLineId: lineId
   });
 
-  const { error: deleteTypeError } = await deletePurchaseOrderLine(
-    client,
-    lineId
-  );
-  if (deleteTypeError) {
-    throw redirect(
-      path.to.purchaseOrderDetails(orderId),
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete purchase order line")
-      )
-    );
-  }
-
-  throw redirect(
+  return respond(request, result).redirect(
     path.to.purchaseOrderDetails(orderId),
-    await flash(request, success("Successfully deleted purchase order line"))
+    { message: "Successfully deleted purchase order line" }
   );
 }

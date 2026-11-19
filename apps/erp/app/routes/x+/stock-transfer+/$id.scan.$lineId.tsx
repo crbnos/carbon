@@ -8,20 +8,25 @@ import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   TrackedEntityPicker,
-  type TrackedEntitySelection
+  type TrackedEntitySelection,
+  useRouteDialog
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { stockTransferLineScanValidator } from "~/modules/inventory/inventory.models";
-import { getAvailableTrackedEntities } from "~/modules/inventory/inventory.service";
+import {
+  getAvailableTrackedEntities,
+  getReceiptPutAwayStock
+} from "~/modules/inventory/inventory.service";
 import type {
   StockTransfer,
   StockTransferLine
 } from "~/modules/inventory/types";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 /**
@@ -39,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const line = await client
     .from("stockTransferLine")
     .select(
-      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, fromStorageUnitId, stockTransfer(locationId)"
+      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, fromStorageUnitId, receiptLineId, stockTransfer(locationId, receiptId)"
     )
     .eq("id", lineId)
     .single();
@@ -48,8 +53,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Stock transfer line not found", { status: 404 });
   }
 
-  const locationId = (line.data.stockTransfer as { locationId: string } | null)
-    ?.locationId;
+  const transfer = line.data.stockTransfer as {
+    locationId: string;
+    receiptId: string | null;
+  } | null;
+  const locationId = transfer?.locationId;
 
   // A bin move keeps a lot's stock stripe, so every stripe's lots may move:
   // common stock and the stock of each project that holds project stock.
@@ -81,6 +89,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })
       : { data: [] };
 
+  // A Put Away line takes only the units its receipt line offers (released,
+  // or kept Use As Is); the pick refuses any other (`putAwayPickRefusal`).
+  const offered =
+    line.data.receiptLineId && transfer?.receiptId
+      ? new Set(
+          (
+            await getReceiptPutAwayStock(
+              getDatabaseClient(),
+              companyId,
+              transfer.receiptId
+            )
+          ).units
+            .filter(
+              (unit) =>
+                unit.receiptLineId === line.data.receiptLineId &&
+                unit.storageUnitId === line.data.fromStorageUnitId
+            )
+            .map((unit) => unit.trackedEntityId)
+        )
+      : null;
+
   const settings = await getCompanySettings(client, companyId);
   const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
     nearExpiryWarningDays?: number | null;
@@ -88,7 +117,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 
   return {
-    entities: entities.data ?? [],
+    entities: (entities.data ?? []).filter(
+      (entity) => !offered || offered.has(entity.trackedEntityId)
+    ),
     trackingType: line.data.requiresSerialTracking
       ? ("Serial" as const)
       : ("Batch" as const),
@@ -146,10 +177,10 @@ export default function StockTransferScan() {
 
   if (!stockTransferLine) throw new Error("stock transfer line not found");
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(
+    path.to.stockTransfer(stockTransferLine.stockTransferId!)
+  );
   const { t } = useLingui();
-  const onClose = () =>
-    navigate(path.to.stockTransfer(stockTransferLine.stockTransferId!));
 
   const fetcher = useAction<typeof action>();
 
@@ -209,7 +240,8 @@ export default function StockTransferScan() {
       nearExpiryWarningDays={nearExpiryWarningDays}
       expiredEntityPolicy={expiredEntityPolicy}
       onSelect={onPick}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

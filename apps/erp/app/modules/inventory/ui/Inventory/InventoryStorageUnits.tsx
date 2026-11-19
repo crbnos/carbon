@@ -38,6 +38,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  NonNettableBadge,
   Input as SearchInput,
   toast,
   useDisclosure,
@@ -79,12 +80,14 @@ import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
 import {
   useCompanyToday,
   useCurrencyDecimals,
+  useDrawerItem,
   usePermissions,
   usePrinting,
   useQuantityFormatter,
   useUser
 } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type {
   itemTrackingTypes,
   pickMethodValidator
@@ -155,6 +158,7 @@ const InventoryStorageUnits = ({
     [storageUnits]
   );
 
+  const nonNettableIds = useNonNettableStorageUnits();
   const ownerLabels = useStockOwnerLabels(
     itemStorageUnitQuantities
       .map((item) => item.projectId)
@@ -391,15 +395,14 @@ const InventoryStorageUnits = ({
   const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
   const companyToday = useCompanyToday();
   const retainedEarningsAccountId = serialCosts?.retainedEarningsAccountId;
-  const [recostItem, setRecostItem] =
-    useState<ItemStorageUnitQuantities | null>(null);
-  const [moveItem, setMoveItem] = useState<ItemStorageUnitQuantities | null>(
-    null
-  );
+  const recostModal = useDrawerItem<ItemStorageUnitQuantities>();
+  const recostItem = recostModal.item;
+  const moveModal = useDrawerItem<ItemStorageUnitQuantities>();
+  const moveItem = moveModal.item;
   const canMove = permissions.can("create", "inventory");
   const recostFetcher = useAction({
     onSuccess: () => {
-      setRecostItem(null);
+      recostModal.close();
       toast.success(t`Unit recosted`);
     }
   });
@@ -567,13 +570,13 @@ const InventoryStorageUnits = ({
               item.quantity <= 0 ||
               ((isSerial || isBatch) && !item.trackedEntityId)
             }
-            onSelect={() => setMoveItem(item)}
+            onSelect={() => moveModal.open(item)}
           >
             <DropdownMenuIcon icon={<LuArrowRightLeft />} />
             <Trans>Move to Another Storage Unit</Trans>
           </DropdownMenuItem>
           {item.trackedEntityId && canRecost && (
-            <DropdownMenuItem onSelect={() => setRecostItem(item)}>
+            <DropdownMenuItem onSelect={() => recostModal.open(item)}>
               <DropdownMenuIcon icon={<LuCoins />} />
               <Trans>Recost</Trans>
             </DropdownMenuItem>
@@ -704,8 +707,13 @@ const InventoryStorageUnits = ({
                           isSingleUntrackedRow && "hover:bg-muted/60"
                         )}
                       >
-                        <span className="truncate font-medium">
-                          {unitLabel}
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-medium">
+                            {unitLabel}
+                          </span>
+                          {nonNettableIds.has(unit.storageUnitId) && (
+                            <NonNettableBadge />
+                          )}
                         </span>
                         {renderQuantity(unit.quantity, "font-medium")}
                         {isSingleUntrackedRow ? (
@@ -794,6 +802,7 @@ const InventoryStorageUnits = ({
       ) : null}
       {moveItem && (
         <StockTransferMoveModal
+          open={moveModal.isOpen}
           itemId={pickMethod.itemId}
           locationId={locationId}
           fromStorageUnitId={moveItem.storageUnitId ?? null}
@@ -805,14 +814,14 @@ const InventoryStorageUnits = ({
           itemTrackingType={itemTrackingType}
           trackedEntityId={moveItem.trackedEntityId ?? null}
           trackedEntityLabel={moveItem.readableId ?? null}
-          onClose={() => setMoveItem(null)}
+          onClose={moveModal.close}
         />
       )}
       {recostItem?.trackedEntityId && (
         <Modal
-          open
+          open={recostModal.isOpen}
           onOpenChange={(open) => {
-            if (!open) setRecostItem(null);
+            if (!open) recostModal.close();
           }}
         >
           <ModalContent>
@@ -858,7 +867,7 @@ const InventoryStorageUnits = ({
                 </VStack>
               </ModalBody>
               <ModalFooter>
-                <Button variant="secondary" onClick={() => setRecostItem(null)}>
+                <Button variant="secondary" onClick={recostModal.close}>
                   <Trans>Cancel</Trans>
                 </Button>
                 <Submit>
@@ -869,216 +878,215 @@ const InventoryStorageUnits = ({
           </ModalContent>
         </Modal>
       )}
-      {adjustmentModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              adjustmentModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              validator={inventoryAdjustmentValidator}
-              fetcher={ruleViolations.fetcher}
-              action={path.to.inventoryItemAdjustment(pickMethod.itemId)}
-              defaultValues={{
-                itemId: pickMethod.itemId,
-                quantity: isSerial && !isEditing ? 1 : quantity,
-                locationId: pickMethod.locationId,
-                storageUnitId: selectedStorageUnitId || undefined,
-                originalStorageUnitId: isEditing
-                  ? selectedStorageUnitId || undefined
-                  : undefined,
-                adjustmentType:
-                  isSerial && !isEditing ? "Positive Adjmt." : "Set Quantity",
-                trackedEntityId: selectedTrackedEntityId || nanoid(),
-                readableId: selectedReadableId || undefined,
-                expirationDate: defaultExpirationDate
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Inventory Adjustment</Trans>
-                </ModalTitle>
-                {selectedProjectId && (
-                  <ModalDescription>
-                    {ownerLabels[selectedProjectId] ?? t`Project stock`}
-                  </ModalDescription>
-                )}
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="itemId" />
-                {selectedProjectId && (
-                  <Hidden name="projectId" value={selectedProjectId} />
-                )}
-                {isEditing && <Hidden name="originalStorageUnitId" />}
-                <Hidden
-                  name="requiresSerialTracking"
-                  value={isSerial ? "true" : "false"}
-                />
-
-                <VStack spacing={2}>
-                  <Location name="locationId" label={t`Location`} isReadOnly />
-                  <StorageUnit
-                    name="storageUnitId"
-                    locationId={pickMethod.locationId}
-                    label={t`Storage Unit`}
-                    isReadOnly={isEditingRow}
-                  />
-                  <Select
-                    name="adjustmentType"
-                    label={t`Adjustment Type`}
-                    termId="inventory-adjustment-type"
-                    onChange={(option) =>
-                      setAdjustmentType(option?.value ?? "Set Quantity")
-                    }
-                    options={
-                      isEditing && (isSerial || isBatch)
-                        ? [
-                            { label: t`Set Quantity`, value: "Set Quantity" },
-                            {
-                              label: t`Negative Adjustment`,
-                              value: "Negative Adjmt."
-                            },
-                            { label: t`Scrap`, value: "Scrap" }
-                          ]
-                        : [
-                            ...(isSerial
-                              ? []
-                              : [
-                                  {
-                                    label: "Set Quantity",
-                                    value: "Set Quantity"
-                                  }
-                                ]),
-                            {
-                              label: t`Positive Adjustment`,
-                              value: "Positive Adjmt."
-                            },
-                            {
-                              label: t`Negative Adjustment`,
-                              value: "Negative Adjmt."
-                            },
-                            { label: t`Scrap`, value: "Scrap" }
-                          ]
-                    }
-                  />
-                  {adjustmentType === "Scrap" && (
-                    <ScrapReason name="scrapReasonId" label={t`Scrap Reason`} />
-                  )}
-                  {(isBatch || isSerial) && (
-                    <>
-                      <Hidden name="trackedEntityId" />
-                      <Input
-                        name="readableId"
-                        label={isSerial ? t`Serial Number` : t`Batch Number`}
-                        termId={
-                          isSerial
-                            ? "inventory-adjustment-serial-number"
-                            : "inventory-adjustment-batch-number"
-                        }
-                      />
-                      {showExpirationField && (
-                        <DatePicker
-                          name="expirationDate"
-                          label={t`Expiration Date`}
-                          termId="inventory-adjustment-expiration-date"
-                        />
-                      )}
-                    </>
-                  )}
-                  <NumberControlled
-                    name="quantity"
-                    label={t`Quantity`}
-                    minValue={0}
-                    maxValue={isSerial && isEditing ? 1 : undefined}
-                    value={isSerial && !isEditing ? 1 : quantity}
-                    onChange={setQuantity}
-                    isReadOnly={isSerial && !isEditing}
-                  />
-
-                  <Input
-                    name="unitOfMeasure"
-                    label={t`Unit of Measure`}
-                    value={itemUnitOfMeasure?.label ?? ""}
-                    isReadOnly
-                  />
-                  <TextArea name="comment" label={t`Comment`} />
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={adjustmentModal.onClose} variant="secondary">
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit
-                  withBlocker={false}
-                  isDisabled={!permissions.can("update", "inventory")}
-                >
-                  Save
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-      <ruleViolations.ViolationModal />
-      {printerModal.isOpen && pendingPrintEntityId && (
-        <Modal open onOpenChange={(open) => !open && printerModal.onClose()}>
-          <ModalContent>
+      <Modal
+        open={adjustmentModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            adjustmentModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            validator={inventoryAdjustmentValidator}
+            fetcher={ruleViolations.fetcher}
+            action={path.to.inventoryItemAdjustment(pickMethod.itemId)}
+            defaultValues={{
+              itemId: pickMethod.itemId,
+              quantity: isSerial && !isEditing ? 1 : quantity,
+              locationId: pickMethod.locationId,
+              storageUnitId: selectedStorageUnitId || undefined,
+              originalStorageUnitId: isEditing
+                ? selectedStorageUnitId || undefined
+                : undefined,
+              adjustmentType:
+                isSerial && !isEditing ? "Positive Adjmt." : "Set Quantity",
+              trackedEntityId: selectedTrackedEntityId || nanoid(),
+              readableId: selectedReadableId || undefined,
+              expirationDate: defaultExpirationDate
+            }}
+          >
             <ModalHeader>
               <ModalTitle>
-                <Trans>Select Printer</Trans>
+                <Trans>Inventory Adjustment</Trans>
               </ModalTitle>
+              {selectedProjectId && (
+                <ModalDescription>
+                  {ownerLabels[selectedProjectId] ?? t`Project stock`}
+                </ModalDescription>
+              )}
             </ModalHeader>
             <ModalBody>
-              <div className="flex flex-col gap-1">
-                {printerRoutes.map((route) => (
-                  <button
-                    type="button"
-                    key={route.id}
-                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                      selectedPrinterId === route.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted"
-                    }`}
-                    onClick={() => setSelectedPrinterId(route.id)}
-                  >
-                    <LuPrinter className="size-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{route.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2 uppercase">
-                        {route.format}
-                      </span>
-                    </div>
-                    {selectedPrinterId === route.id && (
-                      <LuCheck className="size-4 text-primary shrink-0" />
+              <Hidden name="itemId" />
+              {selectedProjectId && (
+                <Hidden name="projectId" value={selectedProjectId} />
+              )}
+              {isEditing && <Hidden name="originalStorageUnitId" />}
+              <Hidden
+                name="requiresSerialTracking"
+                value={isSerial ? "true" : "false"}
+              />
+
+              <VStack spacing={2}>
+                <Location name="locationId" label={t`Location`} isReadOnly />
+                <StorageUnit
+                  name="storageUnitId"
+                  locationId={pickMethod.locationId}
+                  label={t`Storage Unit`}
+                  isReadOnly={isEditingRow}
+                />
+                <Select
+                  name="adjustmentType"
+                  label={t`Adjustment Type`}
+                  termId="inventory-adjustment-type"
+                  onChange={(option) =>
+                    setAdjustmentType(option?.value ?? "Set Quantity")
+                  }
+                  options={
+                    isEditing && (isSerial || isBatch)
+                      ? [
+                          { label: t`Set Quantity`, value: "Set Quantity" },
+                          {
+                            label: t`Negative Adjustment`,
+                            value: "Negative Adjmt."
+                          },
+                          { label: t`Scrap`, value: "Scrap" }
+                        ]
+                      : [
+                          ...(isSerial
+                            ? []
+                            : [
+                                {
+                                  label: "Set Quantity",
+                                  value: "Set Quantity"
+                                }
+                              ]),
+                          {
+                            label: t`Positive Adjustment`,
+                            value: "Positive Adjmt."
+                          },
+                          {
+                            label: t`Negative Adjustment`,
+                            value: "Negative Adjmt."
+                          },
+                          { label: t`Scrap`, value: "Scrap" }
+                        ]
+                  }
+                />
+                {adjustmentType === "Scrap" && (
+                  <ScrapReason name="scrapReasonId" label={t`Scrap Reason`} />
+                )}
+                {(isBatch || isSerial) && (
+                  <>
+                    <Hidden name="trackedEntityId" />
+                    <Input
+                      name="readableId"
+                      label={isSerial ? t`Serial Number` : t`Batch Number`}
+                      termId={
+                        isSerial
+                          ? "inventory-adjustment-serial-number"
+                          : "inventory-adjustment-batch-number"
+                      }
+                    />
+                    {showExpirationField && (
+                      <DatePicker
+                        name="expirationDate"
+                        label={t`Expiration Date`}
+                        termId="inventory-adjustment-expiration-date"
+                      />
                     )}
-                  </button>
-                ))}
-              </div>
+                  </>
+                )}
+                <NumberControlled
+                  name="quantity"
+                  label={t`Quantity`}
+                  minValue={0}
+                  maxValue={isSerial && isEditing ? 1 : undefined}
+                  value={isSerial && !isEditing ? 1 : quantity}
+                  onChange={setQuantity}
+                  isReadOnly={isSerial && !isEditing}
+                />
+
+                <Input
+                  name="unitOfMeasure"
+                  label={t`Unit of Measure`}
+                  value={itemUnitOfMeasure?.label ?? ""}
+                  isReadOnly
+                />
+                <TextArea name="comment" label={t`Comment`} />
+              </VStack>
             </ModalBody>
             <ModalFooter>
-              <div className="flex gap-2">
-                <Button
-                  variant="primary"
-                  leftIcon={<LuPrinter />}
-                  disabled={!selectedPrinterId}
-                  onClick={handleConfirmPrint}
-                >
-                  <Trans>Print</Trans>
-                </Button>
-                <Button variant="solid" onClick={printerModal.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </div>
+              <Button onClick={adjustmentModal.onClose} variant="secondary">
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit
+                withBlocker={false}
+                isDisabled={!permissions.can("update", "inventory")}
+              >
+                Save
+              </Submit>
             </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
-      {downloadModal.isOpen && pendingPrintEntityId && (
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <ruleViolations.ViolationModal />
+      <Modal
+        open={printerModal.isOpen && !!pendingPrintEntityId}
+        onOpenChange={(open) => !open && printerModal.onClose()}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Select Printer</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <div className="flex flex-col gap-1">
+              {printerRoutes.map((route) => (
+                <button
+                  type="button"
+                  key={route.id}
+                  className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                    selectedPrinterId === route.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted"
+                  }`}
+                  onClick={() => setSelectedPrinterId(route.id)}
+                >
+                  <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium">{route.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2 uppercase">
+                      {route.format}
+                    </span>
+                  </div>
+                  {selectedPrinterId === route.id && (
+                    <LuCheck className="size-4 text-primary shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                leftIcon={<LuPrinter />}
+                disabled={!selectedPrinterId}
+                onClick={handleConfirmPrint}
+              >
+                <Trans>Print</Trans>
+              </Button>
+              <Button variant="solid" onClick={printerModal.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+            </div>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {pendingPrintEntityId && (
         <LabelDownloadModal
           sourceDocumentId={pendingPrintEntityId}
           fileRoutes={{
@@ -1086,10 +1094,7 @@ const InventoryStorageUnits = ({
             zpl: path.to.file.trackedEntityLabelZpl
           }}
           isOpen={downloadModal.isOpen}
-          onClose={() => {
-            downloadModal.onClose();
-            setPendingPrintEntityId(null);
-          }}
+          onClose={downloadModal.onClose}
         />
       )}
       <Outlet />

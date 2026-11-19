@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getRevenueRecognitionRun } from "~/modules/accounting/accounting.service";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
@@ -58,19 +59,18 @@ export default function DeleteRevenueRecognitionRunRoute() {
   const { runId } = useParams();
   const { run } = useLoaderData<typeof loader>();
   const { t } = useLingui();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.revenueRecognitionRun(runId!));
 
   if (!run) return null;
   if (!runId) throw new Error("runId is not found");
-
-  const onCancel = () => navigate(path.to.revenueRecognitionRun(runId));
 
   return (
     <ConfirmDelete
       action={path.to.deleteRevenueRecognitionRun(runId)}
       name={run.runId}
       text={t`Are you sure you want to delete ${run.runId}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

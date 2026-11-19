@@ -180,7 +180,13 @@ export const RampBillPaymentSchema = z
     payment_method: z.string().nullish(),
     effective_date: z.string().nullish(),
     payment_date: z.string().nullish(),
-    amount: z.union([RampCurrencyAmountSchema, z.number()]).optional()
+    amount: z.union([RampCurrencyAmountSchema, z.number()]).optional(),
+    // ApiPaymentDetailsResource: for a card payment, the Ramp transactions
+    // that paid the bill. Ramp marks the bill paid once one is matched.
+    details: z
+      .object({ transaction_ids: z.array(z.string()).nullish() })
+      .passthrough()
+      .nullish()
   })
   .passthrough();
 

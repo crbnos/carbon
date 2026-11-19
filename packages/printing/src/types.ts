@@ -14,6 +14,8 @@ export type LocationAssignment = {
   receiving: ContextAssignment;
   inventory: ContextAssignment;
   kanban: ContextAssignment;
+  /** Full-page documents (packing slips, invoices); absent on older settings. */
+  documents?: ContextAssignment;
   workCenters: Record<string, ContextAssignment>;
 };
 
@@ -29,8 +31,8 @@ export type PrinterRoute = {
   format: "zpl" | "pdf";
   mediaSizeId: string | null;
   printerUrl: string;
-  apiKey: string | null;
-  templateId: string | null;
+  /** The API key itself is in Supabase Vault and never leaves the server. */
+  hasApiKey: boolean;
 };
 
 export type PrintJobStatus =

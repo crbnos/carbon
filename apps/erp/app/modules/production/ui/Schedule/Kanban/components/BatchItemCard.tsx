@@ -24,7 +24,7 @@ import {
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
-import { memo, useState } from "react";
+import { memo } from "react";
 import {
   LuCircleCheck,
   LuEllipsisVertical,
@@ -42,6 +42,7 @@ import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { useDateFormatter } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import {
   KANBAN_CARD_SHELL,
@@ -183,7 +184,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
 
   // Removing a member sends its operation back to the schedule to run on its
   // own — easy to trigger by accident on a dense board, so it's confirmed.
-  const [removing, setRemoving] = useState<OperationItem | null>(null);
+  const removing = useDrawerItem<OperationItem>();
 
   return (
     <>
@@ -213,8 +214,23 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
             <HStack spacing={1} className="flex-shrink-0 -mr-2">
               {hasConflict && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-red-500 flex-shrink-0"
+                      />
+                      {/* The tooltip is pointer-only; this reads the warning
+                          as part of the card for keyboard and screen readers. */}
+                      <span className="sr-only">
+                        {conflictedMembers
+                          .map(
+                            (m) =>
+                              `${m.jobReadableId}: ${m.conflictReason ?? t`Scheduling conflict`}`
+                          )
+                          .join("; ")}
+                      </span>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
                     {conflictedMembers.map((m) => (
@@ -377,8 +393,8 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                     icon={<LuX />}
                     variant="ghost"
                     size="sm"
-                    className="md:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                    onClick={() => setRemoving(m)}
+                    className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-destructive"
+                    onClick={() => removing.open(m)}
                   />
                 )}
               </HStack>
@@ -386,22 +402,23 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
           ))}
         </CardContent>
       </Card>
-      {removing && (
+      {removing.item && (
         <ConfirmDelete
           action={path.to.priorityBatchingUpdate}
+          isOpen={removing.isOpen}
           title={t`Remove from batch`}
-          name={removing.jobReadableId ?? t`operation`}
+          name={removing.item.jobReadableId ?? t`operation`}
           text={t`Remove ${
-            removing.jobReadableId ?? "this operation"
+            removing.item.jobReadableId ?? "this operation"
           } from this batch? Its operation goes back to the schedule to run on its own.`}
           deleteText={t`Remove`}
           fields={{
             intent: "remove",
             batchId: item.batchId,
-            jobOperationIds: removing.id
+            jobOperationIds: removing.item.id
           }}
-          onCancel={() => setRemoving(null)}
-          onSubmit={() => setRemoving(null)}
+          onCancel={removing.close}
+          onSubmit={removing.close}
         />
       )}
     </>

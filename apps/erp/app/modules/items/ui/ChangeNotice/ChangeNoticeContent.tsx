@@ -62,6 +62,7 @@ export function ChangeNoticeContentSection({
   const body =
     permissions.can("update", "parts") && !isDisabled ? (
       <Editor
+        label={title}
         className="[&_.ProseMirror]:text-sm"
         initialValue={(content ?? {}) as JSONContent}
         onUpload={onUploadImage}

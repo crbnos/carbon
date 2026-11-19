@@ -194,6 +194,8 @@ export function BarProgress({
         aria-valuemin={0}
         aria-valuemax={max}
         aria-label={label ?? "Progress"}
+        // The shown text ("2h / 8h", "3 / 4"), not a bare percentage.
+        aria-valuetext={value || undefined}
         className="flex w-full items-center gap-[3px]"
       >
         {barCount > 0 &&

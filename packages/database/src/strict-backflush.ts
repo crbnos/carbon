@@ -129,6 +129,7 @@ export async function getMethodPartsMissingPullFrom(
     .innerJoin("item", "item.id", "methodMaterial.itemId")
     .where("methodMaterial.makeMethodId", "=", makeMethodId)
     .where("methodMaterial.companyId", "=", companyId)
+    .where("methodMaterial.methodCorrectionId", "is", null)
     .where("item.companyId", "=", companyId)
     .select([
       "methodMaterial.methodType",

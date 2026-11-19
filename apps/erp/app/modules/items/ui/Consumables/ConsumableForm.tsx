@@ -49,6 +49,7 @@ import ItemStorageFields from "../Item/ItemStorageFields";
 type ConsumableFormProps = {
   initialValues: z.infer<typeof consumableValidator> & { tags: string[] };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -59,6 +60,7 @@ function startsWithLetter(value: string) {
 const ConsumableForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: ConsumableFormProps) => {
   const { company } = useUser();
@@ -69,7 +71,8 @@ const ConsumableForm = ({
   const { t } = useLingui();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    // Stays mounted while it animates closed: close and toast once.
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -79,7 +82,7 @@ const ConsumableForm = ({
         t`Failed to create consumable: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const { id, onIdChange, loading } = useNextItemId("Consumable");
   const permissions = usePermissions();
@@ -112,7 +115,7 @@ const ConsumableForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
             action={isEditing ? undefined : path.to.newConsumable}
@@ -122,7 +125,9 @@ const ConsumableForm = ({
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle
+                aria-level={type === "card" && !isEditing ? 1 : undefined}
+              >
                 {isEditing ? t`Consumable Details` : t`New Consumable`}
               </ModalCardTitle>
               {!isEditing && (

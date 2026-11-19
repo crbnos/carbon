@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import { useButton } from "@react-aria/button";
 import type { AriaButtonProps } from "@react-types/button";
 import { useRef } from "react";
@@ -30,6 +31,7 @@ export interface FieldButtonProps extends AriaButtonProps {
 }
 
 export const FieldButton = ({ size = "md", ...props }: FieldButtonProps) => {
+  const { t } = useLingui();
   const ref = useRef<HTMLButtonElement>(null);
   const { buttonProps } = useButton(props, ref);
 
@@ -43,7 +45,9 @@ export const FieldButton = ({ size = "md", ...props }: FieldButtonProps) => {
     <IconButton
       {...buttonProps}
       ref={ref}
-      aria-label="Toggle"
+      // react-aria's aria-labelledby adds the field's name after this:
+      // "Open calendar Due Date".
+      aria-label={t`Open calendar`}
       className={`flex-shrink-0 ${sizeClasses[size]} rounded-l-none border border-l-0 before:rounded-l-none`}
       icon={<LuCalendar />}
       variant="secondary"

@@ -19,7 +19,10 @@ import { QuoteForm } from "~/modules/sales/ui/Quotes";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Quote");
 
 export const handle: Handle = {
   breadcrumb: msg`Quotes`,

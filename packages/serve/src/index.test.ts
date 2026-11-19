@@ -245,7 +245,7 @@ describe("createApp", () => {
   });
 
   it("outlives a proxy's idle connections and bounds a slow request", () => {
-    expect(app.server.keepAliveTimeout).toBeGreaterThan(90_000);
+    expect(app.server.keepAliveTimeout).toBeGreaterThan(600_000);
     expect(app.server.requestTimeout).toBe(300_000);
   });
 

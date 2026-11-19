@@ -9,8 +9,8 @@ import {
 } from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRequest } from "@carbon/logger/middleware.server";
-import { annotateRequestSpan } from "@carbon/logger/tracing.server";
+import { addLogContext, oncePerRequest } from "@carbon/logger/context.server";
+import { annotateRequestSpan } from "@carbon/logger/span";
 import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
 import {
   isAuthRetryableFetchError,
@@ -233,6 +233,7 @@ export async function requirePermissions(
       const companyId = apiKeyData.companyId;
       const companyGroupId = apiKeyData.companyGroupId;
       const userId = apiKeyData.createdBy;
+      addLogContext({ companyId, userId });
 
       // Check expiration
       if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
@@ -261,7 +262,7 @@ export async function requirePermissions(
         throw new Response("Rate limit exceeded", {
           status: 429,
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "text/plain; charset=utf-8",
             "X-RateLimit-Limit": rl.limit.toString(),
             "X-RateLimit-Remaining": rl.remaining.toString(),
             "X-RateLimit-Reset": rl.resetAt.toString(),
@@ -344,6 +345,7 @@ export async function requirePermissions(
 
   const authSession = await requireAuthSession(request);
   const { accessToken, companyId, companyGroupId, email, userId } = authSession;
+  addLogContext({ companyId, userId });
   const consoleMode = authSession.console === companyId;
 
   const myClaims = await getUserClaims(userId, companyId);
@@ -584,6 +586,53 @@ export async function refreshAccessToken(
 ): Promise<AuthSession | null> {
   if (!refreshToken) return null;
 
+  const session = await refreshSessionOnce(refreshToken);
+  if (!session) return null;
+
+  return makeAuthSession(session, companyId!, companyGroupId!);
+}
+
+// A page's parallel requests all refresh the same token and hit GoTrue's per-IP
+// limit: share one refresh in-process, then via Redis for GoTrue's reuse interval.
+const SHARED_REFRESH_TTL_SECONDS = 10;
+const refreshesInFlight = new Map<
+  string,
+  Promise<SupabaseAuthSession | null>
+>();
+
+function getSharedRefreshKey(refreshToken: string) {
+  return `auth:refresh:${createHash("sha256")
+    .update(refreshToken)
+    .digest("hex")}`;
+}
+
+function refreshSessionOnce(
+  refreshToken: string
+): Promise<SupabaseAuthSession | null> {
+  const key = getSharedRefreshKey(refreshToken);
+  const inFlight = refreshesInFlight.get(key);
+  if (inFlight) return inFlight;
+
+  const refresh = refreshSessionShared(key, refreshToken);
+  refreshesInFlight.set(key, refresh);
+  const clear = () => {
+    refreshesInFlight.delete(key);
+  };
+  refresh.then(clear, clear);
+  return refresh;
+}
+
+async function refreshSessionShared(
+  key: string,
+  refreshToken: string
+): Promise<SupabaseAuthSession | null> {
+  try {
+    const shared = await redis.get(key);
+    if (shared) return JSON.parse(shared) as SupabaseAuthSession;
+  } catch (e) {
+    log.error("Failed to read shared session refresh", { error: e });
+  }
+
   const client = getCarbonServiceRole();
 
   const { data, error } = await client.auth.refreshSession({
@@ -603,7 +652,19 @@ export async function refreshAccessToken(
   }
   if (!data.session || error) return null;
 
-  return makeAuthSession(data.session, companyId!, companyGroupId!);
+  // Only a success is shared: a refused token is refused again on its own.
+  try {
+    await redis.set(
+      key,
+      JSON.stringify(data.session),
+      "EX",
+      SHARED_REFRESH_TTL_SECONDS
+    );
+  } catch (e) {
+    log.error("Failed to share session refresh", { error: e });
+  }
+
+  return data.session;
 }
 
 // `requireAuthSession(request, { verify: true })` costs a full GoTrue round-trip

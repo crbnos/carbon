@@ -71,7 +71,7 @@ const IndirectPoolAccounts = ({
   isDisabled
 }: IndirectPoolAccountsProps) => {
   const { t } = useLingui();
-  const [adding, setAdding] = useState(false);
+  const addModal = useDisclosure();
   const [deleting, setDeleting] = useState<IndirectPoolAccountRow | null>(null);
   const deleteDisclosure = useDisclosure();
 
@@ -93,7 +93,7 @@ const IndirectPoolAccounts = ({
           variant="secondary"
           leftIcon={<LuPlus />}
           isDisabled={isDisabled}
-          onClick={() => setAdding(true)}
+          onClick={addModal.onOpen}
         >
           <Trans>Add</Trans>
         </Button>
@@ -174,30 +174,24 @@ const IndirectPoolAccounts = ({
         </div>
       )}
 
-      {adding && (
-        <IndirectPoolAccountModal
-          poolId={poolId}
-          action={action}
-          dimensions={dimensions}
-          onClose={() => setAdding(false)}
-        />
-      )}
+      <IndirectPoolAccountModal
+        open={addModal.isOpen}
+        poolId={poolId}
+        action={action}
+        dimensions={dimensions}
+        onClose={addModal.onClose}
+      />
 
-      {deleteDisclosure.isOpen && deleting && (
+      {deleting && (
         <Confirm
+          isOpen={deleteDisclosure.isOpen}
           action={action}
           title={t`Remove ${deleting.account?.number ?? ""}`}
           text={t`Remove the account ${deleting.account?.number ?? ""} from this pool? Rates already computed keep it.`}
           confirmText={t`Remove`}
           confirmVariant="destructive"
-          onCancel={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
         >
           <input type="hidden" name="intent" value="account-delete" />
           <input type="hidden" name="id" value={deleting.id} />
@@ -208,6 +202,38 @@ const IndirectPoolAccounts = ({
 };
 
 function IndirectPoolAccountModal({
+  open = true,
+  poolId,
+  action,
+  dimensions,
+  onClose
+}: {
+  open?: boolean;
+  poolId: string;
+  action: string;
+  dimensions: DimensionWithValues[];
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <IndirectPoolAccountBody
+          poolId={poolId}
+          action={action}
+          dimensions={dimensions}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function IndirectPoolAccountBody({
   poolId,
   action,
   dimensions,
@@ -229,77 +255,68 @@ function IndirectPoolAccountModal({
     choosable.find((d) => d.dimensionId === dimensionId)?.values ?? [];
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={indirectPoolAccountValidator}
+      method="post"
+      action={action}
+      defaultValues={{
+        indirectPoolId: poolId,
+        role: "Cost",
+        accountId: "",
+        dimensionId: "",
+        dimensionValueId: ""
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={indirectPoolAccountValidator}
-          method="post"
-          action={action}
-          defaultValues={{
-            indirectPoolId: poolId,
-            role: "Cost",
-            accountId: "",
-            dimensionId: "",
-            dimensionValueId: ""
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Account</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="account-add" />
-            <Hidden name="indirectPoolId" />
-            <div className="flex flex-col gap-4">
-              <Select
-                name="role"
-                label={t`Role`}
-                options={indirectPoolAccountRoles.map((role) => ({
-                  label: role === "Cost" ? t`Cost` : t`Base`,
-                  value: role
-                }))}
-                helperText={t`Cost goes into the pool. Base is what the pool's rate applies to.`}
-              />
-              <Account name="accountId" label={t`Account`} />
-              <SelectControlled
-                name="dimensionId"
-                label={t`Dimension`}
-                isOptional
-                options={choosable.map((d) => ({
-                  label: d.dimensionName,
-                  value: d.dimensionId
-                }))}
-                value={dimensionId}
-                onChange={(option) => setDimensionId(option?.value ?? "")}
-              />
-              {dimensionId && (
-                <Select
-                  key={dimensionId}
-                  name="dimensionValueId"
-                  label={t`Value`}
-                  options={values.map((v) => ({ label: v.name, value: v.id }))}
-                />
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add Account</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value="account-add" />
+        <Hidden name="indirectPoolId" />
+        <div className="flex flex-col gap-4">
+          <Select
+            name="role"
+            label={t`Role`}
+            options={indirectPoolAccountRoles.map((role) => ({
+              label: role === "Cost" ? t`Cost` : t`Base`,
+              value: role
+            }))}
+            helperText={t`Cost goes into the pool. Base is what the pool's rate applies to.`}
+          />
+          <Account name="accountId" label={t`Account`} />
+          <SelectControlled
+            name="dimensionId"
+            label={t`Dimension`}
+            isOptional
+            options={choosable.map((d) => ({
+              label: d.dimensionName,
+              value: d.dimensionId
+            }))}
+            value={dimensionId}
+            onChange={(option) => setDimensionId(option?.value ?? "")}
+          />
+          {dimensionId && (
+            <Select
+              key={dimensionId}
+              name="dimensionValueId"
+              label={t`Value`}
+              options={values.map((v) => ({ label: v.name, value: v.id }))}
+            />
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

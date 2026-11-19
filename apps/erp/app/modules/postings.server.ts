@@ -9,6 +9,7 @@
 // permission first, on the input as its schema parses it; without a client it
 // runs as the system.
 
+import { ServerFnError } from "@carbon/api/errors";
 import {
   batchOperationsInput,
   createInput,
@@ -22,6 +23,7 @@ import {
   recalculateInput,
   saveTimesheetEntryInput,
   submitTimesheetWeekInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "@carbon/api/postings";
 import type { Postings } from "@carbon/api/postings.server";
@@ -31,6 +33,7 @@ import * as invoicing from "./invoicing/invoicing.service";
 import * as production from "./production/production.service";
 import * as projects from "./projects/projects.service";
 import * as purchasing from "./purchasing/purchasing.service";
+import * as quality from "./quality/quality.server";
 import * as resources from "./resources/resources.service";
 import * as sales from "./sales/sales.service";
 import * as service from "./service/service.service";
@@ -51,6 +54,8 @@ export const postingPermissions = {
   "update-purchased-prices": purchasing.updatePurchasedPricesPermission,
   "kanban-replenish": inventory.replenishKanbanPermission,
   "create-rental-invoices": sales.createRentalInvoicesPermission,
+  "check-sales-order-delivery-dates":
+    sales.checkSalesOrderDeliveryDatesPermission,
   "create-contract-invoices": sales.createContractInvoicesPermission,
   "create-project-billing-invoices":
     sales.createProjectBillingInvoicesPermission,
@@ -68,6 +73,8 @@ export const postingPermissions = {
   "batch-operations": production.batchOperationPermission,
   recalculate: production.recalculateRequirementsPermission,
   "trigger-rework": production.triggerReworkPermission,
+  "trigger-correction": production.triggerCorrectionPermission,
+  "reject-inspection": quality.rejectInspection.permission,
   "save-timesheet-entry": projects.saveTimesheetEntryPermission,
   "submit-timesheet-week": projects.submitTimesheetWeekPermission,
   "post-timesheet": projects.postTimesheetPermission
@@ -136,6 +143,17 @@ export const postings: Postings = {
       {
         as: postingPermissions["kanban-replenish"],
         schema: inventory.kanbanReplenishInput
+      }
+    ),
+  "check-sales-order-delivery-dates": (handles, input) =>
+    invokePosting(
+      handles,
+      "check-sales-order-delivery-dates",
+      input,
+      sales.checkSalesOrderDeliveryDates,
+      {
+        as: postingPermissions["check-sales-order-delivery-dates"],
+        schema: sales.checkSalesOrderDeliveryDatesInput
       }
     ),
   "create-rental-invoices": (handles, input) =>
@@ -276,11 +294,41 @@ export const postings: Postings = {
       production.recalculateRequirements,
       { as: postingPermissions.recalculate, schema: recalculateInput }
     ),
+  // The ERP's own Reject Lot operation, so a lot rejected on the shop floor
+  // writes stock off and opens its NCR exactly as one rejected in the ERP.
+  "reject-inspection": (handles, input) =>
+    invokePosting(
+      handles,
+      "reject-inspection",
+      input,
+      async (ctx, raw) => {
+        const result = await quality.rejectInspection(ctx, raw);
+        if (result.error) {
+          throw new ServerFnError(result.error.message, result.error.status);
+        }
+        return result.data;
+      },
+      {
+        as: postingPermissions["reject-inspection"],
+        schema: quality.rejectInspection.input
+      }
+    ),
   "trigger-rework": (handles, input) =>
     invokePosting(handles, "trigger-rework", input, production.triggerRework, {
       as: postingPermissions["trigger-rework"],
       schema: triggerReworkInput
     }),
+  "trigger-correction": (handles, input) =>
+    invokePosting(
+      handles,
+      "trigger-correction",
+      input,
+      production.triggerCorrection,
+      {
+        as: postingPermissions["trigger-correction"],
+        schema: triggerCorrectionInput
+      }
+    ),
   "save-timesheet-entry": (handles, input) =>
     invokePosting(
       handles,

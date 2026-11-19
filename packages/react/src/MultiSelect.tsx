@@ -4,9 +4,14 @@
 
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useMemo, useState } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
+import {
+  useClearLabel,
+  useInlineTriggerLabel,
+  usePickerLabel
+} from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { InlineTrigger } from "./InlineTrigger";
@@ -83,9 +88,10 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     const [search, setSearch] = useState("");
     const openAutoFocus = usePhoneOpenAutoFocus();
 
-    const id = useId();
-
     const hasSelections = value.length > 0;
+    const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
+    const clearLabel = useClearLabel(props["aria-label"]);
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
@@ -102,6 +108,12 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
           <PopoverTrigger asChild>
             {inline ? (
               <InlineTrigger
+                // The field and its values: "Edit Tags: Urgent, Export".
+                aria-label={
+                  hasSelections && selectedLabelText
+                    ? `${inlineTriggerLabel}: ${selectedLabelText}`
+                    : inlineTriggerLabel
+                }
                 ref={ref}
                 isEmpty={!hasSelections}
                 placeholder={
@@ -119,8 +131,6 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
               </InlineTrigger>
             ) : (
               <CommandTrigger
-                aria-controls={id}
-                aria-expanded={open}
                 role="combobox"
                 size={size}
                 className={cn("min-w-[160px]", className)}
@@ -146,6 +156,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -156,6 +167,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filterMultiSelectOptions}
                 selectionMode="multiple"
@@ -180,7 +192,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         {isClearable && !isReadOnly && value.length > 0 && (
           <IconButton
             variant="ghost"
-            aria-label="Clear"
+            aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange([])}
             size={size === "sm" ? "md" : size}

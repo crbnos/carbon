@@ -63,6 +63,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
     return (
       <div className="nodrag nopan min-w-0">
         <input
+          aria-label={t`Step name`}
           autoFocus
           // `block`: an inline-block input adds a baseline descender gap that the
           // static label's flex box has not, which nudged the whole card down.
@@ -100,7 +101,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
         <span className="truncate text-xs font-semibold">
           {nodeNameLabel(name)}
         </span>
-        <LuPencil className="size-2.5 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/name:opacity-100" />
+        <LuPencil className="size-2.5 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/name:opacity-100 group-focus-within/name:opacity-100 focus-visible:opacity-100" />
       </button>
     </div>
   );

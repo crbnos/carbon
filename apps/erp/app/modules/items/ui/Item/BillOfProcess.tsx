@@ -127,7 +127,10 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import { StepLinkEditor } from "~/components/StepLinkEditor";
+import {
+  EveryStepToolsNote,
+  StepLinkEditor
+} from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
@@ -160,7 +163,7 @@ import type { action as newMethodOperationParameterAction } from "~/routes/x+/it
 import type { action as editMethodOperationStepAction } from "~/routes/x+/items+/methods+/operation.step.$id";
 import type { action as editMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.$id";
 import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
-import { useItems, useTools } from "~/stores";
+import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 import type {
@@ -210,6 +213,10 @@ type BillOfProcessProps = {
   isDisabled?: boolean;
   // What to tell the user when isDisabled is what made this read-only.
   disabledReason?: ReactNode;
+  // Set when this edits a correction's operations: new operations are created
+  // inside the correction, and the card takes `title`.
+  methodCorrectionId?: string;
+  title?: ReactNode;
 } & ReleaseLockProps;
 
 type PendingWorkInstructions = {
@@ -265,7 +272,9 @@ const BillOfProcess = ({
   revisionStatus,
   releaseControl,
   isDisabled = false,
-  disabledReason
+  disabledReason,
+  methodCorrectionId,
+  title
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -460,7 +469,8 @@ const BillOfProcess = ({
       ...initialOperation,
       id: operationId,
       order: newOrder,
-      makeMethodId
+      makeMethodId,
+      methodCorrectionId: methodCorrectionId ?? null
     };
 
     setTemporaryItems((prev) => ({
@@ -587,6 +597,7 @@ const BillOfProcess = ({
             <div>
               {!isReadOnly ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -824,7 +835,7 @@ const BillOfProcess = ({
       <HStack className="justify-between">
         <CardHeader className="max-md:min-w-0">
           <CardTitle className="flex flex-row items-center gap-2 max-md:flex max-md:flex-wrap max-md:gap-y-1">
-            <Trans>Bill of Process</Trans>
+            {title ?? <Trans>Bill of Process</Trans>}
             {itemName && (
               <span className="text-xs text-muted-foreground font-normal max-md:order-last max-md:min-w-0 max-md:basis-full max-md:truncate">
                 {itemName}
@@ -907,6 +918,7 @@ const BillOfProcess = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          label={t`Bill of Process`}
           emptyState={
             isPhone ? (
               <CompactEmpty
@@ -936,7 +948,7 @@ const BillOfProcess = ({
           renderItem={renderListItem}
         />
       </CardContent>
-      {configuratorDisclosure.isOpen && configuration && (
+      {configuration && (
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
@@ -1132,6 +1144,8 @@ function OperationForm({
       <div>
         <Hidden name="id" />
         <Hidden name="makeMethodId" />
+        {/* Read on create only: an operation stays in its correction. */}
+        <Hidden name="methodCorrectionId" />
         <Hidden name="order" />
       </div>
 
@@ -1367,6 +1381,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -1482,6 +1497,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -1597,6 +1613,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -1714,6 +1731,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -1792,6 +1810,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -2020,21 +2039,22 @@ function AttributesForm({
   // operation tool row is created server-side on attach when it doesn't exist
   // yet. Tools picked while CREATING a step are buffered here and attached
   // right after the step is created (see the effect below).
-  const allTools = useTools();
   const operationTools = useMemo(() => {
     const opToolByToolId = new Map(
       (tools ?? []).flatMap((tl) =>
         tl.toolId ? [[tl.toolId, tl] as const] : []
       )
     );
-    return allTools.map((tool) => ({
-      id: tool.id,
-      name: tool.readableIdWithRevision,
-      secondary: tool.name ?? undefined,
-      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
-      primary: opToolByToolId.has(tool.id)
-    }));
-  }, [tools, allTools]);
+    return allItems
+      .filter((item) => item.type === "Tool" || opToolByToolId.has(item.id))
+      .map((tool) => ({
+        id: tool.id,
+        name: tool.readableIdWithRevision,
+        secondary: tool.name ?? undefined,
+        quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+        primary: opToolByToolId.has(tool.id)
+      }));
+  }, [tools, allItems]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
   const onUploadImage = useImageUpload("parts");
@@ -2284,6 +2304,7 @@ function AttributesForm({
               >
                 <Label>Description</Label>
                 <Editor
+                  label={t`Description`}
                   initialValue={description}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -2649,6 +2670,7 @@ function AttributesListItem({
             >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -2922,20 +2944,18 @@ function AttributesListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3026,7 +3046,7 @@ function StepTools({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
-  const allTools = useTools();
+  const [allItems] = useItems();
 
   // The whole tool LIBRARY is offered (keyed by tool item id) — an operation
   // needn't have a tool on its Tools tab first; picking one here creates the
@@ -3034,28 +3054,26 @@ function StepTools({
   const opToolByToolId = new Map(
     (tools ?? []).flatMap((tl) => (tl.toolId ? [[tl.toolId, tl] as const] : []))
   );
-  const stepTools = allTools.map((tool) => ({
-    id: tool.id,
-    name: tool.readableIdWithRevision,
-    secondary: tool.name ?? undefined,
-    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
-    primary: opToolByToolId.has(tool.id)
-  }));
+  const stepTools = allItems
+    .filter((item) => item.type === "Tool" || opToolByToolId.has(item.id))
+    .map((tool) => ({
+      id: tool.id,
+      name: tool.readableIdWithRevision,
+      secondary: tool.name ?? undefined,
+      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+      primary: opToolByToolId.has(tool.id)
+    }));
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
-      (
-        tl.methodOperationStepIds ??
-        (
-          (
-            tl as {
-              methodOperationToolStep?: { methodOperationStepId: string }[];
-            }
-          ).methodOperationToolStep ?? []
-        ).map((s) => s.methodOperationStepId)
-      ).some((stepId) => stepId === step.id)
+      (tl.methodOperationToolStep ?? []).some(
+        (s) => s.methodOperationStepId === step.id
+      )
     )
     .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
+  const everyStepCount = (tools ?? []).filter(
+    (tl) => !tl.methodOperationToolStep?.length
+  ).length;
 
   const toggle = (toolId: string, linked: boolean) => {
     if (!step.id) return;
@@ -3085,6 +3103,7 @@ function StepTools({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      note={everyStepCount > 0 && <EveryStepToolsNote count={everyStepCount} />}
     />
   );
 }
@@ -3520,20 +3539,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3549,7 +3566,7 @@ function OperationPreview({
   tools: OperationTool[];
 }) {
   const { t } = useLingui();
-  const allTools = useTools();
+  const [allItems] = useItems();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
   const [isViewingSlide, setIsViewingSlide] = useState(false);
@@ -3607,15 +3624,9 @@ function OperationPreview({
   // Tools scoped to this step + operation-level (no links) tools shown on every step
   // (tool ↔ step is many-to-many).
   const stepTools = tools.filter((tl) => {
-    const ids: string[] =
-      tl.methodOperationStepIds ??
-      (
-        (
-          tl as {
-            methodOperationToolStep?: { methodOperationStepId: string }[];
-          }
-        ).methodOperationToolStep ?? []
-      ).map((s) => s.methodOperationStepId);
+    const ids = (tl.methodOperationToolStep ?? []).map(
+      (s) => s.methodOperationStepId
+    );
     return ids.length === 0 || (!!step.id && ids.includes(step.id));
   });
 
@@ -3630,7 +3641,7 @@ function OperationPreview({
   )
     .map((pin, index) => {
       const tool = pin.toolId
-        ? allTools.find((x) => x.id === pin.toolId)
+        ? allItems.find((item) => item.id === pin.toolId)
         : undefined;
       return {
         pin,
@@ -3737,7 +3748,13 @@ function OperationPreview({
         annotations={slide?.annotations ?? []}
         toolNameById={
           isViewingSlide
-            ? new Map(allTools.map((tool) => [tool.id, tool.name]))
+            ? new Map(
+                pinLegend.flatMap(({ pin, toolName }) =>
+                  pin.toolId && toolName
+                    ? [[pin.toolId, toolName] as const]
+                    : []
+                )
+              )
             : undefined
         }
         onClose={() => setIsViewingSlide(false)}
@@ -3842,7 +3859,7 @@ function OperationPreview({
         </Subheading>
         {stepTools.length > 0 ? (
           stepTools.map((tl, i) => {
-            const tool = allTools.find((x) => x.id === tl.toolId);
+            const tool = allItems.find((item) => item.id === tl.toolId);
             return (
               <div key={tl.id ?? i} className="flex items-center gap-2 py-0.5">
                 <LuHammer className="size-3 shrink-0 text-muted-foreground" />
@@ -3999,9 +4016,10 @@ function ToolsListItem({
     }
   });
 
-  const tools = useTools();
-  const tool = tools.find((t) => t.id === toolId);
-  if (!tool || !id) return null;
+  const [items] = useItems();
+  const tool = items.find((item) => item.id === toolId);
+  if (!id) return null;
+  const toolLabel = tool?.readableIdWithRevision ?? toolId;
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -4057,11 +4075,9 @@ function ToolsListItem({
                 <LuHammer className="size-4" />
               </div>
               <VStack spacing={0}>
-                <span className="text-sm font-medium">
-                  {tool.readableIdWithRevision}
-                </span>
+                <span className="text-sm font-medium">{toolLabel}</span>
                 <span className="text-xs text-muted-foreground">
-                  {tool.name}
+                  {tool?.name}
                 </span>
               </VStack>
               <span className="text-base text-muted-foreground text-right">
@@ -4106,20 +4122,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={toolLabel}
+        text={`Are you sure you want to delete ${toolLabel} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

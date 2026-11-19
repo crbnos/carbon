@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getDefaultSerialCompleteQuantity,
+  getFinishedQuantity,
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialCompleteChoice,
@@ -65,6 +66,36 @@ describe("getReceivableSerialUnits", () => {
     ).toEqual(["SN-0002", "SN-0003"]);
   });
 
+  it("offers a finished unit issued into another job before its job was received, first", () => {
+    // complete_job_to_inventory receives an issued unit (Consumed and booked
+    // out of stock) with the shop-floor-finished units, before reserved ones.
+    expect(
+      getReceivableSerialUnits(
+        [
+          unit({ readableId: "SN-0001" }),
+          unit({ readableId: "SN-0002", status: "Consumed" }),
+          unit({ readableId: "SN-0003", status: "Consumed" }),
+          unit({ readableId: "SN-0004", status: "Available" })
+        ],
+        new Set(),
+        new Set(["SN-0002"])
+      )
+    ).toEqual(["SN-0002", "SN-0004", "SN-0001"]);
+  });
+
+  it("never offers an issued unit the job already received", () => {
+    expect(
+      getReceivableSerialUnits(
+        [
+          unit({ readableId: "SN-0001", status: "Consumed" }),
+          unit({ readableId: "SN-0002" })
+        ],
+        new Set(["SN-0001"]),
+        new Set(["SN-0001"])
+      )
+    ).toEqual(["SN-0002"]);
+  });
+
   it("keeps the quantity locked when a unit has no serial number yet", () => {
     expect(
       getReceivableSerialUnits([
@@ -105,6 +136,45 @@ describe("getFinishedUnreceivedQuantity", () => {
         new Set(["SN-0001"])
       )
     ).toBe(1);
+  });
+
+  it("counts a finished unit issued into another job before its job was received", () => {
+    expect(
+      getFinishedUnreceivedQuantity(
+        [
+          unit({ readableId: "SN-0001", status: "Consumed" }),
+          unit({ readableId: "SN-0002", status: "Consumed" }),
+          unit({ readableId: "SN-0003", status: "Consumed" }),
+          unit({ readableId: "SN-0004" })
+        ],
+        new Set(["SN-0003"]),
+        new Set(["SN-0001", "SN-0003"])
+      )
+    ).toBe(1);
+  });
+});
+
+describe("getFinishedQuantity", () => {
+  it("counts every finished unit, received or not, issued since or not", () => {
+    expect(
+      getFinishedQuantity(
+        [
+          unit({ id: "received", status: "Available" }),
+          unit({ id: "finished", status: "Available" }),
+          unit({ id: "issued", status: "Consumed" }),
+          unit({ id: "never-left-stock", status: "Consumed" }),
+          unit({ id: "scrapped", status: "Scrapped" }),
+          unit({ id: "seed", quantity: 2 })
+        ],
+        new Set(["issued"])
+      )
+    ).toBe(3);
+  });
+
+  it("counts the units of a finished multi-unit entity", () => {
+    expect(
+      getFinishedQuantity([unit({ id: "lot", status: "Available", quantity: 4 })])
+    ).toBe(4);
   });
 });
 
@@ -176,6 +246,7 @@ describe("getSerialCompleteChoice", () => {
         getSerialCompleteChoice({
           trackedEntities: units,
           receivedEntityIds: none,
+          issuedEntityIds: none,
           hasSerialSequence,
           jobQuantity: 2
         })
@@ -188,6 +259,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: false,
         jobQuantity: 3
       })
@@ -199,6 +271,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })
@@ -211,12 +284,13 @@ describe("getSerialCompleteChoice", () => {
       unit({ id: "blank", status: "Reserved" }),
       unit({ id: "received", status: "Available", readableId: "SN-0002" }),
       unit({ id: "scrapped", status: "Scrapped" }),
-      unit({ id: "issued", status: "Consumed", readableId: "SN-0003" })
+      unit({ id: "consumed", status: "Consumed", readableId: "SN-0003" })
     ];
     expect(
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: new Set(["received"]),
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 4
       })
@@ -225,10 +299,53 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: new Set(["received"]),
+        issuedEntityIds: none,
         hasSerialSequence: false,
         jobQuantity: 4
       })
     ).toEqual({ mode: "locked" });
+  });
+
+  it("offers every unit of a job with one unit issued before receipt", () => {
+    // Three numbered units; the first was finished, then issued into another
+    // job. complete_job_to_inventory receives all three, the issued one first.
+    const units = [
+      unit({ id: "issued", status: "Consumed", readableId: "SN-0001" }),
+      unit({ id: "b", readableId: "SN-0002" }),
+      unit({ id: "c", readableId: "SN-0003" })
+    ];
+    for (const hasSerialSequence of [false, true]) {
+      expect(
+        getSerialCompleteChoice({
+          trackedEntities: units,
+          receivedEntityIds: none,
+          issuedEntityIds: new Set(["issued"]),
+          hasSerialSequence,
+          jobQuantity: 3
+        })
+      ).toEqual({
+        mode: "serials",
+        serials: ["SN-0001", "SN-0002", "SN-0003"]
+      });
+    }
+  });
+
+  it("counts an issued unit among the units numbered on receipt", () => {
+    // The shop floor finished the seed's first unit and issued it; the next
+    // unit carries the other two, unnumbered.
+    const units = [
+      unit({ id: "issued", status: "Consumed", readableId: "SN-0001" }),
+      unit({ id: "next", quantity: 2 })
+    ];
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: units,
+        receivedEntityIds: none,
+        issuedEntityIds: new Set(["issued"]),
+        hasSerialSequence: true,
+        jobQuantity: 3
+      })
+    ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
   });
 
   it("stays locked when the receipts could not be read", () => {
@@ -236,6 +353,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: null,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })
@@ -247,6 +365,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [unit({ id: "received", status: "Available" })],
         receivedEntityIds: new Set(["received"]),
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 1
       })
@@ -263,6 +382,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })
@@ -271,6 +391,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: false,
         jobQuantity: 3
       })
@@ -286,6 +407,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })
@@ -294,6 +416,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: false,
         jobQuantity: 3
       })
@@ -309,6 +432,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })
@@ -322,6 +446,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })
@@ -338,6 +463,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
+        issuedEntityIds: none,
         hasSerialSequence: true,
         jobQuantity: 3
       })

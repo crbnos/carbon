@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  getBatchPropertyColumns,
   getInventoryCounts,
   getPickingLists,
   getReceipts,
@@ -22,7 +23,8 @@ import {
   TRACKED_ENTITIES_PAGING,
   WAREHOUSE_TRANSFERS_PAGING
 } from "~/modules/inventory/inventory.service";
-import type { ListDefinition } from "./index.server";
+import { batchPropertyExportValue } from "~/modules/inventory/inventory.utils";
+import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
 // The inventory lists. Each entry follows `sales.server.ts`. The quantities,
@@ -80,11 +82,41 @@ export const storageTypesList = searchList({
   service: getStorageTypes
 });
 
+type TrackedEntityRow = NonNullable<
+  Awaited<ReturnType<typeof getTrackedEntities>>["data"]
+>[number];
+
+/**
+ * Each row's batch property values under their column keys
+ * (`property.<label slug>`), as the columns' `meta.exportValue` computes
+ * them. The columns are the company's own, so they cannot be a static
+ * `exportValues` entry; the background export writes `row[key]`.
+ */
+async function withBatchPropertyValues(
+  rows: TrackedEntityRow[],
+  { client, companyId }: ListRowsContext
+): Promise<TrackedEntityRow[]> {
+  if (rows.length === 0) return rows;
+  const columns = await getBatchPropertyColumns(client, companyId);
+  if (columns.error) throw columns.error;
+  if (columns.data.length === 0) return rows;
+  return rows.map((row) => ({
+    ...row,
+    ...Object.fromEntries(
+      columns.data.map((column) => [
+        column.key,
+        batchPropertyExportValue(column, row)
+      ])
+    )
+  }));
+}
+
 export const trackedEntitiesList = searchList({
   key: "tracked-entities",
   permission: { view: "inventory", role: "employee" },
   paging: TRACKED_ENTITIES_PAGING,
-  service: getTrackedEntities
+  service: getTrackedEntities,
+  rows: withBatchPropertyValues
 });
 
 export const warehouseTransfersList = searchList({

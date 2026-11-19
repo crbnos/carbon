@@ -71,6 +71,7 @@ import {
   useQuantityFormatter,
   useUser
 } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { methodType } from "~/modules/shared/shared.models";
 import type { loader as createPurchaseOrderLineLoader } from "~/routes/x+/project+/$projectId.elements.$elementId.create-po-line";
 import { useItems } from "~/stores";
@@ -245,10 +246,10 @@ export function ElementPlanLines({
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<CostTypeFilter>("all");
   const [sort, setSort] = useState<EstimatedSort>("plan");
-  const [deleting, setDeleting] = useState<PlanCard | null>(null);
-  const [editing, setEditing] = useState<PlanRow | null>(null);
-  const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
-  const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
+  const deleting = useDrawerItem<PlanCard>();
+  const editing = useDrawerItem<PlanRow>();
+  const creatingJob = useDrawerItem<MaterialLine>();
+  const creatingLine = useDrawerItem<MaterialLine>();
 
   const itemsById = useMemo(
     () => new Map(items.map((item) => [item.id, item])),
@@ -481,7 +482,7 @@ export function ElementPlanLines({
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem
             disabled={isDisabled}
-            onClick={() => setEditing(card)}
+            onClick={() => editing.open(card)}
           >
             <DropdownMenuIcon icon={<LuPencil />} />
             <Trans>Edit</Trans>
@@ -489,7 +490,7 @@ export function ElementPlanLines({
           {canMakeJob && material && (
             <DropdownMenuItem
               disabled={!canCreateJob}
-              onClick={() => setCreatingJob(material)}
+              onClick={() => creatingJob.open(material)}
             >
               <DropdownMenuIcon icon={<LuFactory />} />
               <Trans>Create Job</Trans>
@@ -498,7 +499,7 @@ export function ElementPlanLines({
           {canMakeLine && material && (
             <DropdownMenuItem
               disabled={!canCreatePurchaseOrderLine}
-              onClick={() => setCreatingLine(material)}
+              onClick={() => creatingLine.open(material)}
             >
               <DropdownMenuIcon icon={<LuShoppingCart />} />
               <Trans>Create PO Line</Trans>
@@ -508,7 +509,7 @@ export function ElementPlanLines({
           <DropdownMenuItem
             destructive
             disabled={isDisabled}
-            onClick={() => setDeleting(card)}
+            onClick={() => deleting.open(card)}
           >
             <DropdownMenuIcon icon={<LuTrash />} />
             <Trans>Delete</Trans>
@@ -618,7 +619,10 @@ export function ElementPlanLines({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {(["material", "labor", "cost"] as const).map((type) => (
-          <DropdownMenuItem key={type} onClick={() => setEditing(newRow(type))}>
+          <DropdownMenuItem
+            key={type}
+            onClick={() => editing.open(newRow(type))}
+          >
             {typeLabels[type]}
           </DropdownMenuItem>
         ))}
@@ -640,7 +644,9 @@ export function ElementPlanLines({
   );
 
   const deletingName =
-    deleting === null ? "" : deleting.title || typeLabels[deleting.type];
+    deleting.item === null
+      ? ""
+      : deleting.item.title || typeLabels[deleting.item.type];
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -674,7 +680,7 @@ export function ElementPlanLines({
                 figures={figures(card)}
                 isOver={isOver}
                 progress={planProgress(card)}
-                onOpen={isDisabled ? undefined : () => setEditing(card)}
+                onOpen={isDisabled ? undefined : () => editing.open(card)}
                 actions={
                   <>
                     {charge}
@@ -692,40 +698,47 @@ export function ElementPlanLines({
         </div>
       )}
 
-      {editing && (
+      {editing.item && (
         <PlanLineModal
-          row={editing}
+          open={editing.isOpen}
+          row={editing.item}
           elementId={elementId}
           action={action}
           laborCategories={laborCategories}
-          onClose={() => setEditing(null)}
+          onClose={editing.close}
         />
       )}
-      {creatingJob && (
+      {creatingJob.item && (
         <CreateJobModal
+          open={creatingJob.isOpen}
           projectId={projectId}
           elementId={elementId}
-          line={creatingJob}
+          line={creatingJob.item}
           defaultLocationId={defaultLocationId}
-          onClose={() => setCreatingJob(null)}
+          onClose={creatingJob.close}
         />
       )}
-      {creatingLine && (
+      {creatingLine.item && (
         <CreatePurchaseOrderLineModal
+          open={creatingLine.isOpen}
           projectId={projectId}
           elementId={elementId}
-          line={creatingLine}
-          onClose={() => setCreatingLine(null)}
+          line={creatingLine.item}
+          onClose={creatingLine.close}
         />
       )}
-      {deleting && (
+      {deleting.item && (
         <ConfirmDelete
           action={action}
+          isOpen={deleting.isOpen}
           name={deletingName}
           text={t`Remove ${deletingName} from the plan?`}
-          fields={{ intent: DELETE_INTENT[deleting.type], id: deleting.id }}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          fields={{
+            intent: DELETE_INTENT[deleting.item.type],
+            id: deleting.item.id
+          }}
+          onCancel={deleting.close}
+          onSubmit={deleting.close}
         />
       )}
     </div>
@@ -744,25 +757,39 @@ function useMethodTypeLabels(): Record<MethodType, string> {
   );
 }
 
+type PlanLineModalProps = {
+  open?: boolean;
+  row: PlanRow;
+  elementId: string;
+  action: string;
+  laborCategories: { id: string; name: string }[];
+  onClose: () => void;
+};
+
 /**
  * One whole plan line, new or saved: a material's item, method, quantity,
  * unit cost and required date; a labor line's category, hours and dates; a
  * cost's description and amount. It posts the line's upsert intent to the
  * plan route.
  */
-function PlanLineModal({
+function PlanLineModal({ open = true, onClose, ...props }: PlanLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <PlanLineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function PlanLineBody({
   row,
   elementId,
   action,
   laborCategories,
   onClose
-}: {
-  row: PlanRow;
-  elementId: string;
-  action: string;
-  laborCategories: { id: string; name: string }[];
-  onClose: () => void;
-}) {
+}: Omit<PlanLineModalProps, "open">) {
   const { t } = useLingui();
   const [items] = useItems();
   const { company } = useUser();
@@ -930,39 +957,43 @@ function PlanLineModal({
   })();
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          // The three line shapes share one form element.
-          validator={form.validator as typeof projectElementMaterialValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={form.defaultValues}
-        >
-          <ModalHeader>
-            <ModalTitle>{title}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value={INTENT[row.type]} />
-            <Hidden name="id" />
-            <Hidden name="projectElementId" />
-            <VStack spacing={4}>{form.fields}</VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              {isNew ? <Trans>Add</Trans> : <Trans>Save</Trans>}
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      // The three line shapes share one form element.
+      validator={form.validator as typeof projectElementMaterialValidator}
+      method="post"
+      action={action}
+      fetcher={fetcher}
+      defaultValues={form.defaultValues}
+    >
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value={INTENT[row.type]} />
+        <Hidden name="id" />
+        <Hidden name="projectElementId" />
+        <VStack spacing={4}>{form.fields}</VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          {isNew ? <Trans>Add</Trans> : <Trans>Save</Trans>}
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
+
+type CreateJobModalProps = {
+  open?: boolean;
+  projectId: string;
+  elementId: string;
+  line: MaterialLine;
+  defaultLocationId?: string | null;
+  onClose: () => void;
+};
 
 /**
  * Create Job for a Make to Order material: the quantity still needed, by the
@@ -970,18 +1001,27 @@ function PlanLineModal({
  * redirects to the new job; a refusal shows in the modal.
  */
 function CreateJobModal({
+  open = true,
+  onClose,
+  ...props
+}: CreateJobModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <CreateJobBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function CreateJobBody({
   projectId,
   elementId,
   line,
   defaultLocationId,
   onClose
-}: {
-  projectId: string;
-  elementId: string;
-  line: MaterialLine;
-  defaultLocationId?: string | null;
-  onClose: () => void;
-}) {
+}: Omit<CreateJobModalProps, "open">) {
   const { t } = useLingui();
   const { defaults } = useUser();
   const fetcher = useAction<{ error?: { message: string } }>();
@@ -989,62 +1029,65 @@ function CreateJobModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={createJobFromMaterialValidator}
-          method="post"
-          action={path.to.projectElementCreateJob(projectId, elementId)}
-          fetcher={fetcher}
-          defaultValues={{
-            materialId: line.id,
-            quantity: remainingMaterialQuantity(line) || Number(line.quantity),
-            dueDate: line.requiredDate ?? undefined,
-            locationId: defaultLocationId ?? defaults?.locationId ?? ""
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Create Job</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              {line.item?.readableIdWithRevision} {line.item?.name}
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="materialId" />
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              <NumberField
-                name="quantity"
-                label={t`Quantity`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-              />
-              <DatePicker name="dueDate" label={t`Due Date`} />
-              <Location name="locationId" label={t`Location`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Create Job</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      validator={createJobFromMaterialValidator}
+      method="post"
+      action={path.to.projectElementCreateJob(projectId, elementId)}
+      fetcher={fetcher}
+      defaultValues={{
+        materialId: line.id,
+        quantity: remainingMaterialQuantity(line) || Number(line.quantity),
+        dueDate: line.requiredDate ?? undefined,
+        locationId: defaultLocationId ?? defaults?.locationId ?? ""
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Create Job</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          {line.item?.readableIdWithRevision} {line.item?.name}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="materialId" />
+        <VStack spacing={4}>
+          {errorMessage && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <NumberField
+            name="quantity"
+            label={t`Quantity`}
+            minValue={0}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+          />
+          <DatePicker name="dueDate" label={t`Due Date`} />
+          <Location name="locationId" label={t`Location`} />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          <Trans>Create Job</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
+
+type CreatePurchaseOrderLineModalProps = {
+  open?: boolean;
+  projectId: string;
+  elementId: string;
+  line: MaterialLine;
+  onClose: () => void;
+};
 
 /**
  * Create PO line for a Purchase to Order material: the supplier (the item's
@@ -1054,16 +1097,26 @@ function CreateJobModal({
  * purchase order; a refusal shows in the modal.
  */
 function CreatePurchaseOrderLineModal({
+  open = true,
+  onClose,
+  ...props
+}: CreatePurchaseOrderLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <CreatePurchaseOrderLineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function CreatePurchaseOrderLineBody({
   projectId,
   elementId,
   line,
   onClose
-}: {
-  projectId: string;
-  elementId: string;
-  line: MaterialLine;
-  onClose: () => void;
-}) {
+}: Omit<CreatePurchaseOrderLineModalProps, "open">) {
   const { t } = useLingui();
   const resource = path.to.projectElementCreatePurchaseOrderLine(
     projectId,
@@ -1093,91 +1146,86 @@ function CreatePurchaseOrderLineModal({
   ];
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        {options === undefined ? (
+    <>
+      {options === undefined ? (
+        <ModalBody>
+          <div className="flex h-40 items-center justify-center">
+            <Spinner />
+          </div>
+        </ModalBody>
+      ) : (
+        <ValidatedForm
+          // The options of a newly picked supplier restart the form with
+          // its purchase orders.
+          key={options.supplierId ?? ""}
+          validator={createPurchaseOrderLineFromMaterialValidator}
+          method="post"
+          action={resource}
+          fetcher={fetcher}
+          defaultValues={{
+            materialId: line.id,
+            supplierId: options.supplierId ?? "",
+            quantity: remainingMaterialQuantity(line) || Number(line.quantity),
+            requiredDate: line.requiredDate ?? undefined,
+            purchaseOrderId: options.purchaseOrders[0]?.id ?? NEW_PURCHASE_ORDER
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Create PO Line</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              {line.item?.readableIdWithRevision} {line.item?.name}
+            </ModalDescription>
+          </ModalHeader>
           <ModalBody>
-            <div className="flex h-40 items-center justify-center">
-              <Spinner />
-            </div>
-          </ModalBody>
-        ) : (
-          <ValidatedForm
-            // The options of a newly picked supplier restart the form with
-            // its purchase orders.
-            key={options.supplierId ?? ""}
-            validator={createPurchaseOrderLineFromMaterialValidator}
-            method="post"
-            action={resource}
-            fetcher={fetcher}
-            defaultValues={{
-              materialId: line.id,
-              supplierId: options.supplierId ?? "",
-              quantity:
-                remainingMaterialQuantity(line) || Number(line.quantity),
-              requiredDate: line.requiredDate ?? undefined,
-              purchaseOrderId:
-                options.purchaseOrders[0]?.id ?? NEW_PURCHASE_ORDER
-            }}
-          >
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Create PO Line</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                {line.item?.readableIdWithRevision} {line.item?.name}
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              <Hidden name="materialId" />
-              <VStack spacing={4}>
-                {errorMessage && (
-                  <Alert variant="destructive">
-                    <LuTriangleAlert />
-                    <AlertDescription>{errorMessage}</AlertDescription>
-                  </Alert>
-                )}
-                <Supplier
-                  name="supplierId"
-                  label={t`Supplier`}
-                  onChange={(option) => {
-                    if (option?.value && option.value !== options.supplierId) {
-                      setPickedSupplierId(option.value);
-                    }
-                  }}
-                />
-                <NumberField
-                  name="quantity"
-                  label={t`Quantity`}
-                  helperText={
-                    line.unitOfMeasureCode
-                      ? t`In ${line.unitOfMeasureCode}; the supplier part's conversion factor gives the purchase quantity`
-                      : t`The supplier part's conversion factor gives the purchase quantity`
+            <Hidden name="materialId" />
+            <VStack spacing={4}>
+              {errorMessage && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              <Supplier
+                name="supplierId"
+                label={t`Supplier`}
+                onChange={(option) => {
+                  if (option?.value && option.value !== options.supplierId) {
+                    setPickedSupplierId(option.value);
                   }
-                  minValue={0}
-                  formatOptions={INPUT_FORMAT.quantity}
-                  step={INPUT_STEP.quantity}
-                />
-                <DatePicker name="requiredDate" label={t`Required Date`} />
-                <Select
-                  name="purchaseOrderId"
-                  label={t`Add to`}
-                  options={purchaseOrderOptions}
-                />
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Submit withBlocker={false}>
-                <Trans>Create PO Line</Trans>
-              </Submit>
-            </ModalFooter>
-          </ValidatedForm>
-        )}
-      </ModalContent>
-    </Modal>
+                }}
+              />
+              <NumberField
+                name="quantity"
+                label={t`Quantity`}
+                helperText={
+                  line.unitOfMeasureCode
+                    ? t`In ${line.unitOfMeasureCode}; the supplier part's conversion factor gives the purchase quantity`
+                    : t`The supplier part's conversion factor gives the purchase quantity`
+                }
+                minValue={0}
+                formatOptions={INPUT_FORMAT.quantity}
+                step={INPUT_STEP.quantity}
+              />
+              <DatePicker name="requiredDate" label={t`Required Date`} />
+              <Select
+                name="purchaseOrderId"
+                label={t`Add to`}
+                options={purchaseOrderOptions}
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit withBlocker={false}>
+              <Trans>Create PO Line</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      )}
+    </>
   );
 }

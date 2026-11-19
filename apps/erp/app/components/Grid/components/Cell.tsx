@@ -10,6 +10,7 @@ import { memo, useState } from "react";
 import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { CellContent } from "~/components/Table/components/CellContent";
+import { getColumnLabel } from "~/components/Table/utils";
 import { useMovingCellRef } from "~/hooks";
 import { getAccessorKey } from "../utils";
 
@@ -73,6 +74,11 @@ const Cell = <T extends object>({
       ref={ref}
       data-row={cell.row.index}
       data-column={columnIndex}
+      // The grid is an ARIA grid (Grid.tsx): say which cell is selected and
+      // which ones cannot be edited.
+      role="gridcell"
+      aria-selected={isSelected}
+      aria-readonly={hasEditableTableCellComponent ? undefined : true}
       tabIndex={tabIndex}
       onClick={onClick}
       onFocus={onFocus}
@@ -82,6 +88,7 @@ const Cell = <T extends object>({
           {hasEditableTableCellComponent
             ? flexRender(editableCell, {
                 accessorKey,
+                label: getColumnLabel(cell.column.columnDef),
                 value: cell.renderValue(),
                 row: cell.row.original,
                 onUpdate: onUpdate

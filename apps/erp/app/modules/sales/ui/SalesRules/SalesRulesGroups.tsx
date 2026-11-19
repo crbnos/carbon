@@ -34,6 +34,8 @@ import {
   VStack
 } from "@carbon/react";
 import { SALES_RULE_SURFACES, type SalesRuleSurface } from "@carbon/utils";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useCallback } from "react";
 import {
@@ -66,7 +68,7 @@ type SalesRuleListItem = {
 // Sales rules reach items through type/group filters; empty = all items.
 function ruleReach(
   rule: SalesRuleListItem,
-  t: ReturnType<typeof useLingui>["t"]
+  t: (descriptor: MessageDescriptor) => string
 ): {
   broadcastLabel: string | null;
   showAssignments: boolean;
@@ -74,11 +76,15 @@ function ruleReach(
   const types = rule.filteredItemTypes?.length ?? 0;
   const groups = rule.filteredItemGroupIds?.length ?? 0;
   if (types === 0 && groups === 0) {
-    return { broadcastLabel: t`All items`, showAssignments: false };
+    return { broadcastLabel: t(msg`All items`), showAssignments: false };
   }
   const parts: string[] = [];
-  if (types) parts.push(types === 1 ? t`1 type` : t`${types} types`);
-  if (groups) parts.push(groups === 1 ? t`1 group` : t`${groups} groups`);
+  if (types)
+    parts.push(t(msg`${plural(types, { one: "# type", other: "# types" })}`));
+  if (groups)
+    parts.push(
+      t(msg`${plural(groups, { one: "# group", other: "# groups" })}`)
+    );
   return { broadcastLabel: parts.join(" · "), showAssignments: true };
 }
 

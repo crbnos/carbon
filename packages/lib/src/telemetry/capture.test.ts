@@ -12,9 +12,6 @@ const env = vi.hoisted(() => ({
 }));
 
 vi.mock("@carbon/env", () => env);
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
 
 const { captureWorkEvent, trackWorkEvent } = await import("./capture");
 

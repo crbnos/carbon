@@ -37,6 +37,7 @@ type FixedAssetAdjustCostFormProps = {
   netBookValue: number;
   // The transfer needs a location; asked for only when the asset has none.
   hasLocation: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -45,6 +46,7 @@ const FixedAssetAdjustCostForm = ({
   acquisitionCost,
   netBookValue,
   hasLocation,
+  open = true,
   onClose
 }: FixedAssetAdjustCostFormProps) => {
   const { t } = useLingui();
@@ -59,7 +61,7 @@ const FixedAssetAdjustCostForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
@@ -54,14 +54,11 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditRiskRoute() {
   const { risk } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
-  const onClose = () => {
-    closeRoute();
-  };
+  const dialog = useRouteDialog();
 
   return (
     <RiskRegisterForm
-      open
+      open={dialog.open}
       // @ts-expect-error TS2322 - TODO: fix type
       initialValues={{
         ...risk,
@@ -77,7 +74,7 @@ export default function EditRiskRoute() {
         sourceId: risk.sourceId ?? undefined,
         type: risk.type ?? "Risk"
       }}
-      onClose={onClose}
+      onClose={dialog.close}
     />
   );
 }

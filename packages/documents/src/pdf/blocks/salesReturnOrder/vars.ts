@@ -2,38 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { MergeToken } from "../../../template";
+import { returnOrderVars } from "../returnOrder/vars";
+import { str } from "../textVars";
 import type { SalesReturnOrderData } from "./types";
 
 /**
  * Merge-field variable map for a Sales Return Order (RMA). Tokens mirror
- * `SALES_RETURN_ORDER_MERGE_FIELDS` in template/merge.ts.
+ * `SALES_RETURN_ORDER_MERGE_FIELDS` in template/mergeFields.ts.
  */
 export function buildSalesReturnOrderVars(
   data: Pick<
     SalesReturnOrderData,
-    "salesReturnOrder" | "customerAddress" | "company" | "currencyCode"
+    | "salesReturnOrder"
+    | "salesReturnOrderLines"
+    | "customerAddress"
+    | "returnToAddress"
+    | "company"
+    | "currencyCode"
+    | "locale"
+    | "numberFormatter"
   >
-): Record<string, string> {
-  const rma = data.salesReturnOrder;
-  const customer = data.customerAddress;
-  const str = (v: unknown): string => (v == null ? "" : String(v));
-
+): Record<MergeToken<"salesReturnOrder">, string> {
+  const order = data.salesReturnOrder;
   return {
-    "order.number": str(rma?.salesReturnOrderId),
-    "order.date": str(rma?.orderDate),
-    "order.expirationDate": str(rma?.expirationDate),
-    "order.customerReference": str(rma?.customerReference),
-    "order.currency": str(data.currencyCode),
-    "customer.name": str(customer?.name),
-    "customer.addressLine1": str(customer?.addressLine1),
-    "customer.city": str(customer?.city),
-    "customer.country": str(customer?.country),
-    "company.name": str(data.company?.name),
-    "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode),
-    "company.taxId": str(data.company?.taxId),
-    "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber),
-    "company.registrationNumber": str(data.company?.registrationNumber)
+    ...returnOrderVars({
+      ...data,
+      number: order?.salesReturnOrderId,
+      orderDate: order?.orderDate,
+      expirationDate: order?.expirationDate,
+      lines: data.salesReturnOrderLines,
+      party: { prefix: "customer", address: data.customerAddress },
+      other: { prefix: "returnTo", address: data.returnToAddress }
+    }),
+    "order.customerReference": str(order?.customerReference)
   };
 }

@@ -198,7 +198,7 @@ export default function InvoicingSettingsRoute() {
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
       >
-        <Heading size="h3">
+        <Heading as="h1" size="h3">
           <Trans>Invoicing</Trans>
         </Heading>
 
@@ -431,6 +431,7 @@ export default function InvoicingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Centralized Billing Address`}
                 checked={arAddressEnabled}
                 onCheckedChange={handleArAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}

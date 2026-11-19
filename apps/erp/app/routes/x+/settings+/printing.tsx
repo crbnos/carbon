@@ -8,7 +8,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { PrintingSettings } from "@carbon/printing";
-import { getPrinterRoutes, updateAssignmentValidator } from "@carbon/printing";
+import {
+  getLabelTemplates,
+  getPrinterRoutes,
+  labelTemplateValidator,
+  printerRouteValidator,
+  updateAssignmentValidator
+} from "@carbon/printing";
 import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -22,9 +28,12 @@ import {
   getLocationsList,
   getWorkCentersList
 } from "~/modules/resources/resources.service";
-import { printerRouteValidator } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
+import {
+  AssignmentsCard,
+  LabelTemplatesCard,
+  PrintersCard
+} from "~/modules/settings/ui/Printing";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -39,14 +48,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, printerRoutes, workCenters, locations, userDefaults] =
-    await Promise.all([
-      getCompanySettings(client, companyId),
-      getPrinterRoutes(client, companyId),
-      getWorkCentersList(client, companyId),
-      getLocationsList(client, companyId),
-      getUserDefaults(client, userId, companyId)
-    ]);
+  const [
+    companySettings,
+    printerRoutes,
+    labelTemplates,
+    workCenters,
+    locations,
+    userDefaults
+  ] = await Promise.all([
+    getCompanySettings(client, companyId),
+    getPrinterRoutes(client, companyId),
+    getLabelTemplates(client, companyId),
+    getWorkCentersList(client, companyId),
+    getLocationsList(client, companyId),
+    getUserDefaults(client, userId, companyId)
+  ]);
 
   if (!companySettings.data)
     throw redirect(
@@ -61,16 +77,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     printing:
       (companySettings.data.printing as PrintingSettings | null) ?? null,
     printerRoutes: printerRoutes.data ?? [],
+    labelTemplates: labelTemplates.data ?? [],
     workCenters: workCenters.data ?? [],
     locations: locations.data ?? [],
     defaultLocationId: userDefaults.data?.locationId ?? null
   };
 }
 
-// The cards post one intent each: a printer route's save or test print, or a
-// printer assignment.
+// The cards post one intent each: a printer route's save or test print, a
+// label template's save, or a printer assignment.
 const printingForm = z.discriminatedUnion("intent", [
   printerRouteValidator.safeExtend({ intent: z.literal("upsertRoute") }),
+  labelTemplateValidator.safeExtend({
+    intent: z.literal("upsertLabelTemplate")
+  }),
   z.object({
     intent: z.literal("testPrint"),
     routeId: z.string().min(1, { message: "Route ID required" })
@@ -87,6 +107,8 @@ export async function action(args: ActionFunctionArgs) {
   switch (input.data.intent) {
     case "upsertRoute":
       return api.settings.savePrinterRoute(input.data);
+    case "upsertLabelTemplate":
+      return api.settings.saveLabelTemplate(input.data);
     case "testPrint":
       return api.settings.testPrinterRoute(input.data);
     case "updateAssignment":
@@ -95,7 +117,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PrintingSettingsRoute() {
-  const { printing, printerRoutes, workCenters, locations } =
+  const { printing, printerRoutes, labelTemplates, workCenters, locations } =
     useLoaderData<typeof loader>();
 
   return (
@@ -113,6 +135,8 @@ export default function PrintingSettingsRoute() {
         </div>
 
         <PrintersCard printerRoutes={printerRoutes} />
+
+        <LabelTemplatesCard labelTemplates={labelTemplates} />
 
         <AssignmentsCard
           printing={printing}

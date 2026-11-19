@@ -24,11 +24,13 @@ import { fixedAssetDisposalValidator } from "../../accounting.models";
 
 type FixedAssetDisposalFormProps = {
   currentNBV: number;
+  open?: boolean;
   onClose: () => void;
 };
 
 const FixedAssetDisposalForm = ({
   currentNBV,
+  open = true,
   onClose
 }: FixedAssetDisposalFormProps) => {
   const { t } = useLingui();
@@ -42,7 +44,7 @@ const FixedAssetDisposalForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

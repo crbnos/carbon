@@ -33,7 +33,6 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback } from "react";
 import {
   LuLayers,
   LuPackageCheck,
@@ -107,7 +106,14 @@ const inventorySettingsForm = z.discriminatedUnion("intent", [
   returnPickedMaterialTimingValidator.extend({
     intent: z.literal("returnPickedMaterialTiming")
   }),
-  settingsToggle("receiptQuantitiesStartAtZero", "receiptQuantitiesStartAtZero")
+  settingsToggle(
+    "receiptQuantitiesStartAtZero",
+    "receiptQuantitiesStartAtZero"
+  ),
+  settingsToggle(
+    "receiptBatchNumbersFromPurchaseOrder",
+    "receiptBatchNumbersFromPurchaseOrder"
+  )
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -137,33 +143,6 @@ export default function InventorySettingsRoute() {
       else toast.success(t`Material return timing updated`);
     }
   });
-
-  const toggleFetcher = useAction<typeof action>({
-    onSuccess: ({ data }) => {
-      if (data?.receiptQuantitiesStartAtZero === undefined) return;
-      toast.success(
-        data.receiptQuantitiesStartAtZero
-          ? t`Receipt quantities now start at zero`
-          : t`Receipt quantities now start at the quantity to receive`
-      );
-    }
-  });
-
-  const receiptQuantitiesStartAtZero = useSavedToggle(
-    toggleFetcher,
-    "receiptQuantitiesStartAtZero",
-    companySettings.receiptQuantitiesStartAtZero
-  );
-
-  const handleReceiptQuantitiesStartAtZeroToggle = useCallback(
-    (checked: boolean) => {
-      toggleFetcher.submit(
-        { intent: "receiptQuantitiesStartAtZero", enabled: checked.toString() },
-        { method: "POST" }
-      );
-    },
-    [toggleFetcher]
-  );
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
@@ -203,6 +182,7 @@ export default function InventorySettingsRoute() {
                   <Select
                     name="kanbanOutput"
                     label={t`Output`}
+                    aria-label={t`Output`}
                     options={kanbanOutputTypes.map((type) => ({
                       value: type,
                       label: outputLabels[type]
@@ -224,53 +204,39 @@ export default function InventorySettingsRoute() {
           <Trans>Receiving</Trans>
         </SettingsSectionHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Start Receipt Quantities at Zero</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>
-                Choose what a new receipt fills in as each line's received
-                quantity: what is still to receive, or zero so the receiver
-                enters what actually arrived.
-              </Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {receiptQuantitiesStartAtZero ? (
-                    <Trans>Received quantities start at zero</Trans>
-                  ) : (
-                    <Trans>
-                      Received quantities start at the quantity to receive
-                    </Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {receiptQuantitiesStartAtZero ? (
-                    <Trans>
-                      Enter the quantity on each line that arrived. A line left
-                      at zero is not received when the receipt is posted.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Enable to make receivers enter the quantity on each line
-                      instead of confirming the quantity still to receive.
-                    </Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={receiptQuantitiesStartAtZero}
-                onCheckedChange={handleReceiptQuantitiesStartAtZeroToggle}
-                disabled={toggleFetcher.state !== "idle"}
-              />
-            </HStack>
-          </CardContent>
-        </Card>
+        <SettingToggleCard
+          intent="receiptQuantitiesStartAtZero"
+          saved={companySettings.receiptQuantitiesStartAtZero}
+          title={t`Start Receipt Quantities at Zero`}
+          description={t`Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived.`}
+          on={{
+            status: t`Received quantities start at zero`,
+            detail: t`Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted.`,
+            toast: t`Receipt quantities now start at zero`
+          }}
+          off={{
+            status: t`Received quantities start at the quantity to receive`,
+            detail: t`Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive.`,
+            toast: t`Receipt quantities now start at the quantity to receive`
+          }}
+        />
+
+        <SettingToggleCard
+          intent="receiptBatchNumbersFromPurchaseOrder"
+          saved={companySettings.receiptBatchNumbersFromPurchaseOrder}
+          title={t`Generate Batch Numbers from the Purchase Order`}
+          description={t`Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2.`}
+          on={{
+            status: t`Batch numbers are generated`,
+            detail: t`New purchase order receipts fill in batch numbers. Receivers can still change them before posting.`,
+            toast: t`Receipt batch numbers are now generated`
+          }}
+          off={{
+            status: t`Batch numbers are entered by hand`,
+            detail: t`Enable to fill in each purchase order receipt's batch numbers instead of typing them.`,
+            toast: t`Receipt batch numbers are now entered by hand`
+          }}
+        />
 
         <SettingsSectionHeader>
           <Trans>Traceability</Trans>
@@ -416,6 +382,67 @@ export default function InventorySettingsRoute() {
   );
 }
 
+type ToggleState = { status: string; detail: string; toast: string };
+
+// A receiving switch saved on change. Each has its own fetcher, so saving one
+// never disables another.
+function SettingToggleCard({
+  intent,
+  saved,
+  title,
+  description,
+  on,
+  off
+}: {
+  intent:
+    | "receiptQuantitiesStartAtZero"
+    | "receiptBatchNumbersFromPurchaseOrder";
+  saved: boolean;
+  title: string;
+  description: string;
+  on: ToggleState;
+  off: ToggleState;
+}) {
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      const value = data?.[intent];
+      if (value !== undefined) toast.success(value ? on.toast : off.toast);
+    }
+  });
+  const enabled = useSavedToggle(fetcher, intent, saved);
+  const state = enabled ? on : off;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <HStack className="justify-between items-center">
+          <VStack className="items-start" spacing={1}>
+            <span className="font-medium">{state.status}</span>
+            <span className="text-sm text-muted-foreground">
+              {state.detail}
+            </span>
+          </VStack>
+          <Switch
+            aria-label={title}
+            checked={enabled}
+            onCheckedChange={(checked) =>
+              fetcher.submit(
+                { intent, enabled: checked.toString() },
+                { method: "POST" }
+              )
+            }
+            disabled={fetcher.state !== "idle"}
+          />
+        </HStack>
+      </CardContent>
+    </Card>
+  );
+}
+
 // Inline section label used inside a Card. Title + helper copy without a
 // border line — keeps the visual hierarchy quiet so the cards underneath
 // carry the weight.
@@ -476,6 +503,7 @@ function KanbanLabelSizeField() {
     <Select
       name="kanbanLabelSize"
       label={t`Label Size`}
+      aria-label={t`Label Size`}
       helperText={t`A 4" x 2" or 3" x 2" label prints one card per label, for a thermal printer such as a Zebra.`}
       options={Object.entries(sizeLabels).map(([value, label]) => ({
         value,
@@ -497,6 +525,7 @@ function CalculatedInputScopeChoice() {
   return (
     <>
       <ChoiceSelect<CalculatedInputScope>
+        aria-label={t`Calculated finished-good expiry`}
         value={current}
         onChange={setValue}
         options={[
@@ -530,6 +559,7 @@ function ExpiredEntityPolicyChoice() {
   return (
     <>
       <ChoiceSelect<ExpiredEntityPolicy>
+        aria-label={t`When expired stock is used`}
         value={current}
         onChange={setValue}
         options={[
@@ -570,6 +600,7 @@ function IncompletePickingListPolicyChoice() {
   return (
     <>
       <ChoiceSelect<IncompletePickingListPolicy>
+        aria-label={t`Finishing an incomplete pick`}
         value={current}
         onChange={setValue}
         options={[
@@ -605,6 +636,7 @@ function ReturnPickedMaterialTimingChoice() {
   return (
     <>
       <ChoiceSelect<ReturnPickedMaterialTiming>
+        aria-label={t`Returning unused picked material`}
         value={current}
         onChange={setValue}
         options={[

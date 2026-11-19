@@ -5,9 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Enumerable } from "~/components/Enumerable";
+import { useDrawerItem } from "~/hooks";
 import type { getSupplierTypesList } from "~/modules/purchasing/purchasing.service";
 import SupplierTypeForm from "~/modules/purchasing/ui/SupplierTypes/SupplierTypeForm";
 import { path } from "~/utils/path";
@@ -16,14 +16,13 @@ import { useEmptyState } from "./emptyStates";
 type SupplierTypeSelectProps = Omit<ComboboxProps, "options">;
 
 const SupplierType = (props: SupplierTypeSelectProps) => {
-  const newSupplierTypeModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useSupplierTypes();
 
   const emptyMessage = useEmptyState("supplierType", {
-    onCreate: () => newSupplierTypeModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -40,20 +39,20 @@ const SupplierType = (props: SupplierTypeSelectProps) => {
         {...props}
         label={props?.label ?? "SupplierType"}
         onCreateOption={(option) => {
-          newSupplierTypeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newSupplierTypeModal.isOpen && (
+      {create.item !== null && (
         <SupplierTypeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newSupplierTypeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}

@@ -50,6 +50,8 @@ Two personal organizers sit on top of the shared library, and both are **per-use
 
 Search performs a case-insensitive substring match on **name** and **description**, not file contents (`documents.service.ts:72-76`). Combine search with filters for source document, label, type, extension, or creator and with the view tabs. **Download CSV** exports the current result set with a signed download link for each row (`search.tsx`, `DocumentsTable.tsx:393-405`).
 
+Over the [Carbon API](/api) and MCP, `documents_getDocumentDownloadUrl` returns the same link for one document, and each record upload operation has a download companion (`items_getItemDocumentDownloadUrl` and its siblings) that returns a storage link valid for one hour. A document link from the API expires after one hour, and an expired link opens a page that says so; the links in the documents list do not expire. Each download through a document link checks again that the user the link names can read the document — for an API key, the key's creator (`documents.service.ts`, `download.$token.tsx`). A record-file link is different: access is checked once, when the link is made, and the signed storage link then works for anyone who has it until it expires.
+
 ## How documents attach to records
 
 A document can point back at the record it belongs to. The row's **Source Document** column shows that link and jumps straight to the parent record (`DocumentsTable.tsx:207-237`). The set of record types a document can attach to is fixed (`documents.models.ts:9-23`):
@@ -103,7 +105,7 @@ A `documentExtraction` row is only a staging area — it never creates an invoic
 Extraction quality depends on the PDF being text-based and on the AI keys being configured for your deployment; without them the flows still work, you simply type the fields yourself.
 
 <Callout type="note" title="Not the document template customizer">
-This page is about the file library. The separate **document template** feature — the drag-and-drop customizer for the PDFs Carbon *generates* (quotes, order confirmations, invoices) — is a different subsystem and isn't covered here.
+This page is about the file library. The separate **document template** feature — the drag-and-drop customizer for the PDFs Carbon *generates* (quotes, order confirmations, invoices) — is a different subsystem: see [Document Templates](/docs/reference/document-templates).
 </Callout>
 
 <AgentContext>

@@ -34,6 +34,7 @@ type SetIndirectRateModalProps = {
   pools: IndirectPool[];
   fiscalYear: number;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -42,11 +43,28 @@ type SetIndirectRateModalProps = {
  * year (B12). Actual rates come from the period run only.
  */
 const SetIndirectRateModal = ({
+  open = true,
+  onClose,
+  ...props
+}: SetIndirectRateModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <SetIndirectRateBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const SetIndirectRateBody = ({
   pools,
   fiscalYear,
   action,
   onClose
-}: SetIndirectRateModalProps) => {
+}: Omit<SetIndirectRateModalProps, "open">) => {
   const { t } = useLingui();
   const fetcher = useAction({ onSuccess: onClose });
   const [poolId, setPoolId] = useState<string>(pools[0]?.id ?? "");
@@ -59,93 +77,84 @@ const SetIndirectRateModal = ({
     pools.find((pool) => pool.id === poolId)?.baseType === "Direct Labor Hours";
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={indirectRateEntryValidator}
+      method="post"
+      action={action}
+      defaultValues={{
+        indirectPoolId: poolId,
+        rateType: "Provisional",
+        fiscalYear,
+        fromPeriod: 1,
+        rate: 0
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={indirectRateEntryValidator}
-          method="post"
-          action={action}
-          defaultValues={{
-            indirectPoolId: poolId,
-            rateType: "Provisional",
-            fiscalYear,
-            fromPeriod: 1,
-            rate: 0
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Set Rate, FY{fiscalYear}</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="set-rate" />
-            <Hidden name="fiscalYear" />
-            <div className="flex flex-col gap-4">
-              <SelectControlled
-                name="indirectPoolId"
-                label={t`Pool`}
-                termId="indirect-pool"
-                options={pools.map((pool) => ({
-                  label: pool.name,
-                  value: pool.id
-                }))}
-                value={poolId}
-                onChange={(option) => setPoolId(option?.value ?? "")}
-              />
-              <Select
-                name="rateType"
-                label={t`Rate Type`}
-                options={enteredIndirectRateTypes.map((rateType) => ({
-                  label: rateType,
-                  value: rateType
-                }))}
-              />
-              <NumberField
-                name="fromPeriod"
-                label={t`From Period`}
-                minValue={1}
-                maxValue={12}
-                helperText={t`The rate applies from this period to the end of the year`}
-              />
-              {perHour ? (
-                <NumberField
-                  key="per-hour"
-                  name="rate"
-                  label={t`Rate per Hour`}
-                  minValue={0}
-                  step={INPUT_STEP.rate}
-                  formatOptions={INPUT_FORMAT.rate(currency, decimalPlaces)}
-                />
-              ) : (
-                <NumberField
-                  key="percent"
-                  name="rate"
-                  label={t`Rate`}
-                  minValue={0}
-                  step={INPUT_STEP.percent}
-                  formatOptions={INPUT_FORMAT.percent}
-                />
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Set Rate, FY{fiscalYear}</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value="set-rate" />
+        <Hidden name="fiscalYear" />
+        <div className="flex flex-col gap-4">
+          <SelectControlled
+            name="indirectPoolId"
+            label={t`Pool`}
+            termId="indirect-pool"
+            options={pools.map((pool) => ({
+              label: pool.name,
+              value: pool.id
+            }))}
+            value={poolId}
+            onChange={(option) => setPoolId(option?.value ?? "")}
+          />
+          <Select
+            name="rateType"
+            label={t`Rate Type`}
+            options={enteredIndirectRateTypes.map((rateType) => ({
+              label: rateType,
+              value: rateType
+            }))}
+          />
+          <NumberField
+            name="fromPeriod"
+            label={t`From Period`}
+            minValue={1}
+            maxValue={12}
+            helperText={t`The rate applies from this period to the end of the year`}
+          />
+          {perHour ? (
+            <NumberField
+              key="per-hour"
+              name="rate"
+              label={t`Rate per Hour`}
+              minValue={0}
+              step={INPUT_STEP.rate}
+              formatOptions={INPUT_FORMAT.rate(currency, decimalPlaces)}
+            />
+          ) : (
+            <NumberField
+              key="percent"
+              name="rate"
+              label={t`Rate`}
+              minValue={0}
+              step={INPUT_STEP.percent}
+              formatOptions={INPUT_FORMAT.percent}
+            />
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Save</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

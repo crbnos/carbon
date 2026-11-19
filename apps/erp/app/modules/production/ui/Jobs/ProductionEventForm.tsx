@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import type { CalendarDateTime } from "@internationalized/date";
@@ -51,14 +51,14 @@ const ProductionEventForm = ({
 }: ProductionEventFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const eventTypeOptions = [
     { label: t`Labor`, value: "Labor" },
     { label: t`Machine`, value: "Machine" },
     { label: t`Setup`, value: "Setup" }
   ];
-  const onClose = () => closeRoute();
+  const onClose = dialog.close;
 
   const [jobOperationId, setJobOperationId] = useState(
     initialValues.jobOperationId ?? ""
@@ -85,7 +85,7 @@ const ProductionEventForm = ({
     : !permissions.can("create", "production");
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

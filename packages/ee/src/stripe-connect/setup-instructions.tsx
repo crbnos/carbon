@@ -111,6 +111,7 @@ export function StripeConnectSetupInstructions() {
 
       {!isExpanded && (
         <button
+          type="button"
           onClick={() => setIsExpanded(true)}
           className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
@@ -121,6 +122,7 @@ export function StripeConnectSetupInstructions() {
 
       {isExpanded && (
         <button
+          type="button"
           onClick={() => setIsExpanded(false)}
           className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >

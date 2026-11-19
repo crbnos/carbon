@@ -9,11 +9,19 @@ import { Image, Text, View } from "@react-pdf/renderer";
 import { generateQRCode } from "../../../qr/qr-code";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
-  type LineItemsBlock as LineItemsBlockType
+  type LineItemsBlock as LineItemsBlockType,
+  makeText,
+  packingSlipTexts
 } from "../../../template";
+import { Cell, TextCell } from "../Cell";
+import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { PackingSlipData } from "./types";
+import {
+  buildPackingSlipLineVars,
+  buildPackingSlipRentalUnitVars
+} from "./vars";
 
 type ShipmentLine = Database["public"]["Views"]["shipmentLines"]["Row"];
 
@@ -41,11 +49,21 @@ export function LineItemsBlock({
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
   const hasTrackedEntities = trackedEntities.length > 0;
+  const t = makeText(packingSlipTexts.lineItems, block, data.vars);
   let rowIndex = 0;
 
   // A rental shipment lists its units instead of shipment lines: one unit per
   // row, with its serial number.
   if (data.rentalUnits && data.rentalUnits.length > 0) {
+    const rw = columnWidths(
+      [
+        { key: "rentalDescription", width: 50 },
+        { key: "rentalQty", width: 100 / 6 },
+        { key: "serial", width: 100 / 3 }
+      ],
+      t.shows,
+      "rentalDescription"
+    );
     return (
       <View style={tw("mb-4")}>
         <View
@@ -54,13 +72,24 @@ export function LineItemsBlock({
             { backgroundColor: theme.accent, color: theme.accentForeground }
           ]}
         >
-          <Text style={tw("w-6/12 text-left")}>Description</Text>
-          <Text style={tw("w-2/12 text-right")}>Qty</Text>
-          <Text style={tw("w-4/12 text-right")}>Serial</Text>
+          <TextCell width={rw.rentalDescription} style={tw("text-left")}>
+            {t("rentalDescription")}
+          </TextCell>
+          <TextCell width={rw.rentalQty} style={tw("text-right")}>
+            {t("rentalQty")}
+          </TextCell>
+          <TextCell width={rw.serial} style={tw("text-right")}>
+            {t("serial")}
+          </TextCell>
         </View>
         {data.rentalUnits.map((unit, index) => {
           const rowBg =
             !opts.zebra || index % 2 === 0 ? "bg-white" : "bg-gray-50";
+          const row = data.values.row(
+            "unit",
+            unit.id,
+            buildPackingSlipRentalUnitVars(unit)
+          );
           return (
             <View
               key={unit.id}
@@ -69,33 +98,53 @@ export function LineItemsBlock({
               )}
               wrap={false}
             >
-              <View style={tw("w-6/12 pr-2")}>
+              <Cell width={rw.rentalDescription} style={tw("pr-2")}>
                 <Text style={{ ...tw("text-gray-800"), ...overflow }}>
-                  {unit.name}
+                  {t("rentalNameCell", row)}
                 </Text>
-                {unit.assetReadableId ? (
+                {t.prints("rentalAssetCell", row) ? (
                   <Text
                     style={{
                       ...tw("text-[8px] text-gray-400 mt-0.5"),
                       ...overflow
                     }}
                   >
-                    {unit.assetReadableId}
+                    {t("rentalAssetCell", row)}
                   </Text>
                 ) : null}
-              </View>
-              <Text style={tw("w-2/12 text-right text-gray-600")}>
-                {unit.quantity ?? "1"}
-              </Text>
-              <Text style={tw("w-4/12 text-right text-gray-600")}>
-                {unit.serialNumber ?? ""}
-              </Text>
+              </Cell>
+              <TextCell
+                width={rw.rentalQty}
+                style={tw("text-right text-gray-600")}
+              >
+                {t("rentalQtyCell", row)}
+              </TextCell>
+              <TextCell
+                width={rw.serial}
+                style={tw("text-right text-gray-600")}
+              >
+                {t("serialCell", row)}
+              </TextCell>
             </View>
           );
         })}
       </View>
     );
   }
+
+  // Without tracked entities the serial column is absent and the table is
+  // 9/12 wide, as before.
+  const w = columnWidths(
+    [
+      { key: "description", width: hasTrackedEntities ? 500 / 12 : 700 / 12 },
+      { key: "qty", width: 100 / 6 },
+      ...(hasTrackedEntities
+        ? [{ key: "serialBatch" as const, width: 500 / 12 }]
+        : [])
+    ],
+    t.shows,
+    "description"
+  );
 
   return (
     <View style={tw("mb-4")}>
@@ -105,13 +154,15 @@ export function LineItemsBlock({
           { backgroundColor: theme.accent, color: theme.accentForeground }
         ]}
       >
-        <Text style={tw(`w-${hasTrackedEntities ? "5/12" : "7/12"} text-left`)}>
-          Description
-        </Text>
-        <Text style={tw("w-2/12 text-right")}>Qty</Text>
-        {hasTrackedEntities ? (
-          <Text style={tw("w-5/12 text-right")}>Serial/Batch</Text>
-        ) : null}
+        <TextCell width={w.description} style={tw("text-left")}>
+          {t("description")}
+        </TextCell>
+        <TextCell width={w.qty} style={tw("text-right")}>
+          {t("qty")}
+        </TextCell>
+        <TextCell width={w.serialBatch} style={tw("text-right")}>
+          {t("serialBatch")}
+        </TextCell>
       </View>
 
       {shipmentLines
@@ -127,6 +178,14 @@ export function LineItemsBlock({
           const isEven = rowIndex % 2 === 0;
           rowIndex++;
           const rowBg = !opts.zebra || isEven ? "bg-white" : "bg-gray-50";
+          const row = data.values.row(
+            "line",
+            line.id,
+            buildPackingSlipLineVars(
+              line,
+              trackedEntitiesForLine.map((entity) => entity.id)
+            )
+          );
 
           return (
             <View
@@ -136,11 +195,9 @@ export function LineItemsBlock({
               )}
               wrap={false}
             >
-              <View
-                style={tw(`w-${hasTrackedEntities ? "5/12" : "7/12"} pr-2`)}
-              >
+              <Cell width={w.description} style={tw("pr-2")}>
                 <Text style={{ ...tw("text-gray-800"), ...overflow }}>
-                  {line.itemReadableId}
+                  {t("itemCell", row)}
                 </Text>
                 <Text
                   style={{
@@ -148,7 +205,7 @@ export function LineItemsBlock({
                     ...overflow
                   }}
                 >
-                  {line.description}
+                  {t("descriptionCell", row)}
                 </Text>
                 {opts.showThumbnails &&
                 thumbnails &&
@@ -165,31 +222,35 @@ export function LineItemsBlock({
                 <View style={tw("mt-1")}>
                   <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
-              </View>
-              <Text style={tw("w-2/12 text-right text-gray-600")}>
-                {`${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`}
-              </Text>
-              {hasTrackedEntities ? (
-                <View style={tw("w-5/12 flex flex-col gap-1 items-end")}>
-                  {trackedEntitiesForLine.map((entity) => {
-                    const qrCodeDataUrl = generateQRCode(entity.id, 8);
-                    return (
-                      <View
-                        key={entity.id}
-                        style={tw("mb-1 flex flex-row items-center gap-1")}
-                      >
-                        <Text style={tw("text-[8px] text-gray-600")}>
-                          {entity.id}
-                        </Text>
-                        <Image
-                          src={qrCodeDataUrl}
-                          style={{ width: 24, height: 24 }}
-                        />
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : null}
+              </Cell>
+              <TextCell width={w.qty} style={tw("text-right text-gray-600")}>
+                {t("qtyCell", row)}
+              </TextCell>
+              <Cell
+                width={w.serialBatch}
+                style={tw("flex flex-col gap-1 items-end")}
+              >
+                {trackedEntitiesForLine.map((entity) => {
+                  const qrCodeDataUrl = generateQRCode(entity.id, 8);
+                  return (
+                    <View
+                      key={entity.id}
+                      style={tw("mb-1 flex flex-row items-center gap-1")}
+                    >
+                      <Text style={tw("text-[8px] text-gray-600")}>
+                        {t("serialBatchCell", {
+                          ...row,
+                          "line.serialBatch": entity.id
+                        })}
+                      </Text>
+                      <Image
+                        src={qrCodeDataUrl}
+                        style={{ width: 24, height: 24 }}
+                      />
+                    </View>
+                  );
+                })}
+              </Cell>
             </View>
           );
         })}

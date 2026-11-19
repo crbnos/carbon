@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import type { PropsWithChildren } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
@@ -15,15 +16,21 @@ import { Menu } from "./Menu";
 type ActionMenuProps = PropsWithChildren<{
   icon?: JSX.Element;
   disabled?: boolean;
+  /**
+   * The trigger's name — say whose actions these are ("Actions for
+   * PO-000123"). Defaults to "Action Menu".
+   */
+  label?: string;
 }>;
 
-const ActionMenu = ({ children, ...props }: ActionMenuProps) => {
+const ActionMenu = ({ children, label, ...props }: ActionMenuProps) => {
+  const { t } = useLingui();
   return (
     <Menu type="dropdown">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <IconButton
-            aria-label="Action Menu"
+            aria-label={label ?? t`Action Menu`}
             variant="secondary"
             icon={<BsThreeDotsVertical />}
             {...props}

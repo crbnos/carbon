@@ -8,7 +8,8 @@ import {
   HStack,
   IconButton,
   MenuIcon,
-  MenuItem
+  MenuItem,
+  useDisclosure
 } from "@carbon/react";
 import {
   equals,
@@ -41,6 +42,7 @@ import {
   useCellSave
 } from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import type { TimesheetEntryStatus as TimesheetEntryStatusType } from "../../projects.models";
 import { TimesheetEntryStatus } from "../Element/TimesheetEntryStatus";
@@ -152,20 +154,20 @@ export default function TimesheetGrid({
   const formatQuantity = useQuantityFormatter();
   const navigate = useNavigate();
   const submitFetcher = useFetcher();
-  const [addingRow, setAddingRow] = useState(false);
+  const addRowModal = useDisclosure();
   const [addedRows, setAddedRows] = useState<AddedRow[]>([]);
-  const [correcting, setCorrecting] = useState<{
+  const correcting = useDrawerItem<{
     entryId: string;
     hours: number;
     label: string;
     projectId: string;
     projectElementId: string | null;
     laborCategoryId: string;
-  } | null>(null);
-  const [pendingChange, setPendingChange] = useState<PendingChange | null>(
-    null
-  );
-  const [certifying, setCertifying] = useState(false);
+  }>();
+  const { open: openCorrecting } = correcting;
+  const pendingChange = useDrawerItem<PendingChange>();
+  const { open: openPendingChange } = pendingChange;
+  const certifyModal = useDisclosure();
   const save = useCellSave();
   const editableStatuses = employee
     ? MANAGER_EDITABLE_STATUSES
@@ -259,7 +261,7 @@ export default function TimesheetGrid({
         });
         if (requiresReason || requiresLateReason) {
           return new Promise<Awaited<ReturnType<typeof save>>>((resolve) => {
-            setPendingChange({
+            openPendingChange({
               label: `${row.readableId} · ${formatDate(day)}`,
               fields,
               hours,
@@ -273,7 +275,7 @@ export default function TimesheetGrid({
       }
       return save(saveAction, fields);
     },
-    [controls, employee, formatDate, save, saveAction]
+    [controls, employee, formatDate, save, saveAction, openPendingChange]
   );
 
   const stable = useStableEditableComponents(
@@ -476,7 +478,7 @@ export default function TimesheetGrid({
               <MenuItem
                 key={day}
                 onClick={() =>
-                  setCorrecting({
+                  openCorrecting({
                     entryId: cell.entryId,
                     hours: cell.hours,
                     label: `${row.readableId} · ${formatDate(day)}`,
@@ -494,7 +496,7 @@ export default function TimesheetGrid({
         </>
       );
     },
-    [employee, days, formatDate, t]
+    [employee, days, formatDate, t, openCorrecting]
   );
 
   // The menu column shows only while a row has a posted cell to correct.
@@ -504,6 +506,7 @@ export default function TimesheetGrid({
       hasMenu ? [...columns, rowMenuColumn(renderMenu, t`Actions`)] : columns,
     [columns, renderMenu, hasMenu, t]
   );
+  const change = pendingChange.item;
 
   return (
     <div className="flex min-h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full flex-col gap-4 p-4">
@@ -537,7 +540,7 @@ export default function TimesheetGrid({
             <Button
               variant="ghost"
               leftIcon={<LuPlus />}
-              onClick={() => setAddingRow(true)}
+              onClick={addRowModal.onOpen}
             >
               <Trans>Add row</Trans>
             </Button>
@@ -546,7 +549,7 @@ export default function TimesheetGrid({
             <Button
               leftIcon={<LuSend />}
               isDisabled={!hasDraft}
-              onClick={() => setCertifying(true)}
+              onClick={certifyModal.onOpen}
             >
               <Trans>Submit week</Trans>
             </Button>
@@ -610,67 +613,69 @@ export default function TimesheetGrid({
         </div>
       )}
 
-      {addingRow && (
-        <AddRowModal
-          laborCategories={laborCategories}
-          jobLocationId={jobLocationId}
-          onAdd={(row) => {
-            setAddedRows((previous) => [...previous, row]);
-            setAddingRow(false);
-          }}
-          onClose={() => setAddingRow(false)}
-        />
-      )}
+      <AddRowModal
+        open={addRowModal.isOpen}
+        laborCategories={laborCategories}
+        jobLocationId={jobLocationId}
+        onAdd={(row) => {
+          setAddedRows((previous) => [...previous, row]);
+          addRowModal.onClose();
+        }}
+        onClose={addRowModal.onClose}
+      />
 
-      {correcting && (
+      {correcting.item && (
         <CorrectionModal
-          entryId={correcting.entryId}
-          hours={correcting.hours}
-          label={correcting.label}
-          original={correcting}
+          open={correcting.isOpen}
+          entryId={correcting.item.entryId}
+          hours={correcting.item.hours}
+          label={correcting.item.label}
+          original={correcting.item}
           laborCategories={laborCategories}
-          onClose={() => setCorrecting(null)}
+          onClose={correcting.close}
         />
       )}
 
-      {pendingChange && (
+      {change && (
         <TimesheetChangeModal
-          label={pendingChange.label}
-          previousHours={pendingChange.previousHours}
-          hours={pendingChange.hours}
-          requiresReason={pendingChange.requiresReason}
-          requiresLateReason={pendingChange.requiresLateReason}
+          open={pendingChange.isOpen}
+          label={change.label}
+          previousHours={change.previousHours}
+          hours={change.hours}
+          requiresReason={change.requiresReason}
+          requiresLateReason={change.requiresLateReason}
           onConfirm={async (reasons: TimesheetChangeReasons) => {
             const result = await save(saveAction, {
-              ...pendingChange.fields,
+              ...change.fields,
               ...(reasons.reason ? { reason: reasons.reason } : {}),
               ...(reasons.lateReason ? { lateReason: reasons.lateReason } : {})
             });
             // A refusal toasts and keeps the modal open.
             if (result.error) return false;
-            pendingChange.resolve(result);
-            setPendingChange(null);
+            change.resolve(result);
+            pendingChange.close();
             return true;
           }}
           onCancel={() => {
             // An error result reverts the cell to its saved hours.
-            pendingChange.resolve({
+            change.resolve({
               data: null,
               error: { message: t`Change cancelled` }
             } as unknown as Awaited<ReturnType<typeof save>>);
-            setPendingChange(null);
+            pendingChange.close();
           }}
         />
       )}
 
-      {certifying && controls && (
+      {controls && (
         <CertificationModal
+          open={certifyModal.isOpen}
           certificationText={controls.certificationText}
           weekStart={weekStart}
           weekEnd={weekEnd}
           weekOffset={weekOffset}
           weekLabel={`${formatDate(weekStart)} – ${formatDate(weekEnd)}`}
-          onClose={() => setCertifying(false)}
+          onClose={certifyModal.onClose}
         />
       )}
     </div>

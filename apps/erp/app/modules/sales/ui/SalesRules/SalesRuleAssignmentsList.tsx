@@ -135,6 +135,7 @@ export default function SalesRuleAssignmentsList({
             options={availableOptions}
             onChange={handleAssign}
             placeholder={t`Add from library…`}
+            aria-label={t`Add rule from library`}
             className="w-[200px]"
           />
         )}
@@ -204,6 +205,7 @@ export default function SalesRuleAssignmentsList({
                 options={availableOptions}
                 onChange={handleAssign}
                 placeholder={t`Add from library…`}
+                aria-label={t`Add rule from library`}
               />
               <Button
                 asChild

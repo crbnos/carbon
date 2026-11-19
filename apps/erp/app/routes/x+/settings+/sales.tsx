@@ -41,6 +41,7 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
+  deliveryDateCheckSettingsValidator,
   digitalQuoteValidator,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
@@ -48,6 +49,7 @@ import {
   settingsToggle
 } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { DeliveryDateCheckCard } from "~/modules/settings/ui/Sales/DeliveryDateCheckCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -105,6 +107,9 @@ const salesSettingsForm = z.discriminatedUnion("intent", [
     .transform(({ salesRuleNotificationGroup }) => ({
       salesRuleNotificationGroup: salesRuleNotificationGroup ?? []
     })),
+  deliveryDateCheckSettingsValidator
+    .extend({ intent: z.literal("deliveryDateControl") })
+    .transform(({ deliveryDateControl }) => ({ deliveryDateControl })),
   quoteLineCategoryMarkupsSettingsValidator
     .extend({ intent: z.literal("categoryMarkups") })
     .transform(({ intent: _, ...quoteLineCategoryMarkups }) => ({
@@ -270,6 +275,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Customer Contact and Location`}
                 checked={requireCustomerContactAndLocation}
                 onCheckedChange={handleRequireCustomerContactToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -303,6 +309,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require an Email on Customer Contacts`}
                 checked={requireCustomerContactEmail}
                 onCheckedChange={handleRequireCustomerContactEmailToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -352,6 +359,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Customer IDs`}
                 checked={showCustomerReadableIdEnabled}
                 onCheckedChange={handleShowCustomerReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -359,6 +367,10 @@ export default function SalesSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <DeliveryDateCheckCard
+          deliveryDateControl={companySettings.deliveryDateControl ?? "None"}
+        />
 
         <SettingsSectionHeader>
           <Trans>Quotes</Trans>
@@ -620,7 +632,7 @@ function CategoryMarkupsCard({
       >
         <input type="hidden" name="intent" value="categoryMarkups" />
         <CardHeader>
-          <CardTitle>
+          <CardTitle id="quote-markups-title">
             <Trans>Quote Markups</Trans>
           </CardTitle>
           <CardDescription>
@@ -642,10 +654,16 @@ function CategoryMarkupsCard({
                 )}
               >
                 <VStack spacing={0} className="flex flex-1">
-                  <span className="text-sm font-medium">
+                  <span
+                    id={`${key}-markup-label`}
+                    className="text-sm font-medium"
+                  >
                     {categoryLabels[key].label}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span
+                    id={`${key}-markup-description`}
+                    className="text-xs text-muted-foreground"
+                  >
                     {categoryLabels[key].description}
                   </span>
                 </VStack>
@@ -653,6 +671,8 @@ function CategoryMarkupsCard({
                   <Number
                     name={key}
                     label=""
+                    aria-labelledby={`${key}-markup-label quote-markups-title`}
+                    aria-describedby={`${key}-markup-description`}
                     formatOptions={INPUT_FORMAT.percent}
                     minValue={0}
                   />

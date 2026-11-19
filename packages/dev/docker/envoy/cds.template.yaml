@@ -1,0 +1,245 @@
+# Vendored from supabase/supabase docker/volumes/api/envoy (self-hosted v0.8.4).
+# Local changes are marked "carbon:"; keep the rest byte-identical so upstream syncs stay a diff.
+resources:
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: auth
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: auth
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: local-gotrue  # carbon: our alias, unique on carbon-shared
+                    port_value: 9999
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check:
+          path: /health
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000
+
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: rest
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: rest
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: local-postgrest  # carbon: our alias, unique on carbon-shared
+                    port_value: 3000
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check:
+          path: /
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000
+
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: realtime
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: realtime
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: realtime-dev  # carbon: our network alias
+                    port_value: 4000
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check:
+          path: /
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000
+
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: storage
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: storage
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: ${STORAGE_HOST}  # carbon: the shared or the private Storage
+                    port_value: 5000
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check:
+          path: /status
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000
+
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: functions
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: functions
+      # carbon: this worktree's private runtime (`crbn up --full`) while it is
+      # healthy, else the shared one in crbn-shared. Without a private runtime
+      # its alias does not resolve, priority 0 has no hosts, and traffic goes to
+      # priority 1. Never the bare "edge-runtime": on carbon-shared that is
+      # crbn-shared's service.
+      endpoints:
+        - priority: 0
+          lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: local-edge-runtime
+                    port_value: 9000
+        - priority: 1
+          lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: carbon-edge-runtime
+                    port_value: 9000
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        tcp_health_check: {}
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000
+
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: meta
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: meta
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: local-meta  # carbon: our alias, unique on carbon-shared
+                    port_value: 8080
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check:
+          path: /health
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000
+
+  - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: studio
+    connect_timeout: 5s
+    type: STRICT_DNS
+    dns_refresh_rate: 5s
+    dns_failure_refresh_rate:
+      base_interval: 1s
+      max_interval: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: studio
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: studio
+                    port_value: 3000
+    ignore_health_on_host_removal: true
+    health_checks:
+      - timeout: 2s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check:
+          path: /project/default
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 10000
+          max_pending_requests: 10000
+          max_requests: 10000

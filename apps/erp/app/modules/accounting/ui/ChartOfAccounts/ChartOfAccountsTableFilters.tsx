@@ -49,6 +49,7 @@ const ChartOfAccountsTableFilters = ({
             <LuSearch className="h-4 w-4 text-muted-foreground" />
           </InputLeftElement>
           <Input
+            aria-label={t`Search accounts`}
             placeholder={t`Search accounts...`}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}

@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -66,6 +67,7 @@ import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 type SalesReturnOrderLineFormProps = {
   initialValues: z.infer<typeof salesReturnOrderLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
   /** Full line row when editing (drives disposition, short close, tracking) */
   line?: SalesReturnOrderLine;
@@ -119,9 +121,12 @@ function SourceReference({
   );
 }
 
+const logger = getLogger("erp", "sales", "return-order-line-form");
+
 const SalesReturnOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose,
   line,
   returnReasons,
@@ -284,8 +289,13 @@ const SalesReturnOrderLineForm = ({
               // the Number FORM COMPONENT import shadows the global here
               return globalThis.Number(result.finalPrice);
             }
-          } catch {
+          } catch (error) {
             // fall through to the base price below
+            logger.warning("Failed to resolve the return line price", {
+              customerId,
+              itemId,
+              error
+            });
           }
           return null;
         })()
@@ -422,7 +432,7 @@ const SalesReturnOrderLineForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose} isCollapsible={isEditing}>
+      <ModalCard open={open} onClose={onClose} isCollapsible={isEditing}>
         <ModalCardContent size="xxlarge">
           <ValidatedForm
             defaultValues={initialValues}

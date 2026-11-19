@@ -26,11 +26,14 @@ export function TableOfContents() {
     );
     const items = nodes
       .map((n) => {
-        if (n.tagName === "SECTION") {
-          const heading = n.querySelector("h2, h3");
-          return { id: n.id, text: heading?.textContent ?? "", level: 2 };
-        }
-        return { id: n.id, text: n.textContent ?? "", level: n.tagName === "H3" ? 3 : 2 };
+        const heading = n.tagName === "SECTION" ? n.querySelector("h2, h3") : n;
+        const label = heading?.cloneNode(true) as HTMLElement | undefined;
+        label?.querySelectorAll("button, .sr-only, [aria-hidden='true']").forEach((node) => node.remove());
+        return {
+          id: n.id,
+          text: label?.textContent ?? "",
+          level: n.tagName === "H3" ? 3 : 2
+        };
       })
       .filter((h) => h.text.trim());
     setHeadings(items);

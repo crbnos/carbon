@@ -14,7 +14,13 @@ import {
   LuChevronsUpDown,
   LuChevronUp
 } from "react-icons/lu";
-import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import {
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { PivotMeasure, PivotState } from "../../accounting.models";
 import type { DimensionPivot } from "../../types";
@@ -28,6 +34,12 @@ import {
   TOTAL_SORT_KEY,
   UNASSIGNED_COLUMN_KEY
 } from "./pivotData";
+import {
+  treegridBodyProps,
+  treegridCellTarget,
+  treegridNodeWrapperProps,
+  treegridRowProps
+} from "./treegrid";
 
 const ROW_COLUMN_WIDTH = 360;
 const VALUE_COLUMN_WIDTH = 128;
@@ -78,6 +90,69 @@ function formatMeasureValue(value: number, measure: PivotMeasure): string {
     return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }
   return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+/** Enter/Space on a focused element runs the same action as a click on it. */
+function onActivateKey(action: () => void) {
+  return (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      action();
+    }
+  };
+}
+
+// The value cells of a row: out of the tab order, reached with the arrow keys
+// from their row (ARIA treegrid).
+const CELL_SELECTOR = "[data-treegrid-cell]";
+
+/**
+ * A row's keys: Enter/Space activate it, and Right on a row that shows no more
+ * children (a leaf, or an expanded parent) moves into its first cell. Every
+ * other key goes to the tree (Right on a collapsed parent expands it).
+ */
+function onRowKey(action: () => void, canEnterCells: boolean) {
+  const activate = onActivateKey(action);
+  return (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "ArrowRight" && canEnterCells) {
+      const cell = e.currentTarget.querySelector<HTMLElement>(CELL_SELECTOR);
+      if (cell) {
+        e.preventDefault();
+        cell.focus();
+      }
+      return;
+    }
+    activate(e);
+  };
+}
+
+/**
+ * A cell's keys: Enter/Space open it, Left/Right move between the row's cells
+ * and from the first cell back to the row. Up/Down go to the tree, which moves
+ * to the next row.
+ */
+function onCellKey(action: () => void) {
+  const activate = onActivateKey(action);
+  return (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const row = e.currentTarget.closest<HTMLElement>('[role="row"]');
+    const cells = row
+      ? Array.from(row.querySelectorAll<HTMLElement>(CELL_SELECTOR))
+      : [];
+    const target = treegridCellTarget(
+      e.key,
+      cells.indexOf(e.currentTarget),
+      cells.length
+    );
+    if (target === null || !row) {
+      activate(e);
+      return;
+    }
+    e.preventDefault();
+    (target === "row" ? row : cells[target])?.focus();
+  };
 }
 
 const PivotTree = memo(
@@ -202,8 +277,8 @@ const PivotTree = memo(
 
     const {
       nodes,
+      selected,
       getTreeProps,
-      getNodeProps,
       selectNode,
       toggleExpandNode,
       virtualizer
@@ -212,6 +287,13 @@ const PivotTree = memo(
       parentRef,
       estimatedRowHeight,
       isEager: true
+    });
+    const rovingFocus = useRovingTreeFocus({
+      selected,
+      selectNode,
+      getTreeProps,
+      parentRef,
+      virtualizer
     });
 
     const totalColumnsWidth = columnKeys.length * VALUE_COLUMN_WIDTH;
@@ -258,6 +340,15 @@ const PivotTree = memo(
       );
     };
 
+    const ariaSort = (key: string) =>
+      state.sort?.key === key
+        ? state.sort.direction === "asc"
+          ? ("ascending" as const)
+          : ("descending" as const)
+        : undefined;
+    // 1-based column positions: the row label, the value columns, the total.
+    const totalColumnIndex = columnKeys.length + 2;
+
     if (pivot.groups.length === 0) {
       return (
         <div className="flex h-[calc(100dvh-var(--header-height)-61px)] w-full flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -270,85 +361,130 @@ const PivotTree = memo(
     }
 
     return (
-      <div className={cn("flex flex-col", reportFrameClassName)}>
+      <div
+        role="treegrid"
+        aria-label={t`Pivot report`}
+        aria-colcount={totalColumnIndex}
+        className={cn("flex flex-col", reportFrameClassName)}
+      >
         {pivot.hasMore && (
           <div className="shrink-0 border-b border-border bg-card px-4 py-1.5 text-xs text-muted-foreground">
             <p>{t`Showing the top 1,000 groups by amount`}</p>
           </div>
         )}
         {isPhone ? (
-          stepper
+          <>
+            {stepper}
+            {/* The stepper names the shown column; the header row stays for
+                assistive tech. */}
+            <div role="row" className="sr-only">
+              <div role="columnheader" aria-colindex={1}>
+                <Trans>Group</Trans>
+              </div>
+              <div
+                role="columnheader"
+                aria-colindex={
+                  phoneColumnKey === null ? totalColumnIndex : columnIndex + 2
+                }
+              >
+                {phoneColumnKey === null
+                  ? t`Total`
+                  : columnLabel(phoneColumnKey)}
+              </div>
+            </div>
+          </>
         ) : (
           // Header viewport — scrollLeft is mirrored from the tree below
           <div ref={headerRef} className="shrink-0 overflow-x-hidden">
             <div
+              role="row"
               className="relative flex h-12 items-center border-b border-border bg-card text-sm font-medium text-foreground/80"
               style={{ minWidth: rowWidth }}
             >
               {/* Row-label header — sorts rows alphabetically by label */}
-              <button
-                type="button"
-                className={cn(
-                  "group/header sticky left-0 z-[2] flex h-full shrink-0 items-center gap-1 bg-card px-4 text-muted-foreground hover:text-foreground",
-                  state.sort?.key === LABEL_SORT_KEY && "text-foreground"
-                )}
+              <div
+                role="columnheader"
+                aria-colindex={1}
+                aria-sort={ariaSort(LABEL_SORT_KEY)}
+                className="sticky left-0 z-[2] h-full shrink-0 bg-card"
                 style={{ width: rowColumnWidth }}
-                onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
               >
-                {renderSortIndicator(LABEL_SORT_KEY)}
-              </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "group/header flex h-full w-full items-center gap-1 px-4 text-muted-foreground hover:text-foreground",
+                    state.sort?.key === LABEL_SORT_KEY && "text-foreground"
+                  )}
+                  onClick={() => cycleSort(LABEL_SORT_KEY, "asc")}
+                >
+                  <span className="sr-only">
+                    <Trans>Group</Trans>
+                  </span>
+                  {renderSortIndicator(LABEL_SORT_KEY)}
+                </button>
+              </div>
               {virtualColumns.map((virtualColumn) => {
                 const columnKey = columnKeys[virtualColumn.index];
                 if (columnKey === undefined) return null;
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={columnKey}
-                    className={cn(
-                      "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
-                      columnKey === UNASSIGNED_COLUMN_KEY &&
-                        "italic text-muted-foreground",
-                      state.sort?.key === columnKey && "text-foreground"
-                    )}
+                    role="columnheader"
+                    aria-colindex={virtualColumn.index + 2}
+                    aria-sort={ariaSort(columnKey)}
+                    className="absolute top-0 h-full"
                     style={{
                       left: rowColumnWidth + virtualColumn.start,
                       width: VALUE_COLUMN_WIDTH
                     }}
-                    onClick={() => cycleSort(columnKey, "desc")}
                   >
-                    <span className="truncate">
-                      {columnKey === UNASSIGNED_COLUMN_KEY
-                        ? t`Unassigned`
-                        : (columnLabels[columnKey] ?? columnKey)}
-                    </span>
-                    {renderSortIndicator(columnKey)}
-                  </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "group/header flex h-full w-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
+                        columnKey === UNASSIGNED_COLUMN_KEY &&
+                          "italic text-muted-foreground",
+                        state.sort?.key === columnKey && "text-foreground"
+                      )}
+                      onClick={() => cycleSort(columnKey, "desc")}
+                    >
+                      <span className="truncate">{columnLabel(columnKey)}</span>
+                      {renderSortIndicator(columnKey)}
+                    </button>
+                  </div>
                 );
               })}
               {/* Total header — sorts rows by their total */}
-              <button
-                type="button"
-                className={cn(
-                  "group/header absolute top-0 flex h-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
-                  state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
-                )}
+              <div
+                role="columnheader"
+                aria-colindex={totalColumnIndex}
+                aria-sort={ariaSort(TOTAL_SORT_KEY)}
+                className="absolute top-0 h-full"
                 style={{
                   left: rowColumnWidth + totalColumnsWidth,
                   width: VALUE_COLUMN_WIDTH
                 }}
-                onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
               >
-                <Trans>Total</Trans>
-                {renderSortIndicator(TOTAL_SORT_KEY)}
-              </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "group/header flex h-full w-full items-center justify-end gap-1 px-2 text-right hover:text-foreground",
+                    state.sort?.key === TOTAL_SORT_KEY && "text-foreground"
+                  )}
+                  onClick={() => cycleSort(TOTAL_SORT_KEY, "desc")}
+                >
+                  <Trans>Total</Trans>
+                  {renderSortIndicator(TOTAL_SORT_KEY)}
+                </button>
+              </div>
             </div>
           </div>
         )}
         <TreeView<PivotRowNode>
           tree={flatTree}
           nodes={nodes}
-          getTreeProps={getTreeProps}
-          getNodeProps={getNodeProps}
+          getTreeProps={treegridBodyProps(rovingFocus.getTreeProps)}
+          getNodeProps={treegridNodeWrapperProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
           scrollRef={scrollRef}
@@ -360,89 +496,132 @@ const PivotTree = memo(
               ? applyPercentOfTotal(row.cells, columnTotals, state.measure)
               : undefined;
 
+            // Right enters the cells once a row shows no more children.
+            const canEnterCells = !node.hasChildren || nodeState.expanded;
+
             if (isPhone) {
               const isTotal = phoneColumnKey === null;
+              const activateRow = () => {
+                selectNode(node.id, false);
+                if (node.hasChildren) toggleExpandNode(node.id);
+              };
+              const openPhoneCell = () =>
+                onCellClick(
+                  cellCoordinates(row, node.level, phoneColumnKey, isTotal)
+                );
               return (
                 <div
+                  role="row"
+                  {...treegridRowProps({
+                    level: node.level,
+                    hasChildren: node.hasChildren,
+                    expanded: nodeState.expanded
+                  })}
+                  aria-selected={nodeState.selected}
+                  {...rovingFocus.getRowProps(node.id)}
                   className={cn(
                     "flex h-11 cursor-pointer items-center pr-2 text-sm",
+                    treeRowFocusClassName,
                     nodeState.selected ? "bg-muted" : "bg-transparent",
                     node.hasChildren && "font-semibold"
                   )}
-                  onClick={() => {
-                    selectNode(node.id, false);
-                    if (node.hasChildren) toggleExpandNode(node.id);
-                  }}
+                  onClick={activateRow}
+                  onKeyDown={onRowKey(activateRow, canEnterCells)}
                 >
-                  <div className="flex h-9 shrink-0 items-center">
-                    {Array.from({ length: node.level }).map((_, index) => (
-                      <LevelLine key={index} isSelected={nodeState.selected} />
-                    ))}
-                    <div className="flex h-9 w-5 items-center justify-center">
-                      {node.hasChildren ? (
-                        nodeState.expanded ? (
-                          <LuChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        ) : (
-                          <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        )
-                      ) : null}
+                  <div
+                    role="rowheader"
+                    className="flex min-w-0 flex-1 items-center"
+                  >
+                    <div className="flex h-9 shrink-0 items-center">
+                      {Array.from({ length: node.level }).map((_, index) => (
+                        <LevelLine
+                          key={index}
+                          isSelected={nodeState.selected}
+                        />
+                      ))}
+                      <div className="flex h-9 w-5 items-center justify-center">
+                        {node.hasChildren ? (
+                          nodeState.expanded ? (
+                            <LuChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          ) : (
+                            <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )
+                        ) : null}
+                      </div>
                     </div>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate pl-2 pr-2",
+                        row.isUnassigned && "italic text-muted-foreground"
+                      )}
+                    >
+                      {row.label}
+                    </span>
                   </div>
                   <span
-                    className={cn(
-                      "min-w-0 flex-1 truncate pl-2 pr-2",
-                      row.isUnassigned && "italic text-muted-foreground"
-                    )}
+                    role="gridcell"
+                    aria-colindex={isTotal ? totalColumnIndex : columnIndex + 2}
+                    className="shrink-0"
                   >
-                    {row.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "shrink-0 px-2 text-right tabular-nums text-muted-foreground",
-                      isTotal && "font-medium"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCellClick(
-                        cellCoordinates(
-                          row,
-                          node.level,
-                          phoneColumnKey,
-                          isTotal
-                        )
-                      );
-                    }}
-                  >
-                    {phoneColumnKey === null
-                      ? formatRowTotal(row.total)
-                      : formatCell(
-                          row.cells[phoneColumnKey],
-                          percents?.[phoneColumnKey]
-                        )}
+                    <span
+                      role="button"
+                      tabIndex={-1}
+                      data-treegrid-cell
+                      className={cn(
+                        "block px-2 text-right tabular-nums text-muted-foreground",
+                        isTotal && "font-medium"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPhoneCell();
+                      }}
+                      onKeyDown={onCellKey(openPhoneCell)}
+                    >
+                      {phoneColumnKey === null
+                        ? formatRowTotal(row.total)
+                        : formatCell(
+                            row.cells[phoneColumnKey],
+                            percents?.[phoneColumnKey]
+                          )}
+                    </span>
                   </span>
                 </div>
               );
             }
 
+            const activateRow = () => {
+              selectNode(node.id, false);
+              if (node.hasChildren) {
+                toggleExpandNode(node.id);
+              }
+            };
+
             return (
               <div
+                role="row"
+                {...treegridRowProps({
+                  level: node.level,
+                  hasChildren: node.hasChildren,
+                  expanded: nodeState.expanded
+                })}
+                aria-selected={nodeState.selected}
+                {...rovingFocus.getRowProps(node.id)}
                 className={cn(
                   "relative flex h-8 cursor-pointer items-center text-sm group/row",
+                  treeRowFocusClassName,
                   nodeState.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
                   node.hasChildren && "font-semibold"
                 )}
                 style={{ minWidth: rowWidth }}
-                onClick={() => {
-                  selectNode(node.id, false);
-                  if (node.hasChildren) {
-                    toggleExpandNode(node.id);
-                  }
-                }}
+                onClick={activateRow}
+                onKeyDown={onRowKey(activateRow, canEnterCells)}
               >
                 {/* Pinned row cell: indentation + chevron + label */}
                 <div
+                  role="rowheader"
+                  aria-colindex={1}
                   className={cn(
                     "sticky left-0 z-[1] flex h-full shrink-0 items-center overflow-hidden",
                     nodeState.selected
@@ -457,7 +636,9 @@ const PivotTree = memo(
                       <LevelLine key={index} isSelected={nodeState.selected} />
                     ))}
 
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row toggles parents on Enter and carries aria-expanded */}
                     <div
+                      role="presentation"
                       className={cn(
                         "flex h-9 w-5 items-center justify-center",
                         node.hasChildren && "hover:bg-accent"
@@ -495,48 +676,89 @@ const PivotTree = memo(
                 {virtualColumns.map((virtualColumn) => {
                   const columnKey = columnKeys[virtualColumn.index];
                   if (columnKey === undefined) return null;
+                  const openCell = () =>
+                    onCellClick(
+                      cellCoordinates(row, node.level, columnKey, false)
+                    );
                   return (
                     <span
                       key={columnKey}
-                      className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                      role="gridcell"
+                      aria-colindex={virtualColumn.index + 2}
+                      className="absolute top-0 h-full"
                       style={{
                         left: rowColumnWidth + virtualColumn.start,
                         width: VALUE_COLUMN_WIDTH
                       }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCellClick(
-                          cellCoordinates(row, node.level, columnKey, false)
-                        );
-                      }}
                     >
-                      {formatCell(row.cells[columnKey], percents?.[columnKey])}
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        data-treegrid-cell
+                        className="flex h-full w-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                        // Scrolled into view clear of the pinned row column.
+                        style={{ scrollMarginLeft: rowColumnWidth }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCell();
+                        }}
+                        onKeyDown={onCellKey(openCell)}
+                      >
+                        {formatCell(
+                          row.cells[columnKey],
+                          percents?.[columnKey]
+                        )}
+                      </span>
                     </span>
                   );
                 })}
 
                 {/* Row total */}
                 <span
-                  className="absolute top-0 flex h-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                  role="gridcell"
+                  aria-colindex={totalColumnIndex}
+                  className="absolute top-0 h-full"
                   style={{
                     left: rowColumnWidth + totalColumnsWidth,
                     width: VALUE_COLUMN_WIDTH
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCellClick(cellCoordinates(row, node.level, null, true));
-                  }}
                 >
-                  {formatRowTotal(row.total)}
+                  <span
+                    role="button"
+                    tabIndex={-1}
+                    data-treegrid-cell
+                    className="flex h-full w-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                    style={{ scrollMarginLeft: rowColumnWidth }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCellClick(cellCoordinates(row, node.level, null, true));
+                    }}
+                    onKeyDown={onCellKey(() =>
+                      onCellClick(cellCoordinates(row, node.level, null, true))
+                    )}
+                  >
+                    {formatRowTotal(row.total)}
+                  </span>
                 </span>
               </div>
             );
           }}
         />
         {isPhone ? (
-          <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-4 text-sm font-semibold">
-            <Trans>Total</Trans>
-            <span className="tabular-nums">
+          <div
+            role="row"
+            className="flex h-11 shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-4 text-sm font-semibold"
+          >
+            <span role="rowheader" aria-colindex={1}>
+              <Trans>Total</Trans>
+            </span>
+            <span
+              role="gridcell"
+              aria-colindex={
+                phoneColumnKey === null ? totalColumnIndex : columnIndex + 2
+              }
+              className="tabular-nums"
+            >
               {phoneColumnKey === null
                 ? state.percentOfTotal
                   ? percentFormatter.format(grandTotalValue === 0 ? 0 : 1)
@@ -563,10 +785,13 @@ const PivotTree = memo(
           // Column totals footer — scrollLeft mirrored from the tree above
           <div ref={footerRef} className="shrink-0 overflow-x-hidden">
             <div
+              role="row"
               className="relative flex h-9 items-center border-t border-border bg-card text-sm font-semibold"
               style={{ minWidth: rowWidth }}
             >
               <div
+                role="rowheader"
+                aria-colindex={1}
                 className="sticky left-0 z-[2] flex h-full shrink-0 items-center bg-card px-4"
                 style={{ width: rowColumnWidth }}
               >
@@ -578,6 +803,8 @@ const PivotTree = memo(
                 return (
                   <span
                     key={columnKey}
+                    role="gridcell"
+                    aria-colindex={virtualColumn.index + 2}
                     className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
                     style={{
                       left: rowColumnWidth + virtualColumn.start,
@@ -604,6 +831,8 @@ const PivotTree = memo(
                 );
               })}
               <span
+                role="gridcell"
+                aria-colindex={totalColumnIndex}
                 className="absolute top-0 flex h-full items-center justify-end px-2 text-right tabular-nums"
                 style={{
                   left: rowColumnWidth + totalColumnsWidth,

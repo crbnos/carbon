@@ -8,17 +8,21 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  MeasuringStrategy,
   PointerSensor,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
+import {
+  ALWAYS_MEASURE_DROPPABLES,
+  POINTER_SENSOR_OPTIONS,
+  SORTABLE_KEYBOARD_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
 import { BoardContainer } from "../Kanban/components/ColumnCard";
 import { hasDraggableData } from "../Kanban/utils";
@@ -41,13 +45,6 @@ import {
   ladderShiftTime,
   UNASSIGNED
 } from "./peopleShared";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
-const KEYBOARD_SENSOR_OPTIONS = {
-  coordinateGetter: sortableKeyboardCoordinates
-};
 
 export type {
   PeopleAbsence,
@@ -153,14 +150,15 @@ const PeopleBoard = ({
   const isDisabled = !permissions.can("update", "production");
 
   const [activeItem, setActiveItem] = useState<PeopleCardItem | null>(null);
-  const [editorItem, setEditorItem] = useState<PeopleCardItem | null>(null);
+  const hoursEditor = useDrawerItem<PeopleCardItem>();
+  const editorItem = hoursEditor.item;
   // a completed drag still fires a click on the source card — swallow it
   const recentDragRef = useRef(false);
 
   const sensors = useSensors(
     // under ~5px of travel is a tap (opens the editor), beyond it a drag
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
-    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+    useSensor(KeyboardSensor, SORTABLE_KEYBOARD_SENSOR_OPTIONS)
   );
 
   const pendingMoves = usePendingMoves();
@@ -510,7 +508,7 @@ const PeopleBoard = ({
   const cardHandlers: CardHandlers = {
     onOpen: (item: PeopleCardItem) => {
       if (recentDragRef.current) return;
-      setEditorItem(item);
+      hoursEditor.open(item);
     }
   };
 
@@ -541,7 +539,7 @@ const PeopleBoard = ({
       sensors={sensors}
       // the Unassigned column is position: sticky, so droppable rects must be
       // re-measured while dragging (cached rects drift when the board scrolls)
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+      measuring={ALWAYS_MEASURE_DROPPABLES}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => {
@@ -596,10 +594,9 @@ const PeopleBoard = ({
 
       {editorItem && (
         <PeopleHoursModal
-          key={`${editorItem.employee.id}:${date}`}
-          open
+          open={hoursEditor.isOpen}
           onOpenChange={(open) => {
-            if (!open) setEditorItem(null);
+            if (!open) hoursEditor.close();
           }}
           employeeId={editorItem.employee.id}
           employeeName={editorItem.employee.name}

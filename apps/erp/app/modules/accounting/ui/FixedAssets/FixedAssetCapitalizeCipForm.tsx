@@ -30,6 +30,7 @@ type FixedAssetCapitalizeCipFormProps = {
   // Σ fixedAssetCipCost.amount — what the capitalization journal moves.
   totalCost: number;
   cipClassName: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -38,6 +39,7 @@ const FixedAssetCapitalizeCipForm = ({
   assetClasses,
   totalCost,
   cipClassName,
+  open = true,
   onClose
 }: FixedAssetCapitalizeCipFormProps) => {
   const { t } = useLingui();
@@ -53,7 +55,7 @@ const FixedAssetCapitalizeCipForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

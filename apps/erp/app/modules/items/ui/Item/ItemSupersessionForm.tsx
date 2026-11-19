@@ -309,19 +309,50 @@ const ItemSupersessionForm = ({
           </Submit>
         </CardFooter>
       </ValidatedForm>
-      {addPredecessorModal.isOpen && (
-        <AddPredecessorModal
-          itemId={initialValues.itemId}
-          itemReadableId={itemReadableId}
-          type={type}
-          onClose={addPredecessorModal.onClose}
-        />
-      )}
+      <AddPredecessorModal
+        itemId={initialValues.itemId}
+        itemReadableId={itemReadableId}
+        type={type}
+        open={addPredecessorModal.isOpen}
+        onClose={addPredecessorModal.onClose}
+      />
     </Card>
   );
 };
 
 function AddPredecessorModal({
+  itemId,
+  itemReadableId,
+  type,
+  open,
+  onClose
+}: {
+  itemId: string;
+  itemReadableId: string;
+  type: ItemType;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <AddPredecessorBody
+          itemId={itemId}
+          itemReadableId={itemReadableId}
+          type={type}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AddPredecessorBody({
   itemId,
   itemReadableId,
   type,
@@ -344,96 +375,87 @@ function AddPredecessorModal({
       : t`Stops new purchase suggestions for the old part after this date.`;
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      validator={predecessorSupersessionValidator}
+      defaultValues={{
+        supersessionMode: "Consume First",
+        conversionFactor: 1
+      }}
+      onAfterSubmit={() => {
+        if (!actionDataRef.current?.fieldErrors) onClose();
       }}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={predecessorSupersessionValidator}
-          defaultValues={{
-            supersessionMode: "Consume First",
-            conversionFactor: 1
-          }}
-          onAfterSubmit={() => {
-            if (!actionDataRef.current?.fieldErrors) onClose();
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Predecessor</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Choose a part that {itemReadableId} replaces. The rule is saved
-                on that part with {itemReadableId} as its successor.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="supersession-predecessor" />
-            <VStack spacing={4}>
-              <Item
-                name="predecessorItemId"
-                label={t`Part Being Replaced`}
-                type={type}
-                isOptional={false}
-                blacklist={[itemId]}
-              />
-              <SelectForm
-                name="supersessionMode"
-                label={t`Supersession Mode`}
-                termId="supersession-mode"
-                helperText={supersessionModeMeta[mode].description}
-                options={supersessionModes
-                  .filter((value) => value !== "No Stock")
-                  .map((value) => ({
-                    label: (
-                      <Status color={supersessionModeMeta[value].color}>
-                        {value}
-                      </Status>
-                    ),
-                    value
-                  }))}
-                onChange={(selected) => {
-                  if (selected?.value) {
-                    setMode(selected.value as SupersessionMode);
-                  }
-                }}
-              />
-              <DatePicker
-                name="discontinuationDate"
-                label={t`Discontinuation Date`}
-                isRequired={mode !== "Consume First"}
-                helperText={discontinuationDateHelp}
-              />
-              <DatePicker
-                name="successorEffectivityDate"
-                label={t`Successor Effectivity Date`}
-                helperText={t`When MRP starts using this part for the old part's demand`}
-              />
-              <NumberForm
-                name="conversionFactor"
-                label={t`Conversion Factor`}
-                minValue={0}
-                helperText={t`How many of this part replace one old part`}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add Predecessor</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Choose a part that {itemReadableId} replaces. The rule is saved on
+            that part with {itemReadableId} as its successor.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value="supersession-predecessor" />
+        <VStack spacing={4}>
+          <Item
+            name="predecessorItemId"
+            label={t`Part Being Replaced`}
+            type={type}
+            isOptional={false}
+            blacklist={[itemId]}
+          />
+          <SelectForm
+            name="supersessionMode"
+            label={t`Supersession Mode`}
+            termId="supersession-mode"
+            helperText={supersessionModeMeta[mode].description}
+            options={supersessionModes
+              .filter((value) => value !== "No Stock")
+              .map((value) => ({
+                label: (
+                  <Status color={supersessionModeMeta[value].color}>
+                    {value}
+                  </Status>
+                ),
+                value
+              }))}
+            onChange={(selected) => {
+              if (selected?.value) {
+                setMode(selected.value as SupersessionMode);
+              }
+            }}
+          />
+          <DatePicker
+            name="discontinuationDate"
+            label={t`Discontinuation Date`}
+            isRequired={mode !== "Consume First"}
+            helperText={discontinuationDateHelp}
+          />
+          <DatePicker
+            name="successorEffectivityDate"
+            label={t`Successor Effectivity Date`}
+            helperText={t`When MRP starts using this part for the old part's demand`}
+          />
+          <NumberForm
+            name="conversionFactor"
+            label={t`Conversion Factor`}
+            minValue={0}
+            helperText={t`How many of this part replace one old part`}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

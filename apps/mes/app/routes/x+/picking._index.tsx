@@ -12,7 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
@@ -21,17 +21,25 @@ import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
 import { getAssignedPickingLists } from "~/services/picking.service";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   realtime: ["pickingList"]
 };
 
+export const meta: MetaFunction = () => pageMeta("Picking");
+
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId, companyId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
 
-  const pickingLists = await getAssignedPickingLists(client, effectiveUserId);
+  const pickingLists = await getAssignedPickingLists(
+    client,
+    companyId,
+    effectiveUserId,
+    context.get(userContext)?.locationId
+  );
 
   return {
     pickingLists: pickingLists.data ?? []
@@ -46,7 +54,7 @@ export default function PickingIndexRoute() {
       <MesAppBar title={<Trans>Picking</Trans>} />
       <MesQueueHeader title={<Trans>Picking</Trans>} />
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         {pickingLists.length > 0 ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
             {pickingLists.map((pl) => {
@@ -108,10 +116,10 @@ export default function PickingIndexRoute() {
         ) : (
           <MesEmptyState
             className="flex-1 w-full h-[calc(100%-var(--header-height))]"
-            title={<Trans>No picking lists assigned</Trans>}
+            title={<Trans>No picking lists</Trans>}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 }

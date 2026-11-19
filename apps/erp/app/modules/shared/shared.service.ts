@@ -74,8 +74,17 @@ import {
 import { toJson } from "@carbon/database/json";
 import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
+import {
+  type BinStock,
+  chooseSourceBin,
+  untrackedDrawLockKey
+} from "@carbon/database/picked-consumption";
 import { equals, SCALE } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import {
+  assignReceiptBatchNumbers,
+  receiptBatchNumberBase
+} from "@carbon/database/receipt-batch-numbers";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
@@ -154,7 +163,6 @@ import {
   escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
-  getRemainingQuantityToInvoice,
   groupBy,
   indexByMapped,
   type LeasePaymentRowInput,
@@ -208,7 +216,10 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
-import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
+import {
+  purchaseOrderLineRemainingToInvoice,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED
+} from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
@@ -229,6 +240,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import { importJournalEntries } from "./journal-entry-import";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
@@ -1198,17 +1210,16 @@ export async function getCachedTimezoneNames(client: SupabaseClient<Database>) {
 }
 
 /**
- * Sends a sales order confirmation email with the PDF attached.
- *
- * This mirrors the email-sending logic originally in the confirm action
- * and can be reused by the quote-to-order conversion flow.
+ * Sends a sales order confirmation email with the PDF attached, to the
+ * recipient and the sender (`userId`).
  */
 export async function sendSalesOrderEmail(args: {
   salesOrderId: string;
   companyId: string;
   companyGroupId: string;
   userId: string;
-  customerContactId: string;
+  /** A customer contact, or someone who is not one (an online quote acceptor). */
+  recipient: { customerContactId: string } | { email: string; name: string };
   cc?: string[];
   documentFilePath: string;
   fileName: string;
@@ -1220,7 +1231,7 @@ export async function sendSalesOrderEmail(args: {
     companyId,
     companyGroupId,
     userId,
-    customerContactId,
+    recipient: recipientArg,
     cc: ccSelections,
     documentFilePath,
     fileName,
@@ -1240,7 +1251,13 @@ export async function sendSalesOrderEmail(args: {
     getCompany(serviceRole, companyId),
     // customerContactId comes from the form and the service role bypasses
     // RLS — scope it so another company's contact is never read or emailed.
-    getCustomerContact(serviceRole, customerContactId, companyId),
+    "customerContactId" in recipientArg
+      ? getCustomerContact(
+          serviceRole,
+          recipientArg.customerContactId,
+          companyId
+        )
+      : null,
     getSalesOrder(serviceRole, salesOrderId),
     getSalesOrderLines(serviceRole, salesOrderId),
     getSalesOrderCustomerDetails(serviceRole, salesOrderId),
@@ -1248,13 +1265,29 @@ export async function sendSalesOrderEmail(args: {
     getPaymentTermsList(serviceRole, companyId)
   ]);
 
-  if (!customer?.data?.contact) {
-    return { success: false, message: "Failed to get customer contact" };
-  }
-  if (!isEmailableContact(customer.data.contact)) {
-    return {
-      success: false,
-      message: "The customer contact has no email address"
+  let recipient: { email: string; firstName?: string; lastName?: string };
+  if ("customerContactId" in recipientArg) {
+    const contact = customer?.data?.contact;
+    if (!contact) {
+      return { success: false, message: "Failed to get customer contact" };
+    }
+    if (!isEmailableContact(contact)) {
+      return {
+        success: false,
+        message: "The customer contact has no email address"
+      };
+    }
+    recipient = {
+      email: contact.email!,
+      firstName: contact.firstName ?? undefined,
+      lastName: contact.lastName ?? undefined
+    };
+  } else {
+    const [firstName, ...rest] = recipientArg.name.trim().split(/\s+/);
+    recipient = {
+      email: recipientArg.email,
+      firstName: firstName || undefined,
+      lastName: rest.join(" ") || undefined
     };
   }
   if (!company.data) {
@@ -1290,11 +1323,7 @@ export async function sendSalesOrderEmail(args: {
     salesOrder: salesOrder.data,
     salesOrderLines: salesOrderLines.data ?? [],
     salesOrderLocations: salesOrderLocations.data,
-    recipient: {
-      email: customer.data.contact.email!,
-      firstName: customer.data.contact.firstName ?? undefined,
-      lastName: customer.data.contact.lastName ?? undefined
-    },
+    recipient,
     sender: {
       email: seller.data.email,
       firstName: seller.data.firstName,
@@ -1311,7 +1340,7 @@ export async function sendSalesOrderEmail(args: {
 
   await trigger("send-email", {
     document: true,
-    to: [seller.data.email, customer.data.contact.email!],
+    to: [seller.data.email, recipient.email],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
@@ -1577,7 +1606,7 @@ type AppShellRows = {
   defaults: Views["userDefaults"]["Row"] | null;
   modulePreferences: Pick<
     PublicTables["userModulePreference"]["Row"],
-    "module" | "position" | "hidden"
+    "module" | "position" | "hidden" | "hiddenSubmodules" | "submoduleOrder"
   >[];
   printerRoutes: PrinterRoute[];
   implementationHub: PublicTables["implementationHub"]["Row"] | null;
@@ -1613,7 +1642,7 @@ export async function getAppShell(
   };
 }
 
-const signalsLogger = getLogger("erp", "implementation-signals");
+const signalsLogger = getLogger("erp", "shared", "implementation-signals");
 
 // A day, not forever: wiping a company's data (a demo template revert, a
 // restore) can make a signal false again, and this bounds how long the hub
@@ -1641,7 +1670,7 @@ export async function getImplementationSignals(
     if (cached) known = JSON.parse(cached) as Partial<Signals>;
   } catch (error) {
     // Redis is an optimisation here; without it, probe everything.
-    signalsLogger.warn("Could not read cached implementation signals", {
+    signalsLogger.warning("Could not read cached implementation signals", {
       companyId,
       error
     });
@@ -1661,7 +1690,7 @@ export async function getImplementationSignals(
         IMPLEMENTATION_SIGNALS_TTL_SECONDS
       );
     } catch (error) {
-      signalsLogger.warn("Could not cache implementation signals", {
+      signalsLogger.warning("Could not cache implementation signals", {
         companyId,
         error
       });
@@ -2676,7 +2705,7 @@ export function classifyStockRow(params: {
     }
   };
 }
-const importCsvTableLogger = getLogger("server-functions", "import-csv");
+const importCsvTableLogger = getLogger("erp", "shared", "import-csv");
 
 type Rec = Record<string, string>;
 
@@ -4600,17 +4629,22 @@ async function writeGroup(
       }
       const addedBefore = totalMethodRows(added);
 
+      // The import appends to the routing and the bill of materials. A
+      // correction's operations and materials share these tables (with
+      // their own Op Nos from 1) and are not part of either.
       const existingMaterials = await trx
         .selectFrom("methodMaterial")
         .select(["itemId", "order"])
         .where("makeMethodId", "=", makeMethodId)
         .where("companyId", "=", companyId)
+        .where("methodCorrectionId", "is", null)
         .execute();
       const existingOperations = await trx
         .selectFrom("methodOperation")
         .select(["id", "order"])
         .where("makeMethodId", "=", makeMethodId)
         .where("companyId", "=", companyId)
+        .where("methodCorrectionId", "is", null)
         .execute();
 
       const opPlan = planOperationAppend({
@@ -5390,8 +5424,7 @@ export async function importStockQuantities(
     planned.push(decision.row);
   }
 
-  importCsvTableLogger.info({
-    function: "import-stock-quantities",
+  importCsvTableLogger.info("Planned the stock quantity import", {
     table,
     trackingType: STOCK_IMPORT_TRACKING_TYPE[table],
     totalRecords: mappedRecords.length,
@@ -5740,7 +5773,8 @@ export const importCsvInput = z.object({
     "inventoryQuantity",
     "batchQuantity",
     "serialQuantity",
-    "payrollPeriodTotal"
+    "payrollPeriodTotal",
+    "journalEntry"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -6923,7 +6957,7 @@ export async function importCsvTable(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  importCsvTableLogger.info({
+  importCsvTableLogger.info("Importing a CSV file", {
     table,
     filePath,
     columnMappings,
@@ -7137,11 +7171,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          customerInserts: customerInserts.length,
-          customerUpdates: customerUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            customerInserts: customerInserts.length,
+            customerUpdates: customerUpdates.length
+          }
+        );
         summary.inserted += customerInserts.length;
         summary.updated += customerUpdates.length;
 
@@ -7347,11 +7385,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          supplierInserts: supplierInserts.length,
-          supplierUpdates: supplierUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            supplierInserts: supplierInserts.length,
+            supplierUpdates: supplierUpdates.length
+          }
+        );
         summary.inserted += supplierInserts.length;
         summary.updated += supplierUpdates.length;
 
@@ -8044,13 +8086,17 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          itemInserts: itemInserts.length,
-          itemUpdates: itemUpdates.length,
-          materialInserts: Object.keys(materialPartialInserts).length,
-          materialUpdates: materialUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            itemInserts: itemInserts.length,
+            itemUpdates: itemUpdates.length,
+            materialInserts: Object.keys(materialPartialInserts).length,
+            materialUpdates: materialUpdates.length
+          }
+        );
 
         if (itemUpdates.length > 0) {
           const currentItems = await trx
@@ -8249,12 +8295,16 @@ export async function importCsvTable(
         summary.inserted += contactInserts.length;
         summary.updated += contactUpdates.length;
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          contactInserts: contactInserts.length,
-          contactUpdates: contactUpdates.length,
-          customerContactInserts: customerContactInserts.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            customerContactInserts: customerContactInserts.length
+          }
+        );
 
         if (contactInserts.length > 0) {
           const inserted = await inChunks(contactInserts, (rows) =>
@@ -8416,12 +8466,16 @@ export async function importCsvTable(
         summary.inserted += contactInserts.length;
         summary.updated += contactUpdates.length;
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          contactInserts: contactInserts.length,
-          contactUpdates: contactUpdates.length,
-          supplierContactInserts: supplierContactInserts.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            supplierContactInserts: supplierContactInserts.length
+          }
+        );
 
         if (contactInserts.length > 0) {
           const inserted = await inChunks(contactInserts, (rows) =>
@@ -8522,11 +8576,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          workCenterInserts: workCenterInserts.length,
-          workCenterUpdates: workCenterUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            workCenterInserts: workCenterInserts.length,
+            workCenterUpdates: workCenterUpdates.length
+          }
+        );
 
         if (workCenterInserts.length > 0) {
           const inserted = await inChunks(workCenterInserts, (rows) =>
@@ -8628,11 +8686,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          processInserts: processInserts.length,
-          processUpdates: processUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            processInserts: processInserts.length,
+            processUpdates: processUpdates.length
+          }
+        );
 
         if (processInserts.length > 0) {
           const inserted = await inChunks(processInserts, (rows) =>
@@ -8942,11 +9004,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          storageUnitInserts: inserts.length,
-          storageUnitUpdates: updates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            storageUnitInserts: inserts.length,
+            storageUnitUpdates: updates.length
+          }
+        );
         summary.inserted += inserts.length;
         summary.updated += updates.length;
 
@@ -9090,6 +9156,10 @@ export async function importCsvTable(
       });
       break;
     }
+    case "journalEntry": {
+      await importJournalEntries(ctx, { mappedRecords, summary });
+      break;
+    }
     default: {
       throw new Error(`Invalid table: ${table}`);
     }
@@ -9116,7 +9186,7 @@ export async function importCsvTable(
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
-const convertDocumentLogger = getLogger("server-functions", "convert");
+const convertDocumentLogger = getLogger("erp", "shared", "convert");
 
 export const convertInput = z.discriminatedUnion("type", [
   z.object({
@@ -9536,17 +9606,18 @@ export async function convertDocument(
       if (!purchaseOrderDelivery.data)
         throw new NotFoundError("Purchase order delivery not found");
 
-      // Short-closed lines ("Stop Receiving") only bill what was received,
-      // so quantities go through getRemainingQuantityToInvoice rather than
-      // the generated quantityToInvoice column (ordered - invoiced).
+      // Short-closed lines ("Stop Receiving") and every line of a Closed
+      // order only bill what was received, so quantities go through
+      // purchaseOrderLineRemainingToInvoice rather than the generated
+      // quantityToInvoice column (ordered - invoiced).
+      const orderStatus = purchaseOrder.data.status;
+      const remainingToInvoice = (
+        line: NonNullable<(typeof purchaseOrderLines)["data"]>[number]
+      ) => purchaseOrderLineRemainingToInvoice(orderStatus, line);
       const uninvoicedLines = purchaseOrderLines?.data?.reduce<
         (typeof purchaseOrderLines)["data"]
       >((acc, line) => {
-        if (
-          line &&
-          !line.invoicedComplete &&
-          getRemainingQuantityToInvoice(line) > 0
-        ) {
+        if (line && !line.invoicedComplete && remainingToInvoice(line) > 0) {
           acc.push(line);
         }
 
@@ -9554,14 +9625,14 @@ export async function convertDocument(
       }, []);
 
       if (!uninvoicedLines || uninvoicedLines.length === 0) {
-        throw new Error(
+        throw new InvalidInputError(
           "No lines available to invoice. All lines may already be marked as invoiced complete."
         );
       }
 
       const uninvoicedSubtotal = uninvoicedLines.reduce((acc, line) => {
         if (line?.unitPrice) {
-          acc += getRemainingQuantityToInvoice(line) * line.unitPrice;
+          acc += remainingToInvoice(line) * line.unitPrice;
         }
 
         return acc;
@@ -9647,7 +9718,7 @@ export async function convertDocument(
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
           uninvoicedLines.map((line) => {
             const lineBilled = billed.lines.get(line.id) ?? {};
-            const quantity = getRemainingQuantityToInvoice(line);
+            const quantity = remainingToInvoice(line);
             const share = (charge: number | null, field: string) =>
               flatChargeShare({
                 charge: charge ?? 0,
@@ -9939,6 +10010,27 @@ export async function convertDocument(
               null
           ])
         );
+        // With no default bin, a line ships from the bin that holds the stock,
+        // as the order line form fills it.
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: pickedLines.filter(
+            (line) => !pickMethodDefaultsByLineId.get(line.id)
+          )
+        });
+        const sourceStorageUnitId = (
+          line: (typeof selectedQuoteLines)[number],
+          quantity: number
+        ) =>
+          pickMethodDefaultsByLineId.get(line.id!) ??
+          (pickMethodDefaultsByLineId.has(line.id!)
+            ? chooseSourceStorageUnit({
+                itemId: line.itemId!,
+                locationId: line.locationId ?? locationId,
+                storageUnitId: null,
+                quantity
+              })
+            : null);
 
         const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
           selectedQuoteLines.map((line) => {
@@ -9965,7 +10057,7 @@ export async function convertDocument(
               itemId: line.itemId,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
-              storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
+              storageUnitId: sourceStorageUnitId(line, price.quantity),
               internalNotes: toJson(line.internalNotes),
               externalNotes: toJson(line.externalNotes),
               saleQuantity: price.quantity,
@@ -10183,7 +10275,7 @@ export async function convertDocument(
       }, 0);
 
       if (!uninvoicedLines || uninvoicedLines.length === 0) {
-        throw new Error(
+        throw new InvalidInputError(
           "No lines available to invoice. All lines may already be marked as invoiced complete."
         );
       }
@@ -10839,7 +10931,7 @@ export async function convertDocument(
       }, 0);
 
       if (!uninvoicedLines || uninvoicedLines.length === 0) {
-        throw new Error(
+        throw new InvalidInputError(
           "No lines available to invoice. All lines may already be marked as invoiced complete."
         );
       }
@@ -11506,7 +11598,7 @@ export function fromServerFn(
 ): CarbonError {
   return serverFnRefusal(ctx, error, fallback);
 }
-const createDocumentLogger = getLogger("server-functions", "create");
+const createDocumentLogger = getLogger("erp", "shared", "create");
 
 // Resolves a fallback location when a caller omits locationId, so creating a
 // blank shipment degrades gracefully instead of failing payload validation.
@@ -11535,16 +11627,64 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
-async function receiptQuantitiesStartAtZero(
+async function receiptSettings(
   db: Kysely<KyselyDatabase>,
   companyId: string
-): Promise<boolean> {
+): Promise<{ startAtZero: boolean; batchNumbersFromPurchaseOrder: boolean }> {
   const row = await db
     .selectFrom("companySettings")
-    .select("receiptQuantitiesStartAtZero")
+    .select([
+      "receiptQuantitiesStartAtZero",
+      "receiptBatchNumbersFromPurchaseOrder"
+    ])
     .where("id", "=", companyId)
     .executeTakeFirst();
-  return row?.receiptQuantitiesStartAtZero === true;
+  return {
+    startAtZero: row?.receiptQuantitiesStartAtZero === true,
+    batchNumbersFromPurchaseOrder:
+      row?.receiptBatchNumbersFromPurchaseOrder === true
+  };
+}
+
+/**
+ * Deletes a Draft receipt's lines so they can be rebuilt from a new source,
+ * releasing the batches and serials tagged with them (deleted with no stock
+ * history, else unlinked) rather than leaving them on dead line ids. The
+ * receipt is locked and re-read here: a post that won the race refuses.
+ */
+async function deleteDraftReceiptLines(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const draft = await trx
+    .selectFrom("receipt")
+    .select("id")
+    .where("id", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Draft")
+    .forUpdate()
+    .executeTakeFirst();
+  if (!draft) throw new Error("Only a Draft receipt can be rebuilt");
+
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where(
+      sql<boolean>`attributes @> ${JSON.stringify({ Receipt: receiptId })}::jsonb`
+    )
+    .execute();
+  await releaseReceiptSerialEntities(
+    trx,
+    companyId,
+    entities.map((entity) => entity.id)
+  );
+  await trx
+    .deleteFrom("receiptLine")
+    .where("receiptId", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .execute();
 }
 
 export const createDocumentPermission = {
@@ -11600,7 +11740,7 @@ export async function createDocument(
     case "nonConformanceTasks": {
       const { id } = payload;
 
-      createDocumentLogger.info({ type, id });
+      createDocumentLogger.info("Creating a {type} document", { type, id });
 
       const [nonConformance, actionTasks, approvalTasks, existingReviewers] =
         await inOrder([
@@ -11766,7 +11906,7 @@ export async function createDocument(
             });
           }
 
-          createDocumentLogger.debug({
+          createDocumentLogger.debug("Built the issue investigation content", {
             description: nonConformance.data?.description,
             insertedContent
           });
@@ -11835,7 +11975,12 @@ export async function createDocument(
       // releasing several jobs can put them on one PO per supplier.
       const purchaseOrderIdsBySupplierId: Record<string, string> = {};
 
-      createDocumentLogger.info({ type, jobId, companyId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        jobId,
+        companyId,
+        userId
+      });
       const [job, jobOperations] = await inOrder([
         () => maybeSingle(db, "job", { id: jobId, companyId }),
         () =>
@@ -12227,7 +12372,12 @@ export async function createDocument(
     case "receiptDefault": {
       const { locationId } = payload;
       let createdDocumentId;
-      createDocumentLogger.info({ type, locationId, companyId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        locationId,
+        companyId,
+        userId
+      });
       const id = await db.transaction().execute(async (trx) => {
         createdDocumentId = await getNextSequence(trx, "receipt", companyId);
         const newReceipt = await trx
@@ -12255,7 +12405,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         purchaseOrderId,
@@ -12309,8 +12459,16 @@ export async function createDocument(
       if (purchaseOrderLines.error)
         throw new Error(purchaseOrderLines.error.message);
 
-      let locationId = purchaseOrder.data.locationId;
+      // A Draft whose location the user changed keeps the location they chose.
+      const locationChosen =
+        !!userLocationId &&
+        !!receipt.data &&
+        userLocationId !== receipt.data.locationId;
+      let locationId = locationChosen
+        ? userLocationId
+        : purchaseOrder.data.locationId;
       if (
+        !locationChosen &&
         purchaseOrderLines.data.some(
           (d) => d.locationId !== locationId && d.locationId === userLocationId
         )
@@ -12318,15 +12476,20 @@ export async function createDocument(
         locationId = userLocationId ?? null;
       }
 
+      // Every line becomes a receipt line, whatever location it names, so
+      // every line's item is read: posting writes a batch or serial line's
+      // stock only when its tracking flag is set.
+      const receiptItemIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.itemId)
+            .filter((id): id is string => !!id)
+        )
+      ];
       const items = await many(
         db,
         "item",
-        {
-          companyId,
-          id: purchaseOrderLines.data
-            .filter((d) => d.locationId === locationId)
-            .map((d) => d.itemId) as string[]
-        },
+        { companyId, id: receiptItemIds },
         { columns: ["id", "itemTrackingType"] }
       );
       const serializedItems = new Set(
@@ -12346,9 +12509,6 @@ export async function createDocument(
       // one explicitly. Scoped by locationId because a single item can
       // be stocked across multiple locations with different defaults
       // per location (that's why pickMethod exists).
-      const receiptItemIds = purchaseOrderLines.data
-        .filter((d): d is typeof d & { itemId: string } => !!d.itemId)
-        .map((d) => d.itemId);
       const pickMethods = await many(
         db,
         "pickMethod",
@@ -12374,6 +12534,65 @@ export async function createDocument(
       const hasReceipt = !!receipt.data?.id;
       const isOutsideOperation =
         purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+      // A part with a Receipt inspection plan is received into the location's
+      // inspection storage unit, and the line keeps a snapshot of that.
+      const lineLocationIds = [
+        ...new Set(
+          [
+            locationId,
+            ...purchaseOrderLines.data.map((d) => d.locationId)
+          ].filter((id): id is string => !!id)
+        )
+      ];
+      const pinnedStorageUnitIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.storageUnitId)
+            .filter((id): id is string => !!id)
+        )
+      ];
+      const [inspectionAssignments, receiptLocations, pinnedStorageUnits] =
+        await Promise.all([
+          many(
+            db,
+            "itemInspectionDocumentAssignment",
+            { companyId, usage: "Receipt", itemId: receiptItemIds },
+            { columns: ["itemId"] }
+          ),
+          many(
+            db,
+            "location",
+            { companyId, id: lineLocationIds },
+            { columns: ["id", "inspectionStorageUnitId"] }
+          ),
+          many(
+            db,
+            "storageUnit",
+            { companyId, id: pinnedStorageUnitIds },
+            { columns: ["id", "locationId"] }
+          )
+        ]);
+      if (inspectionAssignments.error)
+        throw new Error(inspectionAssignments.error.message);
+      if (receiptLocations.error)
+        throw new Error(receiptLocations.error.message);
+      if (pinnedStorageUnits.error)
+        throw new Error(pinnedStorageUnits.error.message);
+      const storageUnitLocation = new Map(
+        (pinnedStorageUnits.data ?? []).map((row) => [row.id, row.locationId])
+      );
+      const inspectedItemIds = new Set(
+        isOutsideOperation
+          ? []
+          : (inspectionAssignments.data ?? []).map((row) => row.itemId)
+      );
+      const inspectionUnitByLocation = new Map(
+        (receiptLocations.data ?? []).map((row) => [
+          row.id,
+          row.inspectionStorageUnitId
+        ])
+      );
 
       const previouslyReceivedQuantitiesByLine = (
         purchaseOrderLines.data ?? []
@@ -12419,7 +12638,21 @@ export async function createDocument(
           })
         );
       };
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero, batchNumbersFromPurchaseOrder } =
+        await receiptSettings(db, companyId);
+      const batchNumberBase =
+        batchNumbersFromPurchaseOrder && purchaseOrder.data.purchaseOrderId
+          ? receiptBatchNumberBase(
+              purchaseOrder.data.purchaseOrderId,
+              datetime
+                .today(
+                  locationId
+                    ? await getLocationTimeZone(db, locationId, companyId)
+                    : await getCompanyTimeZone(db, companyId)
+                )
+                .toString()
+            )
+          : null;
 
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12437,6 +12670,14 @@ export async function createDocument(
         const unitPrice = d.unitPrice ?? 0;
         const outstandingQuantity =
           d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
+        // Every line is received at the receipt's location (the insert below
+        // sets it), so its bin must be one of that location's.
+        const lineLocationId = locationId ?? d.locationId ?? null;
+        const pinnedStorageUnitId =
+          d.storageUnitId &&
+          storageUnitLocation.get(d.storageUnitId) === lineLocationId
+            ? d.storageUnitId
+            : null;
 
         acc.push({
           lineId: d.id,
@@ -12461,11 +12702,15 @@ export async function createDocument(
             shippingCost: d.shippingCost ?? 0
           }),
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
-          locationId: d.locationId ?? null,
+          locationId: lineLocationId,
+          requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
-            d.storageUnitId ??
+            (inspectedItemIds.has(d.itemId)
+              ? inspectionUnitByLocation.get(lineLocationId ?? "")
+              : null) ??
+            pinnedStorageUnitId ??
             defaultStorageUnitByItemLocation.get(
-              pickMethodKey(d.itemId!, d.locationId ?? null)
+              pickMethodKey(d.itemId!, lineLocationId)
             ) ??
             null,
           createdBy: userId ?? ""
@@ -12493,6 +12738,11 @@ export async function createDocument(
               sourceDocument: "Purchase Order",
               sourceDocumentId: purchaseOrder.data.id,
               sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              // The draft may be switching to a PO from a different supplier.
+              // Generated batches take their Supplier attribute from the
+              // receipt, so it has to follow the new PO.
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
               locationId: locationId,
               updatedBy: userId
             })
@@ -12500,12 +12750,7 @@ export async function createDocument(
             .returning(["id", "receiptId"])
             .where("companyId", "=", companyId)
             .execute();
-          // delete existing receipt lines
-          await trx
-            .deleteFrom("receiptLine")
-            .where("receiptId", "=", receiptId)
-            .where("companyId", "=", companyId)
-            .execute();
+          await deleteDraftReceiptLines(trx, companyId, receiptId);
         } else {
           receiptIdReadable = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
@@ -12529,7 +12774,7 @@ export async function createDocument(
         }
 
         if (receiptLineItems.length > 0) {
-          await trx
+          const lines = await trx
             .insertInto("receiptLine")
             .values(
               receiptLineItems.map((line) => ({
@@ -12538,7 +12783,33 @@ export async function createDocument(
                 locationId
               }))
             )
+            .returning([
+              "id",
+              "itemId",
+              "receivedQuantity",
+              "requiresBatchTracking"
+            ])
             .execute();
+
+          if (batchNumberBase) {
+            await assignReceiptBatchNumbers(trx, {
+              companyId,
+              receiptId,
+              purchaseOrderId: purchaseOrder.data.id!,
+              base: batchNumberBase,
+              lines: lines.flatMap((line) =>
+                line.requiresBatchTracking && line.itemId
+                  ? [
+                      {
+                        id: line.id,
+                        itemId: line.itemId,
+                        receivedQuantity: Number(line.receivedQuantity ?? 0)
+                      }
+                    ]
+                  : []
+              )
+            });
+          }
         }
 
         const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
@@ -12570,7 +12841,7 @@ export async function createDocument(
     case "receiptFromInboundTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -12636,7 +12907,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
@@ -12715,11 +12986,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -12743,8 +13010,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         salesReturnOrderId,
@@ -12815,6 +13081,20 @@ export async function createDocument(
         }
       }
 
+      // Returned goods land in the location's inspection storage unit when it
+      // has one; the RMA line disposition releases them.
+      const returnLocation = locationId
+        ? await maybeSingle(
+            db,
+            "location",
+            { id: locationId, companyId },
+            { columns: ["inspectionStorageUnitId"] }
+          )
+        : { data: null, error: null };
+      if (returnLocation.error) throw new Error(returnLocation.error.message);
+      const returnInspectionStorageUnitId =
+        returnLocation.data?.inspectionStorageUnitId ?? null;
+
       // A supplied id that is not this company's receipt is a 404, not a
       // silent create-new.
       if (existingReceiptId && !receipt.data)
@@ -12825,7 +13105,7 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12842,7 +13122,10 @@ export async function createDocument(
           lineId: d.id,
           itemId: d.itemId,
           locationId,
-          storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+          storageUnitId:
+            returnInspectionStorageUnitId ??
+            defaultStorageUnitByItem.get(d.itemId) ??
+            null,
           requiresSerialTracking: serializedItems.has(d.itemId),
           requiresBatchTracking: batchItems.has(d.itemId),
           receivedQuantity: startAtZero ? 0 : outstanding,
@@ -12903,11 +13186,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -12927,7 +13206,7 @@ export async function createDocument(
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -12993,7 +13272,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
@@ -13102,7 +13381,7 @@ export async function createDocument(
     case "receiptLineSplit": {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         locationId,
         receiptId,
@@ -13120,7 +13399,9 @@ export async function createDocument(
           })
       ]);
 
-      createDocumentLogger.debug({ trackedEntities });
+      createDocumentLogger.debug("Loaded the receipt line tracked entities", {
+        trackedEntities
+      });
 
       if (!receiptLine.data) throw new NotFoundError("Receipt line not found");
 
@@ -13228,7 +13509,12 @@ export async function createDocument(
     case "shipmentDefault": {
       let createdDocumentId;
       const { locationId } = payload;
-      createDocumentLogger.info({ type, companyId, locationId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        companyId,
+        locationId,
+        userId
+      });
       const effectiveLocationId =
         locationId ?? (await getFallbackLocationId(db, companyId, userId));
 
@@ -13256,7 +13542,7 @@ export async function createDocument(
     case "shipmentFromWarehouseTransfer": {
       const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -13432,8 +13718,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         salesReturnOrderId,
@@ -13678,8 +13963,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         purchaseReturnOrderId,
@@ -13969,7 +14253,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14161,7 +14445,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14331,6 +14615,26 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
+        const untrackedItemIds = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Inventory")
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: salesOrderLines.data
+            .filter(
+              (line) =>
+                !!line.itemId &&
+                untrackedItemIds.has(line.itemId) &&
+                line.methodType !== "Make to Order"
+            )
+            .map((line) => ({
+              itemId: line.itemId!,
+              locationId: line.locationId
+            }))
+        });
+
         // Process each sales order line
         for await (const salesOrderLine of salesOrderLines.data) {
           if (
@@ -14482,7 +14786,14 @@ export async function createDocument(
                 unitPrice: shippingAndTaxUnitCost,
                 unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
                 locationId: salesOrderLine.locationId,
-                storageUnitId: salesOrderLine.storageUnitId,
+                storageUnitId: untrackedItemIds.has(salesOrderLine.itemId)
+                  ? chooseSourceStorageUnit({
+                      itemId: salesOrderLine.itemId,
+                      locationId: salesOrderLine.locationId,
+                      storageUnitId: salesOrderLine.storageUnitId,
+                      quantity: outstandingQuantity ?? 0
+                    })
+                  : salesOrderLine.storageUnitId,
                 createdBy: userId ?? ""
               })
               .execute();
@@ -14536,7 +14847,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14772,6 +15083,26 @@ export async function createDocument(
               (salesOrderLine.data.unitPrice ?? 0)) *
             (1 + salesOrderLine.data.taxPercent);
 
+          const storageUnitId =
+            item.data.itemTrackingType === "Inventory"
+              ? (
+                  await shipmentSourceBinChooser(trx, {
+                    companyId,
+                    lines: [
+                      {
+                        itemId: salesOrderLine.data.itemId!,
+                        locationId: salesOrderLine.data.locationId
+                      }
+                    ]
+                  })
+                )({
+                  itemId: salesOrderLine.data.itemId!,
+                  locationId: salesOrderLine.data.locationId,
+                  storageUnitId: salesOrderLine.data.storageUnitId,
+                  quantity: outstandingQuantity
+                })
+              : salesOrderLine.data.storageUnitId;
+
           await trx
             .insertInto("shipmentLine")
             .values({
@@ -14787,7 +15118,7 @@ export async function createDocument(
               unitPrice: shippingAndTaxUnitCost,
               unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
               locationId: salesOrderLine.data.locationId!,
-              storageUnitId: salesOrderLine.data.storageUnitId!,
+              storageUnitId,
               createdBy: userId ?? ""
             })
             .execute();
@@ -14799,7 +15130,7 @@ export async function createDocument(
     case "shipmentLineSplit": {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         locationId,
         shipmentId,
@@ -14850,8 +15181,7 @@ export async function createDocument(
       // Pending units. A per-unit shortcut adds (or ticks) its unit on it.
       const { rentalAgreementId, rentalAgreementLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         rentalAgreementId,
@@ -15006,8 +15336,7 @@ export async function createDocument(
       // it to the project. A per-CLIN shortcut adds its line to the Draft.
       const { customerContractId, customerContractLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         customerContractId,
@@ -15222,8 +15551,7 @@ export async function createDocument(
       // per-unit shortcut adds (or ticks) its unit on it.
       const { rentalAgreementId, rentalAgreementLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         rentalAgreementId,
@@ -16698,6 +17026,8 @@ export function buildItemLedgerRow(args: {
   entryType: Database["public"]["Enums"]["itemLedgerType"];
   documentType?: ItemLedgerDocumentType | null;
   documentId?: string | null;
+  // The document line the movement belongs to, when the reader needs it.
+  documentLineId?: string | null;
   correctionOfItemLedgerId?: string | null;
   itemId: string;
   locationId: string | null;
@@ -16716,6 +17046,7 @@ export function buildItemLedgerRow(args: {
     entryType: args.entryType,
     documentType: args.documentType ?? null,
     documentId: args.documentId ?? null,
+    documentLineId: args.documentLineId ?? null,
     correctionOfItemLedgerId: args.correctionOfItemLedgerId ?? null,
     itemId: args.itemId,
     locationId: args.locationId,
@@ -16786,6 +17117,10 @@ export function buildAdjustmentJournalLines(args: {
     inventoryAdjustmentVarianceAccount: string;
   };
   offsetAccount?: string | null;
+  // The offset account's type, which signs its line. An expense (the variance
+  // or scrap account) unless the caller offsets elsewhere, such as Goods
+  // Received Not Invoiced (a liability) when a receipt is reversed.
+  offsetAccountType?: AccountType;
   offsetDescription?: string;
   companyId: string;
 }): [JournalLineInsert, JournalLineInsert] {
@@ -16819,7 +17154,9 @@ export function buildAdjustmentJournalLines(args: {
         args.accountDefaults.inventoryAdjustmentVarianceAccount,
       description: args.offsetDescription ?? "Inventory Adjustment",
       amount: round(
-        args.isGain ? credit("expense", args.cost) : debit("expense", args.cost)
+        args.isGain
+          ? credit(args.offsetAccountType ?? "expense", args.cost)
+          : debit(args.offsetAccountType ?? "expense", args.cost)
       )
     }
   ];
@@ -17184,6 +17521,9 @@ export interface BookAdjustmentArgs {
     // the fix.
     documentType?: Database["public"]["Enums"]["itemLedgerDocumentType"] | null;
     documentId?: string | null;
+    // The document line: an NCR's restore names the disposition row it
+    // restores for, so Put Away can tell Use As Is stock from Rework stock.
+    documentLineId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
     // Reason for scrap/unscrap movements (documentType 'Scrap'); NULL for
@@ -17221,6 +17561,8 @@ export interface BookAdjustmentArgs {
     // write-offs pass the company's scrapAccount so cost of quality is separable
     // on the P&L.
     offsetAccount?: string | null;
+    // The offset account's type (signs its line); expense by default.
+    offsetAccountType?: AccountType;
     offsetDescription?: string;
     // journal.sourceType for a header this call creates (default
     // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
@@ -17401,6 +17743,7 @@ export async function bookAdjustment(
         entryType: ledger.entryType,
         documentType: ledger.documentType,
         documentId: ledger.documentId,
+        documentLineId: ledger.documentLineId,
         correctionOfItemLedgerId: ledger.correctionOfItemLedgerId,
         itemId: ledger.itemId,
         locationId: ledger.locationId,
@@ -17638,6 +17981,7 @@ export async function valueMovement(
     replenishmentSystem: item.replenishmentSystem,
     accountDefaults: accounting.accountDefaults,
     offsetAccount: accounting.offsetAccount,
+    offsetAccountType: accounting.offsetAccountType,
     offsetDescription: accounting.offsetDescription,
     companyId
   });
@@ -18041,6 +18385,167 @@ export async function getStorageUnitWithHighestQuantity(
     }
   }
   return null;
+}
+
+/**
+ * Locks each (location, item) in key-hash order, as SQL
+ * `backflush_job_materials` does, so two draws cannot plan from the same
+ * on-hand. Read the bins after this.
+ */
+export async function lockUntrackedDraws(
+  db: Kysely<DB>,
+  args: { companyId: string; locationId: string; itemIds: string[] }
+): Promise<void> {
+  const keys = [
+    ...new Set(
+      args.itemIds.map((itemId) =>
+        untrackedDrawLockKey(args.companyId, args.locationId, itemId)
+      )
+    )
+  ];
+  if (keys.length === 0) return;
+  await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+    db
+  );
+}
+
+// Each item's untracked on-hand per bin and stripe at a location. `nettable`:
+// a guess may take from it (active, nettable, not lineside; no storage unit
+// always is).
+export async function getUntrackedBinStock(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<Map<string, BinStock[]>> {
+  const bins = new Map<string, BinStock[]>();
+  if (args.itemIds.length === 0) return bins;
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .leftJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "itemLedger.storageUnitId")
+        .onRef("storageUnit.companyId", "=", "itemLedger.companyId")
+    )
+    .select([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.active",
+      // A child of a lineside unit is lineside too.
+      sql<
+        string | null
+      >`get_effective_work_center_id(${sql.ref("itemLedger.storageUnitId")})`.as(
+        "workCenterId"
+      ),
+      (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+    ])
+    .where("itemLedger.itemId", "in", args.itemIds)
+    .where("itemLedger.locationId", "=", args.locationId)
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.trackedEntityId", "is", null)
+    .where((eb) => itemLedgerInStripes(eb, args.stripes))
+    .groupBy([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.active"
+    ])
+    .execute();
+  for (const row of rows) {
+    const list = bins.get(row.itemId) ?? [];
+    list.push({
+      storageUnitId: row.storageUnitId,
+      projectId: row.projectId ?? null,
+      nettable:
+        row.storageUnitId === null ||
+        (row.effectiveNettable === true &&
+          row.active === true &&
+          !row.workCenterId),
+      quantity: Number(row.quantity ?? 0)
+    });
+    bins.set(row.itemId, list);
+  }
+  return bins;
+}
+
+/**
+ * The bin each untracked shipment line ships from. A bin the order line names
+ * is kept, even when short: posting warns about it (`shipmentStockWarnings`),
+ * so a user's choice never changes silently. A line with no bin takes one that
+ * holds the stock (`chooseSourceBin`). Lines are planned in order, so two lines
+ * of one item do not count the same stock. Shipments draw common stock only.
+ */
+export async function shipmentSourceBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null }[];
+  }
+): Promise<
+  (line: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    quantity: number;
+  }) => string | null
+> {
+  const locationIds = [
+    ...new Set(
+      args.lines
+        .map((line) => line.locationId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const stockByLocation = new Map<string, Map<string, BinStock[]>>();
+  for (const locationId of locationIds) {
+    stockByLocation.set(
+      locationId,
+      await getUntrackedBinStock(db, {
+        companyId: args.companyId,
+        itemIds: [
+          ...new Set(
+            args.lines
+              .filter((line) => line.locationId === locationId)
+              .map((line) => line.itemId)
+          )
+        ],
+        locationId,
+        stripes: [null]
+      })
+    );
+  }
+  const assigned = new Map<string, number>();
+  const key = (itemId: string, locationId: string, bin: string | null) =>
+    `${locationId}\u0000${itemId}\u0000${bin ?? ""}`;
+
+  return (line) => {
+    if (!line.locationId) return line.storageUnitId;
+    const locationId = line.locationId;
+    const chosen =
+      line.storageUnitId ??
+      chooseSourceBin({
+        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
+          (bin) => ({
+            ...bin,
+            quantity:
+              bin.quantity -
+              (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ??
+                0)
+          })
+        ),
+        preferredStorageUnitId: null,
+        quantity: line.quantity
+      });
+    const k = key(line.itemId, locationId, chosen);
+    assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
+    return chosen;
+  };
 }
 
 // Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit

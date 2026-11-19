@@ -32,7 +32,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
 import {
   LuArrowRight,
@@ -602,6 +602,7 @@ function QuestionStep({
     value: string | string[] | number | boolean | Record<string, string>
   ) => void;
 }) {
+  const questionTextId = useId();
   const renderQuestionInput = () => {
     switch (question.type) {
       case "MultipleChoice":
@@ -685,7 +686,12 @@ function QuestionStep({
                   key={index}
                   className="flex items-center gap-4 p-3 border rounded-md"
                 >
-                  <span className="font-medium min-w-[120px]">{pair.left}</span>
+                  <span
+                    id={`${questionTextId}-pair-${index}`}
+                    className="font-medium min-w-[120px]"
+                  >
+                    {pair.left}
+                  </span>
                   <span className="text-muted-foreground">
                     <LuArrowRight className="text-muted-foreground" />
                   </span>
@@ -699,7 +705,10 @@ function QuestionStep({
                       onAnswerChange(question.id, question.type, newPairs);
                     }}
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger
+                      className="flex-1"
+                      aria-labelledby={`${questionTextId}-pair-${index}`}
+                    >
                       <SelectValue placeholder="Select a match..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -720,6 +729,7 @@ function QuestionStep({
         return (
           <div className="space-y-2">
             <NumberField
+              aria-labelledby={questionTextId}
               value={parseFloat((answer?.value as string) ?? "") || undefined}
               onChange={(value) =>
                 onAnswerChange(
@@ -751,7 +761,9 @@ function QuestionStep({
         <h3 className="text-lg font-display font-semibold">
           Question {questionIndex + 1} of {totalQuestions}
         </h3>
-        <p className="text-base">{question.question}</p>
+        <p id={questionTextId} className="text-base">
+          {question.question}
+        </p>
       </div>
 
       {renderQuestionInput()}

@@ -88,7 +88,28 @@ if [[ -z "$REPO_ROOT" ]]; then
   echo "Could not determine the Carbon worktree. Run this from inside the worktree you want to restore." >&2
   exit 1
 fi
-PORT_DB=$(node -e "
+# crbn restore passes PORT_DB and DB_NAME: in shared mode the worktree's data
+# is its wt_ database on the shared Postgres, not the registry's port. Run
+# directly on a shared-mode worktree, this script would target neither.
+if [[ -z "${DB_NAME:-}" ]] && [[ "$(node -e "
+  const fs = require('fs'), path = require('path'), os = require('os');
+  const home = path.join(os.homedir(), '.carbon');
+  let reg = {};
+  try { reg = JSON.parse(fs.readFileSync(path.join(home, 'dev-ports.json'), 'utf8')); } catch {}
+  for (const [slug, slot] of Object.entries(reg)) {
+    if (path.resolve(slot.worktreeRoot) !== '$REPO_ROOT') continue;
+    try { process.stdout.write(fs.readFileSync(path.join(home, 'stacks', slug, 'mode'), 'utf8').trim()); } catch {}
+  }
+")" == shared ]]; then
+  echo "This worktree runs in shared mode. Restore it with 'crbn restore <backup>'." >&2
+  exit 1
+fi
+DB_NAME="${DB_NAME:-postgres}"
+# Shared mode: roles and the `postgres` database belong to every worktree on
+# the cluster. The restore leaves both alone.
+SHARED_CLUSTER=0
+[[ "$DB_NAME" != postgres ]] && SHARED_CLUSTER=1
+[[ -n "${PORT_DB:-}" ]] || PORT_DB=$(node -e "
   const fs = require('fs'), path = require('path'), os = require('os');
   const reg = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.carbon/dev-ports.json'), 'utf8'));
   for (const slot of Object.values(reg)) {
@@ -101,13 +122,13 @@ PORT_DB=$(node -e "
   process.exit(1);
 ")
 export PGPASSWORD=postgres
-PSQL_PG="psql -h 127.0.0.1 -p $PORT_DB -U postgres -d postgres"
-PSQL_SA="psql -h 127.0.0.1 -p $PORT_DB -U supabase_admin -d postgres"
+PSQL_PG="psql -h 127.0.0.1 -p $PORT_DB -U postgres -d $DB_NAME"
+PSQL_SA="psql -h 127.0.0.1 -p $PORT_DB -U supabase_admin -d $DB_NAME"
 echo "▶ Local Postgres: 127.0.0.1:$PORT_DB"
 $PSQL_PG -c 'SELECT 1' > /dev/null \
   || { echo "Postgres not reachable. Run 'crbn up' first." >&2; exit 1; }
 # ── 1. Restore superuser on postgres (in case a prior dump demoted it) ──────
-$PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
+[[ "$SHARED_CLUSTER" == 1 ]] || $PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
   >/dev/null 2>&1 || true
 # ── 2. Drop existing public schema (per-object to avoid lock-table exhaustion)
 echo "▶ Dropping existing public-schema objects"
@@ -160,7 +181,7 @@ if head -c 5 "$BACKUP_FILE" | grep -q '^PGDMP'; then
   echo "  → custom-format archive detected, using pg_restore"
   # `|| true`: pg_restore exits nonzero whenever ANY error occurred, including
   # the expected 'already exists' noise, so its exit code cannot gate the script.
-  pg_restore -h 127.0.0.1 -p "$PORT_DB" -U supabase_admin -d postgres \
+  pg_restore -h 127.0.0.1 -p "$PORT_DB" -U supabase_admin -d "$DB_NAME" \
     --no-owner --no-privileges \
     "$BACKUP_FILE" 2> "$RESTORE_LOG" || true
   restore_pipe=(0 0 0)
@@ -213,7 +234,7 @@ else
       AND nspname NOT LIKE 'pg\_%'
   " > "$COLUMN_MAP"
   if sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
-    | awk -v map="$COLUMN_MAP" -v stats="$COPY_STATS" '
+    | awk -v map="$COLUMN_MAP" -v stats="$COPY_STATS" -v shared="$SHARED_CLUSTER" '
       function unquote(s) { gsub(/"/, "", s); return s }
       BEGIN {
         while ((getline line < map) > 0) {
@@ -236,6 +257,14 @@ else
       /^-- Name: .*; Type: FUNCTION; Schema: [a-z_]+; Owner: supabase_(auth|storage|realtime|functions)_admin$/ {
         mode = "function"; functions++; next
       }
+      # A cluster backup switches databases with \connect and alters roles.
+      # On a shared cluster both would reach past this worktree database.
+      shared == 1 && /^\\connect / { next }
+      shared == 1 && /^(CREATE|ALTER|DROP) ROLE / { roles++; next }
+      # Role memberships; Postgres 16+ dumps add WITH INHERIT/SET options.
+      shared == 1 && /^(GRANT|REVOKE) [^ ]+ (TO|FROM) [^ ]+( WITH [^;]*)?( GRANTED BY [^ ;]+)?;$/ { roles++; next }
+      # Statements about a database act on the database, not on the data in it.
+      shared == 1 && /^((CREATE|ALTER|DROP) DATABASE |COMMENT ON DATABASE |(GRANT|REVOKE) .* ON DATABASE )/ { databases++; next }
       /^COPY public\./ { print; mode = "data"; next }
       /^COPY / {
         open = index($0, " ("); table = unquote(substr($0, 6, open - 6))
@@ -256,7 +285,11 @@ else
         print "COPY " substr($0, 6, open - 6) " (" header ") FROM stdin;"; next
       }
       { print }
-      END { if (functions) print "kept this stack'"'"'s own service functions (skipped the backup'"'"'s " functions ")" > stats }
+      END {
+        if (functions) print "kept this stack'"'"'s own service functions (skipped the backup'"'"'s " functions ")" > stats
+        if (roles) print "skipped " roles " role statement(s): roles are shared by every worktree" > stats
+        if (databases) print "skipped " databases " database statement(s): the cluster is shared by every worktree" > stats
+      }
     ' \
     | $PSQL_SA -v ON_ERROR_STOP=0 2> "$RESTORE_LOG"; then
     restore_pipe=(0 0 0)
@@ -305,7 +338,7 @@ for attempt in $(seq 1 30); do
   sleep 2
 done
 # Reapply superuser to postgres (the dump's ALTER ROLE strips it).
-$PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
+[[ "$SHARED_CLUSTER" == 1 ]] || $PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
   >/dev/null 2>&1 || true
 # ── 3a. Verify the schema landed ────────────────────────────────────────────
 # psql under ON_ERROR_STOP=0 reports a restore that lost its whole post-data

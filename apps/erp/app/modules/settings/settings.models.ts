@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { weekNumberings } from "@carbon/database/sequence-tokens";
 import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
@@ -21,6 +22,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
@@ -425,6 +427,10 @@ export const rescheduleToleranceValidator = z.object({
 });
 
 // Empty clears the default: items without their own horizon then have no fence.
+export const deliveryDateCheckSettingsValidator = z.object({
+  deliveryDateControl: z.enum(deliveryDateControlTypes)
+});
+
 export const planningHorizonValidator = z.object({
   days: zfd.numeric(z.number().int().min(0).max(3650).optional())
 });
@@ -502,6 +508,15 @@ export {
 
 export const serialNumberTimingValidator = z.object({
   serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
+});
+
+export {
+  type WeekNumbering,
+  weekNumberings
+} from "@carbon/database/sequence-tokens";
+
+export const sequenceWeekNumberingValidator = z.object({
+  sequenceWeekNumbering: z.enum(weekNumberings).default("iso")
 });
 
 export const updateLeadTimesOnReceiptValidator = z.object({
@@ -615,7 +630,8 @@ export const itemSerialSequenceValidator = z.object({
   step: zfd.numeric(z.number().min(1)),
   size: zfd.numeric(z.number().min(1).max(20)),
   // Empty follows the company's serial number timing.
-  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional()),
+  printLabelOnCompletion: zfd.checkbox()
 });
 
 export type Theme = ThemeName;
@@ -1034,6 +1050,16 @@ export const documentTemplateValidator = zfd.formData({
   headerConfig: jsonField(
     sectionConfigSchema,
     "Invalid header config"
+  ).optional()
+});
+
+/** One document's draft as the editor holds it; the server keeps only what differs. */
+export const documentEditValidator = zfd.formData({
+  blocks: jsonField(z.array(blockSchema), "Invalid document blocks"),
+  settings: jsonField(documentSettingsSchema, "Invalid document settings"),
+  notes: jsonField(
+    z.record(z.string(), z.unknown()).nullable(),
+    "Invalid notes"
   ).optional()
 });
 

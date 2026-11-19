@@ -82,6 +82,7 @@ export function LiteralControl({
   // `min-w-0` so the control can shrink inside a flex row instead of forcing its
   // content width onto the card.
   const shell = (children: ReactNode) => (
+    // biome-ignore lint/a11y/noStaticElementInteractions: keydown wrapper that opens the variable menu on "{" typed in the inner field; the wrapped field is the control
     <div className="min-w-0 flex-1" onKeyDown={braceOpens}>
       {children}
     </div>
@@ -96,7 +97,7 @@ export function LiteralControl({
         onValueChange={(v) => emit(v || undefined)}
         disabled={isReadOnly}
       >
-        <SelectTrigger disabled={isReadOnly}>
+        <SelectTrigger aria-label={t`Value`} disabled={isReadOnly}>
           <SelectValue className="truncate" placeholder={t`Select…`} />
         </SelectTrigger>
         <SelectContent>
@@ -150,6 +151,7 @@ export function LiteralControl({
         const strValue = typeof value === "string" ? value : "";
         return shell(
           <Input
+            aria-label={t`Text`}
             size="md"
             type="text"
             className="truncate"
@@ -274,6 +276,7 @@ export function LiteralControl({
   // select before they reach here. Kept so this stays total over ValueType.
   return shell(
     <Input
+      aria-label={t`Value`}
       size="md"
       type="text"
       className="truncate"

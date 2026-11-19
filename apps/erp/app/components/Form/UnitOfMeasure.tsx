@@ -3,12 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
+import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { useRouteData } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useRouteData } from "~/hooks";
 import type { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import { selectableUnitsOfMeasure } from "~/modules/items/items.utils";
 import type { UnitOfMeasureListItem } from "~/modules/items/types";
 import UnitOfMeasureForm from "~/modules/items/ui/UnitOfMeasure/UnitOfMeasureForm";
 import { path } from "~/utils/path";
@@ -31,14 +31,19 @@ const UnitOfMeasurePreview = (
 };
 
 const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
-  const options = useUnitOfMeasure();
+  const units = useUnitOfMeasure();
+  const [fieldValue] = useControlField<string | undefined>(props.name);
+  const selected = props.value ?? fieldValue;
+  const options = useMemo(
+    () => selectableUnitsOfMeasure(units, selected),
+    [units, selected]
+  );
 
-  const newUnitOfMeasureModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const emptyMessage = useEmptyState("unitOfMeasure", {
-    onCreate: () => newUnitOfMeasureModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -51,21 +56,22 @@ const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
         label={props?.label ?? "Unit of Measure"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newUnitOfMeasureModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newUnitOfMeasureModal.isOpen && (
+      {create.item !== null && (
         <UnitOfMeasureForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newUnitOfMeasureModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
-            code: ""
+            name: create.item,
+            code: "",
+            active: true
           }}
         />
       )}
@@ -96,7 +102,8 @@ export const useUnitOfMeasure = () => {
 
     return dataSource.map((c) => ({
       value: c.code,
-      label: c.name
+      label: c.name,
+      active: c.active
     }));
   }, [
     hasSharedPartData,

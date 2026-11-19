@@ -20,7 +20,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { LuCheckCheck, LuClipboardCheck, LuTrash, LuX } from "react-icons/lu";
 import { Await, useFetcher, useParams } from "react-router";
 import { VersionMenu } from "~/components";
@@ -28,7 +28,7 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ApprovalDecisionModal from "~/components/Modals/ApprovalDecision";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useDrawerItem, usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action as updateAction } from "~/routes/x+/quality-document+/update";
 import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
@@ -61,8 +61,8 @@ const QualityDocumentHeader = () => {
     error?: string;
     success?: boolean;
   }>();
-  const [approvalDecision, setApprovalDecision] =
-    useState<ApprovalDecision | null>(null);
+  const decisionModal = useDrawerItem<ApprovalDecision>();
+  const approvalDecision = decisionModal.item;
 
   const status = routeData?.document?.status ?? null;
   const isDraft = status === "Draft";
@@ -186,7 +186,7 @@ const QualityDocumentHeader = () => {
                     leftIcon={<LuCheckCheck />}
                     variant="primary"
                     isDisabled={!canApprove}
-                    onClick={() => setApprovalDecision("Approved")}
+                    onClick={() => decisionModal.open("Approved")}
                   >
                     <Trans>Approve</Trans>
                   </Button>
@@ -196,7 +196,7 @@ const QualityDocumentHeader = () => {
                     leftIcon={<LuX />}
                     variant="destructive"
                     isDisabled={!canApprove}
-                    onClick={() => setApprovalDecision("Rejected")}
+                    onClick={() => decisionModal.open("Rejected")}
                   >
                     <Trans>Reject</Trans>
                   </Button>
@@ -239,33 +239,29 @@ const QualityDocumentHeader = () => {
           </>
         }
       />
-      {newVersionDisclosure.isOpen && (
-        <QualityDocumentForm
-          type="copy"
-          initialValues={{
-            name: routeData?.document?.name ?? "",
-            version: (routeData?.document?.version ?? 0) + 1,
-            content: JSON.stringify(routeData?.document?.content) ?? "",
-            copyFromId: routeData?.document?.id ?? ""
-          }}
-          open={newVersionDisclosure.isOpen}
-          onClose={newVersionDisclosure.onClose}
-        />
-      )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteQualityDocument(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={routeData?.document?.name ?? "document"}
-          text={t`Are you sure you want to delete ${routeData?.document?.name}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
-        />
-      )}
+      <QualityDocumentForm
+        type="copy"
+        initialValues={{
+          name: routeData?.document?.name ?? "",
+          version: (routeData?.document?.version ?? 0) + 1,
+          content: JSON.stringify(routeData?.document?.content) ?? "",
+          copyFromId: routeData?.document?.id ?? ""
+        }}
+        open={newVersionDisclosure.isOpen}
+        onClose={newVersionDisclosure.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.deleteQualityDocument(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={routeData?.document?.name ?? "document"}
+        text={t`Are you sure you want to delete ${routeData?.document?.name}? This cannot be undone.`}
+        onCancel={() => {
+          deleteDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteDisclosure.onClose();
+        }}
+      />
       {approvalDecision && approvalRequestId && (
         <ApprovalDecisionModal
           action={path.to.qualityDocument(id)}
@@ -282,7 +278,8 @@ const QualityDocumentHeader = () => {
               : t`Are you sure you want to reject this quality document? The document will remain in draft status.`
           }
           fetcher={approvalFetcher}
-          onClose={() => setApprovalDecision(null)}
+          open={decisionModal.isOpen}
+          onClose={decisionModal.close}
         />
       )}
     </>

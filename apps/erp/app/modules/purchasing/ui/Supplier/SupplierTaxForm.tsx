@@ -20,7 +20,7 @@ import { isEoriCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
-import { LuPaperclip } from "react-icons/lu";
+import { LuPaperclip, LuTrash2 } from "react-icons/lu";
 import type { z } from "zod";
 import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -181,6 +181,17 @@ const SupplierTaxForm = ({
                     >
                       <Trans>View Certificate</Trans>
                     </a>
+                  </Button>
+                )}
+                {certificatePath && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<LuTrash2 />}
+                    isDisabled={isDisabled}
+                    onClick={() => setCertificatePath("")}
+                  >
+                    <Trans>Remove</Trans>
                   </Button>
                 )}
               </div>

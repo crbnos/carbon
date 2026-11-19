@@ -121,7 +121,19 @@ Exact errors and blocking preconditions from the issue validator, the close/disp
 Form-validation from `issueValidator`. A new issue needs a summary name, a location (the plant/warehouse where the defect originated), an issue type, and an open date before it saves.
 
 ### "Cannot modify a closed issue. Reopen it first."
-The issue's status is **Closed**, which locks it against all edits — entity moves, splits, disposition changes. Reopen the issue first, then make the change. (A Closed issue is the only locked state; `isIssueLocked` returns true only for Closed.)
+The issue's status is **Closed**, which locks it against all edits — entity moves, splits, disposition changes. Reopen the issue first, then make the change. (A Closed issue is the only locked state; `isIssueLocked` returns true only for Closed.) An issue that released the rejected part of a Partial inspection lot cannot be reopened; see below.
+
+### "This NCR released the rejected part of inspection lot …, so it cannot be reopened." / "… so it cannot be deleted."
+Closing the issue released the rejected part of a Partial inspection lot. Reopening or deleting it would hold that stock again with nothing to decide it. Open a new issue for any further problem with the stock.
+
+### "Inspection lot … already has its NCR. A receipt lot belongs to one NCR."
+The association adds an inspection lot that is already on another issue. Work that issue instead. A lot that **Passed** can go on a later issue.
+
+### "A Partial inspection lot must be the only lot on its NCR. …"
+A Partial lot's issue decides what happens to its rejected part, so the issue cannot hold other lots. Put the other lot on its own issue. The same rule refuses closing an issue that holds a Partial lot beside another lot, and marking a lot Partial while it shares its issue.
+
+### "Add a disposition for the rejected part of the lot, then close this NCR."
+The issue holds a Partial inspection lot but has no disposition row for its item. Add the item with a disposition, then complete the issue.
 
 ### "Cannot close: Disposition is still Pending; …"
 One or more disposition rows are still set to **Pending**. Every tracked-entity row must have a final disposition (Rework, Scrap, Use As Is, Return to Supplier) before the issue can close. Open each row and pick an outcome.

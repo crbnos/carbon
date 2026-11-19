@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
@@ -51,6 +52,10 @@ export type Associations = {
 
 /** Everything an Issue block renderer might need. */
 export interface IssueData {
+  /** The printed document title. */
+  documentTitle: string;
+  /** The printed document number; absent when the user hid it. */
+  documentNumber?: string;
   company: Company;
   locale?: string;
   nonConformance: Database["public"]["Tables"]["nonConformance"]["Row"];
@@ -66,6 +71,7 @@ export interface IssueData {
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
 }
 

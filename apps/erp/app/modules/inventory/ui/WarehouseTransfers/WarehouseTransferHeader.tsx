@@ -205,16 +205,14 @@ const WarehouseTransferHeader = () => {
       />
 
       <statusRules.ViolationModal />
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteWarehouseTransfer(transferId)}
-          isOpen={deleteDisclosure.isOpen}
-          name={warehouseTransfer.transferId ?? "warehouse transfer"}
-          text={t`Are you sure you want to delete ${warehouseTransfer.transferId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteWarehouseTransfer(transferId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={warehouseTransfer.transferId ?? "warehouse transfer"}
+        text={t`Are you sure you want to delete ${warehouseTransfer.transferId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

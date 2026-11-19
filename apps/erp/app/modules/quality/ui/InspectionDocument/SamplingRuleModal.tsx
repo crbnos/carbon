@@ -79,12 +79,33 @@ type SamplingRuleModalProps = {
   // The document default, used to preview what Inherit resolves to.
   inheritedRule?: SamplingRule | null;
   onSave: (rule: SamplingRule) => void;
+  open?: boolean;
   onClose: () => void;
 };
 
 const INHERIT = "__inherit__";
 
 const SamplingRuleModal = ({
+  open = true,
+  onClose,
+  ...props
+}: SamplingRuleModalProps) => {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <SamplingRuleBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+};
+
+const SamplingRuleBody = ({
   context,
   featureLabel,
   standard,
@@ -92,7 +113,7 @@ const SamplingRuleModal = ({
   inheritedRule,
   onSave,
   onClose
-}: SamplingRuleModalProps) => {
+}: Omit<SamplingRuleModalProps, "open">) => {
   const { t } = useLingui();
 
   const [type, setType] = useState<string>(
@@ -172,208 +193,200 @@ const SamplingRuleModal = ({
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            {context === "document" ? (
-              <Trans>Default Sampling</Trans>
-            ) : (
-              <Trans>Sampling — Characteristic {featureLabel}</Trans>
-            )}
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4} className="w-full">
-            {context === "document" ? (
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  Applies to characteristics without their own rule, and to the
-                  lot when this plan drives an inspection.
-                </Trans>
-              </p>
-            ) : null}
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {context === "document" ? (
+            <Trans>Default Sampling</Trans>
+          ) : (
+            <Trans>Sampling — Characteristic {featureLabel}</Trans>
+          )}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4} className="w-full">
+          {context === "document" ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                Applies to characteristics without their own rule, and to the
+                lot when this plan drives an inspection.
+              </Trans>
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-2 w-full">
+            <Label>
+              <Trans>Plan Type</Trans>
+            </Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {typeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {type === "First" && (
             <div className="flex flex-col gap-2 w-full">
               <Label>
-                <Trans>Plan Type</Trans>
+                <Trans>Sample Size</Trans>
               </Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {typeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                type="number"
+                min={1}
+                value={String(sampleSize)}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n)) setSampleSize(Math.max(1, n));
+                }}
+              />
             </div>
+          )}
 
-            {type === "First" && (
-              <div className="flex flex-col gap-2 w-full">
-                <Label>
-                  <Trans>Sample Size</Trans>
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={String(sampleSize)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    if (Number.isFinite(n)) setSampleSize(Math.max(1, n));
-                  }}
-                />
-              </div>
-            )}
-
-            {type === "Percentage" && (
-              <div className="flex flex-col gap-2 w-full">
-                <Label>
-                  <Trans>Percentage of Lot</Trans>
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={String(percentage)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    if (Number.isFinite(n)) {
-                      setPercentage(Math.min(100, Math.max(1, n)));
-                    }
-                  }}
-                />
-              </div>
-            )}
-
-            {type === "AQL" && (
-              <div className="grid grid-cols-3 gap-4 w-full">
-                <div className="flex flex-col gap-2">
-                  <Label>
-                    <Trans>AQL</Trans>
-                  </Label>
-                  <Select
-                    value={String(aql)}
-                    onValueChange={(v) => setAql(parseFloat(v))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {standardAqlValues.map((v) => (
-                        <SelectItem key={v} value={String(v)}>
-                          {v.toString()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>
-                    <Trans>Inspection Level</Trans>
-                  </Label>
-                  <Select
-                    value={inspectionLevel}
-                    onValueChange={(v) =>
-                      setInspectionLevel(v as InspectionLevel)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {inspectionLevelOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>
-                    <Trans>Severity</Trans>
-                  </Label>
-                  <Select
-                    value={severity}
-                    onValueChange={(v) => setSeverity(v as InspectionSeverity)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {severityOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2 w-full border rounded-md p-4">
-              <HStack className="justify-between">
-                <span className="text-sm font-medium">
-                  <Trans>Preview</Trans>
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {standard === "ANSI_Z1_4" ? "ANSI/ASQ Z1.4" : "ISO 2859-1"}
-                </span>
-              </HStack>
-              <table className="text-sm w-full">
-                <thead className="text-xs text-muted-foreground">
-                  <tr>
-                    <th className="text-left font-medium py-1">
-                      <Trans>Lot</Trans>
-                    </th>
-                    <th className="text-left font-medium py-1">
-                      <Trans>Sample</Trans>
-                    </th>
-                    <th className="text-left font-medium py-1">Ac</th>
-                    <th className="text-left font-medium py-1">Re</th>
-                    <th className="text-left font-medium py-1">
-                      <Trans>Letter</Trans>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {SAMPLE_LOT_SIZES.map((n) => {
-                    const res = resolveSamplingPlan(previewPlan, n, standard);
-                    return (
-                      <tr key={n}>
-                        <td className="py-1 tabular-nums">{n}</td>
-                        <td className="py-1 tabular-nums">{res.sampleSize}</td>
-                        <td className="py-1 tabular-nums">{res.acceptance}</td>
-                        <td className="py-1 tabular-nums">{res.rejection}</td>
-                        <td className="py-1">{res.codeLetter ?? "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {type === "Percentage" && (
+            <div className="flex flex-col gap-2 w-full">
+              <Label>
+                <Trans>Percentage of Lot</Trans>
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={String(percentage)}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n)) {
+                    setPercentage(Math.min(100, Math.max(1, n)));
+                  }
+                }}
+              />
             </div>
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button onClick={handleSave}>
-            <Trans>Save</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          )}
+
+          {type === "AQL" && (
+            <div className="grid grid-cols-3 gap-4 w-full">
+              <div className="flex flex-col gap-2">
+                <Label>
+                  <Trans>AQL</Trans>
+                </Label>
+                <Select
+                  value={String(aql)}
+                  onValueChange={(v) => setAql(parseFloat(v))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {standardAqlValues.map((v) => (
+                      <SelectItem key={v} value={String(v)}>
+                        {v.toString()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>
+                  <Trans>Inspection Level</Trans>
+                </Label>
+                <Select
+                  value={inspectionLevel}
+                  onValueChange={(v) =>
+                    setInspectionLevel(v as InspectionLevel)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {inspectionLevelOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>
+                  <Trans>Severity</Trans>
+                </Label>
+                <Select
+                  value={severity}
+                  onValueChange={(v) => setSeverity(v as InspectionSeverity)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {severityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 w-full border rounded-md p-4">
+            <HStack className="justify-between">
+              <span className="text-sm font-medium">
+                <Trans>Preview</Trans>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {standard === "ANSI_Z1_4" ? "ANSI/ASQ Z1.4" : "ISO 2859-1"}
+              </span>
+            </HStack>
+            <table className="text-sm w-full">
+              <thead className="text-xs text-muted-foreground">
+                <tr>
+                  <th className="text-left font-medium py-1">
+                    <Trans>Lot</Trans>
+                  </th>
+                  <th className="text-left font-medium py-1">
+                    <Trans>Sample</Trans>
+                  </th>
+                  <th className="text-left font-medium py-1">Ac</th>
+                  <th className="text-left font-medium py-1">Re</th>
+                  <th className="text-left font-medium py-1">
+                    <Trans>Letter</Trans>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {SAMPLE_LOT_SIZES.map((n) => {
+                  const res = resolveSamplingPlan(previewPlan, n, standard);
+                  return (
+                    <tr key={n}>
+                      <td className="py-1 tabular-nums">{n}</td>
+                      <td className="py-1 tabular-nums">{res.sampleSize}</td>
+                      <td className="py-1 tabular-nums">{res.acceptance}</td>
+                      <td className="py-1 tabular-nums">{res.rejection}</td>
+                      <td className="py-1">{res.codeLetter ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button onClick={handleSave}>
+          <Trans>Save</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 };
 

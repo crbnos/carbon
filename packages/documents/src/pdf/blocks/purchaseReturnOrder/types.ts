@@ -7,10 +7,12 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
 import type { Company, CompanySettings } from "../../../types";
+import type { ReturnOrderAddress } from "../returnOrder/vars";
 
 /**
  * A line row as the supplier-return PDF route reads it: the table row plus the
@@ -27,20 +29,7 @@ export type PurchaseReturnOrderPdfLine =
     } | null;
   };
 
-/**
- * A party/address for the parties block. Pass a resolved display `country`
- * ("United States") when known; renderers fall back to mapping `countryCode`.
- */
-export interface ReturnOrderAddress {
-  name?: string | null;
-  addressLine1?: string | null;
-  addressLine2?: string | null;
-  city?: string | null;
-  stateProvince?: string | null;
-  postalCode?: string | null;
-  country?: string | null;
-  countryCode?: string | null;
-}
+export type { ReturnOrderAddress };
 
 /** Everything a Purchase Return Order block renderer might need. */
 export interface PurchaseReturnOrderData {
@@ -61,7 +50,14 @@ export interface PurchaseReturnOrderData {
   /** Unit-price COLUMN only — a rate, not a settlement amount. */
   rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
+  /** The printed document number; absent when the user hid it. */
+  documentNumber?: string;
+  /** The printed supplier RMA line in the header; absent when there is none. */
+  supplierRmaLine?: string;
 }
 
 export type BlockRenderer = (args: {

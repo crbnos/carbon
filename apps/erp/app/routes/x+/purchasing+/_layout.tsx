@@ -4,18 +4,16 @@
 
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Purchasing" }];
-};
+export const meta = moduleMeta("Purchasing");
 
 function PurchasingSidebar() {
   const { groups } = usePurchasingSubmodules();

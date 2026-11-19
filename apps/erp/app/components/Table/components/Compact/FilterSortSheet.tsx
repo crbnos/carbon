@@ -26,7 +26,6 @@ import {
   LuChevronRight
 } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
-import { useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { ColumnFilter, Option } from "../Filter/types";
 import { useFilters } from "../Filter/useFilters";
@@ -143,7 +142,9 @@ export function FilterSortSheet({
   filters,
   sortKeyToLabel,
   tableName,
-  count
+  count,
+  hasRememberedChanges,
+  onResetRememberedState
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -151,12 +152,13 @@ export function FilterSortSheet({
   sortKeyToLabel: Record<string, string>;
   tableName?: string;
   count: number;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
 }) {
   const { t } = useLingui();
   const location = useLocation();
-  const [, setParams] = useUrlParams();
   const { savedViews, view } = useSavedViews();
-  const { clearFilters, getFilter, hasFilters } = useFilters();
+  const { getFilter } = useFilters();
   const [activeFilter, setActiveFilter] = useState<ColumnFilter | null>(null);
 
   useEffect(() => {
@@ -173,19 +175,13 @@ export function FilterSortSheet({
     [savedViews, tableName]
   );
 
-  const { sorts, isSorted, toggleSortByAscending, toggleSortByDirection } =
-    useSort();
+  const { isSorted, toggleSortByAscending, toggleSortByDirection } = useSort();
   const sortEntries = Object.entries(sortKeyToLabel);
 
   // Like desktop, a new sort leads and the existing ones stay as tiebreakers.
   const setSort = (key: string) => {
     if (isSorted(key)) toggleSortByDirection(key);
     else toggleSortByAscending(key);
-  };
-
-  const reset = () => {
-    clearFilters();
-    setParams({ sort: undefined, filter: undefined });
   };
 
   const viewHref = (v: (typeof views)[number]) =>
@@ -305,8 +301,8 @@ export function FilterSortSheet({
           <Button
             variant="secondary"
             size="lg"
-            onClick={reset}
-            isDisabled={!hasFilters && sorts.length === 0}
+            onClick={onResetRememberedState}
+            isDisabled={!hasRememberedChanges}
           >
             <Trans>Reset</Trans>
           </Button>

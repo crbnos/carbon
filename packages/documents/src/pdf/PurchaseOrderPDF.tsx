@@ -4,12 +4,12 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  purchaseOrderTexts,
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
 import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
@@ -18,6 +18,8 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchaseOrderApproval,
   PurchaseOrderData
@@ -26,9 +28,9 @@ import {
   buildPurchaseOrderVars,
   purchaseOrderBlockRegistry
 } from "./blocks/purchaseOrder";
-import { Template } from "./components";
 
 interface PurchaseOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
   purchaseOrderLines: Database["public"]["Views"]["purchaseOrderLines"]["Row"][];
   purchaseOrderLocations: Database["public"]["Views"]["purchaseOrderLocations"]["Row"];
@@ -50,6 +52,7 @@ interface PurchaseOrderPDFProps extends PDF {
 }
 
 const PurchaseOrderPDF = ({
+  valueCollector,
   accountsPayableBillingAddress,
   approval,
   company,
@@ -64,8 +67,7 @@ const PurchaseOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Purchase Order"
+  sections = {}
 }: PurchaseOrderPDFProps) => {
   const currencyCode =
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD";
@@ -77,19 +79,35 @@ const PurchaseOrderPDF = ({
   const displayId = purchaseOrder
     ? getPurchaseOrderDisplayId(purchaseOrder)
     : "";
-  const headerTitle = displayId ? `${title}: ${displayId}` : title;
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("purchaseOrder", template);
+  const resolved = resolveTemplate("purchaseOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildPurchaseOrderVars({
-    purchaseOrder,
-    purchaseOrderLocations,
-    company,
-    currencyCode,
-    approval,
-    locale
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildPurchaseOrderVars({
+      purchaseOrder,
+      purchaseOrderLines,
+      purchaseOrderLocations,
+      company,
+      currencyCode,
+      approval,
+      locale,
+      paymentTerms: paymentTerms ?? [],
+      accountsPayableBillingAddress,
+      numberFormatter
+    })
+  );
+  const chrome = documentChrome({
+    texts: purchaseOrderTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
+  const headerTitle = displayId
+    ? `${documentTitle}: ${displayId}`
+    : documentTitle;
 
   const registration = resolveRegistrationLine({
     company,
@@ -98,11 +116,6 @@ const PurchaseOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: PurchaseOrderData = {
     company,
@@ -121,54 +134,26 @@ const PurchaseOrderPDF = ({
     approval,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle,
+    documentNumber
   };
 
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={theme}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="purchase order"
       title={headerTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "purchase order",
-        subject: meta?.subject ?? "Purchase Order"
-      }}
       footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = purchaseOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={purchaseOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 

@@ -196,6 +196,7 @@ export function PeopleHeader({
       <HStack className="flex-wrap gap-y-2">
         <HStack spacing={2} className="flex-wrap gap-y-2">
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}
@@ -209,6 +210,7 @@ export function PeopleHeader({
           />
           {departments.length > 0 && (
             <Combobox
+              aria-label={t`Department`}
               asButton
               size="sm"
               value={departmentId ?? "all"}
@@ -221,6 +223,7 @@ export function PeopleHeader({
           )}
           {view !== "capacity" && shifts.length > 1 && (
             <Combobox
+              aria-label={t`Shift`}
               asButton
               size="sm"
               value={shiftId ?? "all"}

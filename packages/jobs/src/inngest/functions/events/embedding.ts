@@ -267,7 +267,7 @@ export const embeddingQueueFunction = inngest.createFunction(
         };
       });
       for (const { table, id, error } of failed) {
-        logger.warn(`Embedding ${table} ${id} failed: ${error}`);
+        logger.warn("Embedding failed", { table, id, error });
       }
       if (read < QUEUE_BATCH_SIZE) break;
     }
@@ -340,9 +340,9 @@ export const embeddingFunction = inngest.createFunction(
       }
 
       if (jobs.length === 0) {
-        logger.info(
-          `Embedding handler: nothing to process, skipped=${results.skipped}`
-        );
+        logger.info("Embedding handler: nothing to process", {
+          skipped: results.skipped
+        });
         return results;
       }
 
@@ -360,9 +360,11 @@ export const embeddingFunction = inngest.createFunction(
         });
       }
 
-      logger.info(
-        `Embedding handler: processed=${results.processed}, skipped=${results.skipped}, failed=${results.failed}`
-      );
+      logger.info("Embedding handler finished", {
+        processed: results.processed,
+        skipped: results.skipped,
+        failed: results.failed
+      });
 
       return results;
     });

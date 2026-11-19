@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getAnsiColorFormatter, type TextFormatter } from "@logtape/logtape";
+import {
+  getAnsiColorFormatter,
+  type LogLevel,
+  type TextFormatter
+} from "@logtape/logtape";
+import { CARBON_ROOT_CATEGORY } from "./logger";
 
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
@@ -18,7 +23,7 @@ function statusColor(status: number): string {
 }
 
 /** Per-level color for the `LEVEL` field. */
-const LEVEL_COLOR: Record<string, string> = {
+const LEVEL_COLOR: Record<LogLevel, string> = {
   trace: "\x1b[90m",
   debug: "\x1b[36m",
   info: "\x1b[32m",
@@ -89,11 +94,11 @@ export const httpDevFormatter: TextFormatter = getAnsiColorFormatter({
     }
 
     const clock = clockTime(record.timestamp);
-    const levelColor = LEVEL_COLOR[record.level] ?? RESET;
+    const levelColor = LEVEL_COLOR[record.level];
     const label = record.level.toUpperCase();
-    // Drop the shared `carbon` root so the module reads `[http]`, `[erp.sales]`.
+    // Drop the shared root so the module reads `[http]`, `[erp.sales]`.
     const segments =
-      record.category[0] === "carbon"
+      record.category[0] === CARBON_ROOT_CATEGORY
         ? record.category.slice(1)
         : record.category;
     const module = segments.join(".");

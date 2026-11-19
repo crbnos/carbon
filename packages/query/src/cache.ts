@@ -168,7 +168,10 @@ export const loaderQuery = <T>(
       : loaderQueryKey(url),
   queryFn: () => fetchJson<T>(url),
   staleTime: options?.staleTime ?? RefreshRate.Low,
-  gcTime: LOADER_GC_TIME
+  // No collection timer on the server: each render's QueryClient goes with its
+  // request, and a 30-minute timer would keep it, and the render, alive.
+  gcTime:
+    typeof window === "undefined" ? Number.POSITIVE_INFINITY : LOADER_GC_TIME
 });
 
 /**

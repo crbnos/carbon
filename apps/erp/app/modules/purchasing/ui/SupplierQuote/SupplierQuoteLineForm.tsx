@@ -51,6 +51,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { purchaseLineAccountClasses } from "~/modules/invoicing/invoicing.models";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
@@ -66,12 +67,14 @@ type SupplierQuoteLineFormProps = {
     itemType: MethodItemType;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SupplierQuoteLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SupplierQuoteLineFormProps) => {
   const { t } = useLingui();
@@ -211,6 +214,7 @@ const SupplierQuoteLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             defaultCollapsed={false}
             isCollapsible={isEditing}
@@ -426,7 +430,7 @@ const SupplierQuoteLineForm = ({
                             name="accountId"
                             label={t`GL Account`}
                             termId="purchase-indirect-gl-account"
-                            classes={["Asset", "Expense"]}
+                            classes={purchaseLineAccountClasses}
                             isOptional={false}
                           />
 
@@ -490,8 +494,9 @@ const SupplierQuoteLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
-      {isEditing && deleteDisclosure.isOpen && initialValues.id && (
+      {isEditing && initialValues.id && (
         <DeleteSupplierQuoteLine
+          isOpen={deleteDisclosure.isOpen}
           line={{
             itemId: itemData.itemId ?? "",
             id: initialValues.id

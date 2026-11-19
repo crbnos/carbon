@@ -444,7 +444,7 @@ export default function AnalyticsReportRoute() {
     currentUserId,
     scopeAccounts
   } = useLoaderData<typeof loader>();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { locale } = useLocale();
   const [searchParams] = useUrlParams();
 
@@ -591,6 +591,12 @@ export default function AnalyticsReportRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        {i18n._(
+          breadcrumbByReportKey[reportKey as AnalyticsReportKey] ??
+            msg`Analytics`
+        )}
+      </h1>
       <PivotControlBar
         reportKey={reportKey}
         dimensions={dimensions}

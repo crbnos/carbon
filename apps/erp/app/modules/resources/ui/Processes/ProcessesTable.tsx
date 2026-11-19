@@ -157,7 +157,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
                 if (!workCenter) return [];
                 return {
                   label: workCenter.label,
-                  onClick: () => navigate(path.to.workCenter(workCenter.value))
+                  to: path.to.workCenter(workCenter.value)
                 };
               }
             )}
@@ -224,7 +224,10 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
         header: t`Complete All`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.completeAllOnScan ?? false} />
+            <Checkbox
+              aria-label={t`Complete All`}
+              isChecked={row.original.completeAllOnScan ?? false}
+            />
           </div>
         ),
         meta: {
@@ -243,7 +246,10 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
         header: t`Batchable`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.batchable ?? false} />
+            <Checkbox
+              aria-label={t`Batchable`}
+              isChecked={row.original.batchable ?? false}
+            />
           </div>
         ),
         meta: {
@@ -262,7 +268,10 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
         header: t`Requires Ability`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.requiresAbility ?? false} />
+            <Checkbox
+              aria-label={t`Requires Ability`}
+              isChecked={row.original.requiresAbility ?? false}
+            />
           </div>
         ),
         meta: {
@@ -281,7 +290,10 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
         header: t`Active`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.active ?? true} />
+            <Checkbox
+              aria-label={t`Active`}
+              isChecked={row.original.active ?? true}
+            />
           </div>
         ),
         meta: {
@@ -332,7 +344,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [workCenters, people, customColumns, navigate, t]);
+  }, [workCenters, people, customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

@@ -5,12 +5,35 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 import {
+  bodyRowPositions,
   buildColumnMaps,
   exportOnlyColumn,
+  getColumnLabel,
   hasUniqueRowIds,
   isServerSortable,
-  selectExportColumns
+  selectExportColumns,
+  serverExportLinks
 } from "./utils";
+
+describe("serverExportLinks", () => {
+  it("keeps list filters and view columns but starts the download at the first page", () => {
+    const links = serverExportLinks({
+      search: "?filter=status:eq:Posted&sort=dateDue:asc&after=old&count=exact",
+      urls: { csv: "/x/invoicing/sales.csv", xlsx: "/x/invoicing/sales.xlsx" },
+      columns: [{ key: "invoiceId", label: "Invoice Number" }]
+    });
+    for (const href of [links.csv, links.xlsx]) {
+      const params = new URL(href, "http://localhost").searchParams;
+      expect(params.get("filter")).toBe("status:eq:Posted");
+      expect(params.get("sort")).toBe("dateDue:asc");
+      expect(params.has("after")).toBe(false);
+      expect(params.has("count")).toBe(false);
+      expect(JSON.parse(params.get("columns") ?? "null")).toEqual([
+        { key: "invoiceId", label: "Invoice Number" }
+      ]);
+    }
+  });
+});
 
 type Row = {
   id: string;
@@ -137,6 +160,32 @@ describe("buildColumnMaps", () => {
   });
 });
 
+describe("getColumnLabel", () => {
+  it("names a column by its string header, else its filterHeader", () => {
+    const col = (c: ColumnDef<Row>) => c as ColumnDef<Row, unknown>;
+    expect(getColumnLabel(col({ accessorKey: "type", header: "Type" }))).toBe(
+      "Type"
+    );
+    expect(
+      getColumnLabel(
+        col({
+          accessorKey: "type",
+          header: () => null,
+          meta: { filterHeader: "Type" }
+        })
+      )
+    ).toBe("Type");
+    expect(
+      getColumnLabel(
+        col({ accessorKey: "type", header: "", meta: { filterHeader: "Type" } })
+      )
+    ).toBe("Type");
+    expect(
+      getColumnLabel(col({ accessorKey: "type", header: () => null }))
+    ).toBe(undefined);
+  });
+});
+
 describe("isServerSortable", () => {
   it("is true for a plain accessor column", () => {
     expect(isServerSortable<Row>({ accessorKey: "type", header: "Type" })).toBe(
@@ -256,5 +305,46 @@ describe("hasUniqueRowIds", () => {
     expect(hasUniqueRowIds([{ itemId: "a" }, { itemId: "a" }], "itemId")).toBe(
       false
     );
+  });
+});
+
+describe("bodyRowPositions", () => {
+  const plain = { groupHeader: false, hidden: false, expanded: false };
+
+  it("numbers plain rows one after another", () => {
+    expect(bodyRowPositions([plain, plain, plain])).toEqual({
+      starts: [0, 1, 2],
+      total: 3
+    });
+  });
+
+  it("counts an expanded row after its row", () => {
+    expect(
+      bodyRowPositions([plain, { ...plain, expanded: true }, plain])
+    ).toEqual({ starts: [0, 1, 3], total: 4 });
+  });
+
+  it("counts a group header before the row that starts the group", () => {
+    expect(
+      bodyRowPositions([
+        { ...plain, groupHeader: true },
+        plain,
+        { ...plain, groupHeader: true }
+      ])
+    ).toEqual({ starts: [0, 2, 3], total: 5 });
+  });
+
+  it("counts only the header of a collapsed group, even when its rows are expanded", () => {
+    expect(
+      bodyRowPositions([
+        { groupHeader: true, hidden: true, expanded: true },
+        { groupHeader: false, hidden: true, expanded: false },
+        { ...plain, groupHeader: true }
+      ])
+    ).toEqual({ starts: [0, 1, 1], total: 3 });
+  });
+
+  it("is empty for no rows", () => {
+    expect(bodyRowPositions([])).toEqual({ starts: [], total: 0 });
   });
 });

@@ -4,13 +4,12 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { moduleMeta } from "~/utils/meta";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | People" }];
-};
+export const meta = moduleMeta("People");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {

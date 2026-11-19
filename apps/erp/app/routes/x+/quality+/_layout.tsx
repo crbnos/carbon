@@ -4,18 +4,16 @@
 
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Quality" }];
-};
+export const meta = moduleMeta("Quality");
 
 function QualitySidebar() {
   const { groups } = useQualitySubmodules();

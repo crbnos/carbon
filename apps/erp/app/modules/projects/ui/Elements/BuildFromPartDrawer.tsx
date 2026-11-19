@@ -63,19 +63,8 @@ function fitsSource(item: ItemRow, source: BuildFromPartSource) {
     : item.replenishmentSystem !== "Buy";
 }
 
-/**
- * Build from part: creates System elements from a serial's build history,
- * an item's make method or a template's elements, under a parent element.
- * The preview lists what the build creates before anything is written.
- */
-export function BuildFromPartDrawer({
-  projectId,
-  elements,
-  defaultParentId,
-  endpoint,
-  initial,
-  onClose
-}: {
+type BuildFromPartDrawerProps = {
+  open?: boolean;
   projectId: string;
   /** The project's elements, for the parent picker. */
   elements: ParentOption[];
@@ -90,7 +79,37 @@ export function BuildFromPartDrawer({
     trackedEntityId?: string | null;
   };
   onClose: () => void;
-}) {
+};
+
+/**
+ * Build from part: creates System elements from a serial's build history,
+ * an item's make method or a template's elements, under a parent element.
+ * The preview lists what the build creates before anything is written.
+ */
+export function BuildFromPartDrawer({
+  open = true,
+  onClose,
+  ...props
+}: BuildFromPartDrawerProps) {
+  return (
+    <ModalDrawerProvider type="drawer">
+      <ModalDrawer open={open} onOpenChange={(open) => !open && onClose()}>
+        <ModalDrawerContent>
+          <BuildFromPartBody onClose={onClose} {...props} />
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
+  );
+}
+
+function BuildFromPartBody({
+  projectId,
+  elements,
+  defaultParentId,
+  endpoint,
+  initial,
+  onClose
+}: Omit<BuildFromPartDrawerProps, "open">) {
   const { t } = useLingui();
   const [items] = useItems();
   const buildPath = endpoint ?? path.to.projectElementsBuild(projectId);
@@ -234,207 +253,194 @@ export function BuildFromPartDrawer({
     );
 
   return (
-    <ModalDrawerProvider type="drawer">
-      <ModalDrawer open onOpenChange={(open) => !open && onClose()}>
-        <ModalDrawerContent>
-          <ValidatedForm
-            validator={buildFromPartValidator}
-            method="post"
-            action={buildPath}
-            fetcher={submitFetcher}
-            defaultValues={{
-              source,
-              itemId: itemId ?? "",
-              trackedEntityId: trackedEntityId ?? "",
-              depth,
-              includeBought,
-              parentId: parentId ?? ""
+    <ValidatedForm
+      validator={buildFromPartValidator}
+      method="post"
+      action={buildPath}
+      fetcher={submitFetcher}
+      defaultValues={{
+        source,
+        itemId: itemId ?? "",
+        trackedEntityId: trackedEntityId ?? "",
+        depth,
+        includeBought,
+        parentId: parentId ?? ""
+      }}
+      className="flex flex-col h-full"
+    >
+      <ModalDrawerHeader>
+        <ModalDrawerTitle>
+          <Trans>Build from Part</Trans>
+        </ModalDrawerTitle>
+        <ModalDrawerDescription>
+          <Trans>
+            Add the components of a serial, an item or a template as elements.
+          </Trans>
+        </ModalDrawerDescription>
+      </ModalDrawerHeader>
+      <ModalDrawerBody>
+        <VStack spacing={4}>
+          <Select
+            name="source"
+            label={t`Build from`}
+            options={sourceOptions}
+            onChange={(next) =>
+              next && changeSource(next.value as BuildFromPartSource)
+            }
+          />
+          {source !== "Template" && (
+            <Combobox
+              name="itemId"
+              label={t`Item`}
+              isRequired
+              placeholder={t`Choose an item`}
+              options={itemOptions}
+              value={itemId ?? ""}
+              onChange={(next) => {
+                setItemId(next?.value ?? null);
+                setTrackedEntityId(null);
+              }}
+            />
+          )}
+          {source === "Serial" && (
+            <Combobox
+              name="trackedEntityId"
+              label={t`Serial`}
+              isRequired
+              isReadOnly={!itemId}
+              placeholder={
+                itemId ? t`Search by serial` : t`Choose the item first`
+              }
+              options={serialOptions}
+              value={trackedEntityId ?? ""}
+              onChange={(next) => setTrackedEntityId(next?.value ?? null)}
+            />
+          )}
+          {source === "Template" && (
+            <Combobox
+              name="templateProjectId"
+              label={t`Template`}
+              isRequired
+              placeholder={t`Choose a template`}
+              options={(data?.templates ?? []).map((template) => ({
+                value: template.id,
+                label: template.name,
+                helper: template.identifier ?? undefined
+              }))}
+              value={templateProjectId ?? ""}
+              onChange={(next) => setTemplateProjectId(next?.value ?? null)}
+            />
+          )}
+          <NumberControlled
+            name="depth"
+            label={t`Levels`}
+            isRequired
+            helperText={t`How many levels of components below the part`}
+            minValue={1}
+            maxValue={BUILD_FROM_PART_MAX_DEPTH}
+            value={depth}
+            onChange={(next) => {
+              if (Number.isFinite(next)) setDepth(next);
             }}
-            className="flex flex-col h-full"
-          >
-            <ModalDrawerHeader>
-              <ModalDrawerTitle>
-                <Trans>Build from Part</Trans>
-              </ModalDrawerTitle>
-              <ModalDrawerDescription>
-                <Trans>
-                  Add the components of a serial, an item or a template as
-                  elements.
-                </Trans>
-              </ModalDrawerDescription>
-            </ModalDrawerHeader>
-            <ModalDrawerBody>
-              <VStack spacing={4}>
-                <Select
-                  name="source"
-                  label={t`Build from`}
-                  options={sourceOptions}
-                  onChange={(next) =>
-                    next && changeSource(next.value as BuildFromPartSource)
-                  }
-                />
-                {source !== "Template" && (
-                  <Combobox
-                    name="itemId"
-                    label={t`Item`}
-                    isRequired
-                    placeholder={t`Choose an item`}
-                    options={itemOptions}
-                    value={itemId ?? ""}
-                    onChange={(next) => {
-                      setItemId(next?.value ?? null);
-                      setTrackedEntityId(null);
-                    }}
-                  />
-                )}
-                {source === "Serial" && (
-                  <Combobox
-                    name="trackedEntityId"
-                    label={t`Serial`}
-                    isRequired
-                    isReadOnly={!itemId}
-                    placeholder={
-                      itemId ? t`Search by serial` : t`Choose the item first`
-                    }
-                    options={serialOptions}
-                    value={trackedEntityId ?? ""}
-                    onChange={(next) => setTrackedEntityId(next?.value ?? null)}
-                  />
-                )}
-                {source === "Template" && (
-                  <Combobox
-                    name="templateProjectId"
-                    label={t`Template`}
-                    isRequired
-                    placeholder={t`Choose a template`}
-                    options={(data?.templates ?? []).map((template) => ({
-                      value: template.id,
-                      label: template.name,
-                      helper: template.identifier ?? undefined
-                    }))}
-                    value={templateProjectId ?? ""}
-                    onChange={(next) =>
-                      setTemplateProjectId(next?.value ?? null)
-                    }
-                  />
-                )}
-                <NumberControlled
-                  name="depth"
-                  label={t`Levels`}
-                  isRequired
-                  helperText={t`How many levels of components below the part`}
-                  minValue={1}
-                  maxValue={BUILD_FROM_PART_MAX_DEPTH}
-                  value={depth}
-                  onChange={(next) => {
-                    if (Number.isFinite(next)) setDepth(next);
-                  }}
-                />
-                {source !== "Template" && (
-                  <Boolean
-                    name="includeBought"
-                    label={t`Include bought components`}
-                    onChange={setIncludeBought}
-                  />
-                )}
-                <Combobox
-                  name="parentId"
-                  label={t`Add under`}
-                  placeholder={t`Top level`}
-                  isOptional
-                  options={parentOptions}
-                  value={parentId ?? ""}
-                  onChange={(next) => setParentId(next?.value ?? null)}
-                />
+          />
+          {source !== "Template" && (
+            <Boolean
+              name="includeBought"
+              label={t`Include bought components`}
+              onChange={setIncludeBought}
+            />
+          )}
+          <Combobox
+            name="parentId"
+            label={t`Add under`}
+            placeholder={t`Top level`}
+            isOptional
+            options={parentOptions}
+            value={parentId ?? ""}
+            onChange={(next) => setParentId(next?.value ?? null)}
+          />
 
-                {(data?.error || submitError) && (
-                  <Alert variant="destructive">
-                    <LuTriangleAlert />
-                    <AlertDescription>
-                      {submitError ?? data?.error}
-                    </AlertDescription>
-                  </Alert>
-                )}
+          {(data?.error || submitError) && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{submitError ?? data?.error}</AlertDescription>
+            </Alert>
+          )}
 
-                <div className="flex w-full flex-col gap-2 border-t border-border pt-4">
-                  {isLoading && !data ? (
-                    <div className="flex h-24 items-center justify-center">
-                      <Spinner />
-                    </div>
-                  ) : !data?.preview ? (
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>Choose what to build from to see a preview.</Trans>
-                    </p>
-                  ) : rows.length === 0 ? (
-                    <div className="flex flex-col items-start gap-2">
-                      <p className="text-sm font-medium">
-                        <Trans>Nothing to build</Trans>
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {emptyReason}
-                      </p>
-                      {source === "Serial" && itemId && (
-                        <UseBillOfMaterialsButton
-                          onSwitch={() => changeSource("Item")}
-                        />
+          <div className="flex w-full flex-col gap-2 border-t border-border pt-4">
+            {isLoading && !data ? (
+              <div className="flex h-24 items-center justify-center">
+                <Spinner />
+              </div>
+            ) : !data?.preview ? (
+              <p className="text-sm text-muted-foreground">
+                <Trans>Choose what to build from to see a preview.</Trans>
+              </p>
+            ) : rows.length === 0 ? (
+              <div className="flex flex-col items-start gap-2">
+                <p className="text-sm font-medium">
+                  <Trans>Nothing to build</Trans>
+                </p>
+                <p className="text-sm text-muted-foreground">{emptyReason}</p>
+                {source === "Serial" && itemId && (
+                  <UseBillOfMaterialsButton
+                    onSwitch={() => changeSource("Item")}
+                  />
+                )}
+              </div>
+            ) : (
+              <>
+                <p className="text-sm font-medium">
+                  <Plural
+                    value={rows.length}
+                    one="Creates # element"
+                    other="Creates # elements"
+                  />
+                </p>
+                {data.preview.skippedLines > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    <Plural
+                      value={data.preview.skippedLines}
+                      one="# bill of materials line is left out: its item has no cost record"
+                      other="# bill of materials lines are left out: their items have no cost record"
+                    />
+                  </p>
+                )}
+                <ul className="flex max-h-[40dvh] flex-col overflow-y-auto rounded-lg border border-border py-1 text-sm">
+                  {rows.map((row) => (
+                    <li
+                      key={row.id}
+                      className="flex min-w-0 items-center gap-2 py-1 pr-3"
+                      style={{
+                        paddingLeft: `${0.75 + (depthOf.get(row.id) ?? 0) * 1.25}rem`
+                      }}
+                    >
+                      <ElementTypeIcon type={row.type} />
+                      <span className="truncate">{row.name}</span>
+                      {row.itemId && (
+                        <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                          {itemLabel.get(row.itemId)}
+                        </span>
                       )}
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium">
-                        <Plural
-                          value={rows.length}
-                          one="Creates # element"
-                          other="Creates # elements"
-                        />
-                      </p>
-                      {data.preview.skippedLines > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          <Plural
-                            value={data.preview.skippedLines}
-                            one="# bill of materials line is left out: its item has no cost record"
-                            other="# bill of materials lines are left out: their items have no cost record"
-                          />
-                        </p>
-                      )}
-                      <ul className="flex max-h-[40dvh] flex-col overflow-y-auto rounded-lg border border-border py-1 text-sm">
-                        {rows.map((row) => (
-                          <li
-                            key={row.id}
-                            className="flex min-w-0 items-center gap-2 py-1 pr-3"
-                            style={{
-                              paddingLeft: `${0.75 + (depthOf.get(row.id) ?? 0) * 1.25}rem`
-                            }}
-                          >
-                            <ElementTypeIcon type={row.type} />
-                            <span className="truncate">{row.name}</span>
-                            {row.itemId && (
-                              <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-muted-foreground">
-                                {itemLabel.get(row.itemId)}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                </div>
-              </VStack>
-            </ModalDrawerBody>
-            <ModalDrawerFooter>
-              <HStack>
-                <Submit isDisabled={rows.length === 0 || isLoading}>
-                  <Trans>Create Elements</Trans>
-                </Submit>
-                <Button size="md" variant="solid" onClick={onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </HStack>
-            </ModalDrawerFooter>
-          </ValidatedForm>
-        </ModalDrawerContent>
-      </ModalDrawer>
-    </ModalDrawerProvider>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </VStack>
+      </ModalDrawerBody>
+      <ModalDrawerFooter>
+        <HStack>
+          <Submit isDisabled={rows.length === 0 || isLoading}>
+            <Trans>Create Elements</Trans>
+          </Submit>
+          <Button size="md" variant="solid" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+        </HStack>
+      </ModalDrawerFooter>
+    </ValidatedForm>
   );
 }
 

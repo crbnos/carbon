@@ -143,60 +143,52 @@ const RevenueRecognitionRunHeader = () => {
         }
       />
 
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteRevenueRecognitionRun(runId)}
-          isOpen={deleteModal.isOpen}
-          name={run.runId}
-          text={t`Are you sure you want to delete ${run.runId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={() => {
-            deleteModal.onClose();
-            navigate(RUN_PAGES[run.type].listPath);
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteRevenueRecognitionRun(runId)}
+        isOpen={deleteModal.isOpen}
+        name={run.runId}
+        text={t`Are you sure you want to delete ${run.runId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={() => {
+          deleteModal.onClose();
+          navigate(RUN_PAGES[run.type].listPath);
+        }}
+      />
 
-      {reverseModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.reverseRevenueRecognitionRun(runId)}
-          isOpen={reverseModal.isOpen}
-          name={run.runId}
-          title={t`Reverse ${run.runId}`}
-          deleteText={t`Reverse Run`}
-          text={t`This will reverse the journals of ${run.runId} and return it to Draft. You can then recalculate, post or delete it.`}
-          onCancel={reverseModal.onClose}
-          onSubmit={reverseModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.reverseRevenueRecognitionRun(runId)}
+        isOpen={reverseModal.isOpen}
+        name={run.runId}
+        title={t`Reverse ${run.runId}`}
+        deleteText={t`Reverse Run`}
+        text={t`This will reverse the journals of ${run.runId} and return it to Draft. You can then recalculate, post or delete it.`}
+        onCancel={reverseModal.onClose}
+        onSubmit={reverseModal.onClose}
+      />
 
-      {recalculateModal.isOpen && (
-        <Confirm
-          action={path.to.recalculateRevenueRecognitionRun(runId)}
-          isOpen={recalculateModal.isOpen}
-          title={t`Recalculate Run`}
-          text={t`This will rebuild ${run.runId} from its schedule as it is now: every schedule row due on or before ${formatDate(run.periodEnd)} that no other run holds.`}
-          confirmText={t`Recalculate`}
-          onCancel={recalculateModal.onClose}
-          onSubmit={recalculateModal.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.recalculateRevenueRecognitionRun(runId)}
+        isOpen={recalculateModal.isOpen}
+        title={t`Recalculate Run`}
+        text={t`This will rebuild ${run.runId} from its schedule as it is now: every schedule row due on or before ${formatDate(run.periodEnd)} that no other run holds.`}
+        confirmText={t`Recalculate`}
+        onCancel={recalculateModal.onClose}
+        onSubmit={recalculateModal.onClose}
+      />
 
-      {repeatModal.isOpen && (
-        <Confirm
-          action={path.to.repeatRevenueRecognitionRun(runId)}
-          isOpen={repeatModal.isOpen}
-          title={t`Repeat Run`}
-          text={
-            run.type === "Lease"
-              ? t`This will create a draft lease run for the next period, ending ${formatDate(nextPeriodEnd)}. Every lease and rental schedule row due on or before that date will be included.`
-              : t`This will create a draft revenue recognition run for the next period, ending ${formatDate(nextPeriodEnd)}. Every schedule row due on or before that date will be included.`
-          }
-          confirmText={t`Create Run`}
-          onCancel={repeatModal.onClose}
-          onSubmit={repeatModal.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.repeatRevenueRecognitionRun(runId)}
+        isOpen={repeatModal.isOpen}
+        title={t`Repeat Run`}
+        text={
+          run.type === "Lease"
+            ? t`This will create a draft lease run for the next period, ending ${formatDate(nextPeriodEnd)}. Every lease and rental schedule row due on or before that date will be included.`
+            : t`This will create a draft revenue recognition run for the next period, ending ${formatDate(nextPeriodEnd)}. Every schedule row due on or before that date will be included.`
+        }
+        confirmText={t`Create Run`}
+        onCancel={repeatModal.onClose}
+        onSubmit={repeatModal.onClose}
+      />
     </>
   );
 };

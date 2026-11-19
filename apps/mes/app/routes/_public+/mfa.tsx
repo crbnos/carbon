@@ -132,6 +132,7 @@ type MfaResult = { success: boolean; message?: string };
  * re-run, and the user would be staring at a full input that does nothing.
  */
 function MfaCodeField({ result }: { result?: MfaResult }) {
+  const { t } = useLingui();
   const [, setCode] = useControlField<string>("code");
   const lastResult = useRef(result);
 
@@ -141,7 +142,14 @@ function MfaCodeField({ result }: { result?: MfaResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" autoFocus />;
+  return (
+    <InputOTP
+      name="code"
+      label=""
+      aria-label={t`Authenticator code`}
+      autoFocus
+    />
+  );
 }
 
 export default function MfaRoute() {

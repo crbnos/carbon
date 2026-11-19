@@ -23,7 +23,7 @@ import {
   getLocalTimeZone
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { LuInfo } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
@@ -35,6 +35,7 @@ import {
   ScheduleMatrixDnd
 } from "~/components/ScheduleMatrix";
 import { usePermissions } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { path } from "~/utils/path";
 import { PeopleChip } from "./PeopleChip";
 import { PeopleHoursModal } from "./PeopleHoursModal";
@@ -140,7 +141,11 @@ export function PeopleMatrix({
   const permissions = usePermissions();
   const submit = useSubmit();
   const canEdit = permissions.can("update", "production");
-  const [tab, setTab] = useState<"assignments" | "coverage">("assignments");
+  const [tab, setTab] = usePersistentPageTab(
+    "people-matrix",
+    ["assignments", "coverage"],
+    "assignments"
+  );
 
   const today = calendarToday(getLocalTimeZone()).toString();
 

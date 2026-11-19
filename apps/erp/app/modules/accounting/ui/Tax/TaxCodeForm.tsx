@@ -56,6 +56,7 @@ type TaxCodeFormValues = z.infer<typeof taxCodeValidator>;
 type TaxCodeFormProps = {
   initialValues: TaxCodeFormValues;
   taxAuthorities: { id: string; name: string }[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -75,6 +76,7 @@ const TAX_PAID_CLASSES: AccountClass[] = ["Asset"];
 const TaxCodeForm = ({
   initialValues,
   taxAuthorities,
+  open = true,
   onClose
 }: TaxCodeFormProps) => {
   const { t } = useLingui();
@@ -154,7 +156,7 @@ const TaxCodeForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

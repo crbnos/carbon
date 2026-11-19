@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { round } from "./precision.ts";
 import { consumableInWholeAssemblies } from "./supersession-pick.ts";
 
 export type LinesideClaim = {
@@ -101,6 +102,146 @@ export function splitTakeByBin(
     { storageUnitId: budget.storageUnitId, quantity: fromOwn },
     { storageUnitId: budget.sharedStorageUnitId, quantity: fromShared }
   ];
+}
+
+/** An item's untracked on-hand in one bin (`null`: no storage unit) and
+ *  stripe (`projectId` null or absent: common stock). */
+export type BinStock = {
+  storageUnitId: string | null;
+  projectId?: string | null;
+  nettable: boolean;
+  quantity: number;
+};
+
+export type StripedBinDraw = {
+  storageUnitId: string | null;
+  projectId: string | null;
+  quantity: number;
+};
+
+// Each candidate bin's on-hand: nettable bins and no storage unit, and the
+// preferred bin even when it is non-nettable, since someone named it.
+function candidateOnHand(
+  bins: readonly BinStock[],
+  preferred: string | null
+): Map<string | null, number> {
+  const onHand = new Map<string | null, number>();
+  for (const bin of bins) {
+    if (bin.storageUnitId !== null && !bin.nettable) {
+      if (bin.storageUnitId !== preferred) continue;
+    }
+    onHand.set(
+      bin.storageUnitId,
+      (onHand.get(bin.storageUnitId) ?? 0) + bin.quantity
+    );
+  }
+  return onHand;
+}
+
+// The bins holding stock, fullest first (no storage unit sorts as "").
+function fullestFirst(
+  onHand: Map<string | null, number>
+): [string | null, number][] {
+  return [...onHand.entries()]
+    .filter(([, qty]) => round(qty) > 0)
+    .sort(([a, qa], [b, qb]) => qb - qa || (a ?? "").localeCompare(b ?? ""));
+}
+
+// With no bin chosen, no storage unit is a candidate like any other.
+function drawOrder(
+  bins: readonly BinStock[],
+  preferred: string | null
+): [string | null, number][] {
+  const onHand = candidateOnHand(bins, preferred);
+  if (preferred === null) return fullestFirst(onHand);
+  const preferredOnHand = onHand.get(preferred) ?? 0;
+  onHand.delete(preferred);
+  return [[preferred, preferredOnHand], ...fullestFirst(onHand)];
+}
+
+/**
+ * Where an untracked draw comes from when no bin rule (strict backflush)
+ * decides it: the demand's project stock in every bin, then common stock.
+ * Within a stripe the preferred bin (used even when non-nettable, since someone
+ * named it) gives what it holds, then the nettable bins and no storage unit,
+ * fullest first. A shortfall goes to the last stripe, on the preferred bin,
+ * else the first bin drawn, else no storage unit.
+ */
+export function planStripedUntrackedDraw(args: {
+  bins: readonly BinStock[];
+  stripes: readonly (string | null)[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): StripedBinDraw[] {
+  const { preferredStorageUnitId: preferred } = args;
+  const stripes = args.stripes.length > 0 ? args.stripes : [null];
+  let left = round(args.quantity);
+  if (left <= 0) return [];
+
+  const draws: StripedBinDraw[] = [];
+  for (const stripe of stripes) {
+    if (left <= 0) break;
+    const stripeBins = args.bins.filter(
+      (bin) => (bin.projectId ?? null) === stripe
+    );
+    for (const [storageUnitId, available] of drawOrder(stripeBins, preferred)) {
+      if (left <= 0) break;
+      const take = round(Math.min(left, Math.max(0, available)));
+      if (take <= 0) continue;
+      draws.push({ storageUnitId, projectId: stripe, quantity: take });
+      left = round(left - take);
+    }
+  }
+
+  if (left > 0) {
+    const shortStripe = stripes[stripes.length - 1] ?? null;
+    const shortBin = preferred ?? draws[0]?.storageUnitId ?? null;
+    const existing = draws.find(
+      (d) => d.storageUnitId === shortBin && d.projectId === shortStripe
+    );
+    if (existing) existing.quantity = round(existing.quantity + left);
+    else
+      draws.push({
+        storageUnitId: shortBin,
+        projectId: shortStripe,
+        quantity: left
+      });
+  }
+  return draws;
+}
+
+/** The advisory lock key of untracked draws of one item at one location
+ *  (`lockUntrackedDraws`); SQL `backflush_job_materials` builds the same key. */
+export function untrackedDrawLockKey(
+  companyId: string,
+  locationId: string,
+  itemId: string
+): string {
+  return `untracked-draw:${companyId}:${locationId}:${itemId}`;
+}
+
+/**
+ * The one bin a document line that ships untracked stock should name, such as
+ * a shipment line. The preferred bin when it holds `quantity`, else the
+ * fullest bin that holds it, else the fullest bin with any stock, else the
+ * preferred bin. The candidates are the ones `planStripedUntrackedDraw`
+ * guesses from. Returns null for no storage unit.
+ */
+export function chooseSourceBin(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): string | null {
+  const { preferredStorageUnitId: preferred } = args;
+  const onHand = candidateOnHand(args.bins, preferred);
+  const need = round(args.quantity);
+  if (round(onHand.get(preferred) ?? 0) >= need) return preferred;
+  const stocked = fullestFirst(onHand);
+  const covering = stocked.find(([, qty]) => round(qty) >= need);
+  // A chosen bin may be no storage unit (`null`): only no candidate at all
+  // falls back to the preferred bin.
+  const chosen = covering ?? stocked[0];
+  return chosen ? chosen[0] : preferred;
 }
 
 export function orderOldFirst(

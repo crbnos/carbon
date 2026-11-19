@@ -14,7 +14,10 @@ import { getFailureModesList } from "~/modules/resources/resources.service";
 import MaintenanceDispatchForm from "~/modules/resources/ui/Maintenance/MaintenanceDispatchForm";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Maintenance Dispatch");
 
 export const handle: Handle = {
   breadcrumb: msg`Maintenance`,

@@ -129,6 +129,7 @@ export function CancelSalesOrderModal({
             <VStack spacing={2}>
               <HStack className="px-1">
                 <Checkbox
+                  aria-label={t`Select all jobs`}
                   isChecked={allSelected}
                   isIndeterminate={someSelected}
                   onCheckedChange={toggleAll}

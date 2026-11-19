@@ -83,6 +83,7 @@ export function PlanningPurchaseOrderApprovalCard({
             </span>
           </VStack>
           <Switch
+            aria-label={t`Skip approval for planning purchase orders`}
             checked={enabled}
             disabled={fetcher.state !== "idle"}
             onCheckedChange={(checked) => {

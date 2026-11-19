@@ -79,7 +79,7 @@ export const cleanupFunction = inngest.createFunction(
     const serviceRole = getCarbonServiceRole();
 
     await step.run("expire-quotes-and-rfqs", async () => {
-      logger.info(`Starting cleanup tasks: ${new Date().toISOString()}`);
+      logger.info("Starting cleanup tasks");
 
       // Clean up expired quotes
       logger.info("Checking for expired quotes...");
@@ -368,7 +368,7 @@ export const cleanupFunction = inngest.createFunction(
       }
       logger.info("Print job cleanup completed");
 
-      logger.info(`Cleanup tasks completed: ${new Date().toISOString()}`);
+      logger.info("Cleanup tasks completed");
     });
 
     await step.run("purge-old-agent-threads", async () => {
