@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {# कार्य दिवस के लिए 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {लक्ष्य से # दिन पीछे} other {लक्ष्य से # दिन पीछे}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# पंक्ति को उसके ऑर्डर से बनाया गया अनुबंध बिल करता है} other {# पंक्तियों को उनके ऑर्डर से बनाए गए अनुबंध बिल करते हैं}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करता है} other {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करते हैं}}"
 
@@ -1812,6 +1815,9 @@ msgstr "एक उपभोग्य सामग्री एक भौति�
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "एक अनुबंध पंक्ति पर एक अनुबंध पंक्ति आइटम संख्या: 4 अंक, जैसे 0001। एक परियोजना बिलिंग चालान प्रति CLIN एक अलग राशि दिखाता है।"
+
+msgid "A contract made from the order bills this line"
+msgstr "ऑर्डर से बनाया गया अनुबंध इस पंक्ति को बिल करता है"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D कर रिपोर्ट के लिए एक अनुबंध सेटिंग। एक वित्तपोषित अनुबंध के तहत एक प्रत्यक्ष परियोजना की लागत एक योग्य अनुसंधान व्यय नहीं है; डिफ़ॉल्ट पर, एक लागत-अतिरिक्त या समय और सामग्री पंक्ति वाला अनुबंध वित्तपोषित के रूप में गिना जाता है।"

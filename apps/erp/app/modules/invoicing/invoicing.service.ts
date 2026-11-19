@@ -877,17 +877,20 @@ const UNPOSTED_INVOICE_STATUSES = new Set(["Draft", "Pending"]);
 /**
  * What a draft sales invoice's post checks (`salesInvoicePostChecks`) read
  * beyond the invoice: each order line it bills (ordered, left to invoice,
- * what other unposted invoices bill, and each flat charge with what others
- * already billed of it), each order's shipping no other invoice bills, and
- * today's rate for the invoice's currency. "Other" means every non-voided
- * invoice of the order but this one, drafts included, counted as
- * `billedSalesOrderCharges` counts them when an order is invoiced.
+ * what other unposted invoices bill, whether a contract bills it, and each
+ * flat charge with what others already billed of it), each order's shipping
+ * no other invoice bills, and today's rate for the invoice's currency.
+ * "Other" means every non-voided invoice of the order but this one, drafts
+ * included, counted as `billedSalesOrderCharges` counts them when an order
+ * is invoiced.
  *
- * The order tables need `sales_view`, which an invoicing user may not hold, so
- * the caller passes the service role rather than tie the checks to a second
- * module's permission; every read is scoped to the company. It reads only the orders and order lines this
- * invoice's own lines link to, from ids the server loaded, never from the
- * request: keep it that way, since whatever it returns reaches the browser.
+ * The order and contract tables need `sales_view`, which an invoicing user
+ * may not hold, so the caller passes the service role rather than tie the
+ * checks to a second module's permission; every read is scoped to the
+ * company. It reads only the orders, order lines and contract lines of the
+ * order lines this invoice's own lines link to, from ids the server loaded,
+ * never from the request, and returns only whether a contract bills each
+ * one: keep it that way, since whatever it returns reaches the browser.
  */
 export async function getSalesInvoicePostFacts(
   client: SupabaseClient<Database>,
@@ -907,7 +910,7 @@ export async function getSalesInvoicePostFacts(
   ];
   const none = { data: [], error: null };
 
-  const [rate, orderLines, orders, orderShipments, otherLines] =
+  const [rate, orderLines, contractLines, orders, orderShipments, otherLines] =
     await Promise.all([
       currencyCode
         ? getExchangeRate(client, companyId, currencyCode)
@@ -930,6 +933,24 @@ export async function getSalesInvoicePostFacts(
                 "id, unitPrice, saleQuantity, quantityToInvoice, addOnCost, nonTaxableAddOnCost, shippingCost"
               )
               .in("id", batch)
+              .eq("companyId", companyId)
+              .order("id")
+          )
+        : Promise.resolve(none),
+      // The order lines a contract made from the order still bills: one that
+      // ended before it billed leaves the line to an invoice.
+      orderLineIds.length > 0
+        ? fetchAllByIds<{
+            salesOrderLineId: string | null;
+            customerContract: { status: string };
+          }>(orderLineIds, (batch) =>
+            client
+              .from("customerContractLine")
+              .select(
+                "salesOrderLineId, customerContract!customerContractLine_contract_fkey!inner(status)"
+              )
+              .in("salesOrderLineId", batch)
+              .in("customerContract.status", ["Draft", "Active"])
               .eq("companyId", companyId)
               .order("id")
           )
@@ -986,6 +1007,7 @@ export async function getSalesInvoicePostFacts(
     ]);
   const failed =
     orderLines.error ??
+    contractLines.error ??
     orders.error ??
     orderShipments.error ??
     otherLines.error;
@@ -1056,6 +1078,10 @@ export async function getSalesInvoicePostFacts(
     );
   }
 
+  const contractBilled = new Set(
+    (contractLines.data ?? []).flatMap((line) => line.salesOrderLineId ?? [])
+  );
+
   const orderShippingById = new Map(
     (orderShipments.data ?? []).map((row) => [row.id, row.shippingCost ?? 0])
   );
@@ -1081,6 +1107,7 @@ export async function getSalesInvoicePostFacts(
           remainingQuantity: line.quantityToInvoice ?? 0,
           unpostedQuantity: billed?.unpostedQuantity ?? 0,
           otherInvoices: billed?.invoices.size ?? 0,
+          billedByContract: contractBilled.has(line.id),
           charges: {
             addOnCost: {
               charge: line.addOnCost ?? 0,

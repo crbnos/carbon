@@ -88,6 +88,13 @@ export type SalesInvoicePostFacts = {
     unpostedQuantity: number;
     /** How many other non-voided invoices bill this order line. */
     otherInvoices: number;
+    /**
+     * A contract made from the order bills this line (a line of a Draft or
+     * Active contract points at it), so no invoice should. Read from the
+     * contract, not the order line's `invoicedComplete`, which posting can
+     * set while some is left.
+     */
+    billedByContract: boolean;
     charges: Record<OrderLineChargeField, { charge: number; billed: number }>;
   }[];
   orders: {
@@ -119,7 +126,8 @@ export type SalesInvoicePostCheckLine = {
  * Something on a draft invoice that is almost always a mistake, shown before
  * posting because a posted invoice cannot be edited. Each one is a fact, not
  * a guess: a missing price, a line that bills nothing, more than the order
- * has left to invoice, a charge on the order this invoice leaves off, or a
+ * has left to invoice, an order line a contract bills, a charge on the order
+ * this invoice leaves off, or a
  * foreign currency at 1 when today's rate is not. A $0 shipping total on its
  * own is NOT a check — free and buyer-paid freight are normal — so the
  * summary shows it without flagging it.
@@ -128,6 +136,7 @@ export type SalesInvoicePostCheck =
   | { type: "noQuantity"; lineId: string }
   | { type: "noPrice"; lineId: string }
   | { type: "overInvoiced"; lineId: string; remainingQuantity: number }
+  | { type: "billedByContract"; lineId: string }
   | { type: "orderChargesLeftOff"; lineId: string; amount: number }
   | {
       type: "orderShippingLeftOff";
@@ -214,14 +223,21 @@ export function salesInvoicePostChecks({
 
   for (const [salesOrderLineId, group] of byOrderLine) {
     const orderLine = orderLines.get(salesOrderLineId)!;
-    const lineId = group[0]!.id!;
+    // The group's warnings go on the line that bills the most of it.
+    const lineId = group.reduce((most, line) =>
+      (line.quantity ?? 0) > (most.quantity ?? 0) ? line : most
+    ).id!;
     const quantity = group.reduce((sum, line) => sum + (line.quantity ?? 0), 0);
     // A credit (negative quantity) takes back what was billed: neither a
     // double charge nor a charge left off.
     if (quantity <= 0) continue;
 
     const available = orderLine.remainingQuantity - orderLine.unpostedQuantity;
-    if (quantity > available + EPSILON) {
+    if (orderLine.billedByContract) {
+      // The order still reads its quantity as left to invoice, but a
+      // contract made from it bills the line.
+      checks.push({ type: "billedByContract", lineId });
+    } else if (quantity > available + EPSILON) {
       checks.push({
         type: "overInvoiced",
         lineId,
@@ -256,7 +272,8 @@ export function salesInvoicePostChecks({
         );
       }
     }
-    if (leftOff > EPSILON) {
+    // A line a contract bills should come off the invoice, not bill more.
+    if (leftOff > EPSILON && !orderLine.billedByContract) {
       checks.push({ type: "orderChargesLeftOff", lineId, amount: leftOff });
     }
   }

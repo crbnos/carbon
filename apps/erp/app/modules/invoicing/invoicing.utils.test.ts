@@ -43,6 +43,7 @@ const orderLine = (
     remainingQuantity: 100,
     unpostedQuantity: 0,
     otherInvoices: 0,
+    billedByContract: false,
     charges: {
       addOnCost: addOn ?? { charge: 0, billed: 0 },
       nonTaxableAddOnCost: { charge: 0, billed: 0 },
@@ -244,6 +245,54 @@ describe("salesInvoicePostChecks", () => {
     ]);
   });
 
+  it("flags an order line a contract bills, though the order reads it as left to invoice", () => {
+    expect(
+      checks({
+        lines: [line({ salesOrderId: "so-1", salesOrderLineId: "sol-1" })],
+        facts: facts({ orderLines: [orderLine({ billedByContract: true })] })
+      })
+    ).toEqual([{ type: "billedByContract", lineId: "line-1" }]);
+  });
+
+  it("asks only to take a line a contract bills off, not to bill its charges", () => {
+    // The order line's $50 add-on is not on the line, but the line should
+    // come off the invoice, not bill more.
+    expect(
+      checks({
+        lines: [line({ salesOrderId: "so-1", salesOrderLineId: "sol-1" })],
+        facts: facts({
+          orderLines: [
+            orderLine({
+              billedByContract: true,
+              addOn: { charge: 50, billed: 0 }
+            })
+          ]
+        })
+      })
+    ).toEqual([{ type: "billedByContract", lineId: "line-1" }]);
+  });
+
+  it("counts the freight on a line a contract bills toward its order's shipping", () => {
+    // The order's $60 freight sits on the line: only the contract is wrong.
+    expect(
+      checks({
+        lines: [
+          line({
+            salesOrderId: "so-1",
+            salesOrderLineId: "sol-1",
+            shippingCost: 60
+          })
+        ],
+        facts: facts({
+          orderLines: [orderLine({ billedByContract: true })],
+          orders: [
+            { salesOrderId: "so-1", readableId: "SO0001", unbilledShipping: 60 }
+          ]
+        })
+      })
+    ).toEqual([{ type: "billedByContract", lineId: "line-1" }]);
+  });
+
   it("judges two lines of one order line on their sum", () => {
     // 40 left; two lines of 30 bill 60 between them.
     expect(
@@ -266,6 +315,32 @@ describe("salesInvoicePostChecks", () => {
       })
     ).toEqual([
       { type: "overInvoiced", lineId: "line-1", remainingQuantity: 40 }
+    ]);
+  });
+
+  it("puts a split order line's warning on the line that bills the quantity", () => {
+    // 10 left; a 0 line and a 12 line: the 12 is the one that bills too much.
+    expect(
+      checks({
+        lines: [
+          line({
+            id: "line-1",
+            quantity: 0,
+            salesOrderId: "so-1",
+            salesOrderLineId: "sol-1"
+          }),
+          line({
+            id: "line-2",
+            quantity: 12,
+            salesOrderId: "so-1",
+            salesOrderLineId: "sol-1"
+          })
+        ],
+        facts: facts({ orderLines: [orderLine({ remainingQuantity: 10 })] })
+      })
+    ).toEqual([
+      { type: "noQuantity", lineId: "line-1" },
+      { type: "overInvoiced", lineId: "line-2", remainingQuantity: 10 }
     ]);
   });
 

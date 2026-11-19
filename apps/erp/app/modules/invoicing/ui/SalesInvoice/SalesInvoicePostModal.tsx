@@ -200,6 +200,7 @@ const SalesInvoicePostSummary = ({
   const noPrice = count("noPrice");
   const noQuantity = count("noQuantity");
   const overInvoiced = count("overInvoiced");
+  const billedByContract = count("billedByContract");
   const chargesLeftOff = count("orderChargesLeftOff");
 
   const billsAnotherCustomer =
@@ -230,6 +231,8 @@ const SalesInvoicePostSummary = ({
         const remaining = formatQuantity(check.remainingQuantity);
         return t`Only ${remaining} left to invoice on the order`;
       }
+      case "billedByContract":
+        return t`A contract made from the order bills this line`;
       case "orderChargesLeftOff": {
         const amount = formatter.format(check.amount);
         return t`${amount} of the order line's charges not billed`;
@@ -303,6 +306,15 @@ const SalesInvoicePostSummary = ({
                     value={overInvoiced}
                     one="# line bills more than its order has left to invoice"
                     other="# lines bill more than their order has left to invoice"
+                  />
+                </li>
+              )}
+              {billedByContract > 0 && (
+                <li>
+                  <Plural
+                    value={billedByContract}
+                    one="# line is billed by a contract made from its order"
+                    other="# lines are billed by contracts made from their orders"
                   />
                 </li>
               )}

@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {# 営業日割当済} other {# 営業日割当�
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {目標より # 日遅れ} other {目標より # 日遅れ}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# 件の明細は、受注から作成された契約で請求されます} other {# 件の明細は、受注から作成された契約で請求されます}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 個の請求対象項目がレビュー待ちです} other {# 個の請求対象項目がレビュー待ちです}}"
 
@@ -1812,6 +1815,9 @@ msgstr "消耗品は、部品を製造するために使用される物理的な
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "契約明細のCLIN（契約明細番号）：0001などの4桁。プロジェクト請求発票はCLINごとに別の金額を表示します。"
+
+msgid "A contract made from the order bills this line"
+msgstr "受注から作成された契約がこの明細を請求します"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D税レポートの契約設定。資金提供契約下のDirect プロジェクトの原価は適格研究費ではありません。デフォルトでは、Cost Plus または Time & Materials 明細を持つ契約は資金提供されたと見なされます。"

@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { fetchAllRecords } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { getSalesInvoicePostFacts } from "~/modules/invoicing/invoicing.service";
@@ -42,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The invoice and its lines as the caller: their RLS is the gate. The bare
   // tables, not the `salesInvoices` / `salesInvoiceLines` views, since only a
-  // few columns are read.
+  // few columns are read. Every line, paged: one read returns at most 1,000.
   const [invoice, lines] = await Promise.all([
     client
       .from("salesInvoice")
@@ -50,11 +51,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("id", invoiceId)
       .eq("companyId", companyId)
       .maybeSingle(),
-    client
-      .from("salesInvoiceLine")
-      .select("salesOrderId, salesOrderLineId")
-      .eq("invoiceId", invoiceId)
-      .eq("companyId", companyId)
+    fetchAllRecords(() =>
+      client
+        .from("salesInvoiceLine")
+        .select("salesOrderId, salesOrderLineId")
+        .eq("invoiceId", invoiceId)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
   if (invoice.error || lines.error) {
     logger.error("Failed to read the sales invoice for its post facts", {

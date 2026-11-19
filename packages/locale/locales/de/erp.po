@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {Zugewiesen für # Arbeitstag} other {Zugewiesen 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Ziel um # Tage}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# Position wird von einem aus ihrem Auftrag erstellten Vertrag berechnet} other {# Positionen werden von Verträgen berechnet, die aus ihren Aufträgen erstellt wurden}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# abrechenbarer Artikel wartet auf Überprüfung} other {# abrechenbare Artikel warten auf Überprüfung}}"
 
@@ -1812,6 +1815,9 @@ msgstr "Ein Verbrauchsmaterial ist ein physischer Artikel, der zur Herstellung e
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Eine Vertragspositionsnummer auf einer Vertragsposition: 4 Ziffern, wie z. B. 0001. Eine Projektabrechnung zeigt einen separaten Betrag pro CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "Ein aus dem Auftrag erstellter Vertrag berechnet diese Position"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Eine Vertragseinstellung für die F&E-Steuerberichte. Die Kosten eines Direct-Projekts unter einem finanzierten Vertrag sind keine qualifizierten Forschungsausgaben; standardmäßig gilt ein Vertrag mit einer Cost-Plus- oder Time & Materials-Position als finanziert."

@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {Назначено на # рабочий ден�
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Отставание от плана на # день} other {Отставание от плана на # дней}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {За # строку счет-фактуру выставляет контракт, созданный из ее заказа} few {За # строки счета-фактуры выставляют контракты, созданные из их заказов} many {За # строк счета-фактуры выставляют контракты, созданные из их заказов} other {За # строки счета-фактуры выставляют контракты, созданные из их заказов}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# биллинговый элемент ожидает рассмотрения} other {# биллинговых элементов ожидают рассмотрения}}"
 
@@ -1812,6 +1815,9 @@ msgstr "Расходный материал — это физическая но
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Номер строкового элемента контракта на строке контракта: 4 цифры, такие как 0001. Счет-фактура проекта показывает отдельную сумму на CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "Счет-фактуру за эту строку выставляет контракт, созданный из заказа"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Параметр контракта для отчетов налога на НИОКР. Стоимость прямого проекта в рамках финансируемого контракта не является квалифицированными расходами на исследования; По умолчанию контракт со строкой Cost Plus или Time & Materials считается финансируемым."

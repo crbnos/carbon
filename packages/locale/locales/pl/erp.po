@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {Przypisano na # dzień pracy} other {Przypisano 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Opóźniony o # dzień} other {Opóźniony o # dni}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# pozycja jest fakturowana przez umowę utworzoną z jej zamówienia} few {# pozycje są fakturowane przez umowy utworzone z ich zamówień} many {# pozycji jest fakturowanych przez umowy utworzone z ich zamówień} other {# pozycji jest fakturowanych przez umowy utworzone z ich zamówień}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# pozycja do rozliczenia czeka na przegląd} other {# pozycji do rozliczenia czekają na przegląd}}"
 
@@ -1812,6 +1815,9 @@ msgstr "Materiał eksploatacyjny to przedmiot fizyczny używany do wykonania cz�
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Numer pozycji linii umowy na linii umowy: 4 cyfry, takie jak 0001. Faktura rozliczeniowa projektu pokazuje oddzielną kwotę na CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "Tę pozycję fakturuje umowa utworzona z zamówienia"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Ustawienie umowy dla raportów podatkowych R&D. Koszt projektu bezpośredniego w ramach umowy finansowanej nie jest kwalifikowanym wydatkiem badawczym; domyślnie umowa z linią na zasadzie kosztów plus lub czasu i materiałów liczy się jako finansowana."

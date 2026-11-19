@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {# iş günü için atandı} other {# iş günü 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# satır, siparişinden oluşturulan bir sözleşmeyle faturalanıyor} other {# satır, siparişlerinden oluşturulan sözleşmelerle faturalanıyor}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# faturalama öğesi inceleme için bekliyor} other {# faturalama öğeleri inceleme için bekliyor}}"
 
@@ -1812,6 +1815,9 @@ msgstr "Sarf malzemesi, bir Parça yapmak için kullanılan ve birden fazla İş
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Bir sözleşme satırında bir sözleşme satır öğesi numarası: 0001 gibi 4 hane. Bir proje faturalandırma faturası CLIN başına ayrı bir tutarı gösterir."
+
+msgid "A contract made from the order bills this line"
+msgstr "Bu satırı, siparişten oluşturulan bir sözleşme faturalıyor"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D vergi raporları için bir sözleşme ayarı. Finanse edilen bir sözleşme kapsamında bir Doğrudan projenin maliyeti, nitelikli bir araştırma gideri değildir; Varsayılan olarak, bir Cost Plus veya Zaman ve Malzeme satırı olan bir sözleşme finanse edilmiş olarak sayılır."

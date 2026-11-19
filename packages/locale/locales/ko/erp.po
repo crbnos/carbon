@@ -883,6 +883,9 @@ msgstr "{assigned, plural, one {# 업무일에 할당됨} other {# 업무일에 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {목표보다 # 일 뒤짐} other {목표보다 # 일 뒤짐}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {#개 라인은 주문에서 생성된 계약으로 청구됩니다} other {#개 라인은 주문에서 생성된 계약으로 청구됩니다}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 청구 가능 항목이 검토를 기다리고 있습니다} other {# 청구 가능 항목이 검토를 기다리고 있습니다}}"
 
@@ -1812,6 +1815,9 @@ msgstr "소모품은 여러 작업 지시에 걸쳐 사용할 수 있는 부품�
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "계약 라인의 계약 라인 항목 번호: 0001과 같은 4자리 번호입니다. 프로젝트 청구 송장에는 CLIN당 별도의 금액이 표시됩니다."
+
+msgid "A contract made from the order bills this line"
+msgstr "주문에서 생성된 계약이 이 라인을 청구합니다"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D 세금 보고서에 대한 계약 설정입니다. 자금이 지원되는 계약에 따른 직접 프로젝트의 비용은 적격 연구 비용이 아닙니다. 기본값에서 비용 가산 또는 시간 및 자재 라인이 있는 계약은 자금이 지원되는 것으로 계산됩니다."
