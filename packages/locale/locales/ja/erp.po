@@ -3595,8 +3595,14 @@ msgstr "資産に計上されなかった原価を追加します。例えば、
 msgid "Adds to an existing batch"
 msgstr "既存のバッチに追加"
 
+msgid "Adjust"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "原価を調整"
+
+msgid "Adjust for Rounding"
+msgstr ""
 
 msgid "Adjustment"
 msgstr "調整"
@@ -3904,6 +3910,9 @@ msgstr "契約担当官が承認した金額"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "{0}に適用する金額"
+
+msgid "Amount to match"
+msgstr ""
 
 msgid "Amount Type"
 msgstr "金額タイプ"
@@ -5626,6 +5635,9 @@ msgstr "銀行コード"
 
 msgid "Bank Name"
 msgstr "銀行名"
+
+msgid "Bank, Cash or Card Account"
+msgstr ""
 
 msgid "Banner content (optional)"
 msgstr "バナーの内容（任意）"
@@ -9418,6 +9430,10 @@ msgstr "現在の予測"
 msgid "Current quantity"
 msgstr "現在の数量"
 
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr ""
+
 msgid "Custom"
 msgstr "カスタム"
 
@@ -12530,6 +12546,10 @@ msgstr "認証アプリから6桁のコードを入力してください"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
+
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
@@ -20838,6 +20858,9 @@ msgstr "後で"
 msgid "Not on the page"
 msgstr "ページにありません"
 
+msgid "Not posted"
+msgstr ""
+
 msgid "Not Qualified"
 msgstr "適格外"
 
@@ -22523,8 +22546,8 @@ msgstr "仕入先への支払"
 msgid "Payments"
 msgstr "支払い"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "それに充当されている支払とクレジットメモは、先に充当が解除されます。各支払は転記済のまま、他で充当するか強制削除できる未充当残高として残ります。そこから計上済の売上高は取り消されます。"
@@ -22592,6 +22615,9 @@ msgstr "検査待ち"
 
 msgid "Pending Inspection"
 msgstr "検査待ち"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "人員"
@@ -26477,6 +26503,9 @@ msgstr "丸めアカウント"
 msgid "Rounding Account (default)"
 msgstr "丸めアカウント (既定)"
 
+msgid "Rounding adjusted"
+msgstr ""
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "すべての買掛金請求書を、個別の購買担当者の代わりに、1つの住所（例：本社）にルーティングします。"
 
@@ -26851,6 +26880,9 @@ msgstr "保存して上書き"
 
 msgid "Save and post"
 msgstr "保存して転記する"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "アプリケーションを保存"
@@ -31076,6 +31108,9 @@ msgstr "出荷が転記されるときに認識されるインベントリコス
 msgid "The invoice for this payment is drafted on this date"
 msgstr "この支払いの請求書は、この日付で下書きされます。"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのアセットのIRS回収期間クラス。"
 
@@ -32151,6 +32186,9 @@ msgstr "この部門は{locationName}に作業区がありません。別の部�
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "この部門はこの拠点に作業区がありません。別の部門または拠点を選択してください。"
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
 
@@ -32333,6 +32371,12 @@ msgstr "この部品のみ"
 
 msgid "This path only decides what runs next"
 msgstr "このパスは次に何が実行されるかだけを決定します"
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "この期間には転記された仕訳がなく、永久に削除できます。この処理は取り消せません。"

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  ForbiddenError,
   InvalidInputError,
   NotFoundError,
   ServerFnError
@@ -160,6 +161,7 @@ import {
   invoiceRemainingAmounts,
   isBillableLeaseStatus,
   isEffectiveSettlement,
+  isPendingSettlement,
   type LegacyDepositRefund,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
@@ -314,10 +316,13 @@ import type {
   salesInvoiceValidator
 } from "./invoicing.models";
 import {
+  CARD_ACCOUNT_TYPE,
   type DepositDocument,
   isPurchaseInvoiceLocked,
   isSalesInvoiceLocked,
   paymentJournalDifference,
+  purchaseInvoiceRoundingAmount,
+  purchaseLineAccountClasses,
   type stripeCustomerActions
 } from "./invoicing.models";
 import {
@@ -2078,9 +2083,11 @@ export type InvoiceSettlementForInvoice = {
   sourceExchangeRate: number | null;
   appliedDate: string;
   source: InvoiceSettlementSource;
+  /** Applied by a Draft payment: it takes effect when the payment posts. */
+  pending: boolean;
 };
 
-// Posted settlements against a specific invoice — BOTH cash payments and applied
+// Posted settlements, and those pending a Draft payment's post, against a specific invoice — BOTH cash payments and applied
 // credit/debit memos. Used by the "Applied" panel on the sales/purchase invoice
 // detail page. Page the embedded parents with their applications so large histories
 // retain every source without oversized ID lookups.
@@ -2141,17 +2148,16 @@ export async function getInvoiceSettlementsForInvoice(
 
   const merged: InvoiceSettlementForInvoice[] = [];
   for (const a of apps.data ?? []) {
-    if (
-      !isEffectiveSettlement({
-        paymentId: a.paymentId,
-        memoId: a.memoId,
-        appliedViaPaymentId: a.appliedViaPaymentId,
-        paymentStatus: a.payment?.status ?? null,
-        memoStatus: a.memo?.status ?? null,
-        viaStatus: a.appliedViaPayment?.status ?? null
-      })
-    )
-      continue;
+    const effectiveness = {
+      paymentId: a.paymentId,
+      memoId: a.memoId,
+      appliedViaPaymentId: a.appliedViaPaymentId,
+      paymentStatus: a.payment?.status ?? null,
+      memoStatus: a.memo?.status ?? null,
+      viaStatus: a.appliedViaPayment?.status ?? null
+    };
+    const pending = isPendingSettlement(effectiveness);
+    if (!pending && !isEffectiveSettlement(effectiveness)) continue;
     let source: InvoiceSettlementSource | null = null;
     if (a.paymentId && a.payment) {
       const p = a.payment;
@@ -2187,13 +2193,14 @@ export async function getInvoiceSettlementsForInvoice(
       targetExchangeRate: Number(a.targetExchangeRate),
       sourceExchangeRate: Number(a.sourceExchangeRate),
       appliedDate: a.appliedDate,
-      source
+      source,
+      pending
     });
   }
 
   const bySource = new Map<string, InvoiceSettlementForInvoice>();
   for (const row of merged) {
-    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}`;
+    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}:${row.pending}`;
     const previous = bySource.get(key);
     if (!previous) {
       bySource.set(key, { ...row });
@@ -3688,6 +3695,8 @@ export async function upsertPayment(
     .from("payment")
     .update({
       ...sanitize(payment),
+      // An edit may fix why the last post failed; the next post says again.
+      postError: null,
       customerId: payment.customerId ?? null,
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
@@ -3706,18 +3715,51 @@ export async function upsertPayment(
 
 // RLS DELETE policy on payment restricts to status='Draft'.
 export async function deletePayment(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
 ) {
   return requireAffected(
-    client
-      .from("payment")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .select("id")
+    db
+      .transaction()
+      .execute(async (trx) => {
+        // Only a Draft is deleted (as the RLS policy has it); its own
+        // settlements cascade.
+        const data = await trx
+          .deleteFrom("payment")
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Draft")
+          .returning("id")
+          .execute();
+        if (data.length > 0) await releasePaymentMappings(trx, companyId, id);
+        return { data, error: null as unknown };
+      })
+      .catch((error: unknown) => ({ data: null, error }))
   );
+}
+
+/**
+ * Removes the integration mappings that name a payment being deleted: its
+ * provider payment, alone or as `<id>:<settlement key>`, and the Ramp card
+ * transactions it claimed (`<id>:<transaction id>`). A mapping left behind
+ * blocks the provider from restaging it, and keeps a claimed card
+ * transaction from ever being booked.
+ */
+export async function releasePaymentMappings(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  paymentId: string
+): Promise<void> {
+  const prefix = `${paymentId.replace(/[\\%_]/g, "\\$&")}:%`;
+  await trx
+    .deleteFrom("externalIntegrationMapping")
+    .where("companyId", "=", companyId)
+    .where("entityType", "in", ["payment", "cardBillPayment"])
+    .where((eb) =>
+      eb.or([eb("entityId", "=", paymentId), eb("entityId", "like", prefix)])
+    )
+    .execute();
 }
 
 export async function upsertInvoiceSettlement(
@@ -5422,6 +5464,66 @@ export function getApAging(
     _bucket2: b2,
     _bucket3: b3
   });
+}
+
+/**
+ * What Draft payments apply to each purchase invoice, in base: the invoice is
+ * paid by it only once the payment posts. A memo counts when it is Posted and
+ * applied through a Draft payment.
+ */
+export async function getApPendingPayments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<Map<string, number>> {
+  // Driven from the few Draft payments (a partial index), joined to their
+  // settlements by each indexed column, so no company-wide settlement scan.
+  const settled = [
+    "appliedAmount",
+    "discountAmount",
+    "writeOffAmount",
+    "targetPurchaseInvoiceId"
+  ] as const;
+  const cash = db
+    .selectFrom("payment as p")
+    .innerJoin("invoiceSettlement as s", (join) =>
+      join
+        .onRef("s.paymentId", "=", "p.id")
+        .onRef("s.companyId", "=", "p.companyId")
+    )
+    .select(settled.map((column) => `s.${column}` as const))
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Draft")
+    .where("s.targetPurchaseInvoiceId", "is not", null);
+  const memos = db
+    .selectFrom("payment as p")
+    .innerJoin("invoiceSettlement as s", (join) =>
+      join
+        .onRef("s.appliedViaPaymentId", "=", "p.id")
+        .onRef("s.companyId", "=", "p.companyId")
+    )
+    .innerJoin("memo as m", (join) =>
+      join
+        .onRef("m.id", "=", "s.memoId")
+        .onRef("m.companyId", "=", "s.companyId")
+    )
+    .select(settled.map((column) => `s.${column}` as const))
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Draft")
+    .where("m.status", "=", "Posted")
+    .where("s.targetPurchaseInvoiceId", "is not", null);
+  const rows = await db
+    .selectFrom(cash.unionAll(memos).as("pending"))
+    .select([
+      "pending.targetPurchaseInvoiceId as invoiceId",
+      sql<number>`SUM(pending."appliedAmount" + pending."discountAmount" + pending."writeOffAmount")`.as(
+        "pendingInBase"
+      )
+    ])
+    .groupBy("pending.targetPurchaseInvoiceId")
+    .execute();
+  return new Map(
+    rows.map((row) => [row.invoiceId!, Number(row.pendingInBase)])
+  );
 }
 
 export function getAgingUnappliedPayments(
@@ -12795,6 +12897,27 @@ export function paymentKind(
 
 export type PaymentKind = ReturnType<typeof paymentKind>;
 
+/**
+ * The class of the account a payment moves its money through, or null when
+ * the payment cannot use it. Any Asset account can; a supplier payment can
+ * also use a Credit Card account, which is a liability.
+ */
+export function paymentAccountClass(
+  account: { class: string | null; accountType: string | null },
+  kind: Pick<PaymentKind, "isAR" | "isReimbursement">
+): "Asset" | "Liability" | null {
+  if (account.class === "Asset") return "Asset";
+  if (
+    account.class === "Liability" &&
+    account.accountType === CARD_ACCOUNT_TYPE &&
+    !kind.isAR &&
+    !kind.isReimbursement
+  ) {
+    return "Liability";
+  }
+  return null;
+}
+
 const TARGET_DESCRIPTIONS = [
   ...new Set<string>([
     REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
@@ -13172,6 +13295,8 @@ export function assemblePaymentJournal(args: {
   fee?: PaymentJournalFeeInput;
   legacyCustomerDepositRefund?: boolean;
   journalLineReference: string;
+  /** The class of `payment.bankAccount` (`paymentAccountClass`). */
+  bankAccountClass: "Asset" | "Liability";
 }): {
   lines: PaymentJournalLineWithRole[];
   input: BuildPaymentJournalInput;
@@ -13223,6 +13348,7 @@ export function assemblePaymentJournal(args: {
     totalAmount: Number(payment.totalAmount),
     exchangeRate: Number(payment.exchangeRate),
     bankAccount: payment.bankAccount,
+    bankAccountClass: args.bankAccountClass,
     journalLineReference: args.journalLineReference,
     applications,
     newOnAccountBase: args.newOnAccountBase,
@@ -13353,6 +13479,122 @@ function principal(value: number | null, label: string): number {
   return Number(value);
 }
 
+/**
+ * Locks the accounting period that holds `date` and returns its id. A closed
+ * or locked period is refused by name, with `remedy` appended.
+ */
+async function lockOpenPeriodFor(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  date: string,
+  remedy: string
+): Promise<string> {
+  const period = await trx
+    .selectFrom("accountingPeriod")
+    .select([
+      sql<string>`"startDate"::text`.as("startDate"),
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId)
+    .where("startDate", "<=", date)
+    .where("endDate", ">=", date)
+    .orderBy("startDate")
+    .forUpdate()
+    .executeTakeFirst();
+  if (period && (period.closeStatus !== "Open" || period.closedAt !== null)) {
+    const name = new Date(`${period.startDate}T00:00:00Z`).toLocaleString(
+      "en-US",
+      { month: "long", year: "numeric", timeZone: "UTC" }
+    );
+    const state =
+      period.closeStatus === "Locked" && period.closedAt === null
+        ? "locked"
+        : "closed";
+    throw new InvalidInputError(
+      `${date} is in the ${name} accounting period, which is ${state}. ${remedy}`
+    );
+  }
+  // Creates the period when none holds the date yet.
+  return getCurrentAccountingPeriod(companyId, trx, date);
+}
+
+/**
+ * Prior credit is counted as it stands today. A void or a force delete
+ * releases the credit a payment consumed, with a journal dated the day it
+ * ran, so on an earlier date that credit was still spent. A payment dated
+ * before such a release cannot draw on the party's prior credit.
+ */
+async function refuseCreditReleasedAfter(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    paymentId: string;
+    party: { customerId: string } | { supplierId: string };
+    currencyCode: string;
+    postingDate: string;
+  }
+): Promise<void> {
+  const { companyId, postingDate } = args;
+  const release = await trx
+    .selectFrom("payment as p")
+    .innerJoin("journalLine as l", (join) =>
+      join
+        .onRef("l.documentId", "=", "p.id")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .innerJoin("journal as j", (join) =>
+      join
+        .onRef("j.id", "=", "l.journalId")
+        .onRef("j.companyId", "=", "l.companyId")
+    )
+    .select(sql<string | null>`max(j."postingDate")::text`.as("releasedOn"))
+    .where("p.companyId", "=", companyId)
+    .where((eb) =>
+      "customerId" in args.party
+        ? eb("p.customerId", "=", args.party.customerId)
+        : eb("p.supplierId", "=", args.party.supplierId)
+    )
+    .where("p.currencyCode", "=", args.currencyCode)
+    .where("p.id", "!=", args.paymentId)
+    .where("l.documentType", "=", "Payment")
+    .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .where("j.postingDate", ">", postingDate)
+    // A payment's own journals are its posting, a void and a force delete's
+    // unapply; an invoice that spends a prepayment writes its own source.
+    .where("j.sourceType", "=", "Payment")
+    .where((eb) =>
+      eb.or([
+        eb("p.journalId", "is", null),
+        eb("j.id", "!=", eb.ref("p.journalId"))
+      ])
+    )
+    .executeTakeFirst();
+  if (release?.releasedOn) {
+    throw new InvalidInputError(
+      `Prior credit was released on ${release.releasedOn} by a voided or unapplied payment, after the payment date ${postingDate}. Date the payment on or after ${release.releasedOn} to use it.`
+    );
+  }
+}
+
+/**
+ * A payment cannot settle a document that posted after its payment date: the
+ * settlement and its journal would predate what they settle.
+ */
+function refuseDocumentsAfter(
+  documents: { postingDate: string | null }[],
+  postingDate: string
+): void {
+  const later = documents.find(
+    (document) => document.postingDate && document.postingDate > postingDate
+  );
+  if (later) {
+    throw new InvalidInputError(
+      `A document this payment settles posted on ${later.postingDate}, after the payment date ${postingDate}. Date the payment on or after ${later.postingDate}.`
+    );
+  }
+}
+
 /** The endpoint's single commit boundary; every monetary snapshot is read under locks. */
 export function postPaymentTransaction(
   db: Kysely<KyselyDatabase>,
@@ -13402,33 +13644,30 @@ export function postPaymentTransaction(
       throw new Error(`Cannot ${type} payment in status ${payment.status}`);
     }
 
+    // A payment posts on its payment date; a void reverses it on the day it
+    // is voided.
+    const postingDate = type === "post" ? payment.paymentDate : today;
+    if (type === "post" && isBeforeCutover(postingDate, cutoverDate)) {
+      throw new InvalidInputError(
+        `The payment date ${postingDate} is before your accounting cutover on ${cutoverDate}. Change the payment date to ${cutoverDate} or later.`
+      );
+    }
+
     // Every payment posts a journal: Provisional before the company's
     // accounting cutover, Posted after it. FOR SHARE holds the cutover until
     // commit. A Provisional journal has no accounting period.
     const timestamp = datetime.timestamp();
-    let accountingPeriodId: string | null = null;
-    if (postingStatus === "Posted") {
-      accountingPeriodId = await getCurrentAccountingPeriod(
-        companyId,
-        trx,
-        today
-      );
-      // The reader also checks period status, but the row lock protects the
-      // posting against a concurrent close/lock after that read.
-      const period = await trx
-        .selectFrom("accountingPeriod")
-        .select(["id", "closeStatus"])
-        .where("id", "=", accountingPeriodId)
-        .where("companyId", "=", companyId)
-        .forShare()
-        .executeTakeFirst();
-      if (
-        !period ||
-        period.closeStatus === "Closed" ||
-        period.closeStatus === "Locked"
-      )
-        throw new Error("Accounting period is closed or locked");
-    }
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await lockOpenPeriodFor(
+            trx,
+            companyId,
+            postingDate,
+            type === "post"
+              ? "Reopen it or change the payment date."
+              : "Reopen it before voiding."
+          )
+        : null;
 
     if (type === "void") {
       const scope = fundingScopeOf(payment);
@@ -13490,7 +13729,7 @@ export function postPaymentTransaction(
               ),
               accountingPeriodId,
               description: `VOID Payment ${payment.paymentId}`,
-              postingDate: today,
+              postingDate,
               companyId,
               sourceType: "Payment",
               status: postingStatus,
@@ -13746,7 +13985,8 @@ export function postPaymentTransaction(
               "currencyCode",
               "exchangeRate",
               "amount",
-              "payableAccountId"
+              "payableAccountId",
+              "postingDate"
             ])
             .where("companyId", "=", companyId)
             .where("id", "in", targetIds)
@@ -13770,7 +14010,8 @@ export function postPaymentTransaction(
                     "customerId as partyId",
                     "status",
                     "currencyCode",
-                    "exchangeRate"
+                    "exchangeRate",
+                    "postingDate"
                   ])
                   .where("companyId", "=", companyId)
                   .where("id", "in", targetIds)
@@ -13784,7 +14025,8 @@ export function postPaymentTransaction(
                     "supplierId as partyId",
                     "status",
                     "currencyCode",
-                    "exchangeRate"
+                    "exchangeRate",
+                    "postingDate"
                   ])
                   .where("companyId", "=", companyId)
                   .where("id", "in", targetIds)
@@ -13830,6 +14072,7 @@ export function postPaymentTransaction(
       throw new NotFoundError(
         "Payment target invoice not found in this company"
       );
+    refuseDocumentsAfter(invoices, postingDate);
     const totalById = new Map(
       totals.map((row) => [row.id, Number(row.totalAmount)])
     );
@@ -13959,6 +14202,7 @@ export function postPaymentTransaction(
     if (memos.length !== memoIds.length) {
       throw new NotFoundError("Staged memo not found in this company");
     }
+    refuseDocumentsAfter(memos, postingDate);
     const memoConsumption = memoIds.length
       ? (
           await settlementQuery(trx, companyId)
@@ -14080,6 +14324,8 @@ export function postPaymentTransaction(
             .where(isAR ? "customerId" : "supplierId", "=", partyId)
             .where("currencyCode", "=", payment.currencyCode)
             .where("id", "!=", paymentId)
+            // Credit posted after the payment date did not exist yet.
+            .where("postingDate", "<=", postingDate)
             .orderBy("id")
             .forUpdate()
             .execute();
@@ -14196,7 +14442,7 @@ export function postPaymentTransaction(
     const allocation = allocatePaymentFunding({
       currentPayment: {
         paymentId,
-        postingDate: today,
+        postingDate,
         exchangeRate: Number(payment.exchangeRate),
         remainingDocument: Number(payment.totalAmount),
         remainingBase: toBaseAmount(
@@ -14266,7 +14512,35 @@ export function postPaymentTransaction(
         };
       });
     }
+    if (normalized.some((application) => application.sourcePaymentId)) {
+      await refuseCreditReleasedAfter(trx, {
+        companyId,
+        paymentId,
+        party: isAR ? { customerId: partyId } : { supplierId: partyId },
+        currencyCode: payment.currencyCode,
+        postingDate
+      });
+    }
+    const paidThrough = await trx
+      .selectFrom("account")
+      .select(["class", "accountType"])
+      .where("id", "=", payment.bankAccount)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .executeTakeFirst();
+    const bankAccountClass = paidThrough
+      ? paymentAccountClass(paidThrough, kind)
+      : null;
+    if (!bankAccountClass) {
+      throw new InvalidInputError(
+        isAR || isReimbursement
+          ? "Pay from an active Asset account, such as a bank or cash account"
+          : "Pay from an active Asset account, such as a bank or cash account, or a Credit Card account"
+      );
+    }
     const assembled = assemblePaymentJournal({
+      bankAccountClass,
       payment,
       kind,
       companyId,
@@ -14289,7 +14563,7 @@ export function postPaymentTransaction(
     const { accounts } = assembled.input;
     const journalLines = assembled.lines;
     const expectedAccountClasses: Array<[string | null | undefined, string]> = [
-      [payment.bankAccount, "Asset"],
+      [payment.bankAccount, bankAccountClass],
       [accounts.controlAccountId, isAR ? "Asset" : "Liability"],
       [accounts.discountAccountId, isAR ? "Revenue" : "Expense"],
       [accounts.writeOffAccountId, isAR ? "Expense" : "Revenue"],
@@ -14344,13 +14618,9 @@ export function postPaymentTransaction(
       .where("active", "=", true)
       .where("isGroup", "=", false)
       .execute();
-    if (
-      postingAccounts.length !== accountIds.length ||
-      postingAccounts.find((account) => account.id === payment.bankAccount)
-        ?.class !== "Asset"
-    ) {
+    if (postingAccounts.length !== accountIds.length) {
       throw new Error(
-        "Payment accounts must be active posting accounts in this company group, with an Asset bank account"
+        "Payment accounts must be active posting accounts in this company group"
       );
     }
     const classById = new Map(
@@ -14389,7 +14659,7 @@ export function postPaymentTransaction(
             ...application,
             paymentId,
             companyId,
-            appliedDate: today,
+            appliedDate: postingDate,
             createdBy: userId
           }))
         )
@@ -14398,7 +14668,7 @@ export function postPaymentTransaction(
     // One set-based UPDATE preserves memo row identities and avoids query-per-row writes.
     if (normalizedMemos.length) {
       await sql`UPDATE "invoiceSettlement" s SET "appliedAmount"=v."appliedAmount", "sourceAmount"=v."sourceAmount",
-        "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${today}::date, "updatedBy"=${userId}
+        "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${postingDate}::date, "updatedBy"=${userId}
         FROM jsonb_to_recordset(${JSON.stringify(
           normalizedMemos
         )}::jsonb) AS v(id text,"appliedAmount" numeric,"sourceAmount" numeric,"sourceExchangeRate" numeric,"targetExchangeRate" numeric)
@@ -14412,7 +14682,7 @@ export function postPaymentTransaction(
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
         accountingPeriodId,
         description: `Payment ${payment.paymentId}`,
-        postingDate: today,
+        postingDate,
         companyId,
         sourceType: "Payment",
         status: postingStatus,
@@ -14460,7 +14730,8 @@ export function postPaymentTransaction(
       .updateTable("payment")
       .set({
         status: "Posted",
-        postingDate: today,
+        postingDate,
+        postError: null,
         journalId,
         postedAt: timestamp,
         postedBy: userId,
@@ -14561,6 +14832,20 @@ export async function rebuildPaymentJournals(
     trx,
     companyGroupId,
     defaults
+  );
+  // A card account is a liability; every other payment account an asset.
+  const cardAccountIds = new Set(
+    (
+      await trx
+        .selectFrom("account")
+        .select("id")
+        .where("companyGroupId", "=", companyGroupId)
+        .where("id", "in", [
+          ...new Set(payments.map((payment) => payment.bankAccount))
+        ])
+        .where("class", "=", "Liability")
+        .execute()
+    ).map((account) => account.id)
   );
 
   const settlements = await trx
@@ -14674,6 +14959,9 @@ export async function rebuildPaymentJournals(
     }));
 
     const { lines } = assemblePaymentJournal({
+      bankAccountClass: cardAccountIds.has(payment.bankAccount)
+        ? "Liability"
+        : "Asset",
       payment,
       kind,
       companyId,
@@ -14855,15 +15143,33 @@ export async function postPayment(
     .today(await getCompanyTimeZone(db, companyId))
     .toString();
 
-  const result = await postPaymentTransaction(db, {
-    type,
-    paymentId,
-    companyId,
-    userId,
-    today,
-    fee
-  });
-  return { success: true, ...result };
+  try {
+    const result = await postPaymentTransaction(db, {
+      type,
+      paymentId,
+      companyId,
+      userId,
+      today,
+      fee
+    });
+    return { success: true, ...result };
+  } catch (error) {
+    // The transaction rolled back, so the reason is kept on the Draft outside
+    // it, for the payment page to show until a post succeeds.
+    if (type === "post") {
+      await db
+        .updateTable("payment")
+        .set({
+          postError:
+            error instanceof Error ? error.message : "The payment did not post"
+        })
+        .where("id", "=", paymentId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .execute();
+    }
+    throw error;
+  }
 }
 type Enums = Database["public"]["Enums"];
 
@@ -15197,7 +15503,10 @@ export type PurchaseInvoicePostingLine = LineBase &
     | {
         kind: "glAccount";
         purchaseOrderLineId: string | null;
-        account: { id: string; name: string };
+        /** The debit is signed by its class, so a balance sheet account (an
+         *  Equity draw, a Liability paid down) balances. An account with no
+         *  class posts as an expense, as every G/L line once did. */
+        account: { id: string; name: string; class: AccountClass | null };
         costCenterId: string | null;
         projectId: string | null;
         projectElementId?: string | null;
@@ -16048,7 +16357,12 @@ export function buildPurchaseInvoicePostingLines(
             description: glProjectCharge
               ? "Project Account"
               : line.account.name,
-            amount: round(debit("asset", total)),
+            amount: round(
+              debitSigned(
+                glProjectCharge ? "Expense" : (line.account.class ?? "Expense"),
+                total
+              )
+            ),
             ...keys
           },
           meta
@@ -17522,7 +17836,7 @@ export async function postPurchaseInvoice(
             db,
             "account",
             { companyGroupId: companyGroupId!, id: glAccountIds },
-            { columns: ["id", "name", "isGroup"] }
+            { columns: ["id", "name", "class", "isGroup"] }
           )
         : [];
 
@@ -19106,6 +19420,7 @@ export async function deleteForceDeleteDocument(
         .where("id", "=", document.id)
         .where("companyId", "=", companyId)
         .execute();
+      await releasePaymentMappings(trx, companyId, document.id);
       return;
     }
     case "receipt": {
@@ -20875,18 +21190,21 @@ export function accountingPeriodName(period: PeriodNameFields): string {
     : `${period.startDate} to ${period.endDate}`;
 }
 
+/** Why a posted invoice cannot be changed in its period, or null when the
+ *  period is Open. `action` finishes "Reopen it before …". */
 export function lineAccountChangePeriodRefusal(
   period: PeriodNameFields & {
     closeStatus: string;
     closedAt: string | Date | null;
-  }
+  },
+  action = "changing the account"
 ): string | null {
   const name = accountingPeriodName(period);
   if (period.closeStatus === "Closed" || period.closedAt) {
-    return `Accounting period ${name} is closed. Reopen it before changing the account.`;
+    return `Accounting period ${name} is closed. Reopen it before ${action}.`;
   }
   if (period.closeStatus === "Locked") {
-    return `Accounting period ${name} is locked. Unlock it before changing the account.`;
+    return `Accounting period ${name} is locked. Unlock it before ${action}.`;
   }
   return null;
 }
@@ -20902,12 +21220,12 @@ const LINE_ACCOUNT_SIDES = {
   sales: {
     label: "Sales Invoice",
     sourceType: "Sales Invoice",
-    accountClass: "Revenue"
+    accountClasses: ["Revenue"]
   },
   purchase: {
     label: "Purchase Invoice",
     sourceType: "Purchase Invoice",
-    accountClass: "Expense"
+    accountClasses: purchaseLineAccountClasses
   }
 } as const;
 
@@ -21303,7 +21621,7 @@ export async function changeInvoiceLineAccount(
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
-  const { label, sourceType, accountClass } = LINE_ACCOUNT_SIDES[side];
+  const { label, sourceType, accountClasses } = LINE_ACCOUNT_SIDES[side];
 
   const postingStatus = await journalPostingStatus(db, companyId);
 
@@ -21323,9 +21641,10 @@ export async function changeInvoiceLineAccount(
       .where("id", "=", accountId)
       .where("companyGroupId", "=", ctx.company.groupId)
       .executeTakeFirst();
-    if (!to || !to.active || to.isGroup || to.class !== accountClass) {
+    const toClass = accountClasses.find((c) => c === to?.class);
+    if (!to || !to.active || to.isGroup || !toClass) {
       throw new InvalidInputError(
-        `Choose an active ${accountClass} account that is not a group.`
+        `Choose an active ${new Intl.ListFormat("en", { type: "disjunction" }).format(accountClasses)} account that is not a group.`
       );
     }
     if (position.leg.accountId === to.id) {
@@ -21367,7 +21686,7 @@ export async function changeInvoiceLineAccount(
 
     const lines = buildLineAccountChangeLines(
       position,
-      { accountId: to.id, accountClass },
+      { accountId: to.id, accountClass: toClass },
       companyId
     );
     const journalEntryId = await getNextSequence(
@@ -21450,4 +21769,434 @@ export async function changeInvoiceLineAccount(
       postingDate
     };
   });
+}
+
+export const ROUNDING_LINE_DESCRIPTION = "Rounding";
+
+export const adjustPurchaseInvoiceRoundingInput = z.object({
+  invoiceId: z.string().min(1),
+  targetTotal: z.number().finite()
+});
+
+export const ROUNDING_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+/** Statuses whose lines are never changed for rounding. */
+const ROUNDING_REFUSED_STATUSES: Record<string, string> = {
+  Pending: "The invoice is being posted. Try again in a moment.",
+  Voided: "A voided invoice cannot be adjusted for rounding."
+};
+
+/**
+ * Brings a purchase invoice's total to `targetTotal` (the amount the supplier
+ * actually charged) with one G/L line on the company's default rounding
+ * account. The invoice's other lines, inventory lines included, keep their
+ * prices, so receipts and purchase orders are untouched. Setting the same
+ * total again changes nothing; a total the other lines already match removes
+ * the rounding line.
+ *
+ * On a posted invoice it also posts the change as one journal, dated on the
+ * invoice's posting date in its period (which must be Open): the rounding
+ * account against the invoice's own Accounts Payable account, keyed to the
+ * invoice, so payments and balances read the new total and a void reverses
+ * it. A decrease is refused when it would take the total below what is
+ * already paid.
+ */
+export async function adjustPurchaseInvoiceRounding(
+  ctx: ServiceContext,
+  raw: z.input<typeof adjustPurchaseInvoiceRoundingInput>
+) {
+  const { invoiceId, targetTotal } =
+    adjustPurchaseInvoiceRoundingInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const postingStatus = await journalPostingStatus(db, companyId);
+
+  return withTransaction(db, async (trx) => {
+    // FOR UPDATE: a void locks the invoice before it reads the journal it
+    // reverses, so it reverses an adjustment that committed first.
+    const invoice = await trx
+      .selectFrom("purchaseInvoice")
+      .select([
+        "id",
+        "invoiceId",
+        "status",
+        "currencyCode",
+        "exchangeRate",
+        sql<string | null>`"postingDate"::text`.as("postingDate")
+      ])
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!invoice) throw new NotFoundError("Purchase invoice not found");
+    const refusedStatus = invoice.status
+      ? ROUNDING_REFUSED_STATUSES[invoice.status]
+      : undefined;
+    if (refusedStatus) throw new InvalidInputError(refusedStatus);
+    const posted = invoice.status !== "Draft";
+    if (posted) {
+      // A posted invoice's adjustment posts a journal.
+      if (!ctx.can({ update: "accounting" })) {
+        throw new ForbiddenError(
+          "Adjusting a posted invoice needs accounting update permission."
+        );
+      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+      await refuseVoidBeforeCutover(
+        trx,
+        companyId,
+        invoice.postingDate,
+        ROUNDING_BEFORE_CUTOVER_ERROR
+      );
+    }
+
+    const [defaults, decimals, lines, delivery] = await Promise.all([
+      trx
+        .selectFrom("accountDefault")
+        .select("roundingAccount")
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      sharedPostings.currencyDecimals(trx, companyId, invoice.currencyCode),
+      trx
+        .selectFrom("purchaseInvoiceLine")
+        .select([
+          "id",
+          "invoiceLineType",
+          "accountId",
+          "description",
+          "purchaseOrderLineId",
+          "quantity",
+          "unitPrice",
+          "shippingCost",
+          "taxAmount",
+          "sortOrder"
+        ])
+        .where("invoiceId", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("purchaseInvoiceDelivery")
+        .select("supplierShippingCost")
+        .where("id", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+    ]);
+
+    const roundingAccountId = defaults?.roundingAccount;
+    if (!roundingAccountId) {
+      throw new InvalidInputError(
+        "Set a Rounding Account in the account defaults first."
+      );
+    }
+
+    // The account alone is not enough: a company may use its rounding
+    // account for ordinary expense lines, which this must never rewrite.
+    const isRoundingLine = (line: (typeof lines)[number]) =>
+      line.invoiceLineType === "G/L Account" &&
+      line.accountId === roundingAccountId &&
+      line.description === ROUNDING_LINE_DESCRIPTION &&
+      !line.purchaseOrderLineId;
+    const roundingLines = lines.filter(isRoundingLine);
+    if (roundingLines.length > 1) {
+      throw new InvalidInputError(
+        "The invoice has more than one line on the rounding account. Remove all but one first."
+      );
+    }
+    const roundingLine = roundingLines[0];
+
+    // The same arithmetic as the `purchaseInvoices` view's document total,
+    // which balances and settlements read: base line amounts (each at its own
+    // rate) plus header freight, converted back at the invoice's rate.
+    const rate = Number(invoice.exchangeRate);
+    let baseWithoutRounding =
+      Number(delivery?.supplierShippingCost ?? 0) / (rate === 0 ? 1 : rate);
+    for (const line of lines) {
+      if (line === roundingLine) continue;
+      baseWithoutRounding +=
+        Number(line.quantity) * Number(line.unitPrice ?? 0) +
+        Number(line.shippingCost ?? 0) +
+        Number(line.taxAmount ?? 0);
+    }
+    const totalWithoutRounding = baseWithoutRounding * rate;
+
+    const result = purchaseInvoiceRoundingAmount(
+      totalWithoutRounding,
+      targetTotal,
+      decimals
+    );
+    if ("refusal" in result) throw new InvalidInputError(result.refusal);
+    const { amount } = result;
+
+    // What the posting booked for the rounding line, in base currency, and
+    // what it books now: a posted invoice moves by the difference.
+    const previousBase = roundingLine
+      ? Number(roundingLine.quantity) * Number(roundingLine.unitPrice ?? 0)
+      : 0;
+    const nextBase = amount / (rate === 0 ? 1 : rate);
+
+    if (amount === 0) {
+      if (roundingLine) {
+        await trx
+          .deleteFrom("purchaseInvoiceLine")
+          .where("id", "=", roundingLine.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    } else if (roundingLine) {
+      await trx
+        .updateTable("purchaseInvoiceLine")
+        .set({
+          quantity: 1,
+          supplierUnitPrice: amount,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", roundingLine.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      const sortOrder =
+        lines.reduce((max, line) => Math.max(max, line.sortOrder ?? 0), 0) + 1;
+      await trx
+        .insertInto("purchaseInvoiceLine")
+        .values({
+          invoiceId,
+          companyId,
+          invoiceLineType: "G/L Account",
+          accountId: roundingAccountId,
+          description: ROUNDING_LINE_DESCRIPTION,
+          quantity: 1,
+          supplierUnitPrice: amount,
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: invoice.exchangeRate,
+          sortOrder,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    if (!posted) return { amount };
+
+    const journal = await postPurchaseInvoiceRoundingJournal(trx, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId,
+      invoice: {
+        id: invoice.id,
+        invoiceId: invoice.invoiceId,
+        postingDate: invoice.postingDate
+      },
+      roundingAccountId,
+      previousBase,
+      nextBase,
+      postingStatus
+    });
+    return { amount, ...journal };
+  });
+}
+
+/** The posting's own signs for a G/L line and its payable: a debit to the
+ *  rounding account (signed by its class) against a credit to payables. An
+ *  amount below zero reverses both. Lines carry the payable's document keys
+ *  and share one `journalLineReference`, as a posted G/L line does. */
+export function buildRoundingJournalLines(args: {
+  amount: number;
+  rounding: { accountId: string; name: string; accountClass: AccountClass };
+  payable: {
+    accountId: string;
+    accountDefaultRole: string | null;
+    externalDocumentId: string | null;
+  };
+  invoiceId: string;
+  companyId: string;
+  journalLineReference: string;
+}) {
+  const keys = {
+    quantity: 1,
+    documentType: "Invoice" as const,
+    documentId: args.invoiceId,
+    externalDocumentId: args.payable.externalDocumentId,
+    documentLineReference: null,
+    journalLineReference: args.journalLineReference,
+    companyId: args.companyId
+  };
+  return [
+    {
+      ...keys,
+      accountId: args.rounding.accountId,
+      description: args.rounding.name,
+      amount: debitSigned(args.rounding.accountClass, args.amount)
+    },
+    {
+      ...keys,
+      accountId: args.payable.accountId,
+      accountDefaultRole: args.payable.accountDefaultRole,
+      // Role readers find payables by this description.
+      description: "Accounts Payable",
+      amount: debitSigned("Liability", -args.amount)
+    }
+  ];
+}
+
+/** Posts the change in a posted invoice's rounding line. Refuses a closed or
+ *  locked period, and a decrease below what is already paid. */
+async function postPurchaseInvoiceRoundingJournal(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    invoice: { id: string; invoiceId: string; postingDate: string | null };
+    roundingAccountId: string;
+    previousBase: number;
+    nextBase: number;
+    postingStatus: Awaited<ReturnType<typeof journalPostingStatus>>;
+  }
+): Promise<{ journalId?: string; journalEntryId?: string }> {
+  const { companyId, userId, invoice } = args;
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const baseDecimals = await sharedPostings.currencyDecimals(
+    trx,
+    companyId,
+    company.baseCurrencyCode
+  );
+  const delta = round(args.nextBase - args.previousBase, baseDecimals);
+  if (delta === 0) return {};
+
+  const postingDate = invoice.postingDate;
+  if (!postingDate) throw new Error("The posted invoice has no posting date");
+
+  const lines = await documentJournalLines(trx, companyId, {
+    documentId: invoice.id,
+    documentType: "Invoice"
+  });
+  const payable = lines.find((line) => line.description === "Accounts Payable");
+  if (!payable) {
+    throw new InvalidInputError(
+      "The invoice has no posted Accounts Payable line to adjust."
+    );
+  }
+
+  if (delta < 0) {
+    // A decrease cannot take the total below what payments and memos have
+    // already settled.
+    const totals = await trx
+      .selectFrom("purchaseInvoices")
+      .select(["balance"])
+      .where("id", "=", invoice.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (Number(totals?.balance ?? 0) + delta < 0) {
+      throw new InvalidInputError(
+        "The invoice is already paid past the lower total. Use a credit memo instead."
+      );
+    }
+  }
+
+  const rounding = await trx
+    .selectFrom("account")
+    .select(["id", "name", "class"])
+    .where("id", "=", args.roundingAccountId)
+    .where("companyGroupId", "=", args.companyGroupId)
+    .executeTakeFirstOrThrow();
+  if (!isAccountClass(rounding.class)) {
+    throw new InvalidInputError("The Rounding Account has no class.");
+  }
+
+  // A Provisional journal has no period.
+  let accountingPeriodId: string | null = null;
+  if (args.postingStatus === "Posted") {
+    const period = await trx
+      .selectFrom("accountingPeriod")
+      .select([
+        "closeStatus",
+        "closedAt",
+        "fiscalYear",
+        "periodNumber",
+        sql<string>`"startDate"::text`.as("startDate"),
+        sql<string>`"endDate"::text`.as("endDate")
+      ])
+      .where("companyId", "=", companyId)
+      .where("startDate", "<=", postingDate)
+      .where("endDate", ">=", postingDate)
+      .orderBy("startDate")
+      .forUpdate()
+      .executeTakeFirst();
+    const refusal = period
+      ? lineAccountChangePeriodRefusal(period, "adjusting the invoice")
+      : null;
+    if (refusal) throw new InvalidInputError(refusal);
+    accountingPeriodId = (
+      await resolveAccountingPeriod(trx, companyId, postingDate, "historical")
+    ).id;
+  }
+
+  const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
+  const journal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId,
+      description: `Rounding Purchase Invoice ${invoice.invoiceId}`,
+      postingDate,
+      companyId,
+      sourceType: "Purchase Invoice",
+      status: args.postingStatus,
+      postedAt: datetime.timestamp(),
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  const journalLines = buildRoundingJournalLines({
+    amount: delta,
+    rounding: {
+      accountId: rounding.id,
+      name: rounding.name,
+      accountClass: rounding.class
+    },
+    payable: {
+      accountId: payable.accountId!,
+      accountDefaultRole: payable.accountDefaultRole,
+      externalDocumentId: payable.externalDocumentId
+    },
+    invoiceId: invoice.id,
+    companyId,
+    journalLineReference: nanoid()
+  });
+  const lineIds = await allocateJournalLineIds(trx, journalLines.length);
+  await trx
+    .insertInto("journalLine")
+    .values(
+      journalLines.map((line, index) => ({
+        ...line,
+        id: lineIds[index]!,
+        journalId: journal.id,
+        createdBy: userId
+      }))
+    )
+    .execute();
+  // Both lines take the payable's dimensions (supplier type, location).
+  for (const lineId of lineIds) {
+    await copyJournalLineDimensions(trx, {
+      companyId,
+      reversals: [{ originalLineId: payable.id, reversingLineId: lineId }]
+    });
+  }
+
+  return { journalId: journal.id, journalEntryId };
 }

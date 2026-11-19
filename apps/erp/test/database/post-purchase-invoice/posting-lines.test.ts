@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { debitSigned } from "@carbon/database/ledger";
 import { credit, debit } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
@@ -444,7 +445,7 @@ describe("buildPurchaseInvoicePostingLines", () => {
         amounts: amounts(1, 20),
         kind: "glAccount",
         purchaseOrderLineId: null,
-        account: { id: "office", name: "Office Supplies" },
+        account: { id: "office", name: "Office Supplies", class: "Expense" },
         costCenterId: "cc-1",
         projectId: "project-1"
       },
@@ -545,6 +546,51 @@ describe("buildPurchaseInvoicePostingLines", () => {
     expect(receivedVariances.has("fa-direct")).toBe(false);
   });
 
+  it("debits a balance sheet G/L line by its account's class", () => {
+    const glLine = (
+      id: string,
+      account: { id: string; name: string; class: "Equity" | "Liability" | "Asset" }
+    ): PurchaseInvoicePostingLine => ({
+      id,
+      invoiceLineType: "G/L Account",
+      locationId: null,
+      amounts: amounts(1, 11895.2),
+      kind: "glAccount",
+      purchaseOrderLineId: null,
+      account,
+      costCenterId: null,
+      projectId: null
+    });
+    const { lines } = build([
+      glLine("draw", { id: "equity", name: "Owner Draws", class: "Equity" }),
+      glLine("loan", { id: "loan", name: "Notes Payable", class: "Liability" }),
+      glLine("prepaid", { id: "prepaid", name: "Prepaids", class: "Asset" })
+    ]);
+
+    expect(summary(lines)).toEqual([
+      { accountId: "equity", amount: debit("equity", 11895.2), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 11895.2), quantity: 1 },
+      { accountId: "loan", amount: debit("liability", 11895.2), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 11895.2), quantity: 1 },
+      { accountId: "prepaid", amount: debit("asset", 11895.2), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 11895.2), quantity: 1 }
+    ]);
+    // Debits equal the AP credits once each amount is read by its class.
+    const classOf = {
+      equity: "Equity",
+      loan: "Liability",
+      prepaid: "Asset",
+      ap: "Liability"
+    } as const;
+    const net = lines.reduce(
+      (sum, line) =>
+        sum +
+        debitSigned(classOf[line.accountId as keyof typeof classOf], line.amount),
+      0
+    );
+    expect(net).toBeCloseTo(0, 6);
+  });
+
   it("capitalizes tax and line shipping, and converts a foreign header freight to base", () => {
     // EUR invoice at 0.5 EUR per USD: the header freight of 20 EUR is 40 USD,
     // shared 115 : 85 by line cost. Line amounts are already base.
@@ -581,7 +627,7 @@ describe("buildPurchaseInvoicePostingLines", () => {
         amounts: glAmounts!,
         kind: "glAccount",
         purchaseOrderLineId: null,
-        account: { id: "office", name: "Office Supplies" },
+        account: { id: "office", name: "Office Supplies", class: "Expense" },
         costCenterId: null,
         projectId: null
       },

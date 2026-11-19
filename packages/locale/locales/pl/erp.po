@@ -3595,8 +3595,14 @@ msgstr "Dodaje koszt, którym składnik majątku nigdy nie został obciążony, 
 msgid "Adds to an existing batch"
 msgstr "Dodaje do istniejącej partii produkcyjnej"
 
+msgid "Adjust"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Dostosuj koszt"
+
+msgid "Adjust for Rounding"
+msgstr ""
 
 msgid "Adjustment"
 msgstr "Korekta"
@@ -3904,6 +3910,9 @@ msgstr "Kwota zatwierdzona przez urzędnika ds. umów"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "Kwota do zastosowania dla {0}"
+
+msgid "Amount to match"
+msgstr ""
 
 msgid "Amount Type"
 msgstr "Typ kwoty"
@@ -5626,6 +5635,9 @@ msgstr "Kod banku"
 
 msgid "Bank Name"
 msgstr "Nazwa banku"
+
+msgid "Bank, Cash or Card Account"
+msgstr ""
 
 msgid "Banner content (optional)"
 msgstr "Treść banera (opcjonalnie)"
@@ -9418,6 +9430,10 @@ msgstr "Bieżąca projekcja"
 msgid "Current quantity"
 msgstr "Bieżąca ilość"
 
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr ""
+
 msgid "Custom"
 msgstr "Niestandardowy"
 
@@ -12530,6 +12546,10 @@ msgstr "Wprowadź 6-cyfrowy kod z aplikacji authenticator"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Wpisz 6-cyfrowy kod z aplikacji Authenticator, aby wznowić."
+
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr ""
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Podaj URL Onshape, identyfikator klienta i klucz tajny prywatnej aplikacji OAuth, a następnie zapisz."
@@ -20838,6 +20858,9 @@ msgstr "Nie teraz"
 msgid "Not on the page"
 msgstr "Poza stroną"
 
+msgid "Not posted"
+msgstr ""
+
 msgid "Not Qualified"
 msgstr "Niekwalifikowany"
 
@@ -22523,8 +22546,8 @@ msgstr "Płatność dla Dostawcy"
 msgid "Payments"
 msgstr "Płatności"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Płatności i uznania rozliczone z tą fakturą. Kwoty rozliczeń i różnice kursowe są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "Płatności i noty przypisane do tego dokumentu są najpierw odłączane: każda płatność pozostaje zaksięgowana jako nierozliczona nadpłata, którą można przypisać gdzie indziej lub wymusić jej usunięcie. Przychody ze sprzedaży już rozpoznane z tego dokumentu zostają wystornowane."
@@ -22592,6 +22615,9 @@ msgstr "Kontrola oczekująca"
 
 msgid "Pending Inspection"
 msgstr "Kontrola Oczekująca"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "pracownicy"
@@ -26477,6 +26503,9 @@ msgstr "Konto zaokrąglające"
 msgid "Rounding Account (default)"
 msgstr "Konto zaokrąglające (domyślnie)"
 
+msgid "Rounding adjusted"
+msgstr ""
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "Kieruj wszystkie faktury zobowiązań na jeden adres (np. siedzibę korporacyjną) zamiast na poszczególnych nabywców."
 
@@ -26851,6 +26880,9 @@ msgstr "Zapisz i Zastąp"
 
 msgid "Save and post"
 msgstr "Zapisz i zaksięguj"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "Zapisz aplikacje"
@@ -31076,6 +31108,9 @@ msgstr "Koszt zapasów uznany, gdy wysyłka się zaksięgowuje, wyceniony metod�
 msgid "The invoice for this payment is drafted on this date"
 msgstr "Faktura za tę płatność jest sporządzana w tej dacie"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Klasa okresu odzyskania IRS dla tego zasobu w ramach MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 lat)."
 
@@ -32151,6 +32186,9 @@ msgstr "Ten dział nie ma stanowisk roboczych w {locationName}. Wybierz inny dzi
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "Ten dział nie ma stanowisk roboczych w tej lokalizacji. Wybierz inny dział lub lokalizację."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Ten link pobierania jest nieprawidłowy lub został zmieniony."
 
@@ -32333,6 +32371,12 @@ msgstr "Tylko ta część"
 
 msgid "This path only decides what runs next"
 msgstr "Ta ścieżka decyduje tylko o tym, co uruchomi się dalej"
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Ten okres nie ma zaksięgowanych dowodów księgowych i może być trwale usunięty. Nie można tego cofnąć."

@@ -1340,6 +1340,9 @@ msgstr "特性 {characteristicLabel} 对应的量具: {currentGauge}"
 msgid "General"
 msgstr "常规"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "返回之前的工序，从该点重做所有工序；或将该单元送去纠正，例如返工工位。"
+
 msgid "Go back to operation"
 msgstr "返回操作"
 
@@ -2809,9 +2812,6 @@ msgstr "退回零件"
 
 msgid "Rework"
 msgstr "返工"
-
-msgid "Rework created successfully"
-msgstr "返工创建成功"
 
 msgid "Rework quantity"
 msgstr "返工数量"

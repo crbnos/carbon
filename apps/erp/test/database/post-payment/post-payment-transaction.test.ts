@@ -275,7 +275,7 @@ databaseTest(
       const paymentId = await f.payment();
       await expect(
         postPaymentTransaction(f.db, { ...f.args, paymentId })
-      ).rejects.toThrow("bank account");
+      ).rejects.toThrow("Pay from an active Asset account");
       expect(
         (
           await f.db

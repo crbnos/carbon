@@ -2868,7 +2868,7 @@ export async function getAccountsList(
 ) {
   let query = client
     .from("account")
-    .select("id, number, name, incomeBalance, class")
+    .select("id, number, name, incomeBalance, class, accountType")
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
 
@@ -19147,7 +19147,7 @@ export async function buildLegacyPurchaseInvoiceJournals(
     (ids) =>
       trx
         .selectFrom("account")
-        .select(["id", "name", "isGroup"])
+        .select(["id", "name", "class", "isGroup"])
         .where("companyGroupId", "=", companyGroupId)
         .where("id", "in", ids)
         .execute()

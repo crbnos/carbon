@@ -553,6 +553,18 @@ export function isEffectiveSettlement(row: SettlementEffectiveness): boolean {
       );
 }
 
+/** A settlement that takes effect when its Draft payment posts. */
+export function isPendingSettlement(row: SettlementEffectiveness): boolean {
+  return row.paymentId
+    ? row.paymentStatus === "Draft"
+    : Boolean(
+        row.memoId &&
+          row.memoStatus === "Posted" &&
+          row.appliedViaPaymentId &&
+          row.viaStatus === "Draft"
+      );
+}
+
 export type SettlementBalanceRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
