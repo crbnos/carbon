@@ -390,6 +390,8 @@ async function processDocumentType(
 
     try {
       let content: GeneratedContent;
+      // Custom templates are drawn at 203 dpi whatever the printer runs at.
+      let renderedDpi: number = DEFAULT_LABEL_DPI;
 
       if (templateId && BINDERY_PRESS_API_KEY) {
         content = await renderItemWithTemplate(
@@ -407,6 +409,7 @@ async function processDocumentType(
           mediaSizeId,
           dpi
         );
+        renderedDpi = dpi;
       } else {
         await updatePrintJobStatus(client, jobId, companyId, "failed", {
           error: `No built-in renderer for "${documentTypeId}". Add a "${labelType}" label template for media size "${mediaSizeId}".`
@@ -419,7 +422,8 @@ async function processDocumentType(
         jobId,
         companyId,
         content.content,
-        content.contentType
+        content.contentType,
+        renderedDpi
       );
 
       if (printerUrl) {

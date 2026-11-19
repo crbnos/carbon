@@ -22,7 +22,8 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   React components (`pdf/ProductLabelPDF`, `pdf/StorageUnitLabelPDF`, `pdf/KanbanLabelPDF`, plus
   invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`,
   `zpl/KanbanLabelZPL` (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`,
-  `generateKanbanLabelZPL`).
+  `generateKanbanLabelZPL`), and the printer test label `zpl/TestLabelZPL` (`generateTestLabelZPL`,
+  stamped in the company's timezone by `testPrinterRoute`).
 
 ## Document type registry — `packages/printing/src/registry.ts`
 
@@ -101,7 +102,11 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 - **`printerRoute`** table (`pr` id) = physical printer: `companyId, locationId?, name, format(zpl|pdf
   CHECK), mediaSizeId?, dpi(203|300|600 CHECK, default 203), printerUrl, hasApiKey`. The print job
   renders built-in ZPL at the route's dpi (`withLabelDpi`, `@carbon/utils` labels); the interactive
-  download routes have no printer and stay at 203. The ProxyBox API key is in Supabase Vault
+  download routes have no printer and stay at 203. Known limits: custom (BinderyPress) templates
+  are drawn at 203 dpi whatever the route says, and a QR code prints smaller at 300/600 dpi because
+  ZPL caps `^BQ` magnification at 10. `printerRouteValidator.dpi` is optional
+  (`zfd.numeric(z.literal(labelDpis))`): the form leaves it out for a PDF printer, so saving one keeps
+  the stored dpi. The ProxyBox API key is in Supabase Vault
   as `printer:<companyId>:<routeId>` (`20261117091847_printer-api-key-vault.sql`), never in a column
   and never sent to the browser: `set_printer_api_key` / `get_printer_api_key` are service role only
   (`setPrinterApiKey` / `getPrinterApiKey`). The settings form treats it as write-only (blank keeps
@@ -134,7 +139,12 @@ upsert/delete or assignment update.
 
 `pj` id; `status` (`generating|queued|printing|completed|failed`), `contentType?(zpl|pdf)`, `content?`
 (ZPL text or base64 PDF), `printerUrl`, `sourceDocument`, `sourceDocumentId`, `sourceDocumentReadableId?`,
-`description`, `origin(auto|manual|reprint)`, `error?`, `attempts`, audit cols, `completedAt?`.
+`description`, `origin(auto|manual|reprint)`, `dpi(203|300|600 CHECK, default 203)`, `error?`, `attempts`,
+audit cols, `completedAt?`. `dpi` is what the content was drawn for (`20261119102744_print-job-dpi.sql`):
+`create-print-jobs` writes the route's dpi for a built-in label and 203 for a custom template
+(`updatePrintJobContent`). The jobs preview renders at it, and `reprintPrintJob` refuses a ZPL job for a
+printer route at another dpi (`canResendToPrinter`, `@carbon/utils` labels): the row keeps only the
+finished content, not what it was drawn from, so it cannot be redrawn.
 Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Cleanup
 (`scheduled/cleanup.ts`): completed > 30d and failed > 90d deleted.
 

@@ -41,6 +41,7 @@ import {
 import {
   DEFAULT_LABEL_DPI,
   getLabelSizeLabel,
+  type LabelDpi,
   labelDpis,
   labelSizes
 } from "@carbon/utils";
@@ -56,6 +57,11 @@ import {
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
+
+/** A select's value is a string; `printerRouteValidator` reads it back as a dpi. */
+function dpiFieldValue(dpi: LabelDpi): LabelDpi {
+  return String(dpi) as unknown as LabelDpi;
+}
 
 export function getMediaSizeLabel(mediaSizeId: string): string {
   const size = labelSizes.find((s) => s.id === mediaSizeId);
@@ -244,10 +250,10 @@ export function PrintersCard({
                     name: printerToEdit.name,
                     format: printerToEdit.format,
                     mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
-                    dpi: String(printerToEdit.dpi ?? DEFAULT_LABEL_DPI),
+                    dpi: dpiFieldValue(printerToEdit.dpi),
                     printerUrl: printerToEdit.printerUrl
                   }
-                : { format: "zpl", dpi: String(DEFAULT_LABEL_DPI) }
+                : { format: "zpl", dpi: dpiFieldValue(DEFAULT_LABEL_DPI) }
             }
             className="flex flex-col h-full"
           >
@@ -301,11 +307,12 @@ export function PrintersCard({
                         : t`Select a label size`
                     }
                   />
+                  {/* Left out for a PDF printer, so saving one keeps its dpi. */}
                   {selectedFormat === "zpl" && (
                     <Select
                       name="dpi"
                       label={t`DPI`}
-                      helperText={t`The printer's print density, in dots per inch`}
+                      helperText={t`Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi.`}
                       options={dpiOptions}
                       isOptional={false}
                     />

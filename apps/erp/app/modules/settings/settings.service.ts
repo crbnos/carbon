@@ -82,11 +82,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
-import {
-  getZplLabelGeometry,
-  zplFieldData,
-  zplLabelHeader
-} from "@carbon/documents/zpl";
+import { generateTestLabelZPL } from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -250,7 +246,6 @@ import {
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
-  round,
   searchFilter,
   withLabelDpi
 } from "@carbon/utils";
@@ -3763,26 +3758,13 @@ export async function createHeadquarters(
 export function generateTestLabel(
   format: string,
   mediaSizeId: string | null,
-  dpi: number
+  dpi: number,
+  printedAt: string
 ): string | null {
   if (format !== "zpl" || !mediaSizeId) return null;
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
-  const geometry = getZplLabelGeometry(withLabelDpi(labelSize, dpi));
-  const { margin, scale } = geometry;
-  // Sizes are in 2"x1" @ 203dpi dots; the geometry's scale fits them to this label and dpi.
-  const d = (dots: number) => round(dots * scale, 0);
-  const now = new Date();
-  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-  const text = (y: number, size: number, value: string) =>
-    `^FO${margin},${d(y)}^A0N,${d(size)},${d(size)}${zplFieldData(value)}`;
-  return [
-    zplLabelHeader(geometry),
-    text(20, 30, "Test Print"),
-    text(60, 20, `${labelSize.width}x${labelSize.height}" ${geometry.dpi}dpi`),
-    text(90, 16, timestamp),
-    "^XZ"
-  ].join("\n");
+  return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
 }
 
 /** An API key action on a company without the plan. */

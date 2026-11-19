@@ -57,6 +57,19 @@ export function withLabelDpi(size: LabelSize, dpi?: number | null): LabelSize {
   return { ...size, zpl: { ...size.zpl, dpi } };
 }
 
+/**
+ * Whether saved content can go to a printer as is. ZPL is drawn in one
+ * printer's dots, so another dpi prints it the wrong size; a PDF, or a printer
+ * with no known dpi, is sent unchanged.
+ */
+export function canResendToPrinter(
+  contentType: string,
+  contentDpi: number,
+  printerDpi: number | null | undefined
+): boolean {
+  return contentType !== "zpl" || !printerDpi || printerDpi === contentDpi;
+}
+
 function thermalLabel(
   id: string,
   name: string,

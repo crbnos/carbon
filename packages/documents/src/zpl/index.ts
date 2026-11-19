@@ -9,6 +9,7 @@ import { generateStorageUnitLabelZPL } from "./StorageUnitLabelZPL";
 export type { KanbanLabelAction, KanbanLabelItem } from "./KanbanLabelZPL";
 export { canHoldKanbanLabel, kanbanLabelCode } from "./KanbanLabelZPL";
 export type { StorageUnitLabelItem } from "./StorageUnitLabelZPL";
+export { generateTestLabelZPL } from "./TestLabelZPL";
 export type { ZplLabelGeometry } from "./utils";
 export { getZplLabelGeometry, zplFieldData, zplLabelHeader } from "./utils";
 export {

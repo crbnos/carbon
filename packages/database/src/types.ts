@@ -51449,6 +51449,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           description: string
+          dpi: number
           error: string | null
           id: string
           origin: string
@@ -51469,6 +51470,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           description: string
+          dpi?: number
           error?: string | null
           id?: string
           origin?: string
@@ -51489,6 +51491,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           description?: string
+          dpi?: number
           error?: string | null
           id?: string
           origin?: string
