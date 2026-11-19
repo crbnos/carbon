@@ -18,7 +18,7 @@ import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument
 } from "@carbon/ee/rules.server";
-import { SUPABASE_INTERNAL_URL, SUPABASE_URL } from "@carbon/env";
+import { publicSupabaseUrl, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { getDocumentType, storage } from "@carbon/files";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import {
@@ -770,21 +770,16 @@ export async function emailPostedInvoice(args: {
     // The email is read in the recipient's mail client: its logo must use
     // the public URL, not the internal one the PDF was rendered with.
     const publicCompany = { ...document.email.company };
-    if (SUPABASE_INTERNAL_URL && SUPABASE_URL) {
-      for (const field of [
-        "logoLight",
-        "logoDark",
-        "logoLightIcon",
-        "logoDarkIcon",
-        "logoWatermark"
-      ] as const) {
-        const value = publicCompany[field];
-        if (typeof value === "string") {
-          publicCompany[field] = value.replace(
-            SUPABASE_INTERNAL_URL,
-            SUPABASE_URL
-          );
-        }
+    for (const field of [
+      "logoLight",
+      "logoDark",
+      "logoLightIcon",
+      "logoDarkIcon",
+      "logoWatermark"
+    ] as const) {
+      const value = publicCompany[field];
+      if (typeof value === "string") {
+        publicCompany[field] = publicSupabaseUrl(value);
       }
     }
 

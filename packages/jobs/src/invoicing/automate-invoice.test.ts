@@ -19,7 +19,8 @@ let postInvoice: (
 
 vi.mock("@carbon/env", () => ({
   SUPABASE_INTERNAL_URL: "http://internal:8000",
-  SUPABASE_URL: "https://db.example.com"
+  SUPABASE_URL: "https://db.example.com",
+  publicSupabaseUrl: (url: string) => url
 }));
 vi.mock("@carbon/lib/email.server", () => ({
   DEFAULT_FROM: "Carbon <no-reply@carbon.ms>",
