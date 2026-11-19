@@ -1340,6 +1340,9 @@ msgstr "Özellik {characteristicLabel} için ölçüm aleti: {currentGauge}"
 msgid "General"
 msgstr "Genel"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Oradan itibaren tüm operasyonları yeniden yapmak için önceki bir operasyona geri dönün ya da birimi bir yeniden işleme istasyonu gibi bir düzeltmeye gönderin."
+
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
 
@@ -2809,9 +2812,6 @@ msgstr "İade Parçası"
 
 msgid "Rework"
 msgstr "Yeniden işleme"
-
-msgid "Rework created successfully"
-msgstr "Yeniden işleme başarıyla oluşturuldu"
 
 msgid "Rework quantity"
 msgstr "Yeniden işleme miktarı"

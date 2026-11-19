@@ -1340,6 +1340,9 @@ msgstr "特性 {characteristicLabel} の測定器: {currentGauge}"
 msgid "General"
 msgstr "一般"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "前の工程に戻ってそこからすべての工程をやり直すか、手直しステーションなどの修正にユニットを送ります。"
+
 msgid "Go back to operation"
 msgstr "操作に戻る"
 
@@ -2809,9 +2812,6 @@ msgstr "部品返品"
 
 msgid "Rework"
 msgstr "手直し"
-
-msgid "Rework created successfully"
-msgstr "手直しが正常に作成されました"
 
 msgid "Rework quantity"
 msgstr "手直し数量"
