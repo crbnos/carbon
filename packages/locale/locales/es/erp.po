@@ -31108,6 +31108,9 @@ msgstr "El costo de inventario reconocido cuando se registra un envío, valorado
 msgid "The invoice for this payment is drafted on this date"
 msgstr "La factura para este pago se redacta en esta fecha"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "La clase de período de recuperación del IRS para este activo bajo MACRS (3, 5, 7, 10, 15, 20, 27.5, 39 años)."
 

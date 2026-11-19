@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  ForbiddenError,
   InvalidInputError,
   NotFoundError,
   ServerFnError
@@ -21189,18 +21190,21 @@ export function accountingPeriodName(period: PeriodNameFields): string {
     : `${period.startDate} to ${period.endDate}`;
 }
 
+/** Why a posted invoice cannot be changed in its period, or null when the
+ *  period is Open. `action` finishes "Reopen it before …". */
 export function lineAccountChangePeriodRefusal(
   period: PeriodNameFields & {
     closeStatus: string;
     closedAt: string | Date | null;
-  }
+  },
+  action = "changing the account"
 ): string | null {
   const name = accountingPeriodName(period);
   if (period.closeStatus === "Closed" || period.closedAt) {
-    return `Accounting period ${name} is closed. Reopen it before changing the account.`;
+    return `Accounting period ${name} is closed. Reopen it before ${action}.`;
   }
   if (period.closeStatus === "Locked") {
-    return `Accounting period ${name} is locked. Unlock it before changing the account.`;
+    return `Accounting period ${name} is locked. Unlock it before ${action}.`;
   }
   return null;
 }
@@ -21774,13 +21778,29 @@ export const adjustPurchaseInvoiceRoundingInput = z.object({
   targetTotal: z.number().finite()
 });
 
+export const ROUNDING_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+/** Statuses whose lines are never changed for rounding. */
+const ROUNDING_REFUSED_STATUSES: Record<string, string> = {
+  Pending: "The invoice is being posted. Try again in a moment.",
+  Voided: "A voided invoice cannot be adjusted for rounding."
+};
+
 /**
- * Brings a Draft purchase invoice's total to `targetTotal` (the amount the
- * supplier actually charged) with one G/L line on the company's default
- * rounding account. The invoice's other lines, inventory lines included, keep
- * their prices, so receipts and purchase orders are untouched. Setting the
- * same total again changes nothing; a total the other lines already match
- * removes the rounding line.
+ * Brings a purchase invoice's total to `targetTotal` (the amount the supplier
+ * actually charged) with one G/L line on the company's default rounding
+ * account. The invoice's other lines, inventory lines included, keep their
+ * prices, so receipts and purchase orders are untouched. Setting the same
+ * total again changes nothing; a total the other lines already match removes
+ * the rounding line.
+ *
+ * On a posted invoice it also posts the change as one journal, dated on the
+ * invoice's posting date in its period (which must be Open): the rounding
+ * account against the invoice's own Accounts Payable account, keyed to the
+ * invoice, so payments and balances read the new total and a void reverses
+ * it. A decrease is refused when it would take the total below what is
+ * already paid.
  */
 export async function adjustPurchaseInvoiceRounding(
   ctx: ServiceContext,
@@ -21792,18 +21812,44 @@ export async function adjustPurchaseInvoiceRounding(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
+  const postingStatus = await journalPostingStatus(db, companyId);
+
   return withTransaction(db, async (trx) => {
+    // FOR UPDATE: a void locks the invoice before it reads the journal it
+    // reverses, so it reverses an adjustment that committed first.
     const invoice = await trx
       .selectFrom("purchaseInvoice")
-      .select(["id", "status", "currencyCode", "exchangeRate"])
+      .select([
+        "id",
+        "invoiceId",
+        "status",
+        "currencyCode",
+        "exchangeRate",
+        sql<string | null>`"postingDate"::text`.as("postingDate")
+      ])
       .where("id", "=", invoiceId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new NotFoundError("Purchase invoice not found");
-    if (invoice.status !== "Draft") {
-      throw new InvalidInputError(
-        "Only a Draft purchase invoice can be adjusted for rounding."
+    const refusedStatus = invoice.status
+      ? ROUNDING_REFUSED_STATUSES[invoice.status]
+      : undefined;
+    if (refusedStatus) throw new InvalidInputError(refusedStatus);
+    const posted = invoice.status !== "Draft";
+    if (posted) {
+      // A posted invoice's adjustment posts a journal.
+      if (!ctx.can({ update: "accounting" })) {
+        throw new ForbiddenError(
+          "Adjusting a posted invoice needs accounting update permission."
+        );
+      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+      await refuseVoidBeforeCutover(
+        trx,
+        companyId,
+        invoice.postingDate,
+        ROUNDING_BEFORE_CUTOVER_ERROR
       );
     }
 
@@ -21884,6 +21930,13 @@ export async function adjustPurchaseInvoiceRounding(
     if ("refusal" in result) throw new InvalidInputError(result.refusal);
     const { amount } = result;
 
+    // What the posting booked for the rounding line, in base currency, and
+    // what it books now: a posted invoice moves by the difference.
+    const previousBase = roundingLine
+      ? Number(roundingLine.quantity) * Number(roundingLine.unitPrice ?? 0)
+      : 0;
+    const nextBase = amount / (rate === 0 ? 1 : rate);
+
     if (amount === 0) {
       if (roundingLine) {
         await trx
@@ -21931,6 +21984,219 @@ export async function adjustPurchaseInvoiceRounding(
         .execute();
     }
 
-    return { amount };
+    if (!posted) return { amount };
+
+    const journal = await postPurchaseInvoiceRoundingJournal(trx, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId,
+      invoice: {
+        id: invoice.id,
+        invoiceId: invoice.invoiceId,
+        postingDate: invoice.postingDate
+      },
+      roundingAccountId,
+      previousBase,
+      nextBase,
+      postingStatus
+    });
+    return { amount, ...journal };
   });
+}
+
+/** The posting's own signs for a G/L line and its payable: a debit to the
+ *  rounding account (signed by its class) against a credit to payables. An
+ *  amount below zero reverses both. Lines carry the payable's document keys
+ *  and share one `journalLineReference`, as a posted G/L line does. */
+export function buildRoundingJournalLines(args: {
+  amount: number;
+  rounding: { accountId: string; name: string; accountClass: AccountClass };
+  payable: {
+    accountId: string;
+    accountDefaultRole: string | null;
+    externalDocumentId: string | null;
+  };
+  invoiceId: string;
+  companyId: string;
+  journalLineReference: string;
+}) {
+  const keys = {
+    quantity: 1,
+    documentType: "Invoice" as const,
+    documentId: args.invoiceId,
+    externalDocumentId: args.payable.externalDocumentId,
+    documentLineReference: null,
+    journalLineReference: args.journalLineReference,
+    companyId: args.companyId
+  };
+  return [
+    {
+      ...keys,
+      accountId: args.rounding.accountId,
+      description: args.rounding.name,
+      amount: debitSigned(args.rounding.accountClass, args.amount)
+    },
+    {
+      ...keys,
+      accountId: args.payable.accountId,
+      accountDefaultRole: args.payable.accountDefaultRole,
+      // Role readers find payables by this description.
+      description: "Accounts Payable",
+      amount: debitSigned("Liability", -args.amount)
+    }
+  ];
+}
+
+/** Posts the change in a posted invoice's rounding line. Refuses a closed or
+ *  locked period, and a decrease below what is already paid. */
+async function postPurchaseInvoiceRoundingJournal(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    invoice: { id: string; invoiceId: string; postingDate: string | null };
+    roundingAccountId: string;
+    previousBase: number;
+    nextBase: number;
+    postingStatus: Awaited<ReturnType<typeof journalPostingStatus>>;
+  }
+): Promise<{ journalId?: string; journalEntryId?: string }> {
+  const { companyId, userId, invoice } = args;
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const baseDecimals = await sharedPostings.currencyDecimals(
+    trx,
+    companyId,
+    company.baseCurrencyCode
+  );
+  const delta = round(args.nextBase - args.previousBase, baseDecimals);
+  if (delta === 0) return {};
+
+  const postingDate = invoice.postingDate;
+  if (!postingDate) throw new Error("The posted invoice has no posting date");
+
+  const lines = await documentJournalLines(trx, companyId, {
+    documentId: invoice.id,
+    documentType: "Invoice"
+  });
+  const payable = lines.find((line) => line.description === "Accounts Payable");
+  if (!payable) {
+    throw new InvalidInputError(
+      "The invoice has no posted Accounts Payable line to adjust."
+    );
+  }
+
+  if (delta < 0) {
+    // A decrease cannot take the total below what payments and memos have
+    // already settled.
+    const totals = await trx
+      .selectFrom("purchaseInvoices")
+      .select(["balance"])
+      .where("id", "=", invoice.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (Number(totals?.balance ?? 0) + delta < 0) {
+      throw new InvalidInputError(
+        "The invoice is already paid past the lower total. Use a credit memo instead."
+      );
+    }
+  }
+
+  const rounding = await trx
+    .selectFrom("account")
+    .select(["id", "name", "class"])
+    .where("id", "=", args.roundingAccountId)
+    .where("companyGroupId", "=", args.companyGroupId)
+    .executeTakeFirstOrThrow();
+  if (!isAccountClass(rounding.class)) {
+    throw new InvalidInputError("The Rounding Account has no class.");
+  }
+
+  // A Provisional journal has no period.
+  let accountingPeriodId: string | null = null;
+  if (args.postingStatus === "Posted") {
+    const period = await trx
+      .selectFrom("accountingPeriod")
+      .select([
+        "closeStatus",
+        "closedAt",
+        "fiscalYear",
+        "periodNumber",
+        sql<string>`"startDate"::text`.as("startDate"),
+        sql<string>`"endDate"::text`.as("endDate")
+      ])
+      .where("companyId", "=", companyId)
+      .where("startDate", "<=", postingDate)
+      .where("endDate", ">=", postingDate)
+      .orderBy("startDate")
+      .forUpdate()
+      .executeTakeFirst();
+    const refusal = period
+      ? lineAccountChangePeriodRefusal(period, "adjusting the invoice")
+      : null;
+    if (refusal) throw new InvalidInputError(refusal);
+    accountingPeriodId = (
+      await resolveAccountingPeriod(trx, companyId, postingDate, "historical")
+    ).id;
+  }
+
+  const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
+  const journal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId,
+      description: `Rounding Purchase Invoice ${invoice.invoiceId}`,
+      postingDate,
+      companyId,
+      sourceType: "Purchase Invoice",
+      status: args.postingStatus,
+      postedAt: datetime.timestamp(),
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  const journalLines = buildRoundingJournalLines({
+    amount: delta,
+    rounding: {
+      accountId: rounding.id,
+      name: rounding.name,
+      accountClass: rounding.class
+    },
+    payable: {
+      accountId: payable.accountId!,
+      accountDefaultRole: payable.accountDefaultRole,
+      externalDocumentId: payable.externalDocumentId
+    },
+    invoiceId: invoice.id,
+    companyId,
+    journalLineReference: nanoid()
+  });
+  const lineIds = await allocateJournalLineIds(trx, journalLines.length);
+  await trx
+    .insertInto("journalLine")
+    .values(
+      journalLines.map((line, index) => ({
+        ...line,
+        id: lineIds[index]!,
+        journalId: journal.id,
+        createdBy: userId
+      }))
+    )
+    .execute();
+  // Both lines take the payable's dimensions (supplier type, location).
+  for (const lineId of lineIds) {
+    await copyJournalLineDimensions(trx, {
+      companyId,
+      reversals: [{ originalLineId: payable.id, reversingLineId: lineId }]
+    });
+  }
+
+  return { journalId: journal.id, journalEntryId };
 }

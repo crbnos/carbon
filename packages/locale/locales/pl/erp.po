@@ -31108,6 +31108,9 @@ msgstr "Koszt zapasów uznany, gdy wysyłka się zaksięgowuje, wyceniony metod�
 msgid "The invoice for this payment is drafted on this date"
 msgstr "Faktura za tę płatność jest sporządzana w tej dacie"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Klasa okresu odzyskania IRS dla tego zasobu w ramach MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 lat)."
 

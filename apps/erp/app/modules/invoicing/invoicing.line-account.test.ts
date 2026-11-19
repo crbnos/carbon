@@ -6,6 +6,7 @@ import { debitSigned } from "@carbon/database/ledger";
 import { describe, expect, it } from "vitest";
 import {
   buildLineAccountChangeLines,
+  buildRoundingJournalLines,
   findInvoiceLinePosition,
   type InvoiceLineLeg,
   LINE_ACCOUNT_CHANGE_PREFIX,
@@ -461,5 +462,45 @@ describe("the original posting's period", () => {
     expect(
       lineAccountChangePeriodRefusal({ ...period, closeStatus: "Open" })
     ).toBe(null);
+  });
+});
+
+describe("a posted invoice's rounding journal", () => {
+  const base = (amount: number, accountClass: "Expense" | "Revenue") =>
+    buildRoundingJournalLines({
+      amount,
+      rounding: { accountId: "acc-7105", name: "Rounding", accountClass },
+      payable: {
+        accountId: "acc-2000",
+        accountDefaultRole: null,
+        externalDocumentId: "1116ABUNN-3"
+      },
+      invoiceId: "pi-1",
+      companyId: "co-1",
+      journalLineReference: "ref-1"
+    }).map(({ accountId, amount, description }) => ({
+      accountId,
+      amount,
+      description
+    }));
+
+  it("debits the rounding account and credits payables for a higher total", () => {
+    // Stored natural-signed: an expense debit and a liability credit are positive.
+    expect(base(0.01, "Expense")).toEqual([
+      { accountId: "acc-7105", amount: 0.01, description: "Rounding" },
+      { accountId: "acc-2000", amount: 0.01, description: "Accounts Payable" }
+    ]);
+  });
+
+  it("reverses both legs for a lower total", () => {
+    expect(base(-0.01, "Expense")).toEqual([
+      { accountId: "acc-7105", amount: -0.01, description: "Rounding" },
+      { accountId: "acc-2000", amount: -0.01, description: "Accounts Payable" }
+    ]);
+  });
+
+  it("signs the debit by the rounding account's own class", () => {
+    // A revenue account stores a debit negative.
+    expect(base(0.01, "Revenue")[0]!.amount).toBe(-0.01);
   });
 });
