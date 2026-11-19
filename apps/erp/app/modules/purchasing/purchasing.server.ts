@@ -2069,7 +2069,7 @@ export const updatePurchaseOrders = defineServiceFn({
       const before =
         field === "exchangeRate"
           ? await service.getPurchaseOrderApprovalStates(
-              ctx.asSystem.supabase,
+              ctx.asSystem.pg,
               companyId,
               ids
             )

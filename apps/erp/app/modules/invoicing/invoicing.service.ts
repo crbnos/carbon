@@ -497,6 +497,7 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   // Invoiced only once approved and released (or since closed), within the
   // approved amount.
   const funds = await getPurchaseOrderFundsRefusal(
+    db,
     client,
     companyId,
     [purchaseOrderId],
@@ -18353,12 +18354,15 @@ export async function postPurchaseInvoice(
           .orderBy("id")
           .forUpdate()
           .execute();
+        // On this transaction's connection: a posting reads the database
+        // only, never the API.
         const lockedFundsRefused = await purchaseOrderFundsGate(
           ctx,
           invoicePurchaseOrderIds,
           {
             intent: "invoice",
-            purchaseOrderLineIds: invoicePurchaseOrderLineIds
+            purchaseOrderLineIds: invoicePurchaseOrderLineIds,
+            db: trx
           }
         );
         if (lockedFundsRefused) {
