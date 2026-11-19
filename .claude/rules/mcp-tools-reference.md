@@ -393,7 +393,9 @@ bytes never pass through the model or the dispatch.
   `documents_createDocumentUploadUrl` (raw `folder` / `entityId`). Per entity
   because an opportunity's storage folder id differs from its source document
   id. Path convention: `buildDocumentUploadPath` (`documents.models.ts`).
-- The agent PUTs the bytes to `signedUrl`.
+- The agent PUTs the bytes to `signedUrl`. Every `signedUrl` a tool returns
+  (upload or download) is on the public `SUPABASE_URL` (`publicSupabaseUrl`,
+  `@carbon/env`), never the server's `SUPABASE_INTERNAL_URL`.
 - **Step 2:** `documents_insertUploadedDocument` registers the `document` row
   (`size` in KB; read/write groups default to the creating user).
 - Works on the OAuth path. An API key is not a Supabase JWT (`auth.uid()` is

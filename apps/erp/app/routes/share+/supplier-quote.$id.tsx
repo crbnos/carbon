@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { publicSupabaseUrl } from "@carbon/env";
 import { Input, TextArea, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
@@ -160,17 +161,20 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           quote.data.sharedFilePaths
         )
           .then((files) =>
-            async.map(files, async (file) => ({
-              itemId: file.itemId,
-              filename: file.filename,
-              url: await signItemFile(
+            async.map(files, async (file) => {
+              const url = await signItemFile(
                 ctx.asSystem.supabase,
                 quote.data.companyId,
                 file,
                 3600,
                 file.filename
-              )
-            }))
+              );
+              return {
+                itemId: file.itemId,
+                filename: file.filename,
+                url: url && publicSupabaseUrl(url)
+              };
+            })
           )
           // The quote page stays usable when its files can't be read.
           .catch((error) => {

@@ -75,6 +75,12 @@ keys listed in `getBrowserEnv()` are exposed client-side.
 `SUPABASE_SERVICE_ROLE_KEY` (required, secret), `SUPABASE_DB_URL` (required,
 secret), `SUPABASE_JWT_SECRET` (optional), plus
 `SUPABASE_AUTH_EXTERNAL_{GOOGLE,AZURE}_CLIENT_ID/SECRET` for OAuth.
+`SUPABASE_INTERNAL_URL` (optional, server-only) points every server client
+(`packages/auth/src/lib/supabase/client.ts`) at an in-cluster address; unset, it
+is `SUPABASE_URL`. supabase-js builds a signed link from its client's address,
+so a link handed to anyone outside the cluster (browser, email, Slack, MCP)
+goes through `publicSupabaseUrl` (`@carbon/env`); a link our own server or the
+assembler fetches keeps the internal one.
 
 **Redis** — `REDIS_URL` (required, secret).
 

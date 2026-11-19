@@ -8,6 +8,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { publicSupabaseUrl } from "@carbon/env";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { isOwnSignaturePath, SIGNATURES_BUCKET } from "@carbon/utils";
@@ -41,7 +42,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error: signed.error
       });
     }
-    signatureUrl = signed.data?.signedUrl ?? null;
+    signatureUrl = signed.data
+      ? publicSupabaseUrl(signed.data.signedUrl)
+      : null;
   }
 
   return {

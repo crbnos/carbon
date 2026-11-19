@@ -69,6 +69,7 @@ import {
   rejectRequest
 } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { publicSupabaseUrl } from "@carbon/env";
 import {
   getCompanyPrivateBucket,
   getFileExtension,
@@ -8197,7 +8198,11 @@ export async function supplierFileEmailParts(
     signed.flatMap((file) => (file.url ? [{ ...file, url: file.url }] : [])),
     PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
   );
-  const links = split.link;
+  // Attachments are fetched by our own server; links are opened by the supplier.
+  const links = split.link.map((link) => ({
+    ...link,
+    url: publicSupabaseUrl(link.url)
+  }));
 
   const linksHtml = links.length
     ? `<br><br>Files too large to attach (links valid for 7 days):<br>${links

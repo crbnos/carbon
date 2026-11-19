@@ -329,6 +329,38 @@ export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY");
 export const SUPABASE_INTERNAL_URL =
   getEnv("SUPABASE_INTERNAL_URL") || SUPABASE_URL;
 
+/**
+ * `url` with its `from` base swapped for `to`. A url not under `from`, or
+ * either base unset, comes back unchanged.
+ */
+export function rebaseUrl(
+  url: string,
+  from: string | undefined,
+  to: string | undefined
+): string {
+  if (!from || !to || from === to) return url;
+  const base = new URL(from);
+  const target = new URL(url);
+  const basePath = base.pathname.replace(/\/+$/, "");
+  const underBase =
+    target.origin === base.origin &&
+    (target.pathname === basePath ||
+      target.pathname.startsWith(`${basePath}/`));
+  if (!underBase) return url;
+  const next = new URL(to);
+  return `${next.origin}${next.pathname.replace(/\/+$/, "")}${target.pathname.slice(basePath.length)}${target.search}${target.hash}`;
+}
+
+/**
+ * A link a server client made, on the public `SUPABASE_URL`. Server clients
+ * use `SUPABASE_INTERNAL_URL`, and supabase-js builds a signed link from the
+ * client's own address, so pass every link handed to a browser, an email or an
+ * API caller through here. A link our own server fetches keeps the internal one.
+ */
+export function publicSupabaseUrl(url: string): string {
+  return rebaseUrl(url, SUPABASE_INTERNAL_URL, SUPABASE_URL);
+}
+
 export const DEFAULT_LANGUAGE = getEnv("DEFAULT_LANGUAGE") ?? "en";
 
 // Level for @carbon/logger. Optional + non-secret so it reaches the browser.

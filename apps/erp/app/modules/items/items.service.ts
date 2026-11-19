@@ -33,6 +33,7 @@ import {
   hasPendingApproval,
   pendingApprovalDocumentIds
 } from "@carbon/ee/approvals.server";
+import { publicSupabaseUrl } from "@carbon/env";
 import {
   isUnsafeStoragePath,
   storage,
@@ -9346,7 +9347,15 @@ export async function createModelUploadUrl(
     .from(TEMP_STAGING_BUCKET)
     .createSignedUploadUrl(path, { upsert: true });
   if (signed.error) return { data: null, error: signed.error };
-  return { data: { ...signed.data, modelId, path }, error: null };
+  return {
+    data: {
+      ...signed.data,
+      signedUrl: publicSupabaseUrl(signed.data.signedUrl),
+      modelId,
+      path
+    },
+    error: null
+  };
 }
 
 const modelUploadTargets = [
@@ -9539,7 +9548,14 @@ export async function createItemThumbnailUploadUrl(
     .company(args.companyId)
     .createSignedUploadUrl(path, { upsert: true });
   if (signed.error) return { data: null, error: signed.error };
-  return { data: { ...signed.data, path }, error: null };
+  return {
+    data: {
+      ...signed.data,
+      signedUrl: publicSupabaseUrl(signed.data.signedUrl),
+      path
+    },
+    error: null
+  };
 }
 
 /**

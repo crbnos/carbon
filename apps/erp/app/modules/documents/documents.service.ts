@@ -5,6 +5,7 @@
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { generateDownloadToken } from "@carbon/auth/download-token.server";
 import type { Database } from "@carbon/database";
+import { publicSupabaseUrl } from "@carbon/env";
 import {
   getDocumentType,
   imageTransformErrorMessage,
@@ -223,9 +224,17 @@ export async function createDocumentUploadUrl(
   const documentPath = isHeic(args.name)
     ? buildStagedUploadPath(args)
     : buildDocumentUploadPath(args);
-  return storage(client)
+  const signed = await storage(client)
     .company(args.companyId)
     .createSignedUploadUrl(documentPath, { upsert: true });
+  if (signed.error) return { data: null, error: signed.error };
+  return {
+    data: {
+      ...signed.data,
+      signedUrl: publicSupabaseUrl(signed.data.signedUrl)
+    },
+    error: null
+  };
 }
 
 /**
@@ -524,7 +533,7 @@ export async function signRecordFileUrl(
 
   // Set here, not through createSignedUrl's `download` option: that encodes
   // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
-  const url = new URL(signed.data.signedUrl);
+  const url = new URL(publicSupabaseUrl(signed.data.signedUrl));
   url.searchParams.set("download", key.slice(key.lastIndexOf("/") + 1));
   return {
     path: key,
