@@ -7857,49 +7857,6 @@ export async function notifyScheduleInputsChanged(
   }
 }
 
-/**
- * Schedule released jobs out of band. The jobs are stamped schedule-outdated
- * first, then the replan wave is woken. The wave regenerates their locations
- * and clears the stamp. The send is a continuation, so the mark step does not
- * re-stamp the whole company. A failed send leaves the stamp, and the nightly
- * replan picks the jobs up. Running the schedule inside the request lost the
- * jobs when the request ended before the run: they were Ready, not stamped,
- * and never placed.
- */
-export async function queueJobsForScheduling(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; jobIds: string[]; reason: string }
-): Promise<boolean> {
-  const { companyId, jobIds, reason } = args;
-  if (jobIds.length === 0) return true;
-  try {
-    await db
-      .updateTable("job")
-      .set({
-        scheduleOutdatedReason: reason,
-        scheduleOutdatedAt: datetime.timestamp()
-      })
-      .where("companyId", "=", companyId)
-      .where("id", "in", jobIds)
-      .execute();
-    const { trigger } = await import("@carbon/jobs");
-    await trigger("schedule-inputs-changed", {
-      companyId,
-      kind: "reorder",
-      reason,
-      continuation: true
-    });
-    return true;
-  } catch (error) {
-    logger.error("Failed to queue jobs for scheduling", {
-      companyId,
-      jobIds,
-      error
-    });
-    return false;
-  }
-}
-
 // --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
 // Execution lives in MES (the operation view's batch mode); ERP composes
 // batches on the schedule board, mutates them via the batch-operations server fn,
