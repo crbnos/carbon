@@ -17391,6 +17391,12 @@ msgstr "{position}번 라인"
 msgid "Line Add-On"
 msgstr "라인 애드온"
 
+msgid "Line Customer Part ID"
+msgstr "라인 고객 부품 ID"
+
+msgid "Line Customer Part Revision"
+msgstr "라인 고객 리비전"
+
 msgid "Line description"
 msgstr "라인 설명"
 

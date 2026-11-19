@@ -41,6 +41,7 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
+  customerPartNumberDisplaySettingsValidator,
   deliveryDateCheckSettingsValidator,
   digitalQuoteValidator,
   quoteLineCategoryMarkupsSettingsValidator,
@@ -49,6 +50,7 @@ import {
   settingsToggle
 } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { PartNumbersCard } from "~/modules/settings/ui/PartNumbers/PartNumbersCard";
 import { DeliveryDateCheckCard } from "~/modules/settings/ui/Sales/DeliveryDateCheckCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -114,6 +116,11 @@ const salesSettingsForm = z.discriminatedUnion("intent", [
     .extend({ intent: z.literal("categoryMarkups") })
     .transform(({ intent: _, ...quoteLineCategoryMarkups }) => ({
       quoteLineCategoryMarkups
+    })),
+  customerPartNumberDisplaySettingsValidator
+    .extend({ intent: z.literal("customerPartNumberDisplay") })
+    .transform(({ customerPartNumberDisplay }) => ({
+      customerPartNumberDisplay
     }))
 ]);
 
@@ -317,6 +324,12 @@ export default function SalesSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <PartNumbersCard
+          party="customer"
+          value={companySettings.customerPartNumberDisplay ?? "Ours First"}
+        />
+
         <SettingsSectionHeader>
           <Trans>Customers</Trans>
         </SettingsSectionHeader>

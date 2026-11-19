@@ -52,7 +52,8 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 | `opportunity` | Deal container linking quotes and sales orders |
 | `quote` / `quoteLine` / `quoteLinePrice` | Quote with cost rollup and quantity-break pricing |
 | `quoteMakeMethod` / `quoteMaterial` / `quoteOperation` | Quote-level BOM and routing |
-| `salesOrder` / `salesOrderLine` | Confirmed orders with fulfillment tracking |
+| `salesOrder` / `salesOrderLine` | Confirmed orders with fulfillment tracking. `salesOrderLine.customerPartId` / `customerPartRevision` are the line's own copy of the customer part number (a trigger copies `customerPartToItem` on insert and item change; the `salesOrderLines` view returns the live value as `customerPartIdFromCustomer` / `customerPartRevisionFromCustomer`) |
+| `partNumberDisplay` on `quoteLine`, `salesOrderLine`, `salesInvoiceLine`, `shipmentLine` | Which part numbers the line prints. Null: a legacy line, printed as its document printed before the choice existed (`LEGACY_PART_NUMBER_DISPLAY`, `@carbon/documents/utils`; the packing slip prints our part number in code), except that the sales order no longer repeats the customer part number in its details line. A BEFORE INSERT trigger stamps it from `customer.partNumberDisplay`, else `companySettings.customerPartNumberDisplay`; conversions copy it; a customer change restamps the lines that have one; Edit document sets every line |
 | `salesRfq` / `salesRfqLine` | Inbound customer RFQs |
 | `customer` / `customerContact` / `customerLocation` | Customer master data |
 | `customerStatus` / `customerType` | Customer categorization |

@@ -377,7 +377,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       customerStatusId: statusId,
       phone: c.phone,
       website: c.website,
-      currencyCode: c.currencyCode ?? "USD"
+      currencyCode: c.currencyCode ?? "USD",
+      partNumberDisplay: c.partNumberDisplay ?? null
     });
     ctx.refs.customers[c.name] = custId;
 

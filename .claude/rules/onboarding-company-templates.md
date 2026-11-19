@@ -47,7 +47,9 @@ await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log
 ```
 
 It resolves today in the company's timezone, builds the context, opens ONE transaction,
-sets `app.sync_in_progress` and `app.dataset_apply`, ensures sequences, runs the selected tiers in order, and
+sets `app.sync_in_progress` and `app.dataset_apply`, ensures sequences, runs the selected tiers in order,
+stamps the seeded document lines' part number display choice (`stampPartNumberDisplay`,
+`helpers/part-number-display.ts`, because the line triggers skip `app.dataset_apply`), and
 commits — or rolls the whole thing back. A half-seeded company is not a possible outcome.
 
 `wipeFirst` clears the company's existing business data inside that same transaction,

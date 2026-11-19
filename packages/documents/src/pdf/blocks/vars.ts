@@ -137,12 +137,22 @@ export function buildSalesInvoiceVars(
 export function buildSalesInvoiceLineVars(
   line: SalesInvoiceData["salesInvoiceLines"][number],
   rowNumber: number,
-  data: Pick<SalesInvoiceData, "numberFormatter" | "rateFormatter" | "locale">
+  data: Pick<
+    SalesInvoiceData,
+    "numberFormatter" | "rateFormatter" | "locale" | "partNumberDisplayDraft"
+  >
 ): Record<LineMergeToken<"salesInvoice">, string> {
   const money = (v: number) => data.numberFormatter.format(v);
   const common = {
-    "line.description": str(getLineDescription(line)),
-    "line.details": str(getLineDescriptionDetails(line))
+    // The part numbers per the line's display choice.
+    "line.description": str(
+      getLineDescription(line, data.partNumberDisplayDraft)
+    ),
+    "line.details": str(getLineDescriptionDetails(line)),
+    // Each number on its own, whatever the display choice.
+    "line.itemId": str(line.itemReadableId),
+    "line.customerPartId": str(line.customerPartId),
+    "line.customerPartRevision": str(line.customerPartRevision)
   };
 
   if (line.invoiceLineType === "Comment") {

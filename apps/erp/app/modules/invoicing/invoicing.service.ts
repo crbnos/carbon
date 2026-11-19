@@ -10236,6 +10236,7 @@ export async function postSalesInvoice(
             shipmentLineInserts.push({
               itemId: invoiceLine.itemId!,
               lineId: invoiceLine.id,
+              partNumberDisplay: invoiceLine.partNumberDisplay,
               orderQuantity: invoiceLine.quantity,
               outstandingQuantity: invoiceLine.quantity,
               shippedQuantity: invoiceLine.quantity,

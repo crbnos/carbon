@@ -28,7 +28,9 @@ conventions, the drift check, adding an industry) lives in
 | **Engine** | `tiers/01-…` … `tiers/12-…`, `sql.ts`, `dates.ts`, `helpers/` | Insertion logic. Industry-agnostic — a tier reads `ctx.dataset.<slice>` and knows nothing about which industry it is inserting. |
 | **Checks** | `validate.ts` (+ `rule-fields.ts`), `coverage.ts`, `verify.ts` | Pure consistency validator; row-count floors; the apply-and-roll-back drift check. |
 
-`helpers/`: `items.ts` (`createItem`, `addBomLine`, `addBopOperation`, material classification), `method-copy.ts`
+`helpers/`: `part-number-display.ts` (`stampPartNumberDisplay`, run once after the tiers: the line
+triggers skip a dataset apply, so it gives the seeded document lines their party's or the company's
+display choice and the sales order lines their customer part number), `items.ts` (`createItem`, `addBomLine`, `addBopOperation`, material classification), `method-copy.ts`
 (the seed's ONE copy of `get-method`: `copyMethodToJob` / `copyMethodToQuoteLine` /
 `copyMethodToMethod` mirror `itemToJob` / `itemToQuoteLine` / `makeMethodToMakeMethod` —
 tools always, method parameters only without a procedure, a job's procedure steps +

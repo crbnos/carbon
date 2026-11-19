@@ -10,6 +10,7 @@ import {
   pluralize
 } from "@carbon/utils";
 import type { MergeToken, RowVars } from "../../../template";
+import type { PartNumberDisplay } from "../../../utils/part-number";
 import {
   getLineDescription,
   getLineDescriptionDetails,
@@ -92,15 +93,24 @@ export function buildQuoteVars(
   };
 }
 
-/** Printed once, on its first quantity's row. */
+/**
+ * Printed once, on its first quantity's row. `draft` is the Edit document
+ * modal's unsaved display choice.
+ */
 export function buildQuoteLineVars(
   line: QuoteLine,
-  rowNumber: number
+  rowNumber: number,
+  draft?: PartNumberDisplay
 ): RowVars<"quote", "line"> {
   return {
     "line.number": String(rowNumber),
-    "line.description": str(getLineDescription(line)),
-    "line.details": str(getLineDescriptionDetails(line))
+    // The part numbers per the line's display choice.
+    "line.description": str(getLineDescription(line, draft)),
+    "line.details": str(getLineDescriptionDetails(line)),
+    // Each number on its own, whatever the display choice.
+    "line.itemId": str(line.itemReadableId),
+    "line.customerPartId": str(line.customerPartId),
+    "line.customerPartRevision": str(line.customerPartRevision)
   };
 }
 

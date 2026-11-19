@@ -120,6 +120,8 @@ export const MERGE_FIELD_NAMES: Record<string, MessageDescriptor> = {
   "Line Operation": msg`Line Operation`,
   "Line Supplier Part ID Row": msg`Line Supplier Part ID Row`,
   "Line Supplier Part Number": msg`Line Supplier Part Number`,
+  "Line Customer Part ID": msg`Line Customer Part ID`,
+  "Line Customer Part Revision": msg`Line Customer Part Revision`,
   "Line Shipping": msg`Line Shipping`,
   "Line Total": msg`Line Total`,
   "Linked Record": msg`Linked Record`,

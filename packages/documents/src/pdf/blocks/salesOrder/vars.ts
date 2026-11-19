@@ -4,6 +4,7 @@
 
 import { formatDate, formatPercent } from "@carbon/utils";
 import type { LineMergeToken, MergeToken } from "../../../template";
+import { lineCustomerPart } from "../../../utils/part-number";
 import {
   getLineDescription,
   getLineDescriptionDetails,
@@ -118,14 +119,25 @@ export function buildSalesOrderVars(
 export function buildSalesOrderLineVars(
   line: SalesOrderData["salesOrderLines"][number],
   rowNumber: number,
-  data: Pick<SalesOrderData, "numberFormatter" | "rateFormatter" | "locale">
+  data: Pick<
+    SalesOrderData,
+    "numberFormatter" | "rateFormatter" | "locale" | "partNumberDisplayDraft"
+  >
 ): Record<LineMergeToken<"salesOrder">, string> {
   const money = (v: number) => data.numberFormatter.format(v);
   const positive = (v: number) => (v > 0 ? money(v) : "");
   const taxPercent = line.taxPercent ?? 0;
+  const customerPart = lineCustomerPart(line);
   const common = {
-    "line.description": str(getLineDescription(line)),
-    "line.details": str(getLineDescriptionDetails(line))
+    // The part numbers per the line's display choice.
+    "line.description": str(
+      getLineDescription(line, data.partNumberDisplayDraft)
+    ),
+    "line.details": str(getLineDescriptionDetails(line)),
+    // Each number on its own, whatever the display choice.
+    "line.itemId": str(line.itemReadableId),
+    "line.customerPartId": str(customerPart.id),
+    "line.customerPartRevision": str(customerPart.revision)
   };
 
   if (line.salesOrderLineType === "Comment") {

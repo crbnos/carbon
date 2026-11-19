@@ -17391,6 +17391,12 @@ msgstr "पंक्ति {position}"
 msgid "Line Add-On"
 msgstr "लाइन ऐड-ऑन"
 
+msgid "Line Customer Part ID"
+msgstr "लाइन ग्राहक पार्ट आईडी"
+
+msgid "Line Customer Part Revision"
+msgstr "लाइन ग्राहक रिवीजन"
+
 msgid "Line description"
 msgstr "पंक्ति विवरण"
 

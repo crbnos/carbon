@@ -294,6 +294,11 @@ export const COVERAGE = {
       "all three"
     )
   },
+  customerPartNumberDisplay: {
+    values: ["Theirs First"],
+    missing: (value) =>
+      `foundation.customers: no customer with partNumberDisplay "${value}"`
+  },
   supplierPartNumberDisplay: {
     values: ["Ours First"],
     missing: (value) =>
@@ -1658,6 +1663,11 @@ export function foundation(ctx: ValidationCtx): void {
   }
   ctx.cover({ procedureStatus: seenProcedureStatuses });
   ctx.cover({
+    customerPartNumberDisplay: new Set(
+      f.customers.flatMap((c) =>
+        c.partNumberDisplay ? [c.partNumberDisplay] : []
+      )
+    ),
     supplierPartNumberDisplay: new Set(
       f.suppliers.flatMap((s) =>
         s.partNumberDisplay ? [s.partNumberDisplay] : []

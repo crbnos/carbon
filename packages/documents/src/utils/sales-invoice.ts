@@ -4,6 +4,11 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
+import {
+  formatPartNumber,
+  type PartNumberDisplay,
+  resolvePartNumberDisplay
+} from "./part-number";
 
 type SalesInvoiceLineRow =
   Database["public"]["Views"]["salesInvoiceLines"]["Row"];
@@ -21,8 +26,15 @@ function isItemlessServiceLine(line: SalesInvoiceLineRow) {
   );
 }
 
+/**
+ * A sales invoice line's title: the asset for a Fixed Asset line, the
+ * description for a Comment line or an itemless Service line, else the line's
+ * part numbers per its display choice. `draft` is the Edit document modal's
+ * unsaved pick.
+ */
 export function getLineDescription(
-  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"],
+  draft?: PartNumberDisplay
 ) {
   switch (line?.invoiceLineType) {
     case "Fixed Asset":
@@ -34,9 +46,18 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default:
-      return isItemlessServiceLine(line)
-        ? line?.description
-        : line?.itemReadableId;
+      if (isItemlessServiceLine(line)) return line?.description;
+      return formatPartNumber(
+        {
+          ours: line?.itemReadableId,
+          theirs: line?.customerPartId,
+          theirsRevision: line?.customerPartRevision
+        },
+        resolvePartNumberDisplay(
+          "salesInvoice",
+          draft ?? line?.partNumberDisplay
+        )
+      );
   }
 }
 
