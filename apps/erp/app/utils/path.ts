@@ -387,6 +387,8 @@ export const path = {
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesInvoiceLineAccount: (invoiceId: string, lineId: string) =>
         generatePath(`${api}/sales-invoice/${invoiceId}/${lineId}/account`),
+      salesInvoicePostFacts: (invoiceId: string) =>
+        generatePath(`${api}/sales-invoice/${invoiceId}/post-facts`),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrderDeliveryDate: (orderId: string, line: Record<string, string>) =>
         `${generatePath(`${api}/sales-order/${orderId}/delivery-date`)}?${new URLSearchParams(
@@ -2357,6 +2359,8 @@ export const path = {
     purchaseInvoicePost: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/post`),
     purchaseInvoiceRoot: `${x}/purchase-invoice`,
+    purchaseInvoiceRounding: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/rounding`),
     purchaseInvoiceVoid: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/void`),
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),

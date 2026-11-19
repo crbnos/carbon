@@ -857,6 +857,9 @@ msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} of {0} posted to {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount} of the order line's charges not billed"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% of payables"
 
@@ -884,6 +887,9 @@ msgstr "{assigned, plural, one {Assigned for # working day} other {Assigned for 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 
@@ -901,6 +907,9 @@ msgstr "{categoryLabel} markup for quantity {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
 
 msgid "{code} counted"
 msgstr "{code} counted"
@@ -1236,6 +1245,12 @@ msgstr "{names} must match — separate load"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parts skipped — nothing to make"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} of {denominator}"
 
@@ -1258,12 +1273,18 @@ msgstr "{openedTotal} opened, {closedTotal} closed"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} has {amount} of shipping that is not on any invoice"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
@@ -1801,6 +1822,9 @@ msgstr "A consumable is a physical item used to make a part that can be used acr
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "A contract made from the order bills this line"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
@@ -3602,8 +3626,14 @@ msgstr "Adds cost the asset was never charged with, such as the labor and materi
 msgid "Adds to an existing batch"
 msgstr "Adds to an existing batch"
 
+msgid "Adjust"
+msgstr "Adjust"
+
 msgid "Adjust Cost"
 msgstr "Adjust Cost"
+
+msgid "Adjust for Rounding"
+msgstr "Adjust for Rounding"
 
 msgid "Adjustment"
 msgstr "Adjustment"
@@ -3911,6 +3941,9 @@ msgstr "Amount the contracting officer approved"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "Amount to apply for {0}"
+
+msgid "Amount to match"
+msgstr "Amount to match"
 
 msgid "Amount Type"
 msgstr "Amount Type"
@@ -5634,6 +5667,9 @@ msgstr "Bank Code"
 msgid "Bank Name"
 msgstr "Bank Name"
 
+msgid "Bank, Cash or Card Account"
+msgstr "Bank, Cash or Card Account"
+
 msgid "Banner content (optional)"
 msgstr "Banner content (optional)"
 
@@ -7033,11 +7069,17 @@ msgstr "Chat"
 msgid "Check"
 msgstr "Check"
 
+msgid "Check before posting"
+msgstr "Check before posting"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
 
 msgid "Check Quantity"
 msgstr "Check Quantity"
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "Check the details below. A posted invoice can't be edited."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -9424,6 +9466,10 @@ msgstr "Current projection"
 
 msgid "Current quantity"
 msgstr "Current quantity"
+
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr "Current total: {0}"
 
 msgid "Custom"
 msgstr "Custom"
@@ -12544,6 +12590,10 @@ msgstr "Enter the 6-digit code from your authenticator app"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Enter the 6-digit code from your authenticator app to resume."
 
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 
@@ -14289,6 +14339,9 @@ msgstr "Full name"
 msgid "Full setup and migrations"
 msgstr "Full setup and migrations"
 
+msgid "Full Year"
+msgstr "Full Year"
+
 msgid "Fully Depreciated"
 msgstr "Fully Depreciated"
 
@@ -15049,6 +15102,9 @@ msgstr "Hours/1000 Pieces"
 msgid "Hours/Piece"
 msgstr "Hours/Piece"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "How {week} counts weeks in document, serial and batch numbers."
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 
@@ -15219,6 +15275,9 @@ msgstr "How We Work"
 
 msgid "How We Work Together"
 msgstr "How We Work Together"
+
+msgid "How weeks are numbered"
+msgstr "How weeks are numbered"
 
 msgid "How will you use {integrationName}?"
 msgstr "How will you use {integrationName}?"
@@ -16236,6 +16295,9 @@ msgstr "Is supplier org group"
 
 msgid "Is supplier type group"
 msgstr "Is supplier type group"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Issue"
@@ -17591,6 +17653,9 @@ msgstr "Location"
 
 msgid "Location / Item"
 msgstr "Location / Item"
+
+msgid "Location code"
+msgstr "Location code"
 
 msgid "Location Name"
 msgstr "Location Name"
@@ -20385,6 +20450,9 @@ msgstr "No posted reimbursement lines"
 msgid "No posted supplier invoice lines"
 msgstr "No posted supplier invoice lines"
 
+msgid "No price"
+msgstr "No price"
+
 msgid "No pricing for selected quantity"
 msgstr "No pricing for selected quantity"
 
@@ -20435,6 +20503,9 @@ msgstr "No projects yet"
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
+
+msgid "No quantity"
+msgstr "No quantity"
 
 msgid "No Quote"
 msgstr "No Quote"
@@ -20794,6 +20865,9 @@ msgstr "None"
 msgid "None (full page)"
 msgstr "None (full page)"
 
+msgid "None (Net {defaultTermDays})"
+msgstr "None (Net {defaultTermDays})"
+
 msgid "None available"
 msgstr "None available"
 
@@ -20853,6 +20927,9 @@ msgstr "Not now"
 
 msgid "Not on the page"
 msgstr "Not on the page"
+
+msgid "Not posted"
+msgstr "Not posted"
 
 msgid "Not Qualified"
 msgstr "Not Qualified"
@@ -21098,6 +21175,9 @@ msgstr "Number weeks from the present week"
 
 msgid "Numbering sequence"
 msgstr "Numbering sequence"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
 
 msgid "OEE Impact"
 msgstr "OEE Impact"
@@ -21372,6 +21452,9 @@ msgstr "Only {quantity} there"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "Only {quantity} with a serial number there"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "Only {remaining} left to invoice on the order"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
@@ -22539,8 +22622,8 @@ msgstr "Payment to Supplier"
 msgid "Payments"
 msgstr "Payments"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
@@ -22608,6 +22691,9 @@ msgstr "Pending inspection"
 
 msgid "Pending Inspection"
 msgstr "Pending Inspection"
+
+msgid "Pending payment, not posted"
+msgstr "Pending payment, not posted"
 
 msgid "people"
 msgstr "people"
@@ -26493,6 +26579,9 @@ msgstr "Rounding Account"
 msgid "Rounding Account (default)"
 msgstr "Rounding Account (default)"
 
+msgid "Rounding adjusted"
+msgstr "Rounding adjusted"
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 
@@ -26867,6 +26956,9 @@ msgstr "Save and Overwrite"
 
 msgid "Save and post"
 msgstr "Save and post"
+
+msgid "Save and Post"
+msgstr "Save and Post"
 
 msgid "Save applications"
 msgstr "Save applications"
@@ -27333,6 +27425,9 @@ msgstr "Search..."
 
 msgid "Search…"
 msgstr "Search…"
+
+msgid "Second"
+msgstr "Second"
 
 msgid "Seconds to complete"
 msgstr "Seconds to complete"
@@ -31095,6 +31190,9 @@ msgstr "The inventory cost recognized when a shipment posts, valued by the item'
 msgid "The invoice for this payment is drafted on this date"
 msgstr "The invoice for this payment is drafted on this date"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 
@@ -31643,6 +31741,9 @@ msgstr "The revision number of the part"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "The sales order could not be read, so it was not checked against this invoice."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 
@@ -32170,6 +32271,9 @@ msgstr "This department has no work centers at {locationName}. Pick another depa
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "This department has no work centers at this location. Pick another department or location."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr "This download link has expired. Ask for a new one."
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
 
@@ -32225,6 +32329,9 @@ msgstr "This invitation to join {0} has expired. You can request a new invite to
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "This invoice has no usable due date — choose one for Stripe."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
@@ -32352,6 +32459,12 @@ msgstr "This part only"
 
 msgid "This path only decides what runs next"
 msgstr "This path only decides what runs next"
+
+msgid "This payment did not post"
+msgstr "This payment did not post"
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr "This payment is a Draft. Its applications do not pay the invoices until it is posted."
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
@@ -34005,6 +34118,9 @@ msgstr "Urgent"
 msgid "URL"
 msgstr "URL"
 
+msgid "US"
+msgstr "US"
+
 msgid "Usage/Day (30d)"
 msgstr "Usage/Day (30d)"
 
@@ -34748,6 +34864,9 @@ msgstr "Wednesday"
 msgid "Week"
 msgstr "Week"
 
+msgid "Week ({numbering})"
+msgstr "Week ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "Week {0}"
@@ -34760,6 +34879,9 @@ msgstr "Week {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Week 8 cutover"
+
+msgid "Week Numbering"
+msgstr "Week Numbering"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34803,8 +34925,17 @@ msgstr "Weeks are numbered by calendar week"
 msgid "Weeks are numbered from the present week"
 msgstr "Weeks are numbered from the present week"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "Weeks are numbered in Settings → Company."
+
 msgid "Weeks Open"
 msgstr "Weeks Open"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
 
 msgid "Weighted Average"
 msgstr "Weighted Average"
@@ -35406,6 +35537,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "with {0} contingency"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
 
 msgid "With Previous"
 msgstr "With Previous"

@@ -56,7 +56,10 @@ import {
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import {
   postReceipt,
   RECEIPT_VOID_STOCK_MOVED_ERROR
@@ -8083,6 +8086,35 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for a supplier interaction (purchase order/supplier quote/RFQ) document
+ *
+ * @remarks
+ * A signed link to a file on the supplier interaction's Files tab, valid for an
+ * hour (`expiresIn`, in seconds). The response carries the link, never the
+ * file. `name` is the file's name as
+ * `purchasing_getSupplierInteractionDocuments` lists it, or the name given to
+ * `purchasing_createSupplierInteractionDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    interactionId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  permission: { view: "purchasing" },
+  async run(ctx, { interactionId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction",
+      entityId: interactionId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for a supplier interaction LINE document
  *
  * @mcp
@@ -8098,6 +8130,32 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a supplier interaction LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `purchasing_getSupplierInteractionLineDocuments`
+ * lists it, or the name given to
+ * `purchasing_createSupplierInteractionLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is
+ * not there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 

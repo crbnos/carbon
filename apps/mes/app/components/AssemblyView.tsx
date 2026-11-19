@@ -49,7 +49,11 @@ import {
   useShortcutKeys,
   useViewport
 } from "@carbon/react";
-import { distinctItemText, formatDurationMilliseconds } from "@carbon/utils";
+import {
+  distinctItemText,
+  documentHasImages,
+  formatDurationMilliseconds
+} from "@carbon/utils";
 import type { AssemblyStep, CameraPose, Fastener } from "@carbon/viewer";
 import {
   AssemblyPlayer,
@@ -81,7 +85,6 @@ import {
   LuGitPullRequest,
   LuHammer,
   LuHardHat,
-  LuImage,
   LuListChecks,
   LuListFilter,
   LuPackageSearch,
@@ -401,21 +404,6 @@ function richTextToPlainText(doc: unknown): string {
   };
   walk(doc);
   return parts.join(" ").replace(/\s+/g, " ").trim();
-}
-
-// Strip any inline image nodes so the prose shows text only — reference imagery
-// now lives in first-class slides, not embedded in the description.
-function stripImages(doc: any): any {
-  if (!doc || typeof doc !== "object") return doc;
-  if (Array.isArray(doc.content)) {
-    return {
-      ...doc,
-      content: doc.content
-        .filter((n: any) => n?.type !== "image")
-        .map(stripImages)
-    };
-  }
-  return doc;
 }
 
 function formatElapsed(s: number) {
@@ -1121,15 +1109,18 @@ export function AssemblyView({
 
   // Empty descriptions are persisted as JSON.stringify({}) === "{}" (and legacy
   // rows as a tiptap doc whose only text is "{}"); treat those as "no description".
-  const stepDescriptionText = richTextToPlainText(step?.description);
+  // A photo placed in the description renders with the prose, as it does in the
+  // Operation view: a step can carry its reference photo there and have no slide.
+  const stepDescription = step?.description as
+    | Parameters<typeof generateHTML>[0]
+    | null
+    | undefined;
+  const stepDescriptionText = richTextToPlainText(stepDescription);
   const stepHasDescription =
-    stepDescriptionText.length > 0 && stepDescriptionText !== "{}";
+    (stepDescriptionText.length > 0 && stepDescriptionText !== "{}") ||
+    documentHasImages(stepDescription);
   const stepDescriptionHtml =
-    step && stepHasDescription
-      ? generateHTML(
-          stripImages(step.description) as Parameters<typeof generateHTML>[0]
-        )
-      : "";
+    stepDescription && stepHasDescription ? generateHTML(stepDescription) : "";
   const isLastStep = steps.length === 0 || currentStep >= steps.length - 1;
 
   // Reference slides for this step (first-class media, ordered) + "Completed item"
@@ -2370,189 +2361,187 @@ export function AssemblyView({
           ) : (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               {renderPhoneContext()}
-              <div className="flex shrink-0 flex-col gap-2 border-b border-border p-4">
-                {selected === "playback" &&
-                playbackAvailable &&
-                assemblyPlayback ? (
-                  // Animated instruction playback pinned to the operator's current
-                  // step. The player owns orbit/zoom; replay via the step's motion.
-                  <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
-                    <ClientOnly
-                      fallback={
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Spinner className="h-8 w-8" />
-                        </div>
-                      }
-                    >
-                      {() => (
-                        <AssemblyPlayer
-                          glbUrl={getPrivateUrl(assemblyPlayback.glbPath)}
-                          graphUrl={getPrivateUrl(assemblyPlayback.graphPath)}
-                          steps={viewerSteps}
-                          scopeStepIds={scopeStepIds}
-                          isolationLabel={isolationLabel}
-                          carryInLabel={carryInLabel}
-                          activeStepIndex={playbackIndex ?? 0}
-                          playStepNonce={currentStep}
-                          autoPlay
-                          loop
-                          readOnly
-                          // Shop floor: the step name/description is shown in the
-                          // details panel below, so the in-player caption is redundant.
-                          hideCaption
+              {/* No playback, slides or reference image: give the step the space. */}
+              {(playbackAvailable || stepSlides.length > 0 || mainImage) && (
+                <div className="flex shrink-0 flex-col gap-2 border-b border-border p-4">
+                  {selected === "playback" &&
+                  playbackAvailable &&
+                  assemblyPlayback ? (
+                    // Animated instruction playback pinned to the operator's current
+                    // step. The player owns orbit/zoom; replay via the step's motion.
+                    <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
+                      <ClientOnly
+                        fallback={
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Spinner className="h-8 w-8" />
+                          </div>
+                        }
+                      >
+                        {() => (
+                          <AssemblyPlayer
+                            glbUrl={getPrivateUrl(assemblyPlayback.glbPath)}
+                            graphUrl={getPrivateUrl(assemblyPlayback.graphPath)}
+                            steps={viewerSteps}
+                            scopeStepIds={scopeStepIds}
+                            isolationLabel={isolationLabel}
+                            carryInLabel={carryInLabel}
+                            activeStepIndex={playbackIndex ?? 0}
+                            playStepNonce={currentStep}
+                            autoPlay
+                            loop
+                            readOnly
+                            // Shop floor: the step name/description is shown in the
+                            // details panel below, so the in-player caption is redundant.
+                            hideCaption
+                            mode={mode}
+                            className="h-full"
+                          />
+                        )}
+                      </ClientOnly>
+                    </div>
+                  ) : selectedMedia?.kind === "model" ? (
+                    // 3D model slide: the interactive viewer replaces the picture. The
+                    // viewer has its own orbit/zoom controls, so no fullscreen overlay
+                    // button and no annotation pins (pins are image-only).
+                    <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
+                      {selectedModelUrl ? (
+                        <ModelPreview
+                          key={`slide-model-${selectedModelUrl}`}
+                          glbUrl={
+                            selectedMedia?.kind === "model"
+                              ? selectedMedia.glbUrl
+                              : null
+                          }
+                          rawUrl={
+                            selectedMedia?.kind === "model"
+                              ? selectedMedia.rawUrl
+                              : null
+                          }
                           mode={mode}
-                          className="h-full"
+                          className="h-full w-full rounded-lg"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <LuBox className="size-8" />
+                          <span className="text-xs">Model unavailable</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : mainImage ? (
+                    // Both step slides and the finished-item image fill the panel (large by
+                    // default). Height follows the image's own aspect ratio (capped at 65vh);
+                    // the details column scrolls if it overflows.
+                    <div className="relative mx-auto w-full max-w-full overflow-hidden rounded-lg border border-border bg-muted/40">
+                      <img
+                        src={mainImage}
+                        alt="Assembly reference"
+                        className="block h-auto max-h-[65vh] w-full object-contain"
+                      />
+                      {showPins && (
+                        <SlidePins
+                          key={selected}
+                          annotations={selectedAnnotations}
+                          toolNameById={toolNameById}
                         />
                       )}
-                    </ClientOnly>
-                  </div>
-                ) : selectedMedia?.kind === "model" ? (
-                  // 3D model slide: the interactive viewer replaces the picture. The
-                  // viewer has its own orbit/zoom controls, so no fullscreen overlay
-                  // button and no annotation pins (pins are image-only).
-                  <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
-                    {selectedModelUrl ? (
-                      <ModelPreview
-                        key={`slide-model-${selectedModelUrl}`}
-                        glbUrl={
-                          selectedMedia?.kind === "model"
-                            ? selectedMedia.glbUrl
-                            : null
-                        }
-                        rawUrl={
-                          selectedMedia?.kind === "model"
-                            ? selectedMedia.rawUrl
-                            : null
-                        }
-                        mode={mode}
-                        className="h-full w-full rounded-lg"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <LuBox className="size-8" />
-                        <span className="text-xs">Model unavailable</span>
-                      </div>
-                    )}
-                  </div>
-                ) : mainImage ? (
-                  // Both step slides and the finished-item image fill the panel (large by
-                  // default). Height follows the image's own aspect ratio (capped at 65vh);
-                  // the details column scrolls if it overflows.
-                  <div className="relative mx-auto w-full max-w-full overflow-hidden rounded-lg border border-border bg-muted/40">
-                    <img
-                      src={mainImage}
-                      alt="Assembly reference"
-                      className="block h-auto max-h-[65vh] w-full object-contain"
-                    />
-                    {showPins && (
-                      <SlidePins
-                        key={selected}
-                        annotations={selectedAnnotations}
-                        toolNameById={toolNameById}
-                      />
-                    )}
-                    {/* Tap the image to open full screen. */}
-                    <button
-                      type="button"
-                      aria-label="View image full screen"
-                      onClick={imageViewer.onOpen}
-                      className="absolute inset-0"
-                    />
-                    {/* Operator control: show/hide the annotation pins (always vs tap). */}
-                    {selectedAnnotations.length > 0 && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute left-2 top-2 z-10 gap-1.5"
-                        leftIcon={
-                          showPins ? (
-                            <LuEye className="size-4" />
-                          ) : (
-                            <LuEyeOff className="size-4" />
-                          )
-                        }
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowPins((v) => !v);
-                        }}
-                      >
-                        {showPins ? "Hide pins" : "Show pins"}
-                      </Button>
-                    )}
-                    <span className="pointer-events-none absolute right-2 top-2 z-10 flex items-center justify-center rounded-md bg-background/80 p-1.5 text-muted-foreground shadow-sm">
-                      <LuExpand className="size-4" />
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 text-muted-foreground">
-                    <LuImage className="size-8" />
-                    <span className="text-xs">No reference image</span>
-                  </div>
-                )}
-
-                {selectedCaption && (
-                  <p className="shrink-0 truncate text-center text-xs text-muted-foreground">
-                    {selectedCaption}
-                  </p>
-                )}
-
-                {/* Slots = animated step playback (when synced) · this step's slides.
-                    The finished-product image is the fallback when a step has neither. */}
-                <div className="flex shrink-0 items-center gap-2">
-                  {playbackAvailable && (
-                    <button
-                      type="button"
-                      aria-label="Animated assembly step"
-                      title="Animated assembly step"
-                      onClick={() => setSelected("playback")}
-                      className={cn(
-                        "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
-                        selected === "playback"
-                          ? "border-foreground"
-                          : "border-transparent"
-                      )}
-                    >
-                      <LuPlay className="size-5 text-muted-foreground" />
-                      <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
-                        3D
-                      </span>
-                    </button>
-                  )}
-                  {stepSlides.map((slide, i) => {
-                    const media = slideMedia[i];
-                    return (
+                      {/* Tap the image to open full screen. */}
                       <button
-                        key={slide.id}
                         type="button"
-                        aria-label={slide.caption || `Slide ${i + 1}`}
-                        title={slide.caption ?? undefined}
-                        onClick={() => setSelected(i)}
+                        aria-label="View image full screen"
+                        onClick={imageViewer.onOpen}
+                        className="absolute inset-0"
+                      />
+                      {/* Operator control: show/hide the annotation pins (always vs tap). */}
+                      {selectedAnnotations.length > 0 && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="absolute left-2 top-2 z-10 gap-1.5"
+                          leftIcon={
+                            showPins ? (
+                              <LuEye className="size-4" />
+                            ) : (
+                              <LuEyeOff className="size-4" />
+                            )
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowPins((v) => !v);
+                          }}
+                        >
+                          {showPins ? "Hide pins" : "Show pins"}
+                        </Button>
+                      )}
+                      <span className="pointer-events-none absolute right-2 top-2 z-10 flex items-center justify-center rounded-md bg-background/80 p-1.5 text-muted-foreground shadow-sm">
+                        <LuExpand className="size-4" />
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {selectedCaption && (
+                    <p className="shrink-0 truncate text-center text-xs text-muted-foreground">
+                      {selectedCaption}
+                    </p>
+                  )}
+
+                  {/* Slots = animated step playback (when synced) · this step's slides.
+                    The finished-product image is the fallback when a step has neither. */}
+                  <div className="flex shrink-0 items-center gap-2">
+                    {playbackAvailable && (
+                      <button
+                        type="button"
+                        aria-label="Animated assembly step"
+                        title="Animated assembly step"
+                        onClick={() => setSelected("playback")}
                         className={cn(
                           "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
-                          selected === i
+                          selected === "playback"
                             ? "border-foreground"
                             : "border-transparent"
                         )}
                       >
-                        {media?.thumbnail ? (
-                          <img
-                            src={media.thumbnail}
-                            alt=""
-                            className="h-full w-full object-contain"
-                          />
-                        ) : (
-                          <LuBox className="size-5 text-muted-foreground" />
-                        )}
-                        {media?.kind === "model" && (
-                          <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
-                            3D
-                          </span>
-                        )}
+                        <LuPlay className="size-5 text-muted-foreground" />
+                        <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
+                          3D
+                        </span>
                       </button>
-                    );
-                  })}
+                    )}
+                    {stepSlides.map((slide, i) => {
+                      const media = slideMedia[i];
+                      return (
+                        <button
+                          key={slide.id}
+                          type="button"
+                          aria-label={slide.caption || `Slide ${i + 1}`}
+                          title={slide.caption ?? undefined}
+                          onClick={() => setSelected(i)}
+                          className={cn(
+                            "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
+                            selected === i
+                              ? "border-foreground"
+                              : "border-transparent"
+                          )}
+                        >
+                          {media?.thumbnail ? (
+                            <img
+                              src={media.thumbnail}
+                              alt=""
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <LuBox className="size-5 text-muted-foreground" />
+                          )}
+                          {media?.kind === "model" && (
+                            <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
+                              3D
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Current step */}
               <div className="flex shrink-0 flex-col gap-3 p-6">
@@ -2595,7 +2584,7 @@ export function AssemblyView({
                       {() =>
                         stepDescriptionHtml ? (
                           <div
-                            className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
+                            className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:rounded-lg [&_img]:object-contain"
                             dangerouslySetInnerHTML={{
                               __html: stepDescriptionHtml
                             }}
@@ -3563,7 +3552,7 @@ function MaterialRow({
           {/* Everything else stacks under the name and wraps, so a narrow
               card never squeezes "Requires Scan" beside the count. */}
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            <MaterialSource material={material} compact />
+            <MaterialSource material={material} size="compact" />
             <ShortStockBadge material={material} className={compactBadge} />
             {/* An unplanned part (issued from the floor, not on the BOM). */}
             {isExtra && (

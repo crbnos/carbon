@@ -1346,6 +1346,9 @@ msgstr "Gauge for characteristic {characteristicLabel}: {currentGauge}"
 msgid "General"
 msgstr "General"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+
 msgid "Go back to operation"
 msgstr "Go back to operation"
 
@@ -2830,9 +2833,6 @@ msgstr "Return part"
 
 msgid "Rework"
 msgstr "Rework"
-
-msgid "Rework created successfully"
-msgstr "Rework created successfully"
 
 msgid "Rework quantity"
 msgstr "Rework quantity"

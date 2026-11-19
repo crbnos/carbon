@@ -79,7 +79,10 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { purchaseInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import {
+  purchaseInvoiceLineValidator,
+  purchaseLineAccountClasses
+} from "~/modules/invoicing/invoicing.models";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
@@ -369,8 +372,8 @@ const PurchaseInvoiceLineForm = ({
   });
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.can("update", "invoicing")
+    : !permissions.can("create", "invoicing");
 
   // These badges render DOCUMENT-currency values, so both formatters take the
   // document's currency and decimals. Defaulting to base currency is what
@@ -674,7 +677,7 @@ const PurchaseInvoiceLineForm = ({
                         invoiceId,
                         initialValues.id!
                       )}
-                      accountClass="Expense"
+                      accountClasses={purchaseLineAccountClasses}
                     />
                   </CardAction>
                 )}
@@ -967,7 +970,7 @@ const PurchaseInvoiceLineForm = ({
                             <Account
                               name="accountId"
                               label={t`GL Account`}
-                              classes={["Expense"]}
+                              classes={purchaseLineAccountClasses}
                               isOptional={false}
                             />
                             <CostCenter

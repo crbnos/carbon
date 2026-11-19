@@ -1346,6 +1346,9 @@ msgstr "특성 {characteristicLabel}에 대한 계측기: {currentGauge}"
 msgid "General"
 msgstr "일반"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "이전 공정으로 돌아가 그 지점부터 모든 공정을 다시 하거나, 재작업 스테이션 같은 보정으로 유닛을 보내세요."
+
 msgid "Go back to operation"
 msgstr "공정작업으로 돌아가기"
 
@@ -2830,9 +2833,6 @@ msgstr "부품 반품"
 
 msgid "Rework"
 msgstr "재작업"
-
-msgid "Rework created successfully"
-msgstr "재작업이 생성되었습니다"
 
 msgid "Rework quantity"
 msgstr "재작업 수량"

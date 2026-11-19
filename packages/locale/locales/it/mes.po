@@ -1346,6 +1346,9 @@ msgstr "Strumento di misura per la caratteristica {characteristicLabel}: {curren
 msgid "General"
 msgstr "Generale"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Torna a un'operazione precedente per ripetere tutte le operazioni da quel punto, oppure invia l'unità a una correzione, come una postazione di rilavorazione."
+
 msgid "Go back to operation"
 msgstr "Torna all'operazione"
 
@@ -2830,9 +2833,6 @@ msgstr "Componente reso"
 
 msgid "Rework"
 msgstr "Rilavorazione"
-
-msgid "Rework created successfully"
-msgstr "Rilavorazione creata con successo"
 
 msgid "Rework quantity"
 msgstr "Quantità di rilavorazione"

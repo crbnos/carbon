@@ -19,7 +19,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { AnimatePresence, motion } from "motion/react";
@@ -35,18 +35,19 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   isItemlessServiceLine,
   isSalesInvoiceLocked
 } from "../../invoicing.models";
+import { salesInvoiceLineAmounts } from "../../invoicing.utils";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
   SalesInvoiceShipment
 } from "../../types";
-import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
+import { useSalesInvoiceLineName } from "./useSalesInvoiceLineName";
+import { useSalesInvoiceTotals } from "./useSalesInvoiceTotals";
 
 const LineItems = ({
   currencyCode,
@@ -68,9 +69,8 @@ const LineItems = ({
 
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  const [items] = useItems();
   const percentFormatter = usePercentFormatter();
-  const rentalLineTypeLabel = useRentalLineTypeLabel();
+  const getLineName = useSalesInvoiceLineName();
   const [openItems, setOpenItems] = useState<string[]>([]);
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -83,43 +83,20 @@ const LineItems = ({
   const rows = salesInvoiceLines.map((line) => {
     if (!line.id) return null;
 
-    const itemReadableId =
-      line.invoiceLineType === "Rental"
-        ? rentalLineTypeLabel(line.rentalLineType)
-        : line.invoiceLineType === "Fixed Asset"
-          ? (line as any).assetReadableId || "Fixed Asset"
-          : isItemlessServiceLine(line)
-            ? line.description || t`Service`
-            : getItemReadableId(items, line.itemId);
-    const description = distinctItemText(itemReadableId, line.description);
+    const itemReadableId = getLineName(line);
     const lineName = itemReadableId ?? "";
+    const description = distinctItemText(itemReadableId, line.description);
     // The discount reduces the merchandise only (the generated net
     // prices); add-ons and shipping are not discounted.
     const discountPercent = line.discountPercent ?? 0;
     const discount = percentFormatter.format(discountPercent);
-    const lineSubtotal = (line.netUnitPrice ?? 0) * (line.quantity ?? 0);
-    const customerSubtotal =
-      (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0);
-    const total =
-      (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0)) *
-        (1 + (line.taxPercent ?? 0)) +
-      (line.nonTaxableAddOnCost ?? 0);
-    const customerTotal =
-      (customerSubtotal +
-        (line.convertedAddOnCost ?? 0) +
-        (line.convertedShippingCost ?? 0)) *
-        (1 + (line.taxPercent ?? 0)) +
-      (line.convertedNonTaxableAddOnCost ?? 0);
-
-    const lineTaxAmount =
-      (line.taxPercent ?? 0) *
-      (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0));
-
-    const customerLineTaxAmount =
-      (line.taxPercent ?? 0) *
-      (customerSubtotal +
-        (line.convertedAddOnCost ?? 0) +
-        (line.convertedShippingCost ?? 0));
+    const amounts = salesInvoiceLineAmounts(line);
+    const lineSubtotal = amounts.merchandise;
+    const customerSubtotal = amounts.customerMerchandise;
+    const total = amounts.total;
+    const customerTotal = amounts.customerTotal;
+    const lineTaxAmount = amounts.tax;
+    const customerLineTaxAmount = amounts.customerTax;
 
     // Phones: one row that opens the line page (its Edit link, the
     // badges and the breakdown stay on desktop).
@@ -435,9 +412,6 @@ const SalesInvoiceSummary = ({
   const { locale } = useLocale();
   const { company } = useUser();
 
-  const shouldConvertCurrency =
-    routeData?.salesInvoice?.currencyCode !== company?.baseCurrencyCode;
-
   const formatter = useCurrencyFormatter({
     currency: company?.baseCurrencyCode ?? "USD"
   });
@@ -447,61 +421,17 @@ const SalesInvoiceSummary = ({
 
   const isEditable = !isSalesInvoiceLocked(routeData?.salesInvoice?.status);
 
-  // Calculate totals. Merchandise is NET of the line discount, as in the
-  // `salesInvoices` view.
-  const subtotal =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineSubtotal =
-        (line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
-        (line.shippingCost ?? 0) +
-        (line.addOnCost ?? 0) +
-        (line.nonTaxableAddOnCost ?? 0);
-      return acc + lineSubtotal;
-    }, 0) ?? 0;
-
-  const customerSubtotal =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineSubtotal =
-        (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
-        (line.convertedShippingCost ?? 0) +
-        (line.convertedAddOnCost ?? 0) +
-        (line.convertedNonTaxableAddOnCost ?? 0);
-
-      return acc + lineSubtotal;
-    }, 0) ?? 0;
-
-  const tax =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineTaxAmount =
-        (line.taxPercent ?? 0) *
-        ((line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
-          (line.shippingCost ?? 0) +
-          (line.addOnCost ?? 0));
-      return acc + lineTaxAmount;
-    }, 0) ?? 0;
-
-  const customerTax =
-    routeData?.salesInvoiceLines?.reduce((acc, line) => {
-      const lineTaxAmount =
-        (line.taxPercent ?? 0) *
-        ((line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
-          (line.convertedShippingCost ?? 0) +
-          (line.convertedAddOnCost ?? 0));
-      return acc + lineTaxAmount;
-    }, 0) ?? 0;
-
-  // `salesInvoiceShipment.shippingCost` is stored in BASE currency, like every
-  // other raw column on this side -- the `salesInvoices` view adds it straight
-  // onto a base subtotal built from `unitPrice`. So the base figure is the
-  // stored value and only the customer-facing one converts.
-  const shippingCost = routeData?.salesInvoiceShipment?.shippingCost ?? 0;
-
-  const customerShippingCost =
-    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
-    (routeData?.salesInvoice?.exchangeRate ?? 1);
-
-  const total = subtotal + tax + shippingCost;
-  const customerTotal = customerSubtotal + customerTax + customerShippingCost;
+  const {
+    subtotal,
+    customerSubtotal,
+    tax,
+    customerTax,
+    shippingCost,
+    customerShippingCost,
+    total,
+    customerTotal,
+    shouldConvertCurrency
+  } = useSalesInvoiceTotals(invoiceId);
 
   return (
     <Card>

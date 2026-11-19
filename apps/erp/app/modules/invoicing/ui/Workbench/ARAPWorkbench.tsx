@@ -114,6 +114,9 @@ type ARAPWorkbenchProps = {
   title?: string;
   /** The report pages show document details in an expanded table. */
   reportDetails?: boolean;
+  /** By invoice id, what Draft payments apply to it, in base. They pay
+   *  nothing until posted, so they stay out of every bucket and total. */
+  pending?: Record<string, number>;
 };
 
 // A counterparty (root) row carries the aging buckets; an invoice (child) row
@@ -140,7 +143,8 @@ export function ARAPWorkbench({
   agingMethod,
   bucketDays,
   title,
-  reportDetails = false
+  reportDetails = false,
+  pending
 }: ARAPWorkbenchProps) {
   const { t, i18n } = useLingui();
   const [, setParams] = useUrlParams();
@@ -171,6 +175,17 @@ export function ARAPWorkbench({
     }
     return map;
   }, [open, partyIdOf]);
+  const pendingByParty = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!pending) return map;
+    for (const [partyId, invoices] of Object.entries(childrenByParty)) {
+      for (const inv of invoices) {
+        const amount = pending[inv.invoiceId];
+        if (amount) map[partyId] = (map[partyId] ?? 0) + amount;
+      }
+    }
+    return map;
+  }, [pending, childrenByParty]);
   const paymentsByParty = useMemo(() => {
     const map: Record<string, OpenPaymentRow[]> = {};
     for (const payment of payments) {
@@ -654,6 +669,26 @@ export function ARAPWorkbench({
             ) : null
         })
       ),
+      ...(pending
+        ? [
+            {
+              id: "pending",
+              header: t`Pending payment, not posted`,
+              cell: ({ row }) => {
+                const r = row.original;
+                const amount =
+                  r.kind === "counterparty"
+                    ? pendingByParty[r.partyId]
+                    : pending[r.invoiceId];
+                return amount ? (
+                  <span className="tabular-nums text-muted-foreground">
+                    {money(amount)}
+                  </span>
+                ) : null;
+              }
+            } satisfies ColumnDef<WorkbenchRow>
+          ]
+        : []),
       {
         id: "total",
         header: t`Total`,
@@ -699,6 +734,8 @@ export function ARAPWorkbench({
     expandedIds,
     selectedIds,
     reportDetails,
+    pending,
+    pendingByParty,
     toggleExpand,
     toggleCounterparty,
     toggleInvoice

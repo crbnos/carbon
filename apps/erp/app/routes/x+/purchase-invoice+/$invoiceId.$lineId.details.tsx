@@ -93,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
+    update: "invoicing"
   });
 
   const formData = await request.formData();

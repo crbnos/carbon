@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-19T10:52:41.814Z",
+  "exportedAt": "2026-11-19T11:12:06.045Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -520,7 +520,8 @@
         "requireTrackedMaterialsIssued",
         "autoPickingListOnRelease",
         "deliveryDateControl",
-        "receiptBatchNumbersFromPurchaseOrder"
+        "receiptBatchNumbersFromPurchaseOrder",
+        "sequenceWeekNumbering"
       ]
     },
     {
@@ -8819,7 +8820,8 @@
         "salesOrderId",
         "rentalAgreementId",
         "customerContractId",
-        "purchaseOrderId"
+        "purchaseOrderId",
+        "postError"
       ]
     },
     {

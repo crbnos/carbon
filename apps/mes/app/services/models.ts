@@ -314,24 +314,34 @@ export const completeJobOperationBatchValidator = z.object({
     .min(1)
 });
 
+/** A rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
+/** The correction a rework target names, or null for an earlier operation. */
+export function correctionIdOfTarget(target: string) {
+  return target.startsWith(CORRECTION_TARGET_PREFIX)
+    ? target.slice(CORRECTION_TARGET_PREFIX.length)
+    : null;
+}
+
 export const triggerReworkValidator = z.object({
   jobId: z.string().min(1),
   triggeredAtJobOperationId: z.string().min(1),
   targetJobOperationId: z
     .string()
-    .min(1, { message: "Target operation is required" }),
+    .min(1, { message: "Target operation is required" })
+    .refine((target) => correctionIdOfTarget(target) !== "", {
+      message: "Choose a correction"
+    }),
   reason: z.string().min(1, { message: "Reason is required" }),
   quantity: zfd.numeric(
     z.number().positive({ message: "Quantity must be greater than 0" })
   ),
-  trackedEntityIds: zfd.text(z.string().optional()),
+  trackedEntityIds: zfd.json(z.array(z.string()).optional()),
   // Provenance link when the rework was triggered by an inspection
   // disposition (stamped on the Rework productionQuantity row).
   inspectionId: zfd.text(z.string().optional())
 });
-
-/** A disposition rework target naming a correction instead of an operation. */
-export const CORRECTION_TARGET_PREFIX = "correction:";
 
 export const triggerCorrectionValidator = z.object({
   jobId: z.string().min(1),

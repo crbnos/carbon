@@ -8522,6 +8522,7 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
+          sequenceWeekNumbering: string
           serialNumberTiming: string
           serviceLaborBillRate: number | null
           serviceLaborCostRate: number | null
@@ -8623,6 +8624,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          sequenceWeekNumbering?: string
           serialNumberTiming?: string
           serviceLaborBillRate?: number | null
           serviceLaborCostRate?: number | null
@@ -8724,6 +8726,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          sequenceWeekNumbering?: string
           serialNumberTiming?: string
           serviceLaborBillRate?: number | null
           serviceLaborCostRate?: number | null
@@ -48043,6 +48046,7 @@ export type Database = {
           paymentType: Database["public"]["Enums"]["paymentType"]
           postedAt: string | null
           postedBy: string | null
+          postError: string | null
           postingDate: string | null
           purchaseOrderId: string | null
           reference: string | null
@@ -48075,6 +48079,7 @@ export type Database = {
           paymentType: Database["public"]["Enums"]["paymentType"]
           postedAt?: string | null
           postedBy?: string | null
+          postError?: string | null
           postingDate?: string | null
           purchaseOrderId?: string | null
           reference?: string | null
@@ -48107,6 +48112,7 @@ export type Database = {
           paymentType?: Database["public"]["Enums"]["paymentType"]
           postedAt?: string | null
           postedBy?: string | null
+          postError?: string | null
           postingDate?: string | null
           purchaseOrderId?: string | null
           reference?: string | null
@@ -110436,8 +110442,23 @@ export type Database = {
           trackedEntityId: string
         }[]
       }
+      interpolate_sequence_date: {
+        Args: {
+          p_format?: string
+          p_now: string
+          p_value: string
+          p_week_numbering?: string
+        }
+        Returns: string
+      }
       interpolate_serial_segment: {
-        Args: { p_location: string; p_now: string; p_value: string }
+        Args: {
+          p_format?: string
+          p_location: string
+          p_now: string
+          p_value: string
+          p_week_numbering?: string
+        }
         Returns: string
       }
       is_claims_admin: { Args: { company: string }; Returns: boolean }
@@ -111768,6 +111789,7 @@ export type Database = {
         | "Other Current Asset"
         | "Other Asset"
         | "Other Current Liability"
+        | "Credit Card"
         | "Long Term Liability"
         | "Equity - No Close"
         | "Equity - Close"

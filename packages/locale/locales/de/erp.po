@@ -857,6 +857,9 @@ msgstr "{alreadyPlannedItemCount} übersprungene Teile — sie haben bereits off
 msgid "{amount} of {0} posted to {element}"
 msgstr "{amount} von {0} gebucht auf {element}"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount} nicht abgerechnete Zusatzkosten der Auftragsposition"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% der Verbindlichkeiten"
 
@@ -884,6 +887,9 @@ msgstr "{assigned, plural, one {Zugewiesen für # Arbeitstag} other {Zugewiesen 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Ziel um # Tage}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# Position wird von einem aus ihrem Auftrag erstellten Vertrag berechnet} other {# Positionen werden von Verträgen berechnet, die aus ihren Aufträgen erstellt wurden}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# abrechenbarer Artikel wartet auf Überprüfung} other {# abrechenbare Artikel warten auf Überprüfung}}"
 
@@ -901,6 +907,9 @@ msgstr "{categoryLabel}-Aufschlag für Menge {quantity}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nachfolger zu verweisen."
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# Position übernimmt keine Zusatzleistungen oder Versandkosten aus ihrem Auftrag} other {# Positionen übernehmen keine Zusatzleistungen oder Versandkosten aus ihrem Auftrag}}"
 
 msgid "{code} counted"
 msgstr "{code} gezählt"
@@ -1236,6 +1245,12 @@ msgstr "{names} muss übereinstimmen — separate Ladung"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} Teile übersprungen — es gibt nichts zu produzieren"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# Position hat keinen Preis} other {# Positionen haben keinen Preis}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# Position hat keine Menge} other {# Positionen haben keine Menge}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} von {denominator}"
 
@@ -1258,12 +1273,18 @@ msgstr "{openedTotal} offen, {closedTotal} abgeschlossen"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# Zeiteintrag ist noch nicht gebucht} other {# Zeiteinträge sind noch nicht gebucht}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order} hat {amount} Versandkosten, die auf keiner Rechnung enthalten sind"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} wird zur Bearbeitung erneut geöffnet als Revision {0}. Das bereits an den Lieferanten gesendete Dokument bleibt unverändert, bis Sie die Bestellung abschließen und erneut senden."
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# Leihbestand ist über das Rückgabedatum hinaus} other {# Leihbestände sind über das Rückgabedatum hinaus}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# Position berechnet mehr, als der Auftrag noch in Rechnung stellen kann} other {# Positionen berechnen mehr, als ihr Auftrag noch in Rechnung stellen kann}}"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} schuldet {lender}, fällig {due}"
@@ -1801,6 +1822,9 @@ msgstr "Ein Verbrauchsmaterial ist ein physischer Artikel, der zur Herstellung e
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "Eine Vertragspositionsnummer auf einer Vertragsposition: 4 Ziffern, wie z. B. 0001. Eine Projektabrechnung zeigt einen separaten Betrag pro CLIN."
+
+msgid "A contract made from the order bills this line"
+msgstr "Ein aus dem Auftrag erstellter Vertrag berechnet diese Position"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Eine Vertragseinstellung für die F&E-Steuerberichte. Die Kosten eines Direct-Projekts unter einem finanzierten Vertrag sind keine qualifizierten Forschungsausgaben; standardmäßig gilt ein Vertrag mit einer Cost-Plus- oder Time & Materials-Position als finanziert."
@@ -3602,8 +3626,14 @@ msgstr "Addiert Kosten hinzu, mit denen die Anlage nie belastet wurde, wie das P
 msgid "Adds to an existing batch"
 msgstr "Wird einem bestehenden Los hinzugefügt"
 
+msgid "Adjust"
+msgstr ""
+
 msgid "Adjust Cost"
 msgstr "Kosten anpassen"
+
+msgid "Adjust for Rounding"
+msgstr ""
 
 msgid "Adjustment"
 msgstr "Korrektur"
@@ -3911,6 +3941,9 @@ msgstr "Betrag, den der Auftraggeber genehmigt hat"
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
 msgstr "Anzuwendender Betrag für {0}"
+
+msgid "Amount to match"
+msgstr ""
 
 msgid "Amount Type"
 msgstr "Betragtyp"
@@ -5634,6 +5667,9 @@ msgstr "Bankleitzahl"
 msgid "Bank Name"
 msgstr "Bankname"
 
+msgid "Bank, Cash or Card Account"
+msgstr ""
+
 msgid "Banner content (optional)"
 msgstr "Bannerinhalt (optional)"
 
@@ -7033,11 +7069,17 @@ msgstr "Chat"
 msgid "Check"
 msgstr "Prüfung"
 
+msgid "Check before posting"
+msgstr "Vor der Buchung prüfen"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Wählen Sie Arbeitsgänge auf der linken Seite, um das Los zu erstellen."
 
 msgid "Check Quantity"
 msgstr ""
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "Prüfen Sie die Angaben unten. Eine gebuchte Rechnung kann nicht mehr bearbeitet werden."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Überprüfen Sie das Artikelledger auf Artikel mit negativer Bestandsmenge am Periodenende – normalerweise ein fehlender Wareneingang oder eine fehlerhafte Buchung, die den Bestandswert und die Umsatzkosten verzerrt. Markieren Sie es als erledigt, nachdem es überprüft wurde, oder überspringen Sie es mit einem Grund."
@@ -9424,6 +9466,10 @@ msgstr "Aktuelle Prognose"
 
 msgid "Current quantity"
 msgstr "Aktuelle Menge"
+
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr ""
 
 msgid "Custom"
 msgstr "Benutzerdefiniert"
@@ -12544,6 +12590,10 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifizierungs-App ein"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifikator-App ein, um fortzufahren."
 
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr ""
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Geben Sie die Onshape URL, Client-ID und Client Secret Ihrer privaten OAuth-Anwendung ein, dann speichern Sie."
 
@@ -14289,6 +14339,9 @@ msgstr "Vollständiger Name"
 msgid "Full setup and migrations"
 msgstr "Vollständiges Setup und Migrationen"
 
+msgid "Full Year"
+msgstr "Volles Jahr"
+
 msgid "Fully Depreciated"
 msgstr "Vollständig abgeschrieben"
 
@@ -15049,6 +15102,9 @@ msgstr "Stunden/1000 Stück"
 msgid "Hours/Piece"
 msgstr "Stunden/Stück"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "So zählt {week} die Wochen in Dokument-, Serien- und Losnummern."
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Wie ein batchfähiger Verfahren die gruppierte Arbeit abläuft: Sequenziell führt Teile nacheinander auf einer Maschine aus (z. B. Säge oder Lasertisch), während Simultan sie zusammen in einer Charge ausführt (z. B. Ofen, Backofen oder Galvanisierbad)."
 
@@ -15219,6 +15275,9 @@ msgstr "Wie wir arbeiten"
 
 msgid "How We Work Together"
 msgstr "Wie wir zusammenarbeiten"
+
+msgid "How weeks are numbered"
+msgstr "So werden die Wochen nummeriert"
 
 msgid "How will you use {integrationName}?"
 msgstr "Wie werden Sie {integrationName} nutzen?"
@@ -16236,6 +16295,9 @@ msgstr "Ist Lieferantenorganisationsgruppe"
 
 msgid "Is supplier type group"
 msgstr "Ist Lieferantentyp-Gruppe"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Problem"
@@ -17591,6 +17653,9 @@ msgstr "Standort"
 
 msgid "Location / Item"
 msgstr "Standort / Artikel"
+
+msgid "Location code"
+msgstr "Standortcode"
 
 msgid "Location Name"
 msgstr "Standortname"
@@ -20385,6 +20450,9 @@ msgstr "Keine gebuchten Erstattungspositionen"
 msgid "No posted supplier invoice lines"
 msgstr "Keine gebuchten Lieferantenrechnungspositionen"
 
+msgid "No price"
+msgstr "Kein Preis"
+
 msgid "No pricing for selected quantity"
 msgstr "Keine Preisfindung für die ausgewählte Menge"
 
@@ -20435,6 +20503,9 @@ msgstr "Noch keine Projekte vorhanden"
 
 msgid "No purchases in this period"
 msgstr "Keine Käufe in diesem Zeitraum"
+
+msgid "No quantity"
+msgstr "Keine Menge"
 
 msgid "No Quote"
 msgstr "Kein Angebot"
@@ -20794,6 +20865,9 @@ msgstr "Keine"
 msgid "None (full page)"
 msgstr ""
 
+msgid "None (Net {defaultTermDays})"
+msgstr "Keine (Netto {defaultTermDays} Tage)"
+
 msgid "None available"
 msgstr "Keine verfügbar"
 
@@ -20853,6 +20927,9 @@ msgstr "Jetzt nicht"
 
 msgid "Not on the page"
 msgstr "Nicht auf der Seite"
+
+msgid "Not posted"
+msgstr ""
 
 msgid "Not Qualified"
 msgstr "Nicht qualifiziert"
@@ -21098,6 +21175,9 @@ msgstr "Wochen ab der aktuellen Woche nummerieren"
 
 msgid "Numbering sequence"
 msgstr "Nummernkreis"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "Nummern, die nach dem Speichern vergeben werden, zählen die Wochen auf diese Weise. Bereits vergebene Nummern behalten ihre Woche."
 
 msgid "OEE Impact"
 msgstr "OEE-Auswirkung"
@@ -21372,6 +21452,9 @@ msgstr "Dort nur {quantity}"
 
 msgid "Only {quantity} with a serial number there"
 msgstr "Dort nur {quantity} mit Seriennummer"
+
+msgid "Only {remaining} left to invoice on the order"
+msgstr "Auf dem Auftrag sind nur noch {remaining} in Rechnung zu stellen"
 
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Nur Verfahrensanweisungen im Entwurf sind bearbeitbar. Erstellen Sie eine neue Version, um eine aktive oder archivierte Verfahrensanweisung zu ändern."
@@ -22539,8 +22622,8 @@ msgstr "Zahlung an den Lieferanten"
 msgid "Payments"
 msgstr "Zahlungen"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Mit dieser Rechnung verrechnete Zahlungen und Guthaben. Verrechnete Beträge und Kursdifferenzen werden in der Basiswährung des Unternehmens angegeben. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
 msgstr "Zugeordnete Zahlungen und Gutschriften werden zuvor aufgehoben: Jede Zahlung bleibt gebucht, als nicht zugeordnetes Guthaben, das Sie anderswo zuordnen oder per Löschen erzwingen können. Bereits daraus erfasste Umsatzerlöse werden storniert."
@@ -22608,6 +22691,9 @@ msgstr "Prüfung ausstehend"
 
 msgid "Pending Inspection"
 msgstr "Prüfung ausstehend"
+
+msgid "Pending payment, not posted"
+msgstr ""
 
 msgid "people"
 msgstr "Personal"
@@ -26493,6 +26579,9 @@ msgstr "Rundungskonto"
 msgid "Rounding Account (default)"
 msgstr "Rundungskonto (Standard)"
 
+msgid "Rounding adjusted"
+msgstr ""
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "Leiten Sie alle Kreditorenrechnungen an eine Adresse (z. B. Unternehmenszentrale) anstelle einzelner Einkäufer weiter."
 
@@ -26867,6 +26956,9 @@ msgstr "Speichern und Überschreiben"
 
 msgid "Save and post"
 msgstr "Speichern und Buchen"
+
+msgid "Save and Post"
+msgstr ""
 
 msgid "Save applications"
 msgstr "Anwendungen speichern"
@@ -27333,6 +27425,9 @@ msgstr "Suchen..."
 
 msgid "Search…"
 msgstr "Suchen…"
+
+msgid "Second"
+msgstr "Zweite"
 
 msgid "Seconds to complete"
 msgstr "Sekunden zum Abschluss"
@@ -31095,6 +31190,9 @@ msgstr "Die Bestandskosten, die bei einer Lieferbuchung anerkannt werden, bewert
 msgid "The invoice for this payment is drafted on this date"
 msgstr "Die Rechnung für diese Zahlung wird an diesem Datum entworfen."
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Die IRS-Wiederherstellungsperiode-Klasse für diesen Gegenstand nach MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 Jahre)."
 
@@ -31643,6 +31741,9 @@ msgstr "Die Revisionsnummer des Teils"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Das Nutzungsrecht und die Leasingverbindlichkeit sind in der Bilanz, und ein linearer Leasingaufwand wird monatlich gebucht."
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "Der Kundenauftrag konnte nicht gelesen werden, daher wurde er nicht gegen diese Rechnung geprüft."
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Die Kundenauftragsposition, die dieser Fertigungsauftrag liefern soll, wodurch der Fertigungsauftrag an den dahinter liegenden Kundenbedarf gebunden wird."
 
@@ -32170,6 +32271,9 @@ msgstr "Diese Abteilung hat keine Arbeitsplätze bei {locationName}. Wählen Sie
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "Diese Abteilung hat keine Arbeitsplätze an diesem Standort. Wählen Sie eine andere Abteilung oder einen anderen Standort."
 
+msgid "This download link has expired. Ask for a new one."
+msgstr ""
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Dieser Herunterlade-Link ist ungültig oder wurde manipuliert."
 
@@ -32225,6 +32329,9 @@ msgstr "Diese Einladung zum Beitritt zu {0} ist abgelaufen. Sie können eine neu
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie eines für Stripe."
+
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "Diese Rechnung verwendet für {currencyCode} einen Kurs von 1, aber der heutige Kurs beträgt {currentRate}"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie sie im Stripe-Dashboard."
@@ -32352,6 +32459,12 @@ msgstr "Nur dieses Teil"
 
 msgid "This path only decides what runs next"
 msgstr "Dieser Pfad entscheidet nur darüber, was als nächstes ausgeführt wird"
+
+msgid "This payment did not post"
+msgstr ""
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Dieser Zeitraum hat keine gebuchten Buchungssätze und kann dauerhaft gelöscht werden. Dies kann nicht rückgängig gemacht werden."
@@ -34005,6 +34118,9 @@ msgstr "Dringend"
 msgid "URL"
 msgstr "URL"
 
+msgid "US"
+msgstr "US"
+
 msgid "Usage/Day (30d)"
 msgstr "Verbrauch/Tag (30d)"
 
@@ -34748,6 +34864,9 @@ msgstr "Mittwoch"
 msgid "Week"
 msgstr "Woche"
 
+msgid "Week ({numbering})"
+msgstr "Woche ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "Woche {0}"
@@ -34760,6 +34879,9 @@ msgstr "Woche {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Woche 8 Umstellung"
+
+msgid "Week Numbering"
+msgstr "Wochennummerierung"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34803,8 +34925,17 @@ msgstr "Wochen werden nach Kalenderwoche nummeriert"
 msgid "Weeks are numbered from the present week"
 msgstr "Wochen werden ab der aktuellen Woche nummeriert"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "Wochen werden unter Einstellungen → Unternehmen nummeriert."
+
 msgid "Weeks Open"
 msgstr "Wochen offen"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "Wochen beginnen am Montag. Woche 1 ist die Woche mit dem ersten Donnerstag des Jahres, sodass eine Woche nie geteilt wird: Freitag, 1. Januar 2027, liegt in Woche 53 des Jahres 2026."
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "Wochen beginnen am Sonntag. Woche 1 ist die Woche des 1. Januar, daher sind die Wochen um den Jahreswechsel kurz: 1.–2. Januar 2027 ist Woche 1."
 
 msgid "Weighted Average"
 msgstr "Gewichteter Durchschnitt"
@@ -35406,6 +35537,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "mit {0} Rückstellung"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "Mit {week} und ohne {month} oder {day} ist das Jahr das Jahr, zu dem die Woche gehört: 1. Januar 2027 liegt in Woche 53 des Jahres 2026."
 
 msgid "With Previous"
 msgstr "Mit Vorgänger"

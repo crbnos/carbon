@@ -1346,6 +1346,9 @@ msgstr "Средство измерения для характеристики 
 msgid "General"
 msgstr "Общие"
 
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Вернитесь к более ранней операции, чтобы повторить все операции с этого места, или отправьте единицу на доработку, например на участок доработки."
+
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
 
@@ -2830,9 +2833,6 @@ msgstr "Возвращаемая деталь"
 
 msgid "Rework"
 msgstr "Доработка"
-
-msgid "Rework created successfully"
-msgstr "Доработка успешно создана"
 
 msgid "Rework quantity"
 msgstr "Количество для доработки"
