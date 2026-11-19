@@ -216,6 +216,14 @@ export function salesInvoicePostChecks({
         ...(byOrderLine.get(line.salesOrderLineId) ?? []),
         line
       ]);
+    } else if (line.salesOrderId) {
+      // A line from an order with no order line to share against: all its
+      // shipping is that order's.
+      lineShippingSurplus.set(
+        line.salesOrderId,
+        (lineShippingSurplus.get(line.salesOrderId) ?? 0) +
+          Math.max(0, line.shippingCost ?? 0)
+      );
     } else {
       unlinkedLineShipping += Math.max(0, line.shippingCost ?? 0);
     }

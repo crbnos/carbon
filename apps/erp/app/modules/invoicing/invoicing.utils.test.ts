@@ -690,6 +690,35 @@ describe("salesInvoicePostChecks", () => {
     ]);
   });
 
+  it("lets freight on an order's line with no order line cover only that order", () => {
+    // The SO0001 line carries the order but no order line: its $60 is
+    // SO0001's freight, and SO0002's $60 is still on no invoice.
+    expect(
+      checks({
+        lines: [
+          line({ id: "line-1", salesOrderId: "so-1", shippingCost: 60 }),
+          line({ id: "line-2", salesOrderId: "so-2" })
+        ],
+        facts: facts({
+          orders: [
+            {
+              salesOrderId: "so-1",
+              readableId: "SO0001",
+              unbilledShipping: 60
+            },
+            { salesOrderId: "so-2", readableId: "SO0002", unbilledShipping: 60 }
+          ]
+        })
+      })
+    ).toEqual([
+      {
+        type: "orderShippingLeftOff",
+        salesOrderReadableId: "SO0002",
+        amount: 60
+      }
+    ]);
+  });
+
   it("reports the order shipping the invoice's shipping does not reach", () => {
     expect(
       checks({
