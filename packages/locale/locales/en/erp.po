@@ -14326,6 +14326,9 @@ msgstr "Full name"
 msgid "Full setup and migrations"
 msgstr "Full setup and migrations"
 
+msgid "Full Year"
+msgstr "Full Year"
+
 msgid "Fully Depreciated"
 msgstr "Fully Depreciated"
 
@@ -15083,6 +15086,9 @@ msgstr "Hours/1000 Pieces"
 msgid "Hours/Piece"
 msgstr "Hours/Piece"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "How {week} counts weeks in document, serial and batch numbers."
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 
@@ -15253,6 +15259,9 @@ msgstr "How We Work"
 
 msgid "How We Work Together"
 msgstr "How We Work Together"
+
+msgid "How weeks are numbered"
+msgstr "How weeks are numbered"
 
 msgid "How will you use {integrationName}?"
 msgstr "How will you use {integrationName}?"
@@ -16270,6 +16279,9 @@ msgstr "Is supplier org group"
 
 msgid "Is supplier type group"
 msgstr "Is supplier type group"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "Issue"
@@ -17625,6 +17637,9 @@ msgstr "Location"
 
 msgid "Location / Item"
 msgstr "Location / Item"
+
+msgid "Location code"
+msgstr "Location code"
 
 msgid "Location Name"
 msgstr "Location Name"
@@ -21144,6 +21159,9 @@ msgstr "Number weeks from the present week"
 
 msgid "Numbering sequence"
 msgstr "Numbering sequence"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
 
 msgid "OEE Impact"
 msgstr "OEE Impact"
@@ -27391,6 +27409,9 @@ msgstr "Search..."
 
 msgid "Search…"
 msgstr "Search…"
+
+msgid "Second"
+msgstr "Second"
 
 msgid "Seconds to complete"
 msgstr "Seconds to complete"
@@ -34078,6 +34099,9 @@ msgstr "Urgent"
 msgid "URL"
 msgstr "URL"
 
+msgid "US"
+msgstr "US"
+
 msgid "Usage/Day (30d)"
 msgstr "Usage/Day (30d)"
 
@@ -34821,6 +34845,9 @@ msgstr "Wednesday"
 msgid "Week"
 msgstr "Week"
 
+msgid "Week ({numbering})"
+msgstr "Week ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "Week {0}"
@@ -34833,6 +34860,9 @@ msgstr "Week {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "Week 8 cutover"
+
+msgid "Week Numbering"
+msgstr "Week Numbering"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34876,8 +34906,17 @@ msgstr "Weeks are numbered by calendar week"
 msgid "Weeks are numbered from the present week"
 msgstr "Weeks are numbered from the present week"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "Weeks are numbered in Settings → Company."
+
 msgid "Weeks Open"
 msgstr "Weeks Open"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
 
 msgid "Weighted Average"
 msgstr "Weighted Average"
@@ -35479,6 +35518,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "with {0} contingency"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
 
 msgid "With Previous"
 msgstr "With Previous"

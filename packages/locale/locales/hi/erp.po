@@ -14326,6 +14326,9 @@ msgstr "पूरा नाम"
 msgid "Full setup and migrations"
 msgstr "पूर्ण सेटअप और माइग्रेशन"
 
+msgid "Full Year"
+msgstr "पूर्ण वर्ष"
+
 msgid "Fully Depreciated"
 msgstr "पूर्ण मूल्यह्रासित"
 
@@ -15083,6 +15086,9 @@ msgstr "घंटे/1000 पीस"
 msgid "Hours/Piece"
 msgstr "घंटे/टुकड़ा"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "दस्तावेज़, सीरियल और बैच नंबरों में {week} सप्ताहों की गिनती इस प्रकार होती है।"
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "एक बैचयोग्य प्रक्रिया अपने समूहीकृत कार्य को कैसे चलाती है: अनुक्रमिक एक मशीन (एक आरा या लेजर टेबल) पर पार्ट्स को एक के बाद एक चलाता है, जबकि समवर्ती उन्हें एक ही लोड (एक भट्टी, ओवन, या प्लेटिंग बाथ) में एक साथ चलाता है।"
 
@@ -15253,6 +15259,9 @@ msgstr "हम कैसे काम करते हैं"
 
 msgid "How We Work Together"
 msgstr "हम कैसे एक साथ काम करते हैं"
+
+msgid "How weeks are numbered"
+msgstr "सप्ताह कैसे क्रमांकित होते हैं"
 
 msgid "How will you use {integrationName}?"
 msgstr "आप {integrationName} का उपयोग कैसे करेंगे?"
@@ -16270,6 +16279,9 @@ msgstr "आपूर्तिकर्ता संगठन समूह है
 
 msgid "Is supplier type group"
 msgstr "आपूर्तिकर्ता प्रकार समूह है"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "समस्या"
@@ -17625,6 +17637,9 @@ msgstr "स्थान"
 
 msgid "Location / Item"
 msgstr "स्थान / आइटम"
+
+msgid "Location code"
+msgstr "स्थान कोड"
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
@@ -21144,6 +21159,9 @@ msgstr "सप्ताहों को वर्तमान सप्ताह
 
 msgid "Numbering sequence"
 msgstr "संख्या अनुक्रम"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "सहेजने के बाद जारी होने वाले नंबर इसी तरह सप्ताह गिनेंगे। पहले से जारी नंबर अपना सप्ताह बनाए रखेंगे।"
 
 msgid "OEE Impact"
 msgstr "OEE प्रभाव"
@@ -27391,6 +27409,9 @@ msgstr "खोजें..."
 
 msgid "Search…"
 msgstr "खोजें…"
+
+msgid "Second"
+msgstr "दूसरा"
 
 msgid "Seconds to complete"
 msgstr "पूरा करने के सेकंड"
@@ -34078,6 +34099,9 @@ msgstr "तत्काल"
 msgid "URL"
 msgstr "यूआरएल"
 
+msgid "US"
+msgstr "US"
+
 msgid "Usage/Day (30d)"
 msgstr "उपयोग/दिन (30d)"
 
@@ -34821,6 +34845,9 @@ msgstr "बुधवार"
 msgid "Week"
 msgstr "सप्ताह"
 
+msgid "Week ({numbering})"
+msgstr "सप्ताह ({numbering})"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "सप्ताह {0}"
@@ -34833,6 +34860,9 @@ msgstr "सप्ताह {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "सप्ताह 8 कटओवर"
+
+msgid "Week Numbering"
+msgstr "सप्ताह क्रमांकन"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34876,8 +34906,17 @@ msgstr "सप्ताह कैलेंडर सप्ताह के अ�
 msgid "Weeks are numbered from the present week"
 msgstr "सप्ताह वर्तमान सप्ताह से क्रमांकित हैं"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "सप्ताह क्रमांकन ‘सेटिंग्स → कंपनी’ में होता है।"
+
 msgid "Weeks Open"
 msgstr "हफ्ते खुले"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "सप्ताह सोमवार से शुरू होते हैं। सप्ताह 1 वह सप्ताह है जिसमें वर्ष का पहला गुरुवार पड़ता है, ताकि कोई सप्ताह कभी विभाजित न हो: शुक्रवार 1 जनवरी 2027 वर्ष 2026 के सप्ताह 53 में आता है।"
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "सप्ताह रविवार से शुरू होते हैं। सप्ताह 1 वह सप्ताह है जिसमें 1 जनवरी पड़ती है, इसलिए नए वर्ष के आसपास के सप्ताह छोटे होते हैं: 1–2 जनवरी 2027 सप्ताह 1 में आते हैं।"
 
 msgid "Weighted Average"
 msgstr "भारित औसत"
@@ -35479,6 +35518,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "के साथ {0} आकस्मिकता"
+
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "{week} के साथ, और {month} या {day} के बिना, वर्ष वही होता है जिसमें वह सप्ताह आता है: 1 जनवरी 2027 वर्ष 2026 के सप्ताह 53 में आता है।"
 
 msgid "With Previous"
 msgstr "पिछले के साथ"

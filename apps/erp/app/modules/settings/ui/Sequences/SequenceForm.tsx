@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  asWeekNumbering,
+  interpolateSequenceFormat
+} from "@carbon/database/sequence-tokens";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -20,10 +24,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Input, Number, Submit } from "~/components/Form";
-import { useCompanyTimeZone, usePermissions } from "~/hooks";
+import {
+  useCompanySettings,
+  useCompanyTimeZone,
+  usePermissions
+} from "~/hooks";
 import { sequenceValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
-import { interpolateSequenceDate } from "~/utils/string";
+import { SequenceTokenHelp } from "./SequenceTokens";
 
 type SequenceFormProps = {
   initialValues: z.infer<typeof sequenceValidator> & {
@@ -42,12 +50,17 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
   const [next, setNext] = useState(initialValues.next ?? "1");
   const [size, setSize] = useState(initialValues.size ?? 5);
 
-  // Preview in the company timezone — the same calendar get_next_sequence
-  // issues numbers in — not the browser's.
+  // Preview in the company timezone and week numbering — the same calendar
+  // get_next_sequence issues numbers in — not the browser's.
   const timezone = useCompanyTimeZone();
+  const weekNumbering = asWeekNumbering(
+    useCompanySettings()?.sequenceWeekNumbering
+  );
   const makePreview = () => {
-    const p = interpolateSequenceDate(prefix, timezone);
-    const s = interpolateSequenceDate(suffix, timezone);
+    const { prefix: p, suffix: s } = interpolateSequenceFormat(prefix, suffix, {
+      timezone,
+      weekNumbering
+    });
 
     return `${p}${next.toString().padStart(size, "0")}${s}`;
   };
@@ -106,14 +119,7 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
                 label={t`Suffix`}
                 onChange={(e) => setSuffix(e.target.value)}
               />
-              <VStack spacing={0}>
-                <p className="text-muted-foreground text-sm">{`%{yyyy} = Full Year`}</p>
-                <p className="text-muted-foreground text-sm">{`%{yy} = Year`}</p>
-                <p className="text-muted-foreground text-sm">{`%{mm} = Month`}</p>
-                <p className="text-muted-foreground text-sm">{`%{dd} = Day`}</p>
-                <p className="text-muted-foreground text-sm">{`%{hh} = Hour`}</p>
-                <p className="text-muted-foreground text-sm">{`%{ss} = Second`}</p>
-              </VStack>
+              <SequenceTokenHelp weekNumbering={weekNumbering} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

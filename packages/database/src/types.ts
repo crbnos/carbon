@@ -8522,6 +8522,7 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
+          sequenceWeekNumbering: string
           serialNumberTiming: string
           serviceLaborBillRate: number | null
           serviceLaborCostRate: number | null
@@ -8623,6 +8624,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          sequenceWeekNumbering?: string
           serialNumberTiming?: string
           serviceLaborBillRate?: number | null
           serviceLaborCostRate?: number | null
@@ -8724,6 +8726,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          sequenceWeekNumbering?: string
           serialNumberTiming?: string
           serviceLaborBillRate?: number | null
           serviceLaborCostRate?: number | null
@@ -110433,8 +110436,23 @@ export type Database = {
           trackedEntityId: string
         }[]
       }
+      interpolate_sequence_date: {
+        Args: {
+          p_format?: string
+          p_now: string
+          p_value: string
+          p_week_numbering?: string
+        }
+        Returns: string
+      }
       interpolate_serial_segment: {
-        Args: { p_location: string; p_now: string; p_value: string }
+        Args: {
+          p_format?: string
+          p_location: string
+          p_now: string
+          p_value: string
+          p_week_numbering?: string
+        }
         Returns: string
       }
       is_claims_admin: { Args: { company: string }; Returns: boolean }
