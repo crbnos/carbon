@@ -3,6 +3,24 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
+ * The ERP path of a scanned kanban Create, Start or Link label, or null. A
+ * label holds the origin it was printed from, which need not be this
+ * deployment's ERP_URL, so only the path is read; the caller sends it to
+ * ERP_URL. A Complete label is not one: the operation page completes it.
+ */
+export function kanbanScanPath(input: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return null;
+  }
+  return /^\/api\/kanban\/(?:(?:start|link)\/)?[^/]+$/.test(url.pathname)
+    ? `${url.pathname}${url.search}`
+    : null;
+}
+
+/**
  * Whether a scan completes this kanban: its completed barcode override, or its
  * printed complete label. The label holds the origin it was printed from,
  * which need not be this deployment's ERP_URL, so only the path is compared.

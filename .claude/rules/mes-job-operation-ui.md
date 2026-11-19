@@ -269,7 +269,11 @@ Space (Start/Pause) or clicks the focused button with its Enter. A scan with no
 Enter or Tab ends after 700 ms of quiet. Ending sooner acted on the first half
 of a paused URL, which is itself a valid link.
 
-- The MES layout opens MES/ERP links. On an operation or assembly page
+- The MES layout opens MES/ERP links. A kanban Create, Start or Link label
+  (`kanbanScanPath`, `~/utils/kanban`) opens its path on this deployment's
+  `ERP_URL`, whatever origin it was printed from; matching the whole origin
+  sent a label printed from another address to the traveler lookup ("Nothing on
+  this page uses that barcode"). On an operation or assembly page
   (`/x/operation/`, `/x/assembly/`) it leaves a traveler link to the page's own
   `useTravelerScan` (see Traveler scan below). `JobOperation` and `AssemblyView`
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
