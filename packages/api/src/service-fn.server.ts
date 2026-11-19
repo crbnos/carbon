@@ -419,9 +419,10 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         return { data: out, error: null } as Outcome<R>;
       }
       if (out.category === "internal") {
+        const authored = withoutCause(out.message, out.cause);
         const refused = await refusalFromDatabase(
           ctx,
-          out.message,
+          authored === null ? out.message : authored || undefined,
           out.cause,
           parsed.data
         );
@@ -435,6 +436,11 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
           }
         );
         if (refused) return failed(refused);
+        if (authored !== null) {
+          return failed(
+            new CarbonError("internal", authored || INTERNAL_MESSAGE, out.cause)
+          );
+        }
       }
       return failed(out);
     } catch (err) {
@@ -450,7 +456,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         error: err
       });
       return failed(
-        refused ?? new CarbonError("internal", "Something went wrong", err)
+        refused ?? new CarbonError("internal", INTERNAL_MESSAGE, err)
       );
     }
   };
@@ -459,6 +465,28 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
     input: definition.input,
     permission: definition.permission
   });
+}
+
+const INTERNAL_MESSAGE = "Something went wrong";
+
+/**
+ * A message ending in its cause's own text (Postgres' words, which never leave
+ * the server) without that text: `""` when it was nothing else, null when it
+ * does not echo its cause.
+ */
+function withoutCause(message: string, cause: unknown): string | null {
+  const own =
+    cause !== null &&
+    typeof cause === "object" &&
+    "message" in cause &&
+    typeof cause.message === "string"
+      ? cause.message.trim()
+      : "";
+  if (own === "" || !message.trimEnd().endsWith(own)) return null;
+  return message
+    .trimEnd()
+    .slice(0, -own.length)
+    .replace(/[\s:–—-]+$/, "");
 }
 
 /**
@@ -561,5 +589,23 @@ export function toResult<T, E extends CarbonError>(
       ...(title && { title }),
       ...(reason && { reason })
     }
+  } as RouteResult<Result<T, E>>;
+}
+
+/**
+ * `toResult` for a page anyone with the link can open (a share link). An
+ * `internal` error goes out as a generic message: its title and reason carry
+ * the cause's own text (Postgres', a server's), which is logged, not shown.
+ */
+export function toPublicResult<T, E extends CarbonError>(
+  result: Result<T, E>
+): RouteResult<Result<T, E>> {
+  if (result.error === null || result.error.category !== "internal") {
+    return toResult(result);
+  }
+  const { category, status } = result.error;
+  return {
+    data: null,
+    error: { category, message: INTERNAL_MESSAGE, status }
   } as RouteResult<Result<T, E>>;
 }

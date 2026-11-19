@@ -191,6 +191,61 @@ describe("a service function's database refusal", () => {
     const { error } = await create(ctx, {});
     expect(error).toMatchObject({ category: "internal", message: "Failed" });
   });
+
+  it("withholds an internal message that is the cause's own text", async () => {
+    const missingTable = {
+      code: "42P01",
+      message: 'relation "secretTable" does not exist'
+    };
+    const read = defineServiceFn({
+      input: z.object({}),
+      permission: {},
+      async run(ctx) {
+        return ctx.error("internal", missingTable.message, missingTable);
+      }
+    });
+    const { error } = await read(ctx, {});
+    expect(error).toMatchObject({
+      category: "internal",
+      message: "Something went wrong"
+    });
+  });
+
+  it("keeps an internal message's own words and drops the cause's text after them", async () => {
+    const missingTable = {
+      code: "42P01",
+      message: 'relation "secretTable" does not exist'
+    };
+    const apply = defineServiceFn({
+      input: z.object({}),
+      permission: {},
+      async run(ctx) {
+        return ctx.error(
+          "internal",
+          `Failed to apply planning actions: ${missingTable.message}`,
+          missingTable
+        );
+      }
+    });
+    const { error } = await apply(ctx, {});
+    expect(error).toMatchObject({
+      category: "internal",
+      message: "Failed to apply planning actions"
+    });
+  });
+
+  it("names a refusal without Postgres' sentence when the message is the cause's text", async () => {
+    const create = defineServiceFn({
+      input: z.object({}),
+      permission: {},
+      async run(ctx) {
+        return ctx.error("internal", duplicateId.message, duplicateId);
+      }
+    });
+    const { error } = await create(ctx, {});
+    expect(error?.category).toBe("conflict");
+    expect(error?.message).not.toContain("duplicate key value");
+  });
 });
 
 describe("a refusal Postgres withheld the key from", () => {
