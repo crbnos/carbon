@@ -166,8 +166,11 @@ export function salesInvoicePostChecks({
   // shares the order line's quantity and charges.
   const byOrderLine = new Map<string, SalesInvoicePostCheckLine[]>();
   // Shipping billed on a line beyond its order line's own share can be the
-  // order's freight put on the line instead of the Shipping section.
-  let lineShippingSurplus = 0;
+  // order's freight put on the line instead of the Shipping section. It
+  // covers only that line's order; shipping on a line from no order covers
+  // every order, like the Shipping section.
+  const lineShippingSurplus = new Map<string, number>();
+  let unlinkedLineShipping = 0;
   // The orders this invoice bills goods from: a credit or return invoice is
   // not where an order's freight is billed.
   const billingOrders = new Set<string>();
@@ -205,7 +208,7 @@ export function salesInvoicePostChecks({
         line
       ]);
     } else {
-      lineShippingSurplus += Math.max(0, line.shippingCost ?? 0);
+      unlinkedLineShipping += Math.max(0, line.shippingCost ?? 0);
     }
   }
 
@@ -232,6 +235,7 @@ export function salesInvoicePostChecks({
     // it, so an untouched converted invoice is never flagged.
     let leftOff = 0;
     const rounding = halfMinorUnit * (orderLine.otherInvoices + 1);
+    const salesOrderId = group[0]!.salesOrderId;
     for (const field of ORDER_LINE_CHARGE_FIELDS) {
       const { charge, billed } = orderLine.charges[field];
       const expected = flatChargeShare({
@@ -244,8 +248,12 @@ export function salesInvoicePostChecks({
       });
       const actual = group.reduce((sum, line) => sum + (line[field] ?? 0), 0);
       if (expected - actual > rounding + EPSILON) leftOff += expected - actual;
-      if (field === "shippingCost") {
-        lineShippingSurplus += Math.max(0, actual - expected);
+      if (field === "shippingCost" && salesOrderId) {
+        lineShippingSurplus.set(
+          salesOrderId,
+          (lineShippingSurplus.get(salesOrderId) ?? 0) +
+            Math.max(0, actual - expected)
+        );
       }
     }
     if (leftOff > EPSILON) {
@@ -256,10 +264,13 @@ export function salesInvoicePostChecks({
   // The invoice's shipping counts against every order it bills, as another
   // invoice's does in `billedSalesOrderCharges`, so the check and the order
   // conversion agree on what is billed.
-  const covered = shippingCost + lineShippingSurplus;
+  const covered = shippingCost + unlinkedLineShipping;
   for (const order of facts?.orders ?? []) {
     if (!billingOrders.has(order.salesOrderId)) continue;
-    const leftOff = order.unbilledShipping - covered;
+    const leftOff =
+      order.unbilledShipping -
+      covered -
+      (lineShippingSurplus.get(order.salesOrderId) ?? 0);
     if (leftOff > EPSILON) {
       checks.push({
         type: "orderShippingLeftOff",

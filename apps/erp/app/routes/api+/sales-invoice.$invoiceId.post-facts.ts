@@ -28,11 +28,14 @@ const answer = (body: SalesInvoicePostFactsResponse) => Response.json(body);
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Employees only: the service-role read below is for the invoice screen,
-  // not for an API key.
-  const { client, companyId } = await requirePermissions(request, {
+  // not for an API key. `role` is not checked for a key, so the caller is.
+  const { client, companyId, caller } = await requirePermissions(request, {
     view: "invoicing",
     role: "employee"
   });
+  if (caller !== "session") {
+    throw new Response("Forbidden", { status: 403 });
+  }
 
   const { invoiceId } = params;
   if (!invoiceId) return answer({ facts: null, failed: false });
