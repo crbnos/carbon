@@ -91,7 +91,9 @@ Every print, manual or automatic, becomes a **`printJob`** row (`20260326000000_
 
 Each job records its `origin`, one of **auto** (an automatic print behind a business event), **manual** (someone clicked print), or **reprint** (re-run from the jobs list). It also keeps the `sourceDocument`, `sourceDocumentId`, a readable id, the `contentType`, the `printerUrl` it was sent to, and the `dpi` its content was drawn for (`20261119102744_print-job-dpi.sql`; 203 for a custom template and for every job from before the column).
 
-You watch the queue under **Settings → Printing → Print jobs** (`printing.jobs.tsx`). The table streams in real time and shows status, description, source, type, origin, and when. Expanding a row exposes the printer URL, attempts, timestamps, and any error. From there you can **View** the content (ZPL previews via Labelary at the job's own `dpi`, PDF via an inline frame), **Reprint** it (a fresh job with `origin: "reprint"` and the same content), or **Delete** it. A ZPL job is not reprinted to a printer at another dpi, because the copy would print the wrong size.
+You watch the queue under **Settings → Printing → Print jobs** (`printing.jobs.tsx`). The table streams in real time and shows status, description, source, type, origin, and when. Expanding a row exposes the printer URL, attempts, timestamps, and any error.
+
+From there you can **View** the content (ZPL previews via Labelary at the job's own `dpi`, PDF via an inline frame), **Reprint** it (a fresh job with `origin: "reprint"` and the same content), or **Delete** it. A ZPL job is not reprinted to a printer at another dpi, because the copy would print the wrong size.
 
 <Callout type="note">
 Print jobs are pruned on a schedule: completed jobs after 30 days, failed jobs after 90. A failed job stays around long enough to diagnose.
@@ -123,7 +125,9 @@ When a location has printer routes, **Print** opens a printer picker with the re
 
 ## Label sizes
 
-Media sizes are a fixed catalog (`packages/utils/src/labels.ts`): thermal `label1.5x1`, `label2x1`, `label2x2`, `label2.25x1.25`, `label3x2`, `label4x2`, `label4x3`, `label4x6`, metric `label100x50mm` and `label50x25mm`, and PDF-only `avery5163`. Only sizes with ZPL dimensions can print to a thermal printer; a PDF-only size like Avery can't. The catalog lists each thermal size at 203 dpi. A print job redraws a built-in label at the dpi of the printer it goes to; custom templates and the interactive label downloads stay at 203.
+Media sizes are a fixed catalog (`packages/utils/src/labels.ts`): thermal `label1.5x1`, `label2x1`, `label2x2`, `label2.25x1.25`, `label3x2`, `label4x2`, `label4x3`, `label4x6`, metric `label100x50mm` and `label50x25mm`, and PDF-only `avery5163`. Only sizes with ZPL dimensions can print to a thermal printer; a PDF-only size like Avery can't.
+
+The catalog lists each thermal size at 203 dpi. A print job redraws a built-in label at the dpi of the printer it goes to; custom templates and the interactive label downloads stay at 203.
 
 Two places set a size. A printer route pins its own `mediaSizeId` (the size loaded in that physical printer). And the company has a **default product-label size** (`companySettings.productLabelSize`), set on the document-template screen, used by the interactive label-download routes when no route dictates one. See [Company settings](/docs/reference/company-settings) for where that default lives, and [Documents](/docs/reference/documents) for the customizer that styles the built-in label templates.
 
