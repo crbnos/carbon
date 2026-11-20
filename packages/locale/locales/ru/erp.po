@@ -956,6 +956,9 @@ msgstr "{count, plural, one {# строка} few {# строки} many {# стр
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, one {# инструмент этой операции не привязан к шагу, поэтому он показывается на каждом шаге.} few {# инструмента этой операции не привязаны к шагу, поэтому они показываются на каждом шаге.} many {# инструментов этой операции не привязаны к шагу, поэтому они показываются на каждом шаге.} other {# инструмента этой операции не привязаны к шагу, поэтому они показываются на каждом шаге.}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# предупреждение} few {# предупреждения} many {# предупреждений} other {# предупреждения}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {около # строки} few {около # строк} many {около # строк} other {около # строк}}"
 
@@ -2560,6 +2563,9 @@ msgstr "Процент налога поставщика изменяется"
 msgid "A supplier's type changes"
 msgstr "Тип поставщика изменяется"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "Компонент налога, который начисляется на сумму строки плюс налог предыдущих компонентов, а не только на сумму строки."
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Налоговый сбор (погрузка, наладка, топливо), добавляемый к строке и включаемый в налоговую базу."
 
@@ -3229,6 +3235,9 @@ msgstr "Добавить условие"
 
 msgid "Add Company"
 msgstr "Добавить организацию"
+
+msgid "Add component"
+msgstr "Добавить компонент"
 
 msgid "Add components first"
 msgstr "Сначала добавьте компоненты"
@@ -6458,6 +6467,9 @@ msgstr "Расчет лучшего случая…"
 msgid "Calculation Method"
 msgstr "Метод расчета"
 
+msgid "Calculation type"
+msgstr "Тип расчета"
+
 msgid "Calculation Type"
 msgstr "Тип расчета"
 
@@ -7851,6 +7863,9 @@ msgstr "Компоненты скрыты только во время восп�
 msgid "Compound"
 msgstr "Составной"
 
+msgid "Compound tax"
+msgstr "Составной налог"
+
 msgid "Compute Burden"
 msgstr "Расчет накладных расходов"
 
@@ -8981,6 +8996,9 @@ msgstr "Подсчёт…"
 
 msgid "Country"
 msgstr "Страна"
+
+msgid "Country and state (tax code)"
+msgstr "Страна и штат (код налога)"
 
 msgid "Country code"
 msgstr "Код страны"
@@ -12263,6 +12281,9 @@ msgstr "Редактирование <0>{0}</0>: {1}. Изменения пер�
 msgid "Effective"
 msgstr "Действующий"
 
+msgid "Effective (tax component)"
+msgstr "Действует с (компонент налога)"
+
 msgid "Effective Date"
 msgstr "Дата вступления в силу"
 
@@ -13239,6 +13260,9 @@ msgstr "Серии с истекшим сроком"
 
 msgid "Expires"
 msgstr "Истекает"
+
+msgid "Expires (tax component)"
+msgstr "Истекает (компонент налога)"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "Как контракт или поправка классифициру
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "Как договор аренды отсчитывает периоды выставления счетов от своей даты начала: ежемесячно отсчитывает один месяц, начиная с дня даты начала (начало 7-го числа означает выставление счета с 7-го по 6-е число), календарный месяц (ежемесячно, согласованный с календарными периодами) отсчитывает календарные месяцы, и 28 дней отсчитывает последовательные 28-дневные периоды. Каждый период выставляет счет по одной ставке в своей периодичности за полные дни, недели или месяцы, охватываемые периодом; месячная ставка в частичном периоде рассчитывается пропорционально дням."
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "Как код налога начисляет налог: «Обычный» добавляет налог к строке; «Обратное начисление» налог не начисляет, а при закупке Carbon самостоятельно исчисляет налог и кредитует счет налога с продаж при обратном начислении."
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "Как строки кода налога относятся к классам в налоговой декларации: «Стандартная», «Пониженная», «С нулевой ставкой», «Освобождено», «Обратное начисление», «Экспорт» или «Вне сферы налогообложения»."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
 
@@ -16214,6 +16244,9 @@ msgstr "Счет-фактура ID"
 
 msgid "Invoice Location"
 msgstr "Площадка счета-фактуры"
+
+msgid "Invoice message"
+msgstr "Сообщение в счете-фактуре"
 
 msgid "Invoice Message"
 msgstr "Сообщение счета-фактуры"
@@ -25328,7 +25361,7 @@ msgid "Rejected"
 msgstr "Отклонено"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Отклонено при контроле"
 
 msgid "Rejected at Inspection"
 msgstr "Отклонено при контроле"
@@ -25520,6 +25553,9 @@ msgstr "Убрать условие"
 
 msgid "Remove Completion"
 msgstr "Убрать завершение"
+
+msgid "Remove component"
+msgstr "Удалить компонент"
 
 msgid "Remove condition"
 msgstr "Убрать условие"
@@ -25874,6 +25910,9 @@ msgstr "Отчет"
 
 msgid "Reporting"
 msgstr "Отчетность"
+
+msgid "Reporting category"
+msgstr "Категория отчетности"
 
 msgid "Reporting Category"
 msgstr "Категория отчетности"
@@ -30530,6 +30569,9 @@ msgstr "Налоги и сборы"
 msgid "Tax Authorities"
 msgstr "Налоговые органы"
 
+msgid "Tax authority"
+msgstr "Налоговый орган"
+
 msgid "Tax Authority"
 msgstr "Налоговый орган"
 
@@ -30568,6 +30610,9 @@ msgstr "Собранный налог, налог к возврату по ор�
 
 msgid "Tax component"
 msgstr "Компонент налога"
+
+msgid "Tax coverage"
+msgstr "Область применения налога"
 
 msgid "Tax Depreciation"
 msgstr "Налоговая амортизация"
@@ -30614,6 +30659,9 @@ msgstr "Уплаченный налог (по умолчанию)"
 msgid "Tax Paid Account"
 msgstr "Счет уплаченного налога"
 
+msgid "Tax Paid Account (component)"
+msgstr "Счет уплаченного налога (компонент)"
+
 msgid "Tax percent"
 msgstr "Налоговый процент"
 
@@ -30634,6 +30682,9 @@ msgstr "Налог к уплате (по умолчанию)"
 
 msgid "Tax Received Account"
 msgstr "Счет налога к уплате"
+
+msgid "Tax Received Account (component)"
+msgstr "Счет полученного налога (компонент)"
 
 msgid "Tax Registration"
 msgstr "Налоговая регистрация"
@@ -30682,6 +30733,9 @@ msgstr "Облагаемые налогом продажи"
 
 msgid "Taxes"
 msgstr "Налоги"
+
+msgid "Taxes shipping"
+msgstr "Облагать доставку налогом"
 
 msgid "Taxes Shipping"
 msgstr "Налоги на доставку"
@@ -30795,6 +30849,9 @@ msgstr "Цвет текста"
 msgid "Text size"
 msgstr "Размер текста"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "Текст, который печатается в выданном счете-фактуре с этим кодом налога, например причина освобождения продажи от налога."
+
 msgid "Text to edit"
 msgstr "Текст для редактирования"
 
@@ -30858,6 +30915,12 @@ msgstr "Цвет акцента, используемый во всём Carbon."
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "Выбранный счет для {account} больше не находится в плане счетов."
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "Счет, на который дебетуется возмещаемый налог при закупке по этому компоненту; если поле пустое, используется счет уплаченного налога по умолчанию."
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "Счет, на который кредитуется налог с продаж по этому компоненту; если поле пустое, используется счет полученного налога по умолчанию."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Измерение бухгалтерии, которое категоризирует номенклатуру для отчетности и анализа."
@@ -31314,6 +31377,9 @@ msgstr "первые 3–4 недели"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "Первый день, когда организация начинает вести учёт в Carbon, устанавливается один раз при настройке бухгалтерии и никогда не меняется; с этого момента каждое проведение создаёт проведённую операцию."
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "Первый день, с которого действует компонент налога; если поле пустое, он действует всегда. Документ использует компоненты, действующие на его собственную дату."
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "Первый день месяца аренды (день {commencementDay}), когда начинается период платежей, после последнего проведенного запуска аренды"
 
@@ -31364,6 +31430,9 @@ msgstr "Счет GL, на который учитываются взносы з�
 
 msgid "The goal"
 msgstr "Цель"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "Государственный орган, которому причитается налог по компоненту, например казначейство штата; отчет «Налоговые обязательства» суммирует налог, подлежащий уплате каждому такому органу."
 
 msgid "The grades that classify your materials"
 msgstr "Сорта, которые классифицируют ваши материалы"
@@ -31505,6 +31574,9 @@ msgstr "Принтеры этикеток и документов, на кото
 
 msgid "The labels every project can put on its elements."
 msgstr "Метки, которые каждый проект может разместить на своих элементах."
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "Последний день, когда действует компонент налога. Чтобы изменить ставку, укажите старому компоненту дату «Истекает» и добавьте новый, чтобы проведенные документы сохранили старую ставку."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "Последний день месяца лизинга (день перед днем {commencementDay}), после последней проведенной операции лизинга"
@@ -35424,6 +35496,9 @@ msgstr "Когда MRP начинает использовать эту дета
 msgid "When MRP uses the successor for new demand"
 msgstr "Когда MRP использует преемника для новых потребностей"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "Если включено, стоимость доставки строки входит в налогооблагаемую сумму, и код налога облагает доставку по той же ставке, что и товары."
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Когда включено, атрибуты в этой категории отображаются в открытом профиле человека; в противном случае они видны только администраторам."
 
@@ -35555,6 +35630,9 @@ msgstr "Когда вы ожидаете прибытия товаров, исх
 
 msgid "When your fiscal and tax years start"
 msgstr "Когда начинаются ваши финансовый и налоговый годы"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "Где применяется код налога: вкладка «Налог» покупателя или поставщика предлагает коды своей страны и штата, а код без штата подходит для всей страны."
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "Где доставляется уведомление рабочего процесса — в приложении всегда отправляется, email требует план Business или Partner, а Slack требует подключённого рабочего пространства Slack."

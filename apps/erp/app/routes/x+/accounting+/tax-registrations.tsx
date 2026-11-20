@@ -3,16 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  RecordOutlet,
-  VStack
-} from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { getTaxRegistrations } from "~/modules/accounting/accounting.service";
@@ -98,46 +90,14 @@ export default function TaxRegistrationsRoute() {
   const { data, count, countriesWithoutRegistration, countriesWithoutCode } =
     useLoaderData<typeof loader>();
 
-  const unregistered = countriesWithoutRegistration.join(", ");
-  const uncovered = countriesWithoutCode.join(", ");
-
   return (
     <VStack spacing={0} className="h-full">
-      {countriesWithoutRegistration.length > 0 && (
-        <div className="w-full p-4 pb-0">
-          <Alert variant="warning">
-            <LuTriangleAlert className="h-4 w-4" />
-            <AlertTitle>
-              <Trans>No tax registration for {unregistered}</Trans>
-            </AlertTitle>
-            <AlertDescription>
-              <Trans>
-                An active tax code charges tax in these countries, but the
-                company has no tax registration there.
-              </Trans>
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-      {countriesWithoutCode.length > 0 && (
-        <div className="w-full p-4 pb-0">
-          <Alert variant="warning">
-            <LuTriangleAlert className="h-4 w-4" />
-            <AlertTitle>
-              <Trans>No active tax code for {uncovered}</Trans>
-            </AlertTitle>
-            <AlertDescription>
-              <Trans>
-                The company is registered in these countries, but no active tax
-                code charges tax there.
-              </Trans>
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-      <div className="flex-1 min-h-0 w-full">
-        <TaxRegistrationsTable data={data ?? []} count={count ?? 0} />
-      </div>
+      <TaxRegistrationsTable
+        data={data ?? []}
+        count={count ?? 0}
+        countriesWithoutRegistration={countriesWithoutRegistration}
+        countriesWithoutCode={countriesWithoutCode}
+      />
       <RecordOutlet />
     </VStack>
   );

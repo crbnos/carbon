@@ -956,6 +956,9 @@ msgstr "{count, plural, one {# row} other {# rows}}"
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# warning} other {# warnings}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {about # row} other {about # rows}}"
 
@@ -2560,6 +2563,9 @@ msgstr "A supplier's tax percent changes"
 msgid "A supplier's type changes"
 msgstr "A supplier's type changes"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 
@@ -3229,6 +3235,9 @@ msgstr "Add clause"
 
 msgid "Add Company"
 msgstr "Add Company"
+
+msgid "Add component"
+msgstr "Add component"
 
 msgid "Add components first"
 msgstr "Add components first"
@@ -6458,6 +6467,9 @@ msgstr "Calculating best case…"
 msgid "Calculation Method"
 msgstr "Calculation Method"
 
+msgid "Calculation type"
+msgstr "Calculation type"
+
 msgid "Calculation Type"
 msgstr "Calculation Type"
 
@@ -7851,6 +7863,9 @@ msgstr "Components hidden only while this step plays, such as a fixture in the w
 msgid "Compound"
 msgstr "Compound"
 
+msgid "Compound tax"
+msgstr "Compound tax"
+
 msgid "Compute Burden"
 msgstr "Compute Burden"
 
@@ -8981,6 +8996,9 @@ msgstr "Counting…"
 
 msgid "Country"
 msgstr "Country"
+
+msgid "Country and state (tax code)"
+msgstr "Country and state (tax code)"
 
 msgid "Country code"
 msgstr "Country code"
@@ -12263,6 +12281,9 @@ msgstr "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgid "Effective"
 msgstr "Effective"
 
+msgid "Effective (tax component)"
+msgstr "Effective (tax component)"
+
 msgid "Effective Date"
 msgstr "Effective Date"
 
@@ -13239,6 +13260,9 @@ msgstr "Expired Batches"
 
 msgid "Expires"
 msgstr "Expires"
+
+msgid "Expires (tax component)"
+msgstr "Expires (tax component)"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "How a contract or an amendment is classified for recurring-revenue repor
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 
@@ -16214,6 +16244,9 @@ msgstr "Invoice ID"
 
 msgid "Invoice Location"
 msgstr "Invoice Location"
+
+msgid "Invoice message"
+msgstr "Invoice message"
 
 msgid "Invoice Message"
 msgstr "Invoice Message"
@@ -25521,6 +25554,9 @@ msgstr "Remove clause"
 msgid "Remove Completion"
 msgstr "Remove Completion"
 
+msgid "Remove component"
+msgstr "Remove component"
+
 msgid "Remove condition"
 msgstr "Remove condition"
 
@@ -25874,6 +25910,9 @@ msgstr "Report"
 
 msgid "Reporting"
 msgstr "Reporting"
+
+msgid "Reporting category"
+msgstr "Reporting category"
 
 msgid "Reporting Category"
 msgstr "Reporting Category"
@@ -30530,6 +30569,9 @@ msgstr "Tax and Fees"
 msgid "Tax Authorities"
 msgstr "Tax Authorities"
 
+msgid "Tax authority"
+msgstr "Tax authority"
+
 msgid "Tax Authority"
 msgstr "Tax Authority"
 
@@ -30568,6 +30610,9 @@ msgstr "Tax collected and recoverable by authority, and the net due"
 
 msgid "Tax component"
 msgstr "Tax component"
+
+msgid "Tax coverage"
+msgstr "Tax coverage"
 
 msgid "Tax Depreciation"
 msgstr "Tax Depreciation"
@@ -30614,6 +30659,9 @@ msgstr "Tax Paid (default)"
 msgid "Tax Paid Account"
 msgstr "Tax Paid Account"
 
+msgid "Tax Paid Account (component)"
+msgstr "Tax Paid Account (component)"
+
 msgid "Tax percent"
 msgstr "Tax percent"
 
@@ -30634,6 +30682,9 @@ msgstr "Tax Received (default)"
 
 msgid "Tax Received Account"
 msgstr "Tax Received Account"
+
+msgid "Tax Received Account (component)"
+msgstr "Tax Received Account (component)"
 
 msgid "Tax Registration"
 msgstr "Tax Registration"
@@ -30682,6 +30733,9 @@ msgstr "Taxable Sales"
 
 msgid "Taxes"
 msgstr "Taxes"
+
+msgid "Taxes shipping"
+msgstr "Taxes shipping"
 
 msgid "Taxes Shipping"
 msgstr "Taxes Shipping"
@@ -30795,6 +30849,9 @@ msgstr "Text color"
 msgid "Text size"
 msgstr "Text size"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+
 msgid "Text to edit"
 msgstr "Text to edit"
 
@@ -30858,6 +30915,12 @@ msgstr "The accent color used across Carbon."
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "The account picked for {account} is no longer in the chart."
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "The account this component's sales tax is credited to; empty uses the Tax Received default account."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "The accounting dimension that categorizes items for reporting and analysis."
@@ -31314,6 +31377,9 @@ msgstr "the first 3 to 4 weeks"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 
@@ -31364,6 +31430,9 @@ msgstr "The GL account charges for this carrier post to (freight expense, freigh
 
 msgid "The goal"
 msgstr "The goal"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
 
 msgid "The grades that classify your materials"
 msgstr "The grades that classify your materials"
@@ -31505,6 +31574,9 @@ msgstr "The label and document printers your company prints to"
 
 msgid "The labels every project can put on its elements."
 msgstr "The labels every project can put on its elements."
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
@@ -35424,6 +35496,9 @@ msgstr "When MRP starts using this part for the old part's demand"
 msgid "When MRP uses the successor for new demand"
 msgstr "When MRP uses the successor for new demand"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 
@@ -35555,6 +35630,9 @@ msgstr "When you expect the goods to arrive, based on how they shipped. It is fo
 
 msgid "When your fiscal and tax years start"
 msgstr "When your fiscal and tax years start"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."

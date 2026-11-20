@@ -956,6 +956,9 @@ msgstr "{count, plural, one {#행} other {#행}}"
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, other {이 작업의 도구 #개가 단계에 연결되어 있지 않아 모든 단계에 표시됩니다.}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {경고 #건} other {경고 #건}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {약 #행} other {약 #행}}"
 
@@ -2560,6 +2563,9 @@ msgstr "공급업체의 세금율이 변경됨"
 msgid "A supplier's type changes"
 msgstr "공급업체의 유형이 변경됨"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "앞 구성 요소들의 세금을 포함한 라인 금액에 부과되는 세금 구성 요소입니다. 라인 금액에만 부과하는 방식과 다릅니다."
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "라인에 추가된 과세 부과금(취급, 셋업, 연료); 세금 기초에 포함됩니다."
 
@@ -3229,6 +3235,9 @@ msgstr "조건 추가"
 
 msgid "Add Company"
 msgstr "회사 추가"
+
+msgid "Add component"
+msgstr "구성품 추가"
 
 msgid "Add components first"
 msgstr "먼저 구성품 추가"
@@ -6458,6 +6467,9 @@ msgstr "최선의 경우 계산 중…"
 msgid "Calculation Method"
 msgstr "계산 방법"
 
+msgid "Calculation type"
+msgstr "계산 유형"
+
 msgid "Calculation Type"
 msgstr "계산 유형"
 
@@ -7851,6 +7863,9 @@ msgstr "지그와 같이 방해가 되는 구성품은 이 단계가 재생되�
 msgid "Compound"
 msgstr "복합"
 
+msgid "Compound tax"
+msgstr "복합세"
+
 msgid "Compute Burden"
 msgstr "부담액 계산"
 
@@ -8981,6 +8996,9 @@ msgstr "집계 중…"
 
 msgid "Country"
 msgstr "국가"
+
+msgid "Country and state (tax code)"
+msgstr "국가 및 주 (세금 코드)"
 
 msgid "Country code"
 msgstr "국가 코드"
@@ -12263,6 +12281,9 @@ msgstr "<0>{0}</0> 편집 중: {1}. 변경 사항은 이 변경 요청으로 이
 msgid "Effective"
 msgstr "유효"
 
+msgid "Effective (tax component)"
+msgstr "적용 시작일 (세금 구성 요소)"
+
 msgid "Effective Date"
 msgstr "유효 날짜"
 
@@ -13239,6 +13260,9 @@ msgstr "만료된 배치들"
 
 msgid "Expires"
 msgstr "만료"
+
+msgid "Expires (tax component)"
+msgstr "만료일 (세금 구성 요소)"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "계약 또는 수정안이 반복 수익 보고를 위해 어떻게 분�
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "임대료 계약이 시작일로부터 청구 기간을 어떻게 분할하는지: 매월은 시작일의 날로부터 한 달을 분할합니다 (예: 7일 시작은 7일부터 6일까지 청구), 달력월(매월, 달력 기간에 맞춤)은 달력월을 분할하고, 28일은 연속 28일 기간을 분할합니다. 각 개는 기간이 포함하는 전체 날짜, 주, 또는 월에 대해 자신의 빈도로 하나의 료율로 청구됩니다; 부분 기간의 월별 료율은 일수로 비례 배분됩니다."
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "세금 코드의 과세 방식입니다. 일반은 세금을 라인에 더합니다. 역부과 (Reverse Charge)는 세금을 부과하지 않으며, 구매 시 Carbon이 세금을 직접 산정하여 역부과 매출세 계정을 대변에 기입합니다."
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "세금 코드의 라인이 세금 신고서에서 분류되는 방식입니다. 표준, 경감, 영세율, 면세, 역부과 (Reverse Charge), 수출 또는 과세 대상 외."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "품목을 전체적으로 재보충하는 방법(구매, 사내 생산 또는 구매 및 사내 생산)입니다. 라인별 공급 방식과 달리 품목별로 설정됩니다."
 
@@ -16214,6 +16244,9 @@ msgstr "송장 ID"
 
 msgid "Invoice Location"
 msgstr "송장 사업장"
+
+msgid "Invoice message"
+msgstr "송장 메시지"
 
 msgid "Invoice Message"
 msgstr "송장 메시지"
@@ -25328,7 +25361,7 @@ msgid "Rejected"
 msgstr "반려됨"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "검사에서 거부됨"
 
 msgid "Rejected at Inspection"
 msgstr "검사에서 불합격"
@@ -25520,6 +25553,9 @@ msgstr "절 제거"
 
 msgid "Remove Completion"
 msgstr "완료 제거"
+
+msgid "Remove component"
+msgstr "구성품 제거"
 
 msgid "Remove condition"
 msgstr "조건 제거"
@@ -25874,6 +25910,9 @@ msgstr "보고서"
 
 msgid "Reporting"
 msgstr "보고"
+
+msgid "Reporting category"
+msgstr "보고 범주"
 
 msgid "Reporting Category"
 msgstr "보고 카테고리"
@@ -30530,6 +30569,9 @@ msgstr "세금 및 수수료"
 msgid "Tax Authorities"
 msgstr "세금 당국"
 
+msgid "Tax authority"
+msgstr "세무 당국"
+
 msgid "Tax Authority"
 msgstr "세금 당국"
 
@@ -30568,6 +30610,9 @@ msgstr "당국이 징수한 세금 및 회수 가능한 세금 및 순 미결액
 
 msgid "Tax component"
 msgstr "세금 구성요소"
+
+msgid "Tax coverage"
+msgstr "세금 적용 범위"
 
 msgid "Tax Depreciation"
 msgstr "세무 감가상각"
@@ -30614,6 +30659,9 @@ msgstr "지급한 세금(기본값)"
 msgid "Tax Paid Account"
 msgstr "세금 납부 계정"
 
+msgid "Tax Paid Account (component)"
+msgstr "매입세 계정 (구성 요소)"
+
 msgid "Tax percent"
 msgstr "세금 비율"
 
@@ -30634,6 +30682,9 @@ msgstr "세금 수령 (기본값)"
 
 msgid "Tax Received Account"
 msgstr "세금 수령 계정"
+
+msgid "Tax Received Account (component)"
+msgstr "매출세 계정 (구성 요소)"
 
 msgid "Tax Registration"
 msgstr "세금 등록"
@@ -30682,6 +30733,9 @@ msgstr "과세 대상 영업"
 
 msgid "Taxes"
 msgstr "세금"
+
+msgid "Taxes shipping"
+msgstr "배송비에 세금 부과"
 
 msgid "Taxes Shipping"
 msgstr "세금 배송"
@@ -30795,6 +30849,9 @@ msgstr "텍스트 색상"
 msgid "Text size"
 msgstr "글자 크기"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "이 세금 코드를 사용하는 매출 송장에 인쇄되는 문구입니다(예: 판매가 면세인 사유)."
+
 msgid "Text to edit"
 msgstr "편집할 텍스트"
 
@@ -30858,6 +30915,12 @@ msgstr "Carbon 전체에서 사용하는 강조 색상"
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "{account}에 선택된 계정이 더 이상 계정과목표에 없습니다."
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "이 구성 요소의 공제 가능한 매입세가 차변에 기입되는 계정입니다. 비워 두면 매입세 기본 계정을 사용합니다."
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "이 구성 요소의 매출세가 대변에 기입되는 계정입니다. 비워 두면 매출세 기본 계정을 사용합니다."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "보고 및 분석을 위해 항목을 분류하는 회계 차원입니다."
@@ -31314,6 +31377,9 @@ msgstr "처음 3~4주"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "회사가 Carbon에서 장부를 관리하기 시작하는 첫 날로, 회계 설정 시 한 번만 설정되고 이후 변경되지 않습니다. 그 이후로 모든 전기는 전기된 전표를 작성합니다."
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "세금 구성 요소가 적용되는 첫 날입니다. 비워 두면 항상 적용됩니다. 문서는 문서 자체의 날짜에 유효한 구성 요소를 적용받습니다."
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "마지막 전기됨 리스 실행 후 지불 기간이 시작되는 리스 월의 첫 날(일 {commencementDay})"
 
@@ -31364,6 +31430,9 @@ msgstr "이 운송업체 관련 비용이 계상되는 총계정원장 계정입
 
 msgid "The goal"
 msgstr "목표"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "세금 구성 요소의 세금을 받을 정부 기관입니다(예: 주 정부 세무국). 세금 부채 보고서는 각 기관에 납부할 세금의 합계를 보여 줍니다."
 
 msgid "The grades that classify your materials"
 msgstr "자재를 분류하는 등급"
@@ -31505,6 +31574,9 @@ msgstr "회사가 인쇄하는 라벨 및 문서 프린터"
 
 msgid "The labels every project can put on its elements."
 msgstr "모든 프로젝트가 자신의 요소에 넣을 수 있는 라벨."
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "세금 구성 요소가 적용되는 마지막 날입니다. 세율을 변경하려면 기존 구성 요소에 만료일을 입력하고 새 구성 요소를 추가하세요. 그러면 전기된 문서는 기존 세율을 유지합니다."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "임차 월의 마지막 날 (일 {commencementDay} 전날), 마지막 전기된 임차 실행 후"
@@ -35424,6 +35496,9 @@ msgstr "MRP가 기존 부품의 소요량을 충족하기 위해 이 부품을 �
 msgid "When MRP uses the successor for new demand"
 msgstr "MRP가 새로운 소요량에 대해 후속 품목을 사용할 때"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "켜면 라인의 배송비가 과세 대상 금액에 포함되어, 세금 코드가 배송비에도 상품과 같은 세율을 적용합니다."
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "켜면 이 카테고리의 속성이 사용자의 공개 프로필에 표시됩니다. 끄면 관리자에게만 표시됩니다."
 
@@ -35555,6 +35630,9 @@ msgstr "배송 방식에 따라 물품이 도착할 것으로 예상되는 날�
 
 msgid "When your fiscal and tax years start"
 msgstr "귀사의 회계연도 및 세무연도가 시작될 때"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "세금 코드의 적용 범위입니다. 고객 또는 공급업체의 세금 탭은 해당 국가 및 주의 코드를 제안하며, 주가 없는 코드는 국가 전체에 적용됩니다."
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "워크플로우 알림이 전송되는 위치 — 인앱은 항상 전송되며, 이메일은 Business 또는 Partner 요금제가 필요하고 Slack은 Slack 작업 공간이 연결되어야 합니다."

@@ -956,6 +956,9 @@ msgstr "{count, plural, one {# 行} other {# 行}}"
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, other {この処理の # 個のツールはステップに紐付いていないため、すべてのステップに表示されます。}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# 件の警告} other {# 件の警告}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {約# 行} other {約# 行}}"
 
@@ -2560,6 +2563,9 @@ msgstr "仕入先の税率が変更される"
 msgid "A supplier's type changes"
 msgstr "仕入先の種類が変更される"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "明細金額に、その前にあるコンポーネントの税額を加えた額に課税される税コンポーネント。明細金額のみに課税するのではありません。"
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "課税対象の追加料金（取扱、セットアップ、燃料）を行に追加し、課税ベースに含めます。"
 
@@ -3229,6 +3235,9 @@ msgstr "句を追加"
 
 msgid "Add Company"
 msgstr "会社を追加"
+
+msgid "Add component"
+msgstr "構成部品を追加"
 
 msgid "Add components first"
 msgstr "最初にコンポーネントを追加"
@@ -6458,6 +6467,9 @@ msgstr "最良ケースを計算中…"
 msgid "Calculation Method"
 msgstr "計算方法"
 
+msgid "Calculation type"
+msgstr "計算方式"
+
 msgid "Calculation Type"
 msgstr "計算方法"
 
@@ -7851,6 +7863,9 @@ msgstr "このステップの再生中にのみ非表示になるコンポーネ
 msgid "Compound"
 msgstr "複合"
 
+msgid "Compound tax"
+msgstr "複合税"
+
 msgid "Compute Burden"
 msgstr "負担の計算"
 
@@ -8981,6 +8996,9 @@ msgstr "集計中…"
 
 msgid "Country"
 msgstr "国"
+
+msgid "Country and state (tax code)"
+msgstr "国と州（税コード）"
 
 msgid "Country code"
 msgstr "国コード"
@@ -12263,6 +12281,9 @@ msgstr "編集中 <0>{0}</0>: {1}。変更はこの変更要求に保存され�
 msgid "Effective"
 msgstr "有効"
 
+msgid "Effective (tax component)"
+msgstr "適用開始日（税コンポーネント）"
+
 msgid "Effective Date"
 msgstr "有効日"
 
@@ -13239,6 +13260,9 @@ msgstr "期限切れバッチ"
 
 msgid "Expires"
 msgstr "有効期限"
+
+msgid "Expires (tax component)"
+msgstr "失効日（税コンポーネント）"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "契約または修正が継続売上高レポート用にどのように
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "レンタル契約がその開始日から請求期間をどのように区切るかについて：毎月は開始日からの1か月を期間とします（例：開始日が7日の場合は毎月7日から翌月6日まで）。カレンダー月（毎月をカレンダー期間に合わせたもの）はカレンダー月ごとに期間を区切ります。28日は連続した28日間の期間に区切ります。各期間は、独自の頻度で、全体の日、週、または月に対して1つのレートを請求します。一部期間での月額レートは日数で按分されます。"
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "税コードの課税方法。通常は明細に税を加算します。リバースチャージは税を課さず、仕入時にはCarbonが税額を自己申告し、リバースチャージ売上税勘定を貸方に計上します。"
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "税コードの明細が税務申告でどの区分に分類されるか：標準税率、軽減税率、ゼロ税率、非課税、リバースチャージ、輸出、対象外。"
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "品目全体がどのように補充されるか(購入、内製、または購入・内製)。品目ごとに設定され、行ごとの供給方式とは異なります"
 
@@ -16214,6 +16244,9 @@ msgstr "請求書ID"
 
 msgid "Invoice Location"
 msgstr "請求書の場所"
+
+msgid "Invoice message"
+msgstr "請求書メッセージ"
 
 msgid "Invoice Message"
 msgstr "請求書メッセージ"
@@ -25328,7 +25361,7 @@ msgid "Rejected"
 msgstr "却下"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "検査で却下済"
 
 msgid "Rejected at Inspection"
 msgstr "検査で不合格"
@@ -25520,6 +25553,9 @@ msgstr "条項を除去"
 
 msgid "Remove Completion"
 msgstr "完了を除去"
+
+msgid "Remove component"
+msgstr "構成部品を削除"
 
 msgid "Remove condition"
 msgstr "条件を除去"
@@ -25874,6 +25910,9 @@ msgstr "レポート"
 
 msgid "Reporting"
 msgstr "レポーティング"
+
+msgid "Reporting category"
+msgstr "報告区分"
 
 msgid "Reporting Category"
 msgstr "報告カテゴリ"
@@ -30530,6 +30569,9 @@ msgstr "税と手数料"
 msgid "Tax Authorities"
 msgstr "税当局"
 
+msgid "Tax authority"
+msgstr "税務当局"
+
 msgid "Tax Authority"
 msgstr "税当局"
 
@@ -30568,6 +30610,9 @@ msgstr "当局による徴収税と控除可能税、および純額"
 
 msgid "Tax component"
 msgstr "税要素"
+
+msgid "Tax coverage"
+msgstr "税の適用範囲"
 
 msgid "Tax Depreciation"
 msgstr "税務減価償却"
@@ -30614,6 +30659,9 @@ msgstr "支払済み税（デフォルト）"
 msgid "Tax Paid Account"
 msgstr "支払い税勘定"
 
+msgid "Tax Paid Account (component)"
+msgstr "税支払勘定（税コンポーネント）"
+
 msgid "Tax percent"
 msgstr "税率"
 
@@ -30634,6 +30682,9 @@ msgstr "受取税（既定値）"
 
 msgid "Tax Received Account"
 msgstr "受取税勘定"
+
+msgid "Tax Received Account (component)"
+msgstr "税受取勘定（税コンポーネント）"
 
 msgid "Tax Registration"
 msgstr "税務登録"
@@ -30682,6 +30733,9 @@ msgstr "課税売上"
 
 msgid "Taxes"
 msgstr "税金"
+
+msgid "Taxes shipping"
+msgstr "配送料に課税"
 
 msgid "Taxes Shipping"
 msgstr "配送税"
@@ -30795,6 +30849,9 @@ msgstr "文字色"
 msgid "Text size"
 msgstr "テキストサイズ"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "この税コードを使用する売上請求書に印刷されるテキスト（販売が非課税となる理由など）。"
+
 msgid "Text to edit"
 msgstr "編集するテキスト"
 
@@ -30858,6 +30915,12 @@ msgstr "Carbon全体で使用するアクセントカラー。"
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "{account} に対して選択された勘定はもはや勘定科目表にありません。"
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "このコンポーネントの回収可能な仕入税額を借方計上する勘定。空欄の場合は既定の税支払勘定を使用します。"
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "このコンポーネントの売上税を貸方計上する勘定。空欄の場合は既定の税受取勘定を使用します。"
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "レポートと分析のためにアイテムを分類する会計ディメンション。"
@@ -31314,6 +31377,9 @@ msgstr "最初の3～4週間"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "会社がCarbonで帳簿の記録を始める最初の日であり、会計設定時に一度だけ設定され、その後は変更されません。この日以降、転記するたびに転記済の仕訳が作成されます。"
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "税コンポーネントが適用される最初の日。空欄の場合は常に適用されます。文書は、その文書の日付時点で有効なコンポーネントを採用します。"
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "最後に転記済のリース実行の後の、支払期間が開始されるリース月の初日（{commencementDay}日）"
 
@@ -31364,6 +31430,9 @@ msgstr "この運送業者の料金が転記される勘定科目（送料費用
 
 msgid "The goal"
 msgstr "目標"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "税コンポーネントの税金の納付先となる行政機関（州会計監査官など）。税金債務レポートでは、各機関に納付すべき税額を集計します。"
 
 msgid "The grades that classify your materials"
 msgstr "あなたの材料を分類するグレード"
@@ -31505,6 +31574,9 @@ msgstr "あなたの会社が印刷するラベルおよび文書プリンター
 
 msgid "The labels every project can put on its elements."
 msgstr "すべてのプロジェクトが要素に付けることができるラベル。"
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "税コンポーネントが適用される最終日。税率を変更するには、旧コンポーネントに失効日を設定し、新しいコンポーネントを追加してください。転記済の文書は旧税率を維持します。"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "リース月の末日（{commencementDay}日の前日）、最後の転記済みリース実行後"
@@ -35424,6 +35496,9 @@ msgstr "MRPがこの部品を旧部品の所要量に使用し始めるとき"
 msgid "When MRP uses the successor for new demand"
 msgstr "MRPが新しい所要量に対して後継品目を使用する場合"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "オンにすると、明細の配送料が課税対象額に含まれ、税コードは配送料を商品と同じ税率で課税します。"
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "有効にすると、このカテゴリーの属性がユーザーの公開プロフィールに表示されます。そうでない場合は、管理者のみが表示できます。"
 
@@ -35555,6 +35630,9 @@ msgstr "出荷方法に基づき、品物の到着を見込む日です。参考
 
 msgid "When your fiscal and tax years start"
 msgstr "会計年度および税務年度の開始時期"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "税コードの適用先：得意先または仕入先の「税」タブには、その国と州の税コードが提示されます。州が指定されていない税コードは国全体に適用されます。"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "ワークフロー通知が配信される場所 — アプリ内は常に送信されますが、メールはビジネスプランまたはパートナープランが必要で、Slackはワークスペースが接続されている必要があります。"

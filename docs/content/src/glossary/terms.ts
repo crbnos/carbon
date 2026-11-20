@@ -453,6 +453,61 @@ export const terms = {
     definition: msg`The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought.`,
     href: "/docs/reference/accounting#recoverable-purchase-tax"
   },
+  "tax-calculation-type": {
+    term: msg`Calculation type`,
+    definition: msg`How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account.`,
+    href: "/docs/reference/accounting#recoverable-purchase-tax"
+  },
+  "tax-reporting-category": {
+    term: msg`Reporting category`,
+    definition: msg`How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-code-region": {
+    term: msg`Country and state (tax code)`,
+    definition: msg`Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-invoice-message": {
+    term: msg`Invoice message`,
+    definition: msg`Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "taxes-shipping": {
+    term: msg`Taxes shipping`,
+    definition: msg`When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-authority": {
+    term: msg`Tax authority`,
+    definition: msg`The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "compound-tax": {
+    term: msg`Compound tax`,
+    definition: msg`A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-effective-date": {
+    term: msg`Effective (tax component)`,
+    definition: msg`The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-expiration-date": {
+    term: msg`Expires (tax component)`,
+    definition: msg`The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-received-account": {
+    term: msg`Tax Received Account (component)`,
+    definition: msg`The account this component's sales tax is credited to; empty uses the Tax Received default account.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-paid-account": {
+    term: msg`Tax Paid Account (component)`,
+    definition: msg`The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account.`,
+    href: "/docs/reference/accounting#recoverable-purchase-tax"
+  },
   "tax-ledger": {
     term: msg`Tax ledger`,
     definition: msg`The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax.`,

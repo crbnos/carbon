@@ -956,6 +956,9 @@ msgstr "{count, plural, one {# linha} other {# linhas}}"
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, one {# ferramenta desta operação não está vinculada a uma etapa, por isso aparece em todas as etapas.} other {# ferramentas desta operação não estão vinculadas a uma etapa, por isso aparecem em todas as etapas.}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# aviso} other {# avisos}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {cerca de # linha} other {cerca de # linhas}}"
 
@@ -2560,6 +2563,9 @@ msgstr "O percentual de imposto de um fornecedor muda"
 msgid "A supplier's type changes"
 msgstr "O tipo de um fornecedor muda"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "Um componente de imposto cobrado sobre o valor da linha somado ao imposto dos componentes anteriores, em vez de incidir somente sobre o valor da linha."
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Uma sobretaxa tributável (manuseio, setup, combustível) adicionada à linha; é incluída na base tributária."
 
@@ -3229,6 +3235,9 @@ msgstr "Adicionar cláusula"
 
 msgid "Add Company"
 msgstr "Adicionar Empresa"
+
+msgid "Add component"
+msgstr "Adicionar componente"
 
 msgid "Add components first"
 msgstr "Adicionar componentes primeiro"
@@ -6458,6 +6467,9 @@ msgstr "Calculando melhor caso…"
 msgid "Calculation Method"
 msgstr "Método de Cálculo"
 
+msgid "Calculation type"
+msgstr "Tipo de cálculo"
+
 msgid "Calculation Type"
 msgstr "Tipo de Cálculo"
 
@@ -7851,6 +7863,9 @@ msgstr "Componentes ocultados apenas enquanto esta etapa está sendo executada, 
 msgid "Compound"
 msgstr "Composto"
 
+msgid "Compound tax"
+msgstr "Imposto composto"
+
 msgid "Compute Burden"
 msgstr "Calcular Custos Indiretos"
 
@@ -8981,6 +8996,9 @@ msgstr "Contando…"
 
 msgid "Country"
 msgstr "País"
+
+msgid "Country and state (tax code)"
+msgstr "País e estado (código de imposto)"
 
 msgid "Country code"
 msgstr "Código do país"
@@ -12263,6 +12281,9 @@ msgstr "Editando <0>{0}</0>: {1}. As alterações vão para este pedido de mudan
 msgid "Effective"
 msgstr "Em vigor"
 
+msgid "Effective (tax component)"
+msgstr "Início de vigência (componente de imposto)"
+
 msgid "Effective Date"
 msgstr "Data de vigência"
 
@@ -13239,6 +13260,9 @@ msgstr "Lotes de produção vencidos"
 
 msgid "Expires"
 msgstr "Expira"
+
+msgid "Expires (tax component)"
+msgstr "Fim de vigência (componente de imposto)"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "Como um contrato ou uma emenda é classificado para relatórios de recei
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "Como um contrato de aluguel corta períodos de faturação a partir da sua data de início: Mensal corta um mês a partir do dia da data de início (um início no 7º fatura do 7º ao 6º), Mês do Calendário (Mensal, alinhado a períodos do calendário) corta meses do calendário, e 28 Dias corta períodos consecutivos de 28 dias. Cada unidade fatura uma taxa em sua própria frequência pelos dias, semanas ou meses inteiros que um período cobre; uma taxa mensal em um período parcial é rateada por dias."
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "Como um código de imposto cobra o imposto: Normal o adiciona à linha; Reverse Charge não cobra imposto algum e, em uma compra, a Carbon faz a autoliquidação do imposto e credita a conta Reverse Charge Sales Tax."
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "Como as linhas de um código de imposto são classificadas na declaração fiscal: Padrão, Reduzida, Alíquota zero, Isenta, Reverse Charge, Exportação ou Fora do escopo."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Como um item é reabastecido em geral (Compra, Fabricação ou Compra e fabricação), definido por item, diferentemente do tipo de suprimento por linha."
 
@@ -16214,6 +16244,9 @@ msgstr "ID da Fatura"
 
 msgid "Invoice Location"
 msgstr "Local da Fatura"
+
+msgid "Invoice message"
+msgstr "Mensagem na fatura"
 
 msgid "Invoice Message"
 msgstr "Mensagem da Fatura"
@@ -25328,7 +25361,7 @@ msgid "Rejected"
 msgstr "Rejeitado"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Rejeitado na inspeção"
 
 msgid "Rejected at Inspection"
 msgstr "Rejeitado na inspeção"
@@ -25520,6 +25553,9 @@ msgstr "Remover cláusula"
 
 msgid "Remove Completion"
 msgstr "Remover Conclusão"
+
+msgid "Remove component"
+msgstr "Remover componente"
 
 msgid "Remove condition"
 msgstr "Remover condição"
@@ -25874,6 +25910,9 @@ msgstr "Relatório"
 
 msgid "Reporting"
 msgstr "Relatórios"
+
+msgid "Reporting category"
+msgstr "Categoria de relatório"
 
 msgid "Reporting Category"
 msgstr "Categoria de Relatório"
@@ -30530,6 +30569,9 @@ msgstr "Impostos e Taxas"
 msgid "Tax Authorities"
 msgstr "Autoridades Fiscais"
 
+msgid "Tax authority"
+msgstr "Autoridade tributária"
+
 msgid "Tax Authority"
 msgstr "Autoridade Fiscal"
 
@@ -30568,6 +30610,9 @@ msgstr "Imposto arrecadado e recuperável por autoridade, e o líquido devido"
 
 msgid "Tax component"
 msgstr "Componente de imposto"
+
+msgid "Tax coverage"
+msgstr "Abrangência do imposto"
 
 msgid "Tax Depreciation"
 msgstr "Depreciação fiscal"
@@ -30614,6 +30659,9 @@ msgstr "Imposto Pago (padrão)"
 msgid "Tax Paid Account"
 msgstr "Conta de Imposto Pago"
 
+msgid "Tax Paid Account (component)"
+msgstr "Conta de Imposto Pago (componente)"
+
 msgid "Tax percent"
 msgstr "Porcentagem de imposto"
 
@@ -30634,6 +30682,9 @@ msgstr "Imposto a Recuperar (padrão)"
 
 msgid "Tax Received Account"
 msgstr "Conta de Imposto a Recuperar"
+
+msgid "Tax Received Account (component)"
+msgstr "Conta de Imposto a Recuperar (componente)"
 
 msgid "Tax Registration"
 msgstr "Inscrição Fiscal"
@@ -30682,6 +30733,9 @@ msgstr "Vendas Tributáveis"
 
 msgid "Taxes"
 msgstr "Impostos"
+
+msgid "Taxes shipping"
+msgstr "Tributar o frete"
 
 msgid "Taxes Shipping"
 msgstr "Impostos sobre Envio"
@@ -30795,6 +30849,9 @@ msgstr "Cor do texto"
 msgid "Text size"
 msgstr "Tamanho do texto"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "Texto impresso em uma fatura de venda que usa o código de imposto, como o motivo da isenção da venda."
+
 msgid "Text to edit"
 msgstr "Texto a editar"
 
@@ -30858,6 +30915,12 @@ msgstr "A cor de destaque usada em todo o Carbon."
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "A conta selecionada para {account} não está mais no plano."
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "A conta à qual é debitado o imposto de compra recuperável deste componente; se estiver vazio, usa a conta padrão de Imposto Pago."
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "A conta à qual é creditado o imposto sobre vendas deste componente; se estiver vazio, usa a conta padrão de Imposto a Recuperar."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "A dimensão contábil que categoriza itens para relatórios e análises."
@@ -31314,6 +31377,9 @@ msgstr "as primeiras 3 a 4 semanas"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "O primeiro dia em que uma empresa mantém seus livros no Carbon, definido uma única vez quando a contabilidade é configurada e nunca alterado; a partir de então, toda contabilização cria um diário contabilizado."
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "O primeiro dia em que um componente de imposto se aplica; se estiver vazio, ele sempre se aplicou. Um documento usa os componentes em vigor na própria data."
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "O primeiro dia do mês do arrendamento (dia {commencementDay}) em que um período de pagamento é iniciado, após a última execução de aluguel contabilizada"
 
@@ -31364,6 +31430,9 @@ msgstr "A conta GL na qual os encargos desse transportador são contabilizados (
 
 msgid "The goal"
 msgstr "O objetivo"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "O órgão governamental ao qual o imposto de um componente é devido, como a secretaria da fazenda estadual; o relatório de Obrigação Tributária totaliza o imposto devido a cada um."
 
 msgid "The grades that classify your materials"
 msgstr "Os graus que classificam seus materiais"
@@ -31505,6 +31574,9 @@ msgstr "As impressoras de etiquetas e documentos para as quais sua empresa impri
 
 msgid "The labels every project can put on its elements."
 msgstr "Os rótulos que cada projeto pode colocar em seus elementos."
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "O último dia em que um componente de imposto se aplica. Para alterar uma alíquota, informe uma data de fim de vigência no componente antigo e adicione um novo, para que os documentos contabilizados mantenham a alíquota antiga."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "O último dia de um mês de arrendamento (o dia anterior ao dia {commencementDay}), após a última execução de arrendamento contabilizada"
@@ -35424,6 +35496,9 @@ msgstr "Quando MRP começa a usar esta peça para a demanda da peça antiga"
 msgid "When MRP uses the successor for new demand"
 msgstr "Quando o MRP usa o sucessor para nova demanda"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "Quando ativado, o valor do frete de uma linha passa a integrar sua base de cálculo, de modo que o código de imposto tribute o frete à mesma alíquota das mercadorias."
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Quando ativado, os atributos nesta categoria aparecem no perfil público de uma pessoa; caso contrário, são visíveis apenas para administradores."
 
@@ -35555,6 +35630,9 @@ msgstr "Quando você espera que as mercadorias cheguem, com base em como foram e
 
 msgid "When your fiscal and tax years start"
 msgstr "Quando seus anos fiscais e de impostos começam"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "Onde um código de imposto se aplica: a aba Imposto de um cliente ou fornecedor sugere os códigos do seu país e estado, e um código sem estado se aplica ao país inteiro."
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "Onde uma notificação de fluxo de trabalho é entregue — no aplicativo é sempre enviado, enquanto e-mail requer um plano Business ou Partner e Slack precisa de seu espaço de trabalho do Slack conectado."

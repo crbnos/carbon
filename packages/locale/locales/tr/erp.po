@@ -956,6 +956,9 @@ msgstr "{count, plural, one {# satır} other {# satır}}"
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, one {Bu operasyondaki # araç bir adıma bağlı değil, bu yüzden her adımda gösterilir.} other {Bu operasyondaki # araç bir adıma bağlı değil, bu yüzden her adımda gösterilir.}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# uyarı} other {# uyarı}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {yaklaşık # satır} other {yaklaşık # satır}}"
 
@@ -2560,6 +2563,9 @@ msgstr "Bir tedarikçinin vergi yüzdesi değişti"
 msgid "A supplier's type changes"
 msgstr "Bir tedarikçinin türü değişti"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "Yalnızca satır tutarı üzerinden değil, satır tutarı ile önceki bileşenlerin vergisi üzerinden uygulanan bir vergi bileşeni."
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Vergilendirilecek bir ek ücret (işçilik, kurulum, yakıt) satıra eklenir ve vergi matrahına dahil edilir."
 
@@ -3229,6 +3235,9 @@ msgstr "Madde ekle"
 
 msgid "Add Company"
 msgstr "Şirket Ekle"
+
+msgid "Add component"
+msgstr "Bileşen ekle"
 
 msgid "Add components first"
 msgstr "Önce bileşenleri ekle"
@@ -6458,6 +6467,9 @@ msgstr "En iyi durum hesaplanıyor…"
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
 
+msgid "Calculation type"
+msgstr "Hesaplama türü"
+
 msgid "Calculation Type"
 msgstr "Hesaplama Türü"
 
@@ -7851,6 +7863,9 @@ msgstr "Bu adım oynarken yalnızca gizli bileşenler, yolda bir bağlama aparat
 msgid "Compound"
 msgstr "Bileşik"
 
+msgid "Compound tax"
+msgstr "Bileşik vergi"
+
 msgid "Compute Burden"
 msgstr "Üretim Yükü Hesapla"
 
@@ -8981,6 +8996,9 @@ msgstr "Sayılıyor…"
 
 msgid "Country"
 msgstr "Ülke"
+
+msgid "Country and state (tax code)"
+msgstr "Ülke ve eyalet (vergi kodu)"
 
 msgid "Country code"
 msgstr "Ülke kodu"
@@ -12263,6 +12281,9 @@ msgstr "Düzenleme <0>{0}</0>: {1}. Değişiklikler bu değişiklik isteğine gi
 msgid "Effective"
 msgstr "Yürürlükte"
 
+msgid "Effective (tax component)"
+msgstr "Yürürlük tarihi (vergi bileşeni)"
+
 msgid "Effective Date"
 msgstr "Yürürlük Tarihi"
 
@@ -13239,6 +13260,9 @@ msgstr "Süresi doldu partiler"
 
 msgid "Expires"
 msgstr "Süresi Doluyor"
+
+msgid "Expires (tax component)"
+msgstr "Son geçerlilik tarihi (vergi bileşeni)"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "Bir sözleşme veya değişikliğin yinelenen gelir raporlaması için n
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "Bir kiralama anlaşmasının başlangıç tarihinden faturalandırma dönemlerini nasıl kestiği: Aylık, başlangıç tarihinin gününden bir ayı keser (7. gün başlangıçlı bir anlaşma 7'den 6'sına kadarını faturalandırır), Takvim Ayı (Aylık, takvim dönemleriyle uyumlu) takvim aylarını keser, ve 28 Gün ardışık 28 günlük dönemleri keser. Her dönem, kendi frekansıyla bir oranı, dönemin kapsadığı tamamlanmış gün, hafta veya aylar için faturalandırır; kısmi bir dönemde aylık oran güne orantılı olarak hesaplanır."
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "Bir vergi kodunun vergiyi nasıl uyguladığı: Normal, vergiyi satıra ekler; Ters ücretlendirme vergi uygulamaz ve satın almada Carbon, vergiyi kendisi tahakkuk ettirir ve Ters ücretlendirme satış vergisi hesabına alacak kaydeder."
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "Bir vergi kodunun satırlarının vergi beyannamesinde hangi sınıfa girdiği: Standart, İndirimli, Sıfır oranlı, Muaf, Ters ücretlendirme, İhracat veya Kapsam dışı."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Bir stok kartının genel olarak nasıl tamamlandığı (Satın alma, Üretim veya Satın alma ve üretim), stok kartı başına ayarlanır, satır başına tedarik şeklinden farklı."
 
@@ -16214,6 +16244,9 @@ msgstr "Fatura Kimlik Numarası"
 
 msgid "Invoice Location"
 msgstr "Fatura Konumu"
+
+msgid "Invoice message"
+msgstr "Fatura mesajı"
 
 msgid "Invoice Message"
 msgstr "Fatura Mesajı"
@@ -25328,7 +25361,7 @@ msgid "Rejected"
 msgstr "Reddedilmiş"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Muayenede reddedildi"
 
 msgid "Rejected at Inspection"
 msgstr "Muayenede reddedildi"
@@ -25520,6 +25553,9 @@ msgstr "Maddeyi kaldır"
 
 msgid "Remove Completion"
 msgstr "Tamamlamayı Kaldır"
+
+msgid "Remove component"
+msgstr "Bileşeni kaldır"
 
 msgid "Remove condition"
 msgstr "Koşulu kaldır"
@@ -25874,6 +25910,9 @@ msgstr "Rapor"
 
 msgid "Reporting"
 msgstr "Raporlama"
+
+msgid "Reporting category"
+msgstr "Raporlama kategorisi"
 
 msgid "Reporting Category"
 msgstr "Raporlama Kategorisi"
@@ -30530,6 +30569,9 @@ msgstr "Vergi ve Ücretler"
 msgid "Tax Authorities"
 msgstr "Vergi Daireleri"
 
+msgid "Tax authority"
+msgstr "Vergi dairesi"
+
 msgid "Tax Authority"
 msgstr "Vergi Dairesi"
 
@@ -30568,6 +30610,9 @@ msgstr "Daire tarafından toplanan ve geri alınabilir vergi ile net borç"
 
 msgid "Tax component"
 msgstr "Vergi bileşeni"
+
+msgid "Tax coverage"
+msgstr "Vergi kapsamı"
 
 msgid "Tax Depreciation"
 msgstr "Vergi Amortisman"
@@ -30614,6 +30659,9 @@ msgstr "Ödenen Vergi (varsayılan)"
 msgid "Tax Paid Account"
 msgstr "Ödenen Vergi Hesabı"
 
+msgid "Tax Paid Account (component)"
+msgstr "Ödenen vergi hesabı (bileşen)"
+
 msgid "Tax percent"
 msgstr "Vergi yüzdesi"
 
@@ -30634,6 +30682,9 @@ msgstr "Alınan Vergi (varsayılan)"
 
 msgid "Tax Received Account"
 msgstr "Alınan Vergi Hesabı"
+
+msgid "Tax Received Account (component)"
+msgstr "Tahsil edilen vergi hesabı (bileşen)"
 
 msgid "Tax Registration"
 msgstr "Vergi Kaydı"
@@ -30682,6 +30733,9 @@ msgstr "Vergiye Tabi Satışlar"
 
 msgid "Taxes"
 msgstr "Vergiler"
+
+msgid "Taxes shipping"
+msgstr "Nakliye ücretine vergi uygula"
 
 msgid "Taxes Shipping"
 msgstr "Sevkiyat Vergileri"
@@ -30795,6 +30849,9 @@ msgstr "Metin rengi"
 msgid "Text size"
 msgstr "Metin boyutu"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "Bu vergi kodunu kullanan bir satış faturasında yazdırılan metin; örneğin satışın muaf olma nedeni."
+
 msgid "Text to edit"
 msgstr "Düzenlenecek metin"
 
@@ -30858,6 +30915,12 @@ msgstr "Carbon'da kullanılan vurgu rengi."
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "{account} için seçilen hesap artık hesap planında değildir."
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "Bu bileşenin indirilebilir alım vergisinin borçlandırılacağı hesap; boş bırakılırsa varsayılan Ödenen vergi hesabı kullanılır."
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "Bu bileşenin satış vergisinin alacaklandırılacağı hesap; boş bırakılırsa varsayılan Tahsil edilen vergi hesabı kullanılır."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Raporlama ve analiz için öğeleri kategorize eden muhasebe boyutu."
@@ -31314,6 +31377,9 @@ msgstr "ilk 3 ila 4 hafta"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "Şirketin Carbon'da muhasebe tutmaya başladığı ilk gün; muhasebe kurulduğunda bir kez ayarlanır ve değiştirilmez; bundan sonra her Muhasebeleştirme Muhasebeleştirildi bir Muhasebe fişi oluşturur."
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "Vergi bileşeninin uygulanmaya başladığı ilk gün; boş bırakılırsa her zaman uygulandığı anlamına gelir. Bir belge, kendi tarihinde yürürlükte olan bileşenleri alır."
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "Kiralama ayının ilk günü (gün {commencementDay}) — son muhasebeleştirilmiş kiralama çalıştırmasından sonra ödeme döneminin başladığı gün"
 
@@ -31364,6 +31430,9 @@ msgstr "Bu taşıyıcı için ücretlerin nakledildiği GL hesabı (nakliye gide
 
 msgid "The goal"
 msgstr "Hedef"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "Vergi bileşeninin vergisinin borçlu olunduğu devlet kurumu, örneğin eyalet maliye dairesi; Vergi yükümlülüğü raporu her birine borçlu olunan vergiyi toplar."
 
 msgid "The grades that classify your materials"
 msgstr "Malzemelerinizi sınıflandıran dereceler"
@@ -31505,6 +31574,9 @@ msgstr "Şirketinizin yazdığı etiket ve belge yazıcıları"
 
 msgid "The labels every project can put on its elements."
 msgstr "Her projenin öğelerine koyabileceği etiketler."
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "Vergi bileşeninin uygulandığı son gün. Bir oranı değiştirmek için eski bileşene Son geçerlilik tarihi girin ve yenisini ekleyin; böylece muhasebeleştirilmiş belgeler eski oranı korur."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "Kiralama ayının son günü (gün {commencementDay}'den önceki gün), son muhasebeleştirilmiş kiralama çalışmasından sonra"
@@ -35424,6 +35496,9 @@ msgstr "MRP bu parçayı eski parçanın talebinde kullanmaya başladığında"
 msgid "When MRP uses the successor for new demand"
 msgstr "MRP'nin ardılı yeni talebe kullandığında"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "Açıkken, satırın nakliye ücreti vergilendirilebilir tutarına eklenir; böylece vergi kodu nakliyeyi mal bedeliyle aynı oranda vergilendirir."
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Etkinleştirildiğinde, bu kategorideki öznitelikler bir kişinin genel profilinde görünür; aksi takdirde yalnızca yöneticiler tarafından görülebilir."
 
@@ -35555,6 +35630,9 @@ msgstr "Malların gönderim şekline göre ne zaman ulaşmasını beklediğiniz 
 
 msgid "When your fiscal and tax years start"
 msgstr "Mali ve vergi yıllarınız ne zaman başlar"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "Bir vergi kodunun uygulandığı yer: Müşterinin veya tedarikçinin Vergi sekmesi, kendi ülkesinin ve eyaletinin kodlarını önerir; eyaleti olmayan bir kod ise tüm ülkeye uygulanır."
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "İş akışı bildiriminin nereye teslim edileceği — uygulama içi her zaman gönderilir, e-posta Business veya Partner planı gerektirir ve Slack, Slack çalışma alanınızın bağlı olması gerekir."

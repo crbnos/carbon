@@ -956,6 +956,9 @@ msgstr "{count, plural, one {# पंक्ति} other {# पंक्ति�
 msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
 msgstr "{count, plural, one {इस ऑपरेशन का # टूल किसी चरण से जुड़ा नहीं है, इसलिए यह हर चरण में दिखता है।} other {इस ऑपरेशन के # टूल किसी चरण से जुड़े नहीं हैं, इसलिए वे हर चरण में दिखते हैं।}}"
 
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# चेतावनी} other {# चेतावनियाँ}}"
+
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {लगभग # पंक्ति} other {लगभग # पंक्तियाँ}}"
 
@@ -2560,6 +2563,9 @@ msgstr "एक आपूर्तिकर्ता के कर प्रत�
 msgid "A supplier's type changes"
 msgstr "एक आपूर्तिकर्ता के प्रकार में परिवर्तन"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "एक कर घटक जो पंक्ति राशि के साथ-साथ उससे पहले के घटकों के कर पर लगाया जाता है, न कि केवल पंक्ति राशि पर।"
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "एक कर योग्य अधिभार (हैंडलिंग, सेटअप, ईंधन) जो पंक्ति में जोड़ा जाता है और कर आधार में शामिल किया जाता है।"
 
@@ -3229,6 +3235,9 @@ msgstr "खंड जोड़ें"
 
 msgid "Add Company"
 msgstr "कंपनी जोड़ें"
+
+msgid "Add component"
+msgstr "घटक जोड़ें"
 
 msgid "Add components first"
 msgstr "पहले घटक जोड़ें"
@@ -6458,6 +6467,9 @@ msgstr "सर्वश्रेष्ठ स्थिति की गणना
 msgid "Calculation Method"
 msgstr "गणना विधि"
 
+msgid "Calculation type"
+msgstr "गणना प्रकार"
+
 msgid "Calculation Type"
 msgstr "गणना प्रकार"
 
@@ -7851,6 +7863,9 @@ msgstr "घटक केवल तब छिपे होते हैं जब
 msgid "Compound"
 msgstr "मिश्रित"
 
+msgid "Compound tax"
+msgstr "चक्रवृद्धि कर"
+
 msgid "Compute Burden"
 msgstr "बोझ की गणना करें"
 
@@ -8981,6 +8996,9 @@ msgstr "गिनती हो रही है…"
 
 msgid "Country"
 msgstr "देश"
+
+msgid "Country and state (tax code)"
+msgstr "देश और राज्य (कर कोड)"
 
 msgid "Country code"
 msgstr "देश कोड"
@@ -12263,6 +12281,9 @@ msgstr "संपादित कर रहे हैं <0>{0}</0>: {1}। प�
 msgid "Effective"
 msgstr "प्रभावी"
 
+msgid "Effective (tax component)"
+msgstr "प्रारंभ तिथि (कर घटक)"
+
 msgid "Effective Date"
 msgstr "प्रभावी तारीख"
 
@@ -13239,6 +13260,9 @@ msgstr "समाप्त बैच"
 
 msgid "Expires"
 msgstr "समाप्त होता है"
+
+msgid "Expires (tax component)"
+msgstr "समाप्ति तिथि (कर घटक)"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -15192,6 +15216,12 @@ msgstr "अनुबंध या संशोधन को आवर्ती-�
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "किराया समझौता अपनी प्रारंभ तिथि से बिलिंग अवधि को कैसे विभाजित करता है: मासिक विकल्प प्रारंभ तिथि के दिन से एक महीना निर्धारित करता है (7 तारीख को शुरू होने पर 7वीं से 6वीं तक का बिल), कैलेंडर माह (मासिक, कैलेंडर अवधि के साथ संरेखित) कैलेंडर महीनों को निर्धारित करता है, और 28 दिन का विकल्प लगातार 28 दिन की अवधि निर्धारित करता है। प्रत्येक विकल्प अपनी आवृत्ति पर एक दर से बिल करता है जो अवधि के सभी दिनों, हफ्तों, या महीनों को कवर करता है; एक आंशिक अवधि में महीने की दर दिनों के आधार पर समानुपाती होती है।"
 
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "कर कोड कैसे कर लगाता है: सामान्य में यह पंक्ति में जोड़ा जाता है; रिवर्स चार्ज में कोई कर नहीं लगता, और खरीद पर Carbon स्वयं कर का स्व-निर्धारण करता है और रिवर्स चार्ज बिक्री कर खाते में जमा करता है।"
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "कर रिटर्न पर कर कोड की पंक्तियों को किस श्रेणी में रखा जाता है: मानक, कम दर, शून्य-दर, छूट प्राप्त, रिवर्स चार्ज, निर्यात या दायरे से बाहर।"
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "किसी आइटम को समग्र रूप से कैसे आपूर्ति किया जाता है (खरीद, निर्माण, या खरीद और निर्माण), प्रति आइटम सेट किया जाता है, प्रति-पंक्ति आपूर्ति प्रकार के विपरीत।"
 
@@ -16214,6 +16244,9 @@ msgstr "चालान आईडी"
 
 msgid "Invoice Location"
 msgstr "चालान स्थान"
+
+msgid "Invoice message"
+msgstr "चालान संदेश"
 
 msgid "Invoice Message"
 msgstr "चालान संदेश"
@@ -25328,7 +25361,7 @@ msgid "Rejected"
 msgstr "अस्वीकृत"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "निरीक्षण पर अस्वीकृत"
 
 msgid "Rejected at Inspection"
 msgstr "निरीक्षण में अस्वीकृत"
@@ -25520,6 +25553,9 @@ msgstr "खंड निकालें"
 
 msgid "Remove Completion"
 msgstr "पूर्णता निकालें"
+
+msgid "Remove component"
+msgstr "घटक हटाएँ"
 
 msgid "Remove condition"
 msgstr "शर्त निकालें"
@@ -25874,6 +25910,9 @@ msgstr "रिपोर्ट"
 
 msgid "Reporting"
 msgstr "रिपोर्टिंग"
+
+msgid "Reporting category"
+msgstr "रिपोर्टिंग श्रेणी"
 
 msgid "Reporting Category"
 msgstr "रिपोर्टिंग श्रेणी"
@@ -30530,6 +30569,9 @@ msgstr "कर और शुल्क"
 msgid "Tax Authorities"
 msgstr "कर प्राधिकरण"
 
+msgid "Tax authority"
+msgstr "कराधान प्राधिकरण"
+
 msgid "Tax Authority"
 msgstr "कर प्राधिकरण"
 
@@ -30568,6 +30610,9 @@ msgstr "कर प्राधिकरण द्वारा एकत्र �
 
 msgid "Tax component"
 msgstr "कर घटक"
+
+msgid "Tax coverage"
+msgstr "कर क्षेत्र"
 
 msgid "Tax Depreciation"
 msgstr "कर मूल्यह्रास"
@@ -30614,6 +30659,9 @@ msgstr "कर का भुगतान किया गया (डिफ़ॉ
 msgid "Tax Paid Account"
 msgstr "कर भुगतान खाता"
 
+msgid "Tax Paid Account (component)"
+msgstr "भुगतान किया गया कर खाता (घटक)"
+
 msgid "Tax percent"
 msgstr "कर प्रतिशत"
 
@@ -30634,6 +30682,9 @@ msgstr "कर प्राप्त (डिफ़ॉल्ट)"
 
 msgid "Tax Received Account"
 msgstr "कर प्राप्त खाता"
+
+msgid "Tax Received Account (component)"
+msgstr "प्राप्त कर खाता (घटक)"
 
 msgid "Tax Registration"
 msgstr "कर पंजीकरण"
@@ -30682,6 +30733,9 @@ msgstr "कर योग्य बिक्री"
 
 msgid "Taxes"
 msgstr "कर"
+
+msgid "Taxes shipping"
+msgstr "शिपिंग पर कर लगाता है"
 
 msgid "Taxes Shipping"
 msgstr "शिपिंग कर"
@@ -30795,6 +30849,9 @@ msgstr "टेक्स्ट रंग"
 msgid "Text size"
 msgstr "पाठ आकार"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "विक्रय चालान पर छपने वाला पाठ, जो उस कर कोड का उपयोग करता है, जैसे बिक्री छूट प्राप्त होने का कारण।"
+
 msgid "Text to edit"
 msgstr "संपादित करने का टेक्स्ट"
 
@@ -30858,6 +30915,12 @@ msgstr "Carbon में उपयोग किए जाने वाले ह
 
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "{account} के लिए चुने गए खाते अब चार्ट में नहीं हैं।"
+
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "वह खाता जिसमें इस घटक का वसूली योग्य खरीद कर डेबिट होता है; खाली छोड़ने पर डिफ़ॉल्ट भुगतान किया गया कर खाता उपयोग होता है।"
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "वह खाता जिसमें इस घटक का बिक्री कर जमा होता है; खाली छोड़ने पर डिफ़ॉल्ट प्राप्त कर खाता उपयोग होता है।"
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "लेखांकन आयाम जो रिपोर्टिंग और विश्लेषण के लिए आइटम को वर्गीकृत करता है।"
@@ -31314,6 +31377,9 @@ msgstr "पहले 3 से 4 सप्ताह"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "कोई कंपनी Carbon में अपनी किताबें रखना शुरू करने का पहला दिन, जो लेखांकन सेटअप करते समय एक बार सेट किया जाता है और कभी नहीं बदला जाता; उसके बाद प्रत्येक पोस्टिंग एक पोस्ट किया गया जर्नल लिखती है।"
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "वह पहला दिन जब कर घटक लागू होता है; खाली होने का अर्थ है कि यह हमेशा से लागू है। दस्तावेज़ अपनी ही तिथि पर लागू घटकों को लेता है।"
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "पट्टे के महीने का पहला दिन (दिन {commencementDay}) जहां भुगतान अवधि शुरू होती है, अंतिम पोस्ट की गई पट्टे की अवधि के बाद"
 
@@ -31364,6 +31430,9 @@ msgstr "GL खाता जिस पर इस वाहक के लिए �
 
 msgid "The goal"
 msgstr "लक्ष्य"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "वह सरकारी निकाय जिसे कर घटक का कर देना होता है, जैसे राज्य नियंत्रक; कर देनदारी रिपोर्ट हर एक को देय कर का योग दिखाती है।"
 
 msgid "The grades that classify your materials"
 msgstr "वह ग्रेड जो आपकी सामग्री को वर्गीकृत करते हैं"
@@ -31505,6 +31574,9 @@ msgstr "लेबल और दस्तावेज़ प्रिंटर �
 
 msgid "The labels every project can put on its elements."
 msgstr "लेबल जो हर प्रोजेक्ट अपने तत्वों पर लगा सकता है।"
+
+msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgstr "वह अंतिम दिन जब कर घटक लागू होता है। दर बदलने के लिए, पुराने घटक को समाप्ति तिथि दें और एक नया जोड़ें, ताकि पोस्ट किए गए दस्तावेज़ पुरानी दर ही बनाए रखें।"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "पट्टा महीने का अंतिम दिन (दिन {commencementDay} से पहले का दिन), अंतिम पोस्ट किए गए पट्टा रन के बाद"
@@ -35424,6 +35496,9 @@ msgstr "जब MRP इस पार्ट का उपयोग पुरान
 msgid "When MRP uses the successor for new demand"
 msgstr "जब MRP नई मांग के लिए उत्तराधिकारी का उपयोग करता है"
 
+msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgstr "चालू होने पर, पंक्ति का शिपिंग शुल्क उसकी कर-योग्य राशि में जुड़ जाता है, ताकि कर कोड शिपिंग पर भी वस्तुओं जैसी ही दर से कर लगाए।"
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "जब सक्षम हो, तो इस श्रेणी की विशेषताएँ किसी के सार्वजनिक प्रोफ़ाइल पर दिखाई देती हैं; अन्यथा वे केवल व्यवस्थापकों के लिए दृश्यमान हैं।"
 
@@ -35555,6 +35630,9 @@ msgstr "आपको माल कब पहुँचने की उम्म�
 
 msgid "When your fiscal and tax years start"
 msgstr "जब आपका वित्तीय और कर वर्ष शुरू होता है"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "कर कोड कहाँ लागू होता है: ग्राहक या आपूर्तिकर्ता का कर टैब उसके देश और राज्य के कोड सुझाता है, और जिस कोड में राज्य नहीं है वह पूरे देश पर लागू होता है।"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "वह जगह जहां वर्कफ़्लो सूचना दी जाती है — ऐप में हमेशा भेजा जाता है, जबकि ईमेल को एक बिजनेस या पार्टनर प्लान की आवश्यकता है और Slack को आपके Slack वर्कस्पेस को जोड़ने की आवश्यकता है।"

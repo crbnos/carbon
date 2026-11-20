@@ -16,8 +16,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import type { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -36,30 +36,39 @@ type TaxAuthorityFormProps = {
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
+  /** Called with the new authority's id once the modal form has created it. */
+  onCreated?: (id: string) => void;
 };
 
 const TaxAuthorityForm = ({
   initialValues,
   open = true,
   type = "drawer",
-  onClose
+  onClose,
+  onCreated
 }: TaxAuthorityFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const fetcher = useFetcher<PostgrestSingleResponse<{ id: string }>>();
 
+  // A submission's result is handled once, whatever re-renders follow it.
+  const handled = useRef<unknown>(null);
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !fetcher.data || handled.current === fetcher.data)
+      return;
 
-    if (fetcher.state === "loading" && fetcher.data?.data) {
+    if (fetcher.state === "loading" && fetcher.data.data) {
+      handled.current = fetcher.data;
+      onCreated?.(fetcher.data.data.id);
       onClose?.();
       toast.success(t`Created tax authority`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
+    } else if (fetcher.state === "idle" && fetcher.data.error) {
+      handled.current = fetcher.data;
       toast.error(
         t`Failed to create tax authority: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, onCreated, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
