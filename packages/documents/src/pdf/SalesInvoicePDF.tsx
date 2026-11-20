@@ -17,6 +17,7 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import type { TaxSummaryEntry } from "../utils/tax-summary";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
 import { DocumentPage } from "./blocks/DocumentPage";
@@ -44,6 +45,12 @@ interface SalesInvoicePDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** Tax per component and rate (`buildTaxSummary`); omitted prints the single tax row. */
+  taxSummary?: TaxSummaryEntry[];
+  /** The VAT clauses of the lines' tax codes. */
+  invoiceMessages?: string[];
+  /** The seller's tax number (`resolveSellerRegistration`). */
+  sellerRegistration?: string | null;
 }
 
 const SalesInvoicePDF = ({
@@ -65,7 +72,10 @@ const SalesInvoicePDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {}
+  sections = {},
+  taxSummary = [],
+  invoiceMessages = [],
+  sellerRegistration = null
 }: SalesInvoicePDFProps) => {
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -90,7 +100,8 @@ const SalesInvoicePDF = ({
       company,
       currencyCode,
       locale,
-      numberFormatter
+      numberFormatter,
+      sellerRegistration
     })
   );
   const chrome = documentChrome({
@@ -135,6 +146,9 @@ const SalesInvoicePDF = ({
     values,
     vars,
     headerOptions,
+    taxSummary,
+    invoiceMessages,
+    sellerRegistration,
     documentTitle,
     documentNumber
   };

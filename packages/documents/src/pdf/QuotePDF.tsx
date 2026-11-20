@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
+import { DEFAULT_CURRENCY_DECIMALS } from "@carbon/utils";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -14,6 +15,13 @@ import {
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
 import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
+import {
+  buildTaxSummary,
+  lineTaxSummaryEntries,
+  type TaxCodeSummaryRow,
+  type TaxSummaryLine,
+  toTaxSummaryCodes
+} from "../utils/tax-summary";
 import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
@@ -44,6 +52,10 @@ interface QuotePDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The codes the lines name (`TAX_CODE_SUMMARY_SELECT`), for the tax summary. */
+  taxCodes?: TaxCodeSummaryRow[] | null;
+  /** The date the codes' components are read on (YYYY-MM-DD). */
+  taxDate?: string | null;
 }
 
 const QuotePDF = ({
@@ -65,7 +77,9 @@ const QuotePDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {}
+  sections = {},
+  taxCodes,
+  taxDate
 }: QuotePDFProps) => {
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
@@ -138,6 +152,7 @@ const QuotePDF = ({
     return total + charges;
   }, 0);
 
+  const taxLines: TaxSummaryLine[] = [];
   const taxes = quoteLines.reduce((total, line) => {
     const price = priceForFirstQty(line);
     const netExtendedPrice = price?.convertedNetExtendedPrice ?? 0;
@@ -154,8 +169,24 @@ const QuotePDF = ({
     );
     const lineShipping = price?.convertedShippingCost ?? 0;
     const taxableAmount = netExtendedPrice + taxableFees + lineShipping;
+    taxLines.push({
+      taxCodeId: line.taxCodeId,
+      taxPercent: line.taxPercent ?? 0,
+      base: taxableAmount
+    });
     return total + taxableAmount * (line.taxPercent ?? 0);
   }, 0);
+
+  // Quotes have no ledger: the summary splits each line's tax across its
+  // code's components on `taxDate`.
+  const taxSummary =
+    taxDate && taxCodes && taxCodes.length > 0
+      ? buildTaxSummary(
+          lineTaxSummaryEntries(taxLines, toTaxSummaryCodes(taxCodes), taxDate),
+          taxes,
+          currencyDecimals ?? DEFAULT_CURRENCY_DECIMALS
+        )
+      : [];
 
   const totals = {
     subtotal,
@@ -229,6 +260,7 @@ const QuotePDF = ({
     values,
     vars,
     headerOptions,
+    taxSummary,
     documentTitle,
     documentNumber
   };

@@ -75,7 +75,12 @@ describe("DOCUMENT_PDFS", () => {
         }
       ]
     }),
+    // The samples print a row per tax component; without codes, the single
+    // tax row prints instead.
+    salesInvoice: () => ({ taxSummary: [] }),
+    salesOrder: () => ({ taxCodes: [] }),
     quote: (sample) => ({
+      taxCodes: [],
       quoteLines: sample.quoteLines.map((line: any, index: number) =>
         index === 0
           ? {
