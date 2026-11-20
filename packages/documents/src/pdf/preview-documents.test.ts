@@ -4,7 +4,7 @@
 
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement, type ReactElement } from "react";
-import { extractText } from "unpdf";
+import { extractText, getDocumentProxy } from "unpdf";
 import { describe, expect, it } from "vitest";
 import {
   allMergeFields,
@@ -16,6 +16,7 @@ import {
   resolveTemplate
 } from "../template";
 import { DOCUMENT_PDFS } from "./preview-documents";
+import { SAMPLE_PURCHASE_ORDER } from "./purchaseOrder.samples";
 
 const documentTypes = Object.keys(DOCUMENT_PDFS) as DocumentTemplateType[];
 
@@ -356,5 +357,31 @@ describe("DOCUMENT_PDFS", () => {
     const { text } = await extractText(new Uint8Array(pdf));
     expect(text.join(" ")).not.toContain("Unit Price");
     expect(text.join(" ")).toContain("Qty");
+  });
+
+  // react-pdf lays out a text once, at its first measured width, so a title
+  // squeezed by a wide logo kept one line and ran off the page.
+  it("keeps the RMA header on the page beside a wide logo", async () => {
+    const { Component, sample } = DOCUMENT_PDFS.salesReturnOrder;
+    const pdf = await renderToBuffer(
+      createElement(Component, {
+        locale: "en-US",
+        ...sample,
+        company: {
+          ...sample.company,
+          // 260 x 70 px: as wide as many company logos.
+          logoLight: SAMPLE_PURCHASE_ORDER.approval.signature
+        }
+      }) as ReactElement
+    );
+    const page = await (await getDocumentProxy(new Uint8Array(pdf))).getPage(1);
+    const pageWidth = page.getViewport({ scale: 1 }).width;
+    const { items } = await page.getTextContent();
+    const offPage = items.flatMap((item) =>
+      "str" in item && item.transform[4] + item.width > pageWidth
+        ? [item.str]
+        : []
+    );
+    expect(offPage).toEqual([]);
   });
 });
