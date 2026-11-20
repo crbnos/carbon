@@ -12,6 +12,7 @@ export {
   PART_NUMBER_DISPLAYS,
   type PartNumberDisplay,
   type PartNumberDisplaySummary,
+  type PartNumberParty,
   type PartNumberSurface,
   resolvePartNumberDisplay,
   summarizePartNumberDisplay

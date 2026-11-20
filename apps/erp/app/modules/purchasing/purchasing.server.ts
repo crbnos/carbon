@@ -6711,7 +6711,10 @@ export const createPurchaseOrderLine = defineServiceFn({
             payload(ctx, input).forCreate() as never
           )
         ),
-      { restatesStatus: true }
+      {
+        restatesStatus: true,
+        setsPartNumberDisplay: input.partNumberDisplay !== undefined
+      }
     );
   }
 });
@@ -6795,32 +6798,6 @@ export const updatePurchaseOrderLine = defineServiceFn({
     if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
       return ctx.error("notFound", "Purchase order line not found");
     }
-    // The choice follows the document's lock, as Edit document's does: a
-    // sent order keeps printing the part numbers it was sent with.
-    if (
-      input.partNumberDisplay !== undefined &&
-      input.partNumberDisplay !== line.data.partNumberDisplay
-    ) {
-      const order = await ctx.asCaller.supabase
-        .from("purchaseOrder")
-        .select("status")
-        .eq("id", line.data.purchaseOrderId)
-        .eq("companyId", ctx.company.id)
-        .single();
-      if (order.error) {
-        return ctx.error(
-          "internal",
-          "Failed to read the purchase order",
-          order.error
-        );
-      }
-      if (isPurchaseOrderLocked(order.data.status)) {
-        return ctx.error(
-          "rule",
-          "The part numbers of a purchase order cannot change once it is sent."
-        );
-      }
-    }
     if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
       const held = await service.unreleasedChangeOrderRefusal(
         ctx,
@@ -6860,7 +6837,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
             promisedDate: input.promisedDate
           }
         },
-        restatesStatus: true
+        restatesStatus: true,
+        setsPartNumberDisplay:
+          input.partNumberDisplay !== undefined &&
+          input.partNumberDisplay !== line.data.partNumberDisplay
       }
     );
   }

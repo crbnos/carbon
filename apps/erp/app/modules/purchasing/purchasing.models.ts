@@ -1022,6 +1022,24 @@ export function isPurchaseOrderEditLocked(
 }
 
 /**
+ * Why a purchase order's lines cannot change which part numbers they print,
+ * else null. A sent order keeps printing the numbers it was sent with, and an
+ * order waiting for approval is not edited. The line form and Edit document
+ * both follow it.
+ */
+export function purchaseOrderPartNumberRefusal(
+  status: string | null | undefined
+): string | null {
+  if (status === "Needs Approval") {
+    return "The part numbers of a purchase order cannot change while it waits for approval.";
+  }
+  if (isPurchaseOrderLocked(status)) {
+    return "The part numbers of a purchase order cannot change once it is sent.";
+  }
+  return null;
+}
+
+/**
  * Why an edit of a purchase order is refused, or null when it is allowed.
  * `changesSupplierOrCurrency`: the edit names another supplier or currency,
  * which a released order never takes (that is a new order).

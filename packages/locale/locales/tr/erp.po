@@ -17439,8 +17439,8 @@ msgstr "Satır Nakliyesi"
 msgid "Line Status"
 msgstr "Satır Durumu"
 
-msgid "Line Supplier Part ID"
-msgstr "Satır tedarikçi parça kimliği"
+msgid "Line Supplier Part ID Row"
+msgstr "Satır tedarikçi parça kimliği satırı"
 
 msgid "Line Supplier Part Number"
 msgstr "Satır tedarikçi parça numarası"
@@ -20204,6 +20204,9 @@ msgstr "Henüz kiralama çalıştırması muhasebeleştirilmedi"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Hiçbir izin öğesi ayarlanmadı. Dolaylı bir projede, zaman kaydı öğesini açın ve İzni etkinleştirin."
+
+msgid "No line of this document has an item yet."
+msgstr "Bu belgenin hiçbir satırında henüz kalem yok."
 
 msgid "No lines"
 msgstr "Satır yok"
@@ -31548,6 +31551,9 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Bu belgenin parça numaraları şu anda değiştirilemez."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Teslimat ödemesinin, hükümetin ilerleme veya performansa dayalı ödemelerini geri almak için tuttuğu kısmı: tasfiye oranı çarpı fatura, hala tasfiye edilmemiş finansmanı aşmamak üzere."

@@ -50,6 +50,9 @@ export function resolvePartNumberDisplay(
   return stored ?? LEGACY_PART_NUMBER_DISPLAY[surface];
 }
 
+/** Whose part number "theirs" is: the customer's or the supplier's. */
+export type PartNumberParty = "customer" | "supplier";
+
 /** What the Edit document select shows for a document's lines. */
 export type PartNumberDisplaySummary = PartNumberDisplay | "mixed" | null;
 

@@ -14,11 +14,10 @@ import { withRevisionSuffix } from "./revision";
 /**
  * A PO line's title in the purchase order email: the asset name, the
  * description for G/L Account and Comment lines, else the line's part numbers
- * per its display choice. `draft` is the Edit document modal's unsaved pick.
+ * per its display choice.
  */
 export function getLineDescription(
-  line: Database["public"]["Views"]["purchaseOrderLines"]["Row"],
-  draft?: PartNumberDisplay
+  line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
 ) {
   switch (line?.purchaseOrderLineType) {
     case "Fixed Asset":
@@ -30,10 +29,7 @@ export function getLineDescription(
     default:
       return getLinePartNumber(
         line,
-        resolvePartNumberDisplay(
-          "purchaseOrderEmail",
-          draft ?? line?.partNumberDisplay
-        )
+        resolvePartNumberDisplay("purchaseOrderEmail", line?.partNumberDisplay)
       );
   }
 }

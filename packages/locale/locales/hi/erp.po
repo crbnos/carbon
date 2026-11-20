@@ -17439,8 +17439,8 @@ msgstr "लाइन शिपिंग"
 msgid "Line Status"
 msgstr "लाइन स्थिति"
 
-msgid "Line Supplier Part ID"
-msgstr "लाइन आपूर्तिकर्ता पार्ट आईडी"
+msgid "Line Supplier Part ID Row"
+msgstr "लाइन आपूर्तिकर्ता पार्ट आईडी पंक्ति"
 
 msgid "Line Supplier Part Number"
 msgstr "पंक्ति का आपूर्तिकर्ता पार्ट नंबर"
@@ -20204,6 +20204,9 @@ msgstr "अभी तक कोई पट्टा रन पोस्ट नह
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "कोई छुट्टी तत्व सेट नहीं किया गया है। एक अप्रत्यक्ष प्रोजेक्ट पर, समय बंद करने के लिए तत्व खोलें और छुट्टी को चालू करें।"
+
+msgid "No line of this document has an item yet."
+msgstr "इस दस्तावेज़ की किसी भी लाइन में अभी कोई आइटम नहीं है।"
 
 msgid "No lines"
 msgstr "कोई पंक्तियाँ नहीं"
@@ -31548,6 +31551,9 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "पार्ट को मौजूदा स्टॉक से लिया जाता है जब इसका मूल आइटम बनाया जाता है — कोई नया जॉब या क्रय आदेश नहीं।"
+
+msgid "The part numbers of this document cannot change now."
+msgstr "इस दस्तावेज़ के पार्ट नंबर अभी नहीं बदल सकते।"
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "डिलीवरी भुगतान का वह हिस्सा जो सरकार अपने प्रगति व प्रदर्शन-आधारित भुगतान को वसूलने के लिए रखती है: तरलीकरण दर गुणा चालान, कभी भी अभी भी अतरलीकृत वित्तपोषण से अधिक नहीं।"

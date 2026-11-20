@@ -17439,8 +17439,8 @@ msgstr "Versand der Position"
 msgid "Line Status"
 msgstr "Zeilenstatus"
 
-msgid "Line Supplier Part ID"
-msgstr "Lieferantenteilenummer der Position"
+msgid "Line Supplier Part ID Row"
+msgstr "Zeile Lieferantenteilenummer der Position"
 
 msgid "Line Supplier Part Number"
 msgstr "Lieferanten-Teilenummer der Position"
@@ -20204,6 +20204,9 @@ msgstr "Es wurde noch kein Leasing-Durchlauf gebucht."
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Kein Urlaubselement ist eingerichtet. Öffnen Sie in einem indirekten Projekt das Element für Freizeit und aktivieren Sie Urlaub."
+
+msgid "No line of this document has an item yet."
+msgstr "Noch keine Position dieses Dokuments hat einen Artikel."
 
 msgid "No lines"
 msgstr "Keine Zeilen"
@@ -31548,6 +31551,9 @@ msgstr "Der Teil wird als eigener Auftrag hergestellt, wenn das Elternteil, das 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete Teil hergestellt wird – kein neuer Fertigungsauftrag oder Bestellung."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Die Teilenummern dieses Dokuments können jetzt nicht geändert werden."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Der Anteil einer Lieferzahlung, den die Regierung zurückbehält, um ihre Akontozahlungen oder leistungsabhängigen Zahlungen zu sichern: der Rückbehaltssatz mal die Rechnung, nicht mehr als die noch ausstehende Finanzierung."

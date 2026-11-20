@@ -131,7 +131,9 @@ export default function DocumentEditModal({
               },
               partNumberParty:
                 DOCUMENT_EDIT_RECORDS[documentType].partNumberLines?.party ??
-                null
+                null,
+              partNumbersLocked: editor.partNumbersLocked,
+              partNumberLineCount: editor.partNumberLineCount
             }}
             initialNotes={editor.notes as JSONContent | null}
             initialPartNumberDisplay={editor.partNumberDisplay}

@@ -22,7 +22,8 @@ import {
 import {
   isPartNumberDisplay,
   type PartNumberDisplay,
-  type PartNumberDisplaySummary
+  type PartNumberDisplaySummary,
+  type PartNumberParty
 } from "@carbon/documents/utils";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
@@ -106,7 +107,11 @@ export interface DocumentMode {
    * Whose part number "theirs" is on this document's lines; null when the
    * document has no part number choice.
    */
-  partNumberParty: "customer" | "supplier" | null;
+  partNumberParty: PartNumberParty | null;
+  /** The lines' choice cannot change in the record's status. */
+  partNumbersLocked?: boolean;
+  /** The item lines a pick sets. */
+  partNumberLineCount?: number;
 }
 
 /** The persisted shape — what `isDirty` compares and what `save` writes. */

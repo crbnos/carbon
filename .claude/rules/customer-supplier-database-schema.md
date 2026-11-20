@@ -26,6 +26,7 @@ Key columns (both, unless noted):
 - `accountManagerId`, `assignee` → `user.id`
 - `logo`, `website`, `tags` TEXT[], `customFields` JSONB
 - `supplier` also has `embedding halfvec(384)` (semantic search)
+- `supplier.partNumberDisplay` (enum `partNumberDisplay`, nullable): which part numbers its new purchase order lines print; null takes `companySettings.supplierPartNumberDisplay`. The `suppliers` view exposes it
 - Legacy `phone`/`fax` columns still exist on the tables but are **superseded** — the views now derive phone/fax from the primary linked contact (see Views).
 - `externalId` is **no longer a column** — external integration ids moved to the `externalIntegrationMapping` table (`20260130005853`); the views recompute it as a JSONB aggregate.
 - Audit: `companyId` NOT NULL → `company.id`, `createdAt/By`, `updatedAt/By`.

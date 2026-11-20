@@ -27,7 +27,10 @@ import {
   getTextEntries,
   HEADER_TEXT_KEYS
 } from "@carbon/documents/template";
-import { isPartNumberDisplay } from "@carbon/documents/utils";
+import {
+  isPartNumberDisplay,
+  type PartNumberParty
+} from "@carbon/documents/utils";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -278,15 +281,18 @@ function PartNumberDisplayConfig() {
   return <PartNumberDisplaySelect party={party} />;
 }
 
-function PartNumberDisplaySelect({
-  party
-}: {
-  party: "customer" | "supplier";
-}) {
+function PartNumberDisplaySelect({ party }: { party: PartNumberParty }) {
   const { t } = useLingui();
   const value = useEditorStore((s) => s.partNumberDisplay);
   const setPartNumberDisplay = useEditorStore((s) => s.setPartNumberDisplay);
+  const partNumbersLocked = useEditorStore(
+    (s) => s.document?.partNumbersLocked ?? false
+  );
+  const hasLines = useEditorStore(
+    (s) => (s.document?.partNumberLineCount ?? 0) > 0
+  );
   const options = usePartNumberDisplayOptions(party);
+  const canPick = hasLines && !partNumbersLocked;
 
   return (
     <RememberedSection
@@ -298,6 +304,7 @@ function PartNumberDisplaySelect({
         <div className="flex flex-col gap-1.5">
           <Select
             value={isPartNumberDisplay(value) ? value : ""}
+            disabled={!canPick}
             onValueChange={(next) => {
               if (isPartNumberDisplay(next)) setPartNumberDisplay(next);
             }}
@@ -318,7 +325,13 @@ function PartNumberDisplaySelect({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            {value === "mixed" ? (
+            {!hasLines ? (
+              <Trans>No line of this document has an item yet.</Trans>
+            ) : partNumbersLocked ? (
+              <Trans>
+                The part numbers of this document cannot change now.
+              </Trans>
+            ) : value === "mixed" ? (
               <Trans>
                 The lines print different part numbers. A pick sets every line.
               </Trans>

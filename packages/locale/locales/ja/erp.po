@@ -17439,8 +17439,8 @@ msgstr "行の配送"
 msgid "Line Status"
 msgstr "ラインステータス"
 
-msgid "Line Supplier Part ID"
-msgstr "明細の仕入先部品ID"
+msgid "Line Supplier Part ID Row"
+msgstr "明細の仕入先部品ID行"
 
 msgid "Line Supplier Part Number"
 msgstr "明細の仕入先部品番号"
@@ -20204,6 +20204,9 @@ msgstr "リース実行はまだ転記済ではありません。"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "休暇エレメントが設定されていません。間接プロジェクトで休暇時間のエレメントを開き、「休暇」をオンにしてください。"
+
+msgid "No line of this document has an item yet."
+msgstr "この帳票の明細には、まだ品目がありません。"
 
 msgid "No lines"
 msgstr "ラインなし"
@@ -31548,6 +31551,9 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
+
+msgid "The part numbers of this document cannot change now."
+msgstr "この帳票の部品番号は、今は変更できません。"
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "政府が進捗支払または成果支払を回収するために納品支払から控除する部分。清算率 × 請求書で計算され、未清算融資額を超えません。"

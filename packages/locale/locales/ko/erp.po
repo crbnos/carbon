@@ -17439,8 +17439,8 @@ msgstr "라인 배송"
 msgid "Line Status"
 msgstr "라인 상태"
 
-msgid "Line Supplier Part ID"
-msgstr "라인 공급업체 부품 ID"
+msgid "Line Supplier Part ID Row"
+msgstr "라인 공급업체 부품 ID 행"
 
 msgid "Line Supplier Part Number"
 msgstr "라인 공급업체 품번"
@@ -20204,6 +20204,9 @@ msgstr "아직 리스 실행이 전기되지 않았습니다"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "휴가 요소가 설정되지 않았습니다. 간접 프로젝트에서 시간 제외 요소를 열고 휴가를 켜세요."
+
+msgid "No line of this document has an item yet."
+msgstr "이 문서의 라인에 아직 품목이 없습니다."
 
 msgid "No lines"
 msgstr "항목 없음"
@@ -31548,6 +31551,9 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오므로, 새로운 작업 지시 또는 발주서가 없습니다."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "지금은 이 문서의 부품 번호를 변경할 수 없습니다."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "정부가 기성금 또는 실적금으로부터의 회수를 위해 보유하는 납기금의 일부: 송장 금액에 정산율을 곱한 금액으로, 미정산 금융액을 초과하지 않음."

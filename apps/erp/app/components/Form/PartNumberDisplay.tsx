@@ -4,14 +4,14 @@
 
 import {
   PART_NUMBER_DISPLAYS,
-  type PartNumberDisplay as PartNumberDisplayValue
+  type PartNumberDisplay as PartNumberDisplayValue,
+  type PartNumberParty
 } from "@carbon/documents/utils";
 import type { SelectProps } from "@carbon/form";
 import { Select } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 
-/** Whose part number "theirs" is: the customer's or the supplier's. */
-export type PartNumberParty = "customer" | "supplier";
+export type { PartNumberParty };
 
 /** The 4 display choices, labelled for one party, in select order. */
 export function usePartNumberDisplayOptions(party: PartNumberParty) {

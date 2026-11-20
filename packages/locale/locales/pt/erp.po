@@ -17439,8 +17439,8 @@ msgstr "Envio da Linha"
 msgid "Line Status"
 msgstr "Status da Linha"
 
-msgid "Line Supplier Part ID"
-msgstr "ID da peça do fornecedor da linha"
+msgid "Line Supplier Part ID Row"
+msgstr "Linha de ID da peça do fornecedor da linha"
 
 msgid "Line Supplier Part Number"
 msgstr "Número da peça do fornecedor na linha"
@@ -20204,6 +20204,9 @@ msgstr "Nenhuma execução de arrendamento foi contabilizada ainda."
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Nenhum elemento de licença está configurado. Em um projeto Indireto, abra o elemento para folga e ative Licença."
+
+msgid "No line of this document has an item yet."
+msgstr "Nenhuma linha deste documento tem ainda um item."
 
 msgid "No lines"
 msgstr "Sem linhas"
@@ -31548,6 +31551,9 @@ msgstr "A peça é fabricada como seu próprio trabalho quando o pai que a neces
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "A peça é retirada do estoque existente quando seu pai é construído - nenhum novo trabalho ou pedido de compra."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Os números de peça deste documento não podem mudar agora."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "A parte de um pagamento de entrega que o governo retém para recuperar seus pagamentos de progresso ou baseados em desempenho: a taxa de liquidação vezes a fatura, nunca mais que o financiamento ainda não liquidado."

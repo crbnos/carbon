@@ -17439,8 +17439,8 @@ msgstr "行运输"
 msgid "Line Status"
 msgstr "行状态"
 
-msgid "Line Supplier Part ID"
-msgstr "行供应商零件 ID"
+msgid "Line Supplier Part ID Row"
+msgstr "行供应商零件 ID 行"
 
 msgid "Line Supplier Part Number"
 msgstr "行供应商零件号"
@@ -20204,6 +20204,9 @@ msgstr "尚未过账租赁运行"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "未设置休假元素。在间接项目中，打开休假元素并启用\"休假\"功能。"
+
+msgid "No line of this document has an item yet."
+msgstr "此单据的行中还没有物料。"
 
 msgid "No lines"
 msgstr "无行项"
@@ -31548,6 +31551,9 @@ msgstr "当需要该零件的父级被构造时，该零件被制造为其自己
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
+
+msgid "The part numbers of this document cannot change now."
+msgstr "此单据的零件号现在不能更改。"
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "交付付款中政府保留的部分，用以收回进度付款或绩效付款：清算比率乘以发票，不超过未清算的融资。"
