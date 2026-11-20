@@ -76,6 +76,10 @@ msgstr "(इस विभाग के बाहर)"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {इसकी प्रक्रिया को योग्य ऑपरेटर की आवश्यकता है, इसलिए इसके ऑपरेशन को किसी को जोड़ने तक शेड्यूल नहीं किया जा सकता।} one {इसकी प्रक्रिया को योग्य ऑपरेटर की आवश्यकता है: # ऑपरेशन को किसी को जोड़ने तक शेड्यूल नहीं किया जा सकता।} other {इसकी प्रक्रिया को योग्य ऑपरेटर की आवश्यकता है: # ऑपरेशन को किसी को जोड़ने तक शेड्यूल नहीं किए जा सकते।}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr ""
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# सामग्री सूची पंक्ति छोड़ दी गई है: इसके आइटम के पास कोई लागत रिकॉर्ड नहीं है} other {# सामग्री सूची पंक्तियाँ छोड़ दी गई हैं: उनके आइटम के पास कोई लागत रिकॉर्ड नहीं हैं}}"
@@ -136,6 +140,14 @@ msgstr "{0, plural, one {# तत्व} other {# तत्व}}"
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# प्रकार फ़िल्टर द्वारा छिपी गई} other {# प्रकार फ़िल्टर द्वारा छिपी गई}}"
+
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr ""
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr ""
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -269,6 +281,10 @@ msgstr "{0, plural, one {# आइटम स्थानांतरित कर
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {# दस्तावेज़ को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित है।} other {# दस्तावेज़ों को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित हैं।}}"
+
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr ""
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -1320,6 +1336,9 @@ msgstr "{readyJobs, plural, =0 {कोई भी खुला जॉब सभ�
 
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
+
+msgid "{records, plural, one {Keep # customer, supplier or supplier part in {fromCode}} other {Keep # customers, suppliers and supplier parts in {fromCode}}}"
+msgstr ""
 
 msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
@@ -3965,6 +3984,9 @@ msgstr "एक खाता इस सूची से तब तक अनु�
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "एक लेखांकन बकेट जो विभाग या कार्य द्वारा व्यय को समूहित करता है ताकि सामान्य खाता बही समूह द्वारा व्यय की रिपोर्ट कर सकें, केवल खाता द्वारा नहीं।"
 
+msgid "An accounting or spend integration is connected"
+msgstr ""
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "एक पूंजीकृत आइटम के लिए एक लेखांकन रिकॉर्ड जिसे आप व्यय की बजाय मूल्यह्रास करते हैं; ड्राफ्ट → सक्रिय → पूर्ण मूल्यह्रासित → निपटाया गया।"
 
@@ -4239,6 +4261,9 @@ msgstr "वार्षिक दर जिस पर किराया छू�
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "वार्षिक। कंपनी की वृद्धिशील उधार दर से शुरू होता है"
+
+msgid "Another company in the group has transactions"
+msgstr ""
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "इस एकीकरण के लिए एक और कनेक्शन पहले से ही उस नाम के साथ है। एक अलग चुनें।"
@@ -6942,6 +6967,9 @@ msgstr "परिवर्तन न्यूजलेटर"
 
 msgid "Changes"
 msgstr "परिवर्तन"
+
+msgid "Changing the base currency converts no amounts"
+msgstr ""
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "घटकों को बदलने से समूह को पुनः परिभाषित किया जाता है। परिवर्तन को चरणों पर लागू करने के लिए मोशन योजना को पुनः चलाएं।"
@@ -11824,6 +11852,9 @@ msgstr "चार्ज संपादित करें"
 msgid "Edit column visibility"
 msgstr "कॉलम दृश्यता संपादित करें"
 
+msgid "Edit company"
+msgstr ""
+
 msgid "Edit Component Group"
 msgstr "घटक समूह संपादित करें"
 
@@ -14054,6 +14085,9 @@ msgstr "अचल संपत्ति"
 
 msgid "Fixed Assets"
 msgstr "अचल संपत्तियाँ"
+
+msgid "Fixed assets exist"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "निर्धारित लागत परिशोधन विचलन जब बैच आकार सामान्य से भिन्न हो"
@@ -16779,6 +16813,9 @@ msgstr "{total} में से {kept} रखे गए; {unresolved} की �
 
 msgid "Kept {kept} of {total}."
 msgstr "{total} में से {kept} रखे गए।"
+
+msgid "Kept as entered and read in {toCode}:"
+msgstr ""
 
 msgid "Key"
 msgstr "कुंजी"
@@ -22078,6 +22115,9 @@ msgstr "अन्य प्रकार"
 msgid "Otherwise"
 msgstr "अन्यथा"
 
+msgid "Otherwise they move to {toCode}, and so do bank accounts in {fromCode}."
+msgstr ""
+
 msgid "Out"
 msgstr "बाहर"
 
@@ -24508,6 +24548,9 @@ msgstr "कोटेशन, आदेश और चालान को ब्ल
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "कोटेशन, आदेश, चालान और RFQ"
+
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr ""
 
 msgid "Quoting"
 msgstr "कोटेशन"
@@ -29350,6 +29393,9 @@ msgstr "स्टॉक स्थान:"
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
 
+msgid "Stock has been received, moved or used"
+msgstr ""
+
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "इस भंडारण इकाई का स्टॉक आपूर्ति नहीं है। MRP और योजना स्क्रीन इसे नहीं गिनतीं, और पिकिंग इससे नहीं लेती। कोई इकाई तब भी MRP से बाहर होती है जब उसकी मूल इकाई या उसका कोई भंडारण प्रकार बाहर हो। क्वारंटाइन और होल्ड क्षेत्रों के लिए इसका उपयोग करें। स्टॉक स्थानांतरण स्टॉक को फिर से बाहर ले जाता है।"
 
@@ -30662,6 +30708,9 @@ msgstr "बैकअप जॉब ने इस त्रुटि की रि
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
+msgid "The base currency can't change because:"
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "बैच शॉप फ्लोर पर जाता है। इसकी जॉब्स पहले से ही जारी हैं।"
 
@@ -31271,6 +31320,9 @@ msgstr "पट्टे की"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "पट्टे की गई संपत्ति अचल संपत्ति बन जाती है जो व्यायाम तिथि से मूल्यह्रास होती है। इसके बाद की भुगतान देयताएं निकाल दी जाती हैं। पट्टे की अन्य संपत्तियां परिवर्तित नहीं होती हैं।"
+
+msgid "The ledger has entries"
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "कानूनी इकाई जिसे चालान भेजा जाता है, जब यह उस ग्राहक से अलग होता है जो माल प्राप्त करता है - माता-पिता / सहायक या तीसरे पक्ष के बिलिंग व्यवस्था के लिए।"

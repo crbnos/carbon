@@ -55,13 +55,22 @@ BEGIN
     = DATE '2025-11-01', 'A dataset apply re-dates the cutover';
   RAISE NOTICE 'PASS a dataset apply re-dates the cutover';
 
-  -- The bypass covers the cutover columns only: the base currency stays locked.
+  -- The bypass covers the cutover columns only: a base currency its data
+  -- locks stays locked.
+  INSERT INTO journal ("journalEntryId", "companyId", "postingDate", status, "sourceType", "createdBy")
+    VALUES ('GUARD-BASE-' || id(), company_id, DATE '2026-09-15', 'Provisional', 'Sales Invoice', 'system')
+    RETURNING id INTO other_id;
+  INSERT INTO "journalLine" ("journalId", "accountId", amount, description, "journalLineReference", "companyId")
+    VALUES (other_id, cash_id, 10, 'Base currency line', id(), company_id);
   BEGIN
     UPDATE company SET "baseCurrencyCode" = 'EUR' WHERE id = company_id;
-    RAISE EXCEPTION 'The base currency changed after the enable';
+    RAISE EXCEPTION 'The base currency changed with a journal line';
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM NOT LIKE '%base currency is locked%' THEN RAISE; END IF;
   END;
+  DELETE FROM "journalLine" WHERE "journalId" = other_id;
+  DELETE FROM journal WHERE id = other_id;
+  other_id := NULL;
   RAISE NOTICE 'PASS a dataset apply leaves the base currency locked';
 
   -- An API role never gets the bypass, even with the setting on.

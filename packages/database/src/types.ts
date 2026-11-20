@@ -107741,6 +107741,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      base_currency_change_blockers: {
+        Args: { p_company_id: string }
+        Returns: {
+          reason: string
+        }[]
+      }
+      base_currency_data_blockers: {
+        Args: { p_company_id: string }
+        Returns: {
+          reason: string
+        }[]
+      }
       calculate_quantity_to_order: {
         Args: {
           p_demand_accumulation_period: number

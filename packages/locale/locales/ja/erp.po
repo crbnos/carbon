@@ -76,6 +76,10 @@ msgstr "（この部門外）"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {このプロセスには適格な作業者が必要であるため、誰かが追加されるまで工程をスケジュールすることはできません。} one {このプロセスには適格な作業者が必要です：# 工程は誰かが追加されるまでスケジュールできません。} other {このプロセスには適格な作業者が必要です：# 工程は誰かが追加されるまでスケジュールできません。}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr ""
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# 部品表の明細は除外されています：その品目にはコスト記録がありません} other {# 部品表の明細は除外されています：それらの品目にはコスト記録がありません}}"
@@ -136,6 +140,14 @@ msgstr "{0, plural, one {# 要素} other {# 要素}}"
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# タイプフィルタで非表示} other {# タイプフィルタで非表示}}"
+
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr ""
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr ""
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -269,6 +281,10 @@ msgstr "{0, plural, one {# 品目を移動} other {# 品目すべてを移動}}"
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
+
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr ""
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -1320,6 +1336,9 @@ msgstr "{readyJobs, plural, =0 {全部品が揃っているオープンの製造
 
 msgid "{received} of {ordered}"
 msgstr "{ordered} 中 {received}"
+
+msgid "{records, plural, one {Keep # customer, supplier or supplier part in {fromCode}} other {Keep # customers, suppliers and supplier parts in {fromCode}}}"
+msgstr ""
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
@@ -3965,6 +3984,9 @@ msgstr "このリストにアカウントがない場合、再接続されるま
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "部門または機能ごとに費用をグループ化する会計カテゴリで、総勘定元帳がアカウントだけでなくグループごとの支出を報告できます。"
 
+msgid "An accounting or spend integration is connected"
+msgstr ""
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "資本化資産の会計記録（費用化ではなく減価償却対象）。下書き → 有効 → 償却済 → 除却済。"
 
@@ -4239,6 +4261,9 @@ msgstr "レンタル料が割引される年間レート"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "年間。会社の増分借入金利から開始します"
+
+msgid "Another company in the group has transactions"
+msgstr ""
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "この統合への別の接続がすでにその名前を持っています。別の名前を選択してください。"
@@ -6942,6 +6967,9 @@ msgstr "変更ログニュースレター"
 
 msgid "Changes"
 msgstr "変更"
+
+msgid "Changing the base currency converts no amounts"
+msgstr ""
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "コンポーネントを変更するとグループが再定義されます。モーション計画を再実行してステップに変更を適用してください。"
@@ -11824,6 +11852,9 @@ msgstr "料金の編集"
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
 
+msgid "Edit company"
+msgstr ""
+
 msgid "Edit Component Group"
 msgstr "コンポーネントグループを編集"
 
@@ -14054,6 +14085,9 @@ msgstr "固定資産"
 
 msgid "Fixed Assets"
 msgstr "固定資産"
+
+msgid "Fixed assets exist"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "バッチサイズが標準と異なる場合の固定原価配賦差異"
@@ -16779,6 +16813,9 @@ msgstr "{total} 件中 {kept} 件を保持しました。{unresolved} 件は確�
 
 msgid "Kept {kept} of {total}."
 msgstr "{total} 件中 {kept} 件を保持しました。"
+
+msgid "Kept as entered and read in {toCode}:"
+msgstr ""
 
 msgid "Key"
 msgstr "キー"
@@ -22078,6 +22115,9 @@ msgstr "その他のタイプ"
 msgid "Otherwise"
 msgstr "その他"
 
+msgid "Otherwise they move to {toCode}, and so do bank accounts in {fromCode}."
+msgstr ""
+
 msgid "Out"
 msgstr "対象外"
 
@@ -24508,6 +24548,9 @@ msgstr "仕入先がメールアドレスを持つ担当者と国を指定した
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "見積、受注、請求書および見積依頼"
+
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr ""
 
 msgid "Quoting"
 msgstr "見積"
@@ -29350,6 +29393,9 @@ msgstr "在庫場所："
 msgid "Stock Availability"
 msgstr "在庫可用性"
 
+msgid "Stock has been received, moved or used"
+msgstr ""
+
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "この保管ユニットの在庫は供給ではありません。MRPと計画画面はこれを数えず、ピッキングもここから取りません。親ユニットまたはそのストレージタイプのいずれかがMRP対象外の場合も、ユニットはMRP対象外になります。隔離・保留エリアに使用します。在庫転送で在庫を再び移動できます。"
 
@@ -30662,6 +30708,9 @@ msgstr "バックアップジョブがこのエラーを報告しました。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
+msgid "The base currency can't change because:"
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "バッチが製造現場に移動します。その製造指図は既にリリース済です。"
 
@@ -31271,6 +31320,9 @@ msgstr "リースの"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "リースされた資産は行使日から減価償却される固定資産となります。その後の支払義務は除去されます。リースの他の資産は変わりません。"
+
+msgid "The ledger has entries"
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "商品を受け取る得意先と異なる請求先の法人エンティティ。親会社/子会社または第三者請求の場合に使用します。"
