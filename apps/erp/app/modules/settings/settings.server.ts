@@ -1910,7 +1910,8 @@ export const viewPrintJobContent = defineServiceFn({
 
 /**
  * Get the editor for one document: the company template, this document's own
- * edits, whether the record is locked, and its notes.
+ * edits, whether the record is locked, its notes, and its item lines' part
+ * number choice.
  */
 export const getDocumentEditor = defineServiceFn({
   input: z.object({
@@ -1933,15 +1934,28 @@ export const getDocumentEditor = defineServiceFn({
       return ctx.error("notFound", "The document could not be found");
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
-    const [template, edit, terms] = await Promise.all([
+    const [template, edit, terms, partNumberLines] = await Promise.all([
       getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
       getDocumentEdit(client, {
         companyId: ctx.company.id,
         documentType,
         documentId
       }),
-      termsField ? service.getTerms(client, ctx.company.id) : null
+      termsField ? service.getTerms(client, ctx.company.id) : null,
+      service.getDocumentPartNumberLines(
+        client,
+        ctx.company.id,
+        documentType,
+        documentId
+      )
     ]);
+    if (partNumberLines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the document's lines",
+        partNumberLines.error
+      );
+    }
     const termsSeed = termsField
       ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
       : null;
@@ -1953,6 +1967,8 @@ export const getDocumentEditor = defineServiceFn({
     );
     return {
       ...record.data,
+      partNumberDisplay: partNumberLines.data?.summary ?? null,
+      partNumberLineCount: partNumberLines.data?.count ?? 0,
       documentType,
       documentId,
       template,
@@ -1965,8 +1981,10 @@ export const getDocumentEditor = defineServiceFn({
 
 /**
  * Save how one document prints: the words, hidden fields and blocks, and Terms
- * that differ from the company template, plus its notes. Refused once the
- * record is locked.
+ * that differ from the company template, plus its notes and, when picked, the
+ * part numbers every item line prints. Refused once the record is locked; a
+ * pick is also refused while the lines' choice cannot change
+ * (`partNumberLinesRefusal`).
  */
 export const saveDocumentEdit = defineServiceFn({
   input: z.object({
@@ -2029,6 +2047,7 @@ export const saveDocumentEdit = defineServiceFn({
     if (saved === "locked") {
       return ctx.error("rule", "This document is locked.");
     }
+    if (typeof saved === "object") return ctx.error("rule", saved.refusal);
     if (saved === "notFound") {
       return ctx.error("notFound", "The document could not be found");
     }

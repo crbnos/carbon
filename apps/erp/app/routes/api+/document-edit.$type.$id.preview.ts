@@ -34,11 +34,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, documentType, documentId } = key;
   const formData = await request.formData();
 
+  const draft = parseDraft(formData);
   const toPrint = await editToPrint({
     documentType,
     locked: record.locked,
     isDownload: formData.get("intent") === "download",
-    draft: parseDraft(formData),
+    // A pick the save would refuse is not printed either.
+    draft:
+      draft && record.partNumbersLocked
+        ? { ...draft, partNumberDisplay: undefined }
+        : draft,
     readSaved: () => getDocumentEdit(client, key),
     readTemplate: () => getCompanyTemplate(client, key)
   });

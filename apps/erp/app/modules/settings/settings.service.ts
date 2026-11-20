@@ -351,7 +351,10 @@ import type {
   subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
-import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+import {
+  DOCUMENT_EDIT_RECORDS,
+  partNumberLinesRefusal
+} from "./settings.utils";
 
 const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
@@ -9685,8 +9688,9 @@ export async function getOpenJobsMissingStorageUnit(
 
 /**
  * The record a document prints, for the "Edit document" modal: its readable
- * number, whether it is locked, and the notes its Notes block prints. Read with
- * the caller's client, so a record the caller cannot see is not found.
+ * number, whether it is locked, whether its lines' part numbers can change, and
+ * the notes its Notes block prints. Read with the caller's client, so a record
+ * the caller cannot see is not found.
  */
 export async function getDocumentEditRecord(
   client: SupabaseClient<Database>,
@@ -9707,35 +9711,52 @@ export async function getDocumentEditRecord(
     .maybeSingle();
   if (error || !data) return { data: null, error };
   const row = data as unknown as Record<string, unknown>;
-
-  // The lines' display choices, summed up for the modal's select.
-  const partNumberLines = record.partNumberLines;
-  const lines = partNumberLines
-    ? await fetchAllFromTable<{ partNumberDisplay: PartNumberDisplay | null }>(
-        client,
-        partNumberLines.table,
-        "id, partNumberDisplay",
-        (query) =>
-          query
-            .eq(partNumberLines.documentColumn, documentId)
-            .eq("companyId", companyId)
-            .order("id")
-      )
-    : null;
-  if (lines?.error) return { data: null, error: lines.error };
+  const status = row.status as string | null;
 
   return {
     data: {
       label: String(row[record.readableId] ?? documentId),
-      locked: record.isLocked(row.status as string | null),
+      locked: record.isLocked(status),
+      partNumbersLocked:
+        !record.partNumberLines ||
+        partNumberLinesRefusal(documentType, status) !== null,
       notes: record.notesColumn
         ? ((row[record.notesColumn] as JSONContent | null) ?? null)
-        : null,
-      partNumberDisplay: lines
-        ? summarizePartNumberDisplay(
-            lines.data.map((line) => line.partNumberDisplay)
-          )
         : null
+    },
+    error: null
+  };
+}
+
+/**
+ * The part number choices of a document's item lines, summed up for the Edit
+ * document select: their common choice, "mixed", or null for legacy lines, and
+ * how many lines there are. Lines with no item print no part number.
+ */
+export async function getDocumentPartNumberLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const partNumberLines = DOCUMENT_EDIT_RECORDS[documentType].partNumberLines;
+  if (!partNumberLines) return { data: null, error: null };
+  const lines = await fetchAllFromTable<{
+    partNumberDisplay: PartNumberDisplay | null;
+  }>(client, partNumberLines.table, "id, partNumberDisplay", (query) =>
+    query
+      .eq(partNumberLines.documentColumn, documentId)
+      .eq("companyId", companyId)
+      .not("itemId", "is", null)
+      .order("id")
+  );
+  if (lines.error) return { data: null, error: lines.error };
+  return {
+    data: {
+      summary: summarizePartNumberDisplay(
+        lines.data.map((line) => line.partNumberDisplay)
+      ),
+      count: lines.data.length
     },
     error: null
   };
@@ -9754,7 +9775,7 @@ export async function saveDocumentEditRow(
     documentId: string;
     edit: DocumentEdit;
     notes?: JSONContent | null;
-    /** The modal's pick for every line of the document. */
+    /** The modal's pick for every item line of the document. */
     partNumberDisplay?: PartNumberDisplay;
     userId: string;
   }
@@ -9775,6 +9796,10 @@ export async function saveDocumentEditRow(
       .executeTakeFirst();
     if (!current) return "notFound" as const;
     if (record.isLocked(current.status)) return "locked" as const;
+    if (args.partNumberDisplay !== undefined) {
+      const refusal = partNumberLinesRefusal(documentType, current.status);
+      if (refusal) return { refusal };
+    }
 
     if (isEmptyDocumentEdit(edit)) {
       await trx
@@ -9820,7 +9845,7 @@ export async function saveDocumentEditRow(
     }
 
     if (args.partNumberDisplay !== undefined && record.partNumberLines) {
-      // Every line of the document takes the one choice the modal made.
+      // Every item line takes the one choice the modal made.
       await trx
         .updateTable(record.partNumberLines.table as "purchaseOrderLine")
         .set({
@@ -9834,6 +9859,7 @@ export async function saveDocumentEditRow(
           documentId
         )
         .where("companyId", "=", companyId)
+        .where("itemId", "is not", null)
         .execute();
     }
     return "saved" as const;

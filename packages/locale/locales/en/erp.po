@@ -17439,8 +17439,8 @@ msgstr "Line Shipping"
 msgid "Line Status"
 msgstr "Line Status"
 
-msgid "Line Supplier Part ID"
-msgstr "Line Supplier Part ID"
+msgid "Line Supplier Part ID Row"
+msgstr "Line Supplier Part ID Row"
 
 msgid "Line Supplier Part Number"
 msgstr "Line Supplier Part Number"
@@ -20204,6 +20204,9 @@ msgstr "No lease run is posted yet"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
+
+msgid "No line of this document has an item yet."
+msgstr "No line of this document has an item yet."
 
 msgid "No lines"
 msgstr "No lines"
@@ -31548,6 +31551,9 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "The part numbers of this document cannot change now."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."

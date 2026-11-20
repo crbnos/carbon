@@ -15,14 +15,14 @@
 ## Progress
 
 Section 1 — shared pieces (branch `eng-140-supplier-part-number-display`)
-- [ ] Task 1: Add the `partNumberDisplay` enum migration
-- [ ] Task 2: Regenerate the database types
-- [ ] Task 3: Add the shared formatter `part-number.ts`
-- [ ] Task 4: Carry a draft display choice through `DocumentEdit`
-- [ ] Task 5: Read and save the lines' display choice in the document edit server code
-- [ ] Task 6: Add the `PartNumberDisplay` form field and its option labels
-- [ ] Task 7: Add the Edit document select (titled "Part Numbers")
-- [ ] Task 8: Run the shared gate
+- [x] Task 1: Add the `partNumberDisplay` enum migration
+- [x] Task 2: Regenerate the database types
+- [x] Task 3: Add the shared formatter `part-number.ts`
+- [x] Task 4: Carry a draft display choice through `DocumentEdit`
+- [x] Task 5: Read and save the lines' display choice in the document edit server code
+- [x] Task 6: Add the `PartNumberDisplay` form field and its option labels
+- [x] Task 7: Add the Edit document select (titled "Part Numbers")
+- [x] Task 8: Run the shared gate
 
 Section 2 — Part I, sales (branch `eng-102-customer-part-number-display`)
 - [ ] Task 9: Stack the sales branch on the shared pieces
@@ -49,13 +49,13 @@ Section 3 — Part II, purchasing (branch `eng-140-supplier-part-number-display`
 - [x] Task 28: Add `line.itemId` and `line.supplierPartNumber` to purchase order templates
 - [x] Task 29: Pass the draft display choice to the purchase order PDF
 - [x] Task 30: Copy the quoted supplier part number in `supplierQuoteToPurchaseOrder`
-- [ ] Task 31: Add the company default card in Settings > Purchasing
-- [ ] Task 32: Add the supplier override to the supplier form and operations
-- [ ] Task 33: Add the Part Numbers select to the purchase order line form
-- [ ] Task 34: Turn on the Edit document select for the purchase order
-- [ ] Task 35: Update the demo datasets (purchase order lines, one supplier override each)
+- [x] Task 31: Add the company default card in Settings > Purchasing
+- [x] Task 32: Add the supplier override to the supplier form and operations
+- [x] Task 33: Add the Part Numbers select to the purchase order line form
+- [x] Task 34: Turn on the Edit document select for the purchase order
+- [x] Task 35: Update the demo datasets (purchase order lines, one supplier override each)
 - [x] Task 36: Update the docs page, the customizer rule and the purchasing AGENTS.md
-- [ ] Task 37: Run the Part II gate, then verify Part II in the browser
+- [x] Task 37: Run the Part II gate, then verify Part II in the browser
 
 ## Dependencies
 
@@ -546,8 +546,8 @@ ALTER TABLE "salesOrderLine"
 ```sql
 -- Fills a new line's display choice from its document's customer: the
 -- customer's override, else the company default. A line whose document has no
--- customer stays null. A dataset apply (app.sync_in_progress) and a backup load
--- (app.backup_load) bring their own values, so it skips them. PL/pgSQL compiles
+-- customer stays null. A backup load (app.backup_load) brings its own values,
+-- so it skips it. PL/pgSQL compiles
 -- a trigger function per trigger, so each branch reads its own table's NEW.
 CREATE OR REPLACE FUNCTION stamp_line_customer_part_number_display()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -555,7 +555,6 @@ DECLARE
   v_customer_id TEXT;
 BEGIN
   IF NEW."partNumberDisplay" IS NOT NULL
-    OR current_setting('app.sync_in_progress', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
@@ -617,8 +616,7 @@ DECLARE
   v_part TEXT;
   v_revision TEXT;
 BEGIN
-  IF current_setting('app.sync_in_progress', true) = 'true'
-    OR current_setting('app.backup_load', true) = 'on' THEN
+  IF current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
   IF TG_OP = 'INSERT' AND NEW."customerPartId" IS NOT NULL THEN
@@ -661,7 +659,6 @@ DECLARE
   v_user TEXT := COALESCE(NEW."updatedBy", NEW."createdBy");
 BEGIN
   IF NEW."customerId" IS NULL
-    OR current_setting('app.sync_in_progress', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NULL;
   END IF;
@@ -820,7 +817,7 @@ pnpm --filter @carbon/jobs typecheck
 # Expected: exit 0
 ```
 
-**Out of scope:** `datasets/index.ts`: the dataset apply already sets `app.sync_in_progress`, which the triggers read.
+**Out of scope:** `datasets/index.ts`: the triggers stamp the seeded lines during a dataset apply, as for any line.
 
 ## Task 12: Regenerate the types and run the backup check
 
@@ -855,7 +852,7 @@ pnpm db:check:backups
 - Modify: `packages/database/src/datasets/validate.ts` — `COVERAGE` (line 193) and the `foundation` rule (line 1317)
 - Copy from (precedent): `ensureUnitsOfMeasure` (`helpers/units-of-measure.ts`) for the helper shape; `procedureStatus` in `COVERAGE` and its `ctx.cover` call in `foundation`
 
-The triggers skip a dataset apply (`app.sync_in_progress`), so the apply stamps the seeded lines itself. One step after the tiers covers every tier that inserts sales lines: sales, rentals, service and contracts.
+Superseded 2026-11-21: the triggers no longer skip a dataset apply, so no step after the tiers stamps the seeded lines. Only the per-dataset overrides remain.
 
 **Steps:**
 1. Create the helper:

@@ -17439,8 +17439,8 @@ msgstr "Wysyłka pozycji"
 msgid "Line Status"
 msgstr "Status linii"
 
-msgid "Line Supplier Part ID"
-msgstr "ID części dostawcy w pozycji"
+msgid "Line Supplier Part ID Row"
+msgstr "Wiersz ID części dostawcy w pozycji"
 
 msgid "Line Supplier Part Number"
 msgstr "Numer części dostawcy w pozycji"
@@ -20204,6 +20204,9 @@ msgstr "Żadne uruchomienie leasingu nie zostało jeszcze zaksięgowane."
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Nie skonfigurowano elementu urlopu. W projekcie Pośrednim otwórz element na czas wolny i włącz Leave."
+
+msgid "No line of this document has an item yet."
+msgstr "Żadna pozycja tego dokumentu nie ma jeszcze artykułu."
 
 msgid "No lines"
 msgstr "Brak wierszy"
@@ -31548,6 +31551,9 @@ msgstr "Część jest wytwarzana jako swoje własne zadanie, gdy rodzic, który 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Część jest pobierana z istniejących zapasów, gdy jego rodzic jest zbudowany - bez nowego zadania lub zamówienia zakupu."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Numerów części tego dokumentu nie można teraz zmienić."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Kwota z płatności za dostawę, którą rząd zatrzymuje w celu odzyskania swoich płatności za postęp prac lub uwarunkowanych wykonaniem: stawka likwidacji razy faktura, ale nigdy nie więcej niż pozostałe finansowanie do likwidacji."

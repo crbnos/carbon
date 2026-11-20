@@ -17439,8 +17439,8 @@ msgstr "Доставка строки"
 msgid "Line Status"
 msgstr "Статус строки"
 
-msgid "Line Supplier Part ID"
-msgstr "ID детали поставщика в строке"
+msgid "Line Supplier Part ID Row"
+msgstr "Строка ID детали поставщика в строке"
 
 msgid "Line Supplier Part Number"
 msgstr "Номер детали поставщика в строке"
@@ -20204,6 +20204,9 @@ msgstr "Ни один запуск аренды еще не проведен."
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Элемент отпуска не установлен. В косвенном проекте откройте элемент для отпуска и включите отпуск."
+
+msgid "No line of this document has an item yet."
+msgstr "Ни в одной строке этого документа пока нет номенклатуры."
 
 msgid "No lines"
 msgstr "Нет строк"
@@ -31548,6 +31551,9 @@ msgstr "Деталь производится как собственное за
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Деталь берется из существующего запаса при производстве ее родительского элемента — без создания нового производственного заказа или заказа поставщику."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Номера деталей этого документа сейчас изменить нельзя."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Часть платежа по доставке, которую правительство удерживает для возмещения авансовых платежей или платежей по выполнению: произведение ставки ликвидации и суммы счета-фактуры, но не более оставшегося неликвидированного финансирования."

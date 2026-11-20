@@ -131,7 +131,7 @@ A line copy works as follows:
 | Levels | Company default plus a nullable customer override, as starting values for a new line | Resolved with the user (Q3, Q10). Precedent: `customer.defaultCc` over `companySettings.defaultCustomerCc`. |
 | Stamp | A plain BEFORE INSERT trigger on each line table fills a null `partNumberDisplay` from the document's party | The line tables have insert paths in more than 6 files. A trigger covers all of them. Precedent: `rentalAgreement_customer_change_clears_contacts` (`20261104063711`). Event-system interceptors return void and cannot change the row, so they do not fit. |
 | Trigger security | `SECURITY DEFINER`, `SET search_path = public`, every read scoped by `NEW."companyId"` | A caller who can write the line must get the stamp even when RLS hides the customer or `companySettings` row (a key with narrow scopes). A trigger function is not callable as an RPC. Same choice as the rental trigger. |
-| Restore and demo data | Every trigger returns at once when `app.sync_in_progress` or `app.backup_load` is set. Company restore and import set `app.backup_load`. | A company restore must keep a legacy line's null. Restore and import load in replica mode when the connection allows it, else with triggers on (`company-backup.ts`). The demo dataset tiers set the values themselves. |
+| Restore and demo data | Every trigger returns at once when `app.backup_load` is set. Company restore and import set it. A demo dataset apply and an accounting sync do not, so their lines are stamped. | A company restore must keep a legacy line's null. Restore and import load in replica mode when the connection allows it, else with triggers on (`company-backup.ts`). The dataset tiers insert parties before lines, so the triggers give seeded lines the values they give any line. |
 | Conversions | `convertDocument` copies each line's `partNumberDisplay`: quote line to order line, order line to invoice line (also through `shipmentToSalesInvoice`), order line to shipment line. The quote revision copy (`quoteToQuote`) already copies every line column. | A converted line prints like its source. The trigger only fills a null, so a copied value wins. |
 | Customer change | An AFTER UPDATE OF `customerId` trigger on `quote`, `salesOrder`, `salesInvoice` and `shipment` stamps the new customer's choice onto every line that has a value | The stamps came from the old customer. A legacy line stays legacy. Precedent: contracts and rental agreements reset customer defaults on a customer change. |
 | New line on a legacy document | The new line gets a stamp, like any new line | The rule is per line. A user who wants one format on the whole document sets it in the Edit document modal. |
@@ -186,8 +186,7 @@ ALTER TABLE "salesOrderLine"
 CREATE OR REPLACE FUNCTION stamp_sales_order_line_part_number_display()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF current_setting('app.sync_in_progress', true) = 'true'
-    OR current_setting('app.backup_load', true) = 'on'
+  IF current_setting('app.backup_load', true) = 'on'
     OR NEW."partNumberDisplay" IS NOT NULL THEN
     RETURN NEW;
   END IF;
@@ -222,7 +221,7 @@ The migration also adds:
 
 Backups: the new columns are not row ids, so `ID_REF_COLUMNS` and `TABLE_RENAMES` need no entry. A backup taken before the change restores with null values, which print as legacy lines. `company-restore.ts` and `company-import.ts` (`packages/jobs`) set `app.backup_load = 'on'` for the load, so the triggers skip it when replica mode is not available.
 
-Demo data: the dataset tiers run with `app.sync_in_progress`, so the triggers skip them. One step after the tier loop in `applyDatasetTiers` sets `partNumberDisplay` on every seeded line and the line copy on the seeded order lines. One customer in each dataset that has customers gets an override. The `COVERAGE` table in `datasets/validate.ts` gets an entry for it. The `motor-line` walkthrough has no customers, so it has no override.
+Demo data: the triggers stamp the seeded lines and copy the numbers as they do for any line. One customer in each dataset that has customers gets an override. The `COVERAGE` table in `datasets/validate.ts` gets an entry for it. The `motor-line` walkthrough has no customers, so it has no override.
 
 ## API / Service Changes
 
@@ -333,7 +332,7 @@ Direction: the user asked that every Part I decision hold for Part II (2026-11-1
 | A line with no copy reads the live cross-reference | Already true: `purchaseOrderLines.supplierPartIdFromSupplier`. |
 | A party change applies the new party's choice and line numbers | Same, for a supplier change on a Draft purchase order. |
 | Separate merge fields keep their value whatever the choice | `line.supplierPartId` keeps its value on item lines again. The purchase order gets `line.itemId`. |
-| The triggers skip under `app.sync_in_progress` and `app.backup_load` | Same. |
+| The triggers skip only under `app.backup_load` | Same. |
 
 ### Part II design
 
@@ -378,7 +377,7 @@ Part II acceptance criteria. Fixture: item P000123 Rev B; supplier S with suppli
 | An existing purchase order prints 2 rows on the PDF, and a new one prints one line | Low | It follows P2 and P5. The Edit document modal changes a document that is not locked. |
 | A new line on a legacy document prints in the new format, beside legacy lines | Low | The rule is per line. The Edit document modal sets every line at once. |
 | An insert path sets a wrong display choice on purpose | Low | The trigger fills only a null. The conversions copy the source on purpose. |
-| A restore or a dataset apply stamps legacy lines | Low | The triggers skip under `app.sync_in_progress` and `app.backup_load`. An acceptance criterion tests the restore. |
+| A restore stamps legacy lines | Low | The triggers skip under `app.backup_load`. An acceptance criterion tests the restore. |
 | A new line with no customer part number at creation picks one up later | Low | It matches today's behavior and the purchase order fallback. |
 | The customer change trigger rewrites lines on a locked document through the API | Low | A customer change on a locked document is already a change of the record. The trigger keeps the lines consistent with the new customer. |
 | A view recreation drops a column or the invoker option | Med | Copy each body from its newest migration. The `no-view-without-invoker` and `function-redefinition-keeps-changes` checks run. |
@@ -429,3 +428,4 @@ Part II:
   5. The quote revision and the emails need no change.
   6. One dataset step stamps the seeded lines.
 - 2026-11-19: Review. The user kept the per-line design with no document column. P3 became `Theirs First`. P4 and P5 resolved. Part II design written. Part II is built first.
+- 2026-11-21: Strict review fixes. The triggers skip only `app.backup_load`; the dataset helper is gone. The migrations are dated after main's newest. A restamp writes only the lines whose values change. A purchase order's lines cannot change their choice in Needs Approval either (`purchaseOrderPartNumberRefusal`, inside `amendPurchaseOrder`). Edit document sets item lines only and is disabled on a document with none. A long part number wraps after its own separators.

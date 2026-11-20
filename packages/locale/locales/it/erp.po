@@ -17439,8 +17439,8 @@ msgstr "Spedizione Riga"
 msgid "Line Status"
 msgstr "Stato Riga"
 
-msgid "Line Supplier Part ID"
-msgstr "ID parte fornitore della riga"
+msgid "Line Supplier Part ID Row"
+msgstr "Riga ID parte fornitore della riga"
 
 msgid "Line Supplier Part Number"
 msgstr "Codice componente fornitore di riga"
@@ -20204,6 +20204,9 @@ msgstr "Ancora nessuna esecuzione di locazione è stata registrata."
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Nessun elemento di congedo è configurato. Su un progetto indiretto, apri l'elemento per il tempo libero e attiva Congedo."
+
+msgid "No line of this document has an item yet."
+msgstr "Nessuna riga di questo documento ha ancora un articolo."
 
 msgid "No lines"
 msgstr "Nessuna riga"
@@ -31548,6 +31551,9 @@ msgstr "La parte viene fabbricata come suo proprio lavoro quando il genitore che
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La parte viene presa da scorte esistenti quando il suo genitore viene costruito - nessun nuovo lavoro o ordine di acquisto."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "I codici parte di questo documento non possono cambiare ora."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "La parte del pagamento di consegna che il governo trattiene per recuperare i pagamenti progressivi o i pagamenti a prestazione: il tasso di liquidazione per la fattura, mai più del finanziamento ancora non liquidato."

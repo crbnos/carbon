@@ -747,7 +747,7 @@ export default function PurchasingSettingsRoute() {
 
         <PartNumbersCard
           party="supplier"
-          value={companySettings.supplierPartNumberDisplay ?? "Theirs First"}
+          value={companySettings.supplierPartNumberDisplay}
         />
 
         <SettingsSectionHeader>

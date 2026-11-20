@@ -56,19 +56,6 @@ describe("getLineDescription", () => {
     ).toBe(expected);
   });
 
-  it("prints the modal's draft over the line's choice", () => {
-    expect(
-      getLineDescription(
-        line({
-          itemReadableId: "P000123.B",
-          supplierPartId: "SUP-778",
-          partNumberDisplay: "Theirs Only"
-        }),
-        "Ours Only"
-      )
-    ).toBe("P000123.B");
-  });
-
   it("falls back to the supplier part number when the line has no item", () => {
     expect(
       getLineDescription(

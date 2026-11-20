@@ -12,16 +12,14 @@ ALTER TABLE "supplier" ADD COLUMN IF NOT EXISTS "partNumberDisplay" "partNumberD
 ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "partNumberDisplay" "partNumberDisplay";
 
 -- Fills a new line's display choice from its order's supplier: the supplier's
--- override, else the company default. A dataset apply (app.dataset_apply)
--- and a backup load (app.backup_load) bring their own values, so it skips
--- them. SECURITY DEFINER so a caller who may write the line gets the stamp even
+-- override, else the company default. A backup load (app.backup_load) brings
+-- its own values, so it skips it. SECURITY DEFINER so a caller who may write the line gets the stamp even
 -- when RLS hides the supplier or the settings row. A trigger function is not
 -- callable as an RPC.
 CREATE OR REPLACE FUNCTION stamp_purchase_order_line_part_number_display()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF NEW."partNumberDisplay" IS NOT NULL
-    OR current_setting('app.dataset_apply', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
@@ -49,8 +47,7 @@ CREATE TRIGGER "purchaseOrderLine_stamp_part_number_display"
 CREATE OR REPLACE FUNCTION copy_purchase_order_line_supplier_part()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF current_setting('app.dataset_apply', true) = 'true'
-    OR current_setting('app.backup_load', true) = 'on' THEN
+  IF current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
   IF TG_OP = 'INSERT' AND NEW."supplierPartId" IS NOT NULL THEN
@@ -83,14 +80,14 @@ CREATE TRIGGER "purchaseOrderLine_copy_supplier_part"
 -- A supplier change gives every line that has a display choice the new
 -- supplier's value; a legacy line keeps its null. Every line also takes the new
 -- supplier's part number, so an order never prints another supplier's numbers.
+-- A line whose values do not change is not written, so it gets no audit entry.
 CREATE OR REPLACE FUNCTION restamp_supplier_part_number_display()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_display "partNumberDisplay";
   v_user TEXT := COALESCE(NEW."updatedBy", NEW."createdBy");
 BEGIN
-  IF current_setting('app.dataset_apply', true) = 'true'
-    OR current_setting('app.backup_load', true) = 'on' THEN
+  IF current_setting('app.backup_load', true) = 'on' THEN
     RETURN NULL;
   END IF;
   v_display := COALESCE(
@@ -100,15 +97,24 @@ BEGIN
       WHERE cs."id" = NEW."companyId")
   );
   UPDATE "purchaseOrderLine" pl
-  SET "partNumberDisplay" =
-        CASE WHEN pl."partNumberDisplay" IS NULL THEN NULL ELSE v_display END,
-      "supplierPartId" = (
-        SELECT sp."supplierPartId" FROM "supplierPart" sp
-        WHERE sp."supplierId" = NEW."supplierId"
-          AND sp."itemId" = pl."itemId" AND sp."companyId" = pl."companyId"),
+  SET "partNumberDisplay" = n."partNumberDisplay",
+      "supplierPartId" = n."supplierPartId",
       "updatedBy" = v_user,
       "updatedAt" = NOW()
-  WHERE pl."purchaseOrderId" = NEW."id" AND pl."companyId" = NEW."companyId";
+  FROM (
+    SELECT l."id",
+      CASE WHEN l."partNumberDisplay" IS NULL THEN NULL ELSE v_display END
+        AS "partNumberDisplay",
+      (SELECT sp."supplierPartId" FROM "supplierPart" sp
+        WHERE sp."supplierId" = NEW."supplierId"
+          AND sp."itemId" = l."itemId" AND sp."companyId" = l."companyId")
+        AS "supplierPartId"
+    FROM "purchaseOrderLine" l
+    WHERE l."purchaseOrderId" = NEW."id" AND l."companyId" = NEW."companyId"
+  ) n
+  WHERE pl."id" = n."id" AND pl."companyId" = NEW."companyId"
+    AND (pl."partNumberDisplay" IS DISTINCT FROM n."partNumberDisplay"
+      OR pl."supplierPartId" IS DISTINCT FROM n."supplierPartId");
   RETURN NULL;
 END;
 $$;

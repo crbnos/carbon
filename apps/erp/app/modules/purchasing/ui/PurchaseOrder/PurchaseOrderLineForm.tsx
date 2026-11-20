@@ -84,8 +84,8 @@ import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   isPurchaseOrderEditLocked,
-  isPurchaseOrderLocked,
-  purchaseOrderLineValidator
+  purchaseOrderLineValidator,
+  purchaseOrderPartNumberRefusal
 } from "~/modules/purchasing/purchasing.models";
 import type {
   PurchaseOrder,
@@ -162,10 +162,8 @@ const PurchaseOrderLineForm = ({
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
-  // A sent order keeps printing the part numbers it was sent with.
-  const isPartNumberDisplayLocked = isPurchaseOrderLocked(
-    routeData?.purchaseOrder?.status
-  );
+  const isPartNumberDisplayLocked =
+    purchaseOrderPartNumberRefusal(routeData?.purchaseOrder?.status) !== null;
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.purchaseOrderLineType as ItemType
@@ -776,8 +774,8 @@ const PurchaseOrderLineForm = ({
                         />
 
                         {/* Empty on a new line: the supplier's choice, else the
-                            company default. A saved line keeps a value, so its
-                            select has nothing to clear. */}
+                            company default. A save never clears a saved line's
+                            choice, so its select has nothing to clear. */}
                         <PartNumberDisplay
                           party="supplier"
                           name="partNumberDisplay"
