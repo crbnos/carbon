@@ -3358,6 +3358,70 @@ export async function getTrackedEntitiesByJobId(
     .is("attributes ->> Split From Entity ID", null);
 }
 
+/** How many of a job's tracking numbers the job page shows as editable fields. */
+export const JOB_TRACKED_ENTITY_PREVIEW_LIMIT = 10;
+
+/**
+ * The first tracking numbers of a job, with how many it has and the last one,
+ * for the job page. A serial job holds one row per unit, and a page that drew
+ * every one of a 2,000-unit job's serials as an input froze the browser.
+ */
+export async function getJobTrackedEntitiesPreview(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  const jobMakeMethod = await client
+    .from("jobMakeMethod")
+    .select("id, companyId")
+    .eq("jobId", jobId)
+    .is("parentMaterialId", null)
+    .single();
+  if (jobMakeMethod.error) {
+    return {
+      data: null,
+      count: 0,
+      lastReadableId: null,
+      error: jobMakeMethod.error
+    };
+  }
+
+  const { id: makeMethodId, companyId } = jobMakeMethod.data;
+
+  // Unit-axis order, as getTrackedEntitiesByMakeMethodId. An exact count is
+  // cheap here: it counts one job's rows, never the company's.
+  const [first, last] = await Promise.all([
+    client
+      .from("trackedEntity")
+      .select("*", { count: "exact" })
+      .eq("attributes ->> Job Make Method", makeMethodId)
+      .eq("companyId", companyId)
+      .is("attributes ->> Split Entity ID", null)
+      .is("attributes ->> Split From Entity ID", null)
+      .order("createdAt", { ascending: true })
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(JOB_TRACKED_ENTITY_PREVIEW_LIMIT),
+    client
+      .from("trackedEntity")
+      .select("readableId")
+      .eq("attributes ->> Job Make Method", makeMethodId)
+      .eq("companyId", companyId)
+      .is("attributes ->> Split Entity ID", null)
+      .is("attributes ->> Split From Entity ID", null)
+      .order("createdAt", { ascending: false })
+      .order("readableId", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+  ]);
+
+  return {
+    data: first.data,
+    count: first.count ?? first.data?.length ?? 0,
+    lastReadableId: last.data?.[0]?.readableId ?? null,
+    error: first.error ?? last.error
+  };
+}
+
 /**
  * What a job has already received to inventory: its received quantity and the
  * tracked entities its receipts posted. One statement, so both come from the

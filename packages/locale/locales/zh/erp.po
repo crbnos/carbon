@@ -28674,6 +28674,12 @@ msgstr "显示 {0}（共 {1}）。搜索以缩小范围。"
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "显示 {0} / {totalFiltered} — 优化您的搜索"
 
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
+
 msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
 

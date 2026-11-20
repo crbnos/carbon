@@ -28674,6 +28674,12 @@ msgstr "{0} von {1} werden angezeigt. Suchen Sie, um die Liste einzugrenzen."
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Zeige {0} von {totalFiltered} — verfeinern Sie Ihre Suche"
 
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
+
 msgid "Showing in {parentCurrency}"
 msgstr "Anzeige in {parentCurrency}"
 
