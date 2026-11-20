@@ -21,6 +21,7 @@ import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   databaseTasks,
   serviceSchemasReady,
+  waitForApi,
   waitForPostgres,
   waitForServiceSchemas
 } from "../services/migrations.js";
@@ -43,6 +44,9 @@ const MIGRATION_SERVICES: Record<StackMode, string[]> = {
   isolated: ["postgres", "gotrue", "storage", "realtime"],
   shared: ["gotrue", "realtime"]
 };
+
+// What swagger reads: PostgREST through the gateway.
+const API_SERVICES = ["postgrest", "api-gw"];
 
 // Migrate the worktree's database. Against the running stack when its
 // database answers; otherwise boot only the services whose schemas the
@@ -143,15 +147,14 @@ async function migrateStandalone(stack: Stack, regen: boolean) {
         {
           migrate: true,
           regen,
-          swagger: false
+          swagger: true,
+          startApi: async () => {
+            await bootStack(stack, { services: API_SERVICES });
+            await waitForApi(stack.ports!.PORT_API, readDevJwt().serviceKey);
+          }
         }
       )
     );
-    if (regen) {
-      log.warn(
-        "swagger skipped — requires the API (run `crbn up` for full regen)"
-      );
-    }
   } finally {
     detach();
     log.info("stopping migration services");

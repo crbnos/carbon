@@ -214,8 +214,11 @@ export function databaseTasks(
   opts: {
     migrate: boolean;
     regen: boolean;
-    /** Swagger reads the running API, so only `crbn up` and a running stack have it. */
+    /** Swagger reads the running API: `crbn up`, a running stack, or `startApi`. */
     swagger: boolean;
+    /** Boots the API for swagger when none runs. Called after the migrations,
+     *  so PostgREST's first schema cache is the migrated schema. */
+    startApi?: () => Promise<void>;
     /** Default: with `migrate`. A restore sets it: its database has the
      *  table whether it migrates or not, and `--mode prod` keeps the source's. */
     configRow?: boolean;
@@ -259,6 +262,7 @@ export function databaseTasks(
         // migrated (a branch switch, a stash-pop, reverted generated files).
         await execa("pnpm", ["db:types"], { cwd: root });
         if (!opts.swagger || !applied) return "types refreshed";
+        await opts.startApi?.();
         await execa("pnpm", ["generate:swagger"], { cwd: root });
         return "types + swagger refreshed";
       }
