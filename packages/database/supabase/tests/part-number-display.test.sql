@@ -15,6 +15,7 @@ DECLARE
   v_line text; v_kept_line text; v_display "partNumberDisplay"; v_part text;
   v_customer text; v_override_customer text; v_quote text; v_so text;
   v_invoice text; v_shipment text; v_legacy_line text; v_revision text;
+  v_invoice_line text; v_invoice_shipment text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Part number display test', 'system') RETURNING id INTO v_group;
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
@@ -164,34 +165,44 @@ BEGIN
   SELECT "partNumberDisplay", "customerPartId" INTO v_display, v_part FROM "salesOrderLine" WHERE id = v_legacy_line;
   ASSERT v_display IS NULL AND v_part = 'C-200', 'A customer change keeps a legacy order line legacy and copies the number';
 
-  -- Invoice and shipment lines: the stamp, and the copy-else-live columns of their views.
+  -- Invoice and shipment lines: the stamp, and the views read the order line's
+  -- copy while the document's customer is the order's, else the cross-reference.
+  UPDATE "customerPartToItem" SET "customerPartId" = 'C-201' WHERE "customerId" = v_override_customer AND "itemId" = v_item;
   INSERT INTO "salesInvoice" ("invoiceId", "customerId", "currencyCode", "companyId", "createdBy")
-    VALUES ('PND-INV', v_customer, 'USD', v_company, 'system') RETURNING id INTO v_invoice;
+    VALUES ('PND-INV', v_override_customer, 'USD', v_company, 'system') RETURNING id INTO v_invoice;
   INSERT INTO "salesInvoiceLine" ("invoiceId", "invoiceLineType", "itemId", "unitOfMeasureCode", "salesOrderLineId", "companyId", "createdBy")
-    VALUES (v_invoice, 'Part', v_item, 'EA', v_line, v_company, 'system') RETURNING id INTO v_kept_line;
-  ASSERT (SELECT "partNumberDisplay" FROM "salesInvoiceLine" WHERE id = v_kept_line) = 'Ours First',
-    'A new invoice line takes the customer''s choice, else the default';
-  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_kept_line) = 'C-200',
+    VALUES (v_invoice, 'Part', v_item, 'EA', v_line, v_company, 'system') RETURNING id INTO v_invoice_line;
+  ASSERT (SELECT "partNumberDisplay" FROM "salesInvoiceLine" WHERE id = v_invoice_line) = 'Theirs Only',
+    'A new invoice line takes the customer''s choice';
+  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_invoice_line) = 'C-200',
     'salesInvoiceLines reads the order line''s copy';
   INSERT INTO "salesInvoiceLine" ("invoiceId", "invoiceLineType", "itemId", "unitOfMeasureCode", "companyId", "createdBy")
     VALUES (v_invoice, 'Part', v_item, 'EA', v_company, 'system') RETURNING id INTO v_kept_line;
-  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_kept_line) = 'C-101',
-    'salesInvoiceLines reads the live cross-reference when no order line holds a copy';
-  UPDATE "salesInvoice" SET "customerId" = v_override_customer WHERE id = v_invoice;
-  ASSERT (SELECT "partNumberDisplay" FROM "salesInvoiceLine" WHERE id = v_kept_line) = 'Theirs Only',
+  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_kept_line) = 'C-201',
+    'salesInvoiceLines reads the cross-reference when no order line holds a copy';
+  UPDATE "salesInvoice" SET "customerId" = v_customer WHERE id = v_invoice;
+  ASSERT (SELECT "partNumberDisplay" FROM "salesInvoiceLine" WHERE id = v_invoice_line) = 'Ours First',
     'An invoice customer change restamps its lines';
+  ASSERT (SELECT "customerPartId" FROM "salesInvoiceLines" WHERE id = v_invoice_line) = 'C-101',
+    'salesInvoiceLines reads the new customer''s cross-reference once it is not the order''s';
+  UPDATE "salesInvoice" SET "customerId" = v_override_customer WHERE id = v_invoice;
 
   INSERT INTO shipment ("shipmentId", "customerId", "sourceDocument", "sourceDocumentId", "companyId", "createdBy")
-    VALUES ('PND-SH', v_customer, 'Sales Order', v_so, v_company, 'system') RETURNING id INTO v_shipment;
+    VALUES ('PND-SH', v_override_customer, 'Sales Order', v_so, v_company, 'system') RETURNING id INTO v_shipment;
   INSERT INTO "shipmentLine" ("shipmentId", "itemId", "unitOfMeasure", "unitPrice", "lineId", "companyId", "createdBy")
     VALUES (v_shipment, v_item, 'EA', 0, v_line, v_company, 'system') RETURNING id INTO v_kept_line;
-  ASSERT (SELECT "partNumberDisplay" FROM "shipmentLine" WHERE id = v_kept_line) = 'Ours First',
-    'A new shipment line takes the customer''s choice, else the default';
+  ASSERT (SELECT "partNumberDisplay" FROM "shipmentLine" WHERE id = v_kept_line) = 'Theirs Only',
+    'A new shipment line takes the customer''s choice';
   ASSERT (SELECT "customerPartId" FROM "shipmentLines" WHERE id = v_kept_line) = 'C-200',
     'shipmentLines reads the order line''s copy';
-  UPDATE shipment SET "customerId" = v_override_customer WHERE id = v_shipment;
-  ASSERT (SELECT "partNumberDisplay" FROM "shipmentLine" WHERE id = v_kept_line) = 'Theirs Only',
-    'A shipment customer change restamps its lines';
+
+  -- A shipment a posted invoice made names the invoice line; the view follows it to the order line.
+  INSERT INTO shipment ("shipmentId", "customerId", "sourceDocument", "sourceDocumentId", "companyId", "createdBy")
+    VALUES ('PND-SH-INV', v_override_customer, 'Sales Invoice', v_invoice, v_company, 'system') RETURNING id INTO v_invoice_shipment;
+  INSERT INTO "shipmentLine" ("shipmentId", "itemId", "unitOfMeasure", "unitPrice", "lineId", "companyId", "createdBy")
+    VALUES (v_invoice_shipment, v_item, 'EA', 0, v_invoice_line, v_company, 'system') RETURNING id INTO v_legacy_line;
+  ASSERT (SELECT "customerPartId" FROM "shipmentLines" WHERE id = v_legacy_line) = 'C-200',
+    'shipmentLines reads the order line''s copy through the invoice line';
 
   -- A customer change that changes nothing on a line does not write it.
   UPDATE "customer" SET "partNumberDisplay" = 'Theirs Only' WHERE id = v_customer;
@@ -230,7 +241,7 @@ BEGIN
   INSERT INTO "salesOrderLine" ("salesOrderId", "salesOrderLineType", "itemId", "companyId", "createdBy")
     VALUES (v_so, 'Part', v_item, v_company, 'system') RETURNING id INTO v_line;
   SELECT "partNumberDisplay", "customerPartId" INTO v_display, v_part FROM "salesOrderLine" WHERE id = v_line;
-  ASSERT v_display = 'Theirs Only' AND v_part = 'C-200',
+  ASSERT v_display = 'Theirs Only' AND v_part = 'C-201',
     format('A dataset apply or sync sales order line is stamped and copied, got %s %s', v_display, v_part);
   PERFORM set_config('app.dataset_apply', '', true);
   PERFORM set_config('app.sync_in_progress', '', true);
