@@ -16,6 +16,7 @@ import {
   convertUnitPrice,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   decideApprovalRequest,
@@ -6667,6 +6668,12 @@ export const createPurchaseOrderLine = defineServiceFn({
     requiredDate: z.string().optional(),
     storageUnitId: z.string().optional(),
     supplierPartId: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers the line prints. Omitted on a new line: the supplier's choice, else the company default."
+      )
+      .optional(),
     supplierShippingCost: z.number().optional(),
     supplierTaxAmount: z.number().optional(),
     supplierUnitPrice: z.number().optional(),
@@ -6704,7 +6711,10 @@ export const createPurchaseOrderLine = defineServiceFn({
             payload(ctx, input).forCreate() as never
           )
         ),
-      { restatesStatus: true }
+      {
+        restatesStatus: true,
+        setsPartNumberDisplay: input.partNumberDisplay !== undefined
+      }
     );
   }
 });
@@ -6748,6 +6758,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
       requiredDate: z.string().optional(),
       storageUnitId: z.string().optional(),
       supplierPartId: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe("Which part numbers the line prints. Omitted: unchanged.")
+        .optional(),
       supplierShippingCost: z.number().optional(),
       supplierTaxAmount: z.number().optional(),
       supplierUnitPrice: z.number().optional(),
@@ -6823,7 +6837,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
             promisedDate: input.promisedDate
           }
         },
-        restatesStatus: true
+        restatesStatus: true,
+        setsPartNumberDisplay:
+          input.partNumberDisplay !== undefined &&
+          input.partNumberDisplay !== line.data.partNumberDisplay
       }
     );
   }
@@ -6936,6 +6953,13 @@ export const createSupplier = defineServiceFn({
     currencyCode: z.string().optional(),
     purchasingContactId: z.string().optional(),
     website: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers this supplier's new purchase order lines print. Null uses the company default."
+      )
+      .nullable()
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6977,6 +7001,13 @@ export const updateSupplier = defineServiceFn({
       currencyCode: z.string().optional(),
       purchasingContactId: z.string().optional(),
       website: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe(
+          "Which part numbers this supplier's new purchase order lines print. Null clears the supplier's choice, so the company default applies."
+        )
+        .nullable()
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()

@@ -7246,6 +7246,12 @@ msgstr "Choose where it goes"
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+
 msgid "Choose your style"
 msgstr "Choose your style"
 
@@ -17433,8 +17439,11 @@ msgstr "Line Shipping"
 msgid "Line Status"
 msgstr "Line Status"
 
-msgid "Line Supplier Part ID"
-msgstr "Line Supplier Part ID"
+msgid "Line Supplier Part ID Row"
+msgstr "Line Supplier Part ID Row"
+
+msgid "Line Supplier Part Number"
+msgstr "Line Supplier Part Number"
 
 msgid "Line Total"
 msgstr "Line Total"
@@ -18621,6 +18630,9 @@ msgstr "Missing Time"
 
 msgid "Missing:"
 msgstr "Missing:"
+
+msgid "Mixed"
+msgstr "Mixed"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20193,6 +20205,9 @@ msgstr "No lease run is posted yet"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 
+msgid "No line of this document has an item yet."
+msgstr "No line of this document has an item yet."
+
 msgid "No lines"
 msgstr "No lines"
 
@@ -20953,6 +20968,9 @@ msgstr "not set in company settings"
 
 msgid "Not set up"
 msgstr "Not set up"
+
+msgid "Not set: prints as before"
+msgstr "Not set: prints as before"
 
 msgid "Not started"
 msgstr "Not started"
@@ -22078,6 +22096,15 @@ msgstr "Other Type"
 msgid "Otherwise"
 msgstr "Otherwise"
 
+msgid "Our part number only"
+msgstr "Our part number only"
+
+msgid "Our part number, then the customer's"
+msgstr "Our part number, then the customer's"
+
+msgid "Our part number, then the supplier's"
+msgstr "Our part number, then the supplier's"
+
 msgid "Out"
 msgstr "Out"
 
@@ -22395,6 +22422,15 @@ msgstr "Part lead times update from posted purchase receipts."
 
 msgid "Part Number"
 msgstr "Part Number"
+
+msgid "Part Numbers"
+msgstr "Part Numbers"
+
+msgid "Part Numbers on Documents"
+msgstr "Part Numbers on Documents"
+
+msgid "Part numbers on documents updated"
+msgstr "Part numbers on documents updated"
 
 msgid "Part Supersession"
 msgstr "Part Supersession"
@@ -28181,6 +28217,9 @@ msgstr "Set Version {0} as Active Version?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Set your default location in profile settings to pick a storage unit."
 
+msgid "Sets every line of this document when you save."
+msgstr "Sets every line of this document when you save."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Sets the labor warranty of a serial when it ships"
 
@@ -29898,6 +29937,9 @@ msgstr "Supplier Location"
 msgid "Supplier Name"
 msgstr "Supplier Name"
 
+msgid "Supplier or company default"
+msgstr "Supplier or company default"
+
 msgid "Supplier Order Number"
 msgstr "Supplier Order Number"
 
@@ -30880,6 +30922,12 @@ msgstr "The customer whose orders this portal link shows. The link has no sign-i
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 
+msgid "The customer's part number only"
+msgstr "The customer's part number only"
+
+msgid "The customer's part number, then ours"
+msgstr "The customer's part number, then ours"
+
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 
@@ -31296,6 +31344,9 @@ msgstr "The lifecycle state of this supplier — Active, Inactive, Pending Appro
 msgid "The lines could not be loaded."
 msgstr "The lines could not be loaded."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "The lines print different part numbers. A pick sets every line."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 
@@ -31500,6 +31551,9 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "The part numbers of this document cannot change now."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
@@ -31874,6 +31928,12 @@ msgstr "The supplier's own reference for this order (their SO number on their sy
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
+
+msgid "The supplier's part number only"
+msgstr "The supplier's part number only"
+
+msgid "The supplier's part number, then ours"
+msgstr "The supplier's part number, then ours"
 
 msgid "The supplier's return authorization number"
 msgstr "The supplier's return authorization number"

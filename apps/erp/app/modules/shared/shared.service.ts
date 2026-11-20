@@ -11154,6 +11154,11 @@ export async function convertDocument(
                   : (line.item?.type as "Part"),
                 description: line.description,
                 itemId: isIndirect ? null : line.itemId,
+                // The number the supplier quoted; without one the line copies
+                // the supplier part's number.
+                supplierPartId: isIndirect
+                  ? null
+                  : line.supplierPartId?.trim() || null,
                 accountId: isIndirect ? line.accountId : null,
                 costCenterId: isIndirect ? line.costCenterId : null,
                 locationId: isIndirect ? null : employeeJob.data?.locationId,

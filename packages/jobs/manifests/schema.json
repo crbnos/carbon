@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261119125737",
+  "schemaVersion": "20261121061455",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-19T13:02:33.407Z",
+  "exportedAt": "2026-11-20T23:20:28.597Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -521,7 +521,8 @@
         "autoPickingListOnRelease",
         "deliveryDateControl",
         "receiptBatchNumbersFromPurchaseOrder",
-        "sequenceWeekNumbering"
+        "sequenceWeekNumbering",
+        "supplierPartNumberDisplay"
       ]
     },
     {
@@ -7560,7 +7561,8 @@
         "supplierPartId",
         "projectId",
         "projectElementId",
-        "planningGroupId"
+        "planningGroupId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8531,7 +8533,8 @@
         "supplierStatus",
         "intercompanyCompanyId",
         "readableId",
-        "supplierStageId"
+        "supplierStageId",
+        "partNumberDisplay"
       ]
     },
     {

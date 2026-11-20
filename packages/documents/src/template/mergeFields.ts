@@ -306,7 +306,17 @@ const LINE = {
   descriptionText: value("line.description", "Line Description", "Line"),
   details: value("line.details", "Line Details", "Line"),
   operation: value("line.operation", "Line Operation", "Line"),
-  supplierPartId: value("line.supplierPartId", "Line Supplier Part ID", "Line"),
+  // The row under the title, filled only when the title leaves the number out.
+  supplierPartId: value(
+    "line.supplierPartId",
+    "Line Supplier Part ID Row",
+    "Line"
+  ),
+  supplierPartNumber: value(
+    "line.supplierPartNumber",
+    "Line Supplier Part Number",
+    "Line"
+  ),
   item: value("line.item", "Line Item ID", "Line"),
   itemId: value("line.itemId", "Item ID", "Line"),
   itemName: value("line.itemName", "Item Name", "Line"),
@@ -436,7 +446,9 @@ export const LINE_MERGE_FIELDS = {
     LINE.number,
     LINE.description,
     LINE.details,
+    LINE.itemId,
     LINE.supplierPartId,
+    LINE.supplierPartNumber,
     LINE.operation,
     LINE.quantity,
     LINE.unit,

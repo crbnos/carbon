@@ -7246,6 +7246,12 @@ msgstr "Hedefini seçin"
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Stok kartları, teklifler ve iş emirlerindeki malzeme ağacı gezgininin her satırı açıklama veya stok kartı kimliğiyle etiketleyip etiketlemeyeceğini seçin."
 
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Yeni satın alma siparişi satırlarında hangi parça numaralarının yazdırılacağını seçin. Tedarikçi bu seçimi geçersiz kılabilir ve her satır bunu değiştirebilir."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Yeni teklif, sipariş, fatura ve irsaliye satırlarında hangi parça numaralarının yazdırılacağını seçin. Müşteri bu seçimi geçersiz kılabilir."
+
 msgid "Choose your style"
 msgstr "Stilini seçin"
 
@@ -17433,8 +17439,11 @@ msgstr "Satır Nakliyesi"
 msgid "Line Status"
 msgstr "Satır Durumu"
 
-msgid "Line Supplier Part ID"
-msgstr "Satır tedarikçi parça kimliği"
+msgid "Line Supplier Part ID Row"
+msgstr "Satır tedarikçi parça kimliği satırı"
+
+msgid "Line Supplier Part Number"
+msgstr "Satır tedarikçi parça numarası"
 
 msgid "Line Total"
 msgstr "Satır Toplamı"
@@ -18621,6 +18630,9 @@ msgstr "Eksik Zaman"
 
 msgid "Missing:"
 msgstr "Eksik:"
+
+msgid "Mixed"
+msgstr "Karışık"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20193,6 +20205,9 @@ msgstr "Henüz kiralama çalıştırması muhasebeleştirilmedi"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Hiçbir izin öğesi ayarlanmadı. Dolaylı bir projede, zaman kaydı öğesini açın ve İzni etkinleştirin."
 
+msgid "No line of this document has an item yet."
+msgstr "Bu belgenin hiçbir satırında henüz kalem yok."
+
 msgid "No lines"
 msgstr "Satır yok"
 
@@ -20953,6 +20968,9 @@ msgstr "Şirket ayarlarında ayarlanmadı"
 
 msgid "Not set up"
 msgstr "Kurulmadı"
+
+msgid "Not set: prints as before"
+msgstr "Ayarlanmadı: önceki gibi yazdırılır"
 
 msgid "Not started"
 msgstr "Başlanmadı"
@@ -22078,6 +22096,15 @@ msgstr "Diğer Tür"
 msgid "Otherwise"
 msgstr "Aksi takdirde"
 
+msgid "Our part number only"
+msgstr "Yalnızca bizim parça numaramız"
+
+msgid "Our part number, then the customer's"
+msgstr "Önce bizim parça numaramız, sonra müşterinin"
+
+msgid "Our part number, then the supplier's"
+msgstr "Önce bizim parça numaramız, sonra tedarikçinin"
+
 msgid "Out"
 msgstr "Dışı"
 
@@ -22395,6 +22422,15 @@ msgstr "Parça tedarik süreleri muhasebeleştirilmiş mal kabul belgelerinden g
 
 msgid "Part Number"
 msgstr "Parça Numarası"
+
+msgid "Part Numbers"
+msgstr "Parça numaraları"
+
+msgid "Part Numbers on Documents"
+msgstr "Belgelerde parça numaraları"
+
+msgid "Part numbers on documents updated"
+msgstr "Belgelerdeki parça numaraları güncellendi"
 
 msgid "Part Supersession"
 msgstr "Parça İkamesi"
@@ -28181,6 +28217,9 @@ msgstr "Sürüm {0}\"ü Aktif Sürüm Olarak Ayarla?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Bir depolama birimi seçmek için varsayılan konumunuzu profil ayarlarınızda belirleyin."
 
+msgid "Sets every line of this document when you save."
+msgstr "Kaydettiğinizde bu belgenin her satırını ayarlar."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Bir seri gönderildiğinde işçilik garantisini ayarlar"
 
@@ -29898,6 +29937,9 @@ msgstr "Tedarikçi Konumu"
 msgid "Supplier Name"
 msgstr "Tedarikçi Adı"
 
+msgid "Supplier or company default"
+msgstr "Tedarikçi veya şirket varsayılanı"
+
 msgid "Supplier Order Number"
 msgstr "Tedarikçi Sipariş Numarası"
 
@@ -30880,6 +30922,12 @@ msgstr "Bu portal bağlantısının siparişlerini gösterdiği müşteri. Bağl
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Bu belge için müşterinin kendi referansı - tipik olarak sistemindeki RFQ veya PO numarası; yazdırılabilir çıktıda görüntülenir ve bunun dönüştürüldüğü herhangi bir belgeye taşınır."
 
+msgid "The customer's part number only"
+msgstr "Yalnızca müşterinin parça numarası"
+
+msgid "The customer's part number, then ours"
+msgstr "Önce müşterinin parça numarası, sonra bizimki"
+
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "Müşterinin parça kimliği için revizyon etiketi, bizimkinden farklı olduğunda; çapraz referans düzeyinde sabitlenmiş, bizim revizyonumuzda değil."
 
@@ -31296,6 +31344,9 @@ msgstr "Bu Tedarikçinin yaşam döngüsü durumu — Aktif, Pasif, Onay Bekleme
 msgid "The lines could not be loaded."
 msgstr "Satırlar yüklenemedi."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "Satırlar farklı parça numaraları yazdırır. Yapılan bir seçim tüm satırları ayarlar."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Bir planlama grubu siparişinin bir bölümünden bir üyenin talebine bağlantı: Sipariş henüz işlem halindeyken Esnek (MRP bunu taşıyabilir), Alındıktan veya tamamlandıktan sonra Sert (asla taşınmaz), veya Planlayıcı bir nedenle ayarladığında El ile."
 
@@ -31500,6 +31551,9 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Bu belgenin parça numaraları şu anda değiştirilemez."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Teslimat ödemesinin, hükümetin ilerleme veya performansa dayalı ödemelerini geri almak için tuttuğu kısmı: tasfiye oranı çarpı fatura, hala tasfiye edilmemiş finansmanı aşmamak üzere."
@@ -31874,6 +31928,12 @@ msgstr "Bu sipariş için tedarikçinin kendi referansı (sistemlerindeki SO num
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Tedarikçinin ambalaj fişi veya sevkiyat numarası, denetim için kaydedilir; herhangi bir muhasebeleştirme mantığı tarafından kullanılmaz."
+
+msgid "The supplier's part number only"
+msgstr "Yalnızca tedarikçinin parça numarası"
+
+msgid "The supplier's part number, then ours"
+msgstr "Önce tedarikçinin parça numarası, sonra bizimki"
 
 msgid "The supplier's return authorization number"
 msgstr "Tedarikçinin iade yetkilendirme numarası"

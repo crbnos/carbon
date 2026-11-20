@@ -16,6 +16,7 @@ import type {
   Company,
   CompanySettings
 } from "../../../types";
+import type { PartNumberDisplay } from "../../../utils/part-number";
 
 /** Who approved the order, for the `order.approved*` merge fields. */
 export interface PurchaseOrderApproval {
@@ -52,6 +53,11 @@ export interface PurchaseOrderData {
   documentTitle: string;
   /** The printed document number; absent when the user hid it. */
   documentNumber?: string;
+  /**
+   * The Edit document modal's unsaved display choice for every line, on a
+   * preview or download. Absent: each line prints its own choice.
+   */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 export type BlockRenderer = (args: {

@@ -564,6 +564,9 @@ exports[`clicking a real PDF > opens the right text on the purchaseOrder sample 
     "SW-1045-50R": "lineItems:descriptionCell",
   },
   {
+    "(STEEL-BAR-50)": "lineItems:descriptionCell",
+  },
+  {
     "Steel Bar, 50mm": "lineItems:detailsCell",
   },
   {

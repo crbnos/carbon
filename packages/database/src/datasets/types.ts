@@ -106,6 +106,8 @@ export type SupplierSpec = {
   paymentTerm?: string;
   /** Omitted = the dataset-wide `foundation.partyAddress*`. */
   address?: PartyAddressSpec;
+  /** Omitted = the company default. */
+  partNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"];
 };
 
 export type ContactSpec = {

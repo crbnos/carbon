@@ -7246,6 +7246,12 @@ msgstr "Ziel auswählen"
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Wählen Sie, ob der Bill-of-Material-Explorer auf Artikeln, Angeboten und Fertigungsaufträgen jede Position mit ihrer Beschreibung oder ihrer Artikel-ID beschriftet."
 
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Wählen Sie, welche Teilenummern auf neuen Bestellpositionen gedruckt werden. Ein Lieferant kann diese Auswahl überschreiben, und jede Position kann sie ändern."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Wählen Sie, welche Teilenummern auf neuen Angebots-, Auftrags-, Rechnungs- und Lieferscheinpositionen gedruckt werden. Ein Kunde kann diese Auswahl überschreiben."
+
 msgid "Choose your style"
 msgstr "Wählen Sie Ihren Stil"
 
@@ -17433,8 +17439,11 @@ msgstr "Versand der Position"
 msgid "Line Status"
 msgstr "Zeilenstatus"
 
-msgid "Line Supplier Part ID"
-msgstr "Lieferantenteilenummer der Position"
+msgid "Line Supplier Part ID Row"
+msgstr "Zeile Lieferantenteilenummer der Position"
+
+msgid "Line Supplier Part Number"
+msgstr "Lieferanten-Teilenummer der Position"
 
 msgid "Line Total"
 msgstr "Positionssumme"
@@ -18621,6 +18630,9 @@ msgstr "Fehlende Zeit"
 
 msgid "Missing:"
 msgstr "Fehlend:"
+
+msgid "Mixed"
+msgstr "Gemischt"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20193,6 +20205,9 @@ msgstr "Es wurde noch kein Leasing-Durchlauf gebucht."
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Kein Urlaubselement ist eingerichtet. Öffnen Sie in einem indirekten Projekt das Element für Freizeit und aktivieren Sie Urlaub."
 
+msgid "No line of this document has an item yet."
+msgstr "Noch keine Position dieses Dokuments hat einen Artikel."
+
 msgid "No lines"
 msgstr "Keine Zeilen"
 
@@ -20953,6 +20968,9 @@ msgstr "nicht in den Unternehmenseinstellungen festgelegt"
 
 msgid "Not set up"
 msgstr "Nicht eingerichtet"
+
+msgid "Not set: prints as before"
+msgstr "Nicht gesetzt: wird wie bisher gedruckt"
 
 msgid "Not started"
 msgstr "Nicht gestartet"
@@ -22078,6 +22096,15 @@ msgstr "Sonstiger Typ"
 msgid "Otherwise"
 msgstr "Andernfalls"
 
+msgid "Our part number only"
+msgstr "Nur unsere Teilenummer"
+
+msgid "Our part number, then the customer's"
+msgstr "Unsere Teilenummer, dann die des Kunden"
+
+msgid "Our part number, then the supplier's"
+msgstr "Unsere Teilenummer, dann die des Lieferanten"
+
 msgid "Out"
 msgstr "Aus"
 
@@ -22395,6 +22422,15 @@ msgstr "Beschaffungszeiten von Teilen werden aus gebuchten Wareneingängen aktua
 
 msgid "Part Number"
 msgstr "Teilenummer"
+
+msgid "Part Numbers"
+msgstr "Teilenummern"
+
+msgid "Part Numbers on Documents"
+msgstr "Teilenummern auf Dokumenten"
+
+msgid "Part numbers on documents updated"
+msgstr "Teilenummern auf Dokumenten aktualisiert"
 
 msgid "Part Supersession"
 msgstr "Teil-Ablösung"
@@ -28181,6 +28217,9 @@ msgstr "Version {0} als aktive Version festlegen?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Legen Sie Ihren Standardort in den Profileinstellungen fest, um eine Lagereinheit auszuwählen."
 
+msgid "Sets every line of this document when you save."
+msgstr "Setzt beim Speichern jede Position dieses Dokuments."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Legt die Arbeitsgarantie einer Seriennummer fest, wenn diese versendet wird"
 
@@ -29898,6 +29937,9 @@ msgstr "Lieferantenstandort"
 msgid "Supplier Name"
 msgstr "Lieferantenname"
 
+msgid "Supplier or company default"
+msgstr "Lieferanten- oder Unternehmensstandard"
+
 msgid "Supplier Order Number"
 msgstr "Lieferantennummer"
 
@@ -30880,6 +30922,12 @@ msgstr "Der Kunde, dessen Aufträge dieser Portal-Link zeigt. Der Link hat keine
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Die Referenz des Kunden für dieses Dokument – typischerweise ihre Anfrage- oder PO-Nummer in ihrem System; wird in der druckbaren Ausgabe angezeigt und in jedes Dokument übertragen, in das dieses umgewandelt wird."
 
+msgid "The customer's part number only"
+msgstr "Nur die Teilenummer des Kunden"
+
+msgid "The customer's part number, then ours"
+msgstr "Die Teilenummer des Kunden, dann unsere"
+
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "Das Revisions-Tag des Kunden für seine Teil-ID, wenn es sich von unserem unterscheidet; auf der Cross-Reference-Ebene fest, nicht auf unserer Revision."
 
@@ -31296,6 +31344,9 @@ msgstr "Der Lebenszykluszustand dieses Lieferanten – Aktiv, Inaktiv, Genehmigu
 msgid "The lines could not be loaded."
 msgstr "Die Positionen konnten nicht geladen werden."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "Die Positionen drucken unterschiedliche Teilenummern. Eine Auswahl gilt für alle Positionen."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Der Link von einem Teil einer Bestellung einer Planungsgruppe zur Anforderung eines Mitglieds: Soft, während die Bestellung offen ist (MRP kann sie verschieben), Hard, sobald sie erhalten oder abgeschlossen ist (nie verschoben), oder Manuell, wenn ein Planer sie mit einem Grund festlegt."
 
@@ -31500,6 +31551,9 @@ msgstr "Der Teil wird als eigener Auftrag hergestellt, wenn das Elternteil, das 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete Teil hergestellt wird – kein neuer Fertigungsauftrag oder Bestellung."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Die Teilenummern dieses Dokuments können jetzt nicht geändert werden."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Der Anteil einer Lieferzahlung, den die Regierung zurückbehält, um ihre Akontozahlungen oder leistungsabhängigen Zahlungen zu sichern: der Rückbehaltssatz mal die Rechnung, nicht mehr als die noch ausstehende Finanzierung."
@@ -31874,6 +31928,12 @@ msgstr "Die eigene Referenz des Lieferanten für diese Bestellung (ihre SO-Numme
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Die Versand-Klebeschein oder Lieferscheinnummer des Lieferanten, aufgezeichnet für die Prüfung; wird von keiner Buchungslogik verwendet."
+
+msgid "The supplier's part number only"
+msgstr "Nur die Teilenummer des Lieferanten"
+
+msgid "The supplier's part number, then ours"
+msgstr "Die Teilenummer des Lieferanten, dann unsere"
 
 msgid "The supplier's return authorization number"
 msgstr "Die Rückgabegenehmigungsnummer des Lieferanten"

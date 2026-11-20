@@ -219,6 +219,7 @@ export default function EditPurchaseOrderLineRoute() {
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
     storageUnitId: line?.storageUnitId ?? "",
     supplierPartId: line?.supplierPartId ?? "",
+    partNumberDisplay: line?.partNumberDisplay ?? undefined,
     supplierShippingCost: line?.supplierShippingCost ?? 0,
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
