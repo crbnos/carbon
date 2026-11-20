@@ -312,10 +312,10 @@ CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
     i.name as "itemName",
     i.description as "itemDescription",
     ic."unitCost" as "unitCost",
-    -- The order line's own copy, else the live cross-reference; the pair
-    -- stays together.
-    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL THEN sol."customerPartId" ELSE cp."customerPartId" END AS "customerPartId",
-    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL THEN sol."customerPartRevision" ELSE cp."customerPartRevision" END AS "customerPartRevision",
+    -- The order line's own copy while the invoice's customer is the order's,
+    -- else the invoice customer's cross-reference; the pair stays together.
+    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL AND so."customerId" = si."customerId" THEN sol."customerPartId" ELSE cp."customerPartId" END AS "customerPartId",
+    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL AND so."customerId" = si."customerId" THEN sol."customerPartRevision" ELSE cp."customerPartRevision" END AS "customerPartRevision",
     fa."fixedAssetId" as "assetReadableId",
     fa."name" as "assetName"
   FROM "salesInvoiceLine" sl
@@ -326,6 +326,7 @@ CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
   LEFT JOIN "fixedAsset" fa ON fa.id = sl."assetId"
   LEFT JOIN "salesOrderLine" sol ON sol.id = sl."salesOrderLineId"
+  LEFT JOIN "salesOrder" so ON so.id = sol."salesOrderId"
   LEFT JOIN "customerPartToItem" cp ON cp."customerId" = si."customerId" AND cp."itemId" = i.id
 );
 
@@ -340,16 +341,23 @@ CREATE VIEW "shipmentLines" WITH(SECURITY_INVOKER=true) AS
       ELSE i."thumbnailPath"
     END AS "thumbnailPath",
     i."name" as "description",
-    -- A sales order shipment prints the order line's customer part number,
-    -- else the shipment customer's cross-reference.
-    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL THEN sol."customerPartId" ELSE cp."customerPartId" END AS "customerPartId",
-    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL THEN sol."customerPartRevision" ELSE cp."customerPartRevision" END AS "customerPartRevision"
+    -- A shipment of a sales order, directly or through a posted invoice's
+    -- line, prints the order line's customer part number while its customer
+    -- is the order's, else the shipment customer's cross-reference.
+    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL AND so."customerId" = s."customerId" THEN sol."customerPartId" ELSE cp."customerPartId" END AS "customerPartId",
+    CASE WHEN NULLIF(TRIM(sol."customerPartId"), '') IS NOT NULL AND so."customerId" = s."customerId" THEN sol."customerPartRevision" ELSE cp."customerPartRevision" END AS "customerPartRevision"
   FROM "shipmentLine" sl
   INNER JOIN "item" i ON i."id" = sl."itemId"
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
   LEFT JOIN "shipment" s ON s.id = sl."shipmentId"
+  LEFT JOIN "salesInvoiceLine" sil
+    ON s."sourceDocument" = 'Sales Invoice' AND sil.id = sl."lineId"
   LEFT JOIN "salesOrderLine" sol
-    ON s."sourceDocument" = 'Sales Order' AND sol.id = sl."lineId"
+    ON sol.id = CASE
+      WHEN s."sourceDocument" = 'Sales Order' THEN sl."lineId"
+      ELSE sil."salesOrderLineId"
+    END
+  LEFT JOIN "salesOrder" so ON so.id = sol."salesOrderId"
   LEFT JOIN "customerPartToItem" cp
     ON cp."customerId" = s."customerId" AND cp."itemId" = sl."itemId";
 
