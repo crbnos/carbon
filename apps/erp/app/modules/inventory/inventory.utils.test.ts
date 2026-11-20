@@ -4,15 +4,20 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  adjustmentNeedsNumber,
   batchPropertyColumnKey,
   batchPropertyColumns,
   batchPropertyFilter,
   batchPropertyValue,
+  blankUnitNumberRefusal,
   inventoryCountLineState,
   isShippableEntityStatus,
   type NonNettableUnit,
   nonNettableSource,
   shippableEntityStatuses,
+  stockIncreaseRefusal,
+  untrackedIssueRefusal,
+  untrackedUnscrapRefusal,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 
@@ -282,5 +287,239 @@ describe("batch property columns", () => {
     expect(batchPropertyFilter(column, "between", "2026-01-01,")).toBe(
       'and(attributes->>bp1.gte."2026-01-01")'
     );
+  });
+});
+
+// Batch and serial stock belongs to a numbered unit. The adjustment posting
+// reads this for every caller: the quantities page, the API, MCP and the MES.
+describe("stockIncreaseRefusal", () => {
+  const increase = (
+    overrides: Partial<Parameters<typeof stockIncreaseRefusal>[0]> = {}
+  ) =>
+    stockIncreaseRefusal({
+      itemTrackingType: "Batch",
+      trackedEntityId: "te-1",
+      createsUnit: true,
+      readableId: "LOT-1",
+      ...overrides
+    });
+
+  it.each(["Batch", "Serial"] as const)(
+    "refuses a %s increase that names no unit",
+    (itemTrackingType) => {
+      expect(
+        increase({ itemTrackingType, trackedEntityId: undefined })
+      ).toEqual(expect.any(String));
+    }
+  );
+
+  it.each([undefined, null, "", "  "])(
+    "refuses a new unit whose number is %j",
+    (readableId) => {
+      expect(increase({ readableId })).toEqual(expect.any(String));
+      expect(increase({ itemTrackingType: "Serial", readableId })).toEqual(
+        expect.any(String)
+      );
+    }
+  );
+
+  it("takes a new unit with its number", () => {
+    expect(increase()).toBeNull();
+  });
+
+  it.each([undefined, null])(
+    "adds to a numbered unit when the number sent is %j",
+    (readableId) => {
+      expect(
+        increase({ createsUnit: false, readableId, currentReadableId: "LOT-1" })
+      ).toBeNull();
+    }
+  );
+
+  it.each(["", "  "])(
+    "refuses blanking an existing unit's number with %j",
+    (readableId) => {
+      expect(
+        increase({ createsUnit: false, readableId, currentReadableId: "LOT-1" })
+      ).toEqual(expect.any(String));
+    }
+  );
+
+  it("refuses adding to a unit with no number unless one is sent", () => {
+    expect(
+      increase({
+        createsUnit: false,
+        readableId: undefined,
+        currentReadableId: null
+      })
+    ).toEqual(expect.any(String));
+    expect(
+      increase({
+        createsUnit: false,
+        readableId: "LOT-9",
+        currentReadableId: null
+      })
+    ).toBeNull();
+  });
+
+  it.each(["Inventory", "Non-Inventory", null] as const)(
+    "leaves a %s item's increase alone",
+    (itemTrackingType) => {
+      expect(
+        increase({
+          itemTrackingType,
+          trackedEntityId: undefined,
+          readableId: undefined
+        })
+      ).toBeNull();
+      expect(increase({ itemTrackingType, readableId: undefined })).toBeNull();
+    }
+  );
+});
+
+// A quantity-only issue writes stock movements for untracked items only, so a
+// batch or serial item issued that way would count as issued and move nothing.
+describe("untrackedIssueRefusal", () => {
+  it.each(["Batch", "Serial"] as const)(
+    "refuses a quantity-only issue of a %s item, naming it",
+    (itemTrackingType) => {
+      expect(
+        untrackedIssueRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toContain("PART-7.A");
+    }
+  );
+
+  it.each(["Inventory", "Non-Inventory"] as const)(
+    "lets a %s item be issued by quantity",
+    (itemTrackingType) => {
+      expect(
+        untrackedIssueRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toBeNull();
+    }
+  );
+});
+
+// An Unscrap that names no unit books untracked stock, so a batch or serial
+// item refuses it. The refusal names the item, not an id the caller should
+// send: an Unscrap only restores a unit that is already scrapped.
+describe("untrackedUnscrapRefusal", () => {
+  it.each(["Batch", "Serial"] as const)(
+    "refuses an untracked Unscrap of a %s item, naming it",
+    (itemTrackingType) => {
+      expect(
+        untrackedUnscrapRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toContain("PART-7.A");
+    }
+  );
+
+  it.each(["Inventory", "Non-Inventory"] as const)(
+    "lets a %s item be unscrapped by quantity",
+    (itemTrackingType) => {
+      expect(
+        untrackedUnscrapRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toBeNull();
+    }
+  );
+});
+
+// A unit keeps its number whatever an adjustment does to its quantity.
+describe("blankUnitNumberRefusal", () => {
+  it.each(["", "  "])(
+    "refuses blanking a unit's number with %j",
+    (readableId) => {
+      expect(
+        blankUnitNumberRefusal({ itemTrackingType: "Batch", readableId })
+      ).toEqual(expect.any(String));
+      expect(
+        blankUnitNumberRefusal({ itemTrackingType: "Serial", readableId })
+      ).toEqual(expect.any(String));
+    }
+  );
+
+  it.each([undefined, null, "LOT-2"])(
+    "lets the number sent as %j through",
+    (readableId) => {
+      expect(
+        blankUnitNumberRefusal({ itemTrackingType: "Batch", readableId })
+      ).toBeNull();
+    }
+  );
+
+  it("leaves an untracked item alone", () => {
+    expect(
+      blankUnitNumberRefusal({ itemTrackingType: "Inventory", readableId: "" })
+    ).toBeNull();
+  });
+});
+
+// The adjustment form marks the number required exactly when the posting
+// would refuse the adjustment without one.
+describe("adjustmentNeedsNumber", () => {
+  const unnumbered = { quantity: 3, readableId: null };
+
+  it.each(["Positive Adjmt.", "Set Quantity"])(
+    "asks a new unit for its number on %s",
+    (adjustmentType) => {
+      expect(
+        adjustmentNeedsNumber({ adjustmentType, unit: null, quantity: 1 })
+      ).toBe(true);
+    }
+  );
+
+  it("asks an unnumbered unit for a number when Set Quantity raises it", () => {
+    expect(
+      adjustmentNeedsNumber({
+        adjustmentType: "Set Quantity",
+        unit: unnumbered,
+        quantity: 4
+      })
+    ).toBe(true);
+  });
+
+  it.each([3, 2, 0])(
+    "leaves the number optional when Set Quantity takes an unnumbered unit to %d",
+    (quantity) => {
+      expect(
+        adjustmentNeedsNumber({
+          adjustmentType: "Set Quantity",
+          unit: unnumbered,
+          quantity
+        })
+      ).toBe(false);
+    }
+  );
+
+  it.each(["Negative Adjmt.", "Scrap"])(
+    "leaves the number optional on %s",
+    (adjustmentType) => {
+      expect(
+        adjustmentNeedsNumber({ adjustmentType, unit: null, quantity: 1 })
+      ).toBe(false);
+      expect(
+        adjustmentNeedsNumber({ adjustmentType, unit: unnumbered, quantity: 1 })
+      ).toBe(false);
+    }
+  );
+
+  it("never asks a numbered unit again", () => {
+    expect(
+      adjustmentNeedsNumber({
+        adjustmentType: "Set Quantity",
+        unit: { quantity: 3, readableId: "LOT-1" },
+        quantity: 9
+      })
+    ).toBe(false);
   });
 });

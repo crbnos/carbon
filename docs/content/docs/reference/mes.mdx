@@ -101,7 +101,7 @@ Closing the operation is a distinct action. **"Finish"** ends any open events an
 
 ### Issuing material
 
-Material is consumed against an operation from the same panel. The **"Issue"** action has an Adjustment Type: **"Add to Inventory"** (a `Positive Adjmt.`) or **"Pull from Inventory"** (a `Negative Adjmt.`). For serial- or batch-<Term id="tracked-entity">tracked</Term> material, tabs let the operator **"Scan"** a barcode, **"Select"** from stock, or **"Unconsume"** to return material already issued.
+Material is consumed against an operation from the same panel. The **"Issue"** action has an Adjustment Type: **"Add to Inventory"** (a `Positive Adjmt.`) or **"Pull from Inventory"** (a `Negative Adjmt.`). For serial- or batch-<Term id="tracked-entity">tracked</Term> material, tabs let the operator **"Scan"** a barcode, **"Select"** from stock, or **"Unconsume"** to return material already issued. Serial and batch material is always issued by unit: a quantity-only issue of such a part is refused, so it is never counted as issued without leaving stock.
 
 Two edge cases surface right in the flow rather than failing silently. Issuing expired stock is governed by a policy (`Warn`, `Block`, or `BlockWithOverride`); an overridable block asks for a **"Reason for issuing expired stock"**. And when a pick splits a batch, the station reports a **"Batch Split Occurred"** and offers to **"Convert to New Size/Revision"** or scrap the remainder.
 
