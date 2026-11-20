@@ -117,6 +117,8 @@ async function provision(stack: Stack): Promise<Stack> {
 
 async function migrateStandalone(stack: Stack, regen: boolean) {
   const db = stack.db!;
+  // Null after `crbn down --purge`: it releases the slot and keeps .env.local.
+  const { ports } = stack;
   log.info(`booting migration services (${stack.project})`);
   await ensureDockerRunning();
   if (stack.mode === "shared") {
@@ -147,14 +149,19 @@ async function migrateStandalone(stack: Stack, regen: boolean) {
         {
           migrate: true,
           regen,
-          swagger: true,
-          startApi: async () => {
-            await bootStack(stack, { services: API_SERVICES });
-            await waitForApi(stack.ports!.PORT_API, readDevJwt().serviceKey);
-          }
+          swagger: ports !== null,
+          startApi: ports
+            ? async () => {
+                await bootStack(stack, { services: API_SERVICES });
+                await waitForApi(ports.PORT_API, readDevJwt().serviceKey);
+              }
+            : undefined
         }
       )
     );
+    if (regen && !ports) {
+      log.warn("swagger skipped — this worktree has no slot (run `crbn up`)");
+    }
   } finally {
     detach();
     log.info("stopping migration services");

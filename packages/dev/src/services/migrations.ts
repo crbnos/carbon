@@ -262,8 +262,16 @@ export function databaseTasks(
         // migrated (a branch switch, a stash-pop, reverted generated files).
         await execa("pnpm", ["db:types"], { cwd: root });
         if (!opts.swagger || !applied) return "types refreshed";
-        await opts.startApi?.();
-        await execa("pnpm", ["generate:swagger"], { cwd: root });
+        // A re-run finds nothing to apply and skips swagger, so the failure
+        // names the command that finishes it.
+        try {
+          await opts.startApi?.();
+          await execa("pnpm", ["generate:swagger"], { cwd: root });
+        } catch (err) {
+          throw new Error(
+            `swagger not regenerated: ${(err as Error).message}\nWith the stack up (crbn up), run pnpm generate:swagger.`
+          );
+        }
         return "types + swagger refreshed";
       }
     },
