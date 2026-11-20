@@ -34,10 +34,14 @@ import {
 import { z } from "zod";
 import {
   getExchangeRate,
-  getTaxCode,
+  getTaxCodeInputs,
   resolveLineTaxes
 } from "~/modules/accounting/accounting.service";
-import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
+import {
+  decideWrittenLineTax,
+  lineTaxForUpsert,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
 import {
   signRecordFileUrl,
   upsertDocument
@@ -910,22 +914,23 @@ export const createQuoteLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
-    const tax = await service.resolveCreatedLineTax(
+    const tax = await service.resolveSalesLineTax(
       ctx.asCaller.supabase,
       companyId,
       {
         document: "quote",
         documentId: quoteId,
+        lineId: null,
         itemId: line.itemId,
-        sentTaxCode: line.taxCodeId !== undefined,
         taxCodeId: line.taxCodeId,
         taxPercent: line.taxPercent
       }
     );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
 
     const created = await service.upsertQuoteLine(serviceRole, {
       ...line,
-      ...tax,
+      ...lineTaxForUpsert(tax.data),
       companyId,
       configuration,
       createdBy: userId,
@@ -1012,16 +1017,20 @@ export const updateQuoteLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
-    if (
-      !(await service.isItemTaxable(
-        ctx.asCaller.supabase,
-        companyId,
-        line.itemId
-      ))
-    ) {
-      line.taxCodeId = undefined;
-      line.taxPercent = 0;
-    }
+    const tax = await service.resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      companyId,
+      {
+        document: "quote",
+        documentId: quoteId,
+        lineId,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+    Object.assign(line, lineTaxForUpsert(tax.data));
 
     const existing = await serviceRole
       .from("quoteLinePrice")
@@ -2434,18 +2443,19 @@ export const createSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
-    const tax = await service.resolveCreatedLineTax(
+    const tax = await service.resolveSalesLineTax(
       ctx.asCaller.supabase,
       companyId,
       {
         document: "salesOrder",
         documentId: line.salesOrderId,
+        lineId: null,
         itemId: line.itemId,
-        sentTaxCode: line.taxCodeId !== undefined,
         taxCodeId: line.taxCodeId,
         taxPercent: line.taxPercent
       }
     );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
 
     const deliveryDate = await service.deliveryDateForSave(ctx, {
       salesOrderId: line.salesOrderId,
@@ -2454,7 +2464,7 @@ export const createSalesOrderLine = defineServiceFn({
     });
     const created = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       ...line,
-      ...tax,
+      ...lineTaxForUpsert(tax.data),
       ...deliveryDate?.columns,
       companyId,
       createdBy: ctx.auditUserId,
@@ -2528,16 +2538,19 @@ export const updateSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
-    if (
-      !(await service.isItemTaxable(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        line.itemId
-      ))
-    ) {
-      line.taxCodeId = undefined;
-      line.taxPercent = 0;
-    }
+    const tax = await service.resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesOrder",
+        documentId: line.salesOrderId,
+        lineId: id,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
 
     const deliveryDate = await service.deliveryDateForSave(ctx, {
       salesOrderId: line.salesOrderId,
@@ -2547,6 +2560,7 @@ export const updateSalesOrderLine = defineServiceFn({
     const updated = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       id,
       ...line,
+      ...lineTaxForUpsert(tax.data),
       ...deliveryDate?.columns,
       updatedBy: ctx.auditUserId,
       customFields
@@ -2616,7 +2630,8 @@ export const recalculateSalesOrderTaxes = defineServiceFn({
         documentId: salesOrderId
       }
     );
-    if (result.error || !result.data) {
+    if (result.refused) return ctx.error("rule", result.error);
+    if (result.error !== null) {
       return ctx.error("internal", "Failed to recalculate taxes", result.error);
     }
     return { salesOrderId, updated: result.data.updated };
@@ -4977,20 +4992,36 @@ export const createRentalAgreement = defineServiceFn({
     } = input;
     const data = { ...terms, taxCodeId: taxCodeId || undefined };
 
-    // The rent lines' tax, for a caller that sent no code (an empty one is a
-    // cleared code): the customer's or the rental site's code. With no code
+    // The rent lines' tax (`decideWrittenLineTax`): a sent code at its rate
+    // on the start date; for a caller that sent no code (an empty one is a
+    // cleared code), the customer's or the rental site's code. With no code
     // the terms' own percent stands, as before tax codes.
-    if (taxCodeId === undefined) {
-      const tax = await resolveLineTaxes(client, companyId, {
-        source: "sales",
-        customerId: data.customerId,
-        customerLocationId: data.customerLocationId,
-        date: data.startDate
-      });
-      if (tax.data && (tax.data.taxCodeId || tax.data.exempt)) {
-        data.taxCodeId = tax.data.taxCodeId ?? undefined;
-        data.taxPercent = tax.data.taxPercent;
-      }
+    const [sentCode, party] = await Promise.all([
+      getTaxCodeInputs(client, companyId, [taxCodeId]),
+      taxCodeId === undefined
+        ? resolveLineTaxes(client, companyId, {
+            source: "sales",
+            customerId: data.customerId,
+            customerLocationId: data.customerLocationId,
+            date: data.startDate
+          })
+        : null
+    ]);
+    const tax = decideWrittenLineTax({
+      source: "sales",
+      itemTaxable: true,
+      sentTaxCodeId: taxCodeId,
+      sentTaxPercent: data.taxPercent,
+      sentCode: taxCodeId ? (sentCode.data.get(taxCodeId) ?? null) : null,
+      partyDecision: party?.data ?? null,
+      date: data.startDate
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+    if (tax.data.taxCodeId !== undefined) {
+      data.taxCodeId = tax.data.taxCodeId ?? undefined;
+    }
+    if (tax.data.taxPercent !== undefined) {
+      data.taxPercent = tax.data.taxPercent;
     }
 
     // Checked before the insert, so a contact refused (another customer's, or
@@ -5193,12 +5224,13 @@ export const setRentalAgreementTerm = defineServiceFn({
     // Picking a code sets the rent lines' rate to the code's rate today.
     // Clearing it keeps the rate, which stays editable on its own.
     if (field === "taxCodeId" && value) {
-      const taxCode = await getTaxCode(client, value);
-      if (taxCode.error || taxCode.data?.companyId !== companyId) {
-        return ctx.error("notFound", "Tax code not found", taxCode.error);
+      const codes = await getTaxCodeInputs(client, companyId, [value]);
+      const taxCode = codes.data.get(value);
+      if (!taxCode) {
+        return ctx.error("notFound", "Tax code not found", codes.error);
       }
       terms.taxPercent = chargedTaxPercent(
-        toTaxCodeInput(taxCode.data),
+        taxCode,
         await service.companyToday(ctx)
       );
     }
@@ -6538,24 +6570,28 @@ export const getCustomerShipping = defineServiceFn({
 });
 
 /**
- * Set one field on several customers.
+ * Assign a tax code to customers
  *
  * @remarks
- * The one field is `taxCodeId`: the customers' tax code (Customers → Assign
- * Tax Code). The code must be an active code of the company, and every
- * customer the company's.
+ * Sets the tax code (`customerTax.taxCodeId`) of each customer to one active
+ * tax code of the company (Customers → Assign Tax Code). New sales lines for
+ * these customers default to it, unless a ship-to location has its own.
+ *
+ * @param ids - The customers to update.
+ * @param taxCodeId - An active tax code of the company.
  *
  * @mcp
  */
-export const updateCustomerField = defineServiceFn({
-  input: service.fieldUpdate(["taxCodeId"]),
+export const assignCustomerTaxCode = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()),
+    taxCodeId: z.string().min(1, { message: "Select a tax code" })
+  }),
   permission: { update: "sales" },
 
-  async run(ctx, { ids, field, value }) {
+  async run(ctx, { ids, taxCodeId: value }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    if (field !== "taxCodeId") return ctx.error("validation", "Invalid field");
-    if (!value) return ctx.error("validation", "Select a tax code");
 
     const [taxCode, customers] = await Promise.all([
       client

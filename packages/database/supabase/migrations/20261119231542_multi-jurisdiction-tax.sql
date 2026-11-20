@@ -157,18 +157,44 @@ CREATE TABLE IF NOT EXISTS "taxLedger" (
   "exchangeRate" NUMERIC,
   "taxExemptionReason" "taxExemptionReason",
   "exemptionCertificateNumber" TEXT,
+  -- The company owes the tax itself (a Reverse Charge purchase), recorded at
+  -- posting so the liability report never reads the live code.
+  "selfAssessed" BOOLEAN NOT NULL DEFAULT FALSE,
   "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT REFERENCES "user"("id"),
   CONSTRAINT "taxLedger_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "taxLedger_companyId_fkey" FOREIGN KEY ("companyId")
-    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  -- Real FKs, so a restore into another company remaps them; documentId and
+  -- documentLineId are polymorphic and listed in ID_REF_COLUMNS instead.
+  CONSTRAINT "taxLedger_journalId_fkey" FOREIGN KEY ("journalId")
+    REFERENCES "journal"("id"),
+  CONSTRAINT "taxLedger_taxCodeId_fkey" FOREIGN KEY ("taxCodeId", "companyId")
+    REFERENCES "taxCode"("id", "companyId") ON DELETE SET NULL ("taxCodeId"),
+  CONSTRAINT "taxLedger_taxCodeComponentId_fkey" FOREIGN KEY ("taxCodeComponentId", "companyId")
+    REFERENCES "taxCodeComponent"("id", "companyId") ON DELETE SET NULL ("taxCodeComponentId"),
+  -- Filed figures keep their authority: deleteTaxAuthority refuses first.
+  CONSTRAINT "taxLedger_taxAuthorityId_fkey" FOREIGN KEY ("taxAuthorityId", "companyId")
+    REFERENCES "taxAuthority"("id", "companyId") ON DELETE RESTRICT,
+  CONSTRAINT "taxLedger_customerId_fkey" FOREIGN KEY ("customerId", "companyId")
+    REFERENCES "customer"("id", "companyId") ON DELETE SET NULL ("customerId"),
+  CONSTRAINT "taxLedger_supplierId_fkey" FOREIGN KEY ("supplierId", "companyId")
+    REFERENCES "supplier"("id", "companyId") ON DELETE SET NULL ("supplierId")
 );
 CREATE INDEX IF NOT EXISTS "taxLedger_companyId_postingDate_idx" ON "taxLedger" ("companyId", "postingDate");
 CREATE INDEX IF NOT EXISTS "taxLedger_companyId_documentId_idx" ON "taxLedger" ("companyId", "documentId");
-CREATE INDEX IF NOT EXISTS "taxLedger_companyId_journalId_idx" ON "taxLedger" ("companyId", "journalId");
+CREATE INDEX IF NOT EXISTS "taxLedger_journalId_idx" ON "taxLedger" ("journalId");
 CREATE INDEX IF NOT EXISTS "taxLedger_companyId_taxAuthorityId_idx" ON "taxLedger" ("companyId", "taxAuthorityId");
+CREATE INDEX IF NOT EXISTS "taxLedger_taxCodeId_idx" ON "taxLedger" ("taxCodeId");
+CREATE INDEX IF NOT EXISTS "taxLedger_taxCodeComponentId_idx" ON "taxLedger" ("taxCodeComponentId");
+CREATE INDEX IF NOT EXISTS "taxLedger_customerId_idx" ON "taxLedger" ("customerId");
+CREATE INDEX IF NOT EXISTS "taxLedger_supplierId_idx" ON "taxLedger" ("supplierId");
 CREATE INDEX IF NOT EXISTS "taxLedger_createdBy_idx" ON "taxLedger" ("createdBy");
+
+-- The ALTERs below lock live tables: give up after 5s behind a long
+-- transaction (the migration is re-run) rather than queue every writer.
+SET lock_timeout = '5s';
 
 -- Account-default renames (grill 2). No live SQL function reads the old names.
 DO $$ BEGIN
@@ -187,7 +213,7 @@ ALTER TABLE "customerTax" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "customerTax" ADD CONSTRAINT "customerTax_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "customerTax_taxCodeId_idx" ON "customerTax" ("taxCodeId");
 
@@ -195,7 +221,7 @@ ALTER TABLE "supplierTax" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "supplierTax" ADD CONSTRAINT "supplierTax_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "supplierTax_taxCodeId_idx" ON "supplierTax" ("taxCodeId");
 
@@ -203,7 +229,7 @@ ALTER TABLE "customerLocation" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "customerLocation" ADD CONSTRAINT "customerLocation_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "customerLocation_taxCodeId_idx" ON "customerLocation" ("taxCodeId");
 
@@ -211,7 +237,7 @@ ALTER TABLE "quoteLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "quoteLine" ADD CONSTRAINT "quoteLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "quoteLine_taxCodeId_idx" ON "quoteLine" ("taxCodeId");
 
@@ -219,7 +245,7 @@ ALTER TABLE "salesOrderLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "salesOrderLine" ADD CONSTRAINT "salesOrderLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "salesOrderLine_taxCodeId_idx" ON "salesOrderLine" ("taxCodeId");
 
@@ -227,15 +253,46 @@ ALTER TABLE "salesInvoiceLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "salesInvoiceLine" ADD CONSTRAINT "salesInvoiceLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_taxCodeId_idx" ON "salesInvoiceLine" ("taxCodeId");
+
+-- The line's snapshot of its code's "taxes shipping", which the
+-- salesInvoices view and the posting read instead of the live code.
+ALTER TABLE "salesInvoiceLine"
+  ADD COLUMN IF NOT EXISTS "taxesShipping" BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- A plain BEFORE trigger, not an event-system interceptor: an interceptor
+-- cannot change the row it runs on. SECURITY DEFINER so the snapshot does
+-- not depend on whether the writer may read tax codes; a TRIGGER function
+-- cannot be called over RPC, and the composite FK keeps the code in the
+-- line's company.
+CREATE OR REPLACE FUNCTION public.snapshot_sales_invoice_line_taxes_shipping()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  NEW."taxesShipping" := COALESCE((
+    SELECT tc."taxesShipping" FROM "taxCode" tc
+    WHERE tc."id" = NEW."taxCodeId" AND tc."companyId" = NEW."companyId"
+  ), FALSE);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS "salesInvoiceLine_taxesShipping_snapshot" ON "salesInvoiceLine";
+CREATE TRIGGER "salesInvoiceLine_taxesShipping_snapshot"
+  BEFORE INSERT OR UPDATE OF "taxCodeId"
+  ON "salesInvoiceLine"
+  FOR EACH ROW
+  EXECUTE FUNCTION public.snapshot_sales_invoice_line_taxes_shipping();
 
 ALTER TABLE "rentalAgreement" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "rentalAgreement" ADD CONSTRAINT "rentalAgreement_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "rentalAgreement_taxCodeId_idx" ON "rentalAgreement" ("taxCodeId");
 
@@ -243,7 +300,7 @@ ALTER TABLE "rentalAgreementCharge" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "rentalAgreementCharge" ADD CONSTRAINT "rentalAgreementCharge_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "rentalAgreementCharge_taxCodeId_idx" ON "rentalAgreementCharge" ("taxCodeId");
 
@@ -251,7 +308,7 @@ ALTER TABLE "customerContractLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "customerContractLine" ADD CONSTRAINT "customerContractLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "customerContractLine_taxCodeId_idx" ON "customerContractLine" ("taxCodeId");
 
@@ -259,7 +316,7 @@ ALTER TABLE "supplierQuoteLinePrice" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "supplierQuoteLinePrice" ADD CONSTRAINT "supplierQuoteLinePrice_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "supplierQuoteLinePrice_taxCodeId_idx" ON "supplierQuoteLinePrice" ("taxCodeId");
 
@@ -267,15 +324,17 @@ ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "purchaseOrderLine" ADD CONSTRAINT "purchaseOrderLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "purchaseOrderLine_taxCodeId_idx" ON "purchaseOrderLine" ("taxCodeId");
+-- Snapshot only, so restoring an approved version puts the code back with its rate.
+ALTER TABLE "purchaseOrderLineVersion" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 
 ALTER TABLE "purchaseInvoiceLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "purchaseInvoiceLine_taxCodeId_idx" ON "purchaseInvoiceLine" ("taxCodeId");
 
@@ -283,9 +342,27 @@ ALTER TABLE "memo" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "memo" ADD CONSTRAINT "memo_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId");
+    ON DELETE SET NULL ("taxCodeId") NOT VALID;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "memo_taxCodeId_idx" ON "memo" ("taxCodeId");
+
+RESET lock_timeout;
+
+-- Added NOT VALID above, then validated here: the scan of each table runs
+-- under VALIDATE's weaker lock, which does not block writes.
+ALTER TABLE "customerTax" VALIDATE CONSTRAINT "customerTax_taxCodeId_fkey";
+ALTER TABLE "supplierTax" VALIDATE CONSTRAINT "supplierTax_taxCodeId_fkey";
+ALTER TABLE "customerLocation" VALIDATE CONSTRAINT "customerLocation_taxCodeId_fkey";
+ALTER TABLE "quoteLine" VALIDATE CONSTRAINT "quoteLine_taxCodeId_fkey";
+ALTER TABLE "salesOrderLine" VALIDATE CONSTRAINT "salesOrderLine_taxCodeId_fkey";
+ALTER TABLE "salesInvoiceLine" VALIDATE CONSTRAINT "salesInvoiceLine_taxCodeId_fkey";
+ALTER TABLE "rentalAgreement" VALIDATE CONSTRAINT "rentalAgreement_taxCodeId_fkey";
+ALTER TABLE "rentalAgreementCharge" VALIDATE CONSTRAINT "rentalAgreementCharge_taxCodeId_fkey";
+ALTER TABLE "customerContractLine" VALIDATE CONSTRAINT "customerContractLine_taxCodeId_fkey";
+ALTER TABLE "supplierQuoteLinePrice" VALIDATE CONSTRAINT "supplierQuoteLinePrice_taxCodeId_fkey";
+ALTER TABLE "purchaseOrderLine" VALIDATE CONSTRAINT "purchaseOrderLine_taxCodeId_fkey";
+ALTER TABLE "purchaseInvoiceLine" VALIDATE CONSTRAINT "purchaseInvoiceLine_taxCodeId_fkey";
+ALTER TABLE "memo" VALIDATE CONSTRAINT "memo_taxCodeId_fkey";
 
 -- Recreate the line views so their expanded column lists include taxCodeId
 

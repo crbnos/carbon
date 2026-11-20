@@ -26,8 +26,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const taxAuthority = await getTaxAuthority(client, taxAuthorityId);
 
+  if (!taxAuthority.data) throw notFound("Tax authority not found");
+
   return {
-    taxAuthority: taxAuthority?.data ?? null
+    taxAuthority: taxAuthority.data
   };
 }
 

@@ -13,7 +13,12 @@
 // recoverable share (to Tax Paid) and a non-recoverable share (into cost).
 // See .ai/specs/2026-10-16-multi-jurisdiction-tax.md.
 
-import { applyRate, distributeRoundingResidual, round } from "./precision.ts";
+import {
+  applyRate,
+  distributeRoundingResidual,
+  round,
+  SCALE
+} from "./precision.ts";
 
 export type TaxComponentInput = {
   id: string;
@@ -150,6 +155,93 @@ export function splitLineTax(args: {
 /** The recoverable share of a split line's tax. */
 export function recoverableTax(parts: ComponentTax[]): number {
   return parts.reduce((total, part) => total + part.recoverableAmount, 0);
+}
+
+/**
+ * The ids in `taxCodeIds` whose code has no component in force on `date`
+ * (or is missing from `codes`). Posting refuses such a line rather than post
+ * its tax unsplit, with no authority, or into cost.
+ */
+export function taxCodesWithoutComponents(
+  codes: ReadonlyMap<string, Pick<TaxCodeInput, "components">>,
+  taxCodeIds: ReadonlyArray<string | null | undefined>,
+  date: string
+): string[] {
+  return [...new Set(taxCodeIds.filter((id): id is string => !!id))].filter(
+    (id) => {
+      const code = codes.get(id);
+      return !code || effectiveComponents(code, date).length === 0;
+    }
+  );
+}
+
+/**
+ * A purchase line's tax split by its code's components (base amounts):
+ * `taxParts` splits the supplier's tax on a Normal code, `selfAssessedParts`
+ * the tax a Reverse Charge code self-assesses at the code's rate. `code`
+ * carries only the components in force on the document's tax point. Shared
+ * by the purchase invoice posting and the receipt, so both agree on cost.
+ */
+export function purchaseLineTaxParts(args: {
+  base: number;
+  /** The supplier's tax on the line; ignored by a Reverse Charge code. */
+  taxAmount: number;
+  code: TaxCodeInput;
+}): { taxParts?: ComponentTax[]; selfAssessedParts?: ComponentTax[] } {
+  const { base, code } = args;
+  if (code.components.length === 0) return {};
+  if (code.calculationType === "Reverse Charge") {
+    return {
+      selfAssessedParts: splitLineTax({
+        base,
+        lineTax: round(base * effectiveTaxPercent(code.components)),
+        components: code.components,
+        scale: SCALE
+      })
+    };
+  }
+  return {
+    taxParts: splitLineTax({
+      base,
+      lineTax: args.taxAmount,
+      components: code.components,
+      scale: SCALE
+    })
+  };
+}
+
+/**
+ * The tax a received line's cost carries (`receiptUnitCost`): the supplier's
+ * tax less its recoverable share. A Reverse Charge line ignores any supplier
+ * tax amount (the supplier charges none) and carries the non-recoverable
+ * share of the self-assessed tax instead.
+ */
+export function receiptLineTax(args: {
+  base: number;
+  taxAmount: number;
+  code: TaxCodeInput | undefined;
+}): { taxAmount: number; recoverableTaxAmount: number } {
+  if (!args.code || args.code.components.length === 0) {
+    return { taxAmount: args.taxAmount, recoverableTaxAmount: 0 };
+  }
+  const { taxParts, selfAssessedParts } = purchaseLineTaxParts({
+    base: args.base,
+    taxAmount: args.taxAmount,
+    code: args.code
+  });
+  if (selfAssessedParts) {
+    return {
+      taxAmount: 0,
+      recoverableTaxAmount: -selfAssessedParts.reduce(
+        (total, part) => total + part.nonRecoverableAmount,
+        0
+      )
+    };
+  }
+  return {
+    taxAmount: args.taxAmount,
+    recoverableTaxAmount: recoverableTax(taxParts ?? [])
+  };
 }
 
 /**

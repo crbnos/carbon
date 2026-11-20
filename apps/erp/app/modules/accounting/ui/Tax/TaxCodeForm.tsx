@@ -30,6 +30,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
 import { LuChevronRight, LuPlus, LuTrash } from "react-icons/lu";
 import type { z } from "zod";
+import { Enumerable } from "~/components/Enumerable";
 import {
   Account,
   Boolean,
@@ -183,11 +184,11 @@ const TaxCodeForm = ({
 
   const calculationTypeOptions = taxCalculationTypes.map((v) => ({
     value: v,
-    label: v
+    label: <Enumerable value={v} />
   }));
   const reportingCategoryOptions = taxReportingCategories.map((v) => ({
     value: v,
-    label: v
+    label: <Enumerable value={v} />
   }));
   const authorityOptions = useMemo(
     () => taxAuthorities.map((a) => ({ value: a.id, label: a.name })),
@@ -363,6 +364,7 @@ const TaxCodeForm = ({
                                 name={`components[${index}].effectiveDate`}
                                 label={t`Effective`}
                                 termId="tax-component-effective-date"
+                                value={row.effectiveDate ?? ""}
                                 onChange={(effectiveDate) =>
                                   updateRow(index, {
                                     effectiveDate: effectiveDate ?? undefined
@@ -373,6 +375,7 @@ const TaxCodeForm = ({
                                 name={`components[${index}].expirationDate`}
                                 label={t`Expires`}
                                 termId="tax-component-expiration-date"
+                                value={row.expirationDate ?? ""}
                                 onChange={(expirationDate) =>
                                   updateRow(index, {
                                     expirationDate: expirationDate ?? undefined

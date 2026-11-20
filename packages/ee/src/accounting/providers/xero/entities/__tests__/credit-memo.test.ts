@@ -133,6 +133,7 @@ function makeSyncer(
     provider: {
       id: "xero",
       settings: {},
+      listChartOfAccounts: async () => [],
       listTaxRates: async () => [
         {
           TaxType: "OUTPUT2",
@@ -145,6 +146,13 @@ function makeSyncer(
           TaxType: "INPUT2",
           Name: "20% (VAT on Expenses)",
           EffectiveRate: 20,
+          CanApplyToRevenue: false,
+          CanApplyToExpenses: true
+        },
+        {
+          TaxType: "ZERORATEDINPUT",
+          Name: "Zero Rated Expenses",
+          EffectiveRate: 0,
           CanApplyToRevenue: false,
           CanApplyToExpenses: true
         }

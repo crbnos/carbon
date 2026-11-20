@@ -548,11 +548,17 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
           scale: SCALE
         })
       : [];
+  // A tax leg is signed by its account's class, as on purchases: a company
+  // may keep one VAT control account, classed Asset, for both directions.
+  const taxClass = (account: SalesPostingAccount | null | undefined) =>
+    account?.class === "Asset" ? "Asset" : "Liability";
   if (taxParts.length > 0) {
     for (const part of taxParts) {
+      const account =
+        accounts.componentTax?.get(part.component.id) ?? accounts.tax;
       push(
-        accounts.componentTax?.get(part.component.id) ?? accounts.tax,
-        "Liability",
+        account,
+        taxClass(account),
         "credit",
         part.taxAmount,
         TAX_RECEIVED_POSTING_DESCRIPTION
@@ -561,7 +567,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
   } else {
     push(
       accounts.tax,
-      "Liability",
+      taxClass(accounts.tax),
       "credit",
       amounts.salesTaxBase,
       TAX_RECEIVED_POSTING_DESCRIPTION

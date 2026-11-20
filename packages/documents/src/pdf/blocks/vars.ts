@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { formatDate, formatPercent } from "@carbon/utils";
-import type { LineMergeToken, MergeToken } from "../../template";
+import type { MergeToken, RowVars } from "../../template";
 import {
   getLineDescription,
   getLineDescriptionDetails,
@@ -37,6 +37,7 @@ export function buildSalesInvoiceVars(
     | "currencyCode"
     | "locale"
     | "numberFormatter"
+    | "sellerRegistration"
   >
 ): Record<MergeToken<"salesInvoice">, string> {
   const inv = data.salesInvoice;
@@ -99,6 +100,7 @@ export function buildSalesInvoiceVars(
       shipment?.incoterm,
       shipment?.incotermLocation
     ),
+    "invoice.sellerTaxId": str(data.sellerRegistration),
     "invoice.subtotal": money(
       lines.reduce((sum, line) => sum + getLineGrossMerchandise(line), 0)
     ),
@@ -144,7 +146,7 @@ export function buildSalesInvoiceLineVars(
   line: SalesInvoiceData["salesInvoiceLines"][number],
   rowNumber: number,
   data: Pick<SalesInvoiceData, "numberFormatter" | "rateFormatter" | "locale">
-): Record<LineMergeToken<"salesInvoice">, string> {
+): RowVars<"salesInvoice", "line"> {
   const money = (v: number) => data.numberFormatter.format(v);
   const common = {
     "line.description": str(getLineDescription(line)),

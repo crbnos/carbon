@@ -56,10 +56,13 @@ import {
 } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import {
+  getExchangeRate,
+  getTaxCodeInputs
+} from "~/modules/accounting/accounting.service";
 import {
   decideLineTax,
-  toTaxCodeInput
+  updatedTaxCodeId
 } from "~/modules/accounting/accounting.utils";
 import {
   signRecordFileUrl,
@@ -4170,27 +4173,16 @@ export const orderPlannedPurchases = defineServiceFn({
           .filter((id): id is string => !!id)
       )
     );
-    const taxCodes =
-      taxCodeIds.length > 0
-        ? await client
-            .from("taxCode")
-            .select(
-              "id, calculationType, taxesShipping, taxCodeComponent(id, name, taxAuthorityId, taxPercent, recoverablePercent, sequence, isCompound, taxReceivedAccountId, taxPaidAccountId, effectiveDate, expirationDate)"
-            )
-            .in("id", taxCodeIds)
-            .eq("companyId", companyId)
-            .eq("active", true)
-        : null;
-    if (supplierTaxes.error || taxCodes?.error) {
+    // A retired code a supplier still names keeps resolving, as everywhere.
+    const taxCodes = await getTaxCodeInputs(client, companyId, taxCodeIds);
+    if (supplierTaxes.error || taxCodes.error) {
       return ctx.error(
         "internal",
         "Failed to retrieve supplier tax codes from database",
-        supplierTaxes.error ?? taxCodes?.error
+        supplierTaxes.error ?? taxCodes.error
       );
     }
-    const taxCodeById = new Map(
-      (taxCodes?.data ?? []).map((code) => [code.id, toTaxCodeInput(code)])
-    );
+    const taxCodeById = taxCodes.data;
     const supplierTaxCode = new Map(
       (supplierTaxes.data ?? []).map((row) => [
         row.supplierId,
@@ -6760,7 +6752,9 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
  * @remarks
  * Upsert purchase order line. A line sent with no `taxCodeId` takes the
  * supplier's tax code at the order date; an empty `taxCodeId` keeps the sent
- * percent with no code. A non-taxable item carries no tax, whatever was sent.
+ * percent with no code. A sent code sets the rate (its rate on the order
+ * date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -6827,25 +6821,25 @@ export const createPurchaseOrderLine = defineServiceFn({
     if (jobId instanceof CarbonError) return jobId;
     const input = jobId ? { ...fields, jobId } : fields;
     const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
     // A new line takes the tax the form would have opened with: the
     // supplier's code when none is sent, and none for a non-taxable item.
-    // A failed read of the order leaves the sent tax, as the form's would.
-    const order = await service.getPurchaseOrder(client, input.purchaseOrderId);
-    const tax = await service.resolveCreatedPurchaseLineTax(client, {
-      companyId,
+    const tax = await service.resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
       companyGroupId: ctx.company.groupId,
-      supplierId: order.data?.supplierId,
-      documentDate: order.data?.orderDate,
-      currencyCode: order.data?.currencyCode,
-      itemId: input.itemId,
-      unitPrice: input.supplierUnitPrice ?? 0,
-      quantity: input.purchaseQuantity ?? 0,
-      shippingCost: input.supplierShippingCost ?? 0,
-      taxCodeId: input.taxCodeId,
-      taxPercent: input.taxPercent,
-      supplierTaxAmount: input.supplierTaxAmount ?? 0
+      document: "purchaseOrder",
+      documentId: input.purchaseOrderId,
+      lineId: null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.purchaseQuantity ?? 0,
+        shippingCost: input.supplierShippingCost ?? 0,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
     });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -6854,7 +6848,11 @@ export const createPurchaseOrderLine = defineServiceFn({
           ctx,
           await service.upsertPurchaseOrderLine(
             client,
-            payload(ctx, { ...input, ...tax }).forCreate() as never
+            payload(ctx, {
+              ...input,
+              supplierTaxAmount: input.supplierTaxAmount ?? 0,
+              ...tax.data
+            }).forCreate() as never
           )
         ),
       { restatesStatus: true }
@@ -6867,7 +6865,9 @@ export const createPurchaseOrderLine = defineServiceFn({
  *
  * @remarks
  * Upsert purchase order line. A non-taxable item carries no tax, whatever was
- * sent.
+ * sent. A sent code (or the stored one, when only a percent is sent) sets
+ * the rate; an empty `taxCodeId` clears the code. A Reverse Charge code
+ * refuses a supplier tax amount.
  *
  * @mcp
  */
@@ -6939,13 +6939,25 @@ export const updatePurchaseOrderLine = defineServiceFn({
     if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
       return ctx.error("notFound", "Purchase order line not found");
     }
-    // A non-taxable item carries no tax, whatever was sent. A line whose item
-    // is left out keeps its stored one.
-    const tax = await service.nonTaxableItemTax(
-      ctx.asCaller.supabase,
-      ctx.company.id,
-      input.itemId ?? line.data.itemId
-    );
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await service.resolvePurchaseLineTax(ctx.asCaller.supabase, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: line.data.purchaseOrderId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.purchaseQuantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
       const held = await service.unreleasedChangeOrderRefusal(
         ctx,
@@ -6960,7 +6972,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
-            ...payload(ctx, { ...input, ...tax }).forUpdate(),
+            ...payload(ctx, { ...input, ...tax.data }).forUpdate(),
             companyId: ctx.company.id
           } as never)
         ),

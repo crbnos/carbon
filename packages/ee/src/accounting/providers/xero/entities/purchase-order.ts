@@ -14,10 +14,8 @@ import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import {
   hasXeroMappedTax,
-  loadXeroTaxContext,
-  needsXeroTaxContext,
   resolveXeroTaxType,
-  type XeroTaxContext
+  XeroTaxContextLoader
 } from "../tax";
 import { xeroItemCode } from "./item";
 
@@ -126,23 +124,14 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
   Xero.PurchaseOrder,
   "UpdatedDateUTC"
 > {
-  private taxContextPromise?: Promise<XeroTaxContext>;
+  private readonly taxContext = new XeroTaxContextLoader(
+    this.database,
+    { companyId: this.companyId, integration: this.provider.id },
+    this.provider as XeroProvider
+  );
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
-  }
-
-  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
-  private getTaxContext(): Promise<XeroTaxContext> {
-    this.taxContextPromise ??= loadXeroTaxContext(
-      this.database,
-      { companyId: this.companyId, integration: this.provider.id },
-      this.xeroProvider
-    ).catch((error) => {
-      this.taxContextPromise = undefined;
-      throw error;
-    });
-    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -380,17 +369,17 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
 
     // Resolve every line's tax before any dependency write, so an
     // UNMAPPED_TAX_CODES Warning provisions nothing in Xero.
+    // A Reverse Charge line goes out at NONE (Phase 1, as bills do).
     const lineTaxes = local.lines.map(xeroPurchaseOrderLineTax);
-    const taxContext = needsXeroTaxContext(lineTaxes)
-      ? await this.getTaxContext()
-      : null;
-    const taxTypes = lineTaxes.map((tax) =>
+    const taxContext = await this.taxContext.forLines("purchase", lineTaxes);
+    const taxTypes = lineTaxes.map((tax, index) =>
       resolveXeroTaxType({
         context: taxContext,
         documentId: local.id,
         direction: "purchase",
         ...tax,
-        decimalPlaces: local.currencyDecimalPlaces
+        decimalPlaces: local.currencyDecimalPlaces,
+        accountCode: local.lines[index]!.accountNumber
       })
     );
 

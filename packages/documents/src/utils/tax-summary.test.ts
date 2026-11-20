@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTaxSummary,
   getInvoiceMessages,
+  isPostedSalesInvoiceStatus,
   lineTaxSummaryEntries,
   postedTaxSummaryEntries,
   resolveSellerRegistration,
@@ -66,19 +67,25 @@ describe("postedTaxSummaryEntries + buildTaxSummary", () => {
   ];
 
   it("prints one row per component of the posting journal, ignoring the void", () => {
-    const entries = postedTaxSummaryEntries(
-      rows,
-      new Set(["jrn-post", "jrn-void"])
-    );
+    const entries = postedTaxSummaryEntries(rows, true);
     expect(buildTaxSummary(entries!, 144, 2)).toEqual([
       { name: "GST", rate: 0.05, base: 1200, tax: 60 },
       { name: "PST", rate: 0.07, base: 1200, tax: 84 }
     ]);
   });
 
-  it("falls back to the lines when the posting journal is not Posted", () => {
-    expect(postedTaxSummaryEntries(rows, new Set(["jrn-void"]))).toBeNull();
-    expect(postedTaxSummaryEntries([], new Set(["jrn-post"]))).toBeNull();
+  it("falls back to the lines while the invoice has not posted", () => {
+    expect(postedTaxSummaryEntries(rows, false)).toBeNull();
+    expect(postedTaxSummaryEntries([], true)).toBeNull();
+  });
+
+  it("decides posted from the invoice status, not the journal", () => {
+    expect(isPostedSalesInvoiceStatus("Draft")).toBe(false);
+    expect(isPostedSalesInvoiceStatus("Pending")).toBe(false);
+    expect(isPostedSalesInvoiceStatus(null)).toBe(false);
+    for (const status of ["Submitted", "Paid", "Partially Paid", "Voided"]) {
+      expect(isPostedSalesInvoiceStatus(status)).toBe(true);
+    }
   });
 
   it("keeps one entry for one component, so the block prints its single row", () => {
@@ -161,20 +168,13 @@ describe("lineTaxSummaryEntries", () => {
 });
 
 describe("salesInvoiceTaxSummaryLines", () => {
-  it("adds a line's share of header shipping when its code taxes shipping", () => {
-    const codes = new Map<string, TaxSummaryCode>([
-      [
-        "vat",
-        {
-          id: "vat",
-          calculationType: "Normal",
-          taxesShipping: true,
-          invoiceMessage: null,
-          components: [component("vat", "VAT", 0.2)]
-        }
-      ]
-    ]);
-    const line = (id: string, unitPrice: number, taxCodeId: string | null) =>
+  it("adds header shipping only to lines whose own snapshot taxes shipping", () => {
+    const line = (
+      id: string,
+      unitPrice: number,
+      taxCodeId: string | null,
+      taxesShipping: boolean
+    ) =>
       ({
         id,
         invoiceLineType: "Part",
@@ -184,17 +184,22 @@ describe("salesInvoiceTaxSummaryLines", () => {
         convertedShippingCost: 0,
         convertedAddOnCost: 0,
         taxCodeId,
-        taxPercent: taxCodeId ? 0.2 : 0
+        taxPercent: taxCodeId ? 0.2 : 0,
+        taxesShipping
       }) as never;
     expect(
       salesInvoiceTaxSummaryLines(
-        [line("a", 300, "vat"), line("b", 100, null)],
-        100,
-        codes
+        [
+          line("a", 300, "vat", true),
+          line("b", 100, null, false),
+          line("c", 400, "vat", false)
+        ],
+        160
       )
     ).toEqual([
-      { taxCodeId: "vat", taxPercent: 0.2, base: 375 },
-      { taxCodeId: null, taxPercent: 0, base: 100 }
+      { taxCodeId: "vat", taxPercent: 0.2, base: 360 },
+      { taxCodeId: null, taxPercent: 0, base: 100 },
+      { taxCodeId: "vat", taxPercent: 0.2, base: 400 }
     ]);
   });
 });
@@ -275,6 +280,42 @@ describe("resolveSellerRegistration", () => {
         { ...company, taxId: null },
         "2026-10-17",
         true
+      )
+    ).toBeNull();
+  });
+
+  it("prints the registration for the company's own state, never another state's", () => {
+    const texas = { countryCode: "US", stateProvince: "TX", taxId: "US-EIN" };
+    const permit = (state: string, registrationNumber: string) => ({
+      countryCode: "US",
+      state,
+      registrationNumber,
+      effectiveDate: null,
+      endDate: null
+    });
+    expect(
+      resolveSellerRegistration(
+        [permit("CA", "CA-PERMIT"), permit("TX", "TX-PERMIT")],
+        texas,
+        "2026-10-17",
+        true
+      )
+    ).toBe("TX-PERMIT");
+    // Only another state's permit: the company's tax ID, not the CA number.
+    expect(
+      resolveSellerRegistration(
+        [permit("CA", "CA-PERMIT")],
+        texas,
+        "2026-10-17",
+        true
+      )
+    ).toBe("US-EIN");
+    expect(
+      resolveSellerRegistration(
+        [permit("CA", "CA-PERMIT")],
+        texas,
+        "2026-10-17",
+        false
       )
     ).toBeNull();
   });

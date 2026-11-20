@@ -4594,6 +4594,9 @@ msgstr "存档培训"
 msgid "Archived"
 msgstr "已归档"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "在服务商处已归档，请重新映射。"
+
 msgid "Archived Logs"
 msgstr "已归档日志"
 
@@ -11716,6 +11719,12 @@ msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删
 msgid "Each line shows its item ID and revision."
 msgstr "每行显示其物料 ID 和修订版。"
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "每行将采用其物料在开票日期、发票收货地点对应的税码和税率。这会覆盖您在某行上清空的税码。租赁行和合同行保留各自的税码。"
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "每行将采用其物料在订单日期、订单收货地点对应的税码和税率。这会覆盖您在某行上清空的税码。"
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "每月租赁运行过账每项资产的利息和使用权摊销。"
 
@@ -12984,8 +12993,8 @@ msgstr "每行都确认其计费内容"
 msgid "Every match"
 msgstr "每次匹配"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "所有其他启用的税码。选择不同的提供商税率来重新映射。"
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "其他所有税码。请选择其他服务商税率进行重新映射。"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "每个零件文件默认勾选；取消勾选您不想发送的文件。"
@@ -13100,6 +13109,9 @@ msgstr "执行损益表"
 
 msgid "Exempt"
 msgstr "豁免的"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "免税客户、不征税物料、不征税运费"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "豁免或非豁免，在个人的工单选项卡中设置。在 DCAA 模式下，它采用员工在提交时认证的认证文本，豁免员工的长周期会被冲淡。"
@@ -18173,8 +18185,8 @@ msgstr "生产受阻"
 msgid "Map accounts"
 msgstr "映射科目"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "将每个Carbon税码映射到提供商税率（销售和采购各一次）。推送的文档会将Carbon的税款金额与映射的税率一起发送。"
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "将每个 Carbon 税码分别映射到服务商税率，销售和采购各映射一次。推送的单据将使用 Carbon 的税额及映射后的税率。反向征税税码在销售时不收取税款，因此请将其映射到 0% 税率，例如零税率欧盟内销售；其采购单据不含税，无需税率。"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
@@ -20498,11 +20510,11 @@ msgstr "未找到选项。"
 msgid "No options found."
 msgstr "未找到选项。"
 
-msgid "No other active tax codes"
-msgstr "没有其他启用的税码"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "未找到其他员工。添加员工以启用所有权转移。"
+
+msgid "No other tax codes"
+msgstr "没有其他税码"
 
 msgid "No outstanding trainings"
 msgstr "没有未完成的培训"
@@ -20831,6 +20843,9 @@ msgstr "还没有同步操作"
 msgid "No tax code"
 msgstr "无税码"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "无税码（免税或不征税）"
+
 msgid "No tax registration for {unregistered}"
 msgstr "没有{unregistered}的税务登记"
 
@@ -21068,6 +21083,9 @@ msgstr "未映射"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "未移动：{0}。已记录在<0>{1}</0>"
+
+msgid "Not needed"
+msgstr "不需要"
 
 msgid "Not now"
 msgstr "暂不"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "停用税码"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "停用税码{0}？它将不再能在新行中选择。已经使用它的行将保持不变。"
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "停用税码 {0}？之后新行将无法选择该税码。已使用它的行将保留该税码。仍分配给客户、供应商或收货地点的税码无法停用。"
+
+msgid "Retired, still on documents"
+msgstr "已停用，仍在单据中使用"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "通过报废或出售将资产退出使用，将收益或损失计入账面净值，并将其状态设为已处置。"
@@ -26544,6 +26565,10 @@ msgstr "反向收费销售税"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "反向收费销售税 (默认)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "反向征税，按 {0} 收取"
 
 msgid "Reverse Entry"
 msgstr "冲销凭证"
@@ -28018,6 +28043,9 @@ msgstr "将{label}销售给客户"
 
 msgid "Sell to Customer"
 msgstr "销售给客户"
+
+msgid "Seller Tax ID"
+msgstr "卖方税号"
 
 msgid "Selling profit: <0/>"
 msgstr "销售利润：<0/>"
@@ -30611,6 +30639,15 @@ msgstr "由税务部门征收和可抵扣的税，以及应付净额"
 msgid "Tax component"
 msgstr "税务成分"
 
+msgid "Tax Component"
+msgstr "税务组成部分"
+
+msgid "Tax Component Base"
+msgstr "税务组成部分计税基数"
+
+msgid "Tax Component Rate"
+msgstr "税务组成部分税率"
+
 msgid "Tax coverage"
 msgstr "税务适用范围"
 
@@ -31575,8 +31612,8 @@ msgstr "您公司打印至的标签和文件打印机"
 msgid "The labels every project can put on its elements."
 msgstr "每个项目可以在其元素上放置的标签。"
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "税分项最后一天生效。如需变更税率，请为旧税分项设置失效日期，并新增一个税分项，这样已过账的单据仍保留旧税率。"
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "税务组成部分生效的最后一天。如需变更税率，请将旧组成部分的失效日期设为新组成部分生效日的前一天，然后添加新组成部分。同名且同一征税机构的两个组成部分不能在同一天同时有效。"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "租赁月最后一天（第{commencementDay}天之前的日期），在最后一次已过账租赁运行之后"
@@ -35496,8 +35533,8 @@ msgstr "当MRP开始将此零件用于旧零件的需求时"
 msgid "When MRP uses the successor for new demand"
 msgstr "当 MRP 将后继物料用于新需求时"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "开启后，行的运费将计入应税金额，因此税码会以与货物相同的税率对运费征税。"
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "开启后，单据表头运费中分摊到某行的部分将计入该行的应税金额，因此税码会以与货物相同的税率对其征税。行本身的运费始终计税。"
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "启用后,此类别中的属性会显示在人员的公开个人资料中;否则,仅管理员可见。"

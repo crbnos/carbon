@@ -355,10 +355,12 @@ revenue, so it cannot mirror Carbon's posting. Spec:
       2. else the invoice lines of the leg's purchase-order line;
       3. else the direct (no PO) lines on the leg's account;
       4. else `tax: null`.
-    - **One shared planner, `planBillTaxLines`** (`core/document-costing.ts`),
+    - **One shared planner, `planBillTaxLines`** (`core/bill-tax-plan.ts`),
       used by Xero and QBO. A provider does no tax maths of its own: Xero maps
-      each planned line to a `TaxType` (`buildXeroBillLineItems`), QBO to a
-      `TaxCodeRef` (`resolveQboPurchaseTaxLines`).
+      each planned line to a `TaxType` (`buildXeroBillLineItems`,
+      `xero/entities/bill-lines.ts`), QBO to a `TaxCodeRef`
+      (`resolveQboPurchaseTaxLines`, called from
+      `quickbooks-online/entities/bill-lines.ts`).
       1. `billSendsTax` decides. No Tax Paid leg and no zero-rated coded leg:
          every leg replays at no tax, **byte-identical** to before, and the tax
          catalog is never read (`replayBillTaxNeutral`).
@@ -366,22 +368,31 @@ revenue, so it cannot mirror Carbon's posting. Spec:
          `toDocumentTaxTotal` (the legs summed, then converted ONCE; leg-by-leg
          rounding drifts by up to half a unit per leg). `toTransactionCurrencyLines`
          reconciles the cost legs against the same figure.
-      3. Each code's recoverable tax R is Σ`recoverableAmount` of its ledger
-         rows. The codes are converted with `distributeRoundingResidual`, so they
-         sum exactly to the Tax Paid total. A ledger that disagrees with Tax
-         Paid refuses.
-      4. `allocateRecoverableTax`: for a code at rate r, the recoverable net is
-         N = R / r at document decimals. N fills that code's legs of the same
-         sign, largest first, each up to its own amount. R is spread over the
-         pieces in proportion to their net (`distributeRoundingResidual`). Each
-         piece is a line at the mapped purchase rate with its tax. The rest of
-         the leg is a second line on the same account at no tax (Xero `NONE`, QBO
-         the company's non-taxable code from `qboNonTaxableCode`). The share
-         R / tax is never computed, so it is never rounded.
+      3. `recoverableByCodeFromLedger` gives each code's recoverable tax R
+         (Σ`recoverableAmount`) and recoverable net N. A ledger line (one row
+         per component, components sharing the line's `taxableAmount`) adds
+         `taxableAmount × recoverable ÷ tax` ONCE, so a fully recoverable line
+         adds its whole net. N is never R ÷ rate: per-line rounding of the
+         supplier's VAT (net 2.53, VAT 0.51) would push R ÷ rate past the legs
+         (refusal) or short of them (a stray 1p no-tax line). The codes' R are
+         converted with `distributeRoundingResidual`, so they sum exactly to
+         the Tax Paid total; N is converted with `toDocumentAmount`. A ledger
+         that disagrees with Tax Paid refuses.
+      4. `allocateRecoverableTax`: N fills that code's legs of the same sign,
+         largest first, each up to its own amount. R is spread over the pieces
+         in proportion to their net (`distributeRoundingResidual`). Each piece
+         is a line at the mapped purchase rate with its tax. The rest of the leg
+         is a second line on the same account at no tax (Xero `NONE`, QBO the
+         company's non-taxable code from `qboNonTaxableCode`). A foreign bill
+         allows one minor unit per leg (`perLegTolerance`) for conversion
+         rounding: a leg that close to the unplaced net is taken whole.
       5. Every other leg is one line: a code at 0% (zero-rated or exempt) at its
          mapped rate with tax 0, so the net reaches the return (UK box 7); tax
          folded into cost (r ≠ 0, nothing recoverable), no code, or `tax: null`
-         at no tax.
+         at no tax. On Xero, a leg with no code and no tax takes the "no tax
+         code" fallback rate with `TaxAmount` 0 when the company uses purchase
+         codes and the bill has no reverse-charge leg (`isUntaxedBillLeg`; see
+         "Tax-code mapping").
       Legs of a code that cannot absorb N (none tied to the code, or too small)
       refuse with the `UNMAPPED_TAX_CODES` Warning. Every refusal is a
       `JournalEntrySyncError` with `warning: true`, never a plain Error.
@@ -390,8 +401,13 @@ revenue, so it cannot mirror Carbon's posting. Spec:
       account line at no tax, as before bills carried tax. This keeps GL parity.
       Provider reverse-charge rates are not mapped yet.
       <!-- UNVERIFIED: how Xero (reverse-charge TaxTypes) and QBO (reverse-charge codes) take a reverse-charge bill natively; Phase 1 avoids them -->
-    - QBO's vendor credit reuses `allocateRecoverableTax` for a supplier memo's
-      single reason leg.
+    - **Supplier memos share the split.** Xero's credit note and QBO's vendor
+      credit call `planMemoRecoverableLines` (recoverable net = net × share,
+      recoverable tax = tax × share, through `allocateRecoverableTax`) with the
+      share from `loadMemoRecoverableShare` (the memo's tax-ledger rows; a
+      coded taxed memo with none waits for a repost). Both live in
+      `core/bill-tax-plan.ts`. A Reverse Charge supplier memo goes out
+      tax-neutral (Xero `NONE` for the gross; QBO no tax fields).
     - Xero sets `LineAmountTypes: "Exclusive"` only when a line carries a mapped
       `TaxType` (`hasXeroMappedTax`). QBO sends `GlobalTaxCalculation: "TaxExcluded"`
       and `TxnTaxDetail` (`buildQboTxnTaxDetail`) outside the US. A QBO US company
@@ -499,9 +515,13 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     and allows one transaction code. Failed catalog reads evict the
     cached promise so another invoice can retry. [Intuit SDK tax contract](https://intuit.github.io/QuickBooks-V3-PHP-SDK/quickstart.html#constructing-entities-with-tax).
   - Xero: each line's `TaxType` comes from `resolveXeroTaxType`
-    (`providers/xero/tax.ts`). An untaxed legacy line (no code, 0%, no tax) is
-    `NONE` and never reads `GET /TaxRates`. Any other line goes through
-    `resolveProviderTaxRate`. Sales orders and purchase orders resolve the same way.
+    (`providers/xero/tax.ts`), with the context from the syncer's one
+    `XeroTaxContextLoader` (`forLines`). A line `sendsProviderNoTax` names is
+    `NONE`: an untaxed line (no code, 0%, no tax) in a direction that uses no
+    codes, or a Reverse Charge purchase line. When no line needs a rate the
+    loader reads only the tax-code facts, never `GET /TaxRates`. Any other
+    line goes through `resolveProviderTaxRate`. Sales orders, purchase orders
+    and credit notes resolve the same way.
   - Rillet REVENUE_RECOGNITION_ONLY accepts the same directed fixed rate as bills.
     Each item has a DAILY revenue period beginning and ending on Carbon's
     posting date, also used as the remote invoice/FX date. The interim
@@ -809,43 +829,82 @@ A Carbon tax code maps to one provider tax rate per direction: a Xero
   (`buildTaxCodeMappingEntityId`; direction `sales` | `purchase`). One code needs
   both: Xero refuses a revenue rate on an expense account. Many codes may share
   one provider rate (`allowDuplicateExternalId: true`). `metadata` holds
-  `externalName` and `externalRate` (0..1).
+  `externalName` and `externalRate` (0..1) for display only: the save reads
+  them from the provider, and no check uses them.
+- **"No tax code" fallback (Xero only, `NO_TAX_CODE_FALLBACK_PROVIDERS`)**:
+  the sentinel `NO_TAX_CODE_MAPPING_ID` (`noTaxCode:<direction>`, same storage,
+  no schema change). In a direction where the company uses any tax code
+  (`noTaxCodeFallbackDirections`), a line with no code, 0% and no tax (an
+  exempt customer, a non-taxable item, header shipping on a code that does not
+  tax shipping, a legacy untaxed line) sends this mapped rate instead of
+  `NONE`, so its net reaches the VAT return. A direction (or company) with no
+  codes keeps `NONE`. QBO keeps its non-taxable code (`qboNonTaxableCode`).
 - **Catalogs**: Xero `listTaxRates` (`GET /TaxRates`, ACTIVE only, `[]` on
   failure) → `toXeroTaxRateOptions` (a rate is a sales option unless
   `CanApplyToRevenue` is false, a purchase option unless `CanApplyToExpenses` is
-  false). QBO `listTaxRateOptions` → `qboTaxOptions`: active codes with exactly
+  false; each option carries `reportTaxType` and `canApplyTo` by account
+  class). QBO `listTaxRateOptions` → `qboTaxOptions`: active codes with exactly
   one rate in the direction's list; tax groups are not offered.
-- **Used-but-unmapped** (`getUnmappedTaxCodes`): an active code is used for
-  sales when `customerTax`, `customerLocation`, `quoteLine`, `salesOrderLine`,
-  `salesInvoiceLine`, `rentalAgreement`, `rentalAgreementCharge`,
-  `customerContractLine` or a customer `memo` names it. It is used for purchases
-  when `supplierTax`, `supplierQuoteLinePrice`, `purchaseOrderLine`,
-  `purchaseInvoiceLine` or a supplier `memo` names it. Items and locations do
-  not count.
+- **Used-but-unmapped** (`loadTaxCodeUsage` + `computeUnmappedTaxCodes`,
+  wrapped by `getUnmappedTaxCodes`): one statement with an EXISTS per source
+  table per code (each on the table's `taxCodeId` index). A code, retired
+  ones included, is used for sales when `customerTax`, `customerLocation`,
+  `quoteLine`, `salesOrderLine`, `salesInvoiceLine`, `rentalAgreement`,
+  `rentalAgreementCharge`, `customerContractLine` or a customer `memo` names
+  it. It is used for purchases when `supplierTax`, `supplierQuoteLinePrice`,
+  `purchaseOrderLine`, `purchaseInvoiceLine` or a supplier `memo` names it.
+  Items and locations do not count. A Reverse Charge code needs no purchase
+  mapping. On Xero, each direction that uses codes also needs its fallback.
 - **Resolution** (`core/provider-tax.ts` `resolveProviderTaxRate`, shared by
   Xero `resolveXeroTaxType` and QBO `resolveQboLineTax`):
-  1. A line with a code uses the code's mapping for the direction. No mapping
-     raises the retryable `UNMAPPED_TAX_CODES` Warning naming the code.
-  2. A legacy line (bare `taxPercent`, no code) matches its percentage to
-     exactly one provider rate of the direction. A 0% legacy line takes the
-     provider's `NONE` rate when it has one. Zero or several matches raise the Warning.
+  1. A line with a code uses the code's mapping for the direction; an untaxed
+     code-less line uses the fallback mapping when `noTaxCodeFallback` is set.
+     No mapping, or a mapping to a rate the provider no longer offers
+     (archived), raises the retryable `UNMAPPED_TAX_CODES` Warning.
+  2. A legacy line (bare `taxPercent`, no code) matches its percentage with
+     `pickRateByPercent`: one rate wins; among several, capital-goods rates
+     (`CAP` in `ReportTaxType` or `TaxType`) drop out, then the one with the
+     standard `ReportTaxType` (OUTPUT / INPUT) wins; else the Warning. A 0%
+     legacy line takes the provider's `NONE` rate when it has one.
   3. The line's tax must be within one minor unit of `round(net × provider rate,
      decimalPlaces)`. Else the Warning: a code mapped to a rate with a different
-     percentage is caught before the push, not on the VAT return.
-  Every syncer resolves tax BEFORE `ensureDependencySynced`, so an
-  `UNMAPPED_TAX_CODES` Warning provisions nothing in the provider. The context
-  (mappings + catalog) loads once per syncer and is dropped on a failed read.
+     percentage is caught before the push, not on the VAT return. A Reverse
+     Charge sale charges 0%, so only a 0% sales rate passes.
+  4. When the line's account class is known (Xero: the chart's `Class`, read
+     with the catalog), a rate whose `CanApplyTo<class>` is false raises the
+     Warning ("cannot be used on liability account 2125").
+  `sendsProviderNoTax` runs first: a Reverse Charge purchase line (bill,
+  purchase order, supplier memo) is tax-neutral in Phase 1 and needs no
+  mapping (Xero `NONE`; QBO the non-taxable code on a PO, no tax fields on a
+  vendor credit; `loadReverseChargeCodeIds`). Every syncer resolves tax
+  BEFORE `ensureDependencySynced`, so an `UNMAPPED_TAX_CODES` Warning
+  provisions nothing in the provider. Xero's `XeroTaxContextLoader` (one per
+  syncer) memoizes the tax-code facts and the catalog and drops a failed read.
 - **ERP surface**: the integration drawer's **Tax Rates** tab
   (`x+/settings+/integrations.$id.tsx` `getTaxRateTabData`,
   `modules/settings/ui/Integrations/TaxRateMapping.tsx`), rendered only for
   `TAX_RATE_MAPPING_PROVIDERS` (Xero, QBO). It lists "Unmapped tax codes" then
-  "Tax codes", each with a Sales and a Purchase provider rate. Intent
-  `upsert-tax-code-mapping` saves one code (`upsertTaxCodeMappings`, all or
-  none, ids checked against `companyId`). **Match by rate**
-  (`matchTaxCodesByRate`) proposes a rate only when exactly one provider rate of
-  the direction has the code's percentage today.
+  "Tax codes", each with a Sales and a Purchase provider rate: the fallback
+  row first (Xero), then active codes at their charged rate (0 for Reverse
+  Charge), then retired codes documents still use. A mapping to a rate the
+  provider no longer offers shows "Archived in the provider. Re-map it."
+  Intent `upsert-tax-code-mapping` saves one code through
+  `saveTaxCodeMappings`: it re-reads the provider's options
+  (`getProviderTaxRateOptions`, `settings.service.ts`), refuses an unknown
+  rate and a non-0% sales rate for a Reverse Charge code, and stores the
+  option's name and rate (`upsertTaxCodeMappings`, all or none, ids checked
+  against `companyId`). **Match by rate** (`matchTaxCodesByRate`) proposes the
+  `pickRateByPercent` winner for the code's charged rate, and never a
+  purchase rate for a Reverse Charge code.
 - **Sync gate**: `update-sync-enabled` refuses ON while `getUnmappedTaxCodes` is
   non-empty (see "The sync switch" above).
+- **Deferred (Phase 2, needs an accountant)**: the non-recoverable remainder of
+  a partly recoverable purchase goes out at `NONE` (UK box 7 understated), and
+  a reverse-charge bill reports nothing in boxes 1, 4 and 7.
+- **Inbound bills carry no code**: a bill pulled from Xero or QBO writes
+  `taxPercent` and `supplierTaxAmount` but no `taxCodeId`, so its posting folds
+  the tax into cost, recoverable VAT included. Phase 1 does not map a provider
+  rate back to a Carbon code.
 <!-- UNVERIFIED: no Xero or QBO sandbox has accepted a document with a mapped tax rate yet (plan Task 39) -->
 
 ## Gotchas

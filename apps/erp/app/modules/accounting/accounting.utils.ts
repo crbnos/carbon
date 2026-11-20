@@ -5,6 +5,7 @@
 import { journalReference } from "@carbon/database";
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import {
+  applyRate,
   chargedTaxPercent,
   credit,
   debit,
@@ -1267,6 +1268,240 @@ export function decideLineTax(facts: {
     exempt: false,
     exemptionReason: null
   };
+}
+
+/**
+ * A document decision (made with no item) for a line on an item: the same
+ * decision, or none at all for a non-taxable item — `decideLineTax` order:
+ * an exempt customer first, then the item.
+ */
+export function itemTaxDecision(
+  decision: LineTaxDecision,
+  itemTaxable: boolean
+): LineTaxDecision {
+  return decision.exempt || itemTaxable
+    ? decision
+    : {
+        taxCodeId: null,
+        taxPercent: 0,
+        components: [],
+        exempt: true,
+        exemptionReason: null
+      };
+}
+
+/**
+ * A billed line's rate: its code's charged rate on `date` (the invoice's tax
+ * point), else its stored percent — no code, or a code since deleted.
+ */
+export function chargedRateOr(
+  code: TaxCodeInput | null | undefined,
+  storedPercent: number | string | null,
+  date: string
+): number {
+  return code ? chargedTaxPercent(code, date) : Number(storedPercent ?? 0);
+}
+
+export type LineTax = { taxCodeId: string | null; taxPercent: number };
+
+/**
+ * What a line keeps of a resolver decision. A decision that names a code or
+ * zeroes the line (an exempt customer, a non-taxable item) is taken; one with
+ * neither is only the party's bare percent, so the percent that was sent
+ * stands — the behavior from before tax codes.
+ */
+export function applyLineTaxDecision(
+  decision: LineTaxDecision,
+  submitted: LineTax
+): LineTax {
+  return decision.taxCodeId || decision.exempt
+    ? { taxCodeId: decision.taxCodeId, taxPercent: decision.taxPercent }
+    : submitted;
+}
+
+/** A decision that names a code with no component in force on its date:
+ *  taken as it is, it would charge 0% under a real code. */
+export function hasNoRateInForce(decision: LineTaxDecision): boolean {
+  return !!decision.taxCodeId && decision.components.length === 0;
+}
+
+export function noRateInForceMessage(date: string): string {
+  return `The tax code has no rate in force on ${date}. Give it a component that covers this date, or choose another code.`;
+}
+
+/** The refusal of a supplier tax amount on a Reverse Charge line; posting
+ *  (`withPurchaseTax`) refuses the same line with the same words. */
+export function reverseChargeTaxAmountMessage(amount: number): string {
+  return `This line has a Reverse Charge tax code and a tax amount of ${amount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`;
+}
+
+/**
+ * An update's `taxCodeId` as `decideWrittenLineTax` reads it. The line
+ * updates write a key that is present but undefined as null, so such a key
+ * is a cleared code (""); only an absent key is "not sent".
+ */
+export function updatedTaxCodeId(input: {
+  taxCodeId?: string | null;
+}): string | undefined {
+  return "taxCodeId" in input ? (input.taxCodeId ?? "") : undefined;
+}
+
+/**
+ * A decided tax for a line upsert typed by its form validator (no null
+ * code): a cleared code becomes a present `undefined` key, which those
+ * upserts store as null (`sanitize`). An absent key stays absent.
+ */
+export function lineTaxForUpsert(tax: Partial<LineTax>): {
+  taxCodeId?: string;
+  taxPercent?: number;
+} {
+  const { taxCodeId, ...rest } = tax;
+  return "taxCodeId" in tax
+    ? { ...rest, taxCodeId: taxCodeId ?? undefined }
+    : rest;
+}
+
+type LineTaxWriteResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: string };
+
+/**
+ * The tax a document line create or update stores. A key left out of the
+ * result keeps the stored value.
+ *
+ * - A non-taxable item: no code and 0%, whatever was sent.
+ * - A code that is sent decides, at its charged rate on `date`: the server
+ *   never keeps a percent that disagrees with the code. A code of another
+ *   company (`sentCode` null) or with no component in force is refused.
+ * - An empty code is a cleared one: the sent percent stands with no code.
+ * - No code sent: on a create, the party's decision (`applyLineTaxDecision`);
+ *   on an update (`partyDecision` null), the stored code stays.
+ */
+export function decideWrittenLineTax(args: {
+  source: "sales" | "purchase";
+  itemTaxable: boolean;
+  /** undefined: the field was not sent; "": the user cleared the code. */
+  sentTaxCodeId: string | undefined;
+  sentTaxPercent: number | undefined;
+  sentCode: TaxCodeInput | null;
+  partyDecision: LineTaxDecision | null;
+  date: string;
+}): LineTaxWriteResult<Partial<LineTax>> {
+  if (!args.itemTaxable) {
+    return { data: { taxCodeId: null, taxPercent: 0 }, error: null };
+  }
+  if (args.sentTaxCodeId) {
+    if (!args.sentCode) return { data: null, error: "Tax code not found" };
+    const decision = decideLineTax({
+      source: args.source,
+      taxExempt: false,
+      taxExemptionReason: null,
+      itemTaxable: true,
+      locationTaxCode: null,
+      partyTaxCode: args.sentCode,
+      fallbackTaxPercent: 0,
+      date: args.date
+    });
+    if (hasNoRateInForce(decision)) {
+      return { data: null, error: noRateInForceMessage(args.date) };
+    }
+    return {
+      data: { taxCodeId: decision.taxCodeId, taxPercent: decision.taxPercent },
+      error: null
+    };
+  }
+  if (args.sentTaxCodeId === "" || !args.partyDecision) {
+    return {
+      data: {
+        ...(args.sentTaxCodeId === "" ? { taxCodeId: null } : {}),
+        taxPercent: args.sentTaxPercent
+      },
+      error: null
+    };
+  }
+  if (hasNoRateInForce(args.partyDecision)) {
+    return { data: null, error: noRateInForceMessage(args.date) };
+  }
+  return {
+    data: applyLineTaxDecision(args.partyDecision, {
+      taxCodeId: null,
+      taxPercent: args.sentTaxPercent ?? 0
+    }),
+    error: null
+  };
+}
+
+/**
+ * The supplier tax amount a purchase line write stores, after
+ * `decideWrittenLineTax` decided `tax`. `code` is the line's code after the
+ * write (the stored one when the write leaves it alone).
+ *
+ * - A non-taxable item: 0.
+ * - A Reverse Charge code takes no supplier tax: a sent non-zero amount is
+ *   refused, and the amount is 0.
+ * - A code decided by this write: the sent amount stands (the supplier's
+ *   invoice is authoritative); with none sent, or for a code the party gave,
+ *   it is restated from the rate on `base`.
+ * - Otherwise the sent amount stands.
+ */
+export function decidePurchaseTaxAmount(args: {
+  itemTaxable: boolean;
+  tax: Partial<LineTax>;
+  code: Pick<TaxCodeInput, "calculationType"> | null;
+  /** The code was sent by the request, not given by the party. */
+  codeWasSent: boolean;
+  sentTaxAmount: number | undefined;
+  base: number;
+  currencyDecimals: number | null;
+}): LineTaxWriteResult<number | undefined> {
+  if (!args.itemTaxable) return { data: 0, error: null };
+  if (args.code?.calculationType === "Reverse Charge") {
+    if (!equals(args.sentTaxAmount ?? 0, 0)) {
+      return {
+        data: null,
+        error: reverseChargeTaxAmountMessage(args.sentTaxAmount ?? 0)
+      };
+    }
+    return { data: 0, error: null };
+  }
+  const decidedCode = !!args.tax.taxCodeId;
+  const restate =
+    decidedCode && (!args.codeWasSent || args.sentTaxAmount === undefined);
+  if (
+    restate &&
+    args.tax.taxPercent !== undefined &&
+    args.currencyDecimals !== null
+  ) {
+    return {
+      data: applyRate(args.base, args.tax.taxPercent, args.currencyDecimals),
+      error: null
+    };
+  }
+  return { data: args.sentTaxAmount, error: null };
+}
+
+/**
+ * Why a tax code cannot be retired yet, or null: a customer, a supplier or a
+ * ship-to location still names it, and would keep giving it to new lines.
+ */
+export function taxCodeRetireRefusal(references: {
+  customers: number;
+  suppliers: number;
+  locations: number;
+}): string | null {
+  const counted = (count: number, one: string, many: string) =>
+    count === 0 ? null : `${count} ${count === 1 ? one : many}`;
+  const parts = [
+    counted(references.customers, "customer", "customers"),
+    counted(references.suppliers, "supplier", "suppliers"),
+    counted(references.locations, "ship-to location", "ship-to locations")
+  ].filter((part): part is string => part !== null);
+  if (parts.length === 0) return null;
+  const list =
+    parts.length === 1
+      ? parts[0]
+      : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return `This tax code is still assigned to ${list}. Give them another code first, then retire it.`;
 }
 
 type TaxCodeRow = {

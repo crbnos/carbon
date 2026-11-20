@@ -36,8 +36,9 @@ import { fromServerFn } from "../shared/shared.service";
 import {
   accountClassMatchesIncomeBalance,
   fixedAssetClassValidator,
-  taxCalculationTypes,
-  taxReportingCategories
+  taxAuthorityFields,
+  taxCodeFields,
+  taxRegistrationInput
 } from "./accounting.models";
 import * as service from "./accounting.service";
 import {
@@ -4971,63 +4972,19 @@ const taxPagedInput = z.looseObject({
   search: z.string().nullable().optional()
 });
 
-/** Every rate is a 0..1 fraction, as `taxPercent` is on document lines. */
-const taxCodeComponentInput = z
-  .object({
-    id: z
-      .string()
-      .describe("A component of this code keeps its id; omit to add one.")
-      .optional(),
-    name: z.string().trim().min(1),
-    taxAuthorityId: z.string().optional(),
-    taxPercent: z.number().min(0).max(1),
-    recoverablePercent: z.number().min(0).max(1),
-    sequence: z.number().int().min(1),
-    isCompound: z.boolean(),
-    taxReceivedAccountId: z.string().optional(),
-    taxPaidAccountId: z.string().optional(),
-    effectiveDate: z.string().optional(),
-    expirationDate: z.string().optional()
-  })
-  .refine(
-    (c) =>
-      !c.effectiveDate ||
-      !c.expirationDate ||
-      c.expirationDate >= c.effectiveDate,
-    {
-      message: "The expiry date must be on or after the effective date",
-      path: ["expirationDate"]
-    }
-  );
-
 const taxCodeInput = z.object({
-  name: z.string().trim().min(1),
-  description: z.string().optional(),
-  calculationType: z.enum(taxCalculationTypes),
-  reportingCategory: z.enum(taxReportingCategories),
-  taxesShipping: z.boolean(),
-  invoiceMessage: z.string().optional(),
-  countryCode: z.string().optional(),
-  state: z.string().optional(),
-  active: z.boolean(),
-  components: z.array(taxCodeComponentInput).min(1),
+  ...taxCodeFields,
   customFields: taxCustomFieldsInput
 });
 
 const taxAuthorityInput = z.object({
-  name: z.string().trim().min(1),
-  supplierId: z.string().optional(),
+  ...taxAuthorityFields,
   customFields: taxCustomFieldsInput
 });
 
-const taxRegistrationFields = {
-  countryCode: z.string().min(1),
-  state: z.string().optional(),
-  registrationNumber: z.string().trim().min(1),
-  effectiveDate: z.string().optional(),
-  endDate: z.string().optional(),
+const taxRegistrationWithFields = taxRegistrationInput.safeExtend({
   customFields: taxCustomFieldsInput
-};
+});
 
 /**
  * Get tax codes
@@ -5144,7 +5101,9 @@ export const updateTaxCode = defineServiceFn({
  *
  * @remarks
  * Lines that name the code keep it, so it is never deleted: it is made
- * inactive and can no longer be chosen on new lines.
+ * inactive and can no longer be chosen on new lines. Refused while a
+ * customer, a supplier or a ship-to location still names it (the message
+ * gives the counts): they would keep giving it to new lines.
  *
  * @mcp
  */
@@ -5152,10 +5111,17 @@ export const deleteTaxCode = defineServiceFn({
   input: z.object({ taxCodeId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteTaxCode(ctx.asCaller.supabase, input.taxCodeId)
+    const result = await service.deleteTaxCode(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        taxCodeId: input.taxCodeId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      }
     );
+    if (result.error !== null) return ctx.error("rule", result.error);
+    return result.data;
   }
 });
 
@@ -5377,15 +5343,7 @@ export const getTaxRegistration = defineServiceFn({
  * @mcp
  */
 export const createTaxRegistration = defineServiceFn({
-  input: z
-    .object(taxRegistrationFields)
-    .refine(
-      (r) => !r.effectiveDate || !r.endDate || r.endDate >= r.effectiveDate,
-      {
-        message: "The end date must be on or after the effective date",
-        path: ["endDate"]
-      }
-    ),
+  input: taxRegistrationWithFields,
   permission: { create: "accounting" },
   async run(ctx, input) {
     return unwrap(
@@ -5405,15 +5363,7 @@ export const createTaxRegistration = defineServiceFn({
  * @mcp
  */
 export const updateTaxRegistration = defineServiceFn({
-  input: z
-    .object({ ...taxRegistrationFields, id: z.string() })
-    .refine(
-      (r) => !r.effectiveDate || !r.endDate || r.endDate >= r.effectiveDate,
-      {
-        message: "The end date must be on or after the effective date",
-        path: ["endDate"]
-      }
-    ),
+  input: taxRegistrationWithFields.safeExtend({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
     return unwrap(

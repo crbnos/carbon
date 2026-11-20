@@ -14,6 +14,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -37,10 +38,10 @@ import {
   Location
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { Confirm } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
-import type { action as recalculateTaxesAction } from "~/routes/x+/sales-order+/$orderId.recalculate-taxes";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -62,7 +63,7 @@ const SalesOrderProperties = () => {
   });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
-  const recalculateTaxesFetcher = useFetcher<typeof recalculateTaxesAction>();
+  const recalculateTaxesModal = useDisclosure();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -260,15 +261,18 @@ const SalesOrderProperties = () => {
           title={t`Recalculate taxes`}
           icon={<LuRefreshCcw />}
           isDisabled={isDisabled}
-          isLoading={recalculateTaxesFetcher.state !== "idle"}
-          onClick={() => {
-            recalculateTaxesFetcher.submit(null, {
-              method: "post",
-              action: path.to.salesOrderRecalculateTaxes(orderId)
-            });
-          }}
+          onClick={recalculateTaxesModal.onOpen}
         />
       </HStack>
+      <Confirm
+        isOpen={recalculateTaxesModal.isOpen}
+        action={path.to.salesOrderRecalculateTaxes(orderId)}
+        title={t`Recalculate taxes`}
+        text={t`Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line.`}
+        confirmText={t`Recalculate`}
+        onCancel={recalculateTaxesModal.onClose}
+        onSubmit={recalculateTaxesModal.onClose}
+      />
 
       <ValidatedForm
         defaultValues={{

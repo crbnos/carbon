@@ -1897,8 +1897,10 @@ export const manifest = {
   taxAuthority: company("accounting", {
     read: anyOf("accounting_view", "sales_view", "purchasing_view")
   }),
+  // Retired, never deleted (deleteTaxCode): document lines keep their code.
   taxCode: company("accounting", {
-    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+    read: anyOf("accounting_view", "sales_view", "purchasing_view"),
+    delete: false
   }),
   taxCodeComponent: company("accounting", {
     read: anyOf("accounting_view", "sales_view", "purchasing_view")

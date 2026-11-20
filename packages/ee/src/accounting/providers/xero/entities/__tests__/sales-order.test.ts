@@ -55,7 +55,11 @@ function makeSalesOrderSyncer(
   const syncer = new SalesOrderSyncer({
     database: query as never,
     companyId: "company-1",
-    provider: { id: "xero", listTaxRates } as never,
+    provider: {
+      id: "xero",
+      listChartOfAccounts: async () => [],
+      listTaxRates
+    } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "salesOrder"
   });

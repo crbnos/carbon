@@ -5,11 +5,20 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { updateCustomerField } from "~/modules/sales/sales.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+
+const updateForm = z.object({
+  ids: zfd.repeatableOfType(z.string()),
+  field: z.enum(["taxCodeId"]),
+  value: z.string().min(1, { message: "Select a tax code" })
+});
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(updateCustomerField.input).request(args);
+  const input = await validator(updateForm).request(args);
   if ("invalid" in input) return input.invalid;
+  const { ids, value } = input.data;
   const api = await carbon(args.request);
-  return api.sales.updateCustomerField(input.data);
+
+  return api.sales.assignCustomerTaxCode({ ids, taxCodeId: value });
 }

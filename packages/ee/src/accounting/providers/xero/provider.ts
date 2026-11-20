@@ -959,29 +959,33 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
 /**
  * The mapping tab's options from Xero's tax rates: a revenue rate is offered
  * for sales, an expense rate for purchases. `EffectiveRate` is in percent
- * points; the option rate is a 0..1 fraction.
+ * points; the option rate is a 0..1 fraction. `ReportTaxType` and the
+ * `CanApplyTo*` flags ride along for the legacy-percent tie-break and the
+ * account-class check.
  */
 export function toXeroTaxRateOptions(
   rates: ReadonlyArray<Xero.TaxRate>
 ): TaxRateOption[] {
   return rates.flatMap((rate) => {
-    const value = (rate.EffectiveRate ?? rate.DisplayTaxRate ?? 0) / 100;
+    const base = {
+      id: rate.TaxType,
+      name: rate.Name,
+      rate: (rate.EffectiveRate ?? rate.DisplayTaxRate ?? 0) / 100,
+      reportTaxType: rate.ReportTaxType ?? null,
+      canApplyTo: {
+        asset: rate.CanApplyToAssets,
+        equity: rate.CanApplyToEquity,
+        expense: rate.CanApplyToExpenses,
+        liability: rate.CanApplyToLiabilities,
+        revenue: rate.CanApplyToRevenue
+      }
+    };
     const options: TaxRateOption[] = [];
     if (rate.CanApplyToRevenue !== false) {
-      options.push({
-        id: rate.TaxType,
-        name: rate.Name,
-        rate: value,
-        direction: "sales"
-      });
+      options.push({ ...base, direction: "sales" });
     }
     if (rate.CanApplyToExpenses !== false) {
-      options.push({
-        id: rate.TaxType,
-        name: rate.Name,
-        rate: value,
-        direction: "purchase"
-      });
+      options.push({ ...base, direction: "purchase" });
     }
     return options;
   });

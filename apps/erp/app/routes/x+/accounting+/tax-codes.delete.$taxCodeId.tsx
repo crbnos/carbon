@@ -62,7 +62,7 @@ export default function DeleteTaxCodeRoute() {
       name={taxCode.name}
       title={t`Retire ${taxCode.name}`}
       deleteText={t`Retire`}
-      text={t`Retire the tax code ${taxCode.name}? It can no longer be chosen on new lines. Lines that already use it keep it.`}
+      text={t`Retire the tax code ${taxCode.name}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired.`}
       onCancel={onCancel}
     />
   );

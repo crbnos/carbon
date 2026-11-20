@@ -404,7 +404,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a line with a tax code bills at the code's rate on its own date",
+  "a line with a tax code bills at the code's rate on the invoice's date",
   async () => {
     const f = await closedAgreementFixture({ withTaxCode: true });
     try {
@@ -434,17 +434,20 @@ databaseTest(
         taxCodeId: line?.taxCodeId,
         taxPercent: Number(line?.taxPercent)
       });
+      // The invoice is dated 5 October, so every line takes the code's rate
+      // then (10% + the 5% component that starts on 1 October), even the
+      // September period: the invoice date is the tax point.
       expect(
         rate(lines.find((l) => l.rentalBillingPeriodId === f.periodId))
-      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.1 });
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
       expect(
         rate(lines.find((l) => l.rentalBillingPeriodId === f.octoberPeriodId))
       ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
       expect(
         rate(lines.find((l) => l.rentalAgreementChargeId === f.chargeId))
-      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.1 });
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
 
-      // The header totals are the lines': 150 × 10% + 150 × 15% + 25 × 10%.
+      // The header totals are the lines': (150 + 150 + 25) × 15%.
       const invoice = await f.db
         .selectFrom("salesInvoice")
         .select(["subtotal", "totalTax", "totalAmount"])
@@ -454,7 +457,7 @@ databaseTest(
         subtotal: Number(invoice.subtotal),
         totalTax: Number(invoice.totalTax),
         totalAmount: Number(invoice.totalAmount)
-      }).toEqual({ subtotal: 325, totalTax: 40, totalAmount: 365 });
+      }).toEqual({ subtotal: 325, totalTax: 48.75, totalAmount: 373.75 });
     } finally {
       await f.cleanup();
     }

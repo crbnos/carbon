@@ -29,11 +29,13 @@ import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
   memoDirection,
+  memoValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
   memoKeepsStoredTaxRate,
-  memoValidator,
   resolveMemoTaxAmounts,
   type StoredMemoTax
-} from "~/modules/invoicing/invoicing.models";
+} from "~/modules/invoicing/invoicing.utils";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
 

@@ -1289,82 +1289,201 @@ export const taxReportingCategories =
   Constants.public.Enums.taxReportingCategory;
 
 const fraction = (label: string) =>
-  zfd.numeric(
-    z
-      .number()
-      .min(0, { message: `${label} must be at least 0` })
-      .max(1, { message: `${label} must be at most 100%` })
-  );
+  z
+    .number()
+    .min(0, { message: `${label} must be at least 0` })
+    .max(1, { message: `${label} must be at most 100%` });
 
-export const taxCodeComponentValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    taxAuthorityId: zfd.text(z.string().optional()),
-    taxPercent: fraction("Rate"),
-    recoverablePercent: fraction("Recoverable percent"),
-    sequence: zfd.numeric(z.number().int().min(1)),
-    isCompound: zfd.checkbox(),
-    taxReceivedAccountId: zfd.text(z.string().optional()),
-    taxPaidAccountId: zfd.text(z.string().optional()),
-    effectiveDate: zfd.text(z.string().optional()),
-    expirationDate: zfd.text(z.string().optional())
-  })
-  .refine(
-    (c) =>
-      !c.effectiveDate ||
-      !c.expirationDate ||
-      c.expirationDate >= c.effectiveDate,
-    {
-      message: "The expiry date must be on or after the effective date",
-      path: ["expirationDate"]
-    }
-  );
+/** An optional date range is in order: no end, no start, or end ≥ start. */
+export function endOnOrAfterStart(
+  start: string | null | undefined,
+  end: string | null | undefined
+): boolean {
+  return !start || !end || end >= start;
+}
 
-export const taxCodeValidator = z.object({
-  id: zfd.text(z.string().optional()),
+type ComponentRange = {
+  name: string;
+  taxAuthorityId?: string | null;
+  effectiveDate?: string | null;
+  expirationDate?: string | null;
+};
+
+/**
+ * The index of the first component whose dates overlap an earlier one with
+ * the same name and authority, else -1. Both ends are inclusive, as
+ * `effectiveComponents` reads them: a rate change expires the old component
+ * the day before the new one takes effect.
+ */
+export function overlappingComponentIndex(
+  components: ReadonlyArray<ComponentRange>
+): number {
+  const key = (c: ComponentRange) =>
+    `${c.name.trim().toLowerCase()}\u0000${c.taxAuthorityId || ""}`;
+  return components.findIndex((c, index) =>
+    components
+      .slice(0, index)
+      .some(
+        (other) =>
+          key(other) === key(c) &&
+          (!c.expirationDate ||
+            !other.effectiveDate ||
+            other.effectiveDate <= c.expirationDate) &&
+          (!other.expirationDate ||
+            !c.effectiveDate ||
+            c.effectiveDate <= other.expirationDate)
+      )
+  );
+}
+
+const componentDatesInOrder = {
+  message: "The expiry date must be on or after the effective date",
+  path: ["expirationDate"]
+};
+
+// The issue lands on the later row's name, which is always on screen.
+const componentsDoNotOverlap = (
+  components: ReadonlyArray<ComponentRange>,
+  ctx: z.RefinementCtx
+) => {
+  const index = overlappingComponentIndex(components);
+  if (index === -1) return;
+  ctx.addIssue({
+    code: "custom",
+    message:
+      "Another component with this name and authority is in force on the same day. Expire the old one the day before this one takes effect.",
+    path: [index, "name"]
+  });
+};
+
+const registrationDatesInOrder = {
+  message: "The end date must be on or after the effective date",
+  path: ["endDate"]
+};
+
+// Plain-zod fields, read by the service functions (and MCP) as they are; the
+// form validators below wrap the same fields with `zfd` preprocessors.
+export const taxCodeComponentFields = {
+  id: z
+    .string()
+    .describe("A component of this code keeps its id; omit to add one.")
+    .optional(),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().optional()),
+  taxAuthorityId: z.string().optional(),
+  taxPercent: fraction("Rate"),
+  recoverablePercent: fraction("Recoverable percent"),
+  sequence: z.number().int().min(1),
+  isCompound: z.boolean(),
+  taxReceivedAccountId: z.string().optional(),
+  taxPaidAccountId: z.string().optional(),
+  effectiveDate: z.string().optional(),
+  expirationDate: z.string().optional()
+};
+
+export const taxCodeComponentInput = z
+  .object(taxCodeComponentFields)
+  .refine(
+    (c) => endOnOrAfterStart(c.effectiveDate, c.expirationDate),
+    componentDatesInOrder
+  );
+
+export const taxCodeFields = {
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  description: z.string().optional(),
   calculationType: z.enum(taxCalculationTypes, {
     error: "Calculation type is required"
   }),
   reportingCategory: z.enum(taxReportingCategories, {
     error: "Reporting category is required"
   }),
+  taxesShipping: z.boolean(),
+  invoiceMessage: z.string().optional(),
+  countryCode: z.string().optional(),
+  state: z.string().optional(),
+  active: z.boolean(),
+  components: z
+    .array(taxCodeComponentInput)
+    .min(1, { message: "Add at least one component" })
+    .superRefine(componentsDoNotOverlap)
+};
+
+export const taxAuthorityFields = {
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  supplierId: z.string().optional()
+};
+
+export const taxRegistrationFields = {
+  countryCode: z.string().min(1, { message: "Country is required" }),
+  state: z.string().optional(),
+  registrationNumber: z
+    .string()
+    .trim()
+    .min(1, { message: "Registration number is required" }),
+  effectiveDate: z.string().optional(),
+  endDate: z.string().optional()
+};
+
+/** A tax registration's input; update adds `id` with `safeExtend`. */
+export const taxRegistrationInput = z
+  .object(taxRegistrationFields)
+  .refine(
+    (r) => endOnOrAfterStart(r.effectiveDate, r.endDate),
+    registrationDatesInOrder
+  );
+
+const formId = zfd.text(z.string().optional());
+
+export const taxCodeComponentValidator = z
+  .object({
+    ...taxCodeComponentFields,
+    id: formId,
+    taxAuthorityId: zfd.text(taxCodeComponentFields.taxAuthorityId),
+    taxPercent: zfd.numeric(taxCodeComponentFields.taxPercent),
+    recoverablePercent: zfd.numeric(taxCodeComponentFields.recoverablePercent),
+    sequence: zfd.numeric(taxCodeComponentFields.sequence),
+    isCompound: zfd.checkbox(),
+    taxReceivedAccountId: zfd.text(taxCodeComponentFields.taxReceivedAccountId),
+    taxPaidAccountId: zfd.text(taxCodeComponentFields.taxPaidAccountId),
+    effectiveDate: zfd.text(taxCodeComponentFields.effectiveDate),
+    expirationDate: zfd.text(taxCodeComponentFields.expirationDate)
+  })
+  .refine(
+    (c) => endOnOrAfterStart(c.effectiveDate, c.expirationDate),
+    componentDatesInOrder
+  );
+
+export const taxCodeValidator = z.object({
+  ...taxCodeFields,
+  id: formId,
+  description: zfd.text(taxCodeFields.description),
   taxesShipping: zfd.checkbox(),
-  invoiceMessage: zfd.text(z.string().optional()),
-  countryCode: zfd.text(z.string().optional()),
-  state: zfd.text(z.string().optional()),
+  invoiceMessage: zfd.text(taxCodeFields.invoiceMessage),
+  countryCode: zfd.text(taxCodeFields.countryCode),
+  state: zfd.text(taxCodeFields.state),
   active: zfd.checkbox(),
   components: zfd
     .repeatableOfType(taxCodeComponentValidator)
     .refine((components) => components.length > 0, {
       message: "Add at least one component"
     })
+    .superRefine(componentsDoNotOverlap)
 });
 
 export const taxAuthorityValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  supplierId: zfd.text(z.string().optional())
+  ...taxAuthorityFields,
+  id: formId,
+  supplierId: zfd.text(taxAuthorityFields.supplierId)
 });
 
 export const taxRegistrationValidator = z
   .object({
-    id: zfd.text(z.string().optional()),
-    countryCode: z.string().min(1, { message: "Country is required" }),
-    state: zfd.text(z.string().optional()),
-    registrationNumber: z
-      .string()
-      .trim()
-      .min(1, { message: "Registration number is required" }),
-    effectiveDate: zfd.text(z.string().optional()),
-    endDate: zfd.text(z.string().optional())
+    ...taxRegistrationFields,
+    id: formId,
+    state: zfd.text(taxRegistrationFields.state),
+    effectiveDate: zfd.text(taxRegistrationFields.effectiveDate),
+    endDate: zfd.text(taxRegistrationFields.endDate)
   })
   .refine(
-    (r) => !r.effectiveDate || !r.endDate || r.endDate >= r.effectiveDate,
-    {
-      message: "The end date must be on or after the effective date",
-      path: ["endDate"]
-    }
+    (r) => endOnOrAfterStart(r.effectiveDate, r.endDate),
+    registrationDatesInOrder
   );

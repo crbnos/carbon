@@ -60428,6 +60428,7 @@ export type Database = {
           supplierTaxAmount: number
           supplierUnitPrice: number | null
           tags: string[] | null
+          taxCodeId: string | null
           taxPercent: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -60467,6 +60468,7 @@ export type Database = {
           supplierTaxAmount?: number
           supplierUnitPrice?: number | null
           tags?: string[] | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -60506,6 +60508,7 @@ export type Database = {
           supplierTaxAmount?: number
           supplierUnitPrice?: number | null
           tags?: string[] | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -71163,6 +71166,7 @@ export type Database = {
           sortOrder: number
           storageUnitId: string | null
           taxCodeId: string | null
+          taxesShipping: boolean
           taxPercent: number
           unitOfMeasureCode: string
           unitPrice: number
@@ -71220,6 +71224,7 @@ export type Database = {
           sortOrder?: number
           storageUnitId?: string | null
           taxCodeId?: string | null
+          taxesShipping?: boolean
           taxPercent?: number
           unitOfMeasureCode: string
           unitPrice?: number
@@ -71277,6 +71282,7 @@ export type Database = {
           sortOrder?: number
           storageUnitId?: string | null
           taxCodeId?: string | null
+          taxesShipping?: boolean
           taxPercent?: number
           unitOfMeasureCode?: string
           unitPrice?: number
@@ -83475,6 +83481,83 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "taxLedger_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_taxAuthorityId_fkey"
+            columns: ["taxAuthorityId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxAuthority"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_taxCodeComponentId_fkey"
+            columns: ["taxCodeComponentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCodeComponent"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "taxLedger_updatedBy_fkey"
@@ -103973,6 +104056,7 @@ export type Database = {
           sortOrder: number | null
           storageUnitId: string | null
           taxCodeId: string | null
+          taxesShipping: boolean | null
           taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null

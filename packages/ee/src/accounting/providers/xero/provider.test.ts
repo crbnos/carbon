@@ -541,7 +541,7 @@ describe("XeroProvider tax rates", () => {
   });
 
   it("offers a revenue rate for sales and an expense rate for purchases", () => {
-    expect(toXeroTaxRateOptions([OUTPUT2, INPUT2])).toEqual([
+    expect(toXeroTaxRateOptions([OUTPUT2, INPUT2])).toMatchObject([
       {
         id: "OUTPUT2",
         name: "20% (VAT on Income)",
@@ -555,5 +555,20 @@ describe("XeroProvider tax rates", () => {
         direction: "purchase"
       }
     ]);
+  });
+
+  it("carries ReportTaxType and the account classes the rate applies to", () => {
+    const [option] = toXeroTaxRateOptions([
+      {
+        ...INPUT2,
+        ReportTaxType: "INPUT",
+        CanApplyToAssets: true,
+        CanApplyToLiabilities: false
+      }
+    ]);
+    expect(option).toMatchObject({
+      reportTaxType: "INPUT",
+      canApplyTo: { asset: true, liability: false, expense: true }
+    });
   });
 });

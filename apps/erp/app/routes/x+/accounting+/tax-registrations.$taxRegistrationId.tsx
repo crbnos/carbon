@@ -26,8 +26,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const taxRegistration = await getTaxRegistration(client, taxRegistrationId);
 
+  if (!taxRegistration.data) throw notFound("Tax registration not found");
+
   return {
-    taxRegistration: taxRegistration?.data ?? null
+    taxRegistration: taxRegistration.data
   };
 }
 

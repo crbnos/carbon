@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { EPSILON, round, SCALE } from "@carbon/utils";
-import type { BillTaxLine } from "../../../core/document-costing";
+import type { BillTaxLine } from "../../../core/bill-tax-plan";
 import { JournalEntrySyncError } from "../../../core/posting";
 import { resolveProviderTaxRate } from "../../../core/provider-tax";
 import type {

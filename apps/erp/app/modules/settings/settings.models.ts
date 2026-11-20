@@ -916,20 +916,15 @@ export const dimensionValueMappingBulkUpsertValidator = z.object({
 
 /**
  * Saves one tax code's provider rates from the Tax Rates tab: a sales rate,
- * a purchase rate, or both. The rate's name and percentage (0..1) are
- * display metadata captured from the selected provider option, as
- * dimensionValueMappingUpsertValidator captures externalName.
+ * a purchase rate, or both. `taxCodeId` may be the "no tax code" fallback
+ * row. The server reads each rate's name and percentage from the provider.
  */
 export const taxCodeMappingUpsertValidator = z
   .object({
     intent: z.literal("upsert-tax-code-mapping"),
     taxCodeId: z.string().min(1, { message: "Tax code is required" }),
     salesExternalId: zfd.text(z.string().optional()),
-    salesExternalName: zfd.text(z.string().optional()),
-    salesExternalRate: zfd.numeric(z.number().min(0).optional()),
-    purchaseExternalId: zfd.text(z.string().optional()),
-    purchaseExternalName: zfd.text(z.string().optional()),
-    purchaseExternalRate: zfd.numeric(z.number().min(0).optional())
+    purchaseExternalId: zfd.text(z.string().optional())
   })
   .refine(
     (value) => Boolean(value.salesExternalId || value.purchaseExternalId),
@@ -942,9 +937,7 @@ export const taxCodeMappingUpsertValidator = z
 export const taxCodeMappingEntrySchema = z.object({
   taxCodeId: z.string().min(1),
   direction: z.enum(["sales", "purchase"]),
-  externalId: z.string().min(1),
-  externalName: z.string().optional(),
-  externalRate: z.number().min(0).optional()
+  externalId: z.string().min(1)
 });
 
 /**

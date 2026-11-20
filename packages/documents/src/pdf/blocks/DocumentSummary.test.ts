@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { makeText, salesInvoiceTexts } from "../../template";
 import { getMoneyFormatter } from "../../utils/shared";
 import type { TaxSummaryEntry } from "../../utils/tax-summary";
 import { summaryTaxRows } from "./DocumentSummary";
@@ -17,6 +18,10 @@ function rows(
     currencyCode: "CAD",
     locale: "en-US",
     numberFormatter: getMoneyFormatter("en-US", 2),
+    componentText: (_key, rowVars) =>
+      makeText(salesInvoiceTexts.summary, undefined, {
+        "invoice.currency": "CAD"
+      })("taxComponent", rowVars),
     taxValue: "144.00",
     printsTax,
     showsTax

@@ -51,6 +51,13 @@ const XERO_TAX_RATES: Xero.TaxRate[] = [
     CanApplyToRevenue: false,
     CanApplyToExpenses: true
   },
+  {
+    TaxType: "ZERORATEDINPUT",
+    Name: "Zero Rated Expenses",
+    EffectiveRate: 0,
+    CanApplyToRevenue: false,
+    CanApplyToExpenses: true
+  },
   { TaxType: "NONE", Name: "No VAT", EffectiveRate: 0 }
 ];
 
@@ -76,7 +83,11 @@ function makePurchaseOrderSyncer(
   const syncer = new PurchaseOrderSyncer({
     database: query as never,
     companyId: "company-1",
-    provider: { id: "xero", listTaxRates: async () => XERO_TAX_RATES } as never,
+    provider: {
+      id: "xero",
+      listChartOfAccounts: async () => [],
+      listTaxRates: async () => XERO_TAX_RATES
+    } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "purchaseOrder"
   });

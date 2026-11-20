@@ -10,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  IconButton
+  IconButton,
+  useDisclosure
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -29,11 +30,11 @@ import {
   ShippingMethod,
   Submit
 } from "~/components/Form";
+import { Confirm } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import { salesInvoiceShipmentValidator } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import { incoterms } from "~/modules/shared/shared.models";
-import type { action as recalculateTaxesAction } from "~/routes/x+/sales-invoice+/$invoiceId.recalculate-taxes";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.shipment";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
@@ -69,7 +70,7 @@ const SalesInvoiceShipmentForm = forwardRef<
 
   const permissions = usePermissions();
   const fetcher = useFetcher<typeof action>();
-  const recalculateTaxesFetcher = useFetcher<typeof recalculateTaxesAction>();
+  const recalculateTaxesModal = useDisclosure();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [incoterm, setIncoterm] = useState<string | undefined>(
     initialValues.incoterm || undefined
@@ -145,13 +146,16 @@ const SalesInvoiceShipmentForm = forwardRef<
                 isDisabled={
                   !permissions.can("update", "invoicing") || !isEditable
                 }
-                isLoading={recalculateTaxesFetcher.state !== "idle"}
-                onClick={() => {
-                  recalculateTaxesFetcher.submit(null, {
-                    method: "post",
-                    action: path.to.salesInvoiceRecalculateTaxes(invoiceId)
-                  });
-                }}
+                onClick={recalculateTaxesModal.onOpen}
+              />
+              <Confirm
+                isOpen={recalculateTaxesModal.isOpen}
+                action={path.to.salesInvoiceRecalculateTaxes(invoiceId)}
+                title={t`Recalculate taxes`}
+                text={t`Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs.`}
+                confirmText={t`Recalculate`}
+                onCancel={recalculateTaxesModal.onClose}
+                onSubmit={recalculateTaxesModal.onClose}
               />
             </HStack>
             <ShippingMethod

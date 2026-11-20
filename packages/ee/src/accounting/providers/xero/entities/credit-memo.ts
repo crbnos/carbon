@@ -7,9 +7,14 @@ import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { deriveRate, round } from "@carbon/utils";
 import { loadAccountCodesById } from "../../../core/account-mapping";
+import {
+  loadMemoRecoverableShare,
+  planMemoRecoverableLines
+} from "../../../core/bill-tax-plan";
 import { createMappingService } from "../../../core/external-mapping";
 import { MEMO_INCREASER_SKIP_REASON } from "../../../core/models";
 import { JournalEntrySyncError } from "../../../core/posting";
+import { isUntaxedLine, sendsProviderNoTax } from "../../../core/provider-tax";
 import type { TaxDirection } from "../../../core/tax-mapping";
 import { BaseEntitySyncer, type ShouldSyncContext } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
@@ -18,11 +23,10 @@ import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
 import {
   hasXeroMappedTax,
-  loadXeroTaxContext,
-  needsXeroTaxContext,
   resolveXeroTaxType,
   XERO_NO_TAX,
-  type XeroTaxContext
+  type XeroTaxContext,
+  XeroTaxContextLoader
 } from "../tax";
 
 /**
@@ -219,7 +223,10 @@ export function buildXeroCreditNoteLineItems(args: {
   const gross = () => [line(memo.amount, { TaxType: XERO_NO_TAX })];
 
   const tax = args.tax;
-  if (!tax) return gross();
+  // A Reverse Charge supplier memo goes out tax-neutral (Phase 1).
+  if (!tax || sendsProviderNoTax(memoTax, tax.direction, tax.context)) {
+    return gross();
+  }
   const mapped = (netAmount: number, taxAmount: number) =>
     resolveXeroTaxType({
       context: tax.context,
@@ -229,7 +236,8 @@ export function buildXeroCreditNoteLineItems(args: {
       taxPercent: memoTax.taxPercent,
       netAmount,
       taxAmount,
-      decimalPlaces: tax.decimalPlaces
+      decimalPlaces: tax.decimalPlaces,
+      accountCode
     });
 
   if (tax.direction === "sales" || memoTax.taxAmount === 0) {
@@ -252,20 +260,27 @@ export function buildXeroCreditNoteLineItems(args: {
       `Memo ${memo.memoId} has recoverable tax but its currency has no decimal places`
     );
   }
-  // The same rounding the posting used for the Tax Paid leg (planMemoTax).
-  const recoverableTax = round(memoTax.taxAmount * share, decimalPlaces);
-  const recoverableNet = round(memoTax.netAmount * share, decimalPlaces);
-  const rest = round(
-    memo.amount - recoverableNet - recoverableTax,
+  return planMemoRecoverableLines({
+    memo: {
+      id: memo.id,
+      label: `memo ${memo.memoId}`,
+      amount: memo.amount,
+      taxAmount: memoTax.taxAmount,
+      taxCodeId: memoTax.taxCodeId
+    },
+    share,
     decimalPlaces
+  }).map((part) =>
+    line(
+      part.amount,
+      part.tax
+        ? {
+            TaxType: mapped(part.amount, part.tax.taxAmount),
+            TaxAmount: part.tax.taxAmount
+          }
+        : { TaxType: XERO_NO_TAX }
+    )
   );
-  return [
-    line(recoverableNet, {
-      TaxType: mapped(recoverableNet, recoverableTax),
-      TaxAmount: recoverableTax
-    }),
-    ...(rest !== 0 ? [line(rest, { TaxType: XERO_NO_TAX })] : [])
-  ];
 }
 
 /** A memo's tax facts, in its own currency. */
@@ -300,23 +315,14 @@ export abstract class XeroCreditNoteSyncerBase extends BaseEntitySyncer<
   "CreditNoteID" | "UpdatedDateUTC"
 > {
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
-  private taxContextPromise?: Promise<XeroTaxContext>;
+  private readonly taxContext = new XeroTaxContextLoader(
+    this.database,
+    { companyId: this.companyId, integration: this.provider.id },
+    this.provider as XeroProvider
+  );
 
   protected get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
-  }
-
-  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
-  private getTaxContext(): Promise<XeroTaxContext> {
-    this.taxContextPromise ??= loadXeroTaxContext(
-      this.database,
-      { companyId: this.companyId, integration: this.provider.id },
-      this.xeroProvider
-    ).catch((error) => {
-      this.taxContextPromise = undefined;
-      throw error;
-    });
-    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -592,15 +598,13 @@ export abstract class XeroCreditNoteSyncerBase extends BaseEntitySyncer<
     const accountCodesById = await this.getAccountCodesById();
     const direction: TaxDirection =
       this.party === "customer" ? "sales" : "purchase";
-    // A codeless supplier memo kept its tax in cost (planMemoTax), so it goes
-    // out NONE for the gross and needs no tax rates.
-    const taxContext = (
-      direction === "sales"
-        ? needsXeroTaxContext([xeroMemoTax(local)])
-        : Boolean(local.taxCodeId)
-    )
-      ? await this.getTaxContext()
-      : null;
+    // A codeless taxed supplier memo kept its tax in cost (planMemoTax), so
+    // it goes out NONE for the gross and needs no tax rates.
+    const memoTax = xeroMemoTax(local);
+    const taxContext =
+      direction === "sales" || local.taxCodeId || isUntaxedLine(memoTax)
+        ? await this.taxContext.forLines(direction, [memoTax])
+        : null;
     const company = await this.database
       .selectFrom("company")
       .select(["baseCurrencyCode", "companyGroupId"])
@@ -611,7 +615,8 @@ export abstract class XeroCreditNoteSyncerBase extends BaseEntitySyncer<
         `Cannot sync memo ${local.memoId}: the company has no base currency`
       );
     }
-    const decimalPlaces = taxContext
+    const sendsTax = Boolean(taxContext?.catalogLoaded);
+    const decimalPlaces = sendsTax
       ? await this.getCurrencyDecimalPlaces(
           local.currencyCode,
           company.companyGroupId
@@ -627,8 +632,11 @@ export abstract class XeroCreditNoteSyncerBase extends BaseEntitySyncer<
             direction,
             decimalPlaces,
             recoverableShare:
-              direction === "purchase"
-                ? await this.getRecoverableShare(local)
+              sendsTax && direction === "purchase"
+                ? await loadMemoRecoverableShare(this.database, {
+                    companyId: this.companyId,
+                    memo: local
+                  })
                 : null
           }
         : undefined
@@ -674,38 +682,6 @@ export abstract class XeroCreditNoteSyncerBase extends BaseEntitySyncer<
         : {}),
       LineItems: lineItems
     };
-  }
-
-  /**
-   * The share of a supplier memo's tax its posting moved through Tax Paid,
-   * from the memo's tax-ledger rows (planMemoTax). Zero for an untaxed memo;
-   * a coded, taxed memo with no rows was posted before the tax ledger, so its
-   * share is unknown and it waits for a repost.
-   */
-  private async getRecoverableShare(local: XeroMemoSource): Promise<number> {
-    if (local.taxAmount === 0 || !local.taxCodeId) return 0;
-    const rows = await this.database
-      .selectFrom("taxLedger")
-      .select(["taxAmount", "recoverableAmount"])
-      .where("companyId", "=", this.companyId)
-      .where("documentId", "=", local.id)
-      .where("documentType", "=", "Memo")
-      .where("source", "=", "Purchase")
-      .execute();
-    const tax = rows.reduce((sum, row) => sum + Number(row.taxAmount), 0);
-    const recoverable = rows.reduce(
-      (sum, row) => sum + Number(row.recoverableAmount),
-      0
-    );
-    if (rows.length === 0 || tax === 0) {
-      throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_TAX_CODES",
-        warning: true,
-        message: `Cannot sync memo ${local.memoId}: its tax has no tax ledger rows, so its recoverable share is unknown. Repost the memo, then retry.`,
-        metadata: { memoId: local.id, taxCodeId: local.taxCodeId }
-      });
-    }
-    return deriveRate(Math.abs(recoverable), Math.abs(tax));
   }
 
   /** The memo currency's decimals, for the tax-amount check. */

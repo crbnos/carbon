@@ -282,6 +282,7 @@ import {
   loadPartyDimensions,
   loadTaxAccountClasses,
   loadTaxCodes,
+  loadTaxCodesInForce,
   lockContractPositions,
   negateDocumentTaxLedger,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
@@ -332,7 +333,6 @@ import type {
   ReimbursementStatusType,
   reimbursementLineValidator,
   reimbursementUpdateValidator,
-  StoredMemoTax,
   salesInvoiceLineValidator,
   salesInvoiceShipmentValidator,
   salesInvoiceValidator
@@ -345,12 +345,13 @@ import {
   paymentJournalDifference,
   purchaseInvoiceRoundingAmount,
   purchaseLineAccountClasses,
-  resolveMemoTaxAmounts,
   type stripeCustomerActions
 } from "./invoicing.models";
 import {
   ORDER_LINE_CHARGE_FIELDS,
-  type SalesInvoicePostFacts
+  resolveMemoTaxAmounts,
+  type SalesInvoicePostFacts,
+  type StoredMemoTax
 } from "./invoicing.utils";
 import {
   type InvoiceProjectCharges,
@@ -8326,7 +8327,8 @@ export type SalesInvoiceLine = Pick<
   // Read by the service job book only (`planServiceJobRevenue`).
   Partial<
     Pick<Tables["salesInvoiceLine"]["Row"], "serviceJobId" | "sortOrder">
-  >;
+  > &
+  Partial<Pick<Tables["salesInvoiceLine"]["Row"], "taxesShipping">>;
 
 /** The line types that sell an item. */
 export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
@@ -8528,7 +8530,8 @@ export type SalesInvoiceJournalFacts = {
   /** The header shipping of each line (`allocateSalesHeaderShipping`). */
   headerShipping: ReadonlyMap<string, number>;
   /** The lines' tax codes, each with the components in force on the
-   *  posting date (`loadTaxCodes`). A line with no code posts one tax leg. */
+   *  invoice's tax point (`loadTaxCodesInForce`). A line with no code posts
+   *  one tax leg. */
   taxCodes?: ReadonlyMap<string, TaxCodeInput>;
   items: ReadonlyMap<
     string,
@@ -8804,7 +8807,9 @@ export function buildSalesInvoiceJournal(
     const postingLine = {
       ...line,
       allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0,
-      taxesShipping: taxCode?.taxesShipping ?? false
+      // The line's snapshot of its code's "taxes shipping", as the
+      // salesInvoices view reads it.
+      taxesShipping: line.taxesShipping ?? false
     };
     const lineCharges = {
       ...charges,
@@ -10053,16 +10058,17 @@ export async function postSalesInvoice(
             )
           )
         );
-        // The lines' tax codes on the posting date, and their own Tax
-        // Received accounts, which load with the defaults.
-        const taxCodes = await loadTaxCodes(
-          db,
+        // The lines' tax codes on the invoice's tax point (the date issued,
+        // when its rates were taken), and their own Tax Received accounts,
+        // which load with the defaults.
+        const taxCodes = await loadTaxCodesInForce(db, {
           companyId,
-          salesInvoiceLines.data.map(
+          taxCodeIds: salesInvoiceLines.data.map(
             (line: InvoiceLineRecord) => line.taxCodeId
           ),
-          today
-        );
+          taxPointDate: invoiceHeader.dateIssued ?? today,
+          document: "sales invoice"
+        });
         // What the tax ledger snapshots: the customer's exemption and the
         // lines' non-taxable items.
         const invoiceItemIds = [
@@ -12016,6 +12022,25 @@ export function memoTaxLedger(args: {
   };
 }
 
+/**
+ * A memo's tax legs (`buildMemoJournal` `taxLegs`): one per component, on
+ * the component's own Tax Received (customer) or Tax Paid (supplier)
+ * account, weighted by the tax the ledger records for it, so each account
+ * moves as its ledger rows do. Empty for a memo with no code.
+ */
+export function memoTaxLegs(
+  parts: ComponentTax[],
+  isAR: boolean
+): Array<{ accountId: string | null; weight: number }> {
+  return parts.map((part) => ({
+    accountId:
+      (isAR
+        ? part.component.taxReceivedAccountId
+        : part.component.taxPaidAccountId) ?? null,
+    weight: isAR ? part.taxAmount : part.recoverableAmount
+  }));
+}
+
 /** A credit memo that credits a contract or a rental agreement. */
 export function isContractOrRentalCredit(memo: MemoRow): boolean {
   return (
@@ -12534,12 +12559,19 @@ export function postMemoTransaction(
     // or AP, `taxAmount` the tax the form computed forward from the net. A
     // customer memo unwinds Tax Received in full; a supplier memo unwinds the
     // recoverable share in Tax Paid and leaves the rest in the reason leg.
+    // The code splits on the memo's tax point, its memo date.
     const memoTax = Number(memo.taxAmount ?? 0);
-    const memoTaxCode = memo.taxCodeId
-      ? (await loadTaxCodes(trx, companyId, [memo.taxCodeId], today)).get(
-          memo.taxCodeId
-        )
-      : undefined;
+    const memoTaxCode =
+      memo.taxCodeId && memoTax > 0
+        ? (
+            await loadTaxCodesInForce(trx, {
+              companyId,
+              taxCodeIds: [memo.taxCodeId],
+              taxPointDate: memo.memoDate,
+              document: "memo"
+            })
+          ).get(memo.taxCodeId)
+        : undefined;
     const {
       netAmount,
       taxToAccount,
@@ -12657,12 +12689,15 @@ export function postMemoTransaction(
     const memoTaxAccountId = isAR
       ? defaults.taxReceivedAccount
       : defaults.taxPaidAccount;
+    const memoTaxLegAccounts =
+      taxToAccount > 0 ? memoTaxLegs(memoTaxParts, isAR) : [];
     const accountIds = [
       ...new Set(
         [
           controlAccountId,
           reasonAccountId,
           ...(taxToAccount > 0 ? [memoTaxAccountId] : []),
+          ...memoTaxLegAccounts.map((leg) => leg.accountId),
           ...contractLegs.map((leg) => leg.accountId)
         ].filter((id): id is string => !!id)
       )
@@ -12709,6 +12744,10 @@ export function postMemoTransaction(
       taxAmount: taxToAccount,
       taxAccountId: memoTaxAccountId,
       taxAccountClass: accounts.find((a) => a.id === memoTaxAccountId)?.class,
+      taxLegs: memoTaxLegAccounts.map((leg) => ({
+        ...leg,
+        accountClass: accounts.find((a) => a.id === leg.accountId)?.class
+      })),
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
         : contractCredit || rentalCredit
@@ -13212,6 +13251,16 @@ export async function rebuildMemoJournals(
       reasonAccountDefaultRole: reason.accountDefaultRole
     };
   });
+  // Memo tax plans exactly as the posting did (planMemoTax): the codes on
+  // each memo's tax point (its memo date) and each currency's precision,
+  // read once.
+  const taxedMemos = memos.filter((memo) => Number(memo.taxAmount ?? 0) > 0);
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    taxedMemos.map((memo) => memo.taxCodeId),
+    null
+  );
   const reasonAccounts = await trx
     .selectFrom("account")
     .select(["id", "class"])
@@ -13220,7 +13269,13 @@ export async function rebuildMemoJournals(
         [
           ...plans.map((plan) => plan.reasonAccountId),
           defaults.taxReceivedAccount,
-          defaults.taxPaidAccount
+          defaults.taxPaidAccount,
+          ...[...taxCodes.values()].flatMap((code) =>
+            code.components.flatMap((component) => [
+              component.taxReceivedAccountId,
+              component.taxPaidAccountId
+            ])
+          )
         ].filter((id): id is string => !!id)
       )
     ])
@@ -13230,15 +13285,6 @@ export async function rebuildMemoJournals(
     reasonAccounts.map((row) => [row.id, row.class])
   );
   const carriedCosts = await supplierReturnCarriedCosts(trx, memos, companyId);
-  // Memo tax plans exactly as the posting did (planMemoTax): the codes on
-  // each memo's posting date and each currency's precision, read once.
-  const taxedMemos = memos.filter((memo) => Number(memo.taxAmount ?? 0) > 0);
-  const taxCodes = await loadTaxCodes(
-    trx,
-    companyId,
-    taxedMemos.map((memo) => memo.taxCodeId),
-    null
-  );
   const currencyCodes = [
     ...new Set(taxedMemos.map((memo) => memo.currencyCode).filter(Boolean))
   ] as string[];
@@ -13266,7 +13312,7 @@ export async function rebuildMemoJournals(
     }
     const memoTax = Number(memo.taxAmount ?? 0);
     const taxCode = memo.taxCodeId
-      ? taxCodeOn(taxCodes.get(memo.taxCodeId), memo.postingDate ?? "")
+      ? taxCodeOn(taxCodes.get(memo.taxCodeId), memo.memoDate)
       : undefined;
     const { netAmount, taxToAccount, parts } = planMemoTax({
       isAR,
@@ -13298,6 +13344,12 @@ export async function rebuildMemoJournals(
         : defaults.taxPaidAccount,
       taxAccountClass: classByAccount.get(
         (isAR ? defaults.taxReceivedAccount : defaults.taxPaidAccount) ?? ""
+      ),
+      taxLegs: (taxToAccount > 0 ? memoTaxLegs(parts, isAR) : []).map(
+        (leg) => ({
+          ...leg,
+          accountClass: leg.accountId ? classByAccount.get(leg.accountId) : null
+        })
       )
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
@@ -18366,15 +18418,16 @@ export async function postPurchaseInvoice(
       if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
     }
 
-    // Each line's tax split by its code's components on the posting date:
-    // the recoverable share leaves cost for Tax Paid, and a Reverse Charge
-    // code self-assesses tax the supplier did not charge.
-    const taxCodes = await loadTaxCodes(
-      db,
+    // Each line's tax split by its code's components on the invoice's tax
+    // point (the date issued, else the posting date): the recoverable share
+    // leaves cost for Tax Paid, and a Reverse Charge code self-assesses tax
+    // the supplier did not charge.
+    const taxCodes = await loadTaxCodesInForce(db, {
       companyId,
-      purchaseInvoiceLines.data.map((line) => line.taxCodeId),
-      today
-    );
+      taxCodeIds: purchaseInvoiceLines.data.map((line) => line.taxCodeId),
+      taxPointDate: purchaseInvoice.data.dateIssued ?? today,
+      document: "purchase invoice"
+    });
     const linesWithTax = withPurchaseTax(purchaseInvoiceLines.data, taxCodes);
 
     const amountsByLineId = new Map(
@@ -22338,7 +22391,14 @@ async function purchaseLineAccountFacts(
 ): Promise<LineAccountFacts> {
   const invoice = await db
     .selectFrom("purchaseInvoice")
-    .select(["id", "invoiceId", "status", "postingDate", "exchangeRate"])
+    .select([
+      "id",
+      "invoiceId",
+      "status",
+      "postingDate",
+      "dateIssued",
+      "exchangeRate"
+    ])
     .where("id", "=", invoiceId)
     .where("companyId", "=", companyId)
     .$if(lock, (query) => query.forUpdate())
@@ -22367,13 +22427,14 @@ async function purchaseLineAccountFacts(
     );
   }
 
-  // Split the lines' tax as the posting did, on its date: the recoverable
-  // share went to Tax Paid, not to the line's account.
+  // Split the lines' tax as the posting did, on the invoice's tax point:
+  // the recoverable share went to Tax Paid, not to the line's account.
+  const taxPoint = invoice.dateIssued ?? invoice.postingDate;
   const taxCodes = await loadTaxCodes(
     db,
     companyId,
     lines.data.map((row) => row.taxCodeId),
-    invoice.postingDate ? String(invoice.postingDate) : null
+    taxPoint ? String(taxPoint) : null
   );
   const amounts = calculatePurchasePostingAmounts({
     lines: withPurchaseTax(lines.data, taxCodes),

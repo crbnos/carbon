@@ -74,10 +74,7 @@ import { lockIssueDispositions } from "@carbon/database/quality";
 import { monthEnd } from "@carbon/database/revenue-schedule";
 import { updateRowsById } from "@carbon/database/rows";
 import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
-import {
-  chargedTaxPercent,
-  type TaxCodeInput
-} from "@carbon/database/tax-components";
+import type { TaxCodeInput } from "@carbon/database/tax-components";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
@@ -214,9 +211,20 @@ import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate,
+  getTaxCodeInputs,
   resolveLineTaxes
 } from "../accounting/accounting.service";
-import type { LineTaxDecision } from "../accounting/accounting.utils";
+import {
+  applyLineTaxDecision,
+  chargedRateOr,
+  decideWrittenLineTax,
+  hasNoRateInForce,
+  itemTaxDecision,
+  type LineTax,
+  type LineTaxDecision,
+  noRateInForceMessage
+} from "../accounting/accounting.utils";
+import { isSalesInvoiceLocked } from "../invoicing/invoicing.models";
 import { ACTIVE_JOB_STATUSES } from "../production/production.models";
 import * as productionPostings from "../production/production.service";
 import type {
@@ -11053,7 +11061,8 @@ export async function upsertContractLine(
         z.infer<typeof customerContractLineValidator>,
         "id" | "taxCodeId"
       > & {
-        /** Omit to leave the line's code as it is; null clears it. */
+        /** Omit to take the ship-to's or customer's code (on an update, to
+         *  leave the line's as it is); null clears it. */
         taxCodeId?: string | null;
         companyId: string;
         createdBy: string;
@@ -11088,7 +11097,7 @@ export async function upsertContractLine(
 
   const contract = await client
     .from("customerContract")
-    .select("status, billingBasis")
+    .select("status, billingBasis, customerId, shipToCustomerLocationId")
     .eq("id", line.customerContractId)
     .eq("companyId", companyId)
     .single();
@@ -11122,7 +11131,7 @@ export async function upsertContractLine(
 
   const item = await client
     .from("item")
-    .select("type")
+    .select("type, taxable")
     .eq("id", line.itemId)
     .eq("companyId", companyId)
     .single();
@@ -11146,6 +11155,36 @@ export async function upsertContractLine(
   });
   if (numbering) return numbering;
 
+  // The line's tax (`decideWrittenLineTax`), so every route and operation
+  // decides it the same way: a non-taxable item none, a sent code its rate
+  // on the line's start date, and a new line that sends no code the
+  // ship-to's or customer's.
+  const sentTaxCodeId = line.taxCodeId === null ? "" : line.taxCodeId;
+  const itemTaxable = item.data.taxable !== false;
+  const [codes, party] = await Promise.all([
+    getTaxCodeInputs(client, companyId, [sentTaxCodeId]),
+    !("id" in line) && sentTaxCodeId === undefined && itemTaxable
+      ? resolveLineTaxes(client, companyId, {
+          source: "sales",
+          customerId: contract.data.customerId,
+          customerLocationId: contract.data.shipToCustomerLocationId,
+          date: line.startDate
+        })
+      : null
+  ]);
+  const tax = decideWrittenLineTax({
+    source: "sales",
+    itemTaxable,
+    sentTaxCodeId,
+    sentTaxPercent: percentToFraction(line.taxPercent),
+    sentCode: sentTaxCodeId ? (codes.data.get(sentTaxCodeId) ?? null) : null,
+    partyDecision: party?.data ?? null,
+    date: line.startDate
+  });
+  if (tax.error !== null) {
+    return contractRefusal("CONTRACT_LINE_TAX", tax.error);
+  }
+
   // Picked, not spread: amendment and sales-order provenance and the sort
   // order belong to the server functions.
   const values = {
@@ -11162,10 +11201,12 @@ export async function upsertContractLine(
     rateUnit: revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
     discountPercent: percentToFraction(line.discountPercent),
     discountEndsOn: line.discountEndsOn || null,
-    taxPercent: percentToFraction(line.taxPercent),
-    // Only a caller that sends a code (or null) writes one, so an update that
-    // does not know about tax codes never clears the line's.
-    ...(line.taxCodeId !== undefined ? { taxCodeId: line.taxCodeId } : {}),
+    taxPercent: tax.data.taxPercent ?? percentToFraction(line.taxPercent),
+    // Only a decided code (or null) is written, so an update that does not
+    // know about tax codes never clears the line's.
+    ...(tax.data.taxCodeId !== undefined
+      ? { taxCodeId: tax.data.taxCodeId }
+      : {}),
     startDate: line.startDate,
     endDate: line.endDate || null,
     goLiveDate: line.goLiveDate || null,
@@ -11773,9 +11814,11 @@ export async function getProjectBillingBackup(
 }
 
 /** Adds several Service items to a Draft contract at once, each as a line
- *  with the defaults a new line gets (the setup wizard's Add Products).
- *  One read of the contract, one of the items, one insert. Not an MCP tool:
- *  `upsertContractLine` covers a single line. */
+ *  with the defaults a new line gets (the setup wizard's Add Products),
+ *  tax included: the ship-to's or customer's code on the start date, none
+ *  for a non-taxable item. One read of the contract, one of the items, one
+ *  tax decision, one insert. Not an MCP tool: `upsertContractLine` covers a
+ *  single line. */
 export async function insertContractLines(
   client: SupabaseClient<Database>,
   args: {
@@ -11791,7 +11834,7 @@ export async function insertContractLines(
 ) {
   const contract = await client
     .from("customerContract")
-    .select("status, billingBasis")
+    .select("status, billingBasis, customerId, shipToCustomerLocationId")
     .eq("id", args.customerContractId)
     .eq("companyId", args.companyId)
     .single();
@@ -11816,12 +11859,34 @@ export async function insertContractLines(
   }
 
   const itemIds = [...new Set(args.itemIds)];
-  const items = await client
-    .from("item")
-    .select("id, type")
-    .eq("companyId", args.companyId)
-    .in("id", itemIds);
+  const [items, resolved] = await Promise.all([
+    client
+      .from("item")
+      .select("id, type, taxable")
+      .eq("companyId", args.companyId)
+      .in("id", itemIds),
+    // One decision for the contract, as a line added one at a time takes.
+    resolveLineTaxes(client, args.companyId, {
+      source: "sales",
+      customerId: contract.data.customerId,
+      customerLocationId: contract.data.shipToCustomerLocationId,
+      date: args.startDate
+    })
+  ]);
   if (items.error) return items;
+  if (resolved.error || !resolved.data) {
+    return contractRefusal(
+      "CONTRACT_LINE_TAX",
+      resolved.error ?? "Tax was not resolved"
+    );
+  }
+  const decision = resolved.data;
+  if (hasNoRateInForce(decision)) {
+    return contractRefusal(
+      "CONTRACT_LINE_TAX",
+      noRateInForceMessage(args.startDate)
+    );
+  }
   if (
     items.data.length !== itemIds.length ||
     items.data.some((item) => item.type !== "Service")
@@ -11847,7 +11912,10 @@ export async function insertContractLines(
       rate: 0,
       rateUnit: args.revenueType === "Recurring" ? args.rateUnit : null,
       discountPercent: 0,
-      taxPercent: 0,
+      // A non-taxable item takes none; otherwise the contract's decision.
+      ...(item.taxable === false
+        ? { taxCodeId: null, taxPercent: 0 }
+        : applyLineTaxDecision(decision, { taxCodeId: null, taxPercent: 0 })),
       startDate: args.startDate,
       revenueMethod: "Daily" as const,
       projectId: args.projectId
@@ -12789,19 +12857,7 @@ export async function resolveSalesDocumentTaxes(
   const document = resolved.data;
   const byItem = new Map<string, LineTaxDecision>();
   for (const item of items?.data ?? []) {
-    // Same order as decideLineTax: an exempt customer first, then the item.
-    byItem.set(
-      item.id,
-      document.exempt || item.taxable
-        ? document
-        : {
-            taxCodeId: null,
-            taxPercent: 0,
-            components: [],
-            exempt: true,
-            exemptionReason: null
-          }
-    );
+    byItem.set(item.id, itemTaxDecision(document, item.taxable !== false));
   }
   return { data: { document, byItem, date }, error: null };
 }
@@ -12832,75 +12888,139 @@ export async function isItemTaxable(
   return item.data?.taxable !== false;
 }
 
+/** A sales line's stored item and tax code, for an update's tax. */
+function readSalesTaxLine(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  document: SalesTaxDocument,
+  lineId: string
+) {
+  switch (document) {
+    case "quote":
+      return client
+        .from("quoteLine")
+        .select("itemId, taxCodeId")
+        .eq("id", lineId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+    case "salesOrder":
+      return client
+        .from("salesOrderLine")
+        .select("itemId, taxCodeId")
+        .eq("id", lineId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+    case "salesInvoice":
+      return client
+        .from("salesInvoiceLine")
+        .select("itemId, taxCodeId")
+        .eq("id", lineId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+  }
+}
+
 /**
- * The tax a line created on a sales document keeps.
+ * The tax a quote, sales order or sales invoice line create or update
+ * stores (`decideWrittenLineTax`); a key left out of the result keeps the
+ * stored value. Every sales line operation goes through it.
  *
- * - A line on a non-taxable item takes none (`isItemTaxable`), whatever was
- *   posted.
- * - A form that posts the field decides. A code it sends is kept, unless it
- *   is the document's default the form opened with and the customer is
- *   exempt, which zeroes the line. An empty field means the user cleared the
- *   code: the form's own percent stands.
- * - A caller that does not post the field (the API, an MCP tool) gets the
- *   resolver's decision. A decision with no code that does not zero the line
- *   is only the customer's bare percent, so the caller's percent stands —
- *   the behavior from before tax codes.
+ * - A non-taxable item: no code and 0%, whatever was sent.
+ * - A sent code: its charged rate on the document's date. An update that
+ *   sends a percent but no code is held to the stored code the same way.
+ * - An empty code (a form's cleared field): the sent percent with no code.
+ * - A create that sends no code (the API, an MCP tool): the document's
+ *   decision — the ship-to's code, else the customer's, else its bare
+ *   percent, which keeps the sent percent as before tax codes.
  *
- * A read failure keeps what was sent.
+ * A failed read of the document keeps the sent tax on a create with no code.
  */
-export async function resolveCreatedLineTax(
+export async function resolveSalesLineTax(
   client: SupabaseClient<Database>,
   companyId: string,
   args: {
     document: SalesTaxDocument;
     documentId: string;
+    /** The line an update writes; null for a create. */
+    lineId: string | null;
+    /** undefined: not sent (an update keeps the stored item). */
     itemId?: string | null;
-    /** `formData.has("taxCodeId")`: the form posted the field. */
-    sentTaxCode: boolean;
+    /** undefined: not sent; "": the code was cleared. */
     taxCodeId?: string | null;
-    taxPercent: number;
+    taxPercent?: number;
   }
-): Promise<{ taxCodeId: string | undefined; taxPercent: number }> {
-  if (!(await isItemTaxable(client, companyId, args.itemId))) {
-    return { taxCodeId: undefined, taxPercent: 0 };
+): Promise<
+  { data: Partial<LineTax>; error: null } | { data: null; error: string }
+> {
+  const [party, stored] = await Promise.all([
+    getSalesDocumentTaxParty(client, companyId, args),
+    args.lineId
+      ? readSalesTaxLine(client, companyId, args.document, args.lineId)
+      : null
+  ]);
+  if (stored?.error) return { data: null, error: stored.error.message };
+  const line = stored?.data ?? null;
+  const itemId = args.itemId !== undefined ? args.itemId : line?.itemId;
+  const taxCodeId =
+    args.taxCodeId === null
+      ? ""
+      : (args.taxCodeId ??
+        (args.lineId && args.taxPercent !== undefined
+          ? (line?.taxCodeId ?? undefined)
+          : undefined));
+
+  const partyFound = party.error === null ? party : null;
+  if (!partyFound) {
+    logger.error("Failed to read the sales document for line tax", {
+      companyId,
+      documentId: args.documentId,
+      error: party.error
+    });
+  }
+  const [itemTaxable, date, codes] = await Promise.all([
+    isItemTaxable(client, companyId, itemId),
+    partyFound?.date ??
+      getCachedCompanyTimeZone(client, companyId).then((tz) =>
+        datetime.today(tz).toString()
+      ),
+    getTaxCodeInputs(client, companyId, [taxCodeId])
+  ]);
+  if (codes.error) return { data: null, error: codes.error };
+
+  let partyDecision: LineTaxDecision | null = null;
+  if (!args.lineId && taxCodeId === undefined && itemTaxable && partyFound) {
+    // The item is taxable (or there is none): no second read of it.
+    const resolved = await resolveLineTaxes(client, companyId, {
+      source: "sales",
+      customerId: partyFound.customerId,
+      customerLocationId: partyFound.customerLocationId,
+      date
+    });
+    partyDecision = resolved.data;
   }
 
-  const submitted = {
-    taxCodeId: args.taxCodeId || undefined,
-    taxPercent: args.taxPercent
-  };
-  if (args.sentTaxCode && !submitted.taxCodeId) return submitted;
-
-  // The item is taxable (or there is none), so the line takes the document's
-  // decision: no second read of the item.
-  const tax = await resolveSalesDocumentTaxes(client, companyId, {
-    document: args.document,
-    documentId: args.documentId
+  return decideWrittenLineTax({
+    source: "sales",
+    itemTaxable,
+    sentTaxCodeId: taxCodeId,
+    sentTaxPercent: args.taxPercent,
+    sentCode: taxCodeId ? (codes.data.get(taxCodeId) ?? null) : null,
+    partyDecision,
+    date
   });
-  if (!tax.data) return submitted;
-  const decision = tax.data.document;
-
-  if (submitted.taxCodeId) {
-    const isDocumentDefault = submitted.taxCodeId === decision.taxCodeId;
-    return isDocumentDefault && decision.exempt
-      ? { taxCodeId: undefined, taxPercent: decision.taxPercent }
-      : submitted;
-  }
-  if (!decision.taxCodeId && !decision.exempt) return submitted;
-  return {
-    taxCodeId: decision.taxCodeId ?? undefined,
-    taxPercent: decision.taxPercent
-  };
 }
 
 /**
  * Re-resolve the tax of every line on a sales order or sales invoice — after
- * its ship-to or the customer's tax code changed. A line is written only when
- * the decision names a code or zeroes it (an exempt customer, a non-taxable
- * item); with no code, a typed percent stands. Comment lines carry no tax;
- * rental and contract invoice lines take theirs from the agreement or the
- * contract, so they are left alone. Lines that land on the same decision are
- * written together, in one transaction.
+ * its ship-to or the customer's tax code changed. Each line takes the
+ * decision for its item (`applyLineTaxDecision`): a code, or a zero for an
+ * exempt customer or a non-taxable item. A decision with neither keeps the
+ * line's own code and percent. It overwrites a code the user cleared on a
+ * line. Comment lines carry no tax; rental and contract invoice lines take
+ * theirs from the agreement or the contract, so they are left alone. Only
+ * changed lines are written, in one transaction that first re-checks, under
+ * a row lock, that the document is still editable. A decision whose code
+ * has no rate in force on the document's date is refused (`refused`).
  */
 export async function recalculateSalesDocumentTaxes(
   client: SupabaseClient<Database>,
@@ -12911,20 +13031,23 @@ export async function recalculateSalesDocumentTaxes(
     document: "salesOrder" | "salesInvoice";
     documentId: string;
   }
-): Promise<{ data: { updated: number } | null; error: string | null }> {
+): Promise<
+  | { data: { updated: number }; error: null; refused?: never }
+  | { data: null; error: string; refused?: boolean }
+> {
   const { companyId, document, documentId } = args;
 
   const lines =
     document === "salesOrder"
       ? await client
           .from("salesOrderLine")
-          .select("id, itemId")
+          .select("id, itemId, taxCodeId, taxPercent")
           .eq("salesOrderId", documentId)
           .eq("companyId", companyId)
           .neq("salesOrderLineType", "Comment")
       : await client
           .from("salesInvoiceLine")
-          .select("id, itemId")
+          .select("id, itemId, taxCodeId, taxPercent")
           .eq("invoiceId", documentId)
           .eq("companyId", companyId)
           .neq("invoiceLineType", "Comment")
@@ -12938,25 +13061,33 @@ export async function recalculateSalesDocumentTaxes(
     documentId,
     itemIds: lines.data.map((line) => line.itemId)
   });
-  if (!tax.data) return { data: null, error: tax.error };
+  if (!tax.data) return { data: null, error: tax.error ?? "Tax not resolved" };
 
-  const groups = new Map<
-    string,
-    { taxCodeId: string | null; taxPercent: number; ids: string[] }
-  >();
+  const groups = new Map<string, LineTax & { ids: string[] }>();
   for (const line of lines.data) {
     const decision =
       (line.itemId ? tax.data.byItem.get(line.itemId) : undefined) ??
       tax.data.document;
-    // No code and nothing exempt: the decision is only the customer's bare
-    // percent, so a percent typed on the line stands.
-    if (!decision.taxCodeId && !decision.exempt) continue;
-    const key = `${decision.taxCodeId ?? ""}|${decision.taxPercent}`;
-    const group = groups.get(key) ?? {
-      taxCodeId: decision.taxCodeId,
-      taxPercent: decision.taxPercent,
-      ids: []
+    if (hasNoRateInForce(decision)) {
+      return {
+        data: null,
+        error: noRateInForceMessage(tax.data.date),
+        refused: true
+      };
+    }
+    const stored = {
+      taxCodeId: line.taxCodeId,
+      taxPercent: Number(line.taxPercent ?? 0)
     };
+    const next = applyLineTaxDecision(decision, stored);
+    if (
+      next.taxCodeId === stored.taxCodeId &&
+      equals(next.taxPercent, stored.taxPercent)
+    ) {
+      continue;
+    }
+    const key = `${next.taxCodeId ?? ""}|${next.taxPercent}`;
+    const group = groups.get(key) ?? { ...next, ids: [] };
     group.ids.push(line.id);
     groups.set(key, group);
   }
@@ -12970,6 +13101,30 @@ export async function recalculateSalesDocumentTaxes(
   const updatedAt = datetime.timestamp();
   try {
     await db.transaction().execute(async (trx) => {
+      // The caller's lock check ran outside this transaction: re-check it
+      // under a row lock, so a document posted since is never rewritten.
+      const header =
+        document === "salesOrder"
+          ? await trx
+              .selectFrom("salesOrder")
+              .select("status")
+              .where("id", "=", documentId)
+              .where("companyId", "=", companyId)
+              .forUpdate()
+              .executeTakeFirst()
+          : await trx
+              .selectFrom("salesInvoice")
+              .select("status")
+              .where("id", "=", documentId)
+              .where("companyId", "=", companyId)
+              .forUpdate()
+              .executeTakeFirst();
+      const locked =
+        document === "salesOrder"
+          ? isSalesOrderLocked(header?.status)
+          : isSalesInvoiceLocked(header?.status);
+      if (!header || locked) throw new DocumentLockedError();
+
       const table =
         document === "salesOrder" ? "salesOrderLine" : "salesInvoiceLine";
       await Promise.all(
@@ -12989,6 +13144,16 @@ export async function recalculateSalesDocumentTaxes(
       );
     });
   } catch (err) {
+    if (err instanceof DocumentLockedError) {
+      return {
+        data: null,
+        error:
+          document === "salesOrder"
+            ? "Cannot modify a locked sales order. Reopen it first."
+            : "Cannot modify a locked sales invoice. Reopen it first.",
+        refused: true
+      };
+    }
     return {
       data: null,
       error: err instanceof Error ? err.message : String(err)
@@ -12996,6 +13161,8 @@ export async function recalculateSalesDocumentTaxes(
   }
   return { data: { updated }, error: null };
 }
+
+class DocumentLockedError extends Error {}
 
 async function getSalesDocumentTaxParty(
   client: SupabaseClient<Database>,
@@ -16574,26 +16741,25 @@ async function draftAgreementInvoices(
   const adjustments = periods.filter((period) => period.isAdjustment);
   const billable = periods.filter((period) => !period.isAdjustment);
 
-  // A line with a tax code takes the code's rate on its own date — a rent
-  // period's start, a charge's date — so a component that starts or ends
-  // mid-term bills at the rate posting splits by. Loaded once, with every
-  // component. A line with no code (or a code since deleted) keeps its
-  // stored percent. An early-return credit takes the rate of the period it
-  // credits, as the invoice line it gives back did.
+  // A billed line takes its code's rate on the invoice's date, `asOf` (the
+  // tax point); a credit takes the rate of the period it reverses. A line
+  // with no code (or a code since deleted) keeps its stored percent.
   const taxCodes = await loadTaxCodes(
     trx,
     companyId,
     [agreement.taxCodeId, ...charges.map((charge) => charge.taxCodeId)],
     null
   );
-  const taxPercentOn = (
+  const taxPercentOf = (
     taxCodeId: string | null,
     storedPercent: number | string,
-    date: string
-  ) => {
-    const code = taxCodeId ? taxCodes.get(taxCodeId) : undefined;
-    return code ? chargedTaxPercent(code, date) : Number(storedPercent);
-  };
+    date: string = asOf
+  ) =>
+    chargedRateOr(
+      taxCodeId ? taxCodes.get(taxCodeId) : undefined,
+      storedPercent,
+      date
+    );
 
   const creditMemos: DraftedRentalCreditMemo[] =
     adjustments.length > 0
@@ -16602,7 +16768,7 @@ async function draftAgreementInvoices(
             adjustments,
             decimals,
             taxPercentOn: (period) =>
-              taxPercentOn(
+              taxPercentOf(
                 agreement.taxCodeId,
                 agreement.taxPercent,
                 period.periodStart
@@ -16657,11 +16823,7 @@ async function draftAgreementInvoices(
           cycle: agreement.billingCycle
         }),
         unitPrice: toBaseAmount(Number(period.amount), exchangeRate),
-        taxPercent: taxPercentOn(
-          agreement.taxCodeId,
-          agreement.taxPercent,
-          period.periodStart
-        ),
+        taxPercent: taxPercentOf(agreement.taxCodeId, agreement.taxPercent),
         taxCodeId: agreement.taxCodeId,
         serviceStartDate: period.periodStart,
         serviceEndDate: period.periodEnd
@@ -16678,11 +16840,7 @@ async function draftAgreementInvoices(
         rentalLineType: charge.chargeType,
         description: charge.description,
         unitPrice: toBaseAmount(Number(charge.amount), exchangeRate),
-        taxPercent: taxPercentOn(
-          charge.taxCodeId,
-          charge.taxPercent,
-          charge.chargeDate
-        ),
+        taxPercent: taxPercentOf(charge.taxCodeId, charge.taxPercent),
         taxCodeId: charge.taxCodeId,
         serviceStartDate: null,
         serviceEndDate: null
@@ -23155,8 +23313,8 @@ async function cancelContractWrites(
  * The credit memos a cancellation drafts for its unused billed time (spec
  * "Memo tax"): one per tax rate, since a memo has one code and one rate.
  * Each adjustment row takes its line's code at the code's rate on the row's
- * period start — the rate its invoice row billed at (createContractInvoices
- * `taxPercentOn`); a line with no code keeps its stored percent. A memo's
+ * period start, so a credit reverses tax at the rate it was billed at; a line
+ * with no code keeps its stored percent. A memo's
  * net is a settlement value (currency decimals) and its rows are apportioned
  * to the same decimals so they sum to it exactly — posting the memo refuses
  * rows that credit more than its net. A rate whose rows round to nothing gets
@@ -23201,12 +23359,9 @@ async function planCancellationCredit(
   );
   const taxOf = (row: PlannedRow) => {
     const line = lineById.get(row.lineId);
-    const code = line?.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
     return {
       taxCodeId: line?.taxCodeId ?? null,
-      taxPercent: code
-        ? chargedTaxPercent(code, row.periodStart)
-        : Number(line?.taxPercent ?? 0)
+      taxPercent: contractLineRate(line, taxCodes, row.periodStart)
     };
   };
 
@@ -23986,13 +24141,13 @@ async function draftDueInvoices(
   }
 
   const lineById = new Map(lines.map((line) => [line.id, line]));
-  // The lines' tax codes with every component, once: each schedule row takes
-  // its code's rate on the row's own date (invoiceLineValues).
+  // The lines' tax codes, once: a coded line bills at its code's rate on the
+  // invoice's date, `asOf`, the tax point posting splits by.
   const taxCodes = await loadTaxCodes(
     trx,
     companyId,
     lines.map((line) => line.taxCodeId),
-    null
+    asOf
   );
   const drafted: DraftedContractInvoice[] = [];
   for (const [plannedInvoiceId, group] of byInvoice) {
@@ -24030,7 +24185,8 @@ async function draftDueInvoices(
         return invoiceLineValues(row, line, itemById.get(line.itemId), {
           contract,
           locationId,
-          taxCodes
+          taxCodes,
+          asOf
         });
       })
     });
@@ -24208,17 +24364,18 @@ export async function insertDraftContractInvoice(
   return { invoiceId: invoice.id, lineIds };
 }
 
-/** A line with a tax code bills at the code's charged rate on `date` — the
- *  schedule row's period start — so a component that starts or ends mid-term
- *  bills at the rate posting splits by, and a Reverse Charge code bills none.
- *  A line with no code (or a code since deleted) keeps its stored percent. */
-function taxPercentOn(
-  line: ContractLineRow,
+/** A contract line's rate on the invoice's (or the credit memo's) date: its
+ *  code's charged rate (none for Reverse Charge), else its stored percent. */
+function contractLineRate(
+  line: ContractLineRow | undefined,
   taxCodes: Map<string, TaxCodeInput>,
   date: string
 ): number {
-  const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
-  return code ? chargedTaxPercent(code, date) : Number(line.taxPercent);
+  return chargedRateOr(
+    line?.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined,
+    line?.taxPercent ?? 0,
+    date
+  );
 }
 
 /** One schedule row as a Service sales-invoice line (plan decision 10). */
@@ -24236,6 +24393,8 @@ function invoiceLineValues(
     contract: ContractRow;
     locationId: string;
     taxCodes: Map<string, TaxCodeInput>;
+    /** The invoice's date: the tax point. */
+    asOf: string;
   }
 ): InvoiceLineValues {
   const quantity = Number(line.quantity);
@@ -24276,7 +24435,7 @@ function invoiceLineValues(
       Number(context.contract.exchangeRate)
     ),
     discountPercent: pricing.discountPercent,
-    taxPercent: taxPercentOn(line, context.taxCodes, row.periodStart),
+    taxPercent: contractLineRate(line, context.taxCodes, context.asOf),
     taxCodeId: line.taxCodeId,
     serviceStartDate,
     serviceEndDate,
@@ -24633,13 +24792,13 @@ async function processProjectBillingContract(
     .where("companyId", "=", companyId)
     .execute();
   const itemById = new Map(catalog.map((item) => [item.id, item]));
-  // A line with a tax code bills at the code's rate on the period end, the
-  // date its items are billed through; with no code its stored percent.
+  // A line with a tax code bills at the code's rate on the invoice's date,
+  // `asOf`; with no code its stored percent.
   const taxCodes = await loadTaxCodes(
     trx,
     companyId,
     taken.map(({ line }) => line.taxCodeId),
-    null
+    asOf
   );
 
   type PlannedLine = InvoiceLineValues & {
@@ -24659,7 +24818,7 @@ async function processProjectBillingContract(
           Number(contract.exchangeRate)
         ),
         discountPercent: 0,
-        taxPercent: taxPercentOn(line, taxCodes, periodEnd),
+        taxPercent: contractLineRate(line, taxCodes, asOf),
         taxCodeId: line.taxCodeId,
         serviceStartDate: null,
         serviceEndDate: null,

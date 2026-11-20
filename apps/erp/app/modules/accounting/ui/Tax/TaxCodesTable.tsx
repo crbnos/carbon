@@ -47,11 +47,6 @@ type TaxCodesTableProps = {
   count: number;
 };
 
-const booleanFilterOptions = [
-  { value: "true", label: "Yes" },
-  { value: "false", label: "No" }
-];
-
 const TaxCodesTable = memo(({ data, count }: TaxCodesTableProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
@@ -61,6 +56,10 @@ const TaxCodesTable = memo(({ data, count }: TaxCodesTableProps) => {
   const percentFormatter = usePercentFormatter();
 
   const columns = useMemo<ColumnDef<TaxCode>[]>(() => {
+    const booleanFilterOptions = [
+      { value: "true", label: t`Yes` },
+      { value: "false", label: t`No` }
+    ];
     const defaultColumns: ColumnDef<TaxCode>[] = [
       {
         accessorKey: "name",

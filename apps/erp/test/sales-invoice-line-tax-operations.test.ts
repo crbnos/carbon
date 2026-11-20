@@ -10,45 +10,15 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
-import { createSalesInvoiceLine } from "../app/modules/invoicing/invoicing.server";
+import {
+  createSalesInvoiceLine,
+  updateSalesInvoiceLine
+} from "../app/modules/invoicing/invoicing.server";
+import { type FakeWrite, filteringSupabase } from "./filtering-supabase-fake";
 
 const unreachable = () => {
   throw new Error("must not be reached");
 };
-
-type Write = { table: string; op: "insert" | "update"; value: any };
-
-/** Every read answers `rows[table]`; every write is kept and resolves. */
-function database(rows: Record<string, unknown>) {
-  const writes: Write[] = [];
-  const from = (table: string) => {
-    const many = () => {
-      const found = rows[table];
-      if (found === undefined) return [];
-      return Array.isArray(found) ? found : [found];
-    };
-    const chain: Record<string, any> = {};
-    for (const method of ["select", "eq", "in", "neq", "is", "order", "match", "lte", "gte", "or", "limit", "not"]) {
-      chain[method] = () => chain;
-    }
-    chain.insert = (value: unknown) => {
-      writes.push({ table, op: "insert", value });
-      return chain;
-    };
-    chain.update = (value: unknown) => {
-      writes.push({ table, op: "update", value });
-      return chain;
-    };
-    chain.single = chain.maybeSingle = async () => ({
-      data: many()[0] ?? { id: `${table}-1` },
-      error: null
-    });
-    chain.then = (resolve: (value: unknown) => unknown) =>
-      Promise.resolve({ data: many(), error: null }).then(resolve);
-    return chain;
-  };
-  return { client: { from } as any, writes };
-}
 
 const grant = (module: string) => ({
   [module]: {
@@ -71,45 +41,98 @@ function contextFor(client: unknown, module: string) {
   });
 }
 
-const inserted = (writes: Write[], table: string) =>
-  writes.find((write) => write.table === table && write.op === "insert")
-    ?.value[0];
+const component = (overrides: Record<string, unknown>) => ({
+  id: "c-state",
+  name: "TX State",
+  taxAuthorityId: "ta-1",
+  taxPercent: 0.0825,
+  recoverablePercent: 0,
+  sequence: 1,
+  isCompound: false,
+  taxReceivedAccountId: null,
+  taxPaidAccountId: null,
+  effectiveDate: null,
+  expirationDate: null,
+  ...overrides
+});
 
-// A Draft invoice for a customer whose code is TX - Austin at 8.25%.
-const invoiceRows = {
-  salesInvoice: {
-    id: "si-1",
-    status: "Draft",
-    customerId: "customer-1",
-    dateIssued: "2026-10-01",
-    currencyCode: "USD",
-    exchangeRate: 1
-  },
-  customer: { taxPercent: 0.05 },
-  customerTax: { taxCodeId: "tc-austin", taxExempt: false },
-  item: { taxable: true },
+// A Draft invoice for a customer whose code is TX - Austin at 8.25%. Every
+// row names its company, so a read that drops the companyId filter also
+// finds company-2's rows.
+const tables = () => ({
+  salesInvoice: [
+    {
+      id: "si-1",
+      companyId: "company-1",
+      status: "Draft",
+      customerId: "customer-1",
+      dateIssued: "2026-10-01",
+      currencyCode: "USD",
+      exchangeRate: 1
+    }
+  ],
+  salesInvoices: [
+    {
+      id: "si-1",
+      companyId: "company-1",
+      status: "Draft",
+      customerId: "customer-1",
+      dateIssued: "2026-10-01"
+    }
+  ],
+  customer: [{ id: "customer-1", companyId: "company-1", taxPercent: 0.05 }],
+  customerTax: [
+    {
+      customerId: "customer-1",
+      companyId: "company-1",
+      taxCodeId: "tc-austin",
+      taxExempt: false
+    },
+    {
+      customerId: "customer-1",
+      companyId: "company-2",
+      taxCodeId: "tc-other-company",
+      taxExempt: false
+    }
+  ],
+  item: [{ id: "item-1", companyId: "company-1", taxable: true }],
   taxCode: [
     {
       id: "tc-austin",
+      companyId: "company-1",
       calculationType: "Normal",
       taxesShipping: false,
-      taxCodeComponent: [
-        {
-          id: "c-state",
-          name: "TX State",
-          taxAuthorityId: "ta-1",
-          taxPercent: 0.0825,
-          recoverablePercent: 0,
-          sequence: 1,
-          isCompound: false,
-          taxReceivedAccountId: null,
-          taxPaidAccountId: null,
-          effectiveDate: null,
-          expirationDate: null
-        }
-      ]
+      taxCodeComponent: [component({})]
+    },
+    {
+      id: "tc-reduced",
+      companyId: "company-1",
+      calculationType: "Normal",
+      taxesShipping: false,
+      taxCodeComponent: [component({ id: "c-reduced", taxPercent: 0.05 })]
+    },
+    {
+      id: "tc-other-company",
+      companyId: "company-2",
+      calculationType: "Normal",
+      taxesShipping: false,
+      taxCodeComponent: [component({ taxPercent: 0.3 })]
+    }
+  ],
+  salesInvoiceLine: [
+    {
+      id: "sil-1",
+      companyId: "company-1",
+      invoiceId: "si-1",
+      itemId: "item-1",
+      taxCodeId: "tc-austin"
     }
   ]
+});
+
+const written = (writes: FakeWrite[], table: string) => {
+  const write = writes.find((w) => w.table === table);
+  return Array.isArray(write?.value) ? write?.value[0] : write?.value;
 };
 
 const line = {
@@ -124,7 +147,7 @@ const line = {
 
 describe("createSalesInvoiceLine", () => {
   it("keeps a typed percent with no code when the form cleared the code", async () => {
-    const { client, writes } = database(invoiceRows);
+    const { client, writes } = filteringSupabase(tables());
 
     const result = await createSalesInvoiceLine(
       contextFor(client, "invoicing"),
@@ -132,8 +155,69 @@ describe("createSalesInvoiceLine", () => {
     );
 
     expect(result.error).toBeNull();
-    const row = inserted(writes, "salesInvoiceLine");
+    const row = written(writes, "salesInvoiceLine");
     expect(row).toMatchObject({ taxPercent: 0.03 });
     expect(row.taxCodeId ?? null).toBeNull();
+  });
+
+  it("gives a line sent with no code the customer's code at its rate", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createSalesInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...line, taxPercent: 0 }
+    );
+
+    expect(result.error).toBeNull();
+    expect(written(writes, "salesInvoiceLine")).toMatchObject({
+      taxCodeId: "tc-austin",
+      taxPercent: 0.0825
+    });
+  });
+
+  it("takes a sent code's rate, not a percent that disagrees with it", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    await createSalesInvoiceLine(contextFor(client, "invoicing"), {
+      ...line,
+      taxCodeId: "tc-reduced",
+      taxPercent: 0.2
+    });
+
+    expect(written(writes, "salesInvoiceLine")).toMatchObject({
+      taxCodeId: "tc-reduced",
+      taxPercent: 0.05
+    });
+  });
+
+  it("refuses another company's tax code", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createSalesInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...line, taxCodeId: "tc-other-company", taxPercent: 0.3 }
+    );
+
+    expect(result.error?.message).toContain("Tax code not found");
+    expect(writes.filter((w) => w.table === "salesInvoiceLine")).toHaveLength(
+      0
+    );
+  });
+});
+
+describe("updateSalesInvoiceLine", () => {
+  it("holds a percent sent alone to the stored code's rate", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    await updateSalesInvoiceLine(contextFor(client, "invoicing"), {
+      ...line,
+      id: "sil-1",
+      taxPercent: 0.2
+    });
+
+    expect(written(writes, "salesInvoiceLine")).toMatchObject({
+      taxCodeId: "tc-austin",
+      taxPercent: 0.0825
+    });
   });
 });

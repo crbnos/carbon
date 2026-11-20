@@ -290,3 +290,58 @@ it("supplier Debit memo against one liability VAT control account: CR Tax Paid a
 it("a memo with no tax posts the two lines it always did", () => {
   expect(buildMemoJournal(base({ taxAmount: 0 })).lines).toHaveLength(2);
 });
+
+it("customer Credit memo with a two-component code: one Tax Received leg per component account, the default for a component with none", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: true,
+      direction: "Credit",
+      amount: 1082.5,
+      taxAmount: 82.5,
+      taxAccountId: "acct_tax_default",
+      reasonAccountClass: "Expense",
+      taxLegs: [
+        {
+          accountId: "acct_tax_state",
+          accountClass: "Liability",
+          weight: 62.5
+        },
+        { accountId: null, weight: 20 }
+      ]
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ar", -1082.5],
+    ["acct_reason", 1000],
+    ["acct_tax_state", -62.5],
+    ["acct_tax_default", -20]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("splits the tax across component legs to the exact total, and refuses a leg with no account", () => {
+  const r = buildMemoJournal(
+    base({
+      amount: 110,
+      taxAmount: 10,
+      reasonAccountClass: "Expense",
+      taxLegs: [
+        { accountId: "a", accountClass: "Liability", weight: 1 },
+        { accountId: "b", accountClass: "Liability", weight: 1 },
+        { accountId: "c", accountClass: "Liability", weight: 1 }
+      ]
+    })
+  );
+  const tax = r.lines.filter((l) => ["a", "b", "c"].includes(l.accountId));
+  expect(tax).toHaveLength(3);
+  expect(tax.reduce((t, l) => t + l.amount, 0)).toBeCloseTo(-10, 5);
+  expect(() =>
+    buildMemoJournal(
+      base({
+        amount: 110,
+        taxAmount: 10,
+        taxLegs: [{ accountId: null, weight: 1 }]
+      })
+    )
+  ).toThrow("Missing Tax Received account default");
+});

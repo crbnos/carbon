@@ -40,7 +40,7 @@ import {
   serviceReplenishmentSystems
 } from "../../items.models";
 import type { ItemFile, MakeMethod, Service, SupplierPart } from "../../types";
-import { FileBadge, ItemDescription } from "../Item";
+import { FileBadge, ItemDescription, TaxableProperty } from "../Item";
 
 type ServicePropertiesProps = {
   data?: {
@@ -437,23 +437,11 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           }}
         />
       </ValidatedForm>
-      {routeDataFromRoute?.taxable !== undefined && (
-        <ValidatedForm
-          key={itemId}
-          defaultValues={{ taxable: routeDataFromRoute.taxable }}
-          validator={z.object({ taxable: zfd.checkbox() })}
-          className="w-full"
-        >
-          <Boolean
-            label={t`Taxable`}
-            name="taxable"
-            variant="small"
-            onChange={(value) => {
-              onUpdate("taxable", value ? "on" : "off");
-            }}
-          />
-        </ValidatedForm>
-      )}
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">

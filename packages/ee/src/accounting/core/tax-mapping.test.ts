@@ -5,8 +5,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildTaxCodeMappingEntityId,
+  computeUnmappedTaxCodes,
   matchTaxCodesByRate,
-  parseTaxCodeMappingEntityId
+  NO_TAX_CODE_MAPPING_ID,
+  noTaxCodeFallbackDirections,
+  parseTaxCodeMappingEntityId,
+  type TaxCodeUsage
 } from "./tax-mapping";
 
 describe("tax-code mapping ids", () => {
@@ -95,6 +99,113 @@ describe("matchTaxCodesByRate", () => {
         codes: [{ id: "tx", rate: 0.0825 }],
         options,
         mapped: new Set()
+      })
+    ).toEqual([]);
+  });
+
+  it("matches a Reverse Charge code on its charged 0%, and never for purchases", () => {
+    const proposals = matchTaxCodesByRate({
+      codes: [{ id: "ecrc", rate: 0, reverseCharge: true }],
+      options: [
+        ...options.filter((o) => o.rate !== 0),
+        {
+          id: "ECZROUTPUT",
+          name: "Zero Rated EC Goods Income",
+          rate: 0,
+          direction: "sales" as const
+        },
+        {
+          id: "ZERORATEDINPUT",
+          name: "Zero Rated Expenses",
+          rate: 0,
+          direction: "purchase" as const
+        }
+      ],
+      mapped: new Set()
+    });
+    expect(proposals.map((p) => [p.direction, p.externalId])).toEqual([
+      ["sales", "ECZROUTPUT"]
+    ]);
+  });
+});
+
+describe("computeUnmappedTaxCodes", () => {
+  const usage = (overrides: Partial<TaxCodeUsage>): TaxCodeUsage => ({
+    id: "uk20",
+    name: "UK Standard 20%",
+    active: true,
+    reverseCharge: false,
+    usedForSales: false,
+    usedForPurchase: false,
+    ...overrides
+  });
+
+  it("lists each used, unmapped direction, retired codes included", () => {
+    expect(
+      computeUnmappedTaxCodes({
+        usage: [
+          usage({ usedForSales: true, usedForPurchase: true }),
+          usage({
+            id: "old",
+            name: "Old 17.5%",
+            active: false,
+            usedForSales: true
+          }),
+          usage({ id: "unused", name: "Unused" })
+        ],
+        mappings: [{ taxCodeId: "uk20", direction: "sales" }],
+        noTaxCodeFallback: false
+      })
+    ).toEqual([
+      { taxCodeId: "uk20", name: "UK Standard 20%", direction: "purchase" },
+      { taxCodeId: "old", name: "Old 17.5%", direction: "sales" }
+    ]);
+  });
+
+  it("needs no purchase mapping for a Reverse Charge code", () => {
+    expect(
+      computeUnmappedTaxCodes({
+        usage: [
+          usage({ id: "ecrc", reverseCharge: true, usedForPurchase: true })
+        ],
+        mappings: [],
+        noTaxCodeFallback: false
+      })
+    ).toEqual([]);
+  });
+
+  it("requires the fallback of each direction that uses codes, for a fallback provider", () => {
+    const used = [usage({ usedForSales: true })];
+    const mappings = [{ taxCodeId: "uk20", direction: "sales" as const }];
+    expect(noTaxCodeFallbackDirections(used)).toEqual(new Set(["sales"]));
+    expect(
+      computeUnmappedTaxCodes({
+        usage: used,
+        mappings,
+        noTaxCodeFallback: true
+      })
+    ).toEqual([
+      {
+        taxCodeId: NO_TAX_CODE_MAPPING_ID,
+        name: "No tax code (exempt or non-taxable)",
+        direction: "sales"
+      }
+    ]);
+    expect(
+      computeUnmappedTaxCodes({
+        usage: used,
+        mappings: [
+          ...mappings,
+          { taxCodeId: NO_TAX_CODE_MAPPING_ID, direction: "sales" }
+        ],
+        noTaxCodeFallback: true
+      })
+    ).toEqual([]);
+    expect(
+      computeUnmappedTaxCodes({
+        usage: [],
+        mappings: [],
+        noTaxCodeFallback: true
       })
     ).toEqual([]);
   });

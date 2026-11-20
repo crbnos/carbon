@@ -4594,6 +4594,9 @@ msgstr "教育訓練をアーカイブ"
 msgid "Archived"
 msgstr "アーカイブ済み"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "連携先でアーカイブ済みです。再マッピングしてください。"
+
 msgid "Archived Logs"
 msgstr "アーカイブ済ログ"
 
@@ -11716,6 +11719,12 @@ msgstr "各明細はこの会社のデータから、それが所有していな
 msgid "Each line shows its item ID and revision."
 msgstr "各明細はアイテムIDとリビジョンを表示します。"
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "各明細には、発行日時点で請求書の出荷先に対して品目に適用される税コードと税率が設定されます。明細で消去した税コードは上書きされます。レンタルおよび契約の明細は、既存の税コードを維持します。"
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "各明細には、受注日時点で受注の出荷先に対して品目に適用される税コードと税率が設定されます。明細で消去した税コードは上書きされます。"
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "毎月、リース実行は各資産の利息と使用権償却を転記します。"
 
@@ -12984,8 +12993,8 @@ msgstr "すべての明細は請求する金額を認識しています。"
 msgid "Every match"
 msgstr "すべてのマッチ"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "他のすべての有効な税コード。リマップするために別のプロバイダーレートを選択してください。"
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "他のすべての税コード。別の連携先税率を選択して再マッピングしてください。"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "部品ファイルは最初はすべてチェックされています。送信しないものはチェックを外してください。"
@@ -13100,6 +13109,9 @@ msgstr "経営幹部向けP&L"
 
 msgid "Exempt"
 msgstr "免除"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "非課税の得意先、非課税の品目、非課税の配送料"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "個人の製造指図タブで設定されている適格外または適格。DCAA モードでは、従業員が提出時に認証する認証テキストを選択し、適格外従業員の長時間週は希釈されます。"
@@ -18173,8 +18185,8 @@ msgstr "製造がブロックされています"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "Carbonの各税コードをプロバイダーの税率にマッピングしてください（販売と仕入れで各1回）。プッシュされた文書は、マップされたレートでCarbonの税額を送信します。"
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "Carbon の税コードそれぞれを、販売用と仕入用の2回に分けて連携先の税率にマッピングしてください。送信される文書には、マッピングした税率で Carbon の税額が含まれます。リバースチャージのコードは販売で税を課さないため、0%の税率（例：ゼロ税率のEC販売）にマッピングしてください。仕入の文書は税なしで送信されるため、税率は不要です。"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書明細をマップ"
@@ -20498,11 +20510,11 @@ msgstr "オプションが見つかりません。"
 msgid "No options found."
 msgstr "オプションが見つかりません。"
 
-msgid "No other active tax codes"
-msgstr "他の有効な税コードなし"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "他の従業員が見つかりません。所有権の譲渡を有効にするために従業員を追加してください。"
+
+msgid "No other tax codes"
+msgstr "他の税コードはありません"
 
 msgid "No outstanding trainings"
 msgstr "未実施の教育訓練がありません"
@@ -20831,6 +20843,9 @@ msgstr "まだ同期工程はありません"
 msgid "No tax code"
 msgstr "税コードなし"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "税コードなし（免税・非課税）"
+
 msgid "No tax registration for {unregistered}"
 msgstr "{unregistered} の税登録なし"
 
@@ -21068,6 +21083,9 @@ msgstr "未マッピング"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "移動できませんでした: {0}。<0>{1}</0>に記録しました"
+
+msgid "Not needed"
+msgstr "不要"
 
 msgid "Not now"
 msgstr "後で"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "税コードを廃止"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "税コード {0} を廃止しますか？新しい明細で選択できなくなります。既に使用している明細は保持されます。"
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "税コード {0} を廃止しますか？ 新しい明細では選択できなくなります。既に使用している明細はそのまま保持されます。得意先、仕入先、または出荷先に割り当てられている税コードは廃止できません。"
+
+msgid "Retired, still on documents"
+msgstr "廃止済、文書には残存"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "スクラップまたは販売により資産をサービスから除却し、利益または損失を未償却残高に対して計上し、ステータスを除却済に設定します。"
@@ -26544,6 +26565,10 @@ msgstr "リバースチャージ売上税"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "リバースチャージ売上税（デフォルト）"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "リバースチャージ、{0} 課税"
 
 msgid "Reverse Entry"
 msgstr "反対仕訳"
@@ -28018,6 +28043,9 @@ msgstr "得意先に{label}を販売"
 
 msgid "Sell to Customer"
 msgstr "得意先に売却"
+
+msgid "Seller Tax ID"
+msgstr "販売者の税務ID"
 
 msgid "Selling profit: <0/>"
 msgstr "売却利益: <0/>"
@@ -30611,6 +30639,15 @@ msgstr "当局による徴収税と控除可能税、および純額"
 msgid "Tax component"
 msgstr "税要素"
 
+msgid "Tax Component"
+msgstr "税構成要素"
+
+msgid "Tax Component Base"
+msgstr "税構成要素の課税ベース"
+
+msgid "Tax Component Rate"
+msgstr "税構成要素の税率"
+
 msgid "Tax coverage"
 msgstr "税の適用範囲"
 
@@ -31575,8 +31612,8 @@ msgstr "あなたの会社が印刷するラベルおよび文書プリンター
 msgid "The labels every project can put on its elements."
 msgstr "すべてのプロジェクトが要素に付けることができるラベル。"
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "税コンポーネントが適用される最終日。税率を変更するには、旧コンポーネントに失効日を設定し、新しいコンポーネントを追加してください。転記済の文書は旧税率を維持します。"
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "税構成要素が適用される最終日。税率を変更するには、古い構成要素の終了日を新しい構成要素の適用開始日の前日に設定し、そのうえで新しい構成要素を追加してください。同じ名称と税務当局の組み合わせを持つ2つの税構成要素を、同じ日に有効にすることはできません。"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "リース月の末日（{commencementDay}日の前日）、最後の転記済みリース実行後"
@@ -35496,8 +35533,8 @@ msgstr "MRPがこの部品を旧部品の所要量に使用し始めるとき"
 msgid "When MRP uses the successor for new demand"
 msgstr "MRPが新しい所要量に対して後継品目を使用する場合"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "オンにすると、明細の配送料が課税対象額に含まれ、税コードは配送料を商品と同じ税率で課税します。"
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "オンにすると、ヘッダーの配送料のうち明細に按分された金額が課税対象額に含まれ、税コードが商品と同じ税率で課税します。明細自身の配送料は常に課税されます。"
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "有効にすると、このカテゴリーの属性がユーザーの公開プロフィールに表示されます。そうでない場合は、管理者のみが表示できます。"

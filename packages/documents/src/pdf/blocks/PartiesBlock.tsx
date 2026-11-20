@@ -22,7 +22,7 @@ export function PartiesBlock({
 }) {
   const tw = useTw();
   const t = makeText(salesInvoiceTexts.parties, block, data.vars);
-  const { salesInvoiceLocations, salesOrderIds, sellerRegistration } = data;
+  const { salesInvoiceLocations, salesOrderIds } = data;
   const { customerCountryName, invoiceCountryName, shipmentCustomerName } =
     salesInvoiceLocations;
   const { row, boldRow } = useTextRows(t);
@@ -73,11 +73,7 @@ export function PartiesBlock({
               {row("shipping")}
               {row("shippingTerms")}
               {row("incoterm")}
-              {/* The seller's own tax number — its registration for its
-                  country, else its tax ID */}
-              {sellerRegistration ? (
-                <Text>Seller Tax ID: {sellerRegistration}</Text>
-              ) : null}
+              {row("sellerTaxId")}
             </View>
           </View>
 

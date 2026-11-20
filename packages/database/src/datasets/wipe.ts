@@ -51,6 +51,9 @@ const PRESERVED_TABLES = new Set([
   "accountingPeriod",
   "journal",
   "journalLine",
+  // The tax subledger written beside those journals: wiping it would leave
+  // posted GL tax with no ledger
+  "taxLedger",
   // Infrastructure owned by the developer or the platform
   "apiKey",
   "auditLogArchive",

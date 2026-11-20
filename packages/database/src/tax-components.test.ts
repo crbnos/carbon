@@ -10,9 +10,13 @@ import {
   groupByTaxRate,
   lineTaxBase,
   memoAmounts,
+  purchaseLineTaxParts,
+  receiptLineTax,
   receiptUnitCost,
   splitLineTax,
-  type TaxComponentInput
+  type TaxCodeInput,
+  type TaxComponentInput,
+  taxCodesWithoutComponents
 } from "./tax-components.ts";
 
 function component(
@@ -292,5 +296,135 @@ describe("memoAmounts", () => {
       taxAmount: 0,
       amount: 250.5
     });
+  });
+});
+
+describe("the tax point", () => {
+  // State 7.25% + County 2.25%, the County rate rising to 2.5% on
+  // 2027-01-01: an invoice issued 2026-12-30 at 9.5%, posted 2027-01-04.
+  const code: TaxCodeInput = {
+    id: "code",
+    calculationType: "Normal",
+    taxesShipping: false,
+    components: [
+      component({ id: "state", taxPercent: 0.0725, sequence: 1 }),
+      component({
+        id: "county-old",
+        taxPercent: 0.0225,
+        sequence: 2,
+        expirationDate: "2026-12-31"
+      }),
+      component({
+        id: "county-new",
+        taxPercent: 0.025,
+        sequence: 2,
+        effectiveDate: "2027-01-01"
+      })
+    ]
+  };
+  const split = (date: string) =>
+    splitLineTax({
+      base: 1000,
+      lineTax: 95,
+      components: effectiveComponents(code, date),
+      scale: SCALE
+    }).map((part) => [part.component.id, part.taxAmount]);
+
+  it("splits the tax with the components in force on the date the rate was taken", () => {
+    expect(split("2026-12-30")).toEqual([
+      ["state", 72.5],
+      ["county-old", 22.5]
+    ]);
+    // The posting date would file the old rate's tax under the new County.
+    expect(split("2027-01-04")).toEqual([
+      ["state", 70.64103],
+      ["county-new", 24.35897]
+    ]);
+  });
+
+  it("names a code with no component in force on the date, and a missing code", () => {
+    const expired = {
+      components: [component({ id: "gone", expirationDate: "2026-12-31" })]
+    };
+    const codes = new Map([
+      ["code", code],
+      ["expired", expired]
+    ]);
+    expect(
+      taxCodesWithoutComponents(
+        codes,
+        ["code", "expired", "expired", null, "missing"],
+        "2027-01-04"
+      )
+    ).toEqual(["expired", "missing"]);
+    expect(
+      taxCodesWithoutComponents(codes, ["code", "expired"], "2026-12-30")
+    ).toEqual([]);
+  });
+});
+
+describe("purchaseLineTaxParts", () => {
+  const vat = (calculationType: TaxCodeInput["calculationType"]) => ({
+    id: "vat",
+    calculationType,
+    taxesShipping: false,
+    components: [component({ recoverablePercent: 0.5 })]
+  });
+
+  it("splits the supplier's tax on a Normal code", () => {
+    const { taxParts, selfAssessedParts } = purchaseLineTaxParts({
+      base: 1000,
+      taxAmount: 201,
+      code: vat("Normal")
+    });
+    expect(selfAssessedParts).toBeUndefined();
+    expect(taxParts?.[0]).toMatchObject({
+      taxAmount: 201,
+      recoverableAmount: 100.5
+    });
+  });
+
+  it("self-assesses a Reverse Charge code at its rate, whatever the supplier's tax", () => {
+    const { taxParts, selfAssessedParts } = purchaseLineTaxParts({
+      base: 1000,
+      taxAmount: 999,
+      code: vat("Reverse Charge")
+    });
+    expect(taxParts).toBeUndefined();
+    expect(selfAssessedParts?.[0]).toMatchObject({
+      taxAmount: 200,
+      nonRecoverableAmount: 100
+    });
+  });
+});
+
+describe("receiptLineTax", () => {
+  const code = (calculationType: TaxCodeInput["calculationType"]) => ({
+    id: "vat",
+    calculationType,
+    taxesShipping: false,
+    components: [component({ recoverablePercent: 0.25 })]
+  });
+
+  it("carries the supplier's tax less its recoverable share", () => {
+    expect(
+      receiptLineTax({ base: 1000, taxAmount: 200, code: code("Normal") })
+    ).toEqual({ taxAmount: 200, recoverableTaxAmount: 50 });
+  });
+
+  it("ignores a supplier tax amount on a Reverse Charge line and carries the non-recoverable self-assessed tax", () => {
+    expect(
+      receiptLineTax({
+        base: 1000,
+        taxAmount: 200,
+        code: code("Reverse Charge")
+      })
+    ).toEqual({ taxAmount: 0, recoverableTaxAmount: -150 });
+  });
+
+  it("keeps the historical cost with no code", () => {
+    expect(
+      receiptLineTax({ base: 1000, taxAmount: 80, code: undefined })
+    ).toEqual({ taxAmount: 80, recoverableTaxAmount: 0 });
   });
 });

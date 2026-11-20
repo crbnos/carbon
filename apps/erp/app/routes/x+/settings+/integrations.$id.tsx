@@ -22,6 +22,7 @@ import {
 import {
   buildDimensionValueMappingEntityId,
   buildTaxCodeMappingEntityId,
+  computeUnmappedTaxCodes,
   getAccountingIntegration,
   getAccountMappings,
   getAccountsBlockingSync,
@@ -32,13 +33,15 @@ import {
   getTaxCodeMappings,
   getUnmappedPostingAccounts,
   getUnmappedSlottedDimensionValues,
-  getUnmappedTaxCodes,
   isAccountingSyncEnabled,
   JOURNAL_ENTRY_SOURCE_TYPES,
   loadAccountDefaultAccountIds,
+  loadTaxCodeUsage,
   matchAccountsByCode,
   matchDimensionValuesByName,
   matchTaxCodesByRate,
+  NO_TAX_CODE_FALLBACK_PROVIDERS,
+  NO_TAX_CODE_MAPPING_ID,
   POSTING_POLICY,
   ProviderID,
   type QboProvider,
@@ -52,8 +55,6 @@ import {
   SyncOperationStatusSchema,
   selectRequiredMappingAccountIds,
   selectUnmappedRequiredAccounts,
-  type TaxRateOption,
-  toXeroTaxRateOptions,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import {
@@ -91,7 +92,12 @@ import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
 } from "@carbon/stripe/connect.server";
-import { datetime, redirect, redirectExternal } from "@carbon/utils";
+import {
+  chargedTaxPercent,
+  datetime,
+  redirect,
+  redirectExternal
+} from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -113,7 +119,6 @@ import {
 } from "~/modules/accounting/accounting.service";
 import {
   hasAccountingCutover,
-  taxCodeRate,
   toTaxCodeInput
 } from "~/modules/accounting/accounting.utils";
 import {
@@ -133,6 +138,7 @@ import {
   getIntegration,
   getOeeDevicesTabData,
   getProviderDimensionTargets,
+  getProviderTaxRateOptions,
   invalidateIntegrationHealthCache,
   isIntegrationInstallWithheld,
   TAX_RATE_MAPPING_PROVIDERS,
@@ -507,55 +513,15 @@ async function getDimensionSyncTabData(
 }
 
 /**
- * The provider's tax rates as mapping-tab options, both directions. Xero's
- * read returns [] on failure (an empty list then reads as "no rates"); a
- * thrown read sets `optionsError` so the tab says the read failed. The
- * settings drawer never blocks on a provider outage.
- */
-async function getProviderTaxRateOptions(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  integrationId: string
-): Promise<{ options: TaxRateOption[]; optionsError: boolean }> {
-  try {
-    const providerId =
-      integrationId === ProviderID.XERO
-        ? ProviderID.XERO
-        : ProviderID.QUICKBOOKS;
-    const accountingIntegration = await getAccountingIntegration(
-      client,
-      companyId,
-      providerId
-    );
-    const provider = getProviderIntegration(
-      client,
-      companyId,
-      providerId,
-      accountingIntegration.metadata
-    );
-    const options =
-      providerId === ProviderID.XERO
-        ? toXeroTaxRateOptions(await (provider as XeroProvider).listTaxRates())
-        : await (provider as QboProvider).listTaxRateOptions();
-    return { options, optionsError: false };
-  } catch (err) {
-    logger.error("Failed to load provider tax rates", {
-      companyId,
-      integrationId,
-      error: err
-    });
-    return { options: [], optionsError: true };
-  }
-}
-
-/**
  * Tax-rate mapping data for the integration drawer's Tax Rates tab: every
- * active tax code with its rate today, the provider's rates per direction,
- * the stored mappings, the used-but-unmapped (code, direction) pairs that
- * hold the sync switch off, and exact-rate proposals. Null for a provider
- * that does not map tax codes (Rillet), so no tab renders. The mapping
- * services are Kysely-based (RLS bypassed) — same auth stance as
- * getDimensionSyncTabData.
+ * active tax code at its charged rate today (0 for Reverse Charge), the
+ * retired codes that documents still use, the "no tax code" fallback row
+ * (Xero), the provider's rates per direction, the stored mappings, the
+ * mappings whose rate the provider no longer offers, the unmapped
+ * (code, direction) pairs that hold the sync switch off, and exact-rate
+ * proposals. Null for a provider that does not map tax codes (Rillet), so no
+ * tab renders. The mapping services are Kysely-based (RLS bypassed) — same
+ * auth stance as getDimensionSyncTabData.
  */
 async function getTaxRateTabData(
   client: SupabaseClient<Database>,
@@ -565,18 +531,21 @@ async function getTaxRateTabData(
   if (!TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) return null;
 
   const db = getDatabaseClient();
-  const [provider, codesResult, timeZone, mappingsResult, unmappedResult] =
+  const [provider, codesResult, timeZone, mappingsResult, usageResult] =
     await Promise.all([
       getProviderTaxRateOptions(client, companyId, integrationId),
       getTaxCodesList(client, companyId),
       getCompanyTimeZone(client, companyId),
       getTaxCodeMappings(db, { companyId, integration: integrationId }),
-      getUnmappedTaxCodes(db, { companyId, integration: integrationId })
+      loadTaxCodeUsage(db, companyId).then(
+        (data) => ({ data, error: null }),
+        (error: unknown) => ({ data: null, error })
+      )
     ]);
 
   // Don't block the settings drawer on a load failure — render what
   // loaded and log the cause.
-  for (const result of [codesResult, mappingsResult, unmappedResult]) {
+  for (const result of [codesResult, mappingsResult, usageResult]) {
     if (result.error) {
       logger.error("Failed to load tax rate mapping data", {
         companyId,
@@ -587,21 +556,55 @@ async function getTaxRateTabData(
   }
 
   const today = datetime.today(timeZone).toString();
-  const codes = (codesResult.data ?? []).map((code) => ({
+  const activeCodes = (codesResult.data ?? []).map((code) => ({
     id: code.id,
     name: code.name,
-    rate: taxCodeRate(toTaxCodeInput(code), today)
+    rate: chargedTaxPercent(toTaxCodeInput(code), today),
+    reverseCharge: code.calculationType === "Reverse Charge",
+    retired: false
   }));
+  const usage = usageResult.data ?? [];
+  const activeIds = new Set(activeCodes.map((code) => code.id));
+  // A retired code still on open documents parks them until it is mapped.
+  const retiredCodes = usage
+    .filter(
+      (code) =>
+        !activeIds.has(code.id) && (code.usedForSales || code.usedForPurchase)
+    )
+    .map((code) => ({
+      id: code.id,
+      name: code.name,
+      rate: null,
+      reverseCharge: code.reverseCharge,
+      retired: true
+    }));
   const mappings = mappingsResult.data ?? [];
+  const noTaxCodeFallback = NO_TAX_CODE_FALLBACK_PROVIDERS.has(integrationId);
 
   return {
-    codes,
+    codes: [...activeCodes, ...retiredCodes],
+    noTaxCodeId: noTaxCodeFallback ? NO_TAX_CODE_MAPPING_ID : null,
     options: provider.options,
     optionsError: provider.optionsError,
     mappings,
-    unmapped: unmappedResult.data ?? [],
+    // Mapped to a rate the provider no longer offers (archived): sync parks.
+    staleMappingKeys: provider.optionsError
+      ? []
+      : mappings
+          .filter(
+            (mapping) =>
+              !provider.options.some(
+                (option) =>
+                  option.id === mapping.externalId &&
+                  option.direction === mapping.direction
+              )
+          )
+          .map((mapping) =>
+            buildTaxCodeMappingEntityId(mapping.taxCodeId, mapping.direction)
+          ),
+    unmapped: computeUnmappedTaxCodes({ usage, mappings, noTaxCodeFallback }),
     proposals: matchTaxCodesByRate({
-      codes,
+      codes: activeCodes,
       options: provider.options,
       mapped: new Set(
         mappings.map((mapping) =>
@@ -1317,18 +1320,14 @@ export async function action(args: ActionFunctionArgs) {
         mappings.push({
           taxCodeId,
           direction: "sales" as const,
-          externalId: input.data.salesExternalId,
-          externalName: input.data.salesExternalName,
-          externalRate: input.data.salesExternalRate
+          externalId: input.data.salesExternalId
         });
       }
       if (input.data.purchaseExternalId) {
         mappings.push({
           taxCodeId,
           direction: "purchase" as const,
-          externalId: input.data.purchaseExternalId,
-          externalName: input.data.purchaseExternalName,
-          externalRate: input.data.purchaseExternalRate
+          externalId: input.data.purchaseExternalId
         });
       }
       const api = await carbon(args.request);
@@ -1933,9 +1932,11 @@ export default function IntegrationRoute() {
         <TaxRateMapping
           tabs={tabBar}
           codes={taxRates.codes}
+          noTaxCodeId={taxRates.noTaxCodeId}
           options={taxRates.options}
           optionsError={taxRates.optionsError}
           mappings={taxRates.mappings}
+          staleMappingKeys={taxRates.staleMappingKeys}
           unmapped={taxRates.unmapped}
           proposals={taxRates.proposals}
         />

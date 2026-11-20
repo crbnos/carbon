@@ -75,6 +75,7 @@ import {
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
   RecoverableTax,
+  useIsReverseCharge,
   useTaxCodeRateOn
 } from "~/components/Form/RecoverableTax";
 import {
@@ -160,6 +161,9 @@ const PurchaseOrderLineForm = ({
   const companyToday = useCompanyToday();
   const taxDate = routeData?.taxDate ?? companyToday;
   const taxCodeRateOn = useTaxCodeRateOn(taxDate);
+  // A Reverse Charge supplier charges no tax: picking one zeroes the amount
+  // (its charged rate is 0) and locks it.
+  const isReverseCharge = useIsReverseCharge();
   // What a line takes before anyone picks: the supplier's code, else its
   // bare percent.
   const defaultTax = {
@@ -1020,6 +1024,7 @@ const PurchaseOrderLineForm = ({
                             {...itemTax}
                             amountName="supplierTaxAmount"
                             percentName="taxPercent"
+                            isReadOnly={isReverseCharge(itemData.taxCodeId)}
                           />
                           <RecoverableTax
                             taxCodeId={itemData.taxCodeId}
@@ -1250,6 +1255,9 @@ const PurchaseOrderLineForm = ({
                               {...indirectTax}
                               amountName="supplierTaxAmount"
                               percentName="taxPercent"
+                              isReadOnly={isReverseCharge(
+                                indirectData.taxCodeId
+                              )}
                             />
                             <RecoverableTax
                               taxCodeId={indirectData.taxCodeId}

@@ -4594,6 +4594,9 @@ msgstr "교육 보관"
 msgid "Archived"
 msgstr "보관됨"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "제공업체에서 보관됨. 다시 매핑하세요."
+
 msgid "Archived Logs"
 msgstr "보관됨 로그"
 
@@ -11716,6 +11719,12 @@ msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로�
 msgid "Each line shows its item ID and revision."
 msgstr "각 라인에 품목 ID 및 리비전이 표시됩니다."
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "각 라인은 발행일 기준으로 송장 배송지에서 해당 품목이 적용받는 세금 코드와 세율을 가져옵니다. 라인에서 비워 둔 세금 코드는 이 작업으로 덮어씌워집니다. 대여 및 계약 라인은 기존 세금 코드를 유지합니다."
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "각 라인은 주문일 기준으로 주문 배송지에서 해당 품목이 적용받는 세금 코드와 세율을 가져옵니다. 라인에서 비워 둔 세금 코드는 이 작업으로 덮어씌워집니다."
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "매월 리스 실행은 각 자산의 이자와 사용권 상각을 전기합니다."
 
@@ -12984,8 +12993,8 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 msgid "Every match"
 msgstr "모든 일치"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "다른 모든 활성 세금 코드입니다. 다시 매핑하려면 다른 제공자 요율을 선택하세요."
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "그 밖의 모든 세금 코드입니다. 다시 매핑하려면 다른 제공업체 세율을 선택하세요."
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "모든 부품 파일은 기본적으로 선택되어 있습니다. 보내지 않을 파일은 선택을 해제하세요."
@@ -13100,6 +13109,9 @@ msgstr "경영진 손익계산"
 
 msgid "Exempt"
 msgstr "면제됨"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "면세 고객, 과세 대상이 아닌 품목, 과세되지 않는 배송비"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "면제 또는 비면제 - 개인의 직무 탭에서 설정. DCAA 모드에서는 직원이 제출 시 인증하는 인증 텍스트를 선택하고, 면제 직원의 긴 주는 희석됩니다."
@@ -18173,8 +18185,8 @@ msgstr "제조가 차단되었습니다"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "각 Carbon 세금 코드를 제공자 세금 요율에 매핑하세요. 판매용 한 번, 구매용 한 번씩입니다. 푸시된 문서는 매핑된 요율로 Carbon의 세금 금액을 전송합니다."
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "각 Carbon 세금 코드를 제공업체 세율에 매핑하세요. 판매용과 구매용을 각각 한 번씩 매핑합니다. 전송된 문서에는 매핑된 세율로 계산한 Carbon의 세액이 담겨 전송됩니다. 리버스 차지 코드는 판매에 세금을 부과하지 않으므로, 영세율 EC 판매와 같은 0% 세율에 매핑하세요. 구매 문서는 세금 없이 전송되며 세율 매핑이 필요 없습니다."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "추출한 송장 라인 매핑"
@@ -20498,11 +20510,11 @@ msgstr "옵션이 없습니다."
 msgid "No options found."
 msgstr "옵션이 없습니다."
 
-msgid "No other active tax codes"
-msgstr "다른 활성 세금 코드 없음"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "다른 직원이 없습니다. 소유권 이전을 활성화하려면 직원을 추가하세요."
+
+msgid "No other tax codes"
+msgstr "그 밖의 세금 코드 없음"
 
 msgid "No outstanding trainings"
 msgstr "미완료 교육이 없습니다"
@@ -20831,6 +20843,9 @@ msgstr "아직 동기화된 공정이 없습니다"
 msgid "No tax code"
 msgstr "세금 코드 없음"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "세금 코드 없음(면세 또는 과세 대상 아님)"
+
 msgid "No tax registration for {unregistered}"
 msgstr "{unregistered}에 대한 세금 등록 없음"
 
@@ -21068,6 +21083,9 @@ msgstr "매핑되지 않음"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "이동되지 않음: {0}. <0>{1}</0>에 기록됨"
+
+msgid "Not needed"
+msgstr "필요 없음"
 
 msgid "Not now"
 msgstr "나중에"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "세금 코드 폐기"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "세금 코드 {0}를 폐기하시겠습니까? 더 이상 새 라인에서 선택할 수 없으며, 이미 이를 사용 중인 라인은 유지됩니다."
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "세금 코드 {0}을(를) 사용 중지하시겠습니까? 새 라인에서는 더 이상 선택할 수 없습니다. 이미 사용 중인 라인은 그대로 유지됩니다. 고객, 공급업체 또는 배송지 사업장에 아직 지정된 코드는 사용 중지할 수 없습니다."
+
+msgid "Retired, still on documents"
+msgstr "사용 중지됨, 문서에는 남아 있음"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
@@ -26544,6 +26565,10 @@ msgstr "역청구 판매세"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "역청구 판매세 (기본값)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "리버스 차지, {0} 부과됨"
 
 msgid "Reverse Entry"
 msgstr "역분개 항목"
@@ -28018,6 +28043,9 @@ msgstr "고객에게 {label} 판매"
 
 msgid "Sell to Customer"
 msgstr "고객에게 판매"
+
+msgid "Seller Tax ID"
+msgstr "판매자 세금 ID"
 
 msgid "Selling profit: <0/>"
 msgstr "판매 이익: <0/>"
@@ -30611,6 +30639,15 @@ msgstr "당국이 징수한 세금 및 회수 가능한 세금 및 순 미결액
 msgid "Tax component"
 msgstr "세금 구성요소"
 
+msgid "Tax Component"
+msgstr "세금 구성요소"
+
+msgid "Tax Component Base"
+msgstr "세금 구성요소 과세표준"
+
+msgid "Tax Component Rate"
+msgstr "세금 구성요소 세율"
+
 msgid "Tax coverage"
 msgstr "세금 적용 범위"
 
@@ -31575,8 +31612,8 @@ msgstr "회사가 인쇄하는 라벨 및 문서 프린터"
 msgid "The labels every project can put on its elements."
 msgstr "모든 프로젝트가 자신의 요소에 넣을 수 있는 라벨."
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "세금 구성 요소가 적용되는 마지막 날입니다. 세율을 변경하려면 기존 구성 요소에 만료일을 입력하고 새 구성 요소를 추가하세요. 그러면 전기된 문서는 기존 세율을 유지합니다."
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "세금 구성요소가 적용되는 마지막 날입니다. 세율을 바꾸려면 기존 구성요소의 종료일을 새 구성요소 적용일 전날로 설정한 뒤 새 구성요소를 추가하세요. 이름과 과세 기관이 같은 두 구성요소는 같은 날 효력을 가질 수 없습니다."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "임차 월의 마지막 날 (일 {commencementDay} 전날), 마지막 전기된 임차 실행 후"
@@ -35496,8 +35533,8 @@ msgstr "MRP가 기존 부품의 소요량을 충족하기 위해 이 부품을 �
 msgid "When MRP uses the successor for new demand"
 msgstr "MRP가 새로운 소요량에 대해 후속 품목을 사용할 때"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "켜면 라인의 배송비가 과세 대상 금액에 포함되어, 세금 코드가 배송비에도 상품과 같은 세율을 적용합니다."
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "켜면 문서 헤더 배송비 중 라인이 부담하는 몫이 과세 금액에 포함되어, 세금 코드가 상품과 같은 세율로 과세합니다. 라인 자체의 배송비는 항상 과세됩니다."
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "켜면 이 카테고리의 속성이 사용자의 공개 프로필에 표시됩니다. 끄면 관리자에게만 표시됩니다."

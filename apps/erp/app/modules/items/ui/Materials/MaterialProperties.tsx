@@ -72,6 +72,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -164,15 +165,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   const locations = data?.locations ?? sharedMaterialsData?.locations ?? [];
   const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
-
-  // const optimisticAssignment = useOptimisticAssignment({
-  //   id: itemId,
-  //   table: "item",
-  // });
-  // const assignee =
-  //   optimisticAssignment !== undefined
-  //     ? optimisticAssignment
-  //     : routeData?.materialSummary?.assignee;
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
@@ -775,23 +767,11 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             }}
           />
         </ValidatedForm>
-        {routeDataFromRoute?.taxable !== undefined && (
-          <ValidatedForm
-            key={itemId}
-            defaultValues={{ taxable: routeDataFromRoute.taxable }}
-            validator={z.object({ taxable: zfd.checkbox() })}
-            className="w-full"
-          >
-            <Boolean
-              label={t`Taxable`}
-              name="taxable"
-              variant="small"
-              onChange={(value) => {
-                onUpdate("taxable", value ? "on" : "off");
-              }}
-            />
-          </ValidatedForm>
-        )}
+        <TaxableProperty
+          itemId={itemId}
+          taxable={routeDataFromRoute?.taxable}
+          onChange={(value) => onUpdate("taxable", value)}
+        />
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm
             defaultValues={{

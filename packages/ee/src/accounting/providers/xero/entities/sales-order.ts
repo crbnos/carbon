@@ -12,12 +12,7 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
-import {
-  loadXeroTaxContext,
-  needsXeroTaxContext,
-  resolveXeroTaxType,
-  type XeroTaxContext
-} from "../tax";
+import { resolveXeroTaxType, XeroTaxContextLoader } from "../tax";
 
 // Note: This is a push-only syncer (Carbon -> Xero).
 // Carbon sales orders are pushed as Xero Quotes since Xero
@@ -130,23 +125,14 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
   Xero.Quote,
   "UpdatedDateUTC"
 > {
-  private taxContextPromise?: Promise<XeroTaxContext>;
+  private readonly taxContext = new XeroTaxContextLoader(
+    this.database,
+    { companyId: this.companyId, integration: this.provider.id },
+    this.provider as XeroProvider
+  );
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
-  }
-
-  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
-  private getTaxContext(): Promise<XeroTaxContext> {
-    this.taxContextPromise ??= loadXeroTaxContext(
-      this.database,
-      { companyId: this.companyId, integration: this.provider.id },
-      this.xeroProvider
-    ).catch((error) => {
-      this.taxContextPromise = undefined;
-      throw error;
-    });
-    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -347,13 +333,14 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
       taxPercent: line.taxPercent,
       taxAmount: xeroSalesOrderLineTax(line, local.currencyDecimalPlaces)
     }));
-    // A quote whose every line is untaxed legacy (no code, no rate) goes out
-    // as it did before tax codes: no TaxType, no TaxAmount, so Xero applies
-    // each account's default rate. Once any line carries Carbon's tax, every
-    // line states its own — an untaxed one as NONE — or Xero would add the
-    // account default to it and the quote total would exceed Carbon's.
-    const documentCarriesTax = needsXeroTaxContext(lineTaxes);
-    const taxContext = documentCarriesTax ? await this.getTaxContext() : null;
+    // A quote whose every line goes out at no tax (untaxed legacy lines in a
+    // company that does not send the fallback) goes out as it did before tax
+    // codes: no TaxType, no TaxAmount, so Xero applies each account's default
+    // rate. Once any line needs a mapped rate, every line states its own — an
+    // untaxed one as NONE or the fallback — or Xero would add the account
+    // default to it and the quote total would exceed Carbon's.
+    const taxContext = await this.taxContext.forLines("sales", lineTaxes);
+    const documentCarriesTax = taxContext.catalogLoaded;
     const taxTypes = financialLines.map((line, index) =>
       resolveXeroTaxType({
         context: taxContext,
@@ -361,7 +348,8 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         direction: "sales",
         ...lineTaxes[index]!,
         netAmount: line.lineAmount,
-        decimalPlaces: local.currencyDecimalPlaces
+        decimalPlaces: local.currencyDecimalPlaces,
+        accountCode: line.accountNumber
       })
     );
 

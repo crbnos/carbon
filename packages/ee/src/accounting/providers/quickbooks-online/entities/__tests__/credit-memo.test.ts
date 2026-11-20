@@ -18,14 +18,13 @@ import {
   buildQboCreditReasonItemName,
   QBO_MEMO_INCREASER_SKIP_REASON,
   QboCreditMemoSyncer,
-  type QboMemoSettlementRow,
-  type QboMemoSource,
   qboCreditMemoSkipReason,
   qboMemoApplicationAmount,
   resolveQboCreditMemoTax,
   resolveQboCreditReasonItemRef
 } from "../credit-memo";
 import type { QboInvoiceTaxCatalog } from "../invoice-tax";
+import type { QboMemoSettlementRow, QboMemoSource } from "../memo-source";
 import {
   buildQboVendorCreditApplicationPayload,
   buildQboVendorCreditPayload,

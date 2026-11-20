@@ -37,7 +37,11 @@
 
 import { toBaseAmount } from "./accounting-currency.ts";
 import { accountTypeFromClass, credit, debit } from "./ledger.ts";
-import { assertBalanced, round } from "./precision.ts";
+import {
+  assertBalanced,
+  distributeRoundingResidual,
+  round
+} from "./precision.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
@@ -96,6 +100,14 @@ export interface BuildMemoJournalInput {
    *  for both directions, so Tax Paid is not always an asset. Omitted: Tax
    *  Received is a liability, Tax Paid an asset. */
   taxAccountClass?: string | null;
+  /** One tax leg per tax component, on the component's own account (null:
+   *  `taxAccountId`), splitting the tax in proportion to `weight` so the
+   *  legs sum to it exactly. Omitted or empty: one leg on `taxAccountId`. */
+  taxLegs?: Array<{
+    accountId: string | null;
+    accountClass?: string | null;
+    weight: number;
+  }>;
 }
 
 export interface BuildMemoJournalResult {
@@ -126,7 +138,8 @@ export function buildMemoJournal(
     reasonDescription,
     taxAmount = 0,
     taxAccountId,
-    taxAccountClass
+    taxAccountClass,
+    taxLegs
   } = input;
 
   if (!controlAccountId) {
@@ -198,7 +211,13 @@ export function buildMemoJournal(
   }
   const taxMagnitude =
     taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0;
-  if (taxMagnitude > 0 && !taxAccountId) {
+  const legs = taxLegs?.length
+    ? taxLegs
+    : [{ accountId: null, accountClass: null, weight: 1 }];
+  if (
+    taxMagnitude > 0 &&
+    legs.some((leg) => !(leg.accountId ?? taxAccountId))
+  ) {
     throw new Error(
       `Missing ${isAR ? "Tax Received" : "Tax Paid"} account default; cannot post memo tax`
     );
@@ -218,18 +237,33 @@ export function buildMemoJournal(
 
   // 2b) Tax leg — the tax inside the memo, on the reason side, so a credit
   // against a taxed invoice unwinds the tax it charged.
-  if (taxMagnitude > 0 && taxAccountId) {
-    pushLine(
-      controlIsDebit ? "credit" : "debit",
-      taxAccountClass
-        ? accountTypeFromClass(taxAccountClass)
-        : isAR
-          ? "liability"
-          : "asset",
-      taxAccountId,
-      isAR ? "Tax Received" : "Tax Paid",
+  // Per component, so each authority's account moves by what the tax
+  // ledger records for it.
+  if (taxMagnitude > 0) {
+    const totalWeight = legs.reduce((total, leg) => total + leg.weight, 0);
+    const amounts = distributeRoundingResidual(
+      legs.map((leg) =>
+        totalWeight === 0
+          ? taxMagnitude / legs.length
+          : (taxMagnitude * leg.weight) / totalWeight
+      ),
       taxMagnitude
     );
+    legs.forEach((leg, index) => {
+      if (amounts[index] === 0) return;
+      const accountClass = leg.accountId ? leg.accountClass : taxAccountClass;
+      pushLine(
+        controlIsDebit ? "credit" : "debit",
+        accountClass
+          ? accountTypeFromClass(accountClass)
+          : isAR
+            ? "liability"
+            : "asset",
+        (leg.accountId ?? taxAccountId)!,
+        isAR ? "Tax Received" : "Tax Paid",
+        amounts[index]!
+      );
+    });
   }
 
   // 3) Variance leg — the plug that makes an unequal control/reason pair

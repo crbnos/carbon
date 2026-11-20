@@ -475,7 +475,7 @@ export const terms = {
   },
   "taxes-shipping": {
     term: msg`Taxes shipping`,
-    definition: msg`When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods.`,
+    definition: msg`When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed.`,
     href: "/docs/reference/accounting#tax-codes"
   },
   "tax-authority": {
@@ -495,7 +495,7 @@ export const terms = {
   },
   "tax-component-expiration-date": {
     term: msg`Expires (tax component)`,
-    definition: msg`The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate.`,
+    definition: msg`The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day.`,
     href: "/docs/reference/accounting#tax-codes"
   },
   "tax-component-received-account": {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,18 +24,11 @@ import {
 } from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
-  getPurchaseInvoiceLine,
-  upsertPurchaseInvoiceLine
+  getPurchaseInvoiceLine
 } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
-import {
-  chargeNumberError,
-  getLineChargeNumber
-} from "~/modules/projects/projects.service";
-import {
-  getSupplierInteractionLineDocuments,
-  nonTaxableItemTax
-} from "~/modules/purchasing/purchasing.service";
+import { getLineChargeNumber } from "~/modules/projects/projects.service";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -95,10 +89,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
-  });
-
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceLineValidator).validate(
     formData
@@ -108,57 +98,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id: _id, ...d } = validation.data;
 
-  // if (d.invoiceLineType === "G/L Account") {
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else if (d.invoiceLineType === "Fixed Asset") {
-  //   d.accountId = undefined;
-  //   d.itemId = undefined;
-  // } else
-  // if (d.invoiceLineType === "Comment") {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  // }
-
-  const chargeError = await chargeNumberError(client, companyId, d);
-  if (chargeError) {
-    return validationError({
-      fieldErrors: { [chargeError.field]: chargeError.message }
-    });
-  }
-
-  // A non-taxable item carries no tax, whatever was posted.
-  const tax = await nonTaxableItemTax(client, companyId, d.itemId);
-
-  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
-    id: lineId,
+  // The operation checks the charge number and the order's funds, and
+  // decides the line's tax.
+  const api = await carbon(request);
+  const result = await api.invoicing.updatePurchaseInvoiceLine({
     ...d,
-    ...tax,
-    updatedBy: userId,
+    // The form posts the field: an empty one clears the code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
+    id: lineId,
     customFields: setCustomFields(formData)
   });
 
-  if (updatePurchaseInvoiceLine.error) {
-    throw redirect(
-      path.to.purchaseInvoiceLine(invoiceId, lineId),
-      await flash(
-        request,
-        error(
-          updatePurchaseInvoiceLine.error,
-          "Failed to update purchase invoice line"
-        )
-      )
-    );
-  }
-
-  throw redirect(path.to.purchaseInvoiceLine(invoiceId, lineId));
+  return respond(request, result).redirect(
+    path.to.purchaseInvoiceLine(invoiceId, lineId)
+  );
 }
 
 export default function EditPurchaseInvoiceLineRoute() {

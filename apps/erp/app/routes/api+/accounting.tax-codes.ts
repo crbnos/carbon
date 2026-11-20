@@ -14,7 +14,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
 
   const [taxCodes, timeZone] = await Promise.all([
-    getTaxCodesList(client, companyId),
+    // Retired codes too: a picker still shows one a record already names.
+    getTaxCodesList(client, companyId, { includeRetired: true }),
     getCompanyTimeZone(client, companyId)
   ]);
   const today = datetime.today(timeZone).toString();

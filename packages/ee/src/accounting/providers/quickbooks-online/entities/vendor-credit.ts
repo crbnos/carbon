@@ -3,14 +3,19 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { deriveRate, round } from "@carbon/utils";
-import { allocateRecoverableTax } from "../../../core/document-costing";
+import {
+  loadMemoRecoverableShare,
+  planMemoRecoverableLines
+} from "../../../core/bill-tax-plan";
 import {
   createMappingService,
   type ExternalIntegrationMapping
 } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
-import { getTaxCodeMappings } from "../../../core/tax-mapping";
+import {
+  getTaxCodeMappings,
+  loadReverseChargeCodeIds
+} from "../../../core/tax-mapping";
 import { BaseEntitySyncer, type ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
@@ -19,15 +24,10 @@ import {
   type QboVendorCreditApplicationPayload
 } from "../provider";
 import {
-  loadQboMemoSources,
   QBO_MEMO_INCREASER_SKIP_REASON,
-  type QboMemoSettlementRow,
-  type QboMemoSource,
   qboMemoApplicationAmount,
   qboMemoApplicationSkipReason,
   qboMemoCurrencyFields,
-  qboMemoHasTax,
-  qboMemoNetAmount,
   qboMemoStatusSkipReason,
   readQboAppliedSettlementIds,
   readQboMemoApplication,
@@ -42,6 +42,13 @@ import {
   QboTaxContext,
   resolveQboPurchaseTaxLines
 } from "./invoice-tax";
+import {
+  loadQboMemoSources,
+  type QboMemoSettlementRow,
+  type QboMemoSource,
+  qboMemoHasTax,
+  qboMemoNetAmount
+} from "./memo-source";
 import {
   buildQboDocNumberFields,
   loadQboAccountRefsById,
@@ -95,10 +102,10 @@ export type QboVendorCreditTax = {
 /**
  * The tax of a supplier memo with tax, outside the US. The posting moved only
  * the recoverable share of the tax through Tax Paid and left the rest in the
- * reason account, so the memo splits like a bill leg (`allocateRecoverableTax`):
- * the recoverable net at the mapped purchase code with the recoverable tax,
- * the rest at the company's non-taxable code. `recoverableShare` is 0..1. Pure
- * — exported for tests.
+ * reason account, so the memo splits like a bill leg
+ * (`planMemoRecoverableLines`, shared with Xero): the recoverable net at the
+ * mapped purchase code with the recoverable tax, the rest at the company's
+ * non-taxable code. `recoverableShare` is 0..1. Pure — exported for tests.
  */
 export function resolveQboVendorCreditTax(args: {
   memo: QboMemoSource;
@@ -107,28 +114,16 @@ export function resolveQboVendorCreditTax(args: {
   mappings: QboTaxCodeMappings;
 }): QboVendorCreditTax {
   const { memo } = args;
-  const { netAmount, decimalPlaces } = qboMemoNetAmount(memo);
-  // The same rounding the posting used for the Tax Paid leg (planMemoTax).
-  const recoverableTax = round(
-    memo.taxAmount * args.recoverableShare,
-    decimalPlaces
-  );
-  // The reason leg holds the net and the tax that is not recoverable.
-  const lines = allocateRecoverableTax({
-    document: { id: memo.id, label: `memo ${memo.memoId}` },
-    legs: [
-      {
-        id: memo.id,
-        accountId: null,
-        amount: round(memo.amount - recoverableTax, decimalPlaces),
-        description: null,
-        tax: {
-          taxCodeId: memo.taxCodeId,
-          taxPercent: deriveRate(memo.taxAmount, netAmount)
-        }
-      }
-    ],
-    recoverableTaxByCode: new Map([[memo.taxCodeId, recoverableTax]]),
+  const { decimalPlaces } = qboMemoNetAmount(memo);
+  const lines = planMemoRecoverableLines({
+    memo: {
+      id: memo.id,
+      label: `memo ${memo.memoId}`,
+      amount: memo.amount,
+      taxAmount: memo.taxAmount,
+      taxCodeId: memo.taxCodeId
+    },
+    share: args.recoverableShare,
     decimalPlaces
   });
   const parts = resolveQboPurchaseTaxLines({
@@ -312,55 +307,37 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
 
   /**
    * The memo's tax, resolved before any dependency is pushed. Undefined for a
-   * memo without tax and for a US company (QuickBooks US has no purchase
-   * tax): both go out as before.
+   * memo without tax, for a Reverse Charge memo (tax-neutral in Phase 1) and
+   * for a US company (QuickBooks US has no purchase tax): all go out as
+   * before.
    */
   private async resolveTax(
     local: QboMemoSource
   ): Promise<QboVendorCreditTax | undefined> {
     if (!qboMemoHasTax(local)) return undefined;
+    if (
+      local.taxCodeId &&
+      (
+        await loadReverseChargeCodeIds(this.database, {
+          companyId: this.companyId,
+          taxCodeIds: [local.taxCodeId]
+        })
+      ).has(local.taxCodeId)
+    ) {
+      return undefined;
+    }
     const catalog = await this.taxContext.catalog(local.id);
     if (isQboUsCompany(catalog)) return undefined;
     const mappings = await this.taxContext.mappings(local.id);
     return resolveQboVendorCreditTax({
       memo: local,
-      recoverableShare: await this.getRecoverableShare(local),
+      recoverableShare: await loadMemoRecoverableShare(this.database, {
+        companyId: this.companyId,
+        memo: local
+      }),
       catalog,
       mappings
     });
-  }
-
-  /**
-   * The share of the memo's tax the posting moved through Tax Paid. With no
-   * tax code it moved none — the tax stays in cost, as on a legacy purchase
-   * line (planMemoTax); with a code, the tax ledger holds the recoverable
-   * amount of each component.
-   */
-  private async getRecoverableShare(local: QboMemoSource): Promise<number> {
-    if (local.taxAmount === 0) return 0;
-    if (!local.taxCodeId) return 0;
-    const rows = await this.database
-      .selectFrom("taxLedger")
-      .select(["taxAmount", "recoverableAmount"])
-      .where("companyId", "=", this.companyId)
-      .where("documentId", "=", local.id)
-      .where("documentType", "=", "Memo")
-      .where("source", "=", "Purchase")
-      .execute();
-    const tax = rows.reduce((sum, row) => sum + Number(row.taxAmount), 0);
-    const recoverable = rows.reduce(
-      (sum, row) => sum + Number(row.recoverableAmount),
-      0
-    );
-    if (rows.length === 0 || tax === 0) {
-      throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_TAX_CODES",
-        warning: true,
-        message: `Cannot sync memo ${local.memoId}: its tax has no tax ledger rows, so its recoverable share is unknown. Repost the memo, then retry.`,
-        metadata: { memoId: local.id, taxCodeId: local.taxCodeId }
-      });
-    }
-    return deriveRate(Math.abs(recoverable), Math.abs(tax));
   }
 
   private getBaseCurrencyCode(): Promise<string> {

@@ -29,6 +29,7 @@ import {
   getUnmappedRequiredAccounts,
   getUnmappedTaxCodes,
   JOURNAL_ENTRY_SOURCE_TYPES,
+  loadReverseChargeCodeIds,
   POSTING_POLICY,
   suggestAccountMatchesWithAI,
   upsertAccountMappings,
@@ -2844,8 +2845,11 @@ export const saveDimensionValueMappings = defineServiceFn({
  * Map Carbon tax codes to an accounting integration's tax rates.
  *
  * @remarks
- * Xero and QuickBooks Online only: each mapping names one tax code, the
- * direction it is used in (sales or purchase) and the provider's rate.
+ * Xero and QuickBooks Online only: each mapping names one tax code (or the
+ * "no tax code" fallback), the direction it is used in (sales or purchase)
+ * and the provider's rate. The rate must be one the provider offers now; its
+ * name and percentage are read from the provider, never from the form. A
+ * Reverse Charge code charges no tax on sales, so its sales rate must be 0%.
  * Written all or none.
  */
 export const saveTaxCodeMappings = defineServiceFn({
@@ -2860,16 +2864,58 @@ export const saveTaxCodeMappings = defineServiceFn({
     if (!service.TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
       return ctx.error("rule", "This integration does not map tax codes");
     }
+    const provider = await service.getProviderTaxRateOptions(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      integrationId
+    );
+    if (provider.optionsError) {
+      return ctx.error("internal", "Failed to load the provider's tax rates");
+    }
+    const resolved = mappings.map((mapping) => ({
+      mapping,
+      option: provider.options.find(
+        (option) =>
+          option.id === mapping.externalId &&
+          option.direction === mapping.direction
+      )
+    }));
+    const unknown = resolved.find(({ option }) => !option);
+    if (unknown) {
+      return ctx.error(
+        "rule",
+        `${unknown.mapping.externalId} is not an active ${unknown.mapping.direction} tax rate in the provider`
+      );
+    }
+    const reverseCharge = await loadReverseChargeCodeIds(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      taxCodeIds: mappings
+        .filter((m) => m.direction === "sales")
+        .map((m) => m.taxCodeId)
+    });
+    if (
+      resolved.some(
+        ({ mapping, option }) =>
+          mapping.direction === "sales" &&
+          reverseCharge.has(mapping.taxCodeId) &&
+          option!.rate !== 0
+      )
+    ) {
+      return ctx.error(
+        "rule",
+        "A Reverse Charge tax code charges no tax on sales. Map its sales use to a 0% rate."
+      );
+    }
     const result = await upsertTaxCodeMappings(ctx.asSystem.pg, {
       companyId: ctx.company.id,
       integration: integrationId,
       userId: ctx.auditUserId,
-      mappings: mappings.map((mapping) => ({
+      mappings: resolved.map(({ mapping, option }) => ({
         taxCodeId: mapping.taxCodeId,
         direction: mapping.direction,
         externalId: mapping.externalId,
-        externalName: mapping.externalName ?? null,
-        externalRate: mapping.externalRate ?? null
+        externalName: option!.name,
+        externalRate: option!.rate
       }))
     });
     if (result.error) {

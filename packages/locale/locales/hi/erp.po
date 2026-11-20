@@ -4594,6 +4594,9 @@ msgstr "प्रशिक्षण को आर्काइव करें"
 msgid "Archived"
 msgstr "संग्रहीत"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "प्रदाता में संग्रहीत। इसे फिर से मैप करें।"
+
 msgid "Archived Logs"
 msgstr "संग्रहीत लॉग"
 
@@ -11716,6 +11719,12 @@ msgstr "प्रत्येक पंक्ति इस कंपनी क�
 msgid "Each line shows its item ID and revision."
 msgstr "प्रत्येक पंक्ति अपना आइटम ID और रिवीजन दिखाती है।"
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "हर पंक्ति को वही कर कोड और दर मिलती है जो उसके आइटम को जारी होने की तिथि पर चालान के शिप-टू स्थान के लिए मिलती है। इससे वह कर कोड बदल जाएगा जो आपने किसी पंक्ति से हटाया था। किराया और अनुबंध वाली पंक्तियाँ अपना ही कर कोड रखती हैं।"
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "हर पंक्ति को वही कर कोड और दर मिलती है जो उसके आइटम को ऑर्डर की तिथि पर ऑर्डर के शिप-टू स्थान के लिए मिलती है। इससे वह कर कोड बदल जाएगा जो आपने किसी पंक्ति से हटाया था।"
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "प्रत्येक मासिक पट्टे रन प्रत्येक संपत्ति के ब्याज और उपयोग के अधिकार के बकाया को पोस्ट करता है।"
 
@@ -12984,8 +12993,8 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 msgid "Every match"
 msgstr "हर मेल"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "हर दूसरा सक्रिय कर कोड। फिर से मैप करने के लिए एक अलग प्रदाता दर चुनें।"
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "बाकी हर कर कोड। फिर से मैप करने के लिए प्रदाता की कोई अलग दर चुनें।"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "हर पार्ट फ़ाइल पहले से चिह्नित होती है; जो फ़ाइल नहीं भेजनी हो उसका चिह्न हटा दें।"
@@ -13100,6 +13109,9 @@ msgstr "कार्यकारी P&L"
 
 msgid "Exempt"
 msgstr "छूट प्राप्त"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "छूट प्राप्त ग्राहक, करमुक्त आइटम, बिना कर वाली शिपिंग"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "छूट प्राप्त या गैर-छूट प्राप्त, किसी व्यक्ति के जॉब टैब पर सेट किया गया। DCAA मोड में यह प्रमाणन पाठ चुनता है जो कर्मचारी सबमिट करने पर प्रमाणित करता है, और एक छूट प्राप्त कर्मचारी के लंबे सप्ताह को पतला किया जाता है।"
@@ -18173,8 +18185,8 @@ msgstr "विनिर्माण अवरुद्ध है"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "प्रत्येक Carbon कर कोड को प्रदाता कर दर से मैप करें, बिक्री के लिए एक बार और खरीद के लिए एक बार। पुश किए गए दस्तावेज़ Carbon की कर राशि को मैप की गई दर के साथ भेजते हैं।"
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "हर Carbon कर कोड को प्रदाता की कर दर से मैप करें, एक बार बिक्री के लिए और एक बार खरीद के लिए। भेजे गए दस्तावेज़ Carbon की कर राशि को मैप की गई दर के साथ भेजते हैं। रिवर्स चार्ज कोड बिक्री पर कोई कर नहीं लगाता, इसलिए उसे 0% दर से मैप करें, जैसे शून्य-दर वाली EC बिक्री। उसके खरीद दस्तावेज़ बिना कर के जाते हैं और उनके लिए दर की ज़रूरत नहीं होती।"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
@@ -20498,11 +20510,11 @@ msgstr "कोई विकल्प नहीं मिला।"
 msgid "No options found."
 msgstr "कोई विकल्प नहीं मिला।"
 
-msgid "No other active tax codes"
-msgstr "कोई अन्य सक्रिय कर कोड नहीं है"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "कोई अन्य कर्मचारी नहीं मिला। स्वामित्व हस्तांतरण सक्षम करने के लिए कर्मचारियों को जोड़ें।"
+
+msgid "No other tax codes"
+msgstr "कोई और कर कोड नहीं"
 
 msgid "No outstanding trainings"
 msgstr "कोई बकाया प्रशिक्षण नहीं"
@@ -20831,6 +20843,9 @@ msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
 msgid "No tax code"
 msgstr "कोई कर कोड नहीं है"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "कोई कर कोड नहीं (छूट प्राप्त या कर-मुक्त)"
+
 msgid "No tax registration for {unregistered}"
 msgstr "{unregistered} के लिए कोई कर पंजीकरण नहीं है"
 
@@ -21068,6 +21083,9 @@ msgstr "मैप नहीं किया गया"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "स्थानांतरित नहीं हुआ: {0}। <0>{1}</0> पर दर्ज किया गया"
+
+msgid "Not needed"
+msgstr "आवश्यक नहीं"
 
 msgid "Not now"
 msgstr "अभी नहीं"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "कर कोड को सेवानिवृत्त करें"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "कर कोड {0} को सेवानिवृत्त करें? इसे अब नई पंक्तियों पर नहीं चुना जा सकता है। जो पंक्तियां पहले से इसका उपयोग करती हैं, वे इसे रखती हैं।"
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "कर कोड {0} बंद करें? इसे अब नई पंक्तियों पर नहीं चुना जा सकेगा। जो पंक्तियाँ पहले से इसका उपयोग कर रही हैं, वे इसे रखेंगी। जो कोड अब भी किसी ग्राहक, आपूर्तिकर्ता या शिप-टू स्थान को सौंपा गया है, उसे बंद नहीं किया जा सकता।"
+
+msgid "Retired, still on documents"
+msgstr "बंद किया गया, फिर भी दस्तावेज़ों पर"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "किसी संपत्ति को स्क्रैपिंग या विक्रय द्वारा सेवा से सेवामुक्त करना, किसी भी लाभ या हानि को शुद्ध बही मूल्य के विरुद्ध दर्ज करना और इसकी स्थिति को निपटाया गया पर सेट करना।"
@@ -26544,6 +26565,10 @@ msgstr "रिवर्स चार्ज बिक्रय कर"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "रिवर्स चार्ज बिक्रय कर (डिफ़ॉल्ट)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "रिवर्स चार्ज, {0} लगाया गया"
 
 msgid "Reverse Entry"
 msgstr "प्रविष्टि को प्रतिवर्तित करें"
@@ -28018,6 +28043,9 @@ msgstr "ग्राहक को {label} बेचें"
 
 msgid "Sell to Customer"
 msgstr "ग्राहक को बेचें"
+
+msgid "Seller Tax ID"
+msgstr "विक्रेता कर ID"
 
 msgid "Selling profit: <0/>"
 msgstr "विक्रय लाभ: <0/>"
@@ -30611,6 +30639,15 @@ msgstr "कर प्राधिकरण द्वारा एकत्र �
 msgid "Tax component"
 msgstr "कर घटक"
 
+msgid "Tax Component"
+msgstr "कर घटक"
+
+msgid "Tax Component Base"
+msgstr "कर घटक आधार"
+
+msgid "Tax Component Rate"
+msgstr "कर घटक दर"
+
 msgid "Tax coverage"
 msgstr "कर क्षेत्र"
 
@@ -31575,8 +31612,8 @@ msgstr "लेबल और दस्तावेज़ प्रिंटर �
 msgid "The labels every project can put on its elements."
 msgstr "लेबल जो हर प्रोजेक्ट अपने तत्वों पर लगा सकता है।"
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "वह अंतिम दिन जब कर घटक लागू होता है। दर बदलने के लिए, पुराने घटक को समाप्ति तिथि दें और एक नया जोड़ें, ताकि पोस्ट किए गए दस्तावेज़ पुरानी दर ही बनाए रखें।"
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "वह अंतिम दिन जब कोई कर घटक लागू होता है। दर बदलने के लिए, पुराने घटक की समाप्ति नई दर लागू होने से एक दिन पहले सेट करें, फिर नया घटक जोड़ें। एक ही नाम और कर प्राधिकरण वाले दो घटक एक ही दिन लागू नहीं हो सकते।"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "पट्टा महीने का अंतिम दिन (दिन {commencementDay} से पहले का दिन), अंतिम पोस्ट किए गए पट्टा रन के बाद"
@@ -35496,8 +35533,8 @@ msgstr "जब MRP इस पार्ट का उपयोग पुरान
 msgid "When MRP uses the successor for new demand"
 msgstr "जब MRP नई मांग के लिए उत्तराधिकारी का उपयोग करता है"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "चालू होने पर, पंक्ति का शिपिंग शुल्क उसकी कर-योग्य राशि में जुड़ जाता है, ताकि कर कोड शिपिंग पर भी वस्तुओं जैसी ही दर से कर लगाए।"
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "चालू होने पर, दस्तावेज़ की हेडर शिपिंग में से पंक्ति का हिस्सा उसकी कर-योग्य राशि में जुड़ जाता है, ताकि कर कोड उसे सामान की समान दर पर कर लगाए। पंक्ति का अपना शिपिंग शुल्क हमेशा कर-योग्य होता है।"
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "जब सक्षम हो, तो इस श्रेणी की विशेषताएँ किसी के सार्वजनिक प्रोफ़ाइल पर दिखाई देती हैं; अन्यथा वे केवल व्यवस्थापकों के लिए दृश्यमान हैं।"

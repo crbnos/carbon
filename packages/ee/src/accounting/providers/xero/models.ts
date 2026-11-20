@@ -393,6 +393,9 @@ export namespace Xero {
       DisplayTaxRate: z.number().optional(),
       CanApplyToRevenue: z.boolean().optional(),
       CanApplyToExpenses: z.boolean().optional(),
+      CanApplyToAssets: z.boolean().optional(),
+      CanApplyToLiabilities: z.boolean().optional(),
+      CanApplyToEquity: z.boolean().optional(),
       TaxComponents: z
         .array(
           z.object({

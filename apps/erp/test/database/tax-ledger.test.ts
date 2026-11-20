@@ -6,6 +6,7 @@
 // (.ai/specs/2026-10-16-multi-jurisdiction-tax.md, "The tax subledger"), and a
 // void negates those rows.
 
+import { parseDate } from "@internationalized/date";
 import { expect } from "vitest";
 import {
   alwaysPostFixture,
@@ -19,7 +20,10 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
-import { getTaxLiability } from "~/modules/accounting/accounting.service";
+import {
+  getTaxLiability,
+  getTaxLiabilityBaseTotals
+} from "~/modules/accounting/accounting.service";
 import {
   postPurchaseInvoice,
   postSalesInvoice
@@ -34,6 +38,8 @@ async function taxCode(
     name: string;
     taxPercent: number;
     recoverablePercent?: number;
+    effectiveDate?: string;
+    expirationDate?: string;
   }>,
   calculationType: "Normal" | "Reverse Charge" = "Normal"
 ): Promise<string> {
@@ -66,6 +72,8 @@ async function taxCode(
           name: c.name,
           taxPercent: c.taxPercent,
           recoverablePercent: c.recoverablePercent ?? 0,
+          effectiveDate: c.effectiveDate ?? null,
+          expirationDate: c.expirationDate ?? null,
           sequence: index + 1,
           companyId: f.companyId,
           createdBy: USER
@@ -75,6 +83,65 @@ async function taxCode(
   });
   return id;
 }
+
+/** A Draft sales invoice of one 1,000 Service line under `code`. */
+async function draftTaxedSalesInvoice(
+  f: Fixture,
+  key: string,
+  args: { code: string; taxPercent: number; dateIssued?: string }
+): Promise<string> {
+  const invoiceId = `${f.prefix}-sales-invoice-${key}`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("salesInvoice")
+      .values({
+        id: invoiceId,
+        invoiceId: `INV-${key}`,
+        customerId: f.customerId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        dateIssued: args.dateIssued ?? null,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceShipment")
+      .values({
+        id: invoiceId,
+        shippingCost: 0,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceLine")
+      .values({
+        invoiceId,
+        invoiceLineType: "Service",
+        itemId: f.serviceId,
+        quantity: 1,
+        unitPrice: 1000,
+        taxPercent: args.taxPercent,
+        taxCodeId: args.code,
+        exchangeRate: 1,
+        unitOfMeasureCode: "EA",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return invoiceId;
+}
+
+const postSales = (f: Fixture, invoiceId: string) =>
+  invokePosting(
+    handlesOf(f.ctx),
+    "post-sales-invoice",
+    { type: "post", invoiceId },
+    postSalesInvoice
+  );
 
 async function ledgerOf(f: Fixture, documentId: string) {
   return f.db
@@ -355,6 +422,89 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
       expect(await selfAssessedTax()).toBe(82.5);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a sales invoice splits its tax with the components in force on its date issued, not on the posting date",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const yesterday = parseDate(f.today).subtract({ days: 1 }).toString();
+      const code = await taxCode(f, "county-change", [
+        { name: "State", taxPercent: 0.0725 },
+        { name: "County", taxPercent: 0.0225, expirationDate: yesterday },
+        { name: "County 2.5", taxPercent: 0.025, effectiveDate: f.today }
+      ]);
+      const invoiceId = await draftTaxedSalesInvoice(f, "county", {
+        code,
+        taxPercent: 0.095,
+        dateIssued: yesterday
+      });
+      unwrap(await postSales(f, invoiceId));
+      const rows = await ledgerOf(f, invoiceId);
+      expect(rows.map((r) => [r.componentName, r.taxAmount])).toEqual([
+        ["County", 22.5],
+        ["State", 72.5]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a sales invoice whose code has no component in force on its date issued is refused, and posts nothing",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const yesterday = parseDate(f.today).subtract({ days: 1 }).toString();
+      const code = await taxCode(f, "expired", [
+        { name: "Expired", taxPercent: 0.1, expirationDate: yesterday }
+      ]);
+      const invoiceId = await draftTaxedSalesInvoice(f, "expired", {
+        code,
+        taxPercent: 0.1,
+        dateIssued: f.today
+      });
+      const journals = await newJournals(f, async () => {
+        const result = await postSales(f, invoiceId);
+        expect(result.error?.message).toContain("has no component in force");
+      });
+      expect(journals).toEqual([]);
+      expect(await ledgerOf(f, invoiceId)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the liability report's taxable total counts a two-component line once",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stampCutover(f);
+      const code = await taxCode(f, "austin-total", [
+        { name: "TX State", taxPercent: 0.0625 },
+        { name: "City of Austin", taxPercent: 0.02 }
+      ]);
+      const invoiceId = await draftTaxedSalesInvoice(f, "total", {
+        code,
+        taxPercent: 0.0825
+      });
+      unwrap(await postSales(f, invoiceId));
+      const filters = { startDate: f.cutoverDate, endDate: f.periodEnd };
+      const rows = await getTaxLiability(f.db, f.companyId, filters);
+      // Each component row carries the line's whole base...
+      expect(rows.map((row) => row.taxableSales)).toEqual([1000, 1000]);
+      // ...so the total comes from the lines, once each.
+      expect(
+        await getTaxLiabilityBaseTotals(f.db, f.companyId, filters)
+      ).toEqual({ taxableSales: 1000, exemptSales: 0, taxablePurchases: 0 });
     } finally {
       await f.cleanup();
     }

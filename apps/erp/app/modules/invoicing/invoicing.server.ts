@@ -35,6 +35,10 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
+import {
+  lineTaxForUpsert,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   resolveItemIdFromExtractedText,
@@ -47,19 +51,17 @@ import {
 import {
   deletePurchaseInvoiceLineReleasingLeases,
   deletePurchaseInvoiceReleasingLeases,
-  nonTaxableItemTax,
   purchaseOrderFundsGate,
-  resolveCreatedPurchaseLineTax
+  resolvePurchaseLineTax
 } from "~/modules/purchasing/purchasing.service";
 import {
   customerContactHasEmail,
   deleteRentalCreditMemoReleasingPeriods,
   deleteSalesInvoiceLineReleasingRentals,
   deleteSalesInvoiceReleasingRentals,
-  isItemTaxable,
   recalculateSalesDocumentTaxes,
   recordSalesRuleOutcome,
-  resolveCreatedLineTax
+  resolveSalesLineTax
 } from "~/modules/sales/sales.service";
 import {
   getCompanySettings,
@@ -285,24 +287,25 @@ export const createSalesInvoiceLine = defineServiceFn({
 
     // A caller that sends no tax code (the API, MCP) takes the resolved tax;
     // a non-taxable item carries none.
-    const tax = await resolveCreatedLineTax(
+    const tax = await resolveSalesLineTax(
       ctx.asCaller.supabase,
       ctx.company.id,
       {
         document: "salesInvoice",
         documentId: line.invoiceId,
+        lineId: null,
         itemId: line.itemId,
-        sentTaxCode: line.taxCodeId !== undefined,
         taxCodeId: line.taxCodeId,
         taxPercent: line.taxPercent
       }
     );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
 
     const created = await service.upsertSalesInvoiceLine(
       ctx.asCaller.supabase,
       {
         ...line,
-        ...tax,
+        ...lineTaxForUpsert(tax.data),
         companyId: ctx.company.id,
         createdBy: ctx.auditUserId,
         customFields
@@ -423,19 +426,27 @@ export const updateSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
-    // A non-taxable item carries no tax, whatever was sent.
-    const taxable = await isItemTaxable(
+    // A non-taxable item carries no tax, and a code sets the rate.
+    const tax = await resolveSalesLineTax(
       ctx.asCaller.supabase,
       ctx.company.id,
-      line.itemId
+      {
+        document: "salesInvoice",
+        documentId: line.invoiceId,
+        lineId: id,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
     );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
 
     const updated = await service.upsertSalesInvoiceLine(
       ctx.asCaller.supabase,
       {
         id,
         ...line,
-        ...(taxable ? {} : { taxCodeId: undefined, taxPercent: 0 }),
+        ...lineTaxForUpsert(tax.data),
         updatedBy: ctx.auditUserId,
         customFields
       }
@@ -527,10 +538,11 @@ export const recalculateSalesInvoiceTaxes = defineServiceFn({
         documentId: invoiceId
       }
     );
-    if (result.error) {
+    if (result.refused) return ctx.error("rule", result.error);
+    if (result.error !== null) {
       return ctx.error("internal", "Failed to recalculate taxes", result.error);
     }
-    return { invoiceId, updated: result.data?.updated ?? 0 };
+    return { invoiceId, updated: result.data.updated };
   }
 });
 
@@ -2711,8 +2723,9 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
  * @remarks
  * Upsert purchase invoice line. A line sent with no `taxCodeId` takes the
  * supplier's tax code at the invoice date; an empty `taxCodeId` keeps the
- * sent percent with no code. A non-taxable item carries no tax, whatever was
- * sent.
+ * sent percent with no code. A sent code sets the rate (its rate on the
+ * invoice date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -2755,9 +2768,9 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       ),
     supplierTaxAmount: z
       .number()
-      .default(0)
+      .optional()
       .describe(
-        "Applied when creating; on update a field left out keeps its value."
+        "Omit to restate it from the tax code's rate (0 with no code). Refused on a Reverse Charge code."
       ),
     taxPercent: z
       .number()
@@ -2798,31 +2811,32 @@ export const createPurchaseInvoiceLine = defineServiceFn({
     if (refused) return refused;
     // A new line takes the tax the form would have opened with: the
     // supplier's code when none is sent, and none for a non-taxable item.
-    // A failed read of the invoice leaves the sent tax, as the form's would.
-    const invoice = input.id
-      ? null
-      : await service.getPurchaseInvoice(client, input.invoiceId);
-    const tax = input.id
-      ? await nonTaxableItemTax(client, companyId, input.itemId)
-      : await resolveCreatedPurchaseLineTax(client, {
-          companyId,
-          companyGroupId: ctx.company.groupId,
-          supplierId: invoice?.data?.supplierId,
-          documentDate: invoice?.data?.dateIssued,
-          currencyCode: invoice?.data?.currencyCode,
-          itemId: input.itemId,
-          unitPrice: input.supplierUnitPrice ?? 0,
-          quantity: input.quantity ?? 0,
-          shippingCost: input.supplierShippingCost,
-          taxCodeId: input.taxCodeId,
-          taxPercent: input.taxPercent,
-          supplierTaxAmount: input.supplierTaxAmount
-        });
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseInvoice",
+      documentId: input.invoiceId,
+      lineId: input.id ?? null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.quantity ?? 0,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
         client,
-        payload(ctx, { ...input, ...tax }).forCreate() as never
+        payload(ctx, {
+          ...input,
+          supplierTaxAmount: input.supplierTaxAmount ?? 0,
+          ...tax.data
+        }).forCreate() as never
       )
     );
   }
@@ -2834,7 +2848,10 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * @remarks
  * Upsert purchase invoice line. A charge number (`projectId`,
  * `projectElementId`) must name this company's project and an element of it.
- * A non-taxable item carries no tax, whatever was sent.
+ * A non-taxable item carries no tax, whatever was sent. A sent code (or the
+ * stored one, when only a percent is sent) sets the rate; an empty
+ * `taxCodeId` clears the code. A Reverse Charge code refuses a supplier tax
+ * amount.
  *
  * @mcp
  */
@@ -2938,17 +2955,30 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
       purchaseOrderLineIds: [purchaseOrderLineId]
     });
     if (refused) return refused;
-    // A non-taxable item carries no tax, whatever was sent. A line whose item
-    // is left out keeps its stored one.
-    const itemId =
-      input.itemId ??
-      (await service.getPurchaseInvoiceLine(client, input.id)).data?.itemId;
-    const tax = await nonTaxableItemTax(client, ctx.company.id, itemId);
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseInvoice",
+      documentId: input.invoiceId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.quantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
         client,
-        payload(ctx, { ...input, ...tax }).forUpdate() as never
+        payload(ctx, { ...input, ...tax.data }).forUpdate() as never
       )
     );
   }

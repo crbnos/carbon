@@ -14,44 +14,12 @@ import {
   createPurchaseInvoiceLine,
   updatePurchaseInvoiceLine
 } from "../app/modules/invoicing/invoicing.server";
+import { createPurchaseOrderLine } from "../app/modules/purchasing/purchasing.server";
+import { type FakeWrite, filteringSupabase } from "./filtering-supabase-fake";
 
 const unreachable = () => {
   throw new Error("must not be reached");
 };
-
-type Write = { table: string; op: "insert" | "update"; value: any };
-
-/** Every read answers `rows[table]`; every write is kept and resolves. */
-function database(rows: Record<string, unknown>) {
-  const writes: Write[] = [];
-  const from = (table: string) => {
-    const many = () => {
-      const found = rows[table];
-      if (found === undefined) return [];
-      return Array.isArray(found) ? found : [found];
-    };
-    const chain: Record<string, any> = {};
-    for (const method of ["select", "eq", "in", "neq", "is", "order"]) {
-      chain[method] = () => chain;
-    }
-    chain.insert = (value: unknown) => {
-      writes.push({ table, op: "insert", value });
-      return chain;
-    };
-    chain.update = (value: unknown) => {
-      writes.push({ table, op: "update", value });
-      return chain;
-    };
-    chain.single = chain.maybeSingle = async () => ({
-      data: many()[0] ?? { id: `${table}-1` },
-      error: null
-    });
-    chain.then = (resolve: (value: unknown) => unknown) =>
-      Promise.resolve({ data: many(), error: null }).then(resolve);
-    return chain;
-  };
-  return { client: { from } as any, writes };
-}
 
 const grant = (module: string) => ({
   [module]: {
@@ -67,114 +35,333 @@ function contextFor(client: unknown, module: string) {
     actor: { type: "user", userId: "user-1", permissions: grant(module) },
     company: { id: "company-1", groupId: "group-1" },
     caller: client as never,
-    system: unreachable,
+    // The change-order hold reads with the service role.
+    system: (() => client) as never,
     pg: unreachable,
     kv: unreachable
   });
 }
 
-// The supplier's tax code: two components, 6.25% + 2%, in force at the
-// document date. Its own bare percent (5%) must not be what a line takes.
-const supplierTaxRows = {
-  supplier: { taxPercent: 0.05 },
-  supplierTax: { taxCodeId: "tc-houston" },
+const component = (overrides: Record<string, unknown>) => ({
+  id: "c-state",
+  name: "State",
+  taxAuthorityId: "ta-1",
+  taxPercent: 0.0625,
+  recoverablePercent: 1,
+  sequence: 1,
+  isCompound: false,
+  taxReceivedAccountId: null,
+  taxPaidAccountId: null,
+  effectiveDate: null,
+  expirationDate: null,
+  ...overrides
+});
+
+// The supplier's tax code: two components, 6.25% + 2%. Its own bare
+// percent (5%) must not be what a line takes. Every row names its company:
+// a read that drops the companyId filter also finds company-2's rows.
+const tables = () => ({
+  purchaseInvoice: [
+    {
+      id: "pi-1",
+      companyId: "company-1",
+      supplierId: "supplier-1",
+      dateIssued: "2026-10-01",
+      postingDate: null,
+      currencyCode: "USD"
+    }
+  ],
+  purchaseOrder: [
+    {
+      id: "po-1",
+      companyId: "company-1",
+      supplierId: "supplier-1",
+      orderDate: "2026-10-01",
+      currencyCode: "USD",
+      status: "Draft"
+    }
+  ],
+  supplier: [{ id: "supplier-1", companyId: "company-1", taxPercent: 0.05 }],
+  supplierTax: [
+    { supplierId: "supplier-1", companyId: "company-1", taxCodeId: "tc-houston" }
+  ],
+  item: [
+    { id: "item-1", companyId: "company-1", taxable: true },
+    { id: "item-free", companyId: "company-1", taxable: false }
+  ],
   taxCode: [
     {
       id: "tc-houston",
+      companyId: "company-1",
       calculationType: "Normal",
       taxesShipping: false,
       taxCodeComponent: [
-        {
-          id: "c-state",
-          name: "State",
-          taxAuthorityId: "ta-1",
-          taxPercent: 0.0625,
-          recoverablePercent: 1,
-          sequence: 1,
-          isCompound: false,
-          taxReceivedAccountId: null,
-          taxPaidAccountId: null,
-          effectiveDate: null,
-          expirationDate: null
-        },
-        {
-          id: "c-city",
-          name: "City",
-          taxAuthorityId: "ta-2",
-          taxPercent: 0.02,
-          recoverablePercent: 1,
-          sequence: 2,
-          isCompound: false,
-          taxReceivedAccountId: null,
-          taxPaidAccountId: null,
-          effectiveDate: null,
-          expirationDate: null
-        }
+        component({}),
+        component({ id: "c-city", name: "City", taxPercent: 0.02, sequence: 2 })
       ]
+    },
+    {
+      id: "tc-eu-rc",
+      companyId: "company-1",
+      calculationType: "Reverse Charge",
+      taxesShipping: false,
+      taxCodeComponent: [component({ id: "c-vat", taxPercent: 0.2 })]
+    },
+    {
+      id: "tc-expired",
+      companyId: "company-1",
+      calculationType: "Normal",
+      taxesShipping: false,
+      taxCodeComponent: [component({ expirationDate: "2025-12-31" })]
+    },
+    {
+      id: "tc-other-company",
+      companyId: "company-2",
+      calculationType: "Normal",
+      taxesShipping: false,
+      taxCodeComponent: [component({ taxPercent: 0.3 })]
     }
   ],
-  currencies: { code: "USD", decimalPlaces: 2 }
+  currencies: [
+    { code: "USD", companyGroupId: "group-1", decimalPlaces: 2 }
+  ],
+  purchaseInvoiceLine: [
+    {
+      id: "pil-1",
+      companyId: "company-1",
+      itemId: "item-1",
+      taxCodeId: "tc-houston",
+      supplierUnitPrice: 100,
+      quantity: 2,
+      supplierShippingCost: 0
+    },
+    {
+      id: "pil-rc",
+      companyId: "company-1",
+      itemId: "item-1",
+      taxCodeId: "tc-eu-rc",
+      supplierUnitPrice: 100,
+      quantity: 2,
+      supplierShippingCost: 0
+    },
+    {
+      id: "pil-free",
+      companyId: "company-1",
+      itemId: "item-free",
+      taxCodeId: "tc-houston",
+      supplierUnitPrice: 100,
+      quantity: 2,
+      supplierShippingCost: 0
+    }
+  ]
+});
+
+const written = (writes: FakeWrite[], table: string) => {
+  const write = writes.find((w) => w.table === table);
+  return Array.isArray(write?.value) ? write?.value[0] : write?.value;
 };
 
-const inserted = (writes: Write[], table: string) =>
-  writes.find((write) => write.table === table && write.op === "insert")
-    ?.value[0];
-const updated = (writes: Write[], table: string) =>
-  writes.find((write) => write.table === table && write.op === "update")
-    ?.value;
+const piLine = {
+  invoiceId: "pi-1",
+  invoiceLineType: "Part" as const,
+  itemId: "item-1",
+  quantity: 2,
+  supplierUnitPrice: 100
+};
 
 describe("createPurchaseInvoiceLine", () => {
   it("gives a line sent with no tax code the supplier's code and its rate", async () => {
-    const { client, writes } = database({
-      purchaseInvoices: {
-        id: "pi-1",
-        supplierId: "supplier-1",
-        dateIssued: "2026-10-01",
-        currencyCode: "USD"
-      },
-      ...supplierTaxRows,
-      item: { taxable: true }
-    });
+    const { client, writes } = filteringSupabase(tables());
 
     const result = await createPurchaseInvoiceLine(
       contextFor(client, "invoicing"),
-      {
-        invoiceId: "pi-1",
-        invoiceLineType: "Part",
-        itemId: "item-1",
-        quantity: 2,
-        supplierUnitPrice: 100
-      }
+      piLine
     );
 
     expect(result.error).toBeNull();
-    expect(inserted(writes, "purchaseInvoiceLine")).toMatchObject({
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
       taxCodeId: "tc-houston",
       taxPercent: 0.0825,
       supplierTaxAmount: 16.5
     });
   });
+
+  it("takes a sent code's rate, not a percent that disagrees with it", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createPurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...piLine, taxCodeId: "tc-houston", taxPercent: 0.05 }
+    );
+
+    expect(result.error).toBeNull();
+    // No amount was sent, so it is restated from the code's rate.
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
+      taxCodeId: "tc-houston",
+      taxPercent: 0.0825,
+      supplierTaxAmount: 16.5
+    });
+  });
+
+  it("keeps the supplier's charged amount sent with a code", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    await createPurchaseInvoiceLine(contextFor(client, "invoicing"), {
+      ...piLine,
+      taxCodeId: "tc-houston",
+      supplierTaxAmount: 16.51
+    });
+
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
+      taxPercent: 0.0825,
+      supplierTaxAmount: 16.51
+    });
+  });
+
+  it("refuses a supplier tax amount on a Reverse Charge code", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createPurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...piLine, taxCodeId: "tc-eu-rc", supplierTaxAmount: 40 }
+    );
+
+    expect(result.error?.message).toContain("Reverse Charge");
+    expect(writes).toHaveLength(0);
+  });
+
+  it("stores a Reverse Charge line with no supplier tax at 0%", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    await createPurchaseInvoiceLine(contextFor(client, "invoicing"), {
+      ...piLine,
+      taxCodeId: "tc-eu-rc"
+    });
+
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
+      taxCodeId: "tc-eu-rc",
+      taxPercent: 0,
+      supplierTaxAmount: 0
+    });
+  });
+
+  it("refuses a code with no component in force on the invoice date", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createPurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...piLine, taxCodeId: "tc-expired" }
+    );
+
+    expect(result.error?.message).toContain("no rate in force on 2026-10-01");
+    expect(writes).toHaveLength(0);
+  });
+
+  it("refuses another company's tax code", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createPurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...piLine, taxCodeId: "tc-other-company" }
+    );
+
+    expect(result.error?.message).toContain("Tax code not found");
+    expect(writes).toHaveLength(0);
+  });
 });
 
 describe("updatePurchaseInvoiceLine", () => {
   it("clears the tax of a line on a non-taxable item, read from the stored line", async () => {
-    const { client, writes } = database({
-      // The call leaves the item out: the stored line names it.
-      purchaseInvoiceLines: { id: "pil-1", itemId: "item-1" },
-      item: { taxable: false }
-    });
+    const { client, writes } = filteringSupabase(tables());
 
     await updatePurchaseInvoiceLine(contextFor(client, "invoicing"), {
-      id: "pil-1",
+      id: "pil-free",
       invoiceId: "pi-1",
       invoiceLineType: "Part",
       taxPercent: 0.0825
     });
 
-    expect(updated(writes, "purchaseInvoiceLine")).toMatchObject({
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
       taxCodeId: null,
       taxPercent: 0,
       supplierTaxAmount: 0
     });
+  });
+
+  it("holds a percent sent alone to the stored code's rate", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    await updatePurchaseInvoiceLine(contextFor(client, "invoicing"), {
+      id: "pil-1",
+      invoiceId: "pi-1",
+      invoiceLineType: "Part",
+      taxPercent: 0.05
+    });
+
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
+      taxCodeId: "tc-houston",
+      taxPercent: 0.0825,
+      supplierTaxAmount: 16.5
+    });
+  });
+
+  it("refuses a tax amount on a line whose stored code is Reverse Charge", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await updatePurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      {
+        id: "pil-rc",
+        invoiceId: "pi-1",
+        invoiceLineType: "Part",
+        supplierTaxAmount: 40
+      }
+    );
+
+    expect(result.error?.message).toContain("Reverse Charge");
+    expect(writes).toHaveLength(0);
+  });
+
+  it("clears the code when the field is sent empty", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    await updatePurchaseInvoiceLine(contextFor(client, "invoicing"), {
+      id: "pil-1",
+      invoiceId: "pi-1",
+      invoiceLineType: "Part",
+      taxCodeId: "",
+      taxPercent: 0.03,
+      supplierTaxAmount: 6
+    });
+
+    expect(written(writes, "purchaseInvoiceLine")).toMatchObject({
+      taxCodeId: null,
+      taxPercent: 0.03,
+      supplierTaxAmount: 6
+    });
+  });
+});
+
+describe("createPurchaseOrderLine", () => {
+  it("refuses a supplier tax amount on a Reverse Charge code", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await createPurchaseOrderLine(
+      contextFor(client, "purchasing"),
+      {
+        purchaseOrderId: "po-1",
+        purchaseOrderLineType: "Part",
+        itemId: "item-1",
+        purchaseQuantity: 2,
+        supplierUnitPrice: 100,
+        taxCodeId: "tc-eu-rc",
+        supplierTaxAmount: 40
+      }
+    );
+
+    expect(result.error?.message).toContain("Reverse Charge");
+    expect(writes.filter((w) => w.table === "purchaseOrderLine")).toHaveLength(
+      0
+    );
   });
 });

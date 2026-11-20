@@ -173,6 +173,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const api = await carbon(request);
   const result = await api.purchasing.updatePurchaseOrderLine({
     ...d,
+    // The form posts the field: an empty one clears the code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
     id: lineId,
     purchaseOrderId: orderId,
     customFields: setCustomFields(formData)

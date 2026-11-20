@@ -3,10 +3,8 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it, vi } from "vitest";
-import type {
-  BillTaxLine,
-  CostingLine
-} from "../../../../core/document-costing";
+import type { BillTaxLine } from "../../../../core/bill-tax-plan";
+import type { CostingLine } from "../../../../core/document-costing";
 import type { SalesDocumentComponents } from "../../../../core/sales-document-components";
 import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Qbo } from "../../models";

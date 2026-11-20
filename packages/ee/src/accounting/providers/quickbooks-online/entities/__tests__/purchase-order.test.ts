@@ -136,6 +136,30 @@ describe("resolveQboPurchaseOrderTax (outside the US)", () => {
       mappings
     });
 
+  it("sends a Reverse Charge line at the non-taxable code with no purchase mapping", () => {
+    const result = resolveQboPurchaseOrderTax({
+      documentId: "po_1",
+      lines: [
+        {
+          id: "l1",
+          taxCodeId: "tc_rc",
+          taxPercent: 0,
+          taxAmount: 0,
+          totalAmount: 100
+        }
+      ],
+      recoverableShares: new Map([["tc_rc", 1]]),
+      reverseChargeCodeIds: new Set(["tc_rc"]),
+      decimalPlaces: 2,
+      catalog,
+      mappings
+    });
+    expect(Object.fromEntries(result.lineTaxCodeRefs)).toEqual({
+      l1: { value: "NOVAT" }
+    });
+    expect(result.txnTaxDetail).toBeUndefined();
+  });
+
   it("sends each line's mapped code, the non-taxable code for untaxed lines, and the tax detail", () => {
     const result = resolve([
       {

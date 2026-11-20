@@ -4594,6 +4594,9 @@ msgstr "Archiver Formation"
 msgid "Archived"
 msgstr "Archivé"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "Archivé chez le prestataire comptable. Refaites la correspondance."
+
 msgid "Archived Logs"
 msgstr "Journaux archivés"
 
@@ -11716,6 +11719,12 @@ msgstr "Chaque ligne est un lien entre les données de cette Société et une li
 msgid "Each line shows its item ID and revision."
 msgstr "Chaque ligne affiche son ID article et sa révision."
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "Chaque ligne reprend le code de taxe et le taux que son article obtient à l'adresse de livraison de la facture à la date d'émission. Cela écrase un code de taxe que vous avez effacé sur une ligne. Les lignes de location et de contrat gardent les leurs."
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "Chaque ligne reprend le code de taxe et le taux que son article obtient à l'adresse de livraison de la commande à la date de commande. Cela écrase un code de taxe que vous avez effacé sur une ligne."
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Chaque mois, le cycle comptabilise les intérêts de chaque actif et l'amortissement de son droit d'usage."
 
@@ -12984,8 +12993,8 @@ msgstr "Chaque ligne reconnaît ce qu'elle facture."
 msgid "Every match"
 msgstr "Chaque correspondance"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "Tous les autres codes de taxe actifs. Choisissez un taux du fournisseur différent pour remapper."
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "Tous les autres codes de taxe. Choisissez un autre taux du prestataire pour refaire la correspondance."
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "Tous les fichiers de pièce sont cochés par défaut ; décochez ceux que vous ne souhaitez pas envoyer."
@@ -13100,6 +13109,9 @@ msgstr "Compte de résultat exécutif"
 
 msgid "Exempt"
 msgstr "Exonéré"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "Clients exonérés, articles non taxables, frais de port non taxés"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "Exempté ou Non-exempté, défini sur l'onglet Emploi d'une Personne. En mode DCAA, il choisit le texte de certification que l'Employé certifie à la soumission, et les longues semaines d'un Employé exempté sont diluées."
@@ -18173,8 +18185,8 @@ msgstr "la production est bloquée"
 msgid "Map accounts"
 msgstr "Mapper les comptes"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "Mapper chaque code de taxe Carbon à un taux de taxe du fournisseur, une fois pour les ventes et une fois pour les achats. Les documents envoyés envoient le montant de taxe de Carbon avec le taux mappé."
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "Associez chaque code de taxe Carbon à un taux de taxe du prestataire, une fois pour les ventes et une fois pour les achats. Les documents transmis envoient le montant de taxe de Carbon avec le taux associé. Un code d'autoliquidation ne facture aucune taxe sur les ventes : associez-le donc à un taux de 0 %, comme les ventes intracommunautaires à taux zéro. Ses documents d'achat partent sans taxe et n'ont pas besoin de taux."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapper les lignes de facture extraites"
@@ -20498,11 +20510,11 @@ msgstr "Aucune option trouvée."
 msgid "No options found."
 msgstr "Aucune option trouvée."
 
-msgid "No other active tax codes"
-msgstr "Aucun autre code de taxe actif"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Aucun autre employé trouvé. Ajoutez des employés pour activer le transfert de propriété."
+
+msgid "No other tax codes"
+msgstr "Aucun autre code de taxe"
 
 msgid "No outstanding trainings"
 msgstr "Aucune formation en attente"
@@ -20831,6 +20843,9 @@ msgstr "Aucune opération de synchronisation pour le moment"
 msgid "No tax code"
 msgstr "Aucun code de taxe"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "Aucun code de taxe (exonéré ou non taxable)"
+
 msgid "No tax registration for {unregistered}"
 msgstr "Aucun enregistrement de taxe pour {unregistered}"
 
@@ -21068,6 +21083,9 @@ msgstr "Non associé"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Non déplacé : {0}. Enregistré dans <0>{1}</0>"
+
+msgid "Not needed"
+msgstr "Non nécessaire"
 
 msgid "Not now"
 msgstr "Pas maintenant"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "Retirer le code de taxe"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "Retirer le code de taxe {0} ? Il ne peut plus être choisi sur les nouvelles lignes. Les lignes qui l'utilisent déjà le conservent."
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "Retirer le code de taxe {0} ? Il ne pourra plus être choisi sur de nouvelles lignes. Les lignes qui l'utilisent déjà le conservent. Un code encore attribué à un client, à un fournisseur ou à une adresse de livraison ne peut pas être retiré."
+
+msgid "Retired, still on documents"
+msgstr "Retiré, encore présent sur des documents"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Mise hors service d'un actif par mise au rebut ou par vente, en comptabilisant tout gain ou perte par rapport à la valeur nette comptable et en faisant passer son statut à Cédé."
@@ -26544,6 +26565,10 @@ msgstr "Taxe de vente d'autoliquidation"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Taxe de vente d'autoliquidation (défaut)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "Autoliquidation, {0} appliqué"
 
 msgid "Reverse Entry"
 msgstr "Écriture de contrepassation"
@@ -28018,6 +28043,9 @@ msgstr "Vendre {label} au client"
 
 msgid "Sell to Customer"
 msgstr "Vendre au client"
+
+msgid "Seller Tax ID"
+msgstr "Identifiant fiscal du vendeur"
 
 msgid "Selling profit: <0/>"
 msgstr "Bénéfice de vente : <0/>"
@@ -30611,6 +30639,15 @@ msgstr "Taxe collectée et récupérable par autorité, et le montant net dû"
 msgid "Tax component"
 msgstr "Composant de taxe"
 
+msgid "Tax Component"
+msgstr "Composante de taxe"
+
+msgid "Tax Component Base"
+msgstr "Base de la composante de taxe"
+
+msgid "Tax Component Rate"
+msgstr "Taux de la composante de taxe"
+
 msgid "Tax coverage"
 msgstr "Champ d'application de la taxe"
 
@@ -31575,8 +31612,8 @@ msgstr "Les imprimantes d'étiquettes et de documents vers lesquelles votre soci
 msgid "The labels every project can put on its elements."
 msgstr "Les étiquettes que chaque projet peut mettre sur ses éléments."
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "Dernier jour d'application d'un composant de taxe. Pour modifier un taux, attribuez une date d'expiration à l'ancien composant et ajoutez-en un nouveau, afin que les documents comptabilisés conservent l'ancien taux."
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "Dernier jour d'application d'une composante de taxe. Pour modifier un taux, faites expirer l'ancienne composante la veille de l'entrée en vigueur de la nouvelle, puis ajoutez la nouvelle. Deux composantes portant le même nom et la même autorité ne peuvent pas être en vigueur le même jour."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "Le dernier jour d'un mois de location (le jour avant le jour {commencementDay}), après la dernière exécution de location comptabilisée"
@@ -35496,8 +35533,8 @@ msgstr "Quand MRP commence à utiliser cette pièce pour la demande de l'ancienn
 msgid "When MRP uses the successor for new demand"
 msgstr "Quand le MRP utilise le successeur pour les nouveaux besoins"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "Si cette option est activée, les frais de transport d'une ligne sont ajoutés à son montant imposable, de sorte que le code de taxe applique aux frais de transport le même taux qu'aux marchandises."
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "Si activé, la part des frais de port d'en-tête du document revenant à une ligne s'ajoute à son montant taxable, afin que le code de taxe l'impose au même taux que les marchandises. Les frais de port propres à une ligne sont toujours taxés."
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Quand il est activé, les attributs de cette catégorie s'affichent dans le profil public d'une personne ; sinon, ils ne sont visibles que pour les administrateurs."

@@ -11,12 +11,8 @@ import { JournalEntrySyncError } from "../../../../core/posting";
 import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Accounting } from "../../../../core/types";
 import type { Qbo } from "../../models";
-import {
-  buildQboBillLines,
-  buildQboBillPayloadLines,
-  deriveCarbonBillStatus,
-  QboBillSyncer
-} from "../bill";
+import { deriveCarbonBillStatus, QboBillSyncer } from "../bill";
+import { buildQboBillLines, buildQboBillPayloadLines } from "../bill-lines";
 import type { QboInvoiceTaxCatalog } from "../invoice-tax";
 import { buildQboExpenseLines, type QboExpenseLineInput } from "../shared";
 
@@ -643,13 +639,14 @@ describe("buildQboBillPayloadLines (recoverable purchase tax)", () => {
     taxCodeId: string,
     taxPercent: number,
     taxAmount: number,
-    recoverableAmount: number
+    recoverableAmount: number,
+    taxableAmount = taxPercent === 0 ? 0 : taxAmount / taxPercent
   ): BillTaxLedgerRow => ({
     documentLineId: "pil-1",
     taxCodeId,
     taxCodeComponentId: null,
     taxPercent,
-    taxableAmount: 0,
+    taxableAmount,
     taxAmount,
     recoverableAmount
   });
@@ -745,15 +742,15 @@ describe("buildQboBillPayloadLines (recoverable purchase tax)", () => {
           taxPaid("jl-2", 1495.00417)
         ],
         [
-          ledger("tc_bc", 0.05, 1495.00417, 1495.00417),
-          ledger("tc_bc", 0.07, 2093.00583, 0)
+          ledger("tc_bc", 0.05, 1495.00417, 1495.00417, 29900.05),
+          ledger("tc_bc", 0.07, 2093.00583, 0, 29900.05)
         ],
         33488.06
       )
     );
     expect(summary(payload)).toEqual([
-      ["2125", 12458.33, "12P"],
-      ["2125", 19534.73, "NOVAT"]
+      ["2125", 12458.35, "12P"],
+      ["2125", 19534.71, "NOVAT"]
     ]);
     expect(payload.TxnTaxDetail?.TotalTax).toBe(1495);
     expect(total(payload)).toBeCloseTo(33488.06, 6);

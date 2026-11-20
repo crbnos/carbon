@@ -35,12 +35,7 @@ import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
-import {
-  loadXeroTaxContext,
-  needsXeroTaxContext,
-  resolveXeroTaxType,
-  type XeroTaxContext
-} from "../tax";
+import { resolveXeroTaxType, XeroTaxContextLoader } from "../tax";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
@@ -89,8 +84,11 @@ export function buildXeroSalesInvoiceLines(args: {
   /** The Service Revenue account code; a service job's components. */
   serviceAccountCode: string | null;
   shippingAccountCode: string | null;
-  /** The component's Xero `TaxType` (`resolveXeroTaxType`). */
-  resolveTaxType: (component: SalesDocumentComponent) => string;
+  /** The component's Xero `TaxType` on its account (`resolveXeroTaxType`). */
+  resolveTaxType: (
+    component: SalesDocumentComponent,
+    accountCode: string
+  ) => string;
 }): Xero.InvoiceLineItem[] {
   assertXeroMoneyPrecision(
     args.document.subtotal,
@@ -135,7 +133,7 @@ export function buildXeroSalesInvoiceLines(args: {
       UnitAmount: component.netAmount,
       LineAmount: component.netAmount,
       TaxAmount: component.taxAmount,
-      TaxType: args.resolveTaxType(component),
+      TaxType: args.resolveTaxType(component, accountCode),
       // No `ItemCode`. Xero lines are already account-coded, so the item was
       // pure subledger detail — and carrying it meant mirroring Carbon's whole
       // manufacturing parts catalog into Xero Items. The item name stays in
@@ -151,7 +149,11 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   "UpdatedDateUTC"
 > {
   private accountCodesPromise?: ReturnType<typeof loadAccountCodesById>;
-  private taxContextPromise?: Promise<XeroTaxContext>;
+  private readonly taxContext = new XeroTaxContextLoader(
+    this.database,
+    { companyId: this.companyId, integration: this.provider.id },
+    this.provider as XeroProvider
+  );
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
@@ -231,19 +233,6 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
       });
     return code;
-  }
-
-  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
-  private getTaxContext(): Promise<XeroTaxContext> {
-    this.taxContextPromise ??= loadXeroTaxContext(
-      this.database,
-      { companyId: this.companyId, integration: this.provider.id },
-      this.xeroProvider
-    ).catch((error) => {
-      this.taxContextPromise = undefined;
-      throw error;
-    });
-    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -366,15 +355,16 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const shippingAccountCode = hasShipping
       ? await this.getShippingAccountCode(local)
       : null;
-    const taxContext = needsXeroTaxContext(document.components)
-      ? await this.getTaxContext()
-      : null;
+    const taxContext = await this.taxContext.forLines(
+      "sales",
+      document.components
+    );
     const lineItems = buildXeroSalesInvoiceLines({
       document,
       salesAccountCode,
       serviceAccountCode,
       shippingAccountCode,
-      resolveTaxType: (component) =>
+      resolveTaxType: (component, accountCode) =>
         resolveXeroTaxType({
           context: taxContext,
           documentId: local.id,
@@ -383,7 +373,8 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
           taxPercent: component.taxPercent,
           taxAmount: component.taxAmount,
           netAmount: component.netAmount,
-          decimalPlaces: document.decimalPlaces
+          decimalPlaces: document.decimalPlaces,
+          accountCode
         })
     });
     // All currency/account/component/tax requirements are checked before

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,14 +16,9 @@ import {
   isPurchaseInvoiceLocked,
   purchaseInvoiceLineValidator
 } from "~/modules/invoicing/invoicing.models";
-import {
-  getPurchaseInvoice,
-  upsertPurchaseInvoiceLine
-} from "~/modules/invoicing/invoicing.service";
+import { getPurchaseInvoice } from "~/modules/invoicing/invoicing.service";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
-import { chargeNumberError } from "~/modules/projects/projects.service";
-import { resolveCreatedPurchaseLineTax } from "~/modules/purchasing/purchasing.service";
 import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -57,11 +53,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "invoicing"
-    });
-
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceLineValidator).validate(
     formData
@@ -71,55 +62,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id: _id, ...d } = validation.data;
 
-  const chargeError = await chargeNumberError(client, companyId, d);
-  if (chargeError) {
-    return validationError({
-      fieldErrors: { [chargeError.field]: chargeError.message }
-    });
-  }
-
-  const tax = await resolveCreatedPurchaseLineTax(client, {
-    companyId,
-    companyGroupId,
-    supplierId: purchaseInvoice.data?.supplierId,
-    documentDate: purchaseInvoice.data?.dateIssued,
-    currencyCode: purchaseInvoice.data?.currencyCode,
-    itemId: d.itemId,
-    unitPrice: d.supplierUnitPrice ?? 0,
-    quantity: d.quantity ?? 0,
-    shippingCost: d.supplierShippingCost ?? 0,
+  // The operation checks the charge number and the order's funds, and
+  // decides the line's tax.
+  const api = await carbon(request);
+  const result = await api.invoicing.createPurchaseInvoiceLine({
+    ...d,
     // The form posts the field: an empty one is a cleared code. A request
     // that does not takes the supplier's code.
     taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
-    taxPercent: d.taxPercent,
-    supplierTaxAmount: d.supplierTaxAmount ?? 0
-  });
-  Object.assign(d, tax);
-
-  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
     customFields: setCustomFields(formData)
   });
 
-  if (createPurchaseInvoiceLine.error) {
-    throw redirect(
-      path.to.purchaseInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(
-          createPurchaseInvoiceLine.error,
-          "Failed to create purchase invoice line."
-        )
-      )
-    );
-  }
-
-  throw redirect(path.to.purchaseInvoiceDetails(invoiceId));
+  return respond(request, result).redirect(
+    path.to.purchaseInvoiceDetails(invoiceId)
+  );
 }
 
 export default function NewPurchaseInvoiceLineRoute() {

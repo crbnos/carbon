@@ -114,11 +114,12 @@ import {
 } from "@carbon/database/supplier-part-price";
 import {
   effectiveComponents,
-  effectiveTaxPercent,
+  purchaseLineTaxParts,
+  receiptLineTax,
   receiptUnitCost,
-  recoverableTax,
   splitLineTax,
-  type TaxCodeInput
+  type TaxCodeInput,
+  taxCodesWithoutComponents
 } from "@carbon/database/tax-components";
 import {
   negateTaxLedgerRows,
@@ -11077,7 +11078,10 @@ export async function convertDocument(
             many<
               "supplierQuoteLine",
               rows.Tables["supplierQuoteLine"]["Row"] & {
-                item: Pick<rows.Tables["item"]["Row"], "type"> | null;
+                item: Pick<
+                  rows.Tables["item"]["Row"],
+                  "type" | "taxable"
+                > | null;
               }
             >(
               db,
@@ -11085,7 +11089,11 @@ export async function convertDocument(
               { supplierQuoteId: id, companyId },
               {
                 embed: {
-                  item: { table: "item", via: "itemId", columns: ["type"] }
+                  item: {
+                    table: "item",
+                    via: "itemId",
+                    columns: ["type", "taxable"]
+                  }
                 }
               }
             ),
@@ -11215,6 +11223,8 @@ export async function convertDocument(
             )
             .map((line) => {
               const isIndirect = line.supplierQuoteLineType === "G/L Account";
+              // A non-taxable item carries no tax, as on every line write.
+              const nonTaxable = !isIndirect && line.item?.taxable === false;
               return {
                 purchaseOrderId: insertedPurchaseOrderId,
                 purchaseOrderLineType: isIndirect
@@ -11239,12 +11249,17 @@ export async function convertDocument(
                 supplierUnitPrice: selectedLines![line.id!]!.supplierUnitPrice,
                 supplierShippingCost:
                   selectedLines![line.id!]!.supplierShippingCost,
-                supplierTaxAmount: selectedLines![line.id!]!.supplierTaxAmount,
-                taxPercent: resolveTaxPercent(selectedLines![line.id!]!),
-                taxCodeId:
-                  priceTaxCodeIds.get(
-                    `${line.id}:${selectedLines![line.id!]!.quantity}`
-                  ) ?? null,
+                supplierTaxAmount: nonTaxable
+                  ? 0
+                  : selectedLines![line.id!]!.supplierTaxAmount,
+                taxPercent: nonTaxable
+                  ? 0
+                  : resolveTaxPercent(selectedLines![line.id!]!),
+                taxCodeId: nonTaxable
+                  ? null
+                  : (priceTaxCodeIds.get(
+                      `${line.id}:${selectedLines![line.id!]!.quantity}`
+                    ) ?? null),
                 sortOrder: line.sortOrder ?? 1,
                 createdBy: userId,
                 companyId
@@ -12605,39 +12620,26 @@ export async function createDocument(
       // goes to Tax Paid when the invoice posts, so it never enters the
       // received cost. A Reverse Charge code's non-recoverable share is
       // self-assessed cost the supplier did not charge. With no code this
-      // is the receipt's historical cost.
-      const receiptTaxCodes = await loadTaxCodes(
-        db,
+      // is the receipt's historical cost. The tax point is the PO's order
+      // date, the date its lines' rates were taken on.
+      const receiptTaxCodes = await loadTaxCodesInForce(db, {
         companyId,
-        purchaseOrderLines.data.map((line) => line.taxCodeId),
-        datetime.today(await resolveCompanyTimeZone(db, companyId)).toString()
-      );
-      const reclaimedTax = (line: (typeof purchaseOrderLines.data)[number]) => {
-        const code = line.taxCodeId
-          ? receiptTaxCodes.get(line.taxCodeId)
-          : undefined;
-        if (!code || code.components.length === 0) return 0;
-        const base =
-          (line.purchaseQuantity ?? 0) * (line.unitPrice ?? 0) +
-          (line.shippingCost ?? 0);
-        if (code.calculationType === "Reverse Charge") {
-          const parts = splitLineTax({
-            base,
-            lineTax: round(base * effectiveTaxPercent(code.components)),
-            components: code.components,
-            scale: SCALE
-          });
-          return -parts.reduce((t, p) => t + p.nonRecoverableAmount, 0);
-        }
-        return recoverableTax(
-          splitLineTax({
-            base,
-            lineTax: line.taxAmount ?? 0,
-            components: code.components,
-            scale: SCALE
-          })
-        );
-      };
+        taxCodeIds: purchaseOrderLines.data.map((line) => line.taxCodeId),
+        taxPointDate:
+          purchaseOrder.data.orderDate ??
+          datetime
+            .today(await resolveCompanyTimeZone(db, companyId))
+            .toString(),
+        document: "purchase order"
+      });
+      const receiptTax = (line: (typeof purchaseOrderLines.data)[number]) =>
+        receiptLineTax({
+          base:
+            (line.purchaseQuantity ?? 0) * (line.unitPrice ?? 0) +
+            (line.shippingCost ?? 0),
+          taxAmount: line.taxAmount ?? 0,
+          code: line.taxCodeId ? receiptTaxCodes.get(line.taxCodeId) : undefined
+        });
       const { startAtZero, batchNumbersFromPurchaseOrder } =
         await receiptSettings(db, companyId);
       const batchNumberBase =
@@ -12697,8 +12699,7 @@ export async function createDocument(
             unitPrice,
             conversionFactor: d.conversionFactor ?? 1,
             purchaseQuantity: d.purchaseQuantity,
-            taxAmount: d.taxAmount ?? 0,
-            recoverableTaxAmount: reclaimedTax(d),
+            ...receiptTax(d),
             shippingCost: d.shippingCost ?? 0
           }),
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
@@ -19122,6 +19123,48 @@ export function taxCodesOn(
   );
 }
 
+/**
+ * The codes a document's lines name, each with the components in force on
+ * the document's tax point: the date its lines' rates were taken on (one per
+ * document). Refuses a code with no component in force then, so a coded
+ * line never posts its tax unsplit, with no authority, or into cost.
+ */
+export async function loadTaxCodesInForce(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    taxCodeIds: ReadonlyArray<string | null | undefined>;
+    taxPointDate: string;
+    /** Names the document in the refusal: "sales invoice", "memo". */
+    document: string;
+  }
+): Promise<Map<string, TaxCodeInput>> {
+  const codes = taxCodesOn(
+    await loadTaxCodes(db, args.companyId, args.taxCodeIds, null),
+    args.taxPointDate
+  );
+  const missing = taxCodesWithoutComponents(
+    codes,
+    args.taxCodeIds,
+    args.taxPointDate
+  );
+  if (missing.length > 0) {
+    const named = await db
+      .selectFrom("taxCode")
+      .select("name")
+      .where("companyId", "=", args.companyId)
+      .where("id", "in", missing)
+      .execute();
+    const names = named.length
+      ? named.map((code) => code.name).join(", ")
+      : missing.join(", ");
+    throw new InvalidInputError(
+      `Tax code ${names} has no component in force on ${args.taxPointDate}, the ${args.document}'s tax date. Add a component that covers that date, or change the line's tax code.`
+    );
+  }
+  return codes;
+}
+
 type TaxedPurchaseLine = {
   id: string;
   quantity: number;
@@ -19187,31 +19230,20 @@ export function withPurchaseTax<
   return lines.map((line) => {
     const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
     if (!code || code.components.length === 0) return line;
-    const base =
-      line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0);
-    if (code.calculationType === "Reverse Charge") {
-      if (!equals(line.taxAmount ?? 0, 0)) {
-        throw new InvalidInputError(
-          `${purchaseInvoiceLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
-        );
-      }
-      return {
-        ...line,
-        selfAssessedParts: splitLineTax({
-          base,
-          lineTax: round(base * effectiveTaxPercent(code.components)),
-          components: code.components,
-          scale: SCALE
-        })
-      };
+    if (
+      code.calculationType === "Reverse Charge" &&
+      !equals(line.taxAmount ?? 0, 0)
+    ) {
+      throw new InvalidInputError(
+        `${purchaseInvoiceLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
+      );
     }
     return {
       ...line,
-      taxParts: splitLineTax({
-        base,
-        lineTax: line.taxAmount ?? 0,
-        components: code.components,
-        scale: SCALE
+      ...purchaseLineTaxParts({
+        base: line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0),
+        taxAmount: line.taxAmount ?? 0,
+        code
       })
     };
   });
@@ -19321,10 +19353,11 @@ export function salesTaxLedgerLines(args: {
       const code = line.taxCodeId
         ? args.taxCodes.get(line.taxCodeId)
         : undefined;
+      // The line's own snapshot of its code's "taxes shipping".
       const postingLine = {
         ...line,
         allocatedHeaderShipping: args.headerShipping.get(line.id) ?? 0,
-        taxesShipping: code?.taxesShipping ?? false
+        taxesShipping: line.taxesShipping ?? false
       };
       const taxableBase = salesTaxableBase(postingLine);
       const taxAmount = roundSalesPostingAmounts(postingLine).salesTaxBase;
@@ -19375,41 +19408,18 @@ export async function negateDocumentTaxLedger(
     createdBy: string;
   }
 ): Promise<void> {
-  const rows = await trx
-    .selectFrom("taxLedger")
-    .select([
-      "companyId",
-      "createdBy",
-      "source",
-      "documentType",
-      "documentId",
-      "documentLineId",
-      "journalId",
-      "postingDate",
-      "taxCodeId",
-      "taxCodeComponentId",
-      "componentName",
-      "taxAuthorityId",
-      "taxPercent",
-      "recoverablePercent",
-      "customerId",
-      "supplierId",
-      "taxableAmount",
-      "taxAmount",
-      "recoverableAmount",
-      "exemptAmount",
-      "documentTaxableAmount",
-      "documentTaxAmount",
-      "currencyCode",
-      "exchangeRate",
-      "taxExemptionReason",
-      "exemptionCertificateNumber",
-      "selfAssessed"
-    ])
-    .where("companyId", "=", args.companyId)
-    .where("documentType", "=", args.documentType)
-    .where("documentId", "=", args.documentId)
-    .execute();
+  // Every column, so one added later is carried into the negation too.
+  const rows = (
+    await trx
+      .selectFrom("taxLedger")
+      .selectAll()
+      .where("companyId", "=", args.companyId)
+      .where("documentType", "=", args.documentType)
+      .where("documentId", "=", args.documentId)
+      .execute()
+  ).map(
+    ({ id: _id, createdAt: _createdAt, updatedBy: _updatedBy, ...row }) => row
+  );
   if (rows.length === 0) return;
   await trx
     .insertInto("taxLedger")

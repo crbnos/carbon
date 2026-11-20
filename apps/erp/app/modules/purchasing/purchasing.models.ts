@@ -1217,6 +1217,7 @@ export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
   "supplierShippingCost",
   "supplierTaxAmount",
   "taxPercent",
+  "taxCodeId",
   "setupPrice",
   "exchangeRate",
   "locationId",

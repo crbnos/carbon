@@ -5,12 +5,15 @@
 import { describe, expect, it } from "vitest";
 import {
   allocateRecoverableTax,
-  type BillTaxLedgerRow,
   type BillTaxLine,
   billSendsTax,
+  planBillTaxLines,
+  planMemoRecoverableLines
+} from "./bill-tax-plan";
+import {
+  type BillTaxLedgerRow,
   type CostingLine,
   loadBillCostingLines,
-  planBillTaxLines,
   resolveCostingLineTax,
   toTransactionCurrencyLines
 } from "./document-costing";
@@ -703,13 +706,15 @@ describe("planBillTaxLines", () => {
     taxCodeId: string | null,
     taxPercent: number,
     taxAmount: number,
-    recoverableAmount: number
+    recoverableAmount: number,
+    taxableAmount = taxPercent === 0 ? 0 : taxAmount / taxPercent,
+    documentLineId = "pil-1"
   ): BillTaxLedgerRow => ({
-    documentLineId: "pil-1",
+    documentLineId,
     taxCodeId,
     taxCodeComponentId: null,
     taxPercent,
-    taxableAmount: 0,
+    taxableAmount,
     taxAmount,
     recoverableAmount
   });
@@ -759,14 +764,15 @@ describe("planBillTaxLines", () => {
         taxPaid("paid", 1495.00417)
       ],
       [
-        ledger("bc12", 0.05, 1495.00417, 1495.00417),
-        ledger("bc12", 0.07, 2093.00583, 0)
+        ledger("bc12", 0.05, 1495.00417, 1495.00417, 29900.05),
+        ledger("bc12", 0.07, 2093.00583, 0, 29900.05)
       ],
       33488.06
     );
     expect(summary(result.lines)).toEqual([
-      ["cost", 12458.33, "bc12", 1495],
-      ["cost", 19534.73, null, null]
+      // 29,900.05 × 5/12 of the tax recoverable.
+      ["cost", 12458.35, "bc12", 1495],
+      ["cost", 19534.71, null, null]
     ]);
     expect(total(result)).toBeCloseTo(33488.06, 6);
   });
@@ -833,7 +839,9 @@ describe("planBillTaxLines", () => {
     );
     const result = plan(
       [...legs, ...legs.map((_, index) => taxPaid(`paid-${index}`, 4.16667))],
-      legs.map(() => ledger("bc12", 0.05, 4.16667, 4.16667)),
+      legs.map((_, index) =>
+        ledger("bc12", 0.05, 4.16667, 4.16667, 83.33333, `pil-${index}`)
+      ),
       933.33
     );
     expect(result.recoverableTax).toBe(41.67);
@@ -922,12 +930,115 @@ describe("planBillTaxLines", () => {
       allocateRecoverableTax({
         document,
         legs: [leg("memo", 1100)],
-        recoverableTaxByCode: new Map([["uk20", 100]]),
+        recoverableByCode: new Map([["uk20", { tax: 100, net: 500 }]]),
         decimalPlaces: 2
       }).map((line) => [line.amount, line.tax?.taxAmount ?? null])
     ).toEqual([
       [500, 100],
       [600, null]
     ]);
+  });
+
+  // Per-line VAT is rounded to pence, so tax ÷ rate overshoots or undershoots
+  // the net. The net comes from the ledger's taxable amount instead.
+  it("syncs net 2.53 with VAT 0.51 (rounded up) as one line at the code's rate", () => {
+    const result = plan(
+      [leg("cost", 2.53), taxPaid("paid", 0.51)],
+      [ledger("uk20", 0.2, 0.51, 0.51, 2.53)],
+      3.04
+    );
+    expect(summary(result.lines)).toEqual([["cost", 2.53, "uk20", 0.51]]);
+  });
+
+  it("syncs ten lines of 1.03 with VAT 0.21 each, no stray untaxed line", () => {
+    const legs = Array.from({ length: 10 }, (_, index) =>
+      leg(`cost-${index}`, 1.03)
+    );
+    const result = plan(
+      [...legs, ...legs.map((_, index) => taxPaid(`paid-${index}`, 0.21))],
+      legs.map((_, index) =>
+        ledger("uk20", 0.2, 0.21, 0.21, 1.03, `pil-${index}`)
+      ),
+      12.4
+    );
+    expect(summary(result.lines)).toEqual(
+      legs.map((_, index) => [`cost-${index}`, 1.03, "uk20", 0.21])
+    );
+  });
+
+  it("syncs net 2.52 with VAT 0.50 (rounded down) with no stray untaxed line", () => {
+    const result = plan(
+      [leg("cost", 2.52), taxPaid("paid", 0.5)],
+      [ledger("uk20", 0.2, 0.5, 0.5, 2.52)],
+      3.02
+    );
+    expect(summary(result.lines)).toEqual([["cost", 2.52, "uk20", 0.5]]);
+  });
+
+  it("counts a two-component line's taxable amount once", () => {
+    // GST 5% recoverable + PST 7% not, on one line of 1,000.
+    const result = plan(
+      [
+        leg("cost", 1070, { taxCodeId: "bc12", taxPercent: 0.12 }),
+        taxPaid("paid", 50)
+      ],
+      [ledger("bc12", 0.05, 50, 50, 1000), ledger("bc12", 0.07, 70, 0, 1000)],
+      1120
+    );
+    expect(summary(result.lines)).toEqual([
+      ["cost", 416.67, "bc12", 50],
+      ["cost", 653.33, null, null]
+    ]);
+  });
+});
+
+describe("planMemoRecoverableLines", () => {
+  const memo = (amount: number, taxAmount: number) => ({
+    id: "memo_1",
+    label: "memo M-1",
+    amount,
+    taxAmount,
+    taxCodeId: "uk20"
+  });
+  const summary = (lines: BillTaxLine[]) =>
+    lines.map((line) => [line.amount, line.tax?.taxAmount ?? null]);
+
+  it("splits a 50% recoverable memo into the recoverable net and the rest", () => {
+    expect(
+      summary(
+        planMemoRecoverableLines({
+          memo: memo(1200, 200),
+          share: 0.5,
+          decimalPlaces: 2
+        })
+      )
+    ).toEqual([
+      [500, 100],
+      [600, null]
+    ]);
+  });
+
+  it("keeps a fully recoverable memo whose VAT rounded up on one line", () => {
+    expect(
+      summary(
+        planMemoRecoverableLines({
+          memo: memo(3.04, 0.51),
+          share: 1,
+          decimalPlaces: 2
+        })
+      )
+    ).toEqual([[2.53, 0.51]]);
+  });
+
+  it("sends a memo with nothing recoverable as one untaxed line for the gross", () => {
+    expect(
+      summary(
+        planMemoRecoverableLines({
+          memo: memo(1200, 200),
+          share: 0,
+          decimalPlaces: 2
+        })
+      )
+    ).toEqual([[1200, null]]);
   });
 });

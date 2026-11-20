@@ -4594,6 +4594,9 @@ msgstr "Archive Training"
 msgid "Archived"
 msgstr "Archived"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "Archived in the provider. Re-map it."
+
 msgid "Archived Logs"
 msgstr "Archived Logs"
 
@@ -11716,6 +11719,12 @@ msgstr "Each line is a link from this company's data to a row it doesn't own. Re
 msgid "Each line shows its item ID and revision."
 msgstr "Each line shows its item ID and revision."
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Each month the lease run posts each asset's interest and right-of-use amortization."
 
@@ -12984,8 +12993,8 @@ msgstr "Every line recognizes what it bills."
 msgid "Every match"
 msgstr "Every match"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "Every other active tax code. Pick a different provider rate to re-map."
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "Every other tax code. Pick a different provider rate to re-map."
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "Every part file starts ticked; untick any you don't want to send."
@@ -13100,6 +13109,9 @@ msgstr "Executive P&L"
 
 msgid "Exempt"
 msgstr "Exempt"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "Exempt customers, non-taxable items, untaxed shipping"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
@@ -18173,8 +18185,8 @@ msgstr "manufacturing is blocked"
 msgid "Map accounts"
 msgstr "Map accounts"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
@@ -20498,11 +20510,11 @@ msgstr "No option found."
 msgid "No options found."
 msgstr "No options found."
 
-msgid "No other active tax codes"
-msgstr "No other active tax codes"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "No other employees found. Add employees to enable ownership transfer."
+
+msgid "No other tax codes"
+msgstr "No other tax codes"
 
 msgid "No outstanding trainings"
 msgstr "No outstanding trainings"
@@ -20831,6 +20843,9 @@ msgstr "No sync operations yet"
 msgid "No tax code"
 msgstr "No tax code"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "No tax code (exempt or non-taxable)"
+
 msgid "No tax registration for {unregistered}"
 msgstr "No tax registration for {unregistered}"
 
@@ -21068,6 +21083,9 @@ msgstr "Not mapped"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Not moved: {0}. Recorded on <0>{1}</0>"
+
+msgid "Not needed"
+msgstr "Not needed"
 
 msgid "Not now"
 msgstr "Not now"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "Retire Tax Code"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+
+msgid "Retired, still on documents"
+msgstr "Retired, still on documents"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
@@ -26544,6 +26565,10 @@ msgstr "Reverse Charge Sales Tax"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Reverse Charge Sales Tax (default)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "Reverse Charge, {0} charged"
 
 msgid "Reverse Entry"
 msgstr "Reverse Entry"
@@ -28018,6 +28043,9 @@ msgstr "Sell {label} to the customer"
 
 msgid "Sell to Customer"
 msgstr "Sell to Customer"
+
+msgid "Seller Tax ID"
+msgstr "Seller Tax ID"
 
 msgid "Selling profit: <0/>"
 msgstr "Selling profit: <0/>"
@@ -30611,6 +30639,15 @@ msgstr "Tax collected and recoverable by authority, and the net due"
 msgid "Tax component"
 msgstr "Tax component"
 
+msgid "Tax Component"
+msgstr "Tax Component"
+
+msgid "Tax Component Base"
+msgstr "Tax Component Base"
+
+msgid "Tax Component Rate"
+msgstr "Tax Component Rate"
+
 msgid "Tax coverage"
 msgstr "Tax coverage"
 
@@ -31575,8 +31612,8 @@ msgstr "The label and document printers your company prints to"
 msgid "The labels every project can put on its elements."
 msgstr "The labels every project can put on its elements."
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
@@ -35496,8 +35533,8 @@ msgstr "When MRP starts using this part for the old part's demand"
 msgid "When MRP uses the successor for new demand"
 msgstr "When MRP uses the successor for new demand"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."

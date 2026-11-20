@@ -40,6 +40,7 @@ export const quoteBlockRegistry: Partial<
         vars={data.vars}
         currencyCode={data.currencyCode}
         taxSummary={data.taxSummary}
+        values={data.values}
         locale={data.locale}
         numberFormatter={data.numberFormatter}
         rows={[

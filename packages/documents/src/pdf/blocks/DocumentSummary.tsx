@@ -6,6 +6,7 @@ import { formatPercent } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_SUMMARY_OPTIONS,
+  type DocumentValues,
   makeText,
   type SummaryBlock,
   type TextEntry
@@ -24,8 +25,9 @@ export type SummaryTaxRow = { key: string; label: string; amount: string };
 
 /**
  * The tax rows of the summary: one per component and rate when the document
- * has two or more ("GST 5% on 1,200.00 (CAD)"), else the single tax row when
- * it prints, else none. Hiding the tax value hides the component rows too.
+ * has two or more (the `taxComponent` text, "GST 5% on 1,200.00 (CAD)"), else
+ * the single tax row when it prints, else none. Hiding the tax value hides the
+ * component rows too.
  */
 export function summaryTaxRows({
   taxSummary,
@@ -33,6 +35,7 @@ export function summaryTaxRows({
   currencyCode,
   locale,
   numberFormatter,
+  componentText,
   taxValue,
   printsTax,
   showsTax
@@ -42,6 +45,8 @@ export function summaryTaxRows({
   currencyCode: string | null | undefined;
   locale: string;
   numberFormatter: Intl.NumberFormat | undefined;
+  /** The `taxComponent` text filled with one component's `tax.*` variables. */
+  componentText: (key: string, rowVars: Record<string, string>) => string;
   /** The printed single tax amount (`taxValue`). */
   taxValue: string;
   /** The single tax row prints. */
@@ -51,11 +56,18 @@ export function summaryTaxRows({
 }): SummaryTaxRow[] {
   if (taxSummary.length > 1 && numberFormatter) {
     if (!showsTax) return [];
-    return taxSummary.map((entry) => ({
-      key: `${entry.name ?? ""}:${entry.rate}`,
-      label: `${entry.name ?? taxLabel} ${formatPercent(entry.rate, locale)} on ${numberFormatter.format(entry.base)} (${currencyCode})`,
-      amount: numberFormatter.format(entry.tax)
-    }));
+    return taxSummary.map((entry) => {
+      const key = `${entry.name ?? ""}:${entry.rate}`;
+      return {
+        key,
+        label: componentText(key, {
+          "tax.name": entry.name ?? taxLabel,
+          "tax.rate": formatPercent(entry.rate, locale),
+          "tax.base": numberFormatter.format(entry.base)
+        }),
+        amount: numberFormatter.format(entry.tax)
+      };
+    });
   }
   if (printsTax) {
     return [
@@ -82,12 +94,13 @@ export function DocumentSummary<K extends string>({
   locale = "en-US",
   numberFormatter,
   invoiceMessages = [],
+  values,
   labelWidth = "w-5/6",
   valueWidth = "w-1/6"
 }: {
   block: SummaryBlock;
   texts: readonly (TextEntry & {
-    key: K | "taxValue" | "total" | "totalValue";
+    key: K | "taxValue" | "taxComponent" | "total" | "totalValue";
   })[];
   vars: Record<string, string>;
   currencyCode: string | null | undefined;
@@ -100,6 +113,8 @@ export function DocumentSummary<K extends string>({
   numberFormatter?: Intl.NumberFormat;
   /** The tax codes' invoice messages, printed under the total. */
   invoiceMessages?: string[];
+  /** The document's changed values, for the component rows' variables. */
+  values?: DocumentValues;
   labelWidth?: string;
   valueWidth?: string;
 }) {
@@ -132,6 +147,8 @@ export function DocumentSummary<K extends string>({
         currencyCode,
         locale,
         numberFormatter,
+        componentText: (key, rowVars) =>
+          t("taxComponent", values ? values.row("tax", key, rowVars) : rowVars),
         taxValue: t("taxValue"),
         printsTax: taxAlways || t.prints("taxValue"),
         showsTax: t.shows("taxValue")

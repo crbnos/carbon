@@ -11,10 +11,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { resolveLineTaxes } from "~/modules/accounting/accounting.service";
+import { applyLineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
   getContract,
-  isItemTaxable,
   projectRevenueRefusal,
   upsertContractLine
 } from "~/modules/sales/sales.service";
@@ -53,10 +53,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Only a code (or an exemption) changes the default: with no code a new
   // line opens at 0%, as before tax codes.
   return {
-    resolvedTax:
-      tax.data && (tax.data.taxCodeId || tax.data.exempt)
-        ? { taxCodeId: tax.data.taxCodeId, taxPercent: tax.data.taxPercent }
-        : null
+    resolvedTax: tax.data
+      ? applyLineTaxDecision(tax.data, { taxCodeId: null, taxPercent: 0 })
+      : null
   };
 }
 
@@ -88,30 +87,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...line } = validation.data;
 
-  // The line's tax, for a caller that did not post the field (the form does;
-  // an empty one is a cleared code): the ship-to's or the customer's code,
-  // unless the item is not taxable. With no code the caller's own percent
-  // stands, as before tax codes. The form types percent points; the resolver
-  // gives a fraction.
-  if (!formData.has("taxCodeId")) {
-    const tax = await resolveLineTaxes(client, companyId, {
-      source: "sales",
-      customerId: contract.data.customerId,
-      customerLocationId: contract.data.shipToCustomerLocationId,
-      itemId: line.itemId,
-      date: line.startDate
-    });
-    if (tax.data && (tax.data.taxCodeId || tax.data.exempt)) {
-      line.taxCodeId = tax.data.taxCodeId ?? undefined;
-      line.taxPercent = round(tax.data.taxPercent * 100);
-    }
-  }
-  // A non-taxable item carries no tax, whatever the form posted.
-  if (!(await isItemTaxable(client, companyId, line.itemId))) {
-    line.taxCodeId = undefined;
-    line.taxPercent = 0;
-  }
-
   const upgrade = await projectRevenueRefusal(client, companyId, [line]);
   if (upgrade) {
     throw redirect(
@@ -121,9 +96,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // `upsertContractLine` refuses a contract that is not a Draft and an item
-  // that is not a Service; its refusal message is what the user reads.
+  // that is not a Service; its refusal message is what the user reads. It
+  // decides the tax: a caller that does not post the field (the form does;
+  // an empty one is a cleared code) takes the ship-to's or customer's code.
   const insert = await upsertContractLine(client, {
     ...line,
+    taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
     // The contract checked above is the URL's — never the form's copy.
     customerContractId: id,
     companyId,

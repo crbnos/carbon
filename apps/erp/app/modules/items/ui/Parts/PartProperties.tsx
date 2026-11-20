@@ -69,6 +69,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -819,23 +820,13 @@ const PartProperties = ({
           </ValidatedForm>
         </ItemChangeNoticeLock>
       )}
-      {!embedded && routeDataFromRoute?.taxable !== undefined && (
-        <ValidatedForm
-          key={itemId}
-          defaultValues={{ taxable: routeDataFromRoute.taxable }}
-          validator={z.object({ taxable: zfd.checkbox() })}
-          className="w-full"
+      {!embedded && (
+        <TaxableProperty
+          itemId={itemId}
+          taxable={routeDataFromRoute?.taxable}
+          onChange={(value) => onUpdate("taxable", value)}
           isReadOnly={isReadOnly}
-        >
-          <Boolean
-            label={t`Taxable`}
-            name="taxable"
-            variant="small"
-            onChange={(value) => {
-              onUpdate("taxable", value ? "on" : "off");
-            }}
-          />
-        </ValidatedForm>
+        />
       )}
       {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
           affected-item card; it stays editable on the part page (non-embedded),

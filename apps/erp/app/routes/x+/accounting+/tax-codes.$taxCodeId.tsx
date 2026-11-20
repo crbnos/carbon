@@ -31,8 +31,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTaxAuthoritiesList(client, companyId)
   ]);
 
+  if (!taxCode.data) throw notFound("Tax code not found");
+
   return {
-    taxCode: taxCode?.data ?? null,
+    taxCode: taxCode.data,
     taxAuthorities: taxAuthorities.data ?? []
   };
 }

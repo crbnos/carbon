@@ -34,6 +34,9 @@ const CHART = [
   leaf("sales", "Revenue"),
   leaf("shipping", "Revenue"),
   leaf("tax", "Liability"),
+  leaf("state-tax", "Liability"),
+  // One VAT control account for both directions, classed Asset.
+  leaf("vat-control", "Asset"),
   leaf("deferred", "Liability"),
   leaf("cogs", "Expense"),
   leaf("raw", "Asset"),
@@ -254,12 +257,18 @@ describe("account resolution", () => {
           ])
         }
       );
-    // An account of this group carries the component's tax.
+    // An account of this group carries the component's tax, not the default.
+    const lines = summary(buildSalesInvoiceJournal(taxed("state-tax")).lines);
+    expect(lines.find(([accountId]) => accountId === "state-tax")?.[2]).toBe(
+      10
+    );
+    expect(lines.some(([accountId]) => accountId === "tax")).toBe(false);
+    // An Asset-classed tax account is credited as an asset.
     expect(
-      summary(buildSalesInvoiceJournal(taxed("tax")).lines).find(
-        ([accountId]) => accountId === "tax"
+      summary(buildSalesInvoiceJournal(taxed("vat-control")).lines).find(
+        ([accountId]) => accountId === "vat-control"
       )?.[2]
-    ).toBe(10);
+    ).toBe(-10);
     // Another group's account is not read, and never falls back to the default.
     expect(() => buildSalesInvoiceJournal(taxed("other-group-tax"))).toThrow(
       "outside this company group"

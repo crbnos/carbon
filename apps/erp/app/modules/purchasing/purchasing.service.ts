@@ -89,7 +89,6 @@ import {
   BILLABLE_LEASE_STATUSES,
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
-  chargedTaxPercent,
   datetime,
   EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
@@ -127,7 +126,8 @@ import {
   round,
   SIGNATURES_BUCKET,
   searchFilter,
-  type TaxCodeInput
+  type TaxCodeInput,
+  taxableBase
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import {
@@ -171,8 +171,15 @@ import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate,
-  resolvePurchaseLineTax
+  getTaxCodeInputs,
+  resolveLineTaxes
 } from "../accounting/accounting.service";
+import {
+  chargedRateOr,
+  decidePurchaseTaxAmount,
+  decideWrittenLineTax,
+  type LineTaxDecision
+} from "../accounting/accounting.utils";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   claimPlanningActions,
@@ -3822,82 +3829,294 @@ export async function upsertPurchaseOrderLine(
     .single();
 }
 
-type PurchaseLineTax = {
-  taxCodeId: string | undefined;
-  taxPercent: number;
-  supplierTaxAmount: number;
+export type PurchaseLineTax = {
+  taxCodeId?: string | null;
+  taxPercent?: number;
+  supplierTaxAmount?: number;
 };
 
 /**
- * The tax a line on a non-taxable item stores — no code, 0% and no amount,
- * whatever was sent — or null when the item may carry tax (or there is no
- * item). Shared by every purchase order and purchase invoice line write.
- */
-export async function nonTaxableItemTax(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  itemId: string | null | undefined
-): Promise<PurchaseLineTax | null> {
-  return (await isItemTaxable(client, companyId, itemId))
-    ? null
-    : { taxCodeId: undefined, taxPercent: 0, supplierTaxAmount: 0 };
-}
-
-/**
- * The tax a line created on a purchase order or purchase invoice keeps: the
- * purchase twin of `resolveCreatedLineTax` (sales).
+ * The tax a purchase order or purchase invoice line write stores. Every PO
+ * and PI line create and update goes through it; a key left out of the
+ * result keeps the stored value.
  *
- * - A line on a non-taxable item takes none (`nonTaxableItemTax`).
- * - A `taxCodeId` that is sent decides. A code is kept with the sent percent
- *   and amount; an empty string means the user cleared the code, and the
- *   sent percent and amount stand.
- * - A caller that sends no `taxCodeId` (the API, an MCP tool, a workflow)
- *   gets the supplier's resolved tax (`resolvePurchaseLineTax`). With no code
- *   to apply, the sent percent and amount stand.
+ * - The rate: `decideWrittenLineTax` — a non-taxable item takes none, a sent
+ *   code its charged rate on the document's tax point (the order date; the
+ *   invoice's issue date, else its posting date), an empty code is a cleared
+ *   one, and a create that sends no code takes the supplier's.
+ * - The amount: `decidePurchaseTaxAmount` — a Reverse Charge code (sent or
+ *   stored) refuses a supplier tax amount, as posting does.
  *
- * A read failure keeps what was sent.
+ * `sent` holds the request's values: undefined is "not sent". A read failure
+ * of the supplier's code keeps what was sent.
  */
-export async function resolveCreatedPurchaseLineTax(
+export async function resolvePurchaseLineTax(
   client: SupabaseClient<Database>,
   args: {
     companyId: string;
     companyGroupId: string;
-    supplierId: string | null | undefined;
-    /** The document's date; the company's today when it has none. */
-    documentDate: string | null | undefined;
-    currencyCode: string | null | undefined;
-    itemId: string | null | undefined;
-    unitPrice: number;
-    quantity: number;
-    shippingCost: number;
-    taxCodeId: string | undefined;
-    taxPercent: number;
-    supplierTaxAmount: number;
+    document: "purchaseOrder" | "purchaseInvoice";
+    documentId: string;
+    /** The line an update writes; null for a create. */
+    lineId: string | null;
+    sent: {
+      itemId?: string | null;
+      unitPrice?: number;
+      quantity?: number;
+      shippingCost?: number;
+      taxCodeId?: string;
+      taxPercent?: number;
+      supplierTaxAmount?: number;
+    };
   }
-): Promise<PurchaseLineTax> {
-  const zero = await nonTaxableItemTax(client, args.companyId, args.itemId);
-  if (zero) return zero;
+): Promise<
+  { data: PurchaseLineTax; error: null } | { data: null; error: string }
+> {
+  const { companyId, sent } = args;
+  const [header, stored] = await Promise.all([
+    readPurchaseTaxDocument(client, companyId, args.document, args.documentId),
+    args.lineId
+      ? readPurchaseTaxLine(client, companyId, args.document, args.lineId)
+      : null
+  ]);
+  if (header.error !== null) return { data: null, error: header.error };
+  if (stored && stored.error !== null)
+    return { data: null, error: stored.error };
+  const line = stored?.data ?? null;
 
-  const submitted = {
-    taxCodeId: args.taxCodeId || undefined,
-    taxPercent: args.taxPercent,
-    supplierTaxAmount: args.supplierTaxAmount
-  };
-  if (args.taxCodeId !== undefined) return submitted;
+  const itemId = sent.itemId !== undefined ? sent.itemId : line?.itemId;
+  // An update that sends a percent but no code is checked against the
+  // stored code: a coded line's rate is always its code's.
+  const taxCodeId =
+    sent.taxCodeId ??
+    (sent.taxPercent !== undefined
+      ? (line?.taxCodeId ?? undefined)
+      : undefined);
+  const sentCodeId = taxCodeId || null;
+  const storedCodeId =
+    taxCodeId === undefined ? (line?.taxCodeId ?? null) : null;
+  const [itemTaxable, date, codes] = await Promise.all([
+    isItemTaxable(client, companyId, itemId),
+    header.data.date ??
+      getCompanyTimeZone(client, companyId).then((tz) =>
+        datetime.today(tz).toString()
+      ),
+    getTaxCodeInputs(client, companyId, [sentCodeId, storedCodeId])
+  ]);
+  if (codes.error) return { data: null, error: codes.error };
 
-  const resolved = await resolvePurchaseLineTax(client, {
-    companyId: args.companyId,
-    companyGroupId: args.companyGroupId,
-    supplierId: args.supplierId,
+  let partyDecision: LineTaxDecision | null = null;
+  if (
+    !args.lineId &&
+    taxCodeId === undefined &&
+    itemTaxable &&
+    header.data.supplierId
+  ) {
     // The item is taxable (or there is none): no second read of it.
-    itemId: null,
-    documentDate: args.documentDate,
-    currencyCode: args.currencyCode,
-    unitPrice: args.unitPrice,
-    quantity: args.quantity,
-    shippingCost: args.shippingCost
+    const resolved = await resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: header.data.supplierId,
+      date
+    });
+    if (resolved.error) {
+      logger.error("Failed to resolve purchase line tax", {
+        companyId,
+        supplierId: header.data.supplierId,
+        error: resolved.error
+      });
+    }
+    partyDecision = resolved.data;
+  }
+
+  const tax = decideWrittenLineTax({
+    source: "purchase",
+    itemTaxable,
+    sentTaxCodeId: taxCodeId,
+    sentTaxPercent: sent.taxPercent,
+    sentCode: sentCodeId ? (codes.data.get(sentCodeId) ?? null) : null,
+    partyDecision,
+    date
   });
-  return resolved ?? submitted;
+  if (tax.error !== null) return { data: null, error: tax.error };
+
+  // The line's code after the write. A supplier's code is applied at its
+  // charged rate, 0 for Reverse Charge, so restating its amount zeroes it.
+  const code = sentCodeId
+    ? (codes.data.get(sentCodeId) ?? null)
+    : storedCodeId
+      ? (codes.data.get(storedCodeId) ?? null)
+      : null;
+  const base = taxableBase(
+    sent.unitPrice ?? Number(line?.unitPrice ?? 0),
+    sent.quantity ?? Number(line?.quantity ?? 0),
+    sent.shippingCost ?? Number(line?.shippingCost ?? 0)
+  );
+  const restates =
+    !!tax.data.taxCodeId &&
+    (!sentCodeId || sent.supplierTaxAmount === undefined);
+  const currencyDecimals = restates
+    ? await settlementDecimals(client, {
+        companyId,
+        companyGroupId: args.companyGroupId,
+        currencyCode: header.data.currencyCode
+      })
+    : null;
+  const amount = decidePurchaseTaxAmount({
+    itemTaxable,
+    tax: tax.data,
+    code,
+    codeWasSent: !!sentCodeId,
+    sentTaxAmount: sent.supplierTaxAmount,
+    base,
+    currencyDecimals
+  });
+  if (amount.error !== null) return { data: null, error: amount.error };
+  return {
+    data: {
+      ...tax.data,
+      ...(amount.data !== undefined ? { supplierTaxAmount: amount.data } : {})
+    },
+    error: null
+  };
+}
+
+async function readPurchaseTaxDocument(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  document: "purchaseOrder" | "purchaseInvoice",
+  documentId: string
+): Promise<
+  | {
+      data: {
+        supplierId: string | null;
+        date: string | null;
+        currencyCode: string | null;
+      };
+      error: null;
+    }
+  | { data: null; error: string }
+> {
+  if (document === "purchaseOrder") {
+    const order = await client
+      .from("purchaseOrder")
+      .select("supplierId, orderDate, currencyCode")
+      .eq("id", documentId)
+      .eq("companyId", companyId)
+      .single();
+    if (order.error) return { data: null, error: order.error.message };
+    return {
+      data: {
+        supplierId: order.data.supplierId,
+        date: order.data.orderDate,
+        currencyCode: order.data.currencyCode
+      },
+      error: null
+    };
+  }
+  const invoice = await client
+    .from("purchaseInvoice")
+    .select("supplierId, dateIssued, postingDate, currencyCode")
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .single();
+  if (invoice.error) return { data: null, error: invoice.error.message };
+  return {
+    data: {
+      supplierId: invoice.data.supplierId,
+      // The invoice's tax point (plan decision 1).
+      date: invoice.data.dateIssued ?? invoice.data.postingDate ?? null,
+      currencyCode: invoice.data.currencyCode
+    },
+    error: null
+  };
+}
+
+async function readPurchaseTaxLine(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  document: "purchaseOrder" | "purchaseInvoice",
+  lineId: string
+): Promise<
+  | {
+      data: {
+        itemId: string | null;
+        taxCodeId: string | null;
+        unitPrice: number | null;
+        quantity: number | null;
+        shippingCost: number | null;
+      };
+      error: null;
+    }
+  | { data: null; error: string }
+> {
+  if (document === "purchaseOrder") {
+    const line = await client
+      .from("purchaseOrderLine")
+      .select(
+        "itemId, taxCodeId, supplierUnitPrice, purchaseQuantity, supplierShippingCost"
+      )
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .single();
+    if (line.error) return { data: null, error: line.error.message };
+    return {
+      data: {
+        itemId: line.data.itemId,
+        taxCodeId: line.data.taxCodeId,
+        unitPrice: line.data.supplierUnitPrice,
+        quantity: line.data.purchaseQuantity,
+        shippingCost: line.data.supplierShippingCost
+      },
+      error: null
+    };
+  }
+  const line = await client
+    .from("purchaseInvoiceLine")
+    .select(
+      "itemId, taxCodeId, supplierUnitPrice, quantity, supplierShippingCost"
+    )
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error) return { data: null, error: line.error.message };
+  return {
+    data: {
+      itemId: line.data.itemId,
+      taxCodeId: line.data.taxCodeId,
+      unitPrice: line.data.supplierUnitPrice,
+      quantity: line.data.quantity,
+      shippingCost: line.data.supplierShippingCost
+    },
+    error: null
+  };
+}
+
+/** The decimals a purchase tax amount settles at: the document currency's,
+ *  else the company base currency's. Null when neither is set up. */
+async function settlementDecimals(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    currencyCode: string | null;
+  }
+): Promise<number | null> {
+  const currencyCode =
+    args.currencyCode ??
+    (
+      await client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", args.companyId)
+        .single()
+    ).data?.baseCurrencyCode;
+  if (!currencyCode) return null;
+  const currency = await getCurrencyByCode(
+    client,
+    args.companyGroupId,
+    currencyCode
+  );
+  return currency.data?.decimalPlaces ?? null;
 }
 
 export async function updatePurchaseOrderLineOrder(
@@ -13785,7 +14004,8 @@ async function draftLeaseInvoices(
     const subtotal = round(
       group.reduce((sum, row) => sum + Number(row.amount), 0)
     );
-    const taxPercent = taxCode ? chargedTaxPercent(taxCode, dueDate) : 0;
+    // The invoice is dated its due date: the tax point.
+    const taxPercent = chargedRateOr(taxCode, 0, dueDate);
     const lineTax = (amount: number) =>
       decimals === null ? 0 : applyRate(amount, taxPercent, decimals);
     const totalTax = round(
@@ -13893,73 +14113,29 @@ async function draftLeaseInvoices(
 }
 
 /**
- * The lease supplier's tax code (`supplierTax.taxCodeId`) with all its
- * components, in one query; null when the supplier has no active code.
+ * The lease supplier's tax code (`supplierTax.taxCodeId`) with every
+ * component (`loadTaxCodes`); null when the supplier has none. A retired
+ * code the supplier still names keeps billing, as on every other document.
  */
 async function readSupplierTaxCode(
   trx: KyselyTx,
   companyId: string,
   supplierId: string
 ): Promise<TaxCodeInput | null> {
-  const rows = await trx
-    .selectFrom("supplierTax as st")
-    .innerJoin("taxCode as tc", (join) =>
-      join
-        .onRef("tc.id", "=", "st.taxCodeId")
-        .onRef("tc.companyId", "=", "st.companyId")
-    )
-    .leftJoin("taxCodeComponent as c", (join) =>
-      join
-        .onRef("c.taxCodeId", "=", "tc.id")
-        .onRef("c.companyId", "=", "tc.companyId")
-    )
-    .select([
-      "tc.id as taxCodeId",
-      "tc.calculationType",
-      "tc.taxesShipping",
-      "c.id",
-      "c.name",
-      "c.taxAuthorityId",
-      "c.taxPercent",
-      "c.recoverablePercent",
-      "c.sequence",
-      "c.isCompound",
-      "c.taxReceivedAccountId",
-      "c.taxPaidAccountId",
-      sql<string | null>`c."effectiveDate"::text`.as("effectiveDate"),
-      sql<string | null>`c."expirationDate"::text`.as("expirationDate")
-    ])
-    .where("st.supplierId", "=", supplierId)
-    .where("st.companyId", "=", companyId)
-    .where("tc.active", "=", true)
-    .execute();
-  const first = rows[0];
-  if (!first) return null;
-
-  return {
-    id: first.taxCodeId,
-    calculationType: first.calculationType,
-    taxesShipping: first.taxesShipping,
-    components: rows.flatMap((row) =>
-      row.id === null
-        ? []
-        : [
-            {
-              id: row.id,
-              name: row.name ?? "",
-              taxAuthorityId: row.taxAuthorityId,
-              taxPercent: Number(row.taxPercent ?? 0),
-              recoverablePercent: Number(row.recoverablePercent ?? 0),
-              sequence: row.sequence ?? 0,
-              isCompound: row.isCompound ?? false,
-              taxReceivedAccountId: row.taxReceivedAccountId,
-              taxPaidAccountId: row.taxPaidAccountId,
-              effectiveDate: row.effectiveDate,
-              expirationDate: row.expirationDate
-            }
-          ]
-    )
-  };
+  const supplierTax = await trx
+    .selectFrom("supplierTax")
+    .select("taxCodeId")
+    .where("supplierId", "=", supplierId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!supplierTax?.taxCodeId) return null;
+  const codes = await sharedPostings.loadTaxCodes(
+    trx,
+    companyId,
+    [supplierTax.taxCodeId],
+    null
+  );
+  return codes.get(supplierTax.taxCodeId) ?? null;
 }
 
 /**

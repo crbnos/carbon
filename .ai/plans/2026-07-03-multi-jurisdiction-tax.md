@@ -2,7 +2,7 @@
 
 > Superseded (2026-10-16): this plan targets the July spec and the deleted edge functions. Write a new plan from `.ai/specs/2026-10-16-multi-jurisdiction-tax.md`. Do not execute this one.
 
-**Spec:** .ai/specs/2026-07-03-multi-jurisdiction-tax.md
+**Spec:** .ai/specs/archived/2026-07-03-multi-jurisdiction-tax.md
 **Research:** .ai/research/multi-jurisdiction-tax.md
 **Branch:** `tax-compliance` (create from `main`)
 

@@ -4594,6 +4594,9 @@ msgstr "Архивировать обучение"
 msgid "Archived"
 msgstr "Архивировано"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "Архивировано у провайдера. Сопоставьте заново."
+
 msgid "Archived Logs"
 msgstr "Архивированные журналы"
 
@@ -11716,6 +11719,12 @@ msgstr "Каждая строка — это связь данных этой о
 msgid "Each line shows its item ID and revision."
 msgstr "Каждая строка показывает код номенклатуры и ревизию."
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "Каждая строка получает налоговый код и ставку, которые её номенклатура имеет по адресу доставки счета-фактуры на дату выставления. Это перезапишет налоговый код, который вы очистили в строке. Строки аренды и контрактов сохраняют свои коды."
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "Каждая строка получает налоговый код и ставку, которые её номенклатура имеет по адресу доставки заказа на дату заказа. Это перезапишет налоговый код, который вы очистили в строке."
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Каждый месяц расчет аренды проводит процентные расходы и амортизацию актива с правом пользования для каждого актива."
 
@@ -12984,8 +12993,8 @@ msgstr "Каждая строка признает выставленную су
 msgid "Every match"
 msgstr "Каждое совпадение"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "Все остальные активные коды налога. Выберите другую ставку поставщика для переотображения."
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "Все остальные налоговые коды. Выберите другую ставку провайдера, чтобы сопоставить заново."
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "Все файлы деталей изначально отмечены; снимите отметку с тех, которые не нужно отправлять."
@@ -13100,6 +13109,9 @@ msgstr "П&У для руководства"
 
 msgid "Exempt"
 msgstr "Освобождённый"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "Покупатели, освобожденные от налога, необлагаемая номенклатура, необлагаемая доставка"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "Освобожденное или неосвобожденное, устанавливается на вкладке Работа физического лица. В режиме DCAA он выбирает текст сертификации, который сотрудник подтверждает при отправке, и длинные недели освобожденного сотрудника разбавляются."
@@ -18173,8 +18185,8 @@ msgstr "Производство заблокировано"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "Отобразите каждый код налога Carbon на налоговую ставку поставщика один раз для продаж и один раз для покупок. Отправленные документы отправляют налоговую сумму Carbon с отображенной ставкой."
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "Сопоставьте каждый налоговый код Carbon с налоговой ставкой провайдера дважды: отдельно для продаж и отдельно для закупок. Отправляемые документы передают сумму налога Carbon по сопоставленной ставке. Код обратного начисления не начисляет налог на продажи, поэтому сопоставьте его со ставкой 0%, например с нулевой ставкой для продаж в ЕС. Документы закупок по такому коду отправляются без налога и не требуют ставки."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета-фактуры"
@@ -20498,11 +20510,11 @@ msgstr "Опция не найдена."
 msgid "No options found."
 msgstr "Нет доступных вариантов."
 
-msgid "No other active tax codes"
-msgstr "Нет других активных налоговых кодов"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Других сотрудников не найдено. Добавьте сотрудников, чтобы включить передачу прав собственности."
+
+msgid "No other tax codes"
+msgstr "Других налоговых кодов нет"
 
 msgid "No outstanding trainings"
 msgstr "Нет невыполненных обучений"
@@ -20831,6 +20843,9 @@ msgstr "Операции синхронизации еще не выполнен
 msgid "No tax code"
 msgstr "Нет налогового кода"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "Налоговый код не указан (освобождено или не облагается)"
+
 msgid "No tax registration for {unregistered}"
 msgstr "Нет налоговой регистрации для {unregistered}"
 
@@ -21068,6 +21083,9 @@ msgstr "Не сопоставлено"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Не перемещено: {0}. Записано в <0>{1}</0>"
+
+msgid "Not needed"
+msgstr "Не требуется"
 
 msgid "Not now"
 msgstr "Не сейчас"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "Прекратить налоговый код"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "Прекратить налоговый код {0}? Его больше нельзя выбирать в новых строках. Строки, которые уже его используют, оставляют его."
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "Вывести налоговый код {0} из использования? Его больше нельзя будет выбрать в новых строках. Строки, где он уже используется, сохранят его. Код, который все еще назначен покупателю, поставщику или адресу доставки, вывести из использования нельзя."
+
+msgid "Retired, still on documents"
+msgstr "Выведен из использования, но еще в документах"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Вывод активов из эксплуатации путем выбраковки или продажи, учет любой прибыли или убытка против остаточной стоимости и установка статуса на Выбыло."
@@ -26544,6 +26565,10 @@ msgstr "Налог на продажи с обратным взиманием"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Налог на продажи с обратным взиманием (по умолчанию)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "Обратное начисление, начислено {0}"
 
 msgid "Reverse Entry"
 msgstr "Сторнирующая запись"
@@ -28018,6 +28043,9 @@ msgstr "Продать {label} покупателю"
 
 msgid "Sell to Customer"
 msgstr "Продажа Покупателю"
+
+msgid "Seller Tax ID"
+msgstr "Налоговый идентификатор продавца"
 
 msgid "Selling profit: <0/>"
 msgstr "Прибыль от продажи: <0/>"
@@ -30611,6 +30639,15 @@ msgstr "Собранный налог, налог к возврату по ор�
 msgid "Tax component"
 msgstr "Компонент налога"
 
+msgid "Tax Component"
+msgstr "Налоговый компонент"
+
+msgid "Tax Component Base"
+msgstr "База налогового компонента"
+
+msgid "Tax Component Rate"
+msgstr "Ставка налогового компонента"
+
 msgid "Tax coverage"
 msgstr "Область применения налога"
 
@@ -31575,8 +31612,8 @@ msgstr "Принтеры этикеток и документов, на кото
 msgid "The labels every project can put on its elements."
 msgstr "Метки, которые каждый проект может разместить на своих элементах."
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "Последний день, когда действует компонент налога. Чтобы изменить ставку, укажите старому компоненту дату «Истекает» и добавьте новый, чтобы проведенные документы сохранили старую ставку."
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "Последний день действия налогового компонента. Чтобы изменить ставку, установите окончание действия старого компонента на день раньше даты вступления в силу нового, затем добавьте новый. Два компонента с одинаковым названием и одним и тем же налоговым органом не могут действовать в один и тот же день."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "Последний день месяца лизинга (день перед днем {commencementDay}), после последней проведенной операции лизинга"
@@ -35496,8 +35533,8 @@ msgstr "Когда MRP начинает использовать эту дета
 msgid "When MRP uses the successor for new demand"
 msgstr "Когда MRP использует преемника для новых потребностей"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "Если включено, стоимость доставки строки входит в налогооблагаемую сумму, и код налога облагает доставку по той же ставке, что и товары."
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "Если включено, доля строки в общей доставке документа включается в её налогооблагаемую сумму, поэтому налоговый код облагает её по той же ставке, что и товары. Собственная стоимость доставки строки всегда облагается налогом."
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Когда включено, атрибуты в этой категории отображаются в открытом профиле человека; в противном случае они видны только администраторам."

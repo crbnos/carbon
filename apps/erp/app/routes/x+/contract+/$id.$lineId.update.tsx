@@ -16,7 +16,6 @@ import {
 import {
   getContract,
   getContractLine,
-  isItemTaxable,
   projectRevenueRefusal,
   upsertContractLine
 } from "~/modules/sales/sales.service";
@@ -152,8 +151,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...values } = validation.data;
-  // A non-taxable item carries no tax, whatever the line stored.
-  const taxable = await isItemTaxable(client, companyId, values.itemId);
 
   // Cost Plus and Percent Complete need the project revenue feature, as in
   // the line form's route.
@@ -162,10 +159,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ error: upgrade }, { status: 400 });
   }
 
-  // Refuses a contract that is not a Draft and an item that is not a Service.
+  // Refuses a contract that is not a Draft and an item that is not a Service,
+  // and decides the tax (a non-taxable item carries none).
   const update = await upsertContractLine(client, {
     ...values,
-    ...(taxable ? {} : { taxPercent: 0, taxCodeId: null }),
+    taxCodeId: values.taxCodeId ?? null,
     customerContractId: id,
     id: lineId,
     updatedBy: userId

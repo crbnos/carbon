@@ -17,7 +17,8 @@ import { useCurrencyFormatter, useUrlParams } from "~/hooks";
 import type { TaxLiabilityRow } from "~/modules/accounting/accounting.service";
 import {
   getTaxAuthoritiesList,
-  getTaxLiability
+  getTaxLiability,
+  getTaxLiabilityBaseTotals
 } from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -59,12 +60,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (to < from) [from, to] = [to, from];
   const taxAuthorityId = url.searchParams.get("taxAuthorityId") || null;
 
-  const [rows, authorities] = await Promise.all([
-    getTaxLiability(getDatabaseClient(), companyId, {
-      startDate: from,
-      endDate: to,
-      taxAuthorityId
-    }),
+  const filters = { startDate: from, endDate: to, taxAuthorityId };
+  const [rows, baseTotals, authorities] = await Promise.all([
+    getTaxLiability(getDatabaseClient(), companyId, filters),
+    getTaxLiabilityBaseTotals(getDatabaseClient(), companyId, filters),
     getTaxAuthoritiesList(client, companyId)
   ]);
 
@@ -73,6 +72,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     to,
     taxAuthorityId,
     rows,
+    baseTotals,
     authorities: (authorities.data ?? []).map((a) => ({
       value: a.id,
       label: a.name
@@ -91,7 +91,7 @@ type TaxLiabilityDisplayRow = Omit<
 };
 
 export default function TaxLiabilityRoute() {
-  const { from, to, taxAuthorityId, rows, authorities } =
+  const { from, to, taxAuthorityId, rows, baseTotals, authorities } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
@@ -112,16 +112,18 @@ export default function TaxLiabilityRoute() {
       isTotal: false
     }));
     if (rows.length > 0) {
+      // Tax adds up across components; a line's taxable base repeats on
+      // each component's row, so its totals come from the server, per line.
       const sum = (pick: (row: TaxLiabilityRow) => number) =>
         round(rows.reduce((total, row) => total + pick(row), 0));
       out.push({
         key: "total",
         authority: t`Total`,
         component: "",
-        taxableSales: sum((row) => row.taxableSales),
-        exemptSales: sum((row) => row.exemptSales),
+        taxableSales: baseTotals.taxableSales,
+        exemptSales: baseTotals.exemptSales,
         taxCollected: sum((row) => row.taxCollected),
-        taxablePurchases: sum((row) => row.taxablePurchases),
+        taxablePurchases: baseTotals.taxablePurchases,
         selfAssessedTax: sum((row) => row.selfAssessedTax),
         recoverableTax: sum((row) => row.recoverableTax),
         netDue: sum((row) => row.netDue),
@@ -129,7 +131,7 @@ export default function TaxLiabilityRoute() {
       });
     }
     return out;
-  }, [rows, t]);
+  }, [rows, baseTotals, t]);
 
   const columns = useMemo<ColumnDef<TaxLiabilityDisplayRow>[]>(() => {
     const amount =

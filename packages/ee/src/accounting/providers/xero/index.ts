@@ -19,6 +19,7 @@ import { SalesOrderSyncer } from "./entities/sales-order";
 import { VendorCreditSyncer } from "./entities/vendor-credit";
 
 export * from "./entities/bill";
+export * from "./entities/bill-lines";
 export * from "./entities/charge";
 export * from "./entities/contact";
 // credit-memo hosts the shared Xero credit-note base (XeroCreditNoteSyncerBase,

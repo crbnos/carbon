@@ -14,7 +14,10 @@ import {
   type TaxComponentInput
 } from "@carbon/utils";
 import { createMappingService } from "../../../core/external-mapping";
-import { getTaxCodeMappings } from "../../../core/tax-mapping";
+import {
+  getTaxCodeMappings,
+  loadReverseChargeCodeIds
+} from "../../../core/tax-mapping";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -130,7 +133,8 @@ export type QboPurchaseOrderTaxLine = {
  * - a code whose tax is folded into cost (0% recoverable): the non-taxable
  *   code, the tax left out as before;
  * - a legacy taxed line (no code): the one purchase rate of its percentage;
- * - an untaxed line with no code: the non-taxable code.
+ * - an untaxed line with no code, or a Reverse Charge line (tax-neutral in
+ *   Phase 1, as bills are): the non-taxable code.
  * A partly recoverable line is not split as a bill line is: a PO posts
  * nothing, and an item line's amount must stay quantity × unit price.
  * `recoverableShares` is keyed by tax code id, 0..1. Pure — exported for
@@ -140,6 +144,7 @@ export function resolveQboPurchaseOrderTax(args: {
   documentId: string;
   lines: ReadonlyArray<QboPurchaseOrderTaxLine>;
   recoverableShares: ReadonlyMap<string, number>;
+  reverseChargeCodeIds?: ReadonlySet<string>;
   decimalPlaces: number;
   catalog: QboInvoiceTaxCatalog;
   mappings: QboTaxCodeMappings;
@@ -161,8 +166,12 @@ export function resolveQboPurchaseOrderTax(args: {
       line.taxCodeId &&
       taxPercent !== 0 &&
       (args.recoverableShares.get(line.taxCodeId) ?? 0) === 0;
+    const reverseCharge = Boolean(
+      line.taxCodeId && args.reverseChargeCodeIds?.has(line.taxCodeId)
+    );
     if (
       foldedIntoCost ||
+      reverseCharge ||
       (!line.taxCodeId && taxAmount === 0 && taxPercent === 0)
     ) {
       lineTaxCodeRefs.set(line.id, {
@@ -326,20 +335,25 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
     if (!taxed) return null;
     const catalog = await this.taxContext.catalog(local.id);
     if (isQboUsCompany(catalog)) return null;
-    const [mappings, decimalPlaces, recoverableShares] = await Promise.all([
-      this.taxContext.mappings(local.id),
-      this.getBaseDecimalPlaces(),
-      loadRecoverableShares(this.database, {
-        companyId: this.companyId,
-        taxCodeIds: [
-          ...new Set(
-            [...taxCodeIds.values()].filter((id): id is string => !!id)
-          )
-        ],
-        date: local.orderDate ?? null
-      })
-    ]);
+    const usedCodeIds = [
+      ...new Set([...taxCodeIds.values()].filter((id): id is string => !!id))
+    ];
+    const [mappings, decimalPlaces, recoverableShares, reverseChargeCodeIds] =
+      await Promise.all([
+        this.taxContext.mappings(local.id),
+        this.getBaseDecimalPlaces(),
+        loadRecoverableShares(this.database, {
+          companyId: this.companyId,
+          taxCodeIds: usedCodeIds,
+          date: local.orderDate ?? null
+        }),
+        loadReverseChargeCodeIds(this.database, {
+          companyId: this.companyId,
+          taxCodeIds: usedCodeIds
+        })
+      ]);
     return resolveQboPurchaseOrderTax({
+      reverseChargeCodeIds,
       documentId: local.id,
       lines: local.lines.map((line) => ({
         id: line.id,

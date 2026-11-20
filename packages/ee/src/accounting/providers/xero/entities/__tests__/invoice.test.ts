@@ -155,6 +155,7 @@ function makeInvoiceSyncer(
     companyId: "company-1",
     provider: {
       id: "xero",
+      listChartOfAccounts: async () => [],
       listTaxRates: async () => taxRates
     } as never,
     config: { enabled: true, direction: "two-way", owner: "carbon" },
@@ -745,7 +746,11 @@ describe("Xero sales invoice tax rates (mapped TaxType)", () => {
     const syncer = new SalesInvoiceSyncer({
       database: db([]),
       companyId: "company-1",
-      provider: { id: "xero", listTaxRates } as never,
+      provider: {
+        id: "xero",
+        listChartOfAccounts: async () => [],
+        listTaxRates
+      } as never,
       config: { enabled: true, direction: "two-way", owner: "carbon" },
       entityType: "invoice"
     });

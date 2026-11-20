@@ -115,22 +115,28 @@ export type TaxLedgerSummaryRow = {
   documentTaxAmount: number;
 };
 
+/** A sales invoice past Draft and the posting claim (Pending) has posted. */
+export function isPostedSalesInvoiceStatus(
+  status: string | null | undefined
+): boolean {
+  return !!status && status !== "Draft" && status !== "Pending";
+}
+
 /**
  * The entries of a posted invoice: the rows of its posting journal. A void
  * writes negated copies on a later journal, so the posting is the journal of
- * the earliest row. Null when there are no rows, or when that journal is not
- * Posted (a Provisional posting, or one the reader cannot see) — the caller
- * then falls back to the lines.
+ * the earliest row. Null when the invoice has not posted
+ * (`isPostedSalesInvoiceStatus`) or has no rows — the caller then falls back
+ * to the lines.
  */
 export function postedTaxSummaryEntries(
   rows: ReadonlyArray<TaxLedgerSummaryRow>,
-  postedJournalIds: ReadonlySet<string>
+  posted: boolean
 ): TaxSummaryEntry[] | null {
-  if (rows.length === 0) return null;
+  if (!posted || rows.length === 0) return null;
   const posting = [...rows].sort((a, b) =>
     a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0
   )[0]!.journalId;
-  if (!postedJournalIds.has(posting)) return null;
   return rows
     .filter((row) => row.journalId === posting)
     .map((row) => ({
@@ -208,8 +214,7 @@ type SalesInvoiceLine = Database["public"]["Views"]["salesInvoiceLines"]["Row"];
  */
 export function salesInvoiceTaxSummaryLines(
   lines: ReadonlyArray<SalesInvoiceLine>,
-  headerShipping: number,
-  codes: ReadonlyMap<string, TaxSummaryCode>
+  headerShipping: number
 ): TaxSummaryLine[] {
   const postable = lines
     .filter((line) => line.id && line.invoiceLineType !== "Comment")
@@ -222,7 +227,8 @@ export function salesInvoiceTaxSummaryLines(
       unitPrice: line.convertedUnitPrice ?? 0,
       discountPercent: line.discountPercent ?? 0,
       shippingCost: line.convertedShippingCost ?? 0,
-      addOnCost: line.convertedAddOnCost ?? 0
+      addOnCost: line.convertedAddOnCost ?? 0,
+      taxesShipping: line.taxesShipping ?? false
     }));
 
   let allocated = new Map<string, number>();
@@ -232,18 +238,15 @@ export function salesInvoiceTaxSummaryLines(
     // Header shipping with no postable line: nothing to allocate it to.
   }
 
-  return postable.map((line) => {
-    const code = line.taxCodeId ? codes.get(line.taxCodeId) : undefined;
-    return {
-      taxCodeId: line.taxCodeId,
-      taxPercent: line.taxPercent,
-      base: salesTaxableBase({
-        ...line,
-        allocatedHeaderShipping: allocated.get(line.id) ?? 0,
-        taxesShipping: code?.taxesShipping ?? false
-      })
-    };
-  });
+  // The line's own snapshot, so editing the code never changes a posted invoice's summary.
+  return postable.map((line) => ({
+    taxCodeId: line.taxCodeId,
+    taxPercent: line.taxPercent,
+    base: salesTaxableBase({
+      ...line,
+      allocatedHeaderShipping: allocated.get(line.id) ?? 0
+    })
+  }));
 }
 
 /** The distinct VAT clauses of the codes `taxCodeIds` name, in that order. */
@@ -293,8 +296,7 @@ export function resolveSellerRegistration(
   );
   const registration =
     inForce.find((r) => !r.state) ??
-    inForce.find((r) => r.state && r.state === company.stateProvince) ??
-    inForce[0];
+    inForce.find((r) => r.state && r.state === company.stateProvince);
   if (registration?.registrationNumber) return registration.registrationNumber;
   return hasActiveTaxCodes ? company.taxId || null : null;
 }

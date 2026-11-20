@@ -1,7 +1,10 @@
--- Header shipping joins the tax base of lines whose code taxes shipping
--- (taxCode.taxesShipping), as post-sales-invoice taxes it. The view's
--- totals add that tax so they agree with the posting and with the
--- provider components (reconcileSource).
+-- Header shipping joins the tax base of lines whose code taxes shipping, as
+-- post-sales-invoice taxes it. The view's totals add that tax so they agree
+-- with the posting and with the provider components (reconcileSource).
+--
+-- The view reads the line's snapshot of its code's "taxes shipping"
+-- (salesInvoiceLine."taxesShipping", 20261119231542), so editing or deleting
+-- the code later never changes a posted invoice's totals, balance or status.
 
 -- Forked from 20261105204148_sales-invoices-customer-names.sql, the newest
 -- definition (customerName, invoiceCustomerName).
@@ -148,7 +151,7 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
     AND invoice_currency."companyGroupId" = invoice_company."companyGroupId"
   -- Header shipping's tax: each line's share of it, weighted as
   -- allocateSalesHeaderShipping weights it (equal shares when every weight
-  -- is zero), at the line's rate when its code taxes shipping.
+  -- is zero), at the line's rate when it taxes shipping.
   LEFT JOIN LATERAL (
     SELECT COALESCE(
       SUM(w.weight * w."taxPercent") / NULLIF(SUM(w.weight), 0),
@@ -158,9 +161,8 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
       SELECT
         COALESCE(l."quantity", 0) * COALESCE(l."unitPrice", 0) * (1 - COALESCE(l."discountPercent", 0))
           + COALESCE(l."shippingCost", 0) + COALESCE(l."addOnCost", 0) AS weight,
-        CASE WHEN tc."taxesShipping" THEN COALESCE(l."taxPercent", 0) ELSE 0 END AS "taxPercent"
+        CASE WHEN l."taxesShipping" THEN COALESCE(l."taxPercent", 0) ELSE 0 END AS "taxPercent"
       FROM "salesInvoiceLine" l
-      LEFT JOIN "taxCode" tc ON tc."id" = l."taxCodeId" AND tc."companyId" = l."companyId"
       WHERE l."invoiceId" = si."id"
         AND l."companyId" = si."companyId"
         AND l."invoiceLineType" <> 'Comment'

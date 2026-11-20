@@ -16,6 +16,7 @@ export { getLineTotal as getSalesOrderLineTotal } from "./sales-order";
 export {
   buildTaxSummary,
   getInvoiceMessages,
+  isPostedSalesInvoiceStatus,
   lineTaxSummaryEntries,
   postedTaxSummaryEntries,
   resolveSellerRegistration,

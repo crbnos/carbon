@@ -57856,6 +57856,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -58026,6 +58029,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -58148,6 +58154,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.taxCodeId"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLineVersion"
@@ -66074,6 +66083,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.taxesShipping"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId"
@@ -74077,6 +74089,9 @@ export default {
             $ref: "#/parameters/rowFilter.taxLedger.exemptionCertificateNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
             $ref: "#/parameters/rowFilter.taxLedger.createdBy"
           },
           {
@@ -74084,9 +74099,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
           },
           {
             $ref: "#/parameters/select"
@@ -74226,6 +74238,9 @@ export default {
             $ref: "#/parameters/rowFilter.taxLedger.exemptionCertificateNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
             $ref: "#/parameters/rowFilter.taxLedger.createdBy"
           },
           {
@@ -74233,9 +74248,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -74329,6 +74341,9 @@ export default {
             $ref: "#/parameters/rowFilter.taxLedger.exemptionCertificateNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
             $ref: "#/parameters/rowFilter.taxLedger.createdBy"
           },
           {
@@ -74336,9 +74351,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
           },
           {
             $ref: "#/parameters/body.taxLedger"
@@ -119614,6 +119626,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -119832,6 +119847,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -120002,6 +120020,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
           },
           {
             $ref: "#/parameters/body.salesInvoiceLine"
@@ -169938,6 +169959,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -173724,6 +173749,10 @@ export default {
           format: "text",
           type: "string"
         },
+        taxesShipping: {
+          format: "boolean",
+          type: "boolean"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -177158,9 +177187,9 @@ export default {
         "exemptAmount",
         "documentTaxableAmount",
         "documentTaxAmount",
+        "selfAssessed",
         "createdBy",
-        "createdAt",
-        "selfAssessed"
+        "createdAt"
       ],
       properties: {
         id: {
@@ -177193,6 +177222,8 @@ export default {
           type: "string"
         },
         journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -177292,6 +177323,11 @@ export default {
           format: "text",
           type: "string"
         },
+        selfAssessed: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -177308,11 +177344,6 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
-        },
-        selfAssessed: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         }
       },
       type: "object"
@@ -199189,7 +199220,8 @@ export default {
         "createdBy",
         "nonTaxableAddOnCost",
         "sortOrder",
-        "discountPercent"
+        "discountPercent",
+        "taxesShipping"
       ],
       properties: {
         id: {
@@ -199454,6 +199486,11 @@ export default {
         taxCodeId: {
           format: "text",
           type: "string"
+        },
+        taxesShipping: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -231908,6 +231945,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLineVersion.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customerContractFinancingRate": {
       name: "customerContractFinancingRate",
       description: "customerContractFinancingRate",
@@ -236111,6 +236154,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesInvoiceLines.taxesShipping": {
+      name: "taxesShipping",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesInvoiceLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -240113,6 +240162,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.taxLedger.selfAssessed": {
+      name: "selfAssessed",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.taxLedger.createdBy": {
       name: "createdBy",
       required: false,
@@ -240127,12 +240182,6 @@ export default {
     },
     "rowFilter.taxLedger.updatedBy": {
       name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.taxLedger.selfAssessed": {
-      name: "selfAssessed",
       required: false,
       in: "query",
       type: "string"
@@ -264833,6 +264882,12 @@ export default {
     },
     "rowFilter.salesInvoiceLine.taxCodeId": {
       name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLine.taxesShipping": {
+      name: "taxesShipping",
       required: false,
       in: "query",
       type: "string"

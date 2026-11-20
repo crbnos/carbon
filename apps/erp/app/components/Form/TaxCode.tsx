@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { Combobox } from "@carbon/form";
+import { Combobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
 import { usePercentFormatter } from "~/hooks";
@@ -36,7 +36,9 @@ const TaxCodePreview = (
 };
 
 const TaxCode = ({ onChange, ...props }: TaxCodeSelectProps) => {
-  const options = useTaxCodes();
+  const [fieldValue] = useControlField<string | undefined>(props.name);
+  // A retired code leaves the list, but one the record already names stays.
+  const options = useTaxCodes(props.value ?? fieldValue);
 
   // A tax code needs components, so there is no inline create: the empty
   // state links to the new tax code page.
@@ -64,20 +66,23 @@ TaxCode.displayName = "TaxCode";
 
 export default TaxCode;
 
-export const useTaxCodes = () => {
+/** The active codes, plus `keepId` when it names a retired one. */
+export const useTaxCodes = (keepId?: string | null) => {
   const formatter = usePercentFormatter();
   const taxCodeFetcher = useLoaderQuery<{ data: TaxCodeListItem[] | null }>(
     path.to.api.taxCodes
   );
 
   const options = useMemo(() => {
-    return (taxCodeFetcher.data?.data ?? []).map((c) => ({
-      value: c.id,
-      label: c.name,
-      helper: formatter.format(c.rate),
-      rate: c.rate
-    }));
-  }, [taxCodeFetcher.data?.data, formatter]);
+    return (taxCodeFetcher.data?.data ?? [])
+      .filter((c) => c.active || c.id === keepId)
+      .map((c) => ({
+        value: c.id,
+        label: c.name,
+        helper: formatter.format(c.rate),
+        rate: c.rate
+      }));
+  }, [taxCodeFetcher.data?.data, formatter, keepId]);
 
   return options;
 };

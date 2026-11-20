@@ -4,18 +4,24 @@
 
 import { describe, expect, it, vi } from "vitest";
 import {
-  type BillTaxLedgerRow,
   type BillTaxLine,
-  type CostingLine,
   planBillTaxLines
+} from "../../../../core/bill-tax-plan";
+import type {
+  BillTaxLedgerRow,
+  CostingLine
 } from "../../../../core/document-costing";
 import { JournalEntrySyncError } from "../../../../core/posting";
-import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
+import {
+  buildTaxCodeMappingLookup,
+  NO_TAX_CODE_MAPPING_ID
+} from "../../../../core/tax-mapping";
 import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
 import { toXeroTaxRateOptions } from "../../provider";
 import type { XeroTaxContext } from "../../tax";
-import { BillSyncer, buildXeroBillLineItems } from "../bill";
+import { BillSyncer } from "../bill";
+import { buildXeroBillLineItems } from "../bill-lines";
 
 /**
  * Xero ACCPAY bills are an account-costed replay of the posted Purchase
@@ -51,7 +57,11 @@ const TAX_CONTEXT: XeroTaxContext = {
       externalRate: 0.2
     }
   ]),
-  options: toXeroTaxRateOptions(XERO_TAX_RATES)
+  options: toXeroTaxRateOptions(XERO_TAX_RATES),
+  catalogLoaded: true,
+  reverseChargeCodeIds: new Set(),
+  noTaxCodeFallback: new Set(),
+  accountClassByCode: new Map()
 };
 
 /** A cost leg whose invoice line is at 20%. */
@@ -76,7 +86,7 @@ const recoverable = (
   taxCodeId,
   taxCodeComponentId: null,
   taxPercent: 0.2,
-  taxableAmount: 0,
+  taxableAmount: recoverableAmount / 0.2,
   taxAmount: recoverableAmount,
   recoverableAmount
 });
@@ -331,6 +341,7 @@ function makeBillSyncer(db: never, remoteId: string | null) {
     provider: {
       id: "xero",
       settings: {},
+      listChartOfAccounts: async () => [],
       listTaxRates: async () => XERO_TAX_RATES
     } as never,
     config: { enabled: true, direction: "two-way", owner: "accounting" },
@@ -624,6 +635,7 @@ describe("buildXeroBillLineItems (recoverable tax)", () => {
 describe("buildXeroBillLineItems (zero-rated and non-recoverable lines)", () => {
   /** "UK Zero Rated" mapped to ZERORATEDINPUT for purchases. */
   const context: XeroTaxContext = {
+    ...TAX_CONTEXT,
     mappings: buildTaxCodeMappingLookup([
       ...TAX_CONTEXT.mappings.values(),
       {
@@ -926,7 +938,12 @@ describe("BillSyncer.mapToRemote (tax from the ledger)", () => {
     const syncer = new BillSyncer({
       database: db,
       companyId: "company-1",
-      provider: { id: "xero", settings: {}, listTaxRates } as never,
+      provider: {
+        id: "xero",
+        settings: {},
+        listChartOfAccounts: async () => [],
+        listTaxRates
+      } as never,
       config: { enabled: true, direction: "two-way", owner: "accounting" },
       entityType: "bill"
     });
@@ -1003,8 +1020,8 @@ describe("BillSyncer.mapToRemote (tax from the ledger)", () => {
       ]
     });
     expect(summary(payload)).toEqual([
-      ["2125", 12458.33, "INPUT12", 1495],
-      ["2125", 19534.73, "NONE", undefined]
+      ["2125", 12458.35, "INPUT12", 1495],
+      ["2125", 19534.71, "NONE", undefined]
     ]);
     expect(total(payload)).toBeCloseTo(33488.06, 6);
   });
@@ -1107,5 +1124,62 @@ describe("BillSyncer.mapToRemote (tax from the ledger)", () => {
       }
     ]);
     expect(listTaxRates).not.toHaveBeenCalled();
+  });
+});
+
+describe("buildXeroBillLineItems (no-tax-code fallback)", () => {
+  const context: XeroTaxContext = {
+    ...TAX_CONTEXT,
+    noTaxCodeFallback: new Set(["purchase"]),
+    mappings: buildTaxCodeMappingLookup([
+      {
+        taxCodeId: NO_TAX_CODE_MAPPING_ID,
+        direction: "purchase",
+        externalId: "EXEMPTINPUT",
+        externalName: "Exempt Expenses",
+        externalRate: 0
+      }
+    ]),
+    options: toXeroTaxRateOptions([
+      ...XERO_TAX_RATES,
+      {
+        TaxType: "EXEMPTINPUT",
+        Name: "Exempt Expenses",
+        EffectiveRate: 0,
+        CanApplyToRevenue: false,
+        CanApplyToExpenses: true
+      }
+    ])
+  };
+  const exemptLeg: CostingLine = {
+    id: "jl-1",
+    accountId: "acct_ppv",
+    amount: 120,
+    description: "Exempt service",
+    tax: { taxCodeId: null, taxPercent: 0 }
+  };
+
+  it("sends an untaxed code-less leg at the fallback rate with TaxAmount 0", () => {
+    const lines = buildXeroBillLineItems({
+      bill: bill(),
+      lines: untaxed([exemptLeg]),
+      accountCodesById: CODES,
+      tax: { context, decimalPlaces: 2 },
+      noTaxCodeFallback: true
+    });
+    expect(lines.map((l) => [l.LineAmount, l.TaxType, l.TaxAmount])).toEqual([
+      [120, "EXEMPTINPUT", 0]
+    ]);
+  });
+
+  it("keeps NONE on that leg when the bill does not send the fallback", () => {
+    const lines = buildXeroBillLineItems({
+      bill: bill(),
+      lines: untaxed([exemptLeg]),
+      accountCodesById: CODES
+    });
+    expect(lines.map((l) => [l.TaxType, l.TaxAmount])).toEqual([
+      ["NONE", undefined]
+    ]);
   });
 });

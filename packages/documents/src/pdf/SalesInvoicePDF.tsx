@@ -100,7 +100,8 @@ const SalesInvoicePDF = ({
       company,
       currencyCode,
       locale,
-      numberFormatter
+      numberFormatter,
+      sellerRegistration
     })
   );
   const chrome = documentChrome({

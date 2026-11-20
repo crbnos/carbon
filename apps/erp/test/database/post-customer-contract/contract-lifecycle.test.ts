@@ -859,7 +859,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a line with a tax code bills each schedule row at the code's rate on the row's date",
+  "a line with a tax code bills each schedule row at the code's rate on the invoice's date",
   async () => {
     const f = await contractFixture();
     const { db, ctx, companyId } = f;
@@ -952,12 +952,14 @@ databaseTest(
           totalAmount: Number(line.totalAmount)
         }))
       ).toEqual([
+        // Every invoice of the catch-up run is dated 1 March, its tax point,
+        // so January bills at 15% too.
         {
           serviceStartDate: "2026-01-01",
           taxCodeId,
-          taxPercent: 0.1,
-          totalTax: 10,
-          totalAmount: 110
+          taxPercent: 0.15,
+          totalTax: 15,
+          totalAmount: 115
         },
         {
           serviceStartDate: "2026-02-01",

@@ -11,20 +11,7 @@ import {
   resolveTemplate,
   templateShowsThumbnails
 } from "@carbon/documents/template";
-import {
-  buildTaxSummary,
-  getInvoiceMessages,
-  getSalesInvoiceTaxTotal,
-  lineTaxSummaryEntries,
-  postedTaxSummaryEntries,
-  resolveSellerRegistration,
-  salesInvoiceTaxSummaryLines,
-  TAX_CODE_SUMMARY_SELECT,
-  type TaxCodeSummaryRow,
-  toTaxSummaryCodes
-} from "@carbon/documents/utils";
 import { getLogger } from "@carbon/logger";
-import { DEFAULT_CURRENCY_DECIMALS, datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getBase64Image,
@@ -35,6 +22,7 @@ import {
   withPdfLogos
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
+import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -56,109 +44,6 @@ export type SalesInvoiceDocument = {
 
 type Client = SupabaseClient<Database>;
 
-type SalesInvoiceLine = Database["public"]["Views"]["salesInvoiceLines"]["Row"];
-
-/**
- * The invoice's tax summary, VAT clauses and seller registration. A posted
- * invoice's summary comes from its posting journal's `taxLedger` rows; a
- * draft's (or one whose posting is not readable as Posted) from splitting each
- * line's tax across its code's components. Three reads, none per line.
- */
-async function loadTaxSummary(args: {
-  client: Client;
-  companyId: string;
-  company: {
-    countryCode: string | null;
-    stateProvince: string | null;
-    taxId: string | null;
-    timezone: string | null;
-  };
-  salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"];
-  lines: SalesInvoiceLine[];
-  headerShipping: number;
-  taxRegistrations: Parameters<typeof resolveSellerRegistration>[0];
-  /** The company has adopted tax codes: it prints `company.taxId`. */
-  hasActiveTaxCodes: boolean;
-  taxLedger: Parameters<typeof postedTaxSummaryEntries>[0] | null;
-  currencyDecimals: number | null;
-}): Promise<
-  Pick<
-    SalesInvoicePDFProps,
-    "taxSummary" | "invoiceMessages" | "sellerRegistration"
-  >
-> {
-  const { client, companyId, lines } = args;
-  const date =
-    args.salesInvoice.dateIssued ??
-    datetime.today(args.company.timezone ?? "UTC").toString();
-
-  const taxCodeIds = [
-    ...new Set(
-      lines
-        .map((line) => line.taxCodeId)
-        .filter((id): id is string => Boolean(id))
-    )
-  ];
-  const ledger = args.taxLedger ?? [];
-  const journalIds = [...new Set(ledger.map((row) => row.journalId))];
-
-  const [taxCodes, postedJournals] = await Promise.all([
-    taxCodeIds.length > 0
-      ? client
-          .from("taxCode")
-          .select(TAX_CODE_SUMMARY_SELECT)
-          .eq("companyId", companyId)
-          .in("id", taxCodeIds)
-      : null,
-    journalIds.length > 0
-      ? client
-          .from("journal")
-          .select("id")
-          .eq("companyId", companyId)
-          .eq("status", "Posted")
-          .in("id", journalIds)
-      : null
-  ]);
-  if (taxCodes?.error) {
-    logger.error("Failed to load taxCodes", { error: taxCodes.error });
-  }
-  if (postedJournals?.error) {
-    logger.error("Failed to load journals", { error: postedJournals.error });
-  }
-
-  const codes = toTaxSummaryCodes(
-    taxCodes?.data as TaxCodeSummaryRow[] | null | undefined
-  );
-  const entries =
-    postedTaxSummaryEntries(
-      ledger,
-      new Set((postedJournals?.data ?? []).map((journal) => journal.id))
-    ) ??
-    lineTaxSummaryEntries(
-      salesInvoiceTaxSummaryLines(lines, args.headerShipping, codes),
-      codes,
-      date
-    );
-
-  return {
-    taxSummary: buildTaxSummary(
-      entries,
-      getSalesInvoiceTaxTotal(lines, args.salesInvoice),
-      args.currencyDecimals ?? DEFAULT_CURRENCY_DECIMALS
-    ),
-    invoiceMessages: getInvoiceMessages(
-      lines.map((line) => line.taxCodeId),
-      codes
-    ),
-    sellerRegistration: resolveSellerRegistration(
-      args.taxRegistrations,
-      args.company,
-      date,
-      args.hasActiveTaxCodes
-    )
-  };
-}
-
 /**
  * Read a sales invoice and everything its PDF and email render. A pure
  * function of its arguments — no request, no app imports — so an Inngest job
@@ -167,6 +52,13 @@ async function loadTaxSummary(args: {
  */
 export async function loadSalesInvoiceDocument(args: {
   client: Client;
+  /**
+   * Service-role client for the tax reads, whose RLS needs accounting, sales
+   * or purchasing view, so an invoicing-only reader prints the same tax as the
+   * emailed copy. Pass it only after checking the caller's permission;
+   * defaults to `client` for callers that already hold a service-role one.
+   */
+  taxClient?: Client;
   companyId: string;
   companyGroupId: string;
   invoiceId: string;
@@ -174,7 +66,15 @@ export async function loadSalesInvoiceDocument(args: {
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
-  const { client, companyId, companyGroupId, invoiceId, locale, edit } = args;
+  const {
+    client,
+    taxClient,
+    companyId,
+    companyGroupId,
+    invoiceId,
+    locale,
+    edit
+  } = args;
 
   const [
     company,
@@ -188,10 +88,7 @@ export async function loadSalesInvoiceDocument(args: {
     paymentTerms,
     shippingMethods,
     shippingTerms,
-    templateConfig,
-    taxRegistrations,
-    activeTaxCode,
-    taxLedger
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     client.from("companySettings").select("*").eq("id", companyId).single(),
@@ -249,27 +146,7 @@ export async function loadSalesInvoiceDocument(args: {
       client,
       { companyId, documentType: "salesInvoice", documentId: invoiceId },
       edit
-    ),
-    client
-      .from("taxRegistration")
-      .select("countryCode, state, registrationNumber, effectiveDate, endDate")
-      .eq("companyId", companyId),
-    // Has the company adopted tax codes? Decides whether `company.taxId`
-    // prints as the seller's tax number.
-    client
-      .from("taxCode")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .limit(1),
-    client
-      .from("taxLedger")
-      .select(
-        "journalId, createdAt, componentName, taxPercent, documentTaxableAmount, documentTaxAmount"
-      )
-      .eq("companyId", companyId)
-      .eq("documentType", "Sales Invoice")
-      .eq("documentId", invoiceId)
+    )
   ]);
 
   if (company.error) {
@@ -394,17 +271,15 @@ export async function loadSalesInvoiceDocument(args: {
   };
 
   const tax = await loadTaxSummary({
-    client,
+    taxClient: taxClient ?? client,
     companyId,
+    invoiceId,
     company: company.data,
     salesInvoice: salesInvoice.data,
     lines: salesInvoiceLines.data ?? [],
     headerShipping:
       (salesInvoiceShipment.data?.shippingCost ?? 0) *
       (salesInvoice.data.exchangeRate ?? 1),
-    taxRegistrations: taxRegistrations.data,
-    hasActiveTaxCodes: (activeTaxCode.data?.length ?? 0) > 0,
-    taxLedger: taxLedger.data,
     currencyDecimals
   });
 

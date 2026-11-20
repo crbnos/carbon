@@ -4594,6 +4594,9 @@ msgstr "Zarchiwizuj szkolenie"
 msgid "Archived"
 msgstr "Zarchiwizowane"
 
+msgid "Archived in the provider. Re-map it."
+msgstr "Zarchiwizowano w usłudze księgowej. Zmapuj ponownie."
+
 msgid "Archived Logs"
 msgstr "Zarchiwizowane dzienniki"
 
@@ -11716,6 +11719,12 @@ msgstr "Każdy wiersz to łącze z danych tej firmy do wiersza, którego nie jes
 msgid "Each line shows its item ID and revision."
 msgstr "Każda pozycja pokazuje jej ID artykułu i rewizję."
 
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "Każda pozycja otrzymuje kod podatku i stawkę, jakie jej artykuł ma w lokalizacji wysyłki faktury na dzień wystawienia. To nadpisze kod podatku, który usunięto z pozycji. Pozycje wynajmu i umów zachowują swój kod."
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "Każda pozycja otrzymuje kod podatku i stawkę, jakie jej artykuł ma w lokalizacji wysyłki zamówienia na dzień zamówienia. To nadpisze kod podatku, który usunięto z pozycji."
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Każdego miesiąca cykl leasingu zaksięgowuje odsetki i amortyzację prawa do użytkowania każdego aktywa."
 
@@ -12984,8 +12993,8 @@ msgstr "Każda Pozycja ujmuje to, co faktury."
 msgid "Every match"
 msgstr "Każde dopasowanie"
 
-msgid "Every other active tax code. Pick a different provider rate to re-map."
-msgstr "Każdy inny aktywny kod podatku. Wybierz inną stawkę dostawcy, aby zmapować ponownie."
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "Wszystkie pozostałe kody podatku. Wybierz inną stawkę z usługi księgowej, aby zmapować ponownie."
 
 msgid "Every part file starts ticked; untick any you don't want to send."
 msgstr "Wszystkie pliki części są domyślnie zaznaczone; odznacz te, których nie chcesz wysłać."
@@ -13100,6 +13109,9 @@ msgstr "Rachunek zysków i strat dla kierownictwa"
 
 msgid "Exempt"
 msgstr "Zwolniony"
+
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "Klienci zwolnieni z podatku, artykuły nieopodatkowane, nieopodatkowana wysyłka"
 
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "Zwolniony lub Niezwolniony, ustawiony na karcie Zlecenia produkcyjnego osoby. W trybie DCAA wybiera tekst certyfikacji, który pracownik certyfikuje podczas przesyłania, a długie tygodnie pracownika Zwolnionego są rozcieńczane."
@@ -18173,8 +18185,8 @@ msgstr "produkcja jest zablokowana"
 msgid "Map accounts"
 msgstr "Zmapuj konta"
 
-msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
-msgstr "Mapuj każdy kod podatku Carbon na stawkę podatku dostawcy, raz dla Sprzedaży i raz dla zakupów. Wysłane dokumenty wysyłają kwotę podatku Carbon z zmapowaną stawką."
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "Zmapuj każdy kod podatku Carbon na stawkę podatku usługi księgowej, osobno dla sprzedaży i osobno dla zakupów. Wysyłane dokumenty przekazują kwotę podatku Carbon według zmapowanej stawki. Kod odwrotnego obciążenia nie nalicza podatku przy sprzedaży, dlatego zmapuj go na stawkę 0%, np. na sprzedaż WDT. Jego dokumenty zakupowe wychodzą bez podatku i nie wymagają stawki."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapuj wyekstrahowane pozycje faktury"
@@ -20498,11 +20510,11 @@ msgstr "Nie znaleziono opcji."
 msgid "No options found."
 msgstr "Nie znaleziono opcji."
 
-msgid "No other active tax codes"
-msgstr "Brak innych aktywnych kodów podatków"
-
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Nie znaleziono innych pracowników. Dodaj pracowników, aby umożliwić transfer własności."
+
+msgid "No other tax codes"
+msgstr "Brak innych kodów podatku"
 
 msgid "No outstanding trainings"
 msgstr "Brak zaległych szkoleń"
@@ -20831,6 +20843,9 @@ msgstr "Brak operacji synchronizacji"
 msgid "No tax code"
 msgstr "Brak kodu podatku"
 
+msgid "No tax code (exempt or non-taxable)"
+msgstr "Brak kodu podatku (zwolnione lub nieopodatkowane)"
+
 msgid "No tax registration for {unregistered}"
 msgstr "Brak rejestracji podatkowej dla {unregistered}"
 
@@ -21068,6 +21083,9 @@ msgstr "Nieprzypisane"
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Nie przeniesiono: {0}. Zarejestrowano w <0>{1}</0>"
+
+msgid "Not needed"
+msgstr "Nie jest wymagane"
 
 msgid "Not now"
 msgstr "Nie teraz"
@@ -26308,8 +26326,11 @@ msgid "Retire Tax Code"
 msgstr "Wycofać Kod Podatku"
 
 #. placeholder {0}: taxCode.name
-msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
-msgstr "Wycofać kod podatku {0}? Nie można go już wybrać w nowych pozycjach. Pozycje, które go już używają, zachowują go."
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "Wycofać kod podatku {0}? Nie będzie można go już wybrać w nowych pozycjach. Pozycje, które już go używają, zachowają go. Kodu przypisanego jeszcze do klienta, dostawcy lub lokalizacji wysyłki nie można wycofać."
+
+msgid "Retired, still on documents"
+msgstr "Wycofany, nadal na dokumentach"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Wycofanie środka trwałego z użytkowania poprzez złomowanie lub sprzedaż, z zaksięgowaniem ewentualnego zysku lub straty względem wartości księgowej netto oraz zmianą statusu na Zbyty."
@@ -26544,6 +26565,10 @@ msgstr "Odwrotne obciążenie podatkiem od sprzedaży"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Odwrotne obciążenie podatkiem od sprzedaży (domyślnie)"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "Odwrotne obciążenie, naliczono {0}"
 
 msgid "Reverse Entry"
 msgstr "Wpis odwrotny"
@@ -28018,6 +28043,9 @@ msgstr "Sprzedaj {label} klientowi"
 
 msgid "Sell to Customer"
 msgstr "Sprzedaj klientowi"
+
+msgid "Seller Tax ID"
+msgstr "Identyfikator podatkowy sprzedawcy"
 
 msgid "Selling profit: <0/>"
 msgstr "Zysk ze sprzedaży: <0/>"
@@ -30611,6 +30639,15 @@ msgstr "Podatek pobrany i możliwy do odzyskania przez organ, oraz suma netto"
 msgid "Tax component"
 msgstr "Składnik podatku"
 
+msgid "Tax Component"
+msgstr "Składnik podatku"
+
+msgid "Tax Component Base"
+msgstr "Podstawa składnika podatku"
+
+msgid "Tax Component Rate"
+msgstr "Stawka składnika podatku"
+
 msgid "Tax coverage"
 msgstr "Zakres opodatkowania"
 
@@ -31575,8 +31612,8 @@ msgstr "Drukarki etykiet i dokumentów, na które drukuje Twoja firma"
 msgid "The labels every project can put on its elements."
 msgstr "Etykiety, które każdy projekt może umieścić na swoich elementach."
 
-msgid "The last day a tax component applies. To change a rate, give the old component an Expires date and add a new one, so posted documents keep the old rate."
-msgstr "Ostatni dzień, w którym obowiązuje składnik podatku. Aby zmienić stawkę, ustaw staremu składnikowi datę „Obowiązuje do” i dodaj nowy, aby zaksięgowane dokumenty zachowały starą stawkę."
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "Ostatni dzień obowiązywania składnika podatku. Aby zmienić stawkę, ustaw wygaśnięcie starego składnika na dzień przed wejściem w życie nowego, a następnie dodaj nowy. Dwa składniki o tej samej nazwie i tym samym organie nie mogą obowiązywać tego samego dnia."
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "Ostatni dzień miesiąca leasingu (dzień przed dniem {commencementDay}), po ostatnim zaksięgowanym przebiegu leasingu"
@@ -35496,8 +35533,8 @@ msgstr "Kiedy MRP zaczyna używać tę część do zapotrzebowania starej częś
 msgid "When MRP uses the successor for new demand"
 msgstr "Kiedy MRP używa następcy dla nowego zapotrzebowania"
 
-msgid "When on, a line's shipping charge joins its taxable amount, so the tax code taxes shipping at the same rate as the goods."
-msgstr "Gdy opcja jest włączona, opłata za wysyłkę w pozycji wchodzi do podstawy opodatkowania, dzięki czemu kod podatku opodatkowuje wysyłkę tą samą stawką co towary."
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "Gdy włączone, udział pozycji w kosztach wysyłki z nagłówka dokumentu wchodzi do jej podstawy opodatkowania, dzięki czemu kod podatku opodatkowuje go tą samą stawką co towary. Opłata za wysyłkę przypisana bezpośrednio do pozycji jest zawsze opodatkowana."
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Gdy włączone, atrybuty w tej kategorii pojawiają się w profilu publicznym osoby; w przeciwnym razie są widoczne tylko dla administratorów."

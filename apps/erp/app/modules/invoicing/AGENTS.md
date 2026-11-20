@@ -98,7 +98,15 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   cancellation `post-customer-contract`) group their lines with `groupByTaxRate`: one memo
   per (code, rate).
 - **Invoice tax** — invoice lines carry `taxCodeId` + `taxPercent` (resolver: accounting
-  AGENTS → Tax). `post-sales-invoice` / `post-purchase-invoice` write the `taxLedger` rows in
+  AGENTS → Tax). Sales invoice line operations decide them with `resolveSalesLineTax`
+  (sales AGENTS → Line tax), purchase invoice line operations with `resolvePurchaseLineTax`
+  (purchasing AGENTS → Line tax; a Reverse Charge line refuses a supplier tax amount); the PI
+  line routes call the operations. `recalculateSalesInvoiceTaxes` (route
+  `x+/sales-invoice+/$invoiceId.recalculate-taxes.tsx`) re-applies the decision to a Draft
+  invoice's lines, leaving rental and contract lines alone. Service job invoices
+  (`createServiceInvoice`, `service.service.ts`) take the job's ship-to's or customer's code
+  on the invoice date (`serviceInvoiceLineTaxes`).
+  `post-sales-invoice` / `post-purchase-invoice` write the `taxLedger` rows in
   the journal's transaction, and their voids write the negated rows. The sales invoice PDF's
   tax summary, invoice messages and "Seller Tax ID" come from
   `packages/documents/src/utils/tax-summary.ts` and `packages/lib/src/sales-invoice-document.server.tsx`.

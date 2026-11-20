@@ -20,7 +20,7 @@ type TaxCodeRow = NonNullable<
   Awaited<ReturnType<typeof getTaxCodesList>>["data"]
 >[number];
 
-/** The active tax codes with their components — the same cached request the
+/** The tax codes (retired ones too) with their components — the same cached request the
  *  `TaxCode` select makes, so it costs nothing extra. */
 function useTaxCodeInputs() {
   const fetcher = useLoaderQuery<{ data: TaxCodeRow[] | null }>(
@@ -50,6 +50,17 @@ export function useTaxCodeRateOn(date: string) {
       return code ? chargedTaxPercent(code, date) : null;
     },
     [codes, date]
+  );
+}
+
+/** Whether a code is Reverse Charge: its line takes no supplier tax amount,
+ *  which the server refuses as posting does. */
+export function useIsReverseCharge() {
+  const codes = useTaxCodeInputs();
+  return useCallback(
+    (taxCodeId: string | null | undefined) =>
+      !!taxCodeId && codes.get(taxCodeId)?.calculationType === "Reverse Charge",
+    [codes]
   );
 }
 

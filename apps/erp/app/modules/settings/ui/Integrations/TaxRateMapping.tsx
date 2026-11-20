@@ -42,8 +42,12 @@ type TaxDirection = "sales" | "purchase";
 export type CarbonTaxCodeOption = {
   id: string;
   name: string;
-  /** The code's combined rate today, 0..1. */
-  rate: number;
+  /** The rate the code charges today, 0..1 (0 for Reverse Charge); null
+   *  for a retired code. */
+  rate: number | null;
+  reverseCharge: boolean;
+  /** Retired, but documents still use it. */
+  retired: boolean;
 };
 
 export type ProviderTaxRateOption = {
@@ -80,10 +84,16 @@ type TaxRateMappingProps = {
   /** Shared tab bar, rendered at the top of this tab's body card. */
   tabs?: ReactNode;
   codes: CarbonTaxCodeOption[];
+  /** The fallback row's id (lines with no tax code); null when the provider
+   *  sends its own "no tax" rate for them. */
+  noTaxCodeId: string | null;
   options: ProviderTaxRateOption[];
   /** True when the provider tax-rate read failed (options renders empty). */
   optionsError: boolean;
   mappings: TaxCodeMappingRow[];
+  /** `<taxCodeId>:<direction>` of mappings to a rate the provider no longer
+   *  offers. */
+  staleMappingKeys: string[];
   unmapped: UnmappedTaxCodeRow[];
   proposals: TaxCodeMatchProposalRow[];
 };
@@ -93,13 +103,33 @@ const mappingKey = (taxCodeId: string, direction: TaxDirection) =>
 
 export function TaxRateMapping({
   tabs,
-  codes,
+  codes: taxCodes,
+  noTaxCodeId,
   options,
   optionsError,
   mappings,
+  staleMappingKeys,
   unmapped,
   proposals
 }: TaxRateMappingProps) {
+  const { t } = useLingui();
+  const codes = useMemo<CarbonTaxCodeOption[]>(
+    () =>
+      noTaxCodeId
+        ? [
+            {
+              id: noTaxCodeId,
+              name: t`No tax code (exempt or non-taxable)`,
+              rate: null,
+              reverseCharge: false,
+              retired: false
+            },
+            ...taxCodes
+          ]
+        : taxCodes,
+    [noTaxCodeId, taxCodes, t]
+  );
+  const stale = useMemo(() => new Set(staleMappingKeys), [staleMappingKeys]);
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const percentFormatter = usePercentFormatter();
@@ -154,6 +184,11 @@ export function TaxRateMapping({
     <TaxCodeMappingRowForm
       key={code.id}
       code={code}
+      isFallback={code.id === noTaxCodeId}
+      stale={{
+        sales: stale.has(mappingKey(code.id, "sales")),
+        purchase: stale.has(mappingKey(code.id, "purchase"))
+      }}
       formatRate={formatRate}
       sales={mappingsByKey.get(mappingKey(code.id, "sales")) ?? null}
       purchase={mappingsByKey.get(mappingKey(code.id, "purchase")) ?? null}
@@ -173,7 +208,9 @@ export function TaxRateMapping({
             <Trans>
               Map each Carbon tax code to a provider tax rate, once for sales
               and once for purchases. Pushed documents send Carbon's tax amount
-              with the mapped rate.
+              with the mapped rate. A Reverse Charge code charges no tax on
+              sales, so map it to a 0% rate such as zero-rated EC sales; its
+              purchase documents go out with no tax and need no rate.
             </Trans>
           </p>
           {options.length > 0 && codes.length > 0 && (
@@ -222,12 +259,11 @@ export function TaxRateMapping({
           title={<Trans>Tax codes</Trans>}
           description={
             <Trans>
-              Every other active tax code. Pick a different provider rate to
-              re-map.
+              Every other tax code. Pick a different provider rate to re-map.
             </Trans>
           }
           count={otherCodes.length}
-          emptyMessage={<Trans>No other active tax codes</Trans>}
+          emptyMessage={<Trans>No other tax codes</Trans>}
         >
           {otherCodes.map(renderRow)}
         </MappingSection>
@@ -297,30 +333,26 @@ function MappingSection({
 }
 
 /**
- * One direction's provider-rate choice on a row: the options (with the
- * stored mapping kept visible when the provider no longer lists it) and the
- * selected rate's name and percentage for the hidden metadata fields.
- * `picked` is the user's own choice; until they pick, the stored mapping
- * is the selection.
+ * One direction's provider-rate options on a row. The stored mapping stays
+ * visible when the provider no longer lists it (an archived rate), so the
+ * row shows what is mapped until the user re-maps it.
  */
-function useDirectionChoice(
+function useDirectionOptions(
   current: TaxCodeMappingRow | null,
   providerOptions: ProviderTaxRateOption[],
   formatRate: (rate: number) => string
 ) {
-  const [picked, setPicked] = useState<string | null | undefined>(undefined);
-
-  const optionsById = useMemo(
-    () => new Map(providerOptions.map((option) => [option.id, option])),
-    [providerOptions]
-  );
-
-  const options = useMemo(() => {
+  return useMemo(() => {
     const base = providerOptions.map((option) => ({
       value: option.id,
       label: `${option.name} (${formatRate(option.rate)})`
     }));
-    if (!current || optionsById.has(current.externalId)) return base;
+    if (
+      !current ||
+      providerOptions.some((option) => option.id === current.externalId)
+    ) {
+      return base;
+    }
     return [
       {
         value: current.externalId,
@@ -328,30 +360,18 @@ function useDirectionChoice(
       },
       ...base
     ];
-  }, [current, formatRate, optionsById, providerOptions]);
-
-  const selectedId =
-    picked === undefined ? (current?.externalId ?? null) : picked;
-  const selectedOption = selectedId ? optionsById.get(selectedId) : undefined;
-  const fromMapping =
-    selectedId && current?.externalId === selectedId ? current : null;
-
-  return {
-    options,
-    setPicked,
-    selectedName: selectedOption?.name ?? fromMapping?.externalName ?? "",
-    selectedRate: selectedOption?.rate ?? fromMapping?.externalRate ?? null
-  };
+  }, [current, formatRate, providerOptions]);
 }
 
 /**
  * One Carbon tax code → a sales rate and a purchase rate. Each row is its
- * own ValidatedForm posting intent=upsert-tax-code-mapping; the selected
- * rates' names and percentages travel in hidden fields as the mapping's
- * display metadata (mirroring the dimension-value row form).
+ * own ValidatedForm posting intent=upsert-tax-code-mapping; the server reads
+ * the chosen rates' names and percentages from the provider.
  */
 function TaxCodeMappingRowForm({
   code,
+  isFallback,
+  stale,
   formatRate,
   sales,
   purchase,
@@ -361,6 +381,8 @@ function TaxCodeMappingRowForm({
   canUpdate
 }: {
   code: CarbonTaxCodeOption;
+  isFallback: boolean;
+  stale: Record<TaxDirection, boolean>;
   formatRate: (rate: number) => string;
   sales: TaxCodeMappingRow | null;
   purchase: TaxCodeMappingRow | null;
@@ -373,15 +395,34 @@ function TaxCodeMappingRowForm({
   const fetcher = useAction({
     onSuccess: () => toast.success(t`Saved tax code mapping`)
   });
-  const salesChoice = useDirectionChoice(sales, salesOptions, formatRate);
-  const purchaseChoice = useDirectionChoice(
+  const salesChoices = useDirectionOptions(sales, salesOptions, formatRate);
+  const purchaseChoices = useDirectionOptions(
     purchase,
     purchaseOptions,
     formatRate
   );
 
   const placeholder = (direction: TaxDirection) =>
-    required?.has(direction) ? t`Required` : t`Select provider rate`;
+    required?.has(direction)
+      ? t`Required`
+      : direction === "purchase" && code.reverseCharge
+        ? t`Not needed`
+        : t`Select provider rate`;
+
+  const detail = isFallback
+    ? t`Exempt customers, non-taxable items, untaxed shipping`
+    : code.retired
+      ? t`Retired, still on documents`
+      : code.reverseCharge
+        ? t`Reverse Charge, ${formatRate(0)} charged`
+        : formatRate(code.rate ?? 0);
+
+  const staleNote = (direction: TaxDirection) =>
+    stale[direction] ? (
+      <span className="text-xs text-destructive">
+        <Trans>Archived in the provider. Re-map it.</Trans>
+      </span>
+    ) : null;
 
   return (
     <ValidatedForm
@@ -398,47 +439,25 @@ function TaxCodeMappingRowForm({
     >
       <input type="hidden" name="intent" value="upsert-tax-code-mapping" />
       <input type="hidden" name="taxCodeId" value={code.id} />
-      <input
-        type="hidden"
-        name="salesExternalName"
-        value={salesChoice.selectedName}
-      />
-      <input
-        type="hidden"
-        name="salesExternalRate"
-        value={salesChoice.selectedRate ?? ""}
-      />
-      <input
-        type="hidden"
-        name="purchaseExternalName"
-        value={purchaseChoice.selectedName}
-      />
-      <input
-        type="hidden"
-        name="purchaseExternalRate"
-        value={purchaseChoice.selectedRate ?? ""}
-      />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium">{code.name}</span>
-        <span className="text-xs text-muted-foreground">
-          {formatRate(code.rate)}
-        </span>
+        <span className="text-xs text-muted-foreground">{detail}</span>
       </div>
-      <div className="w-[220px] shrink-0">
+      <div className="flex w-[220px] shrink-0 flex-col gap-1">
         <Combobox
           name="salesExternalId"
-          options={salesChoice.options}
+          options={salesChoices}
           placeholder={placeholder("sales")}
-          onChange={(option) => salesChoice.setPicked(option?.value ?? null)}
         />
+        {staleNote("sales")}
       </div>
-      <div className="w-[220px] shrink-0">
+      <div className="flex w-[220px] shrink-0 flex-col gap-1">
         <Combobox
           name="purchaseExternalId"
-          options={purchaseChoice.options}
+          options={purchaseChoices}
           placeholder={placeholder("purchase")}
-          onChange={(option) => purchaseChoice.setPicked(option?.value ?? null)}
         />
+        {staleNote("purchase")}
       </div>
       <div className="w-[60px] shrink-0">
         <Submit size="sm" variant="secondary" isDisabled={!canUpdate}>
@@ -498,9 +517,7 @@ function MatchByRateDrawer({
         JSON.stringify({
           taxCodeId: proposal.taxCodeId,
           direction: proposal.direction,
-          externalId: proposal.externalId,
-          externalName: proposal.externalName,
-          externalRate: proposal.externalRate
+          externalId: proposal.externalId
         })
       );
     }

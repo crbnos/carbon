@@ -66,6 +66,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -659,23 +660,11 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           />
         </ValidatedForm>
       </ItemChangeNoticeLock>
-      {routeDataFromRoute?.taxable !== undefined && (
-        <ValidatedForm
-          key={itemId}
-          defaultValues={{ taxable: routeDataFromRoute.taxable }}
-          validator={z.object({ taxable: zfd.checkbox() })}
-          className="w-full"
-        >
-          <Boolean
-            label={t`Taxable`}
-            name="taxable"
-            variant="small"
-            onChange={(value) => {
-              onUpdate("taxable", value ? "on" : "off");
-            }}
-          />
-        </ValidatedForm>
-      )}
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{

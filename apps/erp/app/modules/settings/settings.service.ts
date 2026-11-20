@@ -165,6 +165,8 @@ import {
   type RilletProvider,
   SYNC_OPERATION_ALLOWED_TRANSITIONS,
   SyncOperationStatusSchema,
+  type TaxRateOption,
+  toXeroTaxRateOptions,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
@@ -9386,6 +9388,47 @@ export const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
   ProviderID.XERO,
   ProviderID.QUICKBOOKS
 ]);
+
+/**
+ * The provider's active tax rates as mapping options, both directions. Xero's
+ * read returns [] on failure (an empty list then reads as "no rates"); a
+ * thrown read sets `optionsError`. The settings drawer shows what loaded;
+ * saving a mapping refuses when the read fails.
+ */
+export async function getProviderTaxRateOptions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{ options: TaxRateOption[]; optionsError: boolean }> {
+  try {
+    const providerId =
+      integrationId === ProviderID.XERO
+        ? ProviderID.XERO
+        : ProviderID.QUICKBOOKS;
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+    const options =
+      providerId === ProviderID.XERO
+        ? toXeroTaxRateOptions(await (provider as XeroProvider).listTaxRates())
+        : await (provider as QboProvider).listTaxRateOptions();
+    return { options, optionsError: false };
+  } catch (err) {
+    getLogger("erp", "settings", "tax-rates").error(
+      "Failed to load provider tax rates",
+      { companyId, integrationId, error: err }
+    );
+    return { options: [], optionsError: true };
+  }
+}
 
 // Strict backflush gaps. Each count and its drawer list share one query, the
 // SQL form of `needsPullFrom`, so they cannot disagree.

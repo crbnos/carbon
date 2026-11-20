@@ -4,6 +4,7 @@
 
 export * from "./core/account-mapping";
 export * from "./core/account-mapping-ai";
+export * from "./core/bill-tax-plan";
 export * from "./core/counterpart";
 export * from "./core/counterpart-types";
 export * from "./core/credit-reason-item";

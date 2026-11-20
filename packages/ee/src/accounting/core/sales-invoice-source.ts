@@ -98,11 +98,6 @@ export async function loadSalesInvoices(
         .onRef("item.id", "=", "salesInvoiceLine.itemId")
         .onRef("item.companyId", "=", "salesInvoiceLine.companyId")
     )
-    .leftJoin("taxCode", (join) =>
-      join
-        .onRef("taxCode.id", "=", "salesInvoiceLine.taxCodeId")
-        .onRef("taxCode.companyId", "=", "salesInvoiceLine.companyId")
-    )
     .select([
       "salesInvoiceLine.id",
       "salesInvoiceLine.invoiceId",
@@ -118,7 +113,8 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.nonTaxableAddOnCost",
       "salesInvoiceLine.taxPercent",
       "salesInvoiceLine.taxCodeId",
-      "taxCode.taxesShipping",
+      // The line's snapshot of its code's "taxes shipping", never the live code.
+      "salesInvoiceLine.taxesShipping",
       "salesInvoiceLine.serviceJobId",
       "item.readableIdWithRevision as itemReadableIdWithRevision"
     ])

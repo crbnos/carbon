@@ -54,6 +54,13 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
 import {
+  decideLineTax,
+  hasNoRateInForce,
+  itemTaxDecision,
+  type LineTax,
+  noRateInForceMessage
+} from "../accounting/accounting.utils";
+import {
   diffLaborGroups,
   type LaborDimension,
   type LaborGroup,
@@ -68,6 +75,7 @@ import {
   createAdjustmentJournal,
   invokePosting,
   isActiveCompanyEmployee,
+  loadTaxCodes,
   refuseUnlessOwned,
   resolveAccountingPeriod,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
@@ -2882,7 +2890,8 @@ export const createServiceInvoicePermission = {
  *    the customer's payment term and currency) and `salesInvoiceShipment`;
  * 4. inserts the lines, each with `serviceJobId`;
  * 5. stamps the job with the invoice and sets it Invoiced.
- * Tax stays at 0, as create-service-order-invoice did.
+ * Each line takes the tax a new invoice line takes on the invoice date: the
+ * job's ship-to's code, else the customer's (`serviceInvoiceLineTaxes`).
  */
 export async function createServiceInvoice(
   ctx: ServiceContext,
@@ -3019,8 +3028,26 @@ export async function createServiceInvoice(
     if (rate.error) throw new Error(rate.error.message);
     const exchangeRate = Number(rate.data);
 
+    // Each line's tax, as any new invoice line takes it: the job's ship-to's
+    // code, else the customer's, on the invoice date; none for an exempt
+    // customer or a non-taxable item.
+    const lineTaxes = await serviceInvoiceLineTaxes(ctx, trx, {
+      customerId,
+      customerLocationId: job.customerLocationId,
+      date: today,
+      itemIds: lines.map((line) => line.itemId)
+    });
+
     const subtotal = round(
       lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+    );
+    const totalTax = round(
+      lines.reduce(
+        (sum, line) =>
+          sum +
+          line.quantity * line.unitPrice * lineTaxes(line.itemId).taxPercent,
+        0
+      )
     );
 
     const readableInvoiceId = await getNextSequence(
@@ -3055,8 +3082,8 @@ export async function createServiceInvoice(
         dateIssued: today,
         subtotal,
         totalDiscount: 0,
-        totalTax: 0,
-        totalAmount: subtotal,
+        totalTax,
+        totalAmount: round(subtotal + totalTax),
         opportunityId: opportunity.id,
         companyId,
         createdBy: userId
@@ -3087,7 +3114,7 @@ export async function createServiceInvoice(
           quantity: line.quantity,
           unitPrice: line.unitPrice,
           unitOfMeasureCode: line.unitOfMeasureCode,
-          taxPercent: 0,
+          ...lineTaxes(line.itemId),
           exchangeRate,
           locationId: job.locationId,
           serviceJobId: job.id,
@@ -3116,6 +3143,88 @@ export async function createServiceInvoice(
       invoiceId: readableInvoiceId
     };
   });
+}
+
+/**
+ * The tax of a service invoice's lines, by item: one decision for the job's
+ * customer and ship-to on `date` (`decideLineTax`, read inside `trx`), zeroed for a
+ * non-taxable item (`itemTaxDecision`): the default a new invoice line opens
+ * with, the customer's bare percent included. A code with no rate in force
+ * on `date` is refused.
+ */
+export async function serviceInvoiceLineTaxes(
+  ctx: ServiceContext,
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    customerId: string;
+    customerLocationId: string | null;
+    date: string;
+    itemIds: ReadonlyArray<string | null>;
+  }
+): Promise<(itemId: string | null) => LineTax> {
+  const companyId = ctx.company.id;
+  const itemIds = [...new Set(args.itemIds.filter((id): id is string => !!id))];
+  const [customer, customerTax, location, items] = await Promise.all([
+    trx
+      .selectFrom("customer")
+      .select("taxPercent")
+      .where("companyId", "=", companyId)
+      .where("id", "=", args.customerId)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("customerTax")
+      .select(["taxExempt", "taxExemptionReason", "taxCodeId"])
+      .where("companyId", "=", companyId)
+      .where("customerId", "=", args.customerId)
+      .executeTakeFirst(),
+    args.customerLocationId
+      ? trx
+          .selectFrom("customerLocation")
+          .select("taxCodeId")
+          .where("companyId", "=", companyId)
+          .where("id", "=", args.customerLocationId)
+          .executeTakeFirst()
+      : undefined,
+    itemIds.length > 0
+      ? trx
+          .selectFrom("item")
+          .select(["id", "taxable"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", itemIds)
+          .execute()
+      : []
+  ]);
+  const locationCodeId = location?.taxCodeId ?? null;
+  const partyCodeId = customerTax?.taxCodeId ?? null;
+  const codes = await loadTaxCodes(
+    trx,
+    companyId,
+    [locationCodeId, partyCodeId],
+    null
+  );
+  const decision = decideLineTax({
+    source: "sales",
+    taxExempt: customerTax?.taxExempt ?? false,
+    taxExemptionReason: customerTax?.taxExemptionReason ?? null,
+    itemTaxable: true,
+    locationTaxCode: locationCodeId
+      ? (codes.get(locationCodeId) ?? null)
+      : null,
+    partyTaxCode: partyCodeId ? (codes.get(partyCodeId) ?? null) : null,
+    fallbackTaxPercent: Number(customer?.taxPercent ?? 0),
+    date: args.date
+  });
+  if (hasNoRateInForce(decision)) {
+    throw new InvalidInputError(noRateInForceMessage(args.date));
+  }
+  const taxable = new Map(items.map((item) => [item.id, item.taxable]));
+  return (itemId) => {
+    const tax = itemTaxDecision(
+      decision,
+      !itemId || taxable.get(itemId) !== false
+    );
+    return { taxCodeId: tax.taxCodeId, taxPercent: tax.taxPercent };
+  };
 }
 
 /**
