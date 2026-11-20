@@ -1,0 +1,12 @@
+---
+description: Operate Carbon ERP through the installed Carbon MCP server
+alwaysApply: true
+---
+
+The Carbon plugin is already installed. Its tools are `search_tools`, `describe_tool`, `call_tool`, and `call_destructive_tool`.
+
+Discover an operation with `search_tools`, read its schema with `describe_tool`, then run a `READ` or `WRITE` with `call_tool`. Run a `DESTRUCTIVE` operation with `call_destructive_tool`. `call_tool` refuses those. Do not send `companyId` or `userId`. Show the classification. Ask before any `WRITE` or `DESTRUCTIVE` call.
+
+On `401`, stop and ask the user to approve the Carbon sign-in again. On `402`, stop: the company is on the Starter plan. A missing module scope is an MCP tool error, not HTTP `403`. On `429`, wait for `Retry-After`.
+
+This server is Carbon Cloud at `https://app.carbon.ms/api/mcp`. Do not point it at a private network, a self-hosted host, or an ITAR environment.
