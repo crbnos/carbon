@@ -967,6 +967,9 @@ msgstr "डिफ़ॉल्ट"
 msgid "Delete"
 msgstr "हटाएं"
 
+msgid "Delete {name}"
+msgstr "{name} को हटाएं"
+
 msgid "Delete {stepLabel}"
 msgstr "{stepLabel} हटाएँ"
 
@@ -1915,6 +1918,9 @@ msgstr "नया रिकॉर्ड"
 msgid "New Service Job"
 msgstr "नया सेवा जॉब"
 
+msgid "New Version"
+msgstr "नया संस्करण"
+
 msgid "Newest first"
 msgstr "सबसे नया पहले"
 
@@ -1975,6 +1981,9 @@ msgstr "कोई देश नहीं मिला।"
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "कोई ग्राहक संपत्ति क्रमांक {0} नहीं रखती। ग्राहक चुनें।"
+
+msgid "No data yet"
+msgstr "अभी तक कोई डेटा नहीं"
 
 msgid "No default bin"
 msgstr ""
@@ -3812,6 +3821,9 @@ msgstr "सत्यापन विफल"
 msgid "Verify"
 msgstr "सत्यापित करें"
 
+msgid "Versions"
+msgstr "संस्करण"
+
 msgid "View"
 msgstr "देखें"
 
@@ -3898,6 +3910,9 @@ msgstr "आपकी {processName} योग्यता {expiredDate} को �
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "जैसे ही आप अपने पहले रिकॉर्ड बनाएँगे या आयात करेंगे, आपका डेटा यहाँ दिखाई देगा"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"

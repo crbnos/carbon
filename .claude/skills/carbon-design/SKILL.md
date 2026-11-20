@@ -103,7 +103,7 @@ screen will post to them. Canonical starting points:
 | Properties panel | `modules/quality/ui/Issue/IssueProperties.tsx` |
 | Settings | `routes/x+/settings+/sales.tsx`, `routes/x+/settings+/items.tsx` |
 | Status wrapper | `modules/sales/ui/Quotes/QuoteStatus.tsx` + `packages/utils/src/status-colors.ts` |
-| Confirm / transition modal | `components/Modals/ConfirmDelete/ConfirmDelete.tsx`, `modules/inventory/ui/Receipts/ReceiptPostModal.tsx` |
+| Confirm / transition modal | `ConfirmDelete` (`@carbon/form/ConfirmDelete`), `modules/inventory/ui/Receipts/ReceiptPostModal.tsx` |
 | MES operator screen | `apps/mes/app/components/JobOperation/JobOperation.tsx`, `apps/mes/app/components/OperationsList.tsx` |
 
 ### Step 3 — Decide reuse / extend / create

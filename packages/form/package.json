@@ -1,6 +1,7 @@
 {
   "name": "@carbon/form",
   "peerDependencies": {
+    "@carbon/query": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@lingui/react": "catalog:",
@@ -42,7 +43,8 @@
     "zustand": "catalog:"
   },
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./ConfirmDelete": "./src/ConfirmDelete.tsx"
   },
   "private": true,
   "scripts": {

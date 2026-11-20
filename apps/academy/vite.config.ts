@@ -49,10 +49,8 @@ export default defineConfig(({ isSsrBuild }) => ({
       // Directory (not index.ts) so subpath imports like
       // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
       "@carbon/utils": path.resolve(import.meta.dirname, "../../packages/utils/src"),
-      "@carbon/form": path.resolve(
-        import.meta.dirname,
-        "../../packages/form/src/index.tsx"
-      ),
+      // A directory too, for `@carbon/form/ConfirmDelete`.
+      "@carbon/form": path.resolve(import.meta.dirname, "../../packages/form/src"),
     },
   },
 }));

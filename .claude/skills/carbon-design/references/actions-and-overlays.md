@@ -113,7 +113,7 @@ When the primary action itself means "cancel", rename the dismiss button: "Back"
 - Simple yes/no confirms: use `Confirm` (`confirmVariant`, `confirmText`) — it binds ⌘↵ via
   `SHORTCUTS.confirm` like `ConfirmDelete`.
 
-Exemplars: `apps/erp/app/components/Modals/ConfirmDelete/ConfirmDelete.tsx`,
+Exemplars: `packages/form/src/ConfirmDelete.tsx`,
 `modules/inventory/ui/Receipts/ReceiptPostModal.tsx`,
 `modules/sales/ui/SalesOrder/CancelSalesOrderModal.tsx`.
 

@@ -61,6 +61,8 @@ return api.things.updateThing({ ...input.data, id: input.params.thingId });
 
 `Input`, `Number`, `Select`, `Combobox`, `CreatableCombobox`, `MultiSelect`, `Boolean`, `TextArea`, `DatePicker`, `DateTimePicker`, `TimePicker`, `Timezone`, `Hidden`, `Password`, `PhoneInput`, `Radios`, `Array`, `Submit` — plus `*Controlled` variants for `Input`, `Number`, `Select`, `TextArea`.
 
+`ConfirmDelete` (the delete confirmation modal) is a subpath, `@carbon/form/ConfirmDelete`, not a root export: it imports `@carbon/query`, and the root stays free of it for apps that do not use the modal. Each app's `vite.config.ts` aliases `@carbon/form` to the `src` directory so the subpath resolves. The ERP imports it through `~/components/Modals`.
+
 ## Cross-References
 
 - `.claude/rules/conventions-forms.md` — full forms conventions, validator rules, action patterns, checklist

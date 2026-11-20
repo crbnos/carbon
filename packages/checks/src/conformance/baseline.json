@@ -70,7 +70,6 @@
   "no-duplicated-app-file::EmployeeAvatar.tsx::apps/erp/app/components/EmployeeAvatar.tsx + apps/mes/app/components/EmployeeAvatar.tsx",
   "no-duplicated-app-file::FileDropzone.tsx::apps/erp/app/components/FileDropzone.tsx + apps/mes/app/components/FileDropzone.tsx",
   "no-duplicated-app-file::Filter.tsx::apps/erp/app/components/Table/components/Filter/Filter.tsx + apps/mes/app/components/Filter/Filter.tsx",
-  "no-duplicated-app-file::Hyperlink.tsx::apps/erp/app/components/Hyperlink.tsx + apps/mes/app/components/Hyperlink.tsx",
   "no-duplicated-app-file::Icons.tsx::apps/erp/app/components/Configurator/Icons.tsx + apps/erp/app/components/Icons.tsx + apps/mes/app/components/Icons.tsx",
   "no-duplicated-app-file::ItemThumbnail.tsx::apps/erp/app/components/ItemThumbnail.tsx + apps/mes/app/components/ItemThumbnail.tsx",
   "no-duplicated-app-file::RealtimeDataProvider.tsx::apps/erp/app/components/RealtimeDataProvider.tsx + apps/mes/app/components/RealtimeDataProvider.tsx",

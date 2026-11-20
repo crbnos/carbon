@@ -967,6 +967,9 @@ msgstr "По умолчанию"
 msgid "Delete"
 msgstr "Удалить"
 
+msgid "Delete {name}"
+msgstr "Удалить {name}"
+
 msgid "Delete {stepLabel}"
 msgstr "Удалить {stepLabel}"
 
@@ -1915,6 +1918,9 @@ msgstr "Новая запись"
 msgid "New Service Job"
 msgstr "Новая заявка на обслуживание"
 
+msgid "New Version"
+msgstr "Новая версия"
+
 msgid "Newest first"
 msgstr "Новые в первую очередь"
 
@@ -1975,6 +1981,9 @@ msgstr "Страна не найдена."
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Ни один актив покупателя не имеет серийный номер {0}. Выберите покупателя."
+
+msgid "No data yet"
+msgstr "Данных пока нет"
 
 msgid "No default bin"
 msgstr ""
@@ -3812,6 +3821,9 @@ msgstr "Проверка не удалась"
 msgid "Verify"
 msgstr "Подтвердить"
 
+msgid "Versions"
+msgstr "Версии"
+
 msgid "View"
 msgstr "Просмотр"
 
@@ -3898,6 +3910,9 @@ msgstr "Ваша квалификация по «{processName}» истекла 
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Ваши данные появятся здесь, как только вы создадите или импортируете первые записи"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."
