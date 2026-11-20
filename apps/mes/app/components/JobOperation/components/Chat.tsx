@@ -100,7 +100,7 @@ export function OperationChat({
   const [message, setMessage] = useState("");
 
   const notify = useDebounce(
-    async () => {
+    async (noteId: string) => {
       if (!carbon) return;
 
       const response = await fetch(path.to.messagingNotify, {
@@ -110,7 +110,8 @@ export function OperationChat({
         },
         body: JSON.stringify({
           type: "jobOperationNote",
-          operationId: operation.id
+          operationId: operation.id,
+          noteId
         }),
         credentials: "include" // This is sufficient for CORS with cookies
       });
@@ -144,7 +145,7 @@ export function OperationChat({
 
     await Promise.all([
       carbon?.from("jobOperationNote").insert(newMessage),
-      notify()
+      notify(newMessage.id)
     ]);
   };
 
