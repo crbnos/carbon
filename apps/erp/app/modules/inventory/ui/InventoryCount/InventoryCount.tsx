@@ -54,6 +54,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import InventoryCountHistory from "./InventoryCountHistory";
 import InventoryCountImport from "./InventoryCountImport";
+import InventoryCountPostModal from "./InventoryCountPostModal";
 import InventoryCountScanField from "./InventoryCountScanField";
 
 type InventoryCountDetailsProps = {
@@ -97,6 +98,7 @@ const InventoryCountDetails = ({
   const notesModal = useDisclosure();
   const historyModal = useDisclosure();
   const importModal = useDisclosure();
+  const postModal = useDisclosure();
   const revalidator = useRevalidator();
   const reopenFetcher = useFetcher();
   // Post submits via a fetcher: a refusal is toasted (by default for an
@@ -104,7 +106,10 @@ const InventoryCountDetails = ({
   // and flashes normally.
   const postFetcher = useAction<typeof postAction>({
     onSuccess: (data) => {
-      if ("invalidLineIds" in data) toast.error(data.message);
+      if ("invalidLineIds" in data) {
+        postModal.onClose();
+        toast.error(data.message);
+      }
     }
   });
   // Rows the last post attempt rejected (an invalid serial quantity) —
@@ -210,19 +215,14 @@ const InventoryCountDetails = ({
             </reopenFetcher.Form>
           </RecordAction>
           <RecordAction slot="primary">
-            <postFetcher.Form
-              method="post"
-              action={path.to.inventoryCountPost(inventoryCount.id!)}
+            <Button
+              isDisabled={!canUpdate}
+              isLoading={postFetcher.state !== "idle"}
+              leftIcon={<LuSend />}
+              onClick={postModal.onOpen}
             >
-              <Button
-                type="submit"
-                isDisabled={!canUpdate}
-                isLoading={postFetcher.state !== "idle"}
-                leftIcon={<LuSend />}
-              >
-                {t`Post`}
-              </Button>
-            </postFetcher.Form>
+              {t`Post`}
+            </Button>
           </RecordAction>
         </>
       )}
@@ -274,6 +274,13 @@ const InventoryCountDetails = ({
         summary={summary}
         isLoading={revalidator.state !== "idle"}
         onClose={confirmModal.onClose}
+      />
+
+      <InventoryCountPostModal
+        open={postModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        fetcher={postFetcher}
+        onClose={postModal.onClose}
       />
 
       <InventoryCountHistory

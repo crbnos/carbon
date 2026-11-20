@@ -5,6 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { inventoryCountPostValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 // The flash shares the session cookie, so a long list of parts would make the
@@ -36,12 +37,15 @@ function partList(rows: Array<{ part: string; unit: string | null }>) {
 
 // Post (Pending -> Posted): the variances become inventory adjustments.
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator().request(args, { params: ["id"] });
+  const input = await validator(inventoryCountPostValidator).request(args, {
+    params: ["id"]
+  });
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
   const result = await api.inventory.postInventoryCount({
-    inventoryCountId: id
+    inventoryCountId: id,
+    postingDate: input.data.postingDate
   });
   // An error is toasted by the Post button's fetcher.
   if (!result.data) return result;
