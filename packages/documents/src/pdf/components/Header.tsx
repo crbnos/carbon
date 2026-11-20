@@ -91,7 +91,7 @@ const Header = ({
           </View>
         ) : null}
       </View>
-      {/* A title longer than 55% of the page wraps inside this bound; short
+      {/* A title longer than 55% of the header wraps inside this bound; short
           titles size to their content. `ml-auto` keeps the title on the right
           when it wraps onto its own line. */}
       <View
