@@ -34,6 +34,7 @@ import {
   maintenanceDispatchStatus,
   maintenanceDispatchValidator,
   maintenanceScheduleValidator,
+  newTrainingAssignees,
   processValidator,
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
@@ -1688,7 +1689,10 @@ export const createTrainingAssignment = defineServiceFn({
     }
 
     if (!isExternal) {
-      await service.notifyTrainingAssignment(ctx, insert.data.id, groupIds);
+      await service.notifyTrainingAssignment(ctx, insert.data.id, {
+        type: "group",
+        groupIds
+      });
     }
     return { id: insert.data.id };
   }
@@ -1699,8 +1703,8 @@ export const createTrainingAssignment = defineServiceFn({
  *
  * @remarks
  * Internal or external is fixed at creation and read from the stored
- * assignment, never the input. The groups of an internal assignment are
- * notified.
+ * assignment, never the input. For an internal assignment, only the people
+ * the change adds are notified.
  *
  * @mcp
  */
@@ -1722,6 +1726,35 @@ export const updateTrainingAssignment = defineServiceFn({
     }
     const isExternal = stored.data.trainingId === null;
 
+    // Everyone else was told when they were assigned; telling them again on
+    // every save emailed a whole group for adding one person. Resolved before
+    // the save: a failure after it would leave the added people never told,
+    // and saving again would find no one new.
+    let added: string[] = [];
+    if (!isExternal) {
+      const [before, after] = await Promise.all([
+        client.rpc("users_for_groups", { groups: stored.data.groupIds ?? [] }),
+        client.rpc("users_for_groups", { groups: groupIds })
+      ]);
+      if (before.error || after.error) {
+        const error = before.error ?? after.error;
+        logger.error("Failed to resolve training assignees", {
+          companyId,
+          trainingAssignmentId: id,
+          error
+        });
+        return ctx.error(
+          "internal",
+          "Failed to resolve who is assigned this training",
+          error
+        );
+      }
+      added = newTrainingAssignees(
+        (before.data ?? []) as string[],
+        (after.data ?? []) as string[]
+      );
+    }
+
     const update = await service.upsertTrainingAssignment(client, {
       id,
       name: isExternal ? name : null,
@@ -1733,7 +1766,12 @@ export const updateTrainingAssignment = defineServiceFn({
       return ctx.error("internal", "Failed to update assignment", update.error);
     }
 
-    if (!isExternal) await service.notifyTrainingAssignment(ctx, id, groupIds);
+    if (added.length > 0) {
+      await service.notifyTrainingAssignment(ctx, id, {
+        type: "users",
+        userIds: added
+      });
+    }
     return { id };
   }
 });
