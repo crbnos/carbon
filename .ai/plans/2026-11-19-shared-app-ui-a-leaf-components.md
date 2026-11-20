@@ -73,15 +73,41 @@ Historical plans, specs and runs keep their paths.
 
 ## Tasks
 
-- [ ] Create the seven `packages/react/src` files; add them to `src/index.tsx`.
-- [ ] Create `packages/form/src/ConfirmDelete.tsx`, the `./ConfirmDelete`
+- [x] Create the seven `packages/react/src` files; add them to `src/index.tsx`.
+- [x] Create `packages/form/src/ConfirmDelete.tsx`, the `./ConfirmDelete`
       export and the `@carbon/query` peer dependency; `pnpm install`.
-- [ ] Make the eight ERP files re-export only.
-- [ ] Remove the `Hyperlink.tsx` baseline entry.
-- [ ] Update the docs above.
-- [ ] Lingui extract + clean (strings move from `apps/erp/app` to packages
+- [x] Make the eight ERP files re-export only.
+- [x] Remove the `Hyperlink.tsx` baseline entry.
+- [x] Update the docs above.
+- [x] Lingui extract + clean (strings move from `apps/erp/app` to packages
       that both catalogs read).
-- [ ] Verify: typecheck `@carbon/react`, `@carbon/form`, `erp`, `mes`; Biome;
+- [x] Verify: typecheck `@carbon/react`, `@carbon/form`, `erp`, `mes`; Biome;
       `@carbon/react` and `@carbon/checks` tests; conformance.
-- [ ] Browser before/after: a record page, a list page, settings, a setup
-      wizard, a delete confirm, at desktop and phone width.
+- [x] Local ERP smoke check: Jeremy confirmed rendering and a successful real
+      delete through `ConfirmDelete` at `e4d8762a6`.
+- [ ] Complete and record the before/after browser matrix: record page, list,
+      settings, setup wizard and delete modal at desktop and phone widths.
+      The smoke check above does not establish coverage of this full matrix.
+
+## Verification evidence
+
+Implementation reviewed at `e4d8762a6` against base `4efbb4ac0`:
+
+- All eight component bodies are unchanged apart from imports and export syntax.
+  Existing ERP import paths preserve default and named exports; props, handlers,
+  markup and classes are unchanged. Shared exports are additive.
+- Local tests passed: `@carbon/checks` 436, `@carbon/react` 203, `@carbon/form` 45.
+  All 10 retained ERP CSS artifacts compare byte-for-byte equal. CSS equality
+  supports visual preservation; it does not verify browser interactions.
+- Recorded scoped typechecks and four app production builds passed. GitHub
+  Checks run `44664256047`, attempt 2, passed. Attempt 1 timed out in the
+  unchanged `QuotePDF.test.ts`; that focused test also passed locally.
+- Vercel academy, carbon, carbon-us, mes and mes-us checks were canceled by
+  their ignored-build rules. They are not evidence of preview builds. The
+  docs preview deployed.
+
+For the remaining browser pass, use a sales-order line with no shipments to
+exercise `Empty` in its Shipments section. Generic empty tables have their own
+empty-state UI. Also check `ReadOnlyField(s)` on a read-only record and
+`VersionMenu` on a versioned record. Record route, viewport, commit and result
+for each check; leave unobserved steps unchecked.
