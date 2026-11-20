@@ -327,7 +327,7 @@ export default function SalesSettingsRoute() {
 
         <PartNumbersCard
           party="customer"
-          value={companySettings.customerPartNumberDisplay ?? "Ours First"}
+          value={companySettings.customerPartNumberDisplay}
         />
 
         <SettingsSectionHeader>

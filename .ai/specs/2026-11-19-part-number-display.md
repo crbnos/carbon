@@ -210,7 +210,7 @@ The migration also adds:
 - The stamp trigger on `quoteLine` (through `quoteId`), `salesInvoiceLine` (through `invoiceId`) and `shipmentLine` (through `shipmentId`). A shipment with no customer gives a null, which prints as the legacy packing slip.
 - A customer change trigger: AFTER UPDATE OF `customerId` on `quote`, `salesOrder`, `salesInvoice` and `shipment`. It stamps the new customer's value onto every line that has a value, in one UPDATE per document.
 - `copy_sales_order_line_customer_part()`: BEFORE INSERT OR UPDATE OF `itemId` on `salesOrderLine`. On INSERT with no copy, and on every item change, it writes the pair from `customerPartToItem` for the order's customer. The pair is null when the cross-reference has no row.
-- On a `salesOrder` customer change, the same trigger also writes the new customer's pair onto every line.
+- On a `quote` or `salesOrder` customer change, the same trigger also writes the new customer's pair onto every line. A line whose values do not change is not written.
 - Every trigger UPDATE stamps `updatedBy` (`COALESCE` of the document's `updatedBy` and `createdBy`) and `updatedAt`, per the lesson on trigger audit columns.
 - `salesOrderLines`: DROP and CREATE, because `sl.*` grows. Copy the body from `20261117063412_delivery-date-check.sql`. `cp."customerPartId"` becomes `"customerPartIdFromCustomer"`, and `cp."customerPartRevision"` becomes `"customerPartRevisionFromCustomer"`.
 - `salesInvoiceLines`: `customerPartId` and a new `customerPartRevision` come from the order line's copy when it has one, else from `customerPartToItem`.
@@ -227,7 +227,7 @@ Demo data: the triggers stamp the seeded lines and copy the numbers as they do f
 
 `@carbon/documents`:
 
-1. Add `utils/part-number.ts`. It exports `PART_NUMBER_DISPLAYS`, `resolvePartNumberDisplay(surface, stored)`, `formatPartNumber({ ours, theirs, theirsRevision }, display)` and `lineCustomerPart(line)` (the copy, else the `FromCustomer` value). `utils/index.ts` re-exports them.
+1. Add `utils/part-number.ts`. It exports `PART_NUMBER_DISPLAYS`, `resolvePartNumberDisplay(surface, stored)`, `formatPartNumber({ ours, theirs, theirsRevision }, display)` and `formatLinePartNumber(surface, parts, stored, draft)`. `lineCustomerPart(line)` (the copy, else the `FromCustomer` value) lives in `utils/sales-order.ts`. `utils/index.ts` re-exports them.
 2. `utils/quote.ts`, `utils/sales-order.ts` and `utils/sales-invoice.ts`: `getLineDescription` resolves the line's own display choice and calls `formatPartNumber`. The sales order `getLineDescriptionDetails` stops appending the customer part number.
 3. `template/mergeFields.ts`: add `LINE.customerPartId` ("Line Customer Part ID") and `LINE.customerPartRevision` ("Line Customer Part Revision") as `value` fields. The labels follow "Line Supplier Part ID". Add them and `LINE.itemId` to the quote, sales order, sales invoice and packing slip line fields. Add each name to `MERGE_FIELD_NAMES`.
 4. Line var builders: `buildQuoteLineVars`, `buildSalesOrderLineVars`, the sales invoice builder in `pdf/blocks/vars.ts` and `buildPackingSlipLineVars` fill the new fields. They print `line.description` or `line.item` per the line's display choice.
@@ -256,7 +256,7 @@ The purchase order and its supplier part number are the sibling.
 |---|---|---|
 | Line copy | `purchaseOrderLine.supplierPartId` | `salesOrderLine.customerPartId`, `customerPartRevision` |
 | View fallback | `purchaseOrderLines.supplierPartIdFromSupplier` | `salesOrderLines.customerPartIdFromCustomer` |
-| Line helper | `getLineSupplierPartId` (`utils/purchase-order.ts`) | `lineCustomerPart` (`utils/part-number.ts`) |
+| Line helper | `getLineSupplierPartId` (`utils/purchase-order.ts`) | `lineCustomerPart` (`utils/sales-order.ts`) |
 | Merge field | `LINE.supplierPartId` | `LINE.customerPartId`, `LINE.customerPartRevision` |
 
 Deviations, each a Design Decision above:
@@ -431,4 +431,4 @@ Part II:
 - 2026-11-19: Built and self-tested on the local stack. Two changes from the design:
   1. A line title breaks only between words, so a part number never splits inside itself (`breakLongItemWord`, `pdf/blocks/itemText.ts`). A word longer than 16 characters still breaks every 16 characters. This also applies to legacy lines: a truncated long title can end a few characters earlier.
   2. A legacy packing slip line prints our part number as it did before (`packingSlip: "Ours Only"` in the legacy map).
-- 2026-11-21: Strict review fixes. The triggers skip only `app.backup_load`; the dataset helper is gone. The migrations are dated after main's newest. A restamp writes only the lines whose values change. A purchase order's lines cannot change their choice in Needs Approval either (`purchaseOrderPartNumberRefusal`, inside `amendPurchaseOrder`). Edit document sets item lines only and is disabled on a document with none. A long part number wraps after its own separators.
+- 2026-11-21: Strict review fixes. The triggers skip only `app.backup_load`; the dataset helper is gone. The migrations are dated after main's newest. A restamp writes only the lines whose values change. A purchase order's lines cannot change their choice in Needs Approval either (`purchaseOrderPartNumberRefusal`, inside `amendPurchaseOrder`). Edit document sets item lines only and is disabled on a document with none. A long part number wraps after its own separators. Sales: a quote's customer change copies the new customer's numbers onto its lines, an invoice made from a shipment takes the shipment line's choice, the Delivery Ticket and Receiving Report offer no pick, and the packing slip's legacy lines go through `LEGACY_PART_NUMBER_DISPLAY`. The sales formatters share `formatLinePartNumber` and `linePartNumberVars`.

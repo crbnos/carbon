@@ -161,7 +161,7 @@ describe("sales line part numbers", () => {
     const row = buildPackingSlipLineVars(
       { ...customerPart, partNumberDisplay: "Theirs Only" } as never,
       [],
-      "Ours Only"
+      { partNumberDisplayDraft: "Ours Only" }
     );
     expect(row["line.item"]).toBe("P000123.B");
     expect(row["line.customerPartId"]).toBe("C-100");
@@ -170,7 +170,8 @@ describe("sales line part numbers", () => {
   it("prints a legacy packing slip line's item ID only", () => {
     const row = buildPackingSlipLineVars(
       { ...customerPart, partNumberDisplay: null } as never,
-      []
+      [],
+      {}
     );
     expect(row["line.item"]).toBe("P000123.B");
   });

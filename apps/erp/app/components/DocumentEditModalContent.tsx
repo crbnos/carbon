@@ -129,9 +129,10 @@ export default function DocumentEditModal({
                 blocks: editor.template.blocks,
                 settings: editor.template.settings as DocumentSettings
               },
-              partNumberParty:
-                DOCUMENT_EDIT_RECORDS[documentType].partNumberLines?.party ??
-                null,
+              partNumberParty: editor.partNumbersShown
+                ? (DOCUMENT_EDIT_RECORDS[documentType].partNumberLines?.party ??
+                  null)
+                : null,
               partNumbersLocked: editor.partNumbersLocked,
               partNumberLineCount: editor.partNumberLineCount
             }}

@@ -4,11 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
-import {
-  formatPartNumber,
-  type PartNumberDisplay,
-  resolvePartNumberDisplay
-} from "./part-number";
+import { formatLinePartNumber, type PartNumberDisplay } from "./part-number";
 
 type SalesInvoiceLineRow =
   Database["public"]["Views"]["salesInvoiceLines"]["Row"];
@@ -47,16 +43,15 @@ export function getLineDescription(
       return line?.description;
     default:
       if (isItemlessServiceLine(line)) return line?.description;
-      return formatPartNumber(
+      return formatLinePartNumber(
+        "salesInvoice",
         {
           ours: line?.itemReadableId,
           theirs: line?.customerPartId,
           theirsRevision: line?.customerPartRevision
         },
-        resolvePartNumberDisplay(
-          "salesInvoice",
-          draft ?? line?.partNumberDisplay
-        )
+        line?.partNumberDisplay,
+        draft
       );
   }
 }

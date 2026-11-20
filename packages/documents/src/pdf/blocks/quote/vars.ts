@@ -10,13 +10,18 @@ import {
   pluralize
 } from "@carbon/utils";
 import type { MergeToken, RowVars } from "../../../template";
-import type { PartNumberDisplay } from "../../../utils/part-number";
 import {
   getLineDescription,
   getLineDescriptionDetails,
   getQuoteDisplayId
 } from "../../../utils/quote";
-import { addressVars, companyVars, incotermText, str } from "../textVars";
+import {
+  addressVars,
+  companyVars,
+  incotermText,
+  linePartNumberVars,
+  str
+} from "../textVars";
 import type { QuoteData } from "./types";
 
 type QuoteLine = QuoteData["quoteLines"][number];
@@ -93,24 +98,24 @@ export function buildQuoteVars(
   };
 }
 
-/**
- * Printed once, on its first quantity's row. `draft` is the Edit document
- * modal's unsaved display choice.
- */
+/** Printed once, on its first quantity's row. */
 export function buildQuoteLineVars(
   line: QuoteLine,
   rowNumber: number,
-  draft?: PartNumberDisplay
+  data: Pick<QuoteData, "partNumberDisplayDraft">
 ): RowVars<"quote", "line"> {
   return {
     "line.number": String(rowNumber),
     // The part numbers per the line's display choice.
-    "line.description": str(getLineDescription(line, draft)),
+    "line.description": str(
+      getLineDescription(line, data.partNumberDisplayDraft)
+    ),
     "line.details": str(getLineDescriptionDetails(line)),
-    // Each number on its own, whatever the display choice.
-    "line.itemId": str(line.itemReadableId),
-    "line.customerPartId": str(line.customerPartId),
-    "line.customerPartRevision": str(line.customerPartRevision)
+    ...linePartNumberVars({
+      ours: line.itemReadableId,
+      theirs: line.customerPartId,
+      theirsRevision: line.customerPartRevision
+    })
   };
 }
 

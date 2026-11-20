@@ -1257,7 +1257,7 @@ exports[`clicking a real PDF > opens the right text on the quote sample 1`] = `
     "48.00": "lineItems:totalCell",
   },
   {
-    "ASSEMBLY-HOUSING…": "lineItems:descriptionCell",
+    "ASSEMBLY-HOUSING-ANODIZED-…": "lineItems:descriptionCell",
   },
   {
     "Fully machined precision aluminium hous…": "lineItems:detailsCell",

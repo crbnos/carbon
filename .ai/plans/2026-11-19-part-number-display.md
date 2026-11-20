@@ -842,6 +842,8 @@ pnpm db:check:backups
 
 ## Task 13: Update the demo datasets
 
+Superseded 2026-11-21: the triggers stamp the seeded lines, so the helper below was removed. The per-dataset overrides remain.
+
 **Depends on:** Task 12
 **Files:**
 - Create: `packages/database/src/datasets/helpers/part-number-display.ts`

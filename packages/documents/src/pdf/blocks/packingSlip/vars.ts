@@ -4,11 +4,8 @@
 
 import { formatDate } from "@carbon/utils";
 import type { MergeToken, RowVars } from "../../../template";
-import {
-  formatPartNumber,
-  type PartNumberDisplay
-} from "../../../utils/part-number";
-import { addressVars, companyVars, str } from "../textVars";
+import { formatLinePartNumber } from "../../../utils/part-number";
+import { addressVars, companyVars, linePartNumberVars, str } from "../textVars";
 import type { PackingSlipData, PackingSlipRentalUnit } from "./types";
 
 /** Merge-field variable map for a Packing Slip. */
@@ -63,27 +60,22 @@ export function buildPackingSlipVars(
 export function buildPackingSlipLineVars(
   line: PackingSlipData["shipmentLines"][number],
   serialBatch: string[],
-  draft?: PartNumberDisplay
+  data: Pick<PackingSlipData, "partNumberDisplayDraft">
 ): RowVars<"packingSlip", "line"> {
-  // Null: a legacy line, which prints our part number as before the display
-  // choice existed.
-  const display = draft ?? line.partNumberDisplay;
+  const parts = {
+    ours: line.itemReadableId,
+    theirs: line.customerPartId,
+    theirsRevision: line.customerPartRevision
+  };
   return {
     // The part numbers per the line's display choice.
-    "line.item": display
-      ? formatPartNumber(
-          {
-            ours: line.itemReadableId,
-            theirs: line.customerPartId,
-            theirsRevision: line.customerPartRevision
-          },
-          display
-        )
-      : str(line.itemReadableId),
-    // Each number on its own, whatever the display choice.
-    "line.itemId": str(line.itemReadableId),
-    "line.customerPartId": str(line.customerPartId),
-    "line.customerPartRevision": str(line.customerPartRevision),
+    "line.item": formatLinePartNumber(
+      "packingSlip",
+      parts,
+      line.partNumberDisplay,
+      data.partNumberDisplayDraft
+    ),
+    ...linePartNumberVars(parts),
     "line.description": str(line.description),
     "line.shippedQuantity": str(line.shippedQuantity),
     "line.orderQuantity": str(line.orderQuantity),

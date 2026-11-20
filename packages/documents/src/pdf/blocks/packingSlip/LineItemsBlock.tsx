@@ -184,7 +184,7 @@ export function LineItemsBlock({
             buildPackingSlipLineVars(
               line,
               trackedEntitiesForLine.map((entity) => entity.id),
-              data.partNumberDisplayDraft
+              data
             )
           );
 

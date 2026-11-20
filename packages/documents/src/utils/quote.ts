@@ -4,11 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
-import {
-  formatPartNumber,
-  type PartNumberDisplay,
-  resolvePartNumberDisplay
-} from "./part-number";
+import { formatLinePartNumber, type PartNumberDisplay } from "./part-number";
 import { withRevisionSuffix } from "./revision";
 
 /**
@@ -19,13 +15,15 @@ export function getLineDescription(
   line: Database["public"]["Views"]["quoteLines"]["Row"],
   draft?: PartNumberDisplay
 ) {
-  return formatPartNumber(
+  return formatLinePartNumber(
+    "quote",
     {
       ours: line?.itemReadableId,
       theirs: line?.customerPartId,
       theirsRevision: line?.customerPartRevision
     },
-    resolvePartNumberDisplay("quote", draft ?? line?.partNumberDisplay)
+    line?.partNumberDisplay,
+    draft
   );
 }
 
