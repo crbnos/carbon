@@ -233,7 +233,11 @@ export interface DocumentTemplateProps {
   initialNotes?: JSONContent | null;
   initialPartNumberDisplay?: PartNumberDisplaySummary;
   /** Called after a successful save of one document, saying what it changed. */
-  onSaved?: (saved: { notesChanged: boolean; stillEditing: boolean }) => void;
+  onSaved?: (saved: {
+    notesChanged: boolean;
+    partNumbersChanged: boolean;
+    stillEditing: boolean;
+  }) => void;
 }
 
 function snapshot(s: EditorSnapshot): EditorSnapshot {
@@ -582,11 +586,16 @@ export function DocumentTemplateProvider({
       const notesChanged =
         changedNotes(sent ? { ...state, notes: sent.notes } : state) !==
         undefined;
+      const partNumbersChanged =
+        changedPartNumberDisplay(
+          sent ? { ...state, partNumberDisplay: sent.partNumberDisplay } : state
+        ) !== undefined;
       if (sent) state.rebaseline(sent);
       if (store.getState().document) {
         toast.success(t`Saved this document`);
         props.onSaved?.({
           notesChanged,
+          partNumbersChanged,
           // Words typed while it saved stay open, to be saved or cancelled.
           stillEditing: selectIsDirty(store.getState())
         });

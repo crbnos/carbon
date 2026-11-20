@@ -42,8 +42,10 @@ CREATE TRIGGER "purchaseOrderLine_stamp_part_number_display"
 
 -- A new line copies its item's supplier part number for the order's supplier,
 -- unless the insert sets one, so a later edit of the supplier part leaves the
--- order as it was. An item change copies it again, unless the same write sets
--- the number (the line form does).
+-- order as it was. An item change copies the new item's number, unless the
+-- same write changes the number (the line form fills it from the new item). A
+-- row trigger cannot tell a number sent unchanged from one left out, so a write
+-- that changes the item and sends the old number gets the new item's.
 CREATE OR REPLACE FUNCTION copy_purchase_order_line_supplier_part()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
