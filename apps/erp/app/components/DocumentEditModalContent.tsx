@@ -64,11 +64,12 @@ export default function DocumentEditModal({
   const actionPath = path.to.api.documentEdit(documentType, documentId);
   const { editor, error } = useDocumentEditor(actionPath);
   // The record's page keeps its own copy of the notes and saves it on the next
-  // keystroke, which would overwrite these. Reloading is the one way that works on
+  // keystroke, and an open line form keeps the line's part number choice; either
+  // would overwrite what was saved here. Reloading is the one way that works on
   // every record's page.
-  const notesSaved = useRef(false);
+  const reloadOnClose = useRef(false);
   const close = () => {
-    if (notesSaved.current) navigate(0);
+    if (reloadOnClose.current) navigate(0);
     else onClose();
   };
   const printed = editor && applyDocumentEdit(editor.template, editor.edit);
@@ -137,8 +138,8 @@ export default function DocumentEditModal({
             }}
             initialNotes={editor.notes as JSONContent | null}
             initialPartNumberDisplay={editor.partNumberDisplay}
-            onSaved={({ notesChanged, stillEditing }) => {
-              notesSaved.current ||= notesChanged;
+            onSaved={({ notesChanged, partNumbersChanged, stillEditing }) => {
+              reloadOnClose.current ||= notesChanged || partNumbersChanged;
               if (!stillEditing) close();
             }}
           >
