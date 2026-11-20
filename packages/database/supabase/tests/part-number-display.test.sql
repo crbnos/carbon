@@ -194,10 +194,7 @@ BEGIN
     'A shipment customer change restamps its lines';
 
   -- A customer change that changes nothing on a line does not write it.
-  UPDATE "shipmentLine" SET "updatedAt" = NULL, "updatedBy" = NULL WHERE id = v_kept_line;
-  UPDATE shipment SET "customerId" = v_customer WHERE id = v_shipment;
   UPDATE "customer" SET "partNumberDisplay" = 'Theirs Only' WHERE id = v_customer;
-  UPDATE shipment SET "customerId" = v_override_customer WHERE id = v_shipment;
   UPDATE "shipmentLine" SET "updatedAt" = NULL WHERE id = v_kept_line;
   UPDATE shipment SET "customerId" = v_customer WHERE id = v_shipment;
   ASSERT (SELECT "updatedAt" IS NULL FROM "shipmentLine" WHERE id = v_kept_line),

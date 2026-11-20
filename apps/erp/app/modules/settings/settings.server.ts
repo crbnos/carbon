@@ -2021,6 +2021,12 @@ export const saveDocumentEdit = defineServiceFn({
     if (!record.data) {
       return ctx.error("notFound", "The document could not be found");
     }
+    if (
+      input.partNumberDisplay !== undefined &&
+      !record.data.partNumbersShown
+    ) {
+      return ctx.error("validation", "This document has no part number choice");
+    }
 
     const template = await getCompanyTemplate(client, {
       companyId: ctx.company.id,

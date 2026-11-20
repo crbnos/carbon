@@ -22,8 +22,8 @@ ALTER TABLE "salesOrderLine"
 
 -- Fills a new line's display choice from its document's customer: the
 -- customer's override, else the company default. A line whose document has no
--- customer stays null. A dataset apply (app.dataset_apply) and a backup load
--- (app.backup_load) bring their own values, so it skips them. PL/pgSQL plans
+-- customer stays null. A backup load (app.backup_load) brings its own values,
+-- so it skips it. PL/pgSQL plans
 -- each statement when it first runs, per trigger table, so each branch reads
 -- only its own table's NEW. SECURITY DEFINER so a caller who may write the
 -- line gets the stamp even when RLS hides the customer or the settings row.
@@ -33,7 +33,6 @@ DECLARE
   v_customer_id TEXT;
 BEGIN
   IF NEW."partNumberDisplay" IS NOT NULL
-    OR current_setting('app.dataset_apply', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
@@ -92,8 +91,7 @@ DECLARE
   v_part TEXT;
   v_revision TEXT;
 BEGIN
-  IF current_setting('app.dataset_apply', true) = 'true'
-    OR current_setting('app.backup_load', true) = 'on' THEN
+  IF current_setting('app.backup_load', true) = 'on' THEN
     RETURN NEW;
   END IF;
   IF TG_OP = 'INSERT' AND NEW."customerPartId" IS NOT NULL THEN
@@ -125,9 +123,11 @@ CREATE TRIGGER "salesOrderLine_copy_customer_part"
   FOR EACH ROW EXECUTE FUNCTION copy_sales_order_line_customer_part();
 
 -- A customer change gives every line that has a display choice the new
--- customer's value. A legacy line (null) keeps its null. On a sales order,
--- every line also takes the new customer's part number, so an order never
--- prints another customer's numbers.
+-- customer's value. A legacy line (null) keeps its null. On a quote and a sales
+-- order, every line also takes the new customer's part number, so the document
+-- never prints another customer's numbers, and a quote converted afterwards
+-- does not carry them onto its order. A line whose values do not change is not
+-- written, so it gets no audit entry.
 CREATE OR REPLACE FUNCTION restamp_customer_part_number_display()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -135,7 +135,6 @@ DECLARE
   v_user TEXT := COALESCE(NEW."updatedBy", NEW."createdBy");
 BEGIN
   IF NEW."customerId" IS NULL
-    OR current_setting('app.dataset_apply', true) = 'true'
     OR current_setting('app.backup_load', true) = 'on' THEN
     RETURN NULL;
   END IF;
@@ -146,32 +145,63 @@ BEGIN
       WHERE s."id" = NEW."companyId")
   );
   IF TG_TABLE_NAME = 'quote' THEN
-    UPDATE "quoteLine"
-    SET "partNumberDisplay" = v_display, "updatedBy" = v_user, "updatedAt" = NOW()
-    WHERE "quoteId" = NEW."id" AND "companyId" = NEW."companyId"
-      AND "partNumberDisplay" IS NOT NULL;
-  ELSIF TG_TABLE_NAME = 'salesOrder' THEN
-    UPDATE "salesOrderLine" sl
-    SET "partNumberDisplay" =
-          CASE WHEN sl."partNumberDisplay" IS NULL THEN NULL ELSE v_display END,
-        ("customerPartId", "customerPartRevision") = (
-          SELECT cp."customerPartId", cp."customerPartRevision"
-          FROM "customerPartToItem" cp
-          WHERE cp."customerId" = NEW."customerId"
-            AND cp."itemId" = sl."itemId" AND cp."companyId" = sl."companyId"),
+    UPDATE "quoteLine" l
+    SET "partNumberDisplay" = n."partNumberDisplay",
+        "customerPartId" = n."customerPartId",
+        "customerPartRevision" = n."customerPartRevision",
         "updatedBy" = v_user,
         "updatedAt" = NOW()
-    WHERE sl."salesOrderId" = NEW."id" AND sl."companyId" = NEW."companyId";
+    FROM (
+      SELECT q."id",
+        CASE WHEN q."partNumberDisplay" IS NULL THEN NULL ELSE v_display END
+          AS "partNumberDisplay",
+        cp."customerPartId",
+        cp."customerPartRevision"
+      FROM "quoteLine" q
+      LEFT JOIN "customerPartToItem" cp
+        ON cp."customerId" = NEW."customerId"
+       AND cp."itemId" = q."itemId" AND cp."companyId" = q."companyId"
+      WHERE q."quoteId" = NEW."id" AND q."companyId" = NEW."companyId"
+    ) n
+    WHERE l."id" = n."id" AND l."companyId" = NEW."companyId"
+      AND (l."partNumberDisplay" IS DISTINCT FROM n."partNumberDisplay"
+        OR l."customerPartId" IS DISTINCT FROM n."customerPartId"
+        OR l."customerPartRevision" IS DISTINCT FROM n."customerPartRevision");
+  ELSIF TG_TABLE_NAME = 'salesOrder' THEN
+    UPDATE "salesOrderLine" l
+    SET "partNumberDisplay" = n."partNumberDisplay",
+        "customerPartId" = n."customerPartId",
+        "customerPartRevision" = n."customerPartRevision",
+        "updatedBy" = v_user,
+        "updatedAt" = NOW()
+    FROM (
+      SELECT o."id",
+        CASE WHEN o."partNumberDisplay" IS NULL THEN NULL ELSE v_display END
+          AS "partNumberDisplay",
+        cp."customerPartId",
+        cp."customerPartRevision"
+      FROM "salesOrderLine" o
+      LEFT JOIN "customerPartToItem" cp
+        ON cp."customerId" = NEW."customerId"
+       AND cp."itemId" = o."itemId" AND cp."companyId" = o."companyId"
+      WHERE o."salesOrderId" = NEW."id" AND o."companyId" = NEW."companyId"
+    ) n
+    WHERE l."id" = n."id" AND l."companyId" = NEW."companyId"
+      AND (l."partNumberDisplay" IS DISTINCT FROM n."partNumberDisplay"
+        OR l."customerPartId" IS DISTINCT FROM n."customerPartId"
+        OR l."customerPartRevision" IS DISTINCT FROM n."customerPartRevision");
   ELSIF TG_TABLE_NAME = 'salesInvoice' THEN
     UPDATE "salesInvoiceLine"
     SET "partNumberDisplay" = v_display, "updatedBy" = v_user, "updatedAt" = NOW()
     WHERE "invoiceId" = NEW."id" AND "companyId" = NEW."companyId"
-      AND "partNumberDisplay" IS NOT NULL;
+      AND "partNumberDisplay" IS NOT NULL
+      AND "partNumberDisplay" IS DISTINCT FROM v_display;
   ELSIF TG_TABLE_NAME = 'shipment' THEN
     UPDATE "shipmentLine"
     SET "partNumberDisplay" = v_display, "updatedBy" = v_user, "updatedAt" = NOW()
     WHERE "shipmentId" = NEW."id" AND "companyId" = NEW."companyId"
-      AND "partNumberDisplay" IS NOT NULL;
+      AND "partNumberDisplay" IS NOT NULL
+      AND "partNumberDisplay" IS DISTINCT FROM v_display;
   END IF;
   RETURN NULL;
 END;

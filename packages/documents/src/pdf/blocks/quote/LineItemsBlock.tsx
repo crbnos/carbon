@@ -102,7 +102,7 @@ export function LineItemsBlock({
         const lineRow = data.values.row(
           "line",
           line.id,
-          buildQuoteLineVars(line, lineIndex + 1, data.partNumberDisplayDraft)
+          buildQuoteLineVars(line, lineIndex + 1, data)
         );
         const additionalCharges = line.additionalCharges ?? {};
 

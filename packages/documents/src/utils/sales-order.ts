@@ -4,21 +4,39 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
-import {
-  formatPartNumber,
-  lineCustomerPart,
-  type PartNumberDisplay,
-  resolvePartNumberDisplay
-} from "./part-number";
+import { formatLinePartNumber, type PartNumberDisplay } from "./part-number";
+
+type LineCustomerPart = { id: string | null; revision: string | null };
+
+/**
+ * A sales order line's customer part: its own copy, else the live
+ * cross-reference (`customerPartToItem`). The pair stays together, so a copy's
+ * number never prints with the cross-reference's revision.
+ */
+export function lineCustomerPart(line: {
+  customerPartId?: string | null;
+  customerPartRevision?: string | null;
+  customerPartIdFromCustomer?: string | null;
+  customerPartRevisionFromCustomer?: string | null;
+}): LineCustomerPart {
+  return line.customerPartId?.trim()
+    ? { id: line.customerPartId, revision: line.customerPartRevision ?? null }
+    : {
+        id: line.customerPartIdFromCustomer ?? null,
+        revision: line.customerPartRevisionFromCustomer ?? null
+      };
+}
 
 /**
  * A sales order line's title: the asset for a Fixed Asset line, the
  * description for a Comment line, else the line's part numbers per its display
- * choice. `draft` is the Edit document modal's unsaved pick.
+ * choice. `draft` is the Edit document modal's unsaved pick; `customerPart` is
+ * the line's `lineCustomerPart`, when the caller has it already.
  */
 export function getLineDescription(
   line: Database["public"]["Views"]["salesOrderLines"]["Row"],
-  draft?: PartNumberDisplay
+  draft?: PartNumberDisplay,
+  customerPart?: LineCustomerPart
 ) {
   switch (line?.salesOrderLineType) {
     case "Fixed Asset":
@@ -30,14 +48,16 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default: {
-      const customerPart = lineCustomerPart(line);
-      return formatPartNumber(
+      const part = customerPart ?? lineCustomerPart(line);
+      return formatLinePartNumber(
+        "salesOrder",
         {
           ours: line?.itemReadableId,
-          theirs: customerPart.id,
-          theirsRevision: customerPart.revision
+          theirs: part.id,
+          theirsRevision: part.revision
         },
-        resolvePartNumberDisplay("salesOrder", draft ?? line?.partNumberDisplay)
+        line?.partNumberDisplay,
+        draft
       );
     }
   }

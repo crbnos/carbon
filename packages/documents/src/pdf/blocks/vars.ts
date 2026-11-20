@@ -13,7 +13,13 @@ import {
   getLineTotal,
   getTotal
 } from "../../utils/sales-invoice";
-import { addressVars, companyVars, incotermText, str } from "./textVars";
+import {
+  addressVars,
+  companyVars,
+  incotermText,
+  linePartNumberVars,
+  str
+} from "./textVars";
 import type { SalesInvoiceData } from "./types";
 
 /**
@@ -149,10 +155,11 @@ export function buildSalesInvoiceLineVars(
       getLineDescription(line, data.partNumberDisplayDraft)
     ),
     "line.details": str(getLineDescriptionDetails(line)),
-    // Each number on its own, whatever the display choice.
-    "line.itemId": str(line.itemReadableId),
-    "line.customerPartId": str(line.customerPartId),
-    "line.customerPartRevision": str(line.customerPartRevision)
+    ...linePartNumberVars({
+      ours: line.itemReadableId,
+      theirs: line.customerPartId,
+      theirsRevision: line.customerPartRevision
+    })
   };
 
   if (line.invoiceLineType === "Comment") {

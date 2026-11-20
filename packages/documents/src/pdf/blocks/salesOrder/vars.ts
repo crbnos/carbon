@@ -4,15 +4,21 @@
 
 import { formatDate, formatPercent } from "@carbon/utils";
 import type { LineMergeToken, MergeToken } from "../../../template";
-import { lineCustomerPart } from "../../../utils/part-number";
 import {
   getLineDescription,
   getLineDescriptionDetails,
   getLineTaxableSubtotal,
   getLineTotal,
-  getTotal
+  getTotal,
+  lineCustomerPart
 } from "../../../utils/sales-order";
-import { addressVars, companyVars, incotermText, str } from "../textVars";
+import {
+  addressVars,
+  companyVars,
+  incotermText,
+  linePartNumberVars,
+  str
+} from "../textVars";
 import type { SalesOrderData } from "./types";
 
 /**
@@ -131,13 +137,14 @@ export function buildSalesOrderLineVars(
   const common = {
     // The part numbers per the line's display choice.
     "line.description": str(
-      getLineDescription(line, data.partNumberDisplayDraft)
+      getLineDescription(line, data.partNumberDisplayDraft, customerPart)
     ),
     "line.details": str(getLineDescriptionDetails(line)),
-    // Each number on its own, whatever the display choice.
-    "line.itemId": str(line.itemReadableId),
-    "line.customerPartId": str(customerPart.id),
-    "line.customerPartRevision": str(customerPart.revision)
+    ...linePartNumberVars({
+      ours: line.itemReadableId,
+      theirs: customerPart.id,
+      theirsRevision: customerPart.revision
+    })
   };
 
   if (line.salesOrderLineType === "Comment") {

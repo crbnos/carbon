@@ -84,6 +84,8 @@ export interface DocumentEditRecord {
       | "purchaseOrderId";
     party: PartNumberParty;
     refusal?: (status: string | null | undefined) => string | null;
+    /** A record column whose values mean the document prints no lines. */
+    noLinesWhen?: { column: "sourceDocument"; values: readonly string[] };
   };
 }
 
@@ -170,7 +172,13 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     partNumberLines: {
       table: "shipmentLine",
       documentColumn: "shipmentId",
-      party: "customer"
+      party: "customer",
+      // A Delivery Ticket and a Receiving Report print rental units and
+      // contract lines, not the shipment's lines.
+      noLinesWhen: {
+        column: "sourceDocument",
+        values: ["Rental Agreement", "Customer Contract"]
+      }
     }
   },
   stockTransfer: {

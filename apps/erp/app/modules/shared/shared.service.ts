@@ -10114,7 +10114,7 @@ export async function convertDocument(
           .map((line) => ({
             companyId,
             customerId: quote.data?.customerId!,
-            customerPartId: line.customerPartId!,
+            customerPartId: line.customerPartId?.trim() ?? "",
             customerPartRevision: line.customerPartRevision ?? "",
             itemId: line.itemId!
           }))
@@ -10790,6 +10790,13 @@ export async function convertDocument(
         acc[lineId] = (acc[lineId] || 0) + line.shippedQuantity;
         return acc;
       }, {});
+      // The invoice prints what the packing slip printed, an Edit document
+      // pick included, else the order line's choice.
+      const shippedPartNumberDisplay = new Map(
+        shipmentLines.data
+          .filter((line) => line.lineId && line.partNumberDisplay)
+          .map((line) => [line.lineId!, line.partNumberDisplay])
+      );
 
       // Each shipped fixed asset line counts as quantity 1
       for (const line of shipmentFixedAssetLines.data) {
@@ -10983,7 +10990,8 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
-              partNumberDisplay: line.partNumberDisplay,
+              partNumberDisplay:
+                shippedPartNumberDisplay.get(line.id) ?? line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
