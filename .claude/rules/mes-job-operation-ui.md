@@ -334,8 +334,10 @@ of a paused URL, which is itself a valid link.
   operation with "Select a unit first". It takes the one unit left, and it
   refuses a named unit already complete there. At a later operation it
   redirects back onto the completed unit, so the screen asks for the next.
-  The kanban Start scan (`start.$operationId`) follows the same rule before it
-  touches a timer.
+  The kanban Start scan (`start.$operationId`) resolves in mode `start`
+  before it touches a timer: as `advance`, except that a later operation with
+  several open units and none named starts with no unit, as the in-app Start
+  does.
 - A completion is recorded once per unit. The ERP refuses a serial unit
   already complete on the operation (its `Operation <id>` marker, which also
   hides the unit here). No production row names its unit, so deleting one

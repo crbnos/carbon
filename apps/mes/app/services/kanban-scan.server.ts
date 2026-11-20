@@ -140,14 +140,14 @@ export async function startOperationByScan(
     }
   }
 
-  // The unit the timer runs on, before any timer is touched: on a later
-  // operation only the one the screen held, or the one left.
+  // The unit the timer runs on, before any timer is touched. A later
+  // operation with several open units and none named starts with no unit.
   const work = await resolveWorkUnit({
     client: serviceRole,
     companyId,
     operationId,
     requestedUnitId: url.searchParams.get("trackedEntityId"),
-    mode: "advance"
+    mode: "start"
   });
   if (work.kind === "refuse") {
     throw redirect(

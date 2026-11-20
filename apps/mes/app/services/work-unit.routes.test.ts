@@ -132,7 +132,7 @@ describe("kanban Complete scan (end route)", () => {
 });
 
 describe("kanban Start scan (start route)", () => {
-  it("starts no timer and asks for the unit", async () => {
+  it("starts the timer with no unit on a later operation, as the Start button does", async () => {
     const fake = floor();
     const thrown = await startOperationByScan(
       {
@@ -144,8 +144,15 @@ describe("kanban Start scan (start route)", () => {
       },
       { ...caller, request: get(`/x/start/${op}`), operationId: op }
     ).catch((response: unknown) => response);
-    expect(location(thrown)).toBe(`/x/operation/${op}`);
-    expect(fake.writes()).toEqual([]);
+    expect(location(thrown)).toContain(`/x/operation/${op}`);
+    const timer = fake
+      .writes()
+      .find((w) => w.op === "insert" && w.table === "productionEvent");
+    expect(timer).toBeDefined();
+    // No unit is stamped on the timer: the screen asks for it next.
+    expect(fake.writes().some((w) => w.table === "trackedActivityOutput")).toBe(
+      false
+    );
   });
 });
 

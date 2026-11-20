@@ -97,6 +97,16 @@ describe("decideWorkUnit", () => {
     }
   });
 
+  it("starts a kanban timer with no unit on a later operation with several open", () => {
+    expect(decide({ mode: "start" })).toEqual({ kind: "none" });
+  });
+
+  it("starts a kanban timer on the next open unit of a first operation", () => {
+    expect(
+      decide({ facts: facts({ isFirstOperation: true }), mode: "start" })
+    ).toMatchObject({ kind: "unit", unitId: "u2", via: "advanced" });
+  });
+
   it("takes the one unit left on a later operation", () => {
     expect(
       decide({

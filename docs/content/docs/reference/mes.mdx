@@ -108,7 +108,8 @@ Until a unit is picked, **"Log Completed"**, Scrap, Rework, recording steps and 
 - **The picker's field** takes a unit id, a serial number, or a pasted traveler link.
 - **A unit's traveler label** picks that unit when scanned, with the picker open or closed.
 - **An item sticker or a part's traveler** scanned with no unit picked issues nothing. The station says **"Select a unit first"** and opens the picker.
-- **A kanban start or complete card** for such an operation also asks for the unit. It never chooses one for the operator.
+- **A kanban complete card** for such an operation also asks for the unit. It never chooses one for the operator.
+- **A kanban start card** starts the timer with no unit, as the **Start** button does. The screen then asks for the unit.
 
 <Callout type="note" title="A finished unit can still be opened.">
 Pick a unit that is already complete at this operation to look back at its records. Work that needs an open unit stays disabled. You can still raise a quality issue against the unit and unconsume parts from it. **Issue** stays disabled with the note **"This unit is complete here"**.

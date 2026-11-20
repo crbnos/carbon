@@ -33,8 +33,11 @@ const ALL_DONE = "Every unit is complete at this operation";
 
 /**
  * How a write may come to its unit.
- * - `advance`: the kanban start and end scans. With none named, the first
+ * - `advance`: the kanban complete scan. With none named, the first
  *   operation takes the next open unit (units flow in order through it).
+ * - `start`: the kanban start scan. As `advance`, but with none named a
+ *   later operation with several open units starts with no unit, like the
+ *   in-app Start; the screen then asks for the unit.
  * - `require`: the write needs an open unit here (complete, scrap, rework,
  *   step record, issue).
  * - `optional`: a named unit open here is stamped (a timer start). With none
@@ -50,6 +53,7 @@ const ALL_DONE = "Every unit is complete at this operation";
  */
 export type WorkUnitMode =
   | "advance"
+  | "start"
   | "require"
   | "optional"
   | "member"
@@ -183,7 +187,9 @@ export function decideWorkUnit({
         ? { kind: "none", lotId: requestedUnitId }
         : { kind: "none" };
     }
-    if (!facts.batch || mode !== "advance") return { kind: "none" };
+    if (!facts.batch || (mode !== "advance" && mode !== "start")) {
+      return { kind: "none" };
+    }
     // The lot: the first live one still open here, else the last one.
     const live = units.filter(
       (unit) =>
@@ -244,11 +250,12 @@ export function decideWorkUnit({
   if (mode === "member") return { kind: "none" };
   if (mode === "optional") return timerUnit();
   const next = open[0];
-  if (mode === "advance" && isFirstOperation && next) {
+  if ((mode === "advance" || mode === "start") && isFirstOperation && next) {
     return take(next, "advanced");
   }
   if (sole) return take(sole, "sole");
   if (open.length === 0) return refuse(false, ALL_DONE);
+  if (mode === "start") return { kind: "none" };
   return refuse(true, SELECT_UNIT_FIRST);
 }
 
@@ -290,10 +297,13 @@ export async function resolveWorkUnit({
     ? !!requestedUnitId ||
       legacyUnitIndex !== undefined ||
       mode === "advance" ||
+      mode === "start" ||
       mode === "require" ||
       mode === "claim" ||
       (mode === "optional" && facts.isFirstOperation)
-    : facts.batch && mode === "advance" && !requestedUnitId;
+    : facts.batch &&
+      (mode === "advance" || mode === "start") &&
+      !requestedUnitId;
   if (!readsUnits || !facts.jobMakeMethodId) {
     return decideWorkUnit({
       facts,
