@@ -1262,20 +1262,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "accountDefault_purchaseTaxPayableAccount_fkey"
-            columns: ["taxPaidAccount"]
-            isOneToOne: false
-            referencedRelation: "account"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "accountDefault_purchaseTaxPayableAccount_fkey"
-            columns: ["taxPaidAccount"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "accountDefault_purchaseVarianceAccount_fkey"
             columns: ["purchaseVarianceAccount"]
             isOneToOne: false
@@ -1486,20 +1472,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "accountDefault_salesTaxPayableAccount_fkey"
-            columns: ["taxReceivedAccount"]
-            isOneToOne: false
-            referencedRelation: "account"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "accountDefault_salesTaxPayableAccount_fkey"
-            columns: ["taxReceivedAccount"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "accountDefault_scrapAccount_fkey"
             columns: ["scrapAccount"]
             isOneToOne: false
@@ -1593,6 +1565,34 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_supplierWriteOffAccount_fkey"
             columns: ["supplierWriteOffAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxPaidAccount_fkey"
+            columns: ["taxPaidAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxPaidAccount_fkey"
+            columns: ["taxPaidAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxReceivedAccount_fkey"
+            columns: ["taxReceivedAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxReceivedAccount_fkey"
+            columns: ["taxReceivedAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -60827,6 +60827,13 @@ export type Database = {
             columns: ["supplierPartId", "companyId"]
             isOneToOne: false
             referencedRelation: "supplierPart"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           },
           {

@@ -21,7 +21,6 @@ import { NotificationEvent } from "@carbon/notifications";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
-  chargedTaxPercent,
   colorNames,
   datetime,
   getErrorMessage,
@@ -5166,8 +5165,9 @@ const rentalBooleanTerms = new Set<string>([
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and the contacts; a new currency
- * brings today's rate. A tax code sets the rent lines' percent to the code's
- * rate today; clearing it keeps the percent. The yes/no terms take `true` or
+ * brings today's rate. While a tax code is set, the rent lines' percent is
+ * the code's rate on the start date (picking the code, editing the percent
+ * or moving the start date); clearing it keeps the percent. The yes/no terms take `true` or
  * `on`. Contacts are set with `setRentalAgreementContacts`.
  *
  * @mcp
@@ -5221,18 +5221,42 @@ export const setRentalAgreementTerm = defineServiceFn({
     terms[field] = rentalBooleanTerms.has(field)
       ? value === "on" || value === "true"
       : value || null;
-    // Picking a code sets the rent lines' rate to the code's rate today.
-    // Clearing it keeps the rate, which stays editable on its own.
-    if (field === "taxCodeId" && value) {
-      const codes = await getTaxCodeInputs(client, companyId, [value]);
-      const taxCode = codes.data.get(value);
-      if (!taxCode) {
-        return ctx.error("notFound", "Tax code not found", codes.error);
+    // A coded agreement's rate is its code's on the start date, as on create
+    // (`decideWrittenLineTax`). Clearing the code keeps the rate, which
+    // stays editable on its own.
+    if (
+      terms.taxCodeId &&
+      (field === "taxCodeId" || field === "taxPercent" || field === "startDate")
+    ) {
+      const taxCodeId = String(terms.taxCodeId);
+      const codes = await getTaxCodeInputs(client, companyId, [taxCodeId]);
+      if (codes.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the tax code",
+          codes.error
+        );
       }
-      terms.taxPercent = chargedTaxPercent(
-        taxCode,
-        await service.companyToday(ctx)
-      );
+      const tax = decideWrittenLineTax({
+        source: "sales",
+        itemTaxable: true,
+        sentTaxCodeId: taxCodeId,
+        sentTaxPercent:
+          terms.taxPercent === null ? undefined : Number(terms.taxPercent),
+        sentCode: codes.data.get(taxCodeId) ?? null,
+        partyDecision: null,
+        date:
+          (terms.startDate as string | null) ??
+          (await service.companyToday(ctx)),
+        stored: {
+          taxCodeId: agreement.taxCodeId,
+          taxPercent: agreement.taxPercent
+        }
+      });
+      if (tax.error !== null) return ctx.error("validation", tax.error);
+      if (tax.data.taxPercent !== undefined) {
+        terms.taxPercent = tax.data.taxPercent;
+      }
     }
     // A site and the contacts belong to one customer.
     if (field === "customerId" && value !== agreement.customerId) {
@@ -10682,7 +10706,12 @@ export const getRentalAgreementCharges = defineServiceFn({
  * Create a rental agreement charge
  *
  * @remarks
- * A variable charge (damage, delivery, overage) on one unit of an open agreement
+ * A variable charge (damage, delivery, overage) on one unit of an open agreement.
+ * Without `taxCodeId` the charge takes the agreement's code; a code sets
+ * `taxPercent` to its rate on the charge date. An empty `taxCodeId` keeps
+ * `taxPercent` with no code.
+ *
+ * @param taxCodeId - Omit for the agreement's code; empty for none.
  *
  * @mcp
  */
@@ -10693,6 +10722,7 @@ export const createRentalAgreementCharge = defineServiceFn({
     description: z.string().min(1),
     amount: z.number(),
     taxPercent: z.number().min(0).max(1),
+    taxCodeId: z.string().optional(),
     invoiceSeparately: z.boolean().optional(),
     id: z
       .string()
@@ -10701,11 +10731,44 @@ export const createRentalAgreementCharge = defineServiceFn({
   }),
   permission: { create: "sales" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    let taxCodeId = input.taxCodeId;
+    if (taxCodeId === undefined) {
+      const line = await client
+        .from("rentalAgreementLine")
+        .select("rentalAgreement!inner(taxCodeId)")
+        .eq("id", input.rentalAgreementLineId)
+        .eq("companyId", companyId)
+        .single();
+      if (line.error) {
+        return ctx.error(
+          "notFound",
+          "Rental agreement line not found",
+          line.error
+        );
+      }
+      taxCodeId = line.data.rentalAgreement.taxCodeId ?? "";
+    }
+    const codes = await getTaxCodeInputs(client, companyId, [taxCodeId]);
+    if (codes.error) {
+      return ctx.error("internal", "Failed to read the tax code", codes.error);
+    }
+    const tax = decideWrittenLineTax({
+      source: "sales",
+      itemTaxable: true,
+      sentTaxCodeId: taxCodeId,
+      sentTaxPercent: input.taxPercent,
+      sentCode: taxCodeId ? (codes.data.get(taxCodeId) ?? null) : null,
+      partyDecision: null,
+      date: input.chargeDate
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return unwrap(
       ctx,
       await service.upsertRentalAgreementCharge(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, { ...input, ...tax.data }).forCreate() as never
       )
     );
   }

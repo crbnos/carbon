@@ -24,6 +24,8 @@ import {
 import { getPrintedTemplate } from "./document-edit.server";
 import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
 
+export { loadTaxSummary };
+
 const logger = getLogger("lib", "sales-invoice-document");
 
 // The documents package does not export its prop interfaces; derive them.
@@ -55,10 +57,10 @@ export async function loadSalesInvoiceDocument(args: {
   /**
    * Service-role client for the tax reads, whose RLS needs accounting, sales
    * or purchasing view, so an invoicing-only reader prints the same tax as the
-   * emailed copy. Pass it only after checking the caller's permission;
-   * defaults to `client` for callers that already hold a service-role one.
+   * emailed copy. Pass it only after checking the caller's permission; a
+   * caller that already holds a service-role `client` passes it again.
    */
-  taxClient?: Client;
+  taxClient: Client;
   companyId: string;
   companyGroupId: string;
   invoiceId: string;
@@ -271,7 +273,7 @@ export async function loadSalesInvoiceDocument(args: {
   };
 
   const tax = await loadTaxSummary({
-    taxClient: taxClient ?? client,
+    taxClient,
     companyId,
     invoiceId,
     company: company.data,

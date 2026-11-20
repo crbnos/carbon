@@ -22,7 +22,7 @@ import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { hasXeroMappedTax, XeroTaxContextLoader } from "../tax";
-import { buildXeroBillLineItems, isUntaxedBillLeg } from "./bill-lines";
+import { buildXeroBillLineItems, takesBillFallback } from "./bill-lines";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -414,15 +414,15 @@ export class BillSyncer extends BaseEntitySyncer<
       label: `bill ${local.invoiceId}`
     });
 
-    // Untaxed code-less legs take the fallback rate, except on a Reverse
-    // Charge bill, which goes out tax-neutral (Phase 1).
+    // Untaxed code-less legs and the untaxed freight of a fully recoverable
+    // code take the mapped fallback rate, except on a Reverse Charge bill,
+    // which goes out tax-neutral (Phase 1).
     const noTaxCodeFallback =
       !billHasReverseCharge(costing.lines) &&
       (await this.taxContext.facts()).noTaxCodeFallback.has("purchase");
     const needsRates =
       plan.sendsTax ||
-      (noTaxCodeFallback &&
-        plan.lines.some((line) => !line.tax && isUntaxedBillLeg(line.leg)));
+      (noTaxCodeFallback && plan.lines.some(takesBillFallback));
 
     // Every tax resolves here, before the supplier dependency is written.
     const lineItems = buildXeroBillLineItems({

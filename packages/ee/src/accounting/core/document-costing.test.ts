@@ -839,9 +839,10 @@ describe("planBillTaxLines", () => {
     );
     const result = plan(
       [...legs, ...legs.map((_, index) => taxPaid(`paid-${index}`, 4.16667))],
-      legs.map((_, index) =>
-        ledger("bc12", 0.05, 4.16667, 4.16667, 83.33333, `pil-${index}`)
-      ),
+      legs.flatMap((_, index) => [
+        ledger("bc12", 0.05, 4.16667, 4.16667, 83.33333, `pil-${index}`),
+        ledger("bc12", 0.07, 5.83333, 0, 83.33333, `pil-${index}`)
+      ]),
       933.33
     );
     expect(result.recoverableTax).toBe(41.67);
@@ -849,6 +850,7 @@ describe("planBillTaxLines", () => {
       result.lines.reduce((sum, line) => sum + (line.tax?.taxAmount ?? 0), 0)
     ).toBeCloseTo(41.67, 6);
     expect(total(result)).toBeCloseTo(933.33, 6);
+    expectEachLineWithinAPenny(result.lines);
   });
 
   it("sends a reverse-charge bill tax-neutral, its Tax Paid and reverse-charge legs included", () => {
@@ -989,6 +991,156 @@ describe("planBillTaxLines", () => {
       ["cost", 416.67, "bc12", 50],
       ["cost", 653.33, null, null]
     ]);
+  });
+
+  /** Every taxed line within one minor unit of net × rate: the provider check. */
+  const expectEachLineWithinAPenny = (lines: BillTaxLine[]) => {
+    for (const line of lines.filter((l) => l.tax && l.tax.taxPercent > 0)) {
+      expect(
+        Math.abs(line.tax!.taxAmount - line.amount * line.tax!.taxPercent)
+      ).toBeLessThanOrEqual(0.01 + 1e-9);
+    }
+  };
+  // One large line plus small lines whose VAT rounded up: R ÷ N is not
+  // exactly 20%, so splitting R in proportion to net moves pence onto the
+  // large line and parks the bill.
+  const mixedLegs = (sign: 1 | -1) => [
+    leg("big", sign * 1000),
+    ...Array.from({ length: 5 }, (_, index) =>
+      leg(`small-${index}`, sign * 2.53)
+    )
+  ];
+  const mixedLedger = (sign: 1 | -1, recoverable = (tax: number) => tax) => [
+    ledger(
+      "uk20",
+      0.2,
+      sign * 200,
+      sign * recoverable(200),
+      sign * 1000,
+      "pil-big"
+    ),
+    ...Array.from({ length: 5 }, (_, index) =>
+      ledger(
+        "uk20",
+        0.2,
+        sign * 0.51,
+        sign * recoverable(0.51),
+        sign * 2.53,
+        `pil-${index}`
+      )
+    )
+  ];
+
+  it("keeps each line's own VAT on a bill of 1,000 plus five lines of 2.53 (VAT 0.51 each)", () => {
+    const result = plan(
+      [...mixedLegs(1), taxPaid("paid", 202.55)],
+      mixedLedger(1),
+      1215.2
+    );
+    expect(summary(result.lines)).toEqual([
+      ["big", 1000, "uk20", 200],
+      ...Array.from({ length: 5 }, (_, index) => [
+        `small-${index}`,
+        2.53,
+        "uk20",
+        0.51
+      ])
+    ]);
+    expectEachLineWithinAPenny(result.lines);
+  });
+
+  it("keeps each line's own VAT on the same lines as a credit", () => {
+    const result = plan(
+      [...mixedLegs(-1), taxPaid("paid", -202.55)],
+      mixedLedger(-1),
+      -1215.2
+    );
+    expect(summary(result.lines)).toEqual([
+      ["big", -1000, "uk20", -200],
+      ...Array.from({ length: 5 }, (_, index) => [
+        `small-${index}`,
+        -2.53,
+        "uk20",
+        -0.51
+      ])
+    ]);
+    expectEachLineWithinAPenny(result.lines);
+  });
+
+  it("keeps the recoverable piece within a penny on the same lines, half recoverable", () => {
+    // Half of each line's VAT recoverable, rounded per line: 100 + 5 × 0.26.
+    const half = (tax: number) => Math.round(tax * 50) / 100;
+    const result = plan(
+      [
+        leg("big", 1100),
+        ...Array.from({ length: 5 }, (_, index) => leg(`small-${index}`, 2.78)),
+        taxPaid("paid", 101.3)
+      ],
+      mixedLedger(1, half),
+      1215.2
+    );
+    const taxed = result.lines.filter((line) => line.tax);
+    expect(
+      taxed.reduce((sum, line) => sum + line.tax!.taxAmount, 0)
+    ).toBeCloseTo(101.3, 6);
+    expectEachLineWithinAPenny(result.lines);
+    expect(total(result)).toBeCloseTo(1215.2, 6);
+  });
+
+  it("marks a fully recoverable code's untaxed rest and offsetting variance as untaxed purchase", () => {
+    const flagged = (result: ReturnType<typeof plan>) =>
+      result.lines.map((line) => [
+        line.leg.id,
+        line.amount,
+        line.untaxedPurchase ?? false
+      ]);
+    // Receipt at 1,050, invoice at 1,000: a -50 price variance on the code.
+    expect(
+      flagged(
+        plan(
+          [leg("grir", 1050), leg("ppv", -50), taxPaid("paid", 200)],
+          [ledger("uk20", 0.2, 200, 200, 1000)],
+          1200
+        )
+      )
+    ).toEqual([
+      ["grir", 1000, false],
+      ["grir", 50, true],
+      ["ppv", -50, true]
+    ]);
+    // Half recoverable: the rest holds tax in cost, so it is not flagged.
+    expect(
+      flagged(
+        plan(
+          [leg("cost", 1150), taxPaid("paid", 100)],
+          [ledger("uk20", 0.2, 200, 100, 1000)],
+          1250
+        )
+      )
+    ).toEqual([
+      ["cost", 500, false],
+      ["cost", 650, false]
+    ]);
+  });
+
+  it("refuses with the UNMAPPED_TAX_CODES Warning when one leg's VAT is more than a penny from net × rate", () => {
+    // Five lines of 2.53 / 0.51 posted to one leg: 12.65 at 20% is 2.53, not 2.55.
+    expect(() =>
+      plan(
+        [leg("cost", 12.65), taxPaid("paid", 2.55)],
+        Array.from({ length: 5 }, (_, index) =>
+          ledger("uk20", 0.2, 0.51, 0.51, 2.53, `pil-${index}`)
+        ),
+        15.2
+      )
+    ).toThrow(
+      expect.objectContaining({
+        failure: expect.objectContaining({
+          errorCode: "UNMAPPED_TAX_CODES",
+          warning: true
+        })
+      })
+    );
   });
 });
 

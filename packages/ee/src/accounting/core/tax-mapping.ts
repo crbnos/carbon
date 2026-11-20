@@ -269,16 +269,23 @@ export function pickRateByPercent(
  * Proposals for unmapped (code, direction) pairs: the provider rate of that
  * direction `pickRateByPercent` picks for the code's charged rate (0 for a
  * Reverse Charge code). A Reverse Charge code needs no purchase rate: its
- * purchase documents go out tax-neutral. Ambiguity proposes nothing.
+ * purchase documents go out tax-neutral. A code with no component in force
+ * (`inForce: false`) has no rate to match. Ambiguity proposes nothing.
  */
 export function matchTaxCodesByRate(args: {
-  codes: ReadonlyArray<{ id: string; rate: number; reverseCharge?: boolean }>;
+  codes: ReadonlyArray<{
+    id: string;
+    rate: number;
+    reverseCharge?: boolean;
+    inForce?: boolean;
+  }>;
   options: ReadonlyArray<TaxRateOption>;
   /** `<taxCodeId>:<direction>` keys that already have a mapping. */
   mapped: ReadonlySet<string>;
 }): TaxCodeMatchProposal[] {
   const proposals: TaxCodeMatchProposal[] = [];
   for (const code of args.codes) {
+    if (code.inForce === false) continue;
     for (const direction of TAX_DIRECTIONS) {
       if (direction === "purchase" && code.reverseCharge) continue;
       if (args.mapped.has(buildTaxCodeMappingEntityId(code.id, direction))) {
@@ -388,25 +395,59 @@ export async function loadReverseChargeCodeIds(
   return new Set(rows.map((row) => row.id));
 }
 
-/**
- * The directions whose code-less, untaxed lines send the fallback rate: a
- * direction in which the company uses any tax code. A company (or a
- * direction) with no codes keeps sending the provider's "no tax" rate.
- */
-export function noTaxCodeFallbackDirections(
+/** The directions in which the company uses any tax code. */
+function directionsUsingCodes(
   usage: ReadonlyArray<TaxCodeUsage>
-): Set<TaxDirection> {
-  return new Set(
-    TAX_DIRECTIONS.filter((direction) =>
-      usage.some((code) =>
-        direction === "sales" ? code.usedForSales : code.usedForPurchase
-      )
+): TaxDirection[] {
+  return TAX_DIRECTIONS.filter((direction) =>
+    usage.some((code) =>
+      direction === "sales" ? code.usedForSales : code.usedForPurchase
     )
   );
 }
 
+function hasNoTaxCodeMapping(
+  mappings: ReadonlyArray<Pick<TaxCodeMapping, "taxCodeId" | "direction">>,
+  direction: TaxDirection
+): boolean {
+  return mappings.some(
+    (m) => m.taxCodeId === NO_TAX_CODE_MAPPING_ID && m.direction === direction
+  );
+}
+
+/**
+ * The directions whose code-less, untaxed lines send the fallback rate: a
+ * direction in which the company uses any tax code and the fallback row is
+ * mapped. Every other direction keeps sending the provider's "no tax" rate,
+ * so an unmapped fallback never parks a document.
+ */
+export function noTaxCodeFallbackDirections(
+  usage: ReadonlyArray<TaxCodeUsage>,
+  mappings: ReadonlyArray<Pick<TaxCodeMapping, "taxCodeId" | "direction">>
+): Set<TaxDirection> {
+  return new Set(
+    directionsUsingCodes(usage).filter((direction) =>
+      hasNoTaxCodeMapping(mappings, direction)
+    )
+  );
+}
+
+/**
+ * The directions that use codes but whose fallback row is unmapped: their
+ * exempt, non-taxable and untaxed-shipping lines go out at the provider's
+ * "no tax" rate, which keeps them off the VAT return. The Tax Rates tab
+ * warns about these; they do not hold the sync switch off.
+ */
+export function unmappedNoTaxCodeDirections(
+  usage: ReadonlyArray<TaxCodeUsage>,
+  mappings: ReadonlyArray<Pick<TaxCodeMapping, "taxCodeId" | "direction">>
+): TaxDirection[] {
+  return directionsUsingCodes(usage).filter(
+    (direction) => !hasNoTaxCodeMapping(mappings, direction)
+  );
+}
+
 export type UnmappedTaxCode = {
-  /** A tax code id, or `NO_TAX_CODE_MAPPING_ID` for the fallback row. */
   taxCodeId: string;
   name: string;
   direction: TaxDirection;
@@ -415,44 +456,30 @@ export type UnmappedTaxCode = {
 /**
  * The (code, direction) pairs that hold the sync switch off: a code used in
  * a direction with no mapping for it (retired codes too, since their open
- * documents still sync), and, for a provider that sends the fallback, the
- * unmapped fallback of each direction that uses codes. A Reverse Charge code
- * needs no purchase mapping. Pure.
+ * documents still sync). A Reverse Charge code needs no purchase mapping.
+ * The fallback row is never required (`unmappedNoTaxCodeDirections`). Pure.
  */
 export function computeUnmappedTaxCodes(args: {
   usage: ReadonlyArray<TaxCodeUsage>;
   mappings: ReadonlyArray<Pick<TaxCodeMapping, "taxCodeId" | "direction">>;
-  noTaxCodeFallback: boolean;
 }): UnmappedTaxCode[] {
   const mapped = new Set(
     args.mappings.map((m) =>
       buildTaxCodeMappingEntityId(m.taxCodeId, m.direction)
     )
   );
-  const isMapped = (taxCodeId: string, direction: TaxDirection) =>
-    mapped.has(buildTaxCodeMappingEntityId(taxCodeId, direction));
-
-  const data: UnmappedTaxCode[] = args.usage.flatMap((code) =>
+  return args.usage.flatMap((code) =>
     TAX_DIRECTIONS.filter((direction) =>
       direction === "sales"
         ? code.usedForSales
         : code.usedForPurchase && !code.reverseCharge
     )
-      .filter((direction) => !isMapped(code.id, direction))
+      .filter(
+        (direction) =>
+          !mapped.has(buildTaxCodeMappingEntityId(code.id, direction))
+      )
       .map((direction) => ({ taxCodeId: code.id, name: code.name, direction }))
   );
-  if (args.noTaxCodeFallback) {
-    for (const direction of noTaxCodeFallbackDirections(args.usage)) {
-      if (!isMapped(NO_TAX_CODE_MAPPING_ID, direction)) {
-        data.push({
-          taxCodeId: NO_TAX_CODE_MAPPING_ID,
-          name: "No tax code (exempt or non-taxable)",
-          direction
-        });
-      }
-    }
-  }
-  return data;
 }
 
 /**
@@ -473,8 +500,7 @@ export async function getUnmappedTaxCodes(
     return {
       data: computeUnmappedTaxCodes({
         usage,
-        mappings: mappings.data ?? [],
-        noTaxCodeFallback: NO_TAX_CODE_FALLBACK_PROVIDERS.has(args.integration)
+        mappings: mappings.data ?? []
       }),
       error: null
     };

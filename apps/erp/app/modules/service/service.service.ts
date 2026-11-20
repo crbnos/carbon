@@ -53,13 +53,7 @@ import { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
-import {
-  decideLineTax,
-  hasNoRateInForce,
-  itemTaxDecision,
-  type LineTax,
-  noRateInForceMessage
-} from "../accounting/accounting.utils";
+import type { LineTax } from "../accounting/accounting.utils";
 import {
   diffLaborGroups,
   type LaborDimension,
@@ -73,9 +67,9 @@ import {
 import {
   allocateJournalLineIds,
   createAdjustmentJournal,
+  customerLineTaxes,
   invokePosting,
   isActiveCompanyEmployee,
-  loadTaxCodes,
   refuseUnlessOwned,
   resolveAccountingPeriod,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
@@ -3146,13 +3140,11 @@ export async function createServiceInvoice(
 }
 
 /**
- * The tax of a service invoice's lines, by item: one decision for the job's
- * customer and ship-to on `date` (`decideLineTax`, read inside `trx`), zeroed for a
- * non-taxable item (`itemTaxDecision`): the default a new invoice line opens
- * with, the customer's bare percent included. A code with no rate in force
- * on `date` is refused.
+ * The tax of a service invoice's lines, by item (`customerLineTaxes`, read
+ * inside `trx`): the default a new invoice line opens with, the customer's
+ * bare percent included. A code with no rate in force on `date` is refused.
  */
-export async function serviceInvoiceLineTaxes(
+export function serviceInvoiceLineTaxes(
   ctx: ServiceContext,
   trx: Transaction<KyselyDatabase>,
   args: {
@@ -3162,69 +3154,7 @@ export async function serviceInvoiceLineTaxes(
     itemIds: ReadonlyArray<string | null>;
   }
 ): Promise<(itemId: string | null) => LineTax> {
-  const companyId = ctx.company.id;
-  const itemIds = [...new Set(args.itemIds.filter((id): id is string => !!id))];
-  const [customer, customerTax, location, items] = await Promise.all([
-    trx
-      .selectFrom("customer")
-      .select("taxPercent")
-      .where("companyId", "=", companyId)
-      .where("id", "=", args.customerId)
-      .executeTakeFirst(),
-    trx
-      .selectFrom("customerTax")
-      .select(["taxExempt", "taxExemptionReason", "taxCodeId"])
-      .where("companyId", "=", companyId)
-      .where("customerId", "=", args.customerId)
-      .executeTakeFirst(),
-    args.customerLocationId
-      ? trx
-          .selectFrom("customerLocation")
-          .select("taxCodeId")
-          .where("companyId", "=", companyId)
-          .where("id", "=", args.customerLocationId)
-          .executeTakeFirst()
-      : undefined,
-    itemIds.length > 0
-      ? trx
-          .selectFrom("item")
-          .select(["id", "taxable"])
-          .where("companyId", "=", companyId)
-          .where("id", "in", itemIds)
-          .execute()
-      : []
-  ]);
-  const locationCodeId = location?.taxCodeId ?? null;
-  const partyCodeId = customerTax?.taxCodeId ?? null;
-  const codes = await loadTaxCodes(
-    trx,
-    companyId,
-    [locationCodeId, partyCodeId],
-    null
-  );
-  const decision = decideLineTax({
-    source: "sales",
-    taxExempt: customerTax?.taxExempt ?? false,
-    taxExemptionReason: customerTax?.taxExemptionReason ?? null,
-    itemTaxable: true,
-    locationTaxCode: locationCodeId
-      ? (codes.get(locationCodeId) ?? null)
-      : null,
-    partyTaxCode: partyCodeId ? (codes.get(partyCodeId) ?? null) : null,
-    fallbackTaxPercent: Number(customer?.taxPercent ?? 0),
-    date: args.date
-  });
-  if (hasNoRateInForce(decision)) {
-    throw new InvalidInputError(noRateInForceMessage(args.date));
-  }
-  const taxable = new Map(items.map((item) => [item.id, item.taxable]));
-  return (itemId) => {
-    const tax = itemTaxDecision(
-      decision,
-      !itemId || taxable.get(itemId) !== false
-    );
-    return { taxCodeId: tax.taxCodeId, taxPercent: tax.taxPercent };
-  };
+  return customerLineTaxes(trx, { companyId: ctx.company.id, ...args });
 }
 
 /**

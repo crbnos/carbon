@@ -55,6 +55,7 @@ import {
   SyncOperationStatusSchema,
   selectRequiredMappingAccountIds,
   selectUnmappedRequiredAccounts,
+  unmappedNoTaxCodeDirections,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import {
@@ -95,6 +96,7 @@ import {
 import {
   chargedTaxPercent,
   datetime,
+  effectiveComponents,
   redirect,
   redirectExternal
 } from "@carbon/utils";
@@ -556,13 +558,18 @@ async function getTaxRateTabData(
   }
 
   const today = datetime.today(timeZone).toString();
-  const activeCodes = (codesResult.data ?? []).map((code) => ({
-    id: code.id,
-    name: code.name,
-    rate: chargedTaxPercent(toTaxCodeInput(code), today),
-    reverseCharge: code.calculationType === "Reverse Charge",
-    retired: false
-  }));
+  const activeCodes = (codesResult.data ?? []).map((code) => {
+    const input = toTaxCodeInput(code);
+    return {
+      id: code.id,
+      name: code.name,
+      rate: chargedTaxPercent(input, today),
+      reverseCharge: code.calculationType === "Reverse Charge",
+      retired: false,
+      // A code that starts later charges 0% today: match by rate skips it.
+      inForce: effectiveComponents(input, today).length > 0
+    };
+  });
   const usage = usageResult.data ?? [];
   const activeIds = new Set(activeCodes.map((code) => code.id));
   // A retired code still on open documents parks them until it is mapped.
@@ -602,7 +609,11 @@ async function getTaxRateTabData(
           .map((mapping) =>
             buildTaxCodeMappingEntityId(mapping.taxCodeId, mapping.direction)
           ),
-    unmapped: computeUnmappedTaxCodes({ usage, mappings, noTaxCodeFallback }),
+    unmapped: computeUnmappedTaxCodes({ usage, mappings }),
+    // Exempt and zero-rated lines go out at "no tax" until the fallback is mapped.
+    unmappedFallbackDirections: noTaxCodeFallback
+      ? unmappedNoTaxCodeDirections(usage, mappings)
+      : [],
     proposals: matchTaxCodesByRate({
       codes: activeCodes,
       options: provider.options,
@@ -1938,6 +1949,7 @@ export default function IntegrationRoute() {
           mappings={taxRates.mappings}
           staleMappingKeys={taxRates.staleMappingKeys}
           unmapped={taxRates.unmapped}
+          unmappedFallbackDirections={taxRates.unmappedFallbackDirections}
           proposals={taxRates.proposals}
         />
       )

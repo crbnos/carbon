@@ -18197,6 +18197,15 @@ msgstr "निकाली गई लाइनों को मैप करे�
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "खरीद के लिए “कोई कर-संबंधी कोड नहीं (छूट प्राप्त या कर-मुक्त)” पंक्ति को मैप करें। तब तक, बिना कर-संबंधी कोड वाली छूट प्राप्त और शून्य-दर खरीद पंक्तियाँ बिना कर के सिंक होंगी और VAT रिटर्न से बाहर रहेंगी।"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "बिक्री और खरीद के लिए “कोई कर-संबंधी कोड नहीं (छूट प्राप्त या कर-मुक्त)” पंक्ति को मैप करें। तब तक, बिना कर-संबंधी कोड वाली छूट प्राप्त और शून्य-दर पंक्तियाँ बिना कर के सिंक होंगी और VAT रिटर्न से बाहर रहेंगी।"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "बिक्री के लिए “कोई कर-संबंधी कोड नहीं (छूट प्राप्त या कर-मुक्त)” पंक्ति को मैप करें। तब तक, बिना कर-संबंधी कोड वाली छूट प्राप्त और शून्य-दर बिक्री पंक्तियाँ बिना कर के सिंक होंगी और VAT रिटर्न से बाहर रहेंगी।"
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "{providerName} एकीकरण सेटिंग्स में इन खातों को मैप करें और फिर से खींचें, या नीचे उनकी शेष राशि दर्ज करें।"
 
@@ -26329,8 +26338,8 @@ msgstr "कर कोड को सेवानिवृत्त करें"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "कर कोड {0} बंद करें? इसे अब नई पंक्तियों पर नहीं चुना जा सकेगा। जो पंक्तियाँ पहले से इसका उपयोग कर रही हैं, वे इसे रखेंगी। जो कोड अब भी किसी ग्राहक, आपूर्तिकर्ता या शिप-टू स्थान को सौंपा गया है, उसे बंद नहीं किया जा सकता।"
 
-msgid "Retired, still on documents"
-msgstr "बंद किया गया, फिर भी दस्तावेज़ों पर"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "बंद किया गया, फिर भी दस्तावेज़ों पर मौजूद है। दर से मिलान में इसे छोड़ दिया जाता है"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "किसी संपत्ति को स्क्रैपिंग या विक्रय द्वारा सेवा से सेवामुक्त करना, किसी भी लाभ या हानि को शुद्ध बही मूल्य के विरुद्ध दर्ज करना और इसकी स्थिति को निपटाया गया पर सेट करना।"
@@ -32854,6 +32863,9 @@ msgstr "यह PIN फिर से नहीं दिखाया जाएग
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "एक पाठ आंकड़ा बदल रहा है, इसलिए यह पूर्वावलोकन रोका गया है।"
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "इस मूल्य स्तर पर रिवर्स चार्ज कर-संबंधी कोड है। रिवर्स चार्ज में आपूर्तिकर्ता कोई कर नहीं लगाता, इसलिए इसकी कर राशि 0 होनी चाहिए।"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "यह मूल्य मैन्युअल रूप से दर्ज किया गया था, इसलिए कोई मूल्य नियम लागू नहीं किए गए।"

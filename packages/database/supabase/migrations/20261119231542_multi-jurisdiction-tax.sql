@@ -3,6 +3,12 @@
 -- the Odoo-style tax account names, and taxCodeId on every in-scope document.
 -- RLS rules live in packages/database/src/authz/manifest.ts.
 
+-- The file runs as one transaction and takes locks on live tables (the new
+-- tables' FKs lock journal, customer, supplier; the ALTERs lock the document
+-- tables): give up after 5s behind a long transaction (the migration is
+-- re-run) rather than queue every reader and writer behind it.
+SET lock_timeout = '5s';
+
 -- Enums
 DO $$ BEGIN
   CREATE TYPE "taxCalculationType" AS ENUM ('Normal', 'Reverse Charge');
@@ -88,8 +94,10 @@ CREATE TABLE IF NOT EXISTS "taxCodeComponent" (
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "taxCodeComponent_taxCodeId_fkey" FOREIGN KEY ("taxCodeId", "companyId")
     REFERENCES "taxCode"("id", "companyId") ON DELETE CASCADE,
+  -- deleteTaxAuthority refuses first, with the counts; this holds for a
+  -- direct delete too.
   CONSTRAINT "taxCodeComponent_taxAuthorityId_fkey" FOREIGN KEY ("taxAuthorityId", "companyId")
-    REFERENCES "taxAuthority"("id", "companyId") ON DELETE SET NULL ("taxAuthorityId"),
+    REFERENCES "taxAuthority"("id", "companyId") ON DELETE RESTRICT,
   CONSTRAINT "taxCodeComponent_taxReceivedAccountId_fkey" FOREIGN KEY ("taxReceivedAccountId")
     REFERENCES "account"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "taxCodeComponent_taxPaidAccountId_fkey" FOREIGN KEY ("taxPaidAccountId")
@@ -192,10 +200,6 @@ CREATE INDEX IF NOT EXISTS "taxLedger_customerId_idx" ON "taxLedger" ("customerI
 CREATE INDEX IF NOT EXISTS "taxLedger_supplierId_idx" ON "taxLedger" ("supplierId");
 CREATE INDEX IF NOT EXISTS "taxLedger_createdBy_idx" ON "taxLedger" ("createdBy");
 
--- The ALTERs below lock live tables: give up after 5s behind a long
--- transaction (the migration is re-run) rather than queue every writer.
-SET lock_timeout = '5s';
-
 -- Account-default renames (grill 2). No live SQL function reads the old names.
 DO $$ BEGIN
   ALTER TABLE "accountDefault" RENAME COLUMN "salesTaxPayableAccount" TO "taxReceivedAccount";
@@ -203,6 +207,12 @@ EXCEPTION WHEN undefined_column THEN NULL; END $$;
 DO $$ BEGIN
   ALTER TABLE "accountDefault" RENAME COLUMN "purchaseTaxPayableAccount" TO "taxPaidAccount";
 EXCEPTION WHEN undefined_column THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "accountDefault" RENAME CONSTRAINT "accountDefault_salesTaxPayableAccount_fkey" TO "accountDefault_taxReceivedAccount_fkey";
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "accountDefault" RENAME CONSTRAINT "accountDefault_purchaseTaxPayableAccount_fkey" TO "accountDefault_taxPaidAccount_fkey";
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
 
 -- Columns
 ALTER TABLE "item" ADD COLUMN IF NOT EXISTS "taxable" BOOLEAN NOT NULL DEFAULT TRUE;
@@ -213,7 +223,7 @@ ALTER TABLE "customerTax" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "customerTax" ADD CONSTRAINT "customerTax_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "customerTax_taxCodeId_idx" ON "customerTax" ("taxCodeId");
 
@@ -221,7 +231,7 @@ ALTER TABLE "supplierTax" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "supplierTax" ADD CONSTRAINT "supplierTax_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "supplierTax_taxCodeId_idx" ON "supplierTax" ("taxCodeId");
 
@@ -229,7 +239,7 @@ ALTER TABLE "customerLocation" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "customerLocation" ADD CONSTRAINT "customerLocation_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "customerLocation_taxCodeId_idx" ON "customerLocation" ("taxCodeId");
 
@@ -237,7 +247,7 @@ ALTER TABLE "quoteLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "quoteLine" ADD CONSTRAINT "quoteLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "quoteLine_taxCodeId_idx" ON "quoteLine" ("taxCodeId");
 
@@ -245,7 +255,7 @@ ALTER TABLE "salesOrderLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "salesOrderLine" ADD CONSTRAINT "salesOrderLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "salesOrderLine_taxCodeId_idx" ON "salesOrderLine" ("taxCodeId");
 
@@ -253,7 +263,7 @@ ALTER TABLE "salesInvoiceLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "salesInvoiceLine" ADD CONSTRAINT "salesInvoiceLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_taxCodeId_idx" ON "salesInvoiceLine" ("taxCodeId");
 
@@ -266,13 +276,21 @@ ALTER TABLE "salesInvoiceLine"
 -- cannot change the row it runs on. SECURITY DEFINER so the snapshot does
 -- not depend on whether the writer may read tax codes; a TRIGGER function
 -- cannot be called over RPC, and the composite FK keeps the code in the
--- line's company.
+-- line's company. A line of a posted invoice keeps the value it was posted
+-- with (a restore that cannot use replica mode re-inserts it).
 CREATE OR REPLACE FUNCTION public.snapshot_sales_invoice_line_taxes_shipping()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
+  IF EXISTS (
+    SELECT 1 FROM "salesInvoice" si
+    WHERE si."id" = NEW."invoiceId" AND si."companyId" = NEW."companyId"
+      AND si."status" NOT IN ('Draft', 'Pending')
+  ) THEN
+    RETURN NEW;
+  END IF;
   NEW."taxesShipping" := COALESCE((
     SELECT tc."taxesShipping" FROM "taxCode" tc
     WHERE tc."id" = NEW."taxCodeId" AND tc."companyId" = NEW."companyId"
@@ -283,16 +301,51 @@ $$;
 
 DROP TRIGGER IF EXISTS "salesInvoiceLine_taxesShipping_snapshot" ON "salesInvoiceLine";
 CREATE TRIGGER "salesInvoiceLine_taxesShipping_snapshot"
-  BEFORE INSERT OR UPDATE OF "taxCodeId"
+  BEFORE INSERT
   ON "salesInvoiceLine"
   FOR EACH ROW
   EXECUTE FUNCTION public.snapshot_sales_invoice_line_taxes_shipping();
+DROP TRIGGER IF EXISTS "salesInvoiceLine_taxesShipping_snapshot_update" ON "salesInvoiceLine";
+CREATE TRIGGER "salesInvoiceLine_taxesShipping_snapshot_update"
+  BEFORE UPDATE OF "taxCodeId"
+  ON "salesInvoiceLine"
+  FOR EACH ROW
+  WHEN (OLD."taxCodeId" IS DISTINCT FROM NEW."taxCodeId")
+  EXECUTE FUNCTION public.snapshot_sales_invoice_line_taxes_shipping();
+
+-- A code's "taxes shipping" change reaches the lines of its draft invoices,
+-- so a draft never posts the old value or mixes old and new lines. Posted
+-- invoices keep their snapshot. Same style as the line snapshot above.
+CREATE OR REPLACE FUNCTION public.sync_draft_sales_invoice_line_taxes_shipping()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  UPDATE "salesInvoiceLine" l
+  SET "taxesShipping" = NEW."taxesShipping"
+  FROM "salesInvoice" si
+  WHERE l."taxCodeId" = NEW."id" AND l."companyId" = NEW."companyId"
+    AND si."id" = l."invoiceId" AND si."companyId" = l."companyId"
+    AND si."status" IN ('Draft', 'Pending')
+    AND l."taxesShipping" IS DISTINCT FROM NEW."taxesShipping";
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS "taxCode_taxesShipping_sync_draft_lines" ON "taxCode";
+CREATE TRIGGER "taxCode_taxesShipping_sync_draft_lines"
+  AFTER UPDATE OF "taxesShipping"
+  ON "taxCode"
+  FOR EACH ROW
+  WHEN (OLD."taxesShipping" IS DISTINCT FROM NEW."taxesShipping")
+  EXECUTE FUNCTION public.sync_draft_sales_invoice_line_taxes_shipping();
 
 ALTER TABLE "rentalAgreement" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "rentalAgreement" ADD CONSTRAINT "rentalAgreement_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "rentalAgreement_taxCodeId_idx" ON "rentalAgreement" ("taxCodeId");
 
@@ -300,7 +353,7 @@ ALTER TABLE "rentalAgreementCharge" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "rentalAgreementCharge" ADD CONSTRAINT "rentalAgreementCharge_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "rentalAgreementCharge_taxCodeId_idx" ON "rentalAgreementCharge" ("taxCodeId");
 
@@ -308,7 +361,7 @@ ALTER TABLE "customerContractLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "customerContractLine" ADD CONSTRAINT "customerContractLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "customerContractLine_taxCodeId_idx" ON "customerContractLine" ("taxCodeId");
 
@@ -316,7 +369,7 @@ ALTER TABLE "supplierQuoteLinePrice" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "supplierQuoteLinePrice" ADD CONSTRAINT "supplierQuoteLinePrice_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "supplierQuoteLinePrice_taxCodeId_idx" ON "supplierQuoteLinePrice" ("taxCodeId");
 
@@ -324,17 +377,25 @@ ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "purchaseOrderLine" ADD CONSTRAINT "purchaseOrderLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "purchaseOrderLine_taxCodeId_idx" ON "purchaseOrderLine" ("taxCodeId");
--- Snapshot only, so restoring an approved version puts the code back with its rate.
+-- Restoring an approved version puts the code back with its rate. A real FK,
+-- like the version's other id columns, so a restore into another company
+-- remaps it.
 ALTER TABLE "purchaseOrderLineVersion" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
+DO $$ BEGIN
+  ALTER TABLE "purchaseOrderLineVersion" ADD CONSTRAINT "purchaseOrderLineVersion_taxCodeId_fkey"
+    FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
+    ON DELETE SET NULL ("taxCodeId");
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE INDEX IF NOT EXISTS "purchaseOrderLineVersion_taxCodeId_idx" ON "purchaseOrderLineVersion" ("taxCodeId");
 
 ALTER TABLE "purchaseInvoiceLine" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLine_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "purchaseInvoiceLine_taxCodeId_idx" ON "purchaseInvoiceLine" ("taxCodeId");
 
@@ -342,27 +403,9 @@ ALTER TABLE "memo" ADD COLUMN IF NOT EXISTS "taxCodeId" TEXT;
 DO $$ BEGIN
   ALTER TABLE "memo" ADD CONSTRAINT "memo_taxCodeId_fkey"
     FOREIGN KEY ("taxCodeId", "companyId") REFERENCES "taxCode"("id", "companyId")
-    ON DELETE SET NULL ("taxCodeId") NOT VALID;
+    ON DELETE SET NULL ("taxCodeId");
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "memo_taxCodeId_idx" ON "memo" ("taxCodeId");
-
-RESET lock_timeout;
-
--- Added NOT VALID above, then validated here: the scan of each table runs
--- under VALIDATE's weaker lock, which does not block writes.
-ALTER TABLE "customerTax" VALIDATE CONSTRAINT "customerTax_taxCodeId_fkey";
-ALTER TABLE "supplierTax" VALIDATE CONSTRAINT "supplierTax_taxCodeId_fkey";
-ALTER TABLE "customerLocation" VALIDATE CONSTRAINT "customerLocation_taxCodeId_fkey";
-ALTER TABLE "quoteLine" VALIDATE CONSTRAINT "quoteLine_taxCodeId_fkey";
-ALTER TABLE "salesOrderLine" VALIDATE CONSTRAINT "salesOrderLine_taxCodeId_fkey";
-ALTER TABLE "salesInvoiceLine" VALIDATE CONSTRAINT "salesInvoiceLine_taxCodeId_fkey";
-ALTER TABLE "rentalAgreement" VALIDATE CONSTRAINT "rentalAgreement_taxCodeId_fkey";
-ALTER TABLE "rentalAgreementCharge" VALIDATE CONSTRAINT "rentalAgreementCharge_taxCodeId_fkey";
-ALTER TABLE "customerContractLine" VALIDATE CONSTRAINT "customerContractLine_taxCodeId_fkey";
-ALTER TABLE "supplierQuoteLinePrice" VALIDATE CONSTRAINT "supplierQuoteLinePrice_taxCodeId_fkey";
-ALTER TABLE "purchaseOrderLine" VALIDATE CONSTRAINT "purchaseOrderLine_taxCodeId_fkey";
-ALTER TABLE "purchaseInvoiceLine" VALIDATE CONSTRAINT "purchaseInvoiceLine_taxCodeId_fkey";
-ALTER TABLE "memo" VALIDATE CONSTRAINT "memo_taxCodeId_fkey";
 
 -- Recreate the line views so their expanded column lists include taxCodeId
 
@@ -539,3 +582,4 @@ CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "account" a ON a.id = ql."accountId"
 );
 
+RESET lock_timeout;

@@ -65,7 +65,7 @@ On a unit treated as a sale, rent and the purchase option credit net investment 
 
 ### Tax
 
-Each line carries a **"Tax Code"** and a **"Tax Percent"**. A new line takes them from the customer or supplier ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)), and an invoice made from an order copies the order line's code.
+Each line carries a **"Tax Code"** and a **"Tax Percent"**. A new line takes them from the customer or supplier ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)), and an invoice made from an order copies the order line's code at its rate on the invoice date.
 
 - A **sales invoice** credits Tax Received once per <Term>tax component</Term>. Header shipping is taxed only when a line's code has **"Taxes Shipping"** on: that line's share of the shipping joins its tax base.
 - A **purchase invoice** posts the recoverable share of each component's tax to Tax Paid. The rest stays in the cost of the line. See [recoverable purchase tax](/docs/reference/accounting#recoverable-purchase-tax).

@@ -58,31 +58,6 @@ describe("DOCUMENT_PDFS", () => {
   );
 
   /** What makes each document print the tables its sample leaves out. */
-  // Two components, so the summary prints a `taxComponent` row for each.
-  const gstPst = {
-    id: "code-gst-pst",
-    calculationType: "Normal",
-    taxesShipping: false,
-    invoiceMessage: null,
-    taxCodeComponent: [
-      ["cmp-gst", "GST", 0.05, 1],
-      ["cmp-pst", "PST", 0.07, 2]
-    ].map(([id, name, taxPercent, sequence]) => ({
-      id,
-      name,
-      taxAuthorityId: null,
-      taxPercent,
-      recoverablePercent: 0,
-      sequence,
-      isCompound: false,
-      taxReceivedAccountId: null,
-      taxPaidAccountId: null,
-      effectiveDate: null,
-      expirationDate: null
-    }))
-  };
-  const taxedLines = (lines: any[]) =>
-    lines.map((line) => ({ ...line, taxCodeId: gstPst.id, taxPercent: 0.12 }));
   const everyTable: Partial<
     Record<DocumentTemplateType, (sample: any) => Record<string, unknown>>
   > = {
@@ -100,33 +75,24 @@ describe("DOCUMENT_PDFS", () => {
         }
       ]
     }),
-    salesInvoice: () => ({
-      taxSummary: [
-        { name: "GST", rate: 0.05, base: 1000, tax: 50 },
-        { name: "PST", rate: 0.07, base: 1000, tax: 70 }
-      ]
-    }),
-    salesOrder: (sample) => ({
-      taxDate: "2026-06-01",
-      taxCodes: [gstPst],
-      salesOrderLines: taxedLines(sample.salesOrderLines)
-    }),
+    // The samples print a row per tax component; without codes, the single
+    // tax row prints instead.
+    salesInvoice: () => ({ taxSummary: [] }),
+    salesOrder: () => ({ taxCodes: [] }),
     quote: (sample) => ({
-      taxDate: "2026-06-01",
-      taxCodes: [gstPst],
-      quoteLines: taxedLines(sample.quoteLines).map(
-        (line: any, index: number) =>
-          index === 0
-            ? {
-                ...line,
-                additionalCharges: {
-                  freight: {
-                    description: "Crating",
-                    amounts: { [line.quantity[0]]: 5 }
-                  }
+      taxCodes: [],
+      quoteLines: sample.quoteLines.map((line: any, index: number) =>
+        index === 0
+          ? {
+              ...line,
+              additionalCharges: {
+                freight: {
+                  description: "Crating",
+                  amounts: { [line.quantity[0]]: 5 }
                 }
               }
-            : line
+            }
+          : line
       )
     }),
     jobTraveler: (sample) => ({

@@ -176,6 +176,82 @@ export function taxCodesWithoutComponents(
 }
 
 /**
+ * The coded lines whose stored rate is not their code's charged rate on
+ * `date` (the document's tax point), each with that rate. Posting refuses
+ * them: the split would otherwise file tax charged at one date's rate under
+ * another date's components. `codes` must hold every code the lines name.
+ */
+export function lineRateMismatches<
+  T extends { taxCodeId: string | null; taxPercent: number | string | null }
+>(
+  lines: ReadonlyArray<T>,
+  codes: ReadonlyMap<
+    string,
+    Pick<TaxCodeInput, "calculationType" | "components">
+  >,
+  date: string
+): { line: T; chargedPercent: number }[] {
+  return lines.flatMap((line) => {
+    const code = line.taxCodeId ? codes.get(line.taxCodeId) : undefined;
+    if (!code) return [];
+    const chargedPercent = chargedTaxPercent(code, date);
+    return round(Number(line.taxPercent ?? 0)) === chargedPercent
+      ? []
+      : [{ line, chargedPercent }];
+  });
+}
+
+/**
+ * The stored components a tax-code save may not change, by name. Posted tax
+ * snapshots a component, but every reader that reloads the code (a G/L
+ * account change, a memo rebuild, the cutover backfill) would see the edit as
+ * history. So a component the tax ledger names (`postedThrough`: the latest
+ * posting date of its rows) keeps its rate, recoverable percent, compounding
+ * and effective date, cannot be removed, and can only expire on or after
+ * that date. The user expires it and adds a new component instead.
+ */
+export function lockedComponentEdits(args: {
+  stored: ReadonlyArray<
+    Pick<
+      TaxComponentInput,
+      | "id"
+      | "name"
+      | "taxPercent"
+      | "recoverablePercent"
+      | "isCompound"
+      | "effectiveDate"
+      | "expirationDate"
+    >
+  >;
+  submitted: ReadonlyArray<{
+    id?: string | null;
+    taxPercent: number;
+    recoverablePercent: number;
+    isCompound: boolean;
+    effectiveDate?: string | null;
+    expirationDate?: string | null;
+  }>;
+  postedThrough: ReadonlyMap<string, string>;
+}): string[] {
+  return args.stored.flatMap((stored) => {
+    const lastPosted = args.postedThrough.get(stored.id);
+    if (!lastPosted) return [];
+    const next = args.submitted.find((c) => c.id === stored.id);
+    const expirationDate = next?.expirationDate || null;
+    const locked =
+      !next ||
+      round(next.taxPercent) !== round(stored.taxPercent) ||
+      round(next.recoverablePercent) !== round(stored.recoverablePercent) ||
+      next.isCompound !== stored.isCompound ||
+      (next.effectiveDate || null) !== (stored.effectiveDate || null) ||
+      (expirationDate !== (stored.expirationDate || null) &&
+        expirationDate !== null &&
+        expirationDate < lastPosted);
+    return locked ? [stored.name] : [];
+  });
+}
+
+/**
  * A purchase line's tax split by its code's components (base amounts):
  * `taxParts` splits the supplier's tax on a Normal code, `selfAssessedParts`
  * the tax a Reverse Charge code self-assesses at the code's rate. `code`

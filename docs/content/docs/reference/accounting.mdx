@@ -70,11 +70,11 @@ A <Term>tax code</Term> is a named tax treatment, such as "TX – Houston". It h
 
 You set them up under **Accounting → Tax**:
 
-- **Tax Codes**: the codes and their components. A code also has a **"Calculation Type"** (*Normal* or *Reverse Charge*), a **"Reporting Category"**, an **"Invoice Message"** that prints on sales invoices, and **"Taxes Shipping"**. Deleting a code retires it, so posted documents keep it.
-- **Tax Authorities**: who you pay the tax to, with an optional **"Supplier"**.
+- **Tax Codes**: the codes and their components. A code also has a **"Calculation Type"** (*Normal* or *Reverse Charge*), a **"Reporting Category"**, an **"Invoice Message"** that prints on sales invoices, and **"Taxes Shipping"**. Deleting a code retires it, so posted documents keep it. You cannot retire a code while a customer, a supplier or a ship-to location still uses it: give them another code first.
+- **Tax Authorities**: who you pay the tax to, with an optional **"Supplier"**. You cannot delete an authority that a component or posted tax still uses.
 - **Tax Registrations**: your own registration numbers, by country and state. The page warns about an active code's country with no registration, and about a registration whose country has no active code.
 
-To change a rate, give the old component an **"Expires"** date and add a new component. A document takes the components in force on its date. A posted document never changes.
+To change a rate, set the old component to expire the day before the new one takes effect, and add the new component. Two components with the same name and authority cannot be in force on the same day. Once posted tax uses a component, you cannot change its rate, recoverable percent or dates, or delete it: expire it and add a new one. A document takes the components in force on its date. A posted document never changes.
 
 ### Which code a line takes
 
@@ -86,7 +86,9 @@ When you add a line, Carbon picks its tax in this order:
 4. The **"Tax Code"** of the customer or supplier.
 5. The party's bare **"Tax Percent"**, as before tax codes existed.
 
-The code's combined rate fills the line's **"Tax Percent"**. You can change the line's code. A conversion, such as a quote to a sales order, copies the code and does not pick again.
+The code's rate on the document's date fills the line's **"Tax Percent"**. A *Reverse Charge* code fills 0%, because the customer or you account for the tax. You can change the line's code. A conversion, such as a quote to a sales order, copies the code and does not pick again; the line takes the code's rate on the new document's date.
+
+When you post a sales invoice, a line whose rate is not its code's rate on the invoice date is refused. The message names the line, both rates and the date. Use **"Recalculate taxes"** on the invoice to fix it.
 
 ### Recoverable purchase tax
 

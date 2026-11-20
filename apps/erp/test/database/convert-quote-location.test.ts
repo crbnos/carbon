@@ -7,6 +7,7 @@
 // shipment: the company's first location.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
+import { parseDate } from "@internationalized/date";
 import { expect } from "vitest";
 import {
   alwaysPostFixture,
@@ -23,7 +24,10 @@ import {
 
 // A Sent quote of one Pull from Inventory line for 4 of the fixture's part,
 // converted to a sales order. Returns the order id.
-async function convertQuote(f: Fixture) {
+async function convertQuote(
+  f: Fixture,
+  tax?: { taxCodeId: string; taxPercent: number }
+) {
   const quoteId = `${f.prefix}-quote`;
   const quoteLineId = `${f.prefix}-quote-line`;
   await seed(f, async (trx) => {
@@ -68,6 +72,7 @@ async function convertQuote(f: Fixture) {
         methodType: "Pull from Inventory",
         unitOfMeasureCode: "EA",
         quantity: [4],
+        ...tax,
         companyId: f.companyId,
         createdBy: USER
       })
@@ -171,6 +176,68 @@ databaseTest(
         .where("salesOrderId", "=", convertedId)
         .execute();
       expect(lines).toEqual([{ storageUnitId: shelf }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a converted line keeps its tax code and takes the code's rate on the new document's date",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      // 17.5% until yesterday, 20% from today: the quote was rated at 17.5%.
+      const yesterday = parseDate(f.today).subtract({ days: 1 }).toString();
+      const taxCodeId = `${f.prefix}-vat`;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("taxCode")
+          .values({
+            id: taxCodeId,
+            name: "VAT",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("taxCodeComponent")
+          .values([
+            {
+              taxCodeId,
+              name: "VAT 17.5",
+              taxPercent: 0.175,
+              expirationDate: yesterday,
+              sequence: 1,
+              companyId: f.companyId,
+              createdBy: USER
+            },
+            {
+              taxCodeId,
+              name: "VAT 20",
+              taxPercent: 0.2,
+              effectiveDate: f.today,
+              sequence: 1,
+              companyId: f.companyId,
+              createdBy: USER
+            }
+          ])
+          .execute();
+      });
+
+      const convertedId = await convertQuote(f, {
+        taxCodeId,
+        taxPercent: 0.175
+      });
+
+      const lines = await f.db
+        .selectFrom("salesOrderLine")
+        .select(["taxCodeId", "taxPercent"])
+        .where("salesOrderId", "=", convertedId)
+        .execute();
+      expect(
+        lines.map((line) => [line.taxCodeId, Number(line.taxPercent)])
+      ).toEqual([[taxCodeId, 0.2]]);
     } finally {
       await f.cleanup();
     }

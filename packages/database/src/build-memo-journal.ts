@@ -36,6 +36,7 @@
 // the cost never reconcile and GRNI keeps a permanent residual.
 
 import { toBaseAmount } from "./accounting-currency.ts";
+import { REVERSE_CHARGE_TAX_POSTING_DESCRIPTION } from "./accounting-posting.ts";
 import { accountTypeFromClass, credit, debit } from "./ledger.ts";
 import {
   assertBalanced,
@@ -95,6 +96,10 @@ export interface BuildMemoJournalInput {
   // account — Tax Received for a customer memo, Tax Paid for a supplier memo —
   // and the reason leg takes the rest. Omit, or 0, for a memo with no tax.
   taxAmount?: number;
+  /** The tax legs' base amount when it is not `taxAmount` converted: a
+   *  supplier memo's recoverable share, summed from its tax-ledger parts so
+   *  the GL and the ledger agree exactly. */
+  taxAmountBase?: number;
   taxAccountId?: string | null;
   /** The tax account's class. A company may keep one VAT control account
    *  for both directions, so Tax Paid is not always an asset. Omitted: Tax
@@ -108,6 +113,15 @@ export interface BuildMemoJournalInput {
     accountClass?: string | null;
     weight: number;
   }>;
+  /** A supplier memo on a Reverse Charge code: the tax its bill
+   *  self-assessed, in base, posted on `accountId` on the control side (the
+   *  supplier charged none). Its recoverable share is the tax legs
+   *  (`taxAmountBase`); the rest joins the reason leg, as cost. */
+  selfAssessed?: {
+    amountBase: number;
+    accountId: string;
+    accountClass?: string | null;
+  };
 }
 
 export interface BuildMemoJournalResult {
@@ -137,9 +151,11 @@ export function buildMemoJournal(
     varianceAccountId,
     reasonDescription,
     taxAmount = 0,
+    taxAmountBase,
     taxAccountId,
     taxAccountClass,
-    taxLegs
+    taxLegs,
+    selfAssessed
   } = input;
 
   if (!controlAccountId) {
@@ -210,7 +226,14 @@ export function buildMemoJournal(
     );
   }
   const taxMagnitude =
-    taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0;
+    taxAmountBase ??
+    (taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0);
+  if (!Number.isFinite(taxMagnitude) || taxMagnitude < 0) {
+    throw new Error("Memo tax must be at least 0");
+  }
+  const selfAssessedMagnitude = selfAssessed
+    ? round(selfAssessed.amountBase)
+    : 0;
   const legs = taxLegs?.length
     ? taxLegs
     : [{ accountId: null, accountClass: null, weight: 1 }];
@@ -222,9 +245,11 @@ export function buildMemoJournal(
       `Missing ${isAR ? "Tax Received" : "Tax Paid"} account default; cannot post memo tax`
     );
   }
+  // Self-assessed tax sits on the reason side: its recoverable share on the
+  // tax legs, the rest (cost) in the reason leg.
   const reasonMagnitude =
     reasonAmountBase === undefined
-      ? round(magnitude - taxMagnitude)
+      ? round(magnitude - taxMagnitude + selfAssessedMagnitude)
       : round(Math.abs(reasonAmountBase));
   pushLine(
     controlIsDebit ? "credit" : "debit",
@@ -264,6 +289,20 @@ export function buildMemoJournal(
         amounts[index]!
       );
     });
+  }
+
+  // 2c) Reverse-charge leg — the self-assessed tax, owed to the authority,
+  // on the control side as the bill posted it.
+  if (selfAssessed && selfAssessedMagnitude > 0) {
+    pushLine(
+      controlIsDebit ? "debit" : "credit",
+      selfAssessed.accountClass
+        ? accountTypeFromClass(selfAssessed.accountClass)
+        : "liability",
+      selfAssessed.accountId,
+      REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
+      selfAssessedMagnitude
+    );
   }
 
   // 3) Variance leg — the plug that makes an unequal control/reason pair

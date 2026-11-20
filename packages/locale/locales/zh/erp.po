@@ -18197,6 +18197,15 @@ msgstr "映射提取的行"
 msgid "Map Lines Now"
 msgstr "立即映射行"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "请为采购映射“无税码（免税或不应税）”行。在此之前，没有税码的免税和零税率采购行将以不计税方式同步，且不计入增值税申报表。"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "请为销售和采购映射“无税码（免税或不应税）”行。在此之前，没有税码的免税和零税率行将以不计税方式同步，且不计入增值税申报表。"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "请为销售映射“无税码（免税或不应税）”行。在此之前，没有税码的免税和零税率销售行将以不计税方式同步，且不计入增值税申报表。"
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "在 {providerName} 集成设置中映射这些账户并重新拉取，或在下方输入它们的余额。"
 
@@ -26329,8 +26338,8 @@ msgstr "停用税码"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "停用税码 {0}？之后新行将无法选择该税码。已使用它的行将保留该税码。仍分配给客户、供应商或收货地点的税码无法停用。"
 
-msgid "Retired, still on documents"
-msgstr "已停用，仍在单据中使用"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "已停用，但仍在单据上使用。按税率匹配时会跳过它"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "通过报废或出售将资产退出使用，将收益或损失计入账面净值，并将其状态设为已处置。"
@@ -32854,6 +32863,9 @@ msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "由于某段文字改变了数值，此预览已暂停。"
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "此价格阶梯设有反向征税（Reverse Charge）税码。供应商在反向征税下不收取税款，因此其税额必须为 0。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"

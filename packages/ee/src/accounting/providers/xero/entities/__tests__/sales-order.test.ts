@@ -48,7 +48,9 @@ function makeSalesOrderSyncer(
     selectFrom: () => query,
     select: () => query,
     where: () => query,
-    // The tax-code mapping read.
+    leftJoin: () => query,
+    orderBy: () => query,
+    // The tax-code mapping read (and an empty account mapping).
     execute: async () => taxMappings
   };
   const listTaxRates = vi.fn(async () => XERO_TAX_RATES);

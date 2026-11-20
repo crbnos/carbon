@@ -173,6 +173,7 @@ import {
   type LegacyDepositRefund,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
+  purchaseLineTaxParts,
   RECEIVABLE_POSTING_DESCRIPTIONS,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   type ReceiptLayerLike,
@@ -289,6 +290,7 @@ import {
   partyDimensionValues,
   partyDimensionValuesFrom,
   purchaseTaxLedgerLines,
+  refuseLineRateMismatches,
   refuseUnlessOwned,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
@@ -299,7 +301,7 @@ import {
   samePosition,
   signedCreditAmount,
   syncDraftRecognitionRuns,
-  taxCodeOn,
+  taxCodesInForceOn,
   withPurchaseTax
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
@@ -1565,7 +1567,8 @@ export async function upsertPurchaseInvoiceLine(
   const existing = await client
     .from("purchaseInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", line.invoiceId);
+    .eq("invoiceId", line.invoiceId)
+    .eq("companyId", line.companyId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -1968,7 +1971,8 @@ export async function upsertSalesInvoiceLine(
   const existing = await client
     .from("salesInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", line.invoiceId);
+    .eq("invoiceId", line.invoiceId)
+    .eq("companyId", line.companyId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -6654,6 +6658,7 @@ export async function sendPostedSalesInvoice(
   try {
     const document = await loadSalesInvoiceDocument({
       client: serviceRole,
+      taxClient: serviceRole,
       companyId,
       companyGroupId: ctx.company.groupId,
       invoiceId,
@@ -10061,12 +10066,22 @@ export async function postSalesInvoice(
         // The lines' tax codes on the invoice's tax point (the date issued,
         // when its rates were taken), and their own Tax Received accounts,
         // which load with the defaults.
+        const taxPointDate = invoiceHeader.dateIssued ?? today;
         const taxCodes = await loadTaxCodesInForce(db, {
           companyId,
           taxCodeIds: salesInvoiceLines.data.map(
             (line: InvoiceLineRecord) => line.taxCodeId
           ),
-          taxPointDate: invoiceHeader.dateIssued ?? today,
+          taxPointDate,
+          document: "sales invoice"
+        });
+        // A line rated on another date (an order's, or before the date
+        // issued changed) would file its tax under the wrong components.
+        await refuseLineRateMismatches(db, {
+          companyId,
+          lines: salesInvoiceLines.data,
+          taxCodes,
+          taxPointDate,
           document: "sales invoice"
         });
         // What the tax ledger snapshots: the customer's exemption and the
@@ -11932,14 +11947,37 @@ export type MemoJournalLineWithRole = MemoJournalLine & {
   accountDefaultRole: OptionalDefaultRole | null;
 };
 
+/** How a memo's tax posts (`planMemoTax`). */
+export type MemoTaxPlan = {
+  netAmount: number;
+  /** Base amount through Tax Received (all of a customer memo's tax) or Tax
+   *  Paid (a supplier memo's recoverable share, summed from `parts`, so the
+   *  GL moves exactly what the ledger records). */
+  taxToAccountBase: number;
+  /** The tax split by the code's components: the memo's own tax, or the
+   *  tax a Reverse Charge supplier memo self-assesses. */
+  parts: ComponentTax[];
+  /** A supplier memo on a Reverse Charge code: `parts` is self-assessed tax,
+   *  owed to the authority on the reverse-charge account. */
+  selfAssessed: boolean;
+  /** All of the self-assessed tax, base; 0 unless `selfAssessed`. */
+  selfAssessedBase: number;
+};
+
 /**
  * How a memo's tax posts (spec "Memo tax"). `amount` is the gross on AR or
- * AP and `taxAmount` the tax inside it, both in document currency. A customer
- * memo moves all of the tax through Tax Received; a supplier memo moves only
- * the recoverable share through Tax Paid and leaves the rest in the reason
- * leg; with no code it moves none, as a legacy purchase line folded its tax
- * into cost. Shared by the posting and the pre-cutover rebuild, so both build the
- * same journal.
+ * AP and `taxAmount` the tax inside it, both in document currency.
+ * - A customer memo moves all of its tax through Tax Received.
+ * - A supplier memo moves only the recoverable share through Tax Paid and
+ *   leaves the rest in the reason leg.
+ * - A supplier memo on a Reverse Charge code carries no tax, but reverses
+ *   (or adds) the tax its bill self-assessed, as the purchase invoice does.
+ * - With no code a supplier memo moves no tax, as a legacy purchase line
+ *   folded its tax into cost.
+ * `taxCode` carries only the components in force on the memo's tax point. A
+ * coded memo is split even at 0 tax, so its ledger rows name the authority.
+ * Shared by the posting and the pre-cutover rebuild, so both build the same
+ * journal.
  */
 export function planMemoTax(args: {
   isAR: boolean;
@@ -11948,38 +11986,52 @@ export function planMemoTax(args: {
   exchangeRate: number;
   decimals: number;
   taxCode: TaxCodeInput | undefined;
-}): { netAmount: number; taxToAccount: number; parts: ComponentTax[] } {
+}): MemoTaxPlan {
   const { isAR, amount, taxAmount, exchangeRate, decimals, taxCode } = args;
   const netAmount = round(amount - taxAmount, decimals);
-  const parts =
-    taxAmount > 0 && taxCode && taxCode.components.length > 0
-      ? splitLineTax({
-          base: toBaseAmount(netAmount, exchangeRate),
-          lineTax: toBaseAmount(taxAmount, exchangeRate),
-          components: taxCode.components,
-          scale: SCALE
-        })
-      : [];
-  if (isAR) return { netAmount, taxToAccount: taxAmount, parts };
-  // A supplier memo with no code reverses tax a legacy purchase line folded
-  // into cost, so it stays in the reason leg, as on that invoice.
-  if (parts.length === 0) return { netAmount, taxToAccount: 0, parts };
-  const total = parts.reduce((t, p) => t + p.taxAmount, 0);
+  const base = toBaseAmount(netAmount, exchangeRate);
+  const none = { selfAssessed: false, selfAssessedBase: 0 };
+  if (!taxCode || taxCode.components.length === 0) {
+    return {
+      netAmount,
+      taxToAccountBase:
+        isAR && taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0,
+      parts: [],
+      ...none
+    };
+  }
+  if (!isAR && taxCode.calculationType === "Reverse Charge") {
+    const parts =
+      purchaseLineTaxParts({ base, taxAmount: 0, code: taxCode })
+        .selfAssessedParts ?? [];
+    return {
+      netAmount,
+      taxToAccountBase: recoverableTax(parts),
+      parts,
+      selfAssessed: true,
+      selfAssessedBase: parts.reduce((total, part) => total + part.taxAmount, 0)
+    };
+  }
+  const lineTax = taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0;
+  const parts = splitLineTax({
+    base,
+    lineTax,
+    components: taxCode.components,
+    scale: SCALE
+  });
   return {
     netAmount,
-    taxToAccount:
-      total === 0
-        ? 0
-        : round(taxAmount * (recoverableTax(parts) / total), decimals),
-    parts
+    taxToAccountBase: isAR ? lineTax : recoverableTax(parts),
+    parts,
+    ...none
   };
 }
 
 /**
- * The tax-ledger input of a memo with tax: one line at its net. A customer
- * credit and a supplier debit reverse tax the invoice recorded, so they
- * write negative; the other two add to it. Shared by the posting and the
- * cutover backfill.
+ * The tax-ledger input of a coded or taxed memo: one line at its net. A
+ * customer credit and a supplier debit reverse tax the invoice recorded, so
+ * they write negative; the other two add to it. Shared by the posting and
+ * the cutover backfill.
  */
 export function memoTaxLedger(args: {
   memo: {
@@ -11991,12 +12043,11 @@ export function memoTaxLedger(args: {
   isAR: boolean;
   partyId: string;
   exchangeRate: number;
-  netAmount: number;
   taxAmount: number;
-  parts: ComponentTax[];
+  plan: MemoTaxPlan;
   taxCode: TaxCodeInput | undefined;
 }): TaxLedgerDocument {
-  const { memo, isAR, partyId, exchangeRate } = args;
+  const { memo, isAR, partyId, exchangeRate, plan } = args;
   return {
     source: isAR ? "Sales" : "Purchase",
     documentType: "Memo",
@@ -12010,13 +12061,16 @@ export function memoTaxLedger(args: {
       {
         documentLineId: null,
         taxCodeId: memo.taxCodeId,
-        taxableBase: toBaseAmount(args.netAmount, exchangeRate),
-        components: args.parts,
+        taxableBase: toBaseAmount(plan.netAmount, exchangeRate),
+        components: plan.parts,
         taxPercent: args.taxCode
           ? effectiveTaxPercent(args.taxCode.components)
           : 0,
-        taxAmount: toBaseAmount(args.taxAmount, exchangeRate),
-        exempt: null
+        taxAmount: plan.selfAssessed
+          ? plan.selfAssessedBase
+          : toBaseAmount(args.taxAmount, exchangeRate),
+        exempt: null,
+        selfAssessed: plan.selfAssessed
       }
     ]
   };
@@ -12032,13 +12086,15 @@ export function memoTaxLegs(
   parts: ComponentTax[],
   isAR: boolean
 ): Array<{ accountId: string | null; weight: number }> {
-  return parts.map((part) => ({
-    accountId:
-      (isAR
-        ? part.component.taxReceivedAccountId
-        : part.component.taxPaidAccountId) ?? null,
-    weight: isAR ? part.taxAmount : part.recoverableAmount
-  }));
+  return parts
+    .map((part) => ({
+      accountId:
+        (isAR
+          ? part.component.taxReceivedAccountId
+          : part.component.taxPaidAccountId) ?? null,
+      weight: isAR ? part.taxAmount : part.recoverableAmount
+    }))
+    .filter((leg) => leg.weight !== 0);
 }
 
 /** A credit memo that credits a contract or a rental agreement. */
@@ -12556,27 +12612,21 @@ export function postMemoTransaction(
       throw new Error("Base-currency memo must use exchange rate 1");
     }
     // The tax inside the memo (spec "Memo tax"): `amount` is the gross on AR
-    // or AP, `taxAmount` the tax the form computed forward from the net. A
-    // customer memo unwinds Tax Received in full; a supplier memo unwinds the
-    // recoverable share in Tax Paid and leaves the rest in the reason leg.
-    // The code splits on the memo's tax point, its memo date.
+    // or AP, `taxAmount` the tax the form computed forward from the net. The
+    // code splits on the memo's tax point, its memo date; a coded memo with
+    // no component in force then is refused, whatever its tax.
     const memoTax = Number(memo.taxAmount ?? 0);
-    const memoTaxCode =
-      memo.taxCodeId && memoTax > 0
-        ? (
-            await loadTaxCodesInForce(trx, {
-              companyId,
-              taxCodeIds: [memo.taxCodeId],
-              taxPointDate: memo.memoDate,
-              document: "memo"
-            })
-          ).get(memo.taxCodeId)
-        : undefined;
-    const {
-      netAmount,
-      taxToAccount,
-      parts: memoTaxParts
-    } = planMemoTax({
+    const memoTaxCode = memo.taxCodeId
+      ? (
+          await loadTaxCodesInForce(trx, {
+            companyId,
+            taxCodeIds: [memo.taxCodeId],
+            taxPointDate: memo.memoDate,
+            document: "memo"
+          })
+        ).get(memo.taxCodeId)
+      : undefined;
+    const memoTaxPlan = planMemoTax({
       isAR,
       amount,
       taxAmount: memoTax,
@@ -12584,6 +12634,7 @@ export function postMemoTransaction(
       decimals: currency.decimalPlaces,
       taxCode: memoTaxCode
     });
+    const { netAmount, taxToAccountBase, parts: memoTaxParts } = memoTaxPlan;
     const party = isAR
       ? await trx
           .selectFrom("customer")
@@ -12690,14 +12741,23 @@ export function postMemoTransaction(
       ? defaults.taxReceivedAccount
       : defaults.taxPaidAccount;
     const memoTaxLegAccounts =
-      taxToAccount > 0 ? memoTaxLegs(memoTaxParts, isAR) : [];
+      taxToAccountBase > 0 ? memoTaxLegs(memoTaxParts, isAR) : [];
+    const reverseChargeAccountId = memoTaxPlan.selfAssessedBase
+      ? defaults.reverseChargeSalesTaxPayableAccount
+      : null;
+    if (memoTaxPlan.selfAssessedBase && !reverseChargeAccountId) {
+      throw new InvalidInputError(
+        "Set the Reverse Charge Sales Tax account default before posting a memo on a reverse charge code"
+      );
+    }
     const accountIds = [
       ...new Set(
         [
           controlAccountId,
           reasonAccountId,
-          ...(taxToAccount > 0 ? [memoTaxAccountId] : []),
+          ...(taxToAccountBase > 0 ? [memoTaxAccountId] : []),
           ...memoTaxLegAccounts.map((leg) => leg.accountId),
+          reverseChargeAccountId,
           ...contractLegs.map((leg) => leg.accountId)
         ].filter((id): id is string => !!id)
       )
@@ -12741,13 +12801,22 @@ export function postMemoTransaction(
       reasonAccountClass: reason.class,
       reasonAmountBase,
       varianceAccountId: defaults.purchaseVarianceAccount,
-      taxAmount: taxToAccount,
+      taxAmount: memoTax,
+      taxAmountBase: taxToAccountBase,
       taxAccountId: memoTaxAccountId,
       taxAccountClass: accounts.find((a) => a.id === memoTaxAccountId)?.class,
       taxLegs: memoTaxLegAccounts.map((leg) => ({
         ...leg,
         accountClass: accounts.find((a) => a.id === leg.accountId)?.class
       })),
+      selfAssessed: reverseChargeAccountId
+        ? {
+            amountBase: memoTaxPlan.selfAssessedBase,
+            accountId: reverseChargeAccountId,
+            accountClass: accounts.find((a) => a.id === reverseChargeAccountId)
+              ?.class
+          }
+        : undefined,
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
         : contractCredit || rentalCredit
@@ -12796,16 +12865,15 @@ export function postMemoTransaction(
       )
       .returning("id")
       .execute();
-    if (memoTax > 0) {
+    if (memoTax > 0 || memoTaxCode) {
       const memoLedgerRows = buildTaxLedgerRows({
         ...memoTaxLedger({
           memo: { ...memo, taxCodeId: memo.taxCodeId ?? null },
           isAR,
           partyId,
           exchangeRate,
-          netAmount,
           taxAmount: memoTax,
-          parts: memoTaxParts,
+          plan: memoTaxPlan,
           taxCode: memoTaxCode
         }),
         companyId,
@@ -13254,7 +13322,9 @@ export async function rebuildMemoJournals(
   // Memo tax plans exactly as the posting did (planMemoTax): the codes on
   // each memo's tax point (its memo date) and each currency's precision,
   // read once.
-  const taxedMemos = memos.filter((memo) => Number(memo.taxAmount ?? 0) > 0);
+  const taxedMemos = memos.filter(
+    (memo) => Number(memo.taxAmount ?? 0) > 0 || memo.taxCodeId
+  );
   const taxCodes = await loadTaxCodes(
     trx,
     companyId,
@@ -13270,6 +13340,7 @@ export async function rebuildMemoJournals(
           ...plans.map((plan) => plan.reasonAccountId),
           defaults.taxReceivedAccount,
           defaults.taxPaidAccount,
+          defaults.reverseChargeSalesTaxPayableAccount,
           ...[...taxCodes.values()].flatMap((code) =>
             code.components.flatMap((component) => [
               component.taxReceivedAccountId,
@@ -13312,9 +13383,13 @@ export async function rebuildMemoJournals(
     }
     const memoTax = Number(memo.taxAmount ?? 0);
     const taxCode = memo.taxCodeId
-      ? taxCodeOn(taxCodes.get(memo.taxCodeId), memo.memoDate)
+      ? taxCodesInForceOn(taxCodes, {
+          taxCodeIds: [memo.taxCodeId],
+          taxPointDate: memo.memoDate,
+          document: `Memo ${memo.memoId}`
+        }).get(memo.taxCodeId)
       : undefined;
-    const { netAmount, taxToAccount, parts } = planMemoTax({
+    const taxPlan = planMemoTax({
       isAR,
       amount: Number(memo.amount),
       taxAmount: memoTax,
@@ -13322,6 +13397,14 @@ export async function rebuildMemoJournals(
       decimals: decimalsByCurrency.get(memo.currencyCode ?? "") ?? 2,
       taxCode
     });
+    const reverseChargeAccountId = taxPlan.selfAssessedBase
+      ? defaults.reverseChargeSalesTaxPayableAccount
+      : null;
+    if (taxPlan.selfAssessedBase && !reverseChargeAccountId) {
+      throw new InvalidInputError(
+        "Set the Reverse Charge Sales Tax account default before posting a memo on a reverse charge code"
+      );
+    }
     const { lines } = buildMemoJournal({
       memoId: memo.id,
       companyId,
@@ -13338,19 +13421,28 @@ export async function rebuildMemoJournals(
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
         : undefined,
-      taxAmount: taxToAccount,
+      taxAmount: memoTax,
+      taxAmountBase: taxPlan.taxToAccountBase,
       taxAccountId: isAR
         ? defaults.taxReceivedAccount
         : defaults.taxPaidAccount,
       taxAccountClass: classByAccount.get(
         (isAR ? defaults.taxReceivedAccount : defaults.taxPaidAccount) ?? ""
       ),
-      taxLegs: (taxToAccount > 0 ? memoTaxLegs(parts, isAR) : []).map(
-        (leg) => ({
-          ...leg,
-          accountClass: leg.accountId ? classByAccount.get(leg.accountId) : null
-        })
-      )
+      taxLegs: (taxPlan.taxToAccountBase > 0
+        ? memoTaxLegs(taxPlan.parts, isAR)
+        : []
+      ).map((leg) => ({
+        ...leg,
+        accountClass: leg.accountId ? classByAccount.get(leg.accountId) : null
+      })),
+      selfAssessed: reverseChargeAccountId
+        ? {
+            amountBase: taxPlan.selfAssessedBase,
+            accountId: reverseChargeAccountId,
+            accountClass: classByAccount.get(reverseChargeAccountId)
+          }
+        : undefined
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
     return {
@@ -13365,15 +13457,14 @@ export async function rebuildMemoJournals(
         typeId: typeByParty.get(partyId) ?? null
       }),
       taxLedger:
-        memoTax > 0 && memo.currencyCode
+        (memoTax > 0 || taxCode) && memo.currencyCode
           ? memoTaxLedger({
               memo: { ...memo, currencyCode: memo.currencyCode },
               isAR,
               partyId,
               exchangeRate: Number(memo.exchangeRate),
-              netAmount,
               taxAmount: memoTax,
-              parts,
+              plan: taxPlan,
               taxCode
             })
           : null

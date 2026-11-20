@@ -1182,4 +1182,60 @@ describe("buildXeroBillLineItems (no-tax-code fallback)", () => {
       ["NONE", undefined]
     ]);
   });
+
+  // £1,000 at 20% plus £50 of untaxed header freight in the cost leg.
+  const freightLines = (recoverableAmount: number, costLeg: number) =>
+    planBillTaxLines(
+      {
+        lines: [
+          taxedLeg("jl-1", costLeg),
+          taxPaidLeg("jl-2", recoverableAmount)
+        ],
+        taxLedger: [
+          {
+            documentLineId: "pil-1",
+            taxCodeId: "tc_uk20",
+            taxCodeComponentId: null,
+            taxPercent: 0.2,
+            taxableAmount: 1000,
+            taxAmount: 200,
+            recoverableAmount
+          }
+        ],
+        exchangeRate: 1,
+        documentTotal: costLeg + recoverableAmount,
+        decimalPlaces: 2
+      },
+      { id: "pi_1", label: "bill AP000001" }
+    ).lines;
+  const withCode: XeroTaxContext = {
+    ...context,
+    mappings: new Map([...TAX_CONTEXT.mappings, ...context.mappings])
+  };
+  const freightSummary = (fallback: boolean, lines: BillTaxLine[]) =>
+    buildXeroBillLineItems({
+      bill: bill(),
+      lines,
+      accountCodesById: CODES,
+      tax: { context: withCode, decimalPlaces: 2 },
+      noTaxCodeFallback: fallback
+    }).map((l) => [l.LineAmount, l.TaxType, l.TaxAmount]);
+
+  it("sends a fully recoverable bill's untaxed freight at the fallback rate, like sales shipping", () => {
+    expect(freightSummary(true, freightLines(200, 1050))).toEqual([
+      [1000, "INPUT2", 200],
+      [50, "EXEMPTINPUT", 0]
+    ]);
+    expect(freightSummary(false, freightLines(200, 1050))).toEqual([
+      [1000, "INPUT2", 200],
+      [50, "NONE", undefined]
+    ]);
+  });
+
+  it("keeps the rest of a partly recoverable leg at NONE: it holds tax in cost", () => {
+    expect(freightSummary(true, freightLines(100, 1150))).toEqual([
+      [500, "INPUT2", 100],
+      [650, "NONE", undefined]
+    ]);
+  });
 });

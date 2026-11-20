@@ -18197,6 +18197,15 @@ msgstr "Mapuj Wyodrębnione Linie"
 msgid "Map Lines Now"
 msgstr "Mapuj linie teraz"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Zmapuj wiersz „Brak kodu podatkowego (zwolnione lub nieopodatkowane)” dla zakupów. Do tego czasu pozycje zakupowe zwolnione lub ze stawką 0% bez kodu podatkowego synchronizują się bez podatku i nie trafiają do deklaracji VAT."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Zmapuj wiersz „Brak kodu podatkowego (zwolnione lub nieopodatkowane)” dla sprzedaży i zakupów. Do tego czasu pozycje zwolnione lub ze stawką 0% bez kodu podatkowego synchronizują się bez podatku i nie trafiają do deklaracji VAT."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Zmapuj wiersz „Brak kodu podatkowego (zwolnione lub nieopodatkowane)” dla sprzedaży. Do tego czasu pozycje sprzedażowe zwolnione lub ze stawką 0% bez kodu podatkowego synchronizują się bez podatku i nie trafiają do deklaracji VAT."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "Zmapuj te konta w ustawieniach integracji {providerName} i pobierz ponownie lub wpisz ich salda poniżej."
 
@@ -26329,8 +26338,8 @@ msgstr "Wycofać Kod Podatku"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "Wycofać kod podatku {0}? Nie będzie można go już wybrać w nowych pozycjach. Pozycje, które już go używają, zachowają go. Kodu przypisanego jeszcze do klienta, dostawcy lub lokalizacji wysyłki nie można wycofać."
 
-msgid "Retired, still on documents"
-msgstr "Wycofany, nadal na dokumentach"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "Wycofany, nadal widoczny na dokumentach. Dopasowanie po stawce go pomija"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Wycofanie środka trwałego z użytkowania poprzez złomowanie lub sprzedaż, z zaksięgowaniem ewentualnego zysku lub straty względem wartości księgowej netto oraz zmianą statusu na Zbyty."
@@ -32854,6 +32863,9 @@ msgstr "Ten PIN nie będzie już więcej wyświetlany. Będzie ci potrzebny do w
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Podgląd jest wstrzymany, ponieważ tekst zmienia wartość."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "Ten próg cenowy ma kod podatkowy odwrotnego obciążenia. Dostawca nie nalicza podatku przy odwrotnym obciążeniu, więc jego kwota podatku musi wynosić 0."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ta cena została wprowadzona ręcznie, dlatego nie zastosowano żadnych reguł cenowych."

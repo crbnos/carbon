@@ -33,7 +33,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import EditableNumberCell from "~/components/EditableNumberCell";
 import { Enumerable } from "~/components/Enumerable";
-import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
+import {
+  useIsReverseCharge,
+  useTaxCodeRateOn
+} from "~/components/Form/RecoverableTax";
 import { useTaxCodes } from "~/components/Form/TaxCode";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -96,6 +99,7 @@ const SupplierQuoteLinePricing = ({
   const taxCodeRateOn = useTaxCodeRateOn(
     routeData?.taxDate ?? routeData?.quote?.quotedDate ?? ""
   );
+  const isReverseCharge = useIsReverseCharge();
   const isEditable =
     permissions.can("update", "purchasing") &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
@@ -145,6 +149,16 @@ const SupplierQuoteLinePricing = ({
         } as unknown as SupplierQuoteLinePrice;
       }
       newPrices[quantity] = { ...newPrices[quantity], ...patch };
+      // A supplier charges no tax on a reverse charge; posting refuses it.
+      if (
+        isReverseCharge(newPrices[quantity].taxCodeId) &&
+        (newPrices[quantity].supplierTaxAmount ?? 0) !== 0
+      ) {
+        toastError(
+          t`This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0.`
+        );
+        return;
+      }
       if (!hasPrice && !("supplierTaxAmount" in patch)) {
         // The new break's amount follows its rate, so the pair agrees.
         const created = newPrices[quantity];
@@ -216,7 +230,8 @@ const SupplierQuoteLinePricing = ({
       t,
       defaultTaxCodeId,
       defaultTaxPercent,
-      currencyDecimals
+      currencyDecimals,
+      isReverseCharge
     ]
   );
 

@@ -5291,7 +5291,8 @@ export const deleteTaxAuthority = defineServiceFn({
     return unwrap(
       ctx,
       await service.deleteTaxAuthority(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
+        ctx.company.id,
         input.taxAuthorityId
       )
     );

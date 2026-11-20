@@ -98,15 +98,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id: _id, ...d } = validation.data;
+  const { id: _id, taxCodeId, ...d } = validation.data;
 
   // The operation checks the charge number and the order's funds, and
   // decides the line's tax.
   const api = await carbon(request);
   const result = await api.invoicing.updatePurchaseInvoiceLine({
     ...d,
-    // The form posts the field: an empty one clears the code.
-    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
+    // A posted empty field clears the code; an absent one keeps it.
+    ...(formData.has("taxCodeId") ? { taxCodeId: taxCodeId ?? "" } : {}),
     id: lineId,
     customFields: setCustomFields(formData)
   });

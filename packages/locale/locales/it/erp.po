@@ -18197,6 +18197,15 @@ msgstr "Mappa Righe Estratte"
 msgid "Map Lines Now"
 msgstr "Mappa Righe Ora"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Associa la riga «Nessun codice imposta (esente o non imponibile)» per gli acquisti. Fino ad allora, le righe di acquisto esenti e ad aliquota zero senza codice imposta si sincronizzano senza imposta e restano escluse dalla dichiarazione IVA."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Associa la riga «Nessun codice imposta (esente o non imponibile)» per le vendite e per gli acquisti. Fino ad allora, le righe esenti e ad aliquota zero senza codice imposta si sincronizzano senza imposta e restano escluse dalla dichiarazione IVA."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Associa la riga «Nessun codice imposta (esente o non imponibile)» per le vendite. Fino ad allora, le righe di vendita esenti e ad aliquota zero senza codice imposta si sincronizzano senza imposta e restano escluse dalla dichiarazione IVA."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "Associa questi account nelle impostazioni di integrazione {providerName} ed estrai di nuovo, oppure inserisci i loro saldi di seguito."
 
@@ -26329,8 +26338,8 @@ msgstr "Ritirare Codice di Imposta"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "Ritirare il codice imposta {0}? Non potrà più essere scelto per le nuove righe. Le righe che lo usano già lo mantengono. Un codice ancora assegnato a un cliente, a un fornitore o a un luogo di consegna non può essere ritirato."
 
-msgid "Retired, still on documents"
-msgstr "Ritirato, ancora presente nei documenti"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "Ritirato, ancora presente nei documenti. La corrispondenza per aliquota lo ignora"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Il ritiro di un cespite dal servizio tramite rottamazione o vendita, registrando l'eventuale utile o perdita rispetto al valore netto contabile e impostando il suo stato su Dismesso."
@@ -32854,6 +32863,9 @@ msgstr "Questo PIN non verrà più visualizzato. Ne avrai bisogno per uscire dal
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Questa anteprima è in pausa perché un testo modifica un valore."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "Questo scaglione di prezzo ha un codice imposta reverse charge. Un fornitore non addebita imposta su un reverse charge, quindi il suo importo dell'imposta deve essere 0."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Questo prezzo è stato inserito manualmente, quindi nessuna regola di prezzo è stata applicata."

@@ -18197,6 +18197,15 @@ msgstr "Çıkarılan Satırları Eşle"
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Satın almalar için “Vergi kodu yok (muaf veya vergiye tabi olmayan)” satırını eşleştirin. O zamana kadar vergi kodu olmayan muaf ve sıfır oranlı satın alma satırları vergisiz olarak senkronize edilir ve KDV beyannamesine yansımaz."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Satışlar ve satın almalar için “Vergi kodu yok (muaf veya vergiye tabi olmayan)” satırını eşleştirin. O zamana kadar vergi kodu olmayan muaf ve sıfır oranlı satırlar vergisiz olarak senkronize edilir ve KDV beyannamesinin dışında kalır."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Satışlar için “Vergi kodu yok (muaf veya vergiye tabi olmayan)” satırını eşleştirin. O zamana kadar vergi kodu olmayan muaf ve sıfır oranlı satış satırları vergisiz olarak senkronize edilir ve KDV beyannamesinin dışında kalır."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "Bu hesapları {providerName} entegrasyon ayarlarında eşleyin ve tekrar çekin, ya da aşağıda bakiyelerini girin."
 
@@ -26329,8 +26338,8 @@ msgstr "Vergi Kodunu Kaldır"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "{0} vergi kodunu kullanımdan kaldırmak istiyor musunuz? Artık yeni satırlarda seçilemez. Bunu zaten kullanan satırlar kodu korur. Bir müşteriye, bir tedarikçiye veya bir teslimat lokasyonuna hâlâ atanmış bir kod kullanımdan kaldırılamaz."
 
-msgid "Retired, still on documents"
-msgstr "Kullanımdan kaldırıldı, belgelerde hâlâ var"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "Kullanımdan kaldırıldı, hâlâ belgelerde kullanılıyor. Orana göre eşleştirme bunu atlar"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Bir varlığı hurdaya ayırarak veya satarak hizmetten çekmek; net defter değerine karşı oluşan kâr veya zararı kaydetmek ve durumunu Elden Çıkarıldı olarak ayarlamak."
@@ -32854,6 +32863,9 @@ msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan �
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Bir metin bir rakamı değiştirdiği için bu önizleme duraklatıldı."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "Bu fiyat kademesinin bir Ters Yükleme vergi kodu var. Tedarikçi ters yüklemede vergi almaz, bu yüzden vergi tutarı 0 olmalıdır."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."

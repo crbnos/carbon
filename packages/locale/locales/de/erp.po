@@ -18197,6 +18197,15 @@ msgstr "Extrahierte Zeilen zuordnen"
 msgid "Map Lines Now"
 msgstr "Zeilen jetzt zuordnen"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Den Eintrag „Kein Steuercode (steuerbefreit oder nicht steuerpflichtig)“ für Einkäufe zuordnen. Bis dahin werden steuerbefreite und mit Nullsatz versehene Einkaufspositionen ohne Steuercode ohne Steuer synchronisiert und bleiben aus der Umsatzsteuer-Voranmeldung heraus."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Den Eintrag „Kein Steuercode (steuerbefreit oder nicht steuerpflichtig)“ für Verkäufe und Einkäufe zuordnen. Bis dahin werden steuerbefreite und mit Nullsatz versehene Positionen ohne Steuercode ohne Steuer synchronisiert und bleiben aus der Umsatzsteuer-Voranmeldung heraus."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Den Eintrag „Kein Steuercode (steuerbefreit oder nicht steuerpflichtig)“ für Verkäufe zuordnen. Bis dahin werden steuerbefreite und mit Nullsatz versehene Verkaufspositionen ohne Steuercode ohne Steuer synchronisiert und bleiben aus der Umsatzsteuer-Voranmeldung heraus."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "Ordnen Sie diese Konten in den {providerName}-Integrationseinstellungen zu, rufen Sie erneut ab, oder geben Sie ihre Salden unten ein."
 
@@ -26329,8 +26338,8 @@ msgstr "Steuercode einstellen"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "Steuercode {0} außer Betrieb nehmen? Er kann danach nicht mehr für neue Positionen gewählt werden. Bestehende Positionen behalten ihn. Ein Code, der noch einem Kunden, einem Lieferanten oder einer Lieferadresse zugeordnet ist, kann nicht außer Betrieb genommen werden."
 
-msgid "Retired, still on documents"
-msgstr "Außer Betrieb, noch auf Belegen"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "Ausgemustert, noch auf Dokumenten vorhanden. Abgleich nach Satz überspringt ihn"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Stillegung eines Vermögenswertes durch Verschrottung oder Verkauf, Buchung von Gewinn oder Verlust gegen den Restbuchwert und Festlegung des Status auf Abgegangen."
@@ -32854,6 +32863,9 @@ msgstr "Diese PIN wird nicht mehr angezeigt. Sie benötigen sie, um den Konsolen
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Diese Vorschau ist pausiert, weil ein Text einen Wert verändert."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "Diese Preisstaffel hat einen Steuercode Reverse Charge. Ein Lieferant berechnet bei Reverse Charge keine Steuer, daher muss dessen Steuerbetrag 0 sein."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Dieser Preis wurde manuell eingegeben, daher wurden keine Preisregeln angewendet."

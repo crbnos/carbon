@@ -85,7 +85,10 @@ import {
   rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
-import { withRevisionSuffix } from "@carbon/documents/utils";
+import {
+  TAX_CODE_SUMMARY_SELECT,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -243,6 +246,7 @@ import {
 import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
+import { loadTaxSummary } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -1995,6 +1999,29 @@ export async function listPreviewEntities(
 const emptyThumbnails: Record<string, string | null> = {};
 
 /**
+ * The codes a picked quote's or order's lines name, for its tax summary, as the
+ * PDF route reads them. Service role: the caller checked `update: settings`,
+ * and the tax tables need accounting, sales or purchasing view.
+ */
+async function previewTaxCodes(
+  companyId: string,
+  lines: ReadonlyArray<{ taxCodeId: string | null }> | null
+) {
+  const taxCodeIds = [
+    ...new Set(
+      (lines ?? []).flatMap((line) => (line.taxCodeId ? [line.taxCodeId] : []))
+    )
+  ];
+  if (taxCodeIds.length === 0) return null;
+  const taxCodes = await getCarbonServiceRole()
+    .from("taxCode")
+    .select(TAX_CODE_SUMMARY_SELECT)
+    .eq("companyId", companyId)
+    .in("id", taxCodeIds);
+  return taxCodes.data;
+}
+
+/**
  * Fetch the real data props a document's PDF needs for a record id, mirroring
  * the live PDF route loaders. Returns null when unsupported / not found, so the
  * preview falls back to sample data.
@@ -2042,8 +2069,22 @@ export async function buildPreviewProps(
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
+      const tax = await loadTaxSummary({
+        // The caller checked `update: settings`; the tax tables need
+        // accounting, sales or purchasing view.
+        taxClient: getCarbonServiceRole(),
+        companyId,
+        invoiceId: id,
+        company: company.data,
+        salesInvoice: invoice.data,
+        lines: lines.data ?? [],
+        headerShipping:
+          (shipment.data?.shippingCost ?? 0) * (invoice.data.exchangeRate ?? 1),
+        currencyDecimals: null
+      });
       return {
         ...base,
+        ...tax,
         salesInvoice: invoice.data,
         salesInvoiceLines: lines.data ?? [],
         salesInvoiceLocations: locations.data,
@@ -2072,6 +2113,10 @@ export async function buildPreviewProps(
       if (!order.data) return null;
       return {
         ...base,
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate:
+          order.data.orderDate ??
+          datetime.today(company.data.timezone ?? "UTC").toString(),
         salesOrder: order.data,
         salesOrderLines: lines.data ?? [],
         salesOrderLocations: locations.data,
@@ -2148,6 +2193,9 @@ export async function buildPreviewProps(
         ...base,
         exchangeRate,
         printDate: datetime.today(timeZone).toString(),
+        // A quote has no document date; its codes are read on today.
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -9391,9 +9439,9 @@ export const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
 
 /**
  * The provider's active tax rates as mapping options, both directions. Xero's
- * read returns [] on failure (an empty list then reads as "no rates"); a
- * thrown read sets `optionsError`. The settings drawer shows what loaded;
- * saving a mapping refuses when the read fails.
+ * read returns [] on failure, and an organisation always has active rates,
+ * so an empty Xero list sets `optionsError` like a thrown read. The settings
+ * drawer shows what loaded; saving a mapping refuses when the read fails.
  */
 export async function getProviderTaxRateOptions(
   client: SupabaseClient<Database>,
@@ -9416,10 +9464,15 @@ export async function getProviderTaxRateOptions(
       providerId,
       accountingIntegration.metadata
     );
-    const options =
-      providerId === ProviderID.XERO
-        ? toXeroTaxRateOptions(await (provider as XeroProvider).listTaxRates())
-        : await (provider as QboProvider).listTaxRateOptions();
+    if (providerId === ProviderID.XERO) {
+      const rates = await (provider as XeroProvider).listTaxRates();
+      // listTaxRates answers [] on failure; an organisation always has rates.
+      return {
+        options: toXeroTaxRateOptions(rates),
+        optionsError: rates.length === 0
+      };
+    }
+    const options = await (provider as QboProvider).listTaxRateOptions();
     return { options, optionsError: false };
   } catch (err) {
     getLogger("erp", "settings", "tax-rates").error(

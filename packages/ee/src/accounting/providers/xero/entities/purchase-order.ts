@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { distributeRoundingResidual } from "@carbon/utils";
 import { createMappingService } from "../../../core/external-mapping";
 import {
   type Accounting,
@@ -15,6 +16,7 @@ import type { XeroProvider } from "../provider";
 import {
   hasXeroMappedTax,
   resolveXeroTaxType,
+  verifiedXeroAccountCode,
   XeroTaxContextLoader
 } from "../tax";
 import { xeroItemCode } from "./item";
@@ -47,27 +49,30 @@ type PurchaseOrderRow = {
   updatedAt: string | null;
 };
 
-// Type for rows returned from purchaseOrderLine queries
+// Type for rows returned from purchaseOrderLine queries. Amounts are the
+// supplier's (the order currency), never the base-currency columns.
 type PurchaseOrderLineRow = {
   id: string;
   purchaseOrderId: string;
   description: string | null;
   purchaseQuantity: number | null;
-  unitPrice: number | null;
+  supplierUnitPrice: number | null;
   itemId: string | null;
+  accountId: string | null;
   accountNumber: string | null;
   taxPercent: number | null;
-  taxAmount: number | null;
+  supplierTaxAmount: number | null;
   taxCodeId: string | null;
-  shippingCost: number | null;
-  extendedPrice: number | null;
+  supplierShippingCost: number | null;
+  supplierExtendedPrice: number | null;
   quantityReceived: number | null;
   quantityInvoiced: number | null;
   itemReadableId: string | null;
   itemReadableIdWithRevision: string | null;
 };
 
-/** A purchase order line with the tax code and the shipping its tax covers. */
+/** A purchase order line with the tax code and the shipping its tax covers.
+ *  Amounts are in the order's currency. */
 export type XeroPurchaseOrderLine = Accounting.PurchaseOrderLine & {
   taxCodeId: string | null;
   /** Taxed with the line (`taxAmount` is on price × quantity + shipping). */
@@ -81,14 +86,63 @@ export type XeroPurchaseOrder = Omit<Accounting.PurchaseOrder, "lines"> & {
   currencyDecimalPlaces: number | null;
 };
 
-/** The tax facts of one PO line, as `resolveXeroTaxType` reads them. */
-export function xeroPurchaseOrderLineTax(line: XeroPurchaseOrderLine) {
-  return {
-    taxCodeId: line.taxCodeId,
-    taxPercent: line.taxPercent ?? 0,
-    taxAmount: line.taxAmount ?? 0,
-    netAmount: line.totalAmount + line.shippingCost
-  };
+/** One Xero line of a PO line (its goods or its shipping), with its tax. */
+export type XeroPurchaseOrderLinePart = {
+  shipping: boolean;
+  taxCodeId: string | null;
+  taxPercent: number;
+  netAmount: number;
+  taxAmount: number;
+};
+
+/**
+ * The Xero lines of one PO line: the goods (quantity × unit price), then its
+ * shipping as a line of its own, so each line's tax is on its own
+ * `LineAmount`. The line's tax covers both: each part starts at its net ×
+ * rate and the leftover goes one minor unit per part. A tax the rate cannot
+ * explain is split in proportion to net, and the tax check refuses it.
+ * Pure — exported for tests.
+ */
+export function xeroPurchaseOrderLineParts(
+  line: XeroPurchaseOrderLine,
+  decimalPlaces: number | null
+): XeroPurchaseOrderLinePart[] {
+  const tax = { taxCodeId: line.taxCodeId, taxPercent: line.taxPercent ?? 0 };
+  const taxAmount = line.taxAmount ?? 0;
+  const goods = line.totalAmount;
+  const shipping = line.shippingCost;
+  if (shipping === 0) {
+    return [{ shipping: false, ...tax, netAmount: goods, taxAmount }];
+  }
+  let split = [taxAmount, 0];
+  if (taxAmount !== 0) {
+    if (decimalPlaces === null) {
+      throw new Error(
+        `Purchase order line ${line.id} taxes its shipping but its currency has no decimal places`
+      );
+    }
+    try {
+      split = distributeRoundingResidual(
+        [goods * tax.taxPercent, shipping * tax.taxPercent],
+        taxAmount,
+        decimalPlaces
+      );
+    } catch {
+      const net = goods + shipping;
+      split =
+        net === 0
+          ? split
+          : distributeRoundingResidual(
+              [(taxAmount * goods) / net, (taxAmount * shipping) / net],
+              taxAmount,
+              decimalPlaces
+            );
+    }
+  }
+  return [
+    { shipping: false, ...tax, netAmount: goods, taxAmount: split[0]! },
+    { shipping: true, ...tax, netAmount: shipping, taxAmount: split[1]! }
+  ];
 }
 
 // Status mapping between Carbon and Xero
@@ -208,13 +262,14 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         "purchaseOrderLine.purchaseOrderId",
         "purchaseOrderLine.description",
         "purchaseOrderLine.purchaseQuantity",
-        "purchaseOrderLine.unitPrice",
+        "purchaseOrderLine.supplierUnitPrice",
         "purchaseOrderLine.itemId",
+        "purchaseOrderLine.accountId",
         "purchaseOrderLine.taxPercent",
-        "purchaseOrderLine.taxAmount",
+        "purchaseOrderLine.supplierTaxAmount",
         "purchaseOrderLine.taxCodeId",
-        "purchaseOrderLine.shippingCost",
-        "purchaseOrderLine.extendedPrice",
+        "purchaseOrderLine.supplierShippingCost",
+        "purchaseOrderLine.supplierExtendedPrice",
         "purchaseOrderLine.quantityReceived",
         "purchaseOrderLine.quantityInvoiced",
         "item.readableId as itemReadableId",
@@ -259,8 +314,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       let subtotal = 0;
       let totalTax = 0;
       for (const line of lines) {
-        subtotal += Number(line.extendedPrice) || 0;
-        totalTax += Number(line.taxAmount) || 0;
+        subtotal +=
+          (Number(line.supplierExtendedPrice) || 0) +
+          (Number(line.supplierShippingCost) || 0);
+        totalTax += Number(line.supplierTaxAmount) || 0;
       }
 
       result.set(row.id, {
@@ -288,7 +345,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           id: line.id,
           description: line.description,
           quantity: Number(line.purchaseQuantity) || 0,
-          unitPrice: Number(line.unitPrice) || 0,
+          unitPrice: Number(line.supplierUnitPrice) || 0,
           itemId: line.itemId,
           itemCode: line.itemReadableId
             ? xeroItemCode({
@@ -296,12 +353,16 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
                 readableIdWithRevision: line.itemReadableIdWithRevision
               })
             : null,
+          accountId: line.accountId,
           accountNumber: line.accountNumber,
           taxPercent: line.taxPercent != null ? Number(line.taxPercent) : null,
-          taxAmount: line.taxAmount != null ? Number(line.taxAmount) : null,
+          taxAmount:
+            line.supplierTaxAmount != null
+              ? Number(line.supplierTaxAmount)
+              : null,
           taxCodeId: line.taxCodeId,
-          shippingCost: Number(line.shippingCost) || 0,
-          totalAmount: Number(line.extendedPrice) || 0,
+          shippingCost: Number(line.supplierShippingCost) || 0,
+          totalAmount: Number(line.supplierExtendedPrice) || 0,
           quantityReceived:
             line.quantityReceived != null
               ? Number(line.quantityReceived)
@@ -370,17 +431,33 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
     // Resolve every line's tax before any dependency write, so an
     // UNMAPPED_TAX_CODES Warning provisions nothing in Xero.
     // A Reverse Charge line goes out at NONE (Phase 1, as bills do).
-    const lineTaxes = local.lines.map(xeroPurchaseOrderLineTax);
-    const taxContext = await this.taxContext.forLines("purchase", lineTaxes);
-    const taxTypes = lineTaxes.map((tax, index) =>
-      resolveXeroTaxType({
-        context: taxContext,
-        documentId: local.id,
-        direction: "purchase",
-        ...tax,
-        decimalPlaces: local.currencyDecimalPlaces,
-        accountCode: local.lines[index]!.accountNumber
-      })
+    const lineParts = local.lines.map((line) =>
+      xeroPurchaseOrderLineParts(line, local.currencyDecimalPlaces)
+    );
+    const taxContext = await this.taxContext.forLines(
+      "purchase",
+      lineParts.flat()
+    );
+    const accountCodesById = taxContext.catalogLoaded
+      ? await this.taxContext.accountCodesById()
+      : new Map<string, string>();
+    const taxTypes = lineParts.map((parts, index) =>
+      parts.map((part) =>
+        resolveXeroTaxType({
+          context: taxContext,
+          documentId: local.id,
+          direction: "purchase",
+          taxCodeId: part.taxCodeId,
+          taxPercent: part.taxPercent,
+          netAmount: part.netAmount,
+          taxAmount: part.taxAmount,
+          decimalPlaces: local.currencyDecimalPlaces,
+          accountCode: verifiedXeroAccountCode(
+            local.lines[index]!,
+            accountCodesById
+          )
+        })
+      )
     );
 
     // Get supplier's Xero ContactID - ensure supplier is synced first
@@ -395,8 +472,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       );
     }
 
-    // Map line items
-    const lineItems: Xero.PurchaseOrderLineItem[] = await Promise.all(
+    // Map line items: each PO line, then its shipping on a line of its own.
+    const lineItemGroups: Xero.PurchaseOrderLineItem[][] = await Promise.all(
       local.lines.map(async (line, index) => {
         let itemCode = line.itemCode;
 
@@ -414,22 +491,34 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           }
         }
 
-        return {
-          Description: line.description ?? undefined,
-          Quantity: line.quantity,
-          UnitAmount: line.unitPrice,
-          ItemCode: itemCode?.slice(0, 30) ?? undefined,
-          // PO is non-posting — Xero accepts PO lines without AccountCode, so
-          // only send one when the line actually carries an account number
-          // (no blunt default-account-code fallback).
-          AccountCode: line.accountNumber ?? undefined,
-          TaxAmount: line.taxAmount ?? undefined,
-          LineAmount: line.totalAmount,
+        // PO is non-posting — Xero accepts PO lines without AccountCode, so
+        // only send one when the line actually carries an account number
+        // (no blunt default-account-code fallback).
+        const accountCode = line.accountNumber ?? undefined;
+        return lineParts[index]!.map((part, partIndex) => ({
+          ...(part.shipping
+            ? {
+                Description: line.description
+                  ? `Shipping: ${line.description}`
+                  : "Shipping",
+                Quantity: 1,
+                UnitAmount: part.netAmount
+              }
+            : {
+                Description: line.description ?? undefined,
+                Quantity: line.quantity,
+                UnitAmount: line.unitPrice,
+                ItemCode: itemCode?.slice(0, 30) ?? undefined
+              }),
+          AccountCode: accountCode,
+          TaxAmount: part.taxAmount,
+          LineAmount: part.netAmount,
           // The mapped purchase rate; NONE for an untaxed legacy line.
-          TaxType: taxTypes[index]
-        };
+          TaxType: taxTypes[index]![partIndex]
+        }));
       })
     );
+    const lineItems = lineItemGroups.flat();
 
     return {
       PurchaseOrderID: existingRemoteId!,

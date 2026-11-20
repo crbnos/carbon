@@ -9,10 +9,13 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 
+import { createServiceContext } from "@carbon/api/service-fn.server";
 import { deleteTaxCode } from "../app/modules/accounting/accounting.service";
+import { createRentalAgreementCharge } from "../app/modules/sales/sales.server";
 import {
   insertContractLines,
-  recalculateSalesDocumentTaxes
+  recalculateSalesDocumentTaxes,
+  upsertContractLine
 } from "../app/modules/sales/sales.service";
 import { serviceInvoiceLineTaxes } from "../app/modules/service/service.service";
 import { filteringSupabase } from "./filtering-supabase-fake";
@@ -218,22 +221,251 @@ describe("insertContractLines", () => {
       { itemId: "svc-free", taxCodeId: null, taxPercent: 0 }
     ]);
   });
+
+  it("adds non-taxable services although the customer's code has no rate in force", async () => {
+    const tables = taxTables();
+    tables.taxCode[0]!.taxCodeComponent = [
+      component({ effectiveDate: "2027-01-01" })
+    ];
+    const contract = {
+      id: "contract-1",
+      companyId: "company-1",
+      status: "Draft",
+      billingBasis: "Subscription",
+      customerId: "customer-1",
+      shipToCustomerLocationId: null
+    };
+    const args = {
+      customerContractId: "contract-1",
+      companyId: "company-1",
+      createdBy: "user-1",
+      revenueType: "Recurring" as const,
+      rateUnit: "Month" as const,
+      startDate: "2026-10-01",
+      projectId: null
+    };
+
+    const free = filteringSupabase({ ...tables, customerContract: [contract] });
+    const added = await insertContractLines(free.client, {
+      ...args,
+      itemIds: ["svc-free"]
+    });
+    expect(added.error).toBeNull();
+
+    const taxed = filteringSupabase({
+      ...tables,
+      customerContract: [contract]
+    });
+    const refused = await insertContractLines(taxed.client, {
+      ...args,
+      itemIds: ["svc-free", "svc-1"]
+    });
+    expect(refused.error?.message).toContain("no rate in force");
+  });
+});
+
+describe("upsertContractLine", () => {
+  const contractTables = () => ({
+    ...taxTables(),
+    customerContract: [
+      {
+        id: "contract-1",
+        companyId: "company-1",
+        status: "Draft",
+        billingBasis: "Subscription",
+        customerId: "customer-1",
+        shipToCustomerLocationId: null
+      }
+    ],
+    customerContractLine: [
+      {
+        id: "ccl-1",
+        companyId: "company-1",
+        customerContractId: "contract-1",
+        taxCodeId: "tc-vat",
+        taxPercent: 0.2
+      },
+      {
+        id: "ccl-expired",
+        companyId: "company-1",
+        customerContractId: "contract-1",
+        taxCodeId: "tc-expired",
+        taxPercent: 0.2
+      }
+    ],
+    companySettings: [{ id: "company-1", timekeepingControls: null }]
+  });
+  const withExpired = () => {
+    const tables = contractTables();
+    tables.taxCode.push({
+      id: "tc-expired",
+      companyId: "company-1",
+      calculationType: "Normal",
+      taxesShipping: true,
+      taxCodeComponent: [component({ expirationDate: "2026-06-30" })]
+    });
+    return tables;
+  };
+  const update = {
+    customerContractId: "contract-1",
+    revenueType: "Recurring" as const,
+    itemId: "svc-1",
+    quantity: 1,
+    rate: 100,
+    rateUnit: "Month" as const,
+    discountPercent: 0,
+    startDate: "2026-10-01",
+    billingMethod: "Fixed" as const,
+    revenueMethod: "Daily" as const,
+    updatedBy: "user-1"
+  };
+  // The line is read by its id to learn its company (RLS scopes it).
+  const unscoped = ["customerContractLine"];
+
+  it("holds a percent sent with no code to the stored code's rate", async () => {
+    const { client, writes } = filteringSupabase(contractTables(), {
+      unscoped
+    });
+
+    const result = await upsertContractLine(client, {
+      ...update,
+      id: "ccl-1",
+      taxPercent: 5
+    } as never);
+
+    expect(result.error).toBeNull();
+    expect(
+      writes.find((w) => w.table === "customerContractLine")?.value
+    ).toMatchObject({ taxPercent: 0.2 });
+  });
+
+  it("lets an edit that leaves the tax alone through on a code with no rate in force", async () => {
+    const { client, writes } = filteringSupabase(withExpired(), { unscoped });
+
+    const result = await upsertContractLine(client, {
+      ...update,
+      id: "ccl-expired",
+      description: "Renamed",
+      taxCodeId: "tc-expired",
+      taxPercent: 20
+    } as never);
+
+    expect(result.error).toBeNull();
+    expect(
+      writes.find((w) => w.table === "customerContractLine")?.value
+    ).toMatchObject({ description: "Renamed", taxPercent: 0.2 });
+  });
+
+  it("refuses a changed percent on a code with no rate in force", async () => {
+    const { client, writes } = filteringSupabase(withExpired(), { unscoped });
+
+    const result = await upsertContractLine(client, {
+      ...update,
+      id: "ccl-expired",
+      taxPercent: 10
+    } as never);
+
+    expect(result.error?.message).toContain("no rate in force on 2026-10-01");
+    expect(writes).toHaveLength(0);
+  });
+});
+
+describe("createRentalAgreementCharge", () => {
+  const grant = {
+    sales: {
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: ["company-1"]
+    }
+  };
+  const contextFor = (client: unknown) =>
+    createServiceContext({
+      actor: { type: "user", userId: "user-1", permissions: grant },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: client as never,
+      system: (() => client) as never,
+      pg: (() => {
+        throw new Error("must not be reached");
+      }) as never,
+      kv: (() => {
+        throw new Error("must not be reached");
+      }) as never
+    });
+  const rentalTables = () => ({
+    ...taxTables(),
+    rentalAgreementLine: [
+      {
+        id: "ral-1",
+        companyId: "company-2",
+        rentalAgreementId: "ra-2",
+        rentalAgreement: { taxCodeId: "tc-foreign", status: "Active" }
+      },
+      {
+        id: "ral-1",
+        companyId: "company-1",
+        rentalAgreementId: "ra-1",
+        rentalAgreement: { taxCodeId: "tc-vat", status: "Active" }
+      }
+    ]
+  });
+  const charge = {
+    rentalAgreementLineId: "ral-1",
+    chargeDate: "2026-10-01",
+    description: "Damage",
+    amount: 100,
+    taxPercent: 0.05
+  };
+
+  it("gives a charge sent with no code the agreement's code at its rate on the charge date", async () => {
+    const { client, writes } = filteringSupabase(rentalTables());
+
+    const result = await createRentalAgreementCharge(
+      contextFor(client),
+      charge
+    );
+
+    expect(result.error).toBeNull();
+    expect(
+      writes.find((w) => w.table === "rentalAgreementCharge")?.value[0]
+    ).toMatchObject({ taxCodeId: "tc-vat", taxPercent: 0.2 });
+  });
+
+  it("keeps the sent percent with no code for an empty code", async () => {
+    const { client, writes } = filteringSupabase(rentalTables());
+
+    await createRentalAgreementCharge(contextFor(client), {
+      ...charge,
+      taxCodeId: ""
+    });
+
+    expect(
+      writes.find((w) => w.table === "rentalAgreementCharge")?.value[0]
+    ).toMatchObject({ taxCodeId: null, taxPercent: 0.05 });
+  });
 });
 
 describe("serviceInvoiceLineTaxes", () => {
-  // A Kysely stand-in that applies `=` and `in` filters, so a read that drops
-  // its companyId filter also finds company-2's rows.
+  // A Kysely stand-in that applies `=` and `in` filters, and refuses a read
+  // with no companyId filter of a table whose rows carry one.
   const filteringTrx = (tables: Record<string, Record<string, unknown>[]>) => ({
     selectFrom: (table: string) => {
       const filters: [string, string, unknown][] = [];
-      const rows = () =>
-        (tables[table] ?? []).filter((row) =>
+      const rows = () => {
+        if (
+          !filters.some(([column]) => column === "companyId") &&
+          (tables[table] ?? []).some((row) => "companyId" in row)
+        ) {
+          throw new Error(`${table} was queried without a companyId filter`);
+        }
+        return (tables[table] ?? []).filter((row) =>
           filters.every(([column, op, value]) =>
             op === "in"
               ? (value as unknown[]).includes(row[column])
               : row[column] === value
           )
         );
+      };
       const chain: any = {
         select: () => chain,
         where: (column: string, op: string, value: unknown) => {

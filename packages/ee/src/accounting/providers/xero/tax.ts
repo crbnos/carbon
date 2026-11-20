@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { loadAccountCodesById } from "../../core/account-mapping";
 import {
   type ProviderTaxCodeFacts,
   type ProviderTaxLine,
@@ -55,14 +56,15 @@ type XeroTaxReads = Pick<XeroProvider, "listTaxRates" | "listChartOfAccounts">;
 /**
  * One syncer's tax reads, each memoized and dropped again when it fails, so
  * the next document retries:
- * - the company's tax-code facts (Reverse Charge codes, which directions use
- *   codes), one DB statement;
+ * - the company's tax-code facts (Reverse Charge codes, which directions
+ *   send the mapped fallback), one or two DB statements;
  * - the mappings, the organisation's active tax rates and its chart of
  *   accounts, only when a line needs a mapped rate.
  */
 export class XeroTaxContextLoader {
   private factsPromise?: Promise<ProviderTaxCodeFacts>;
   private catalogPromise?: Promise<XeroTaxContext>;
+  private accountCodesPromise?: Promise<Map<string, string>>;
 
   constructor(
     private readonly db: Kysely<KyselyDatabase>,
@@ -72,12 +74,28 @@ export class XeroTaxContextLoader {
 
   facts(): Promise<ProviderTaxCodeFacts> {
     this.factsPromise ??= loadTaxCodeUsage(this.db, this.args.companyId)
-      .then((usage) => ({
-        reverseChargeCodeIds: new Set(
-          usage.filter((code) => code.reverseCharge).map((code) => code.id)
-        ),
-        noTaxCodeFallback: noTaxCodeFallbackDirections(usage)
-      }))
+      .then(async (usage) => {
+        // A company with no codes never sends the fallback: skip the read.
+        const mappings = usage.some(
+          (code) => code.usedForSales || code.usedForPurchase
+        )
+          ? await getTaxCodeMappings(this.db, this.args)
+          : { data: [], error: null };
+        if (mappings.error) {
+          throw new Error(
+            `Failed to load Xero tax-rate mappings: ${mappings.error}`
+          );
+        }
+        return {
+          reverseChargeCodeIds: new Set(
+            usage.filter((code) => code.reverseCharge).map((code) => code.id)
+          ),
+          noTaxCodeFallback: noTaxCodeFallbackDirections(
+            usage,
+            mappings.data ?? []
+          )
+        };
+      })
       .catch((error) => {
         this.factsPromise = undefined;
         throw error;
@@ -121,6 +139,35 @@ export class XeroTaxContextLoader {
   load(): Promise<XeroTaxContext> {
     return this.catalog();
   }
+
+  /** Carbon account id → the Xero code its account mapping names. */
+  accountCodesById(): Promise<Map<string, string>> {
+    this.accountCodesPromise ??= loadAccountCodesById(this.db, this.args).catch(
+      (error) => {
+        this.accountCodesPromise = undefined;
+        throw error;
+      }
+    );
+    return this.accountCodesPromise;
+  }
+}
+
+/**
+ * The code a purchase order or quote line is class-checked against
+ * (`CanApplyTo*`). Those documents send Carbon's own account number as
+ * `AccountCode`. It names a known Xero account only when the integration's
+ * account mapping maps the line's Carbon account to that same code; a number
+ * Xero merely shares says nothing about the account's class, so anything
+ * else skips the check.
+ */
+export function verifiedXeroAccountCode(
+  line: { accountId?: string | null; accountNumber?: string | null },
+  accountCodesById: ReadonlyMap<string, string>
+): string | null {
+  if (!line.accountId || !line.accountNumber) return null;
+  return accountCodesById.get(line.accountId) === line.accountNumber
+    ? line.accountNumber
+    : null;
 }
 
 /**
@@ -182,7 +229,8 @@ export function resolveXeroTaxType(args: {
   taxAmount: number;
   /** The document currency's decimals; null only fails a taxed line. */
   decimalPlaces: number | null;
-  /** The line's Xero account code, for the account-class check. */
+  /** The line's Xero account code, for the account-class check: a code from
+   *  the integration's account mapping, never a bare Carbon number. */
   accountCode?: string | null;
 }): string {
   if (sendsProviderNoTax(args, args.direction, args.context)) {

@@ -772,6 +772,33 @@ describe("buildQboBillPayloadLines (recoverable purchase tax)", () => {
     expect(payload.TxnTaxDetail?.TotalTax).toBe(100);
   });
 
+  it("keeps each line's own VAT on a bill of 1,000 plus five lines of 2.53 (VAT 0.51 each)", () => {
+    const smalls = Array.from({ length: 5 }, (_, index) => index);
+    const payload = gb(
+      costing(
+        [
+          leg("jl-big", "acc-grir", 1000, std),
+          ...smalls.map((index) => leg(`jl-${index}`, "acc-grir", 2.53, std)),
+          taxPaid("jl-tax", 202.55)
+        ],
+        [
+          { ...ledger("tc_std", 0.2, 200, 200, 1000), documentLineId: "big" },
+          ...smalls.map((index) => ({
+            ...ledger("tc_std", 0.2, 0.51, 0.51, 2.53),
+            documentLineId: `small-${index}`
+          }))
+        ],
+        1215.2
+      )
+    );
+    expect(summary(payload)).toEqual([
+      ["2125", 1000, "20S"],
+      ...smalls.map(() => ["2125", 2.53, "20S"])
+    ]);
+    expect(payload.TxnTaxDetail?.TotalTax).toBe(202.55);
+    expect(total(payload)).toBeCloseTo(1215.2, 6);
+  });
+
   it("sends a bill spanning two codes, each code's tax on its own legs", () => {
     // £1,000 at 20% and £400 at 5%, both recoverable, plus £70 freight
     // weighted on the gross lines.

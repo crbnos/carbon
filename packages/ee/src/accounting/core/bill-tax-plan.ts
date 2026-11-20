@@ -6,6 +6,7 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   deriveRate,
   distributeRoundingResidual,
+  equals,
   round,
   toDocumentAmount
 } from "@carbon/utils";
@@ -40,6 +41,10 @@ export type BillTaxLine = {
   /** null: no tax (Xero `NONE`, QuickBooks the non-taxable code). A code at
    *  0% carries `taxAmount` 0, so its net reaches the return. */
   tax: (CostingLineTax & { taxAmount: number }) | null;
+  /** An untaxed part of a fully recoverable code's legs: header freight, or a
+   *  variance that offsets it. A provider with a fallback rate for untaxed
+   *  lines sends it there, as it does untaxed sales shipping. */
+  untaxedPurchase?: true;
 };
 
 export type BillTaxPlan = {
@@ -52,7 +57,12 @@ export type BillTaxPlan = {
 };
 
 /** A code's recoverable tax and the net it is charged on. */
-export type RecoverableTax = { tax: number; net: number };
+export type RecoverableTax = {
+  tax: number;
+  net: number;
+  /** All of the code's tax is recoverable: its legs carry no tax in cost. */
+  fullyRecoverable?: boolean;
+};
 
 type BillTaxCosting = Pick<
   BillCostingResult,
@@ -127,15 +137,24 @@ export function recoverableByCodeFromLedger(
     line.recoverable += row.recoverableAmount;
     lines.set(key, line);
   });
-  const byCode = new Map<string | null, RecoverableTax>();
+  const byCode = new Map<
+    string | null,
+    { tax: number; net: number; charged: number }
+  >();
   for (const line of lines.values()) {
-    const total = byCode.get(line.taxCodeId) ?? { tax: 0, net: 0 };
+    const total = byCode.get(line.taxCodeId) ?? { tax: 0, net: 0, charged: 0 };
     total.tax += line.recoverable;
+    total.charged += line.tax;
     total.net +=
       line.tax === 0 ? 0 : (line.taxable * line.recoverable) / line.tax;
     byCode.set(line.taxCodeId, total);
   }
-  return byCode;
+  return new Map(
+    [...byCode].map(([taxCodeId, { tax, net, charged }]) => [
+      taxCodeId,
+      { tax, net, fullyRecoverable: equals(tax, charged) }
+    ])
+  );
 }
 
 /**
@@ -210,7 +229,8 @@ export function planBillTaxLines(
           taxCodeId,
           {
             tax: converted[index]!,
-            net: toDocumentAmount(amount.net, exchangeRate, decimalPlaces)
+            net: toDocumentAmount(amount.net, exchangeRate, decimalPlaces),
+            fullyRecoverable: amount.fullyRecoverable
           }
         ])
       ),
@@ -227,10 +247,14 @@ export function planBillTaxLines(
  * (the legs whose `tax` is that code; one rate per code). Pure.
  * - The recoverable net N (from the ledger, or net × share on a memo) fills
  *   the code's legs of the same sign as N, largest first, each up to its own
- *   amount. R is spread over those pieces in proportion to their net
- *   (`distributeRoundingResidual`), so the pieces' tax sums exactly to R.
+ *   amount. Each piece's tax starts at round(piece × the code's rate), and
+ *   what is left of R goes one minor unit per piece, largest remainder first
+ *   (`distributeRoundingResidual`). So the pieces' tax sums exactly to R and
+ *   every piece stays within one minor unit of net × rate, which is what the
+ *   provider check allows (`resolveProviderTaxRate`).
  * - Each piece is a line at the code's rate with its tax. The rest of the leg
- *   is a second line on the same account at no tax.
+ *   is a second line on the same account at no tax. On a fully recoverable
+ *   code, that rest and the code's legs left whole are `untaxedPurchase`.
  * Every other leg is one line: at its code's rate with tax 0 when the code is
  * zero-rated, else at no tax (tax folded into cost, no code, or a leg that
  * cannot be tied to one tax). Lines keep the order of `legs`.
@@ -251,10 +275,14 @@ export function allocateRecoverableTax(args: {
   const { document, decimalPlaces } = args;
   const tolerance = args.perLegTolerance ?? 0;
   const pieces = new Map<string, { amount: number; taxAmount: number }>();
+  const fullyRecoverableCodes = new Set<string | null>();
 
   for (const [taxCodeId, recoverableAmounts] of args.recoverableByCode) {
     const recoverable = recoverableAmounts.tax;
     if (recoverable === 0) continue;
+    if (recoverableAmounts.fullyRecoverable) {
+      fullyRecoverableCodes.add(taxCodeId);
+    }
     const codeName = taxCodeId ?? "with no tax code";
     const coded = args.legs.filter(
       (leg) => leg.tax && leg.tax.taxCodeId === taxCodeId
@@ -300,11 +328,23 @@ export function allocateRecoverableTax(args: {
         { taxCodeId, recoverableTax: recoverable, recoverableNet: net }
       );
     }
-    const taxes = distributeRoundingResidual(
-      taken.map((piece) => (recoverable * piece.amount) / placed),
-      recoverable,
-      decimalPlaces
-    );
+    // Each piece starts at its own net × rate, so a large piece never absorbs
+    // the small pieces' rounding; the leftover goes one minor unit per piece.
+    const rate = rates[0]!;
+    let taxes: number[];
+    try {
+      taxes = distributeRoundingResidual(
+        taken.map((piece) => piece.amount * rate),
+        recoverable,
+        decimalPlaces
+      );
+    } catch {
+      throw billTaxWarning(
+        document,
+        `the ${recoverable} of recoverable tax of tax code ${codeName} is more than one minor unit per line away from ${round(rate * 100)}% of the ${placed} it is charged on`,
+        { taxCodeId, recoverableTax: recoverable, recoverableNet: placed }
+      );
+    }
     taken.forEach((piece, index) => {
       pieces.set(piece.leg.id, {
         amount: piece.amount,
@@ -315,6 +355,14 @@ export function allocateRecoverableTax(args: {
 
   return args.legs.flatMap((leg): BillTaxLine[] => {
     const piece = pieces.get(leg.id);
+    const untaxed: BillTaxLine = {
+      leg,
+      amount: leg.amount,
+      tax: null,
+      ...(leg.tax && fullyRecoverableCodes.has(leg.tax.taxCodeId)
+        ? { untaxedPurchase: true as const }
+        : {})
+    };
     if (piece) {
       const rest = round(leg.amount - piece.amount, decimalPlaces);
       return [
@@ -327,7 +375,7 @@ export function allocateRecoverableTax(args: {
             taxAmount: piece.taxAmount
           }
         },
-        ...(rest !== 0 ? [{ leg, amount: rest, tax: null }] : [])
+        ...(rest !== 0 ? [{ ...untaxed, amount: rest }] : [])
       ];
     }
     if (isZeroRatedLeg(leg)) {
@@ -339,7 +387,7 @@ export function allocateRecoverableTax(args: {
         }
       ];
     }
-    return [{ leg, amount: leg.amount, tax: null }];
+    return [untaxed];
   });
 }
 

@@ -113,7 +113,9 @@ import {
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
 import {
+  chargedTaxPercent,
   effectiveComponents,
+  lineRateMismatches,
   purchaseLineTaxParts,
   receiptLineTax,
   receiptUnitCost,
@@ -198,6 +200,14 @@ import {
   getCurrencyByCode,
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
+import {
+  decideLineTax,
+  hasNoRateInForce,
+  itemTaxDecision,
+  type LineTax,
+  newPurchaseLineTax,
+  noRateInForceMessage
+} from "~/modules/accounting/accounting.utils";
 import {
   loadReturnLineJobs,
   SHIP_BACK_JOB_STATUSES
@@ -9290,6 +9300,30 @@ function resolveTaxPercent(line: {
 }
 
 /**
+ * A converted line's rate: its code's charged rate on the new document's
+ * date, so the rate agrees with the document's tax point (sales posting
+ * refuses a mismatch). A line with no code keeps its rate, and so does one
+ * whose code has no component in force then: posting refuses that line with
+ * a message that names the code.
+ */
+async function convertedTaxPercent(
+  trx: KyselyTx,
+  companyId: string,
+  taxCodeIds: ReadonlyArray<string | null | undefined>,
+  date: string
+): Promise<
+  (line: { taxCodeId: string | null; taxPercent: number | null }) => number
+> {
+  const codes = await loadTaxCodes(trx, companyId, taxCodeIds, date);
+  return (line) => {
+    const code = line.taxCodeId ? codes.get(line.taxCodeId) : undefined;
+    return code && code.components.length > 0
+      ? chargedTaxPercent(code, date)
+      : (line.taxPercent ?? 0);
+  };
+}
+
+/**
  * Where an order's goods go, for the invoice's customer ship-to: a drop
  * shipment's own location, else the order header's ship-to. The same rule as
  * `resolveSalesOrderShipTo` (sales rules) — never the bill-to.
@@ -9660,6 +9694,18 @@ export async function convertDocument(
           purchaseOrder.data!.currencyCode ?? "USD"
         );
 
+        const dateIssued = datetime
+          .today(await resolveCompanyTimeZone(trx, companyId))
+          .toString();
+        // The supplier's tax amount stays; the rate is the code's on the
+        // invoice's date, the posting's tax point.
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          uninvoicedLines.map((line) => line.taxCodeId),
+          dateIssued
+        );
+
         const purchaseInvoice = await trx
           .insertInto("purchaseInvoice")
           .values({
@@ -9675,9 +9721,7 @@ export async function convertDocument(
             locationId: purchaseOrderDelivery.data!.locationId,
             paymentTermId: purchaseOrderPayment.data!.paymentTermId,
             currencyCode: purchaseOrder.data!.currencyCode ?? "USD",
-            dateIssued: datetime
-              .today(await resolveCompanyTimeZone(trx, companyId))
-              .toString(),
+            dateIssued,
             exchangeRate: purchaseOrder.data!.exchangeRate ?? 1,
             subtotal: uninvoicedSubtotal ?? 0,
             supplierInteractionId: purchaseOrder.data!.supplierInteractionId,
@@ -9755,7 +9799,7 @@ export async function convertDocument(
                 "supplierTaxAmount"
               ),
               // The rate is invariant under proration; only the amount scales
-              taxPercent: line.taxPercent ?? 0,
+              taxPercent: taxPercentOf(line),
               taxCodeId: line.taxCodeId,
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
@@ -9857,6 +9901,12 @@ export async function convertDocument(
           trx,
           "salesOrder",
           companyId
+        );
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          quoteLineRows.map((line) => line.taxCodeId),
+          today
         );
 
         // Check if any selected lines have quantity 0
@@ -10080,7 +10130,7 @@ export async function convertDocument(
               createdBy: userId,
               companyId,
               exchangeRate: quote.data.exchangeRate ?? 1,
-              taxPercent: line.taxPercent,
+              taxPercent: taxPercentOf(line),
               taxCodeId: line.taxCodeId,
               shippingCost: price.shippingCost ?? 0,
               sortOrder: line.sortOrder ?? 1,
@@ -10288,6 +10338,15 @@ export async function convertDocument(
         // Flat charges bill once across partial invoices (flatChargeShare).
         const billed = await billedSalesOrderCharges(trx, companyId, order.id);
         const decimals = await baseCurrencyDecimals(trx, companyId);
+        const dateIssued = datetime
+          .today(await resolveCompanyTimeZone(trx, companyId))
+          .toString();
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          uninvoicedLines.map((line) => line.taxCodeId),
+          dateIssued
+        );
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -10304,9 +10363,7 @@ export async function convertDocument(
             locationId: orderShipment.locationId,
             paymentTermId: salesOrderPayment.data!.paymentTermId,
             currencyCode: order.currencyCode ?? "USD",
-            dateIssued: datetime
-              .today(await resolveCompanyTimeZone(trx, companyId))
-              .toString(),
+            dateIssued,
             exchangeRate: order.exchangeRate ?? 1,
             subtotal: uninvoicedSubtotal ?? 0,
             opportunityId: order.opportunityId,
@@ -10387,7 +10444,7 @@ export async function convertDocument(
                 "nonTaxableAddOnCost"
               ),
               shippingCost: share(line.shippingCost, "shippingCost"),
-              taxPercent: line.taxPercent ?? 0,
+              taxPercent: taxPercentOf(line),
               taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
@@ -10676,8 +10733,20 @@ export async function convertDocument(
           .where("salesRfqId", "=", id)
           .execute();
 
+        // Each line takes the quote's tax, as a line added on the quote does.
+        const quoteLineTax = await customerLineTaxes(trx, {
+          companyId,
+          customerId: salesRfq.data.customerId,
+          customerLocationId: salesRfq.data.customerLocationId ?? null,
+          date: datetime
+            .today(await resolveCompanyTimeZone(trx, companyId))
+            .toString(),
+          itemIds: salesRfqLinesWithItemIds.map((line) => line.itemId)
+        });
+
         const quoteLineInserts: Database["public"]["Tables"]["quoteLine"]["Insert"][] =
           salesRfqLinesWithItemIds.map((line) => ({
+            ...quoteLineTax(line.itemId),
             id: line.id ?? undefined,
             quoteId: quote.id!,
             itemId: line.itemId!,
@@ -10944,6 +11013,15 @@ export async function convertDocument(
         // Flat charges bill once across partial invoices (flatChargeShare).
         const billed = await billedSalesOrderCharges(trx, companyId, order.id);
         const decimals = await baseCurrencyDecimals(trx, companyId);
+        const dateIssued = datetime
+          .today(await resolveCompanyTimeZone(trx, companyId))
+          .toString();
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          uninvoicedLines.map((line) => line.taxCodeId),
+          dateIssued
+        );
 
         const salesInvoice = await trx
           .insertInto("salesInvoice")
@@ -10960,9 +11038,7 @@ export async function convertDocument(
             locationId: orderShipment.locationId,
             paymentTermId: salesOrderPayment.data!.paymentTermId,
             currencyCode: order.currencyCode ?? "USD",
-            dateIssued: datetime
-              .today(await resolveCompanyTimeZone(trx, companyId))
-              .toString(),
+            dateIssued,
             exchangeRate: order.exchangeRate ?? 1,
             subtotal: uninvoicedSubtotal ?? 0,
             opportunityId: order.opportunityId,
@@ -11044,7 +11120,7 @@ export async function convertDocument(
                 "nonTaxableAddOnCost"
               ),
               shippingCost: share(line.shippingCost, "shippingCost"),
-              taxPercent: line.taxPercent ?? 0,
+              taxPercent: taxPercentOf(line),
               taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
@@ -11152,6 +11228,20 @@ export async function convertDocument(
           "purchaseOrder",
           companyId
         );
+        // A coded line takes its code's rate on the order's date (today: the
+        // order date is stamped on submit); the supplier's amount stays.
+        const priceTaxCodeId = (lineId: string) =>
+          priceTaxCodeIds.get(
+            `${lineId}:${selectedLines![lineId]!.quantity}`
+          ) ?? null;
+        const taxPercentOf = await convertedTaxPercent(
+          trx,
+          companyId,
+          Object.keys(selectedLines ?? {}).map(priceTaxCodeId),
+          datetime
+            .today(await resolveCompanyTimeZone(trx, companyId))
+            .toString()
+        );
 
         const purchaseOrder = await trx
           .insertInto("purchaseOrder")
@@ -11254,12 +11344,11 @@ export async function convertDocument(
                   : selectedLines![line.id!]!.supplierTaxAmount,
                 taxPercent: nonTaxable
                   ? 0
-                  : resolveTaxPercent(selectedLines![line.id!]!),
-                taxCodeId: nonTaxable
-                  ? null
-                  : (priceTaxCodeIds.get(
-                      `${line.id}:${selectedLines![line.id!]!.quantity}`
-                    ) ?? null),
+                  : taxPercentOf({
+                      taxCodeId: priceTaxCodeId(line.id!),
+                      taxPercent: resolveTaxPercent(selectedLines![line.id!]!)
+                    }),
+                taxCodeId: nonTaxable ? null : priceTaxCodeId(line.id!),
                 sortOrder: line.sortOrder ?? 1,
                 createdBy: userId,
                 companyId
@@ -12146,31 +12235,55 @@ export async function createDocument(
           outsideOperations.map((d) => d.jobMakeMethod?.itemId).filter(Boolean)
         );
 
-        const [suppliers, supplierPayments, supplierShipping, items] =
-          await inOrder([
-            () =>
-              many(db, "supplier", {
-                id: Array.from(supplierIds),
-                companyId
-              }),
-            () =>
-              many(db, "supplierPayment", {
-                supplierId: Array.from(supplierIds),
-                companyId
-              }),
-            () =>
-              many(db, "supplierShipping", {
-                supplierId: Array.from(supplierIds),
-                companyId
-              }),
-            () =>
-              many(db, "item", {
-                id: Array.from(itemIds) as string[],
-                companyId
-              })
-          ]);
+        const [
+          suppliers,
+          supplierPayments,
+          supplierShipping,
+          items,
+          supplierTaxes
+        ] = await inOrder([
+          () =>
+            many(db, "supplier", {
+              id: Array.from(supplierIds),
+              companyId
+            }),
+          () =>
+            many(db, "supplierPayment", {
+              supplierId: Array.from(supplierIds),
+              companyId
+            }),
+          () =>
+            many(db, "supplierShipping", {
+              supplierId: Array.from(supplierIds),
+              companyId
+            }),
+          () =>
+            many(db, "item", {
+              id: Array.from(itemIds) as string[],
+              companyId
+            }),
+          () =>
+            many(db, "supplierTax", {
+              supplierId: Array.from(supplierIds),
+              companyId
+            })
+        ]);
 
         if (suppliers.error) throw new Error(suppliers.error.message);
+        if (supplierTaxes.error) throw new Error(supplierTaxes.error.message);
+        // Each line takes its supplier's tax, as a line added on the order
+        // does (`newPurchaseLineTax`).
+        const [supplierTaxCodes, today] = await Promise.all([
+          loadTaxCodes(
+            db,
+            companyId,
+            (supplierTaxes.data ?? []).map((row) => row.taxCodeId),
+            null
+          ),
+          getCompanyTimeZone(db, companyId).then((tz) =>
+            datetime.today(tz).toString()
+          )
+        ]);
         if (supplierPayments.error)
           throw new Error(supplierPayments.error.message);
         if (supplierShipping.error)
@@ -12326,6 +12439,35 @@ export async function createDocument(
 
             purchaseOrderIdsBySupplierId[supplier] = purchaseOrderId;
 
+            const [order, decimals] = await Promise.all([
+              trx
+                .selectFrom("purchaseOrder")
+                .select(["orderDate", "currencyCode"])
+                .where("id", "=", purchaseOrderId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst(),
+              // A currency not set up leaves the amount to the line form.
+              currencyDecimals(trx, companyId, supplierCurrencyCode).catch(
+                () => null
+              )
+            ]);
+            const taxDate = order?.orderDate ?? today;
+            const supplierTaxCodeId =
+              supplierTaxes.data?.find((row) => row.supplierId === supplier)
+                ?.taxCodeId ?? null;
+            const supplierDecision = decideLineTax({
+              source: "purchase",
+              taxExempt: false,
+              taxExemptionReason: null,
+              itemTaxable: true,
+              locationTaxCode: null,
+              partyTaxCode: supplierTaxCodeId
+                ? (supplierTaxCodes.get(supplierTaxCodeId) ?? null)
+                : null,
+              fallbackTaxPercent: 0,
+              date: taxDate
+            });
+
             const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
               [];
 
@@ -12346,8 +12488,17 @@ export async function createDocument(
                     ? (operation.operationMinimumCost ?? 0)
                     : totalCostWithUnitPrice;
 
+                const tax = newPurchaseLineTax(supplierDecision, {
+                  itemTaxable: item.taxable !== false,
+                  date: taxDate,
+                  base: totalCostWithMinimumCost,
+                  currencyDecimals: decimals
+                });
+                if (tax.error !== null) throw new InvalidInputError(tax.error);
+
                 // Create purchase order line
                 purchaseOrderLineInserts.push({
+                  ...tax.data,
                   purchaseOrderId,
                   purchaseOrderLineType: item.type,
                   itemId: item.id,
@@ -12621,17 +12772,16 @@ export async function createDocument(
       // received cost. A Reverse Charge code's non-recoverable share is
       // self-assessed cost the supplier did not charge. With no code this
       // is the receipt's historical cost. The tax point is the PO's order
-      // date, the date its lines' rates were taken on.
-      const receiptTaxCodes = await loadTaxCodesInForce(db, {
+      // date, the date its lines' rates were taken on. A draft never refuses:
+      // a code with no rate in force then splits nothing (all of the
+      // supplier's tax is cost), and posting the receipt refuses it.
+      const receiptTaxCodes = await loadTaxCodes(
+        db,
         companyId,
-        taxCodeIds: purchaseOrderLines.data.map((line) => line.taxCodeId),
-        taxPointDate:
-          purchaseOrder.data.orderDate ??
-          datetime
-            .today(await resolveCompanyTimeZone(db, companyId))
-            .toString(),
-        document: "purchase order"
-      });
+        purchaseOrderLines.data.map((line) => line.taxCodeId),
+        purchaseOrder.data.orderDate ??
+          datetime.today(await resolveCompanyTimeZone(db, companyId)).toString()
+      );
       const receiptTax = (line: (typeof purchaseOrderLines.data)[number]) =>
         receiptLineTax({
           base:
@@ -19027,11 +19177,94 @@ async function authorizeApiKey(
 // ---------------------------------------------------------------------------
 
 /**
+ * The tax of new sales lines, by item, read inside `db` (a transaction sees
+ * its own inserts): one decision for the customer and ship-to on `date`
+ * (`decideLineTax`, the customer's bare percent included), zeroed for a
+ * non-taxable item (`itemTaxDecision`). A code with no rate in force on
+ * `date` is refused.
+ */
+export async function customerLineTaxes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    customerId: string;
+    customerLocationId: string | null;
+    date: string;
+    itemIds: ReadonlyArray<string | null | undefined>;
+  }
+): Promise<(itemId: string | null | undefined) => LineTax> {
+  const { companyId } = args;
+  const itemIds = [...new Set(args.itemIds.filter((id): id is string => !!id))];
+  const [customer, customerTax, location, items] = await Promise.all([
+    db
+      .selectFrom("customer")
+      .select("taxPercent")
+      .where("companyId", "=", companyId)
+      .where("id", "=", args.customerId)
+      .executeTakeFirst(),
+    db
+      .selectFrom("customerTax")
+      .select(["taxExempt", "taxExemptionReason", "taxCodeId"])
+      .where("companyId", "=", companyId)
+      .where("customerId", "=", args.customerId)
+      .executeTakeFirst(),
+    args.customerLocationId
+      ? db
+          .selectFrom("customerLocation")
+          .select("taxCodeId")
+          .where("companyId", "=", companyId)
+          .where("id", "=", args.customerLocationId)
+          .executeTakeFirst()
+      : undefined,
+    itemIds.length > 0
+      ? db
+          .selectFrom("item")
+          .select(["id", "taxable"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", itemIds)
+          .execute()
+      : []
+  ]);
+  const locationCodeId = location?.taxCodeId ?? null;
+  const partyCodeId = customerTax?.taxCodeId ?? null;
+  const codes = await loadTaxCodes(
+    db,
+    companyId,
+    [locationCodeId, partyCodeId],
+    null
+  );
+  const decision = decideLineTax({
+    source: "sales",
+    taxExempt: customerTax?.taxExempt ?? false,
+    taxExemptionReason: customerTax?.taxExemptionReason ?? null,
+    itemTaxable: true,
+    locationTaxCode: locationCodeId
+      ? (codes.get(locationCodeId) ?? null)
+      : null,
+    partyTaxCode: partyCodeId ? (codes.get(partyCodeId) ?? null) : null,
+    fallbackTaxPercent: Number(customer?.taxPercent ?? 0),
+    date: args.date
+  });
+  if (hasNoRateInForce(decision)) {
+    throw new InvalidInputError(noRateInForceMessage(args.date));
+  }
+  const taxable = new Map(items.map((item) => [item.id, item.taxable]));
+  return (itemId) => {
+    const tax = itemTaxDecision(
+      decision,
+      !itemId || taxable.get(itemId) !== false
+    );
+    return { taxCodeId: tax.taxCodeId, taxPercent: tax.taxPercent };
+  };
+}
+
+/**
  * The tax codes `ids` name, each with only the components in force on
  * `date` (YYYY-MM-DD), in two queries. A null `date` keeps every component,
- * for a caller that reads documents of many dates (`taxCodeOn`). Shared by every posting path that
- * splits a line's tax into components. A code of another company, or one
- * that no longer exists, is simply absent from the map.
+ * for a caller that reads documents of many dates (`taxCodesOn`). Shared by
+ * every posting path that splits a line's tax into components. A code of
+ * another company, or one that no longer exists, is simply absent from the
+ * map.
  */
 export async function loadTaxCodes(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -19101,15 +19334,6 @@ export async function loadTaxCodes(
   );
 }
 
-/** A code loaded with every component (`loadTaxCodes` with a null date),
- *  with only those in force on `date`. */
-export function taxCodeOn(
-  code: TaxCodeInput | undefined,
-  date: string
-): TaxCodeInput | undefined {
-  return code && { ...code, components: effectiveComponents(code, date) };
-}
-
 /** Every code of `codes` (loaded with a null date) on `date`. */
 export function taxCodesOn(
   codes: ReadonlyMap<string, TaxCodeInput>,
@@ -19121,6 +19345,31 @@ export function taxCodesOn(
       { ...code, components: effectiveComponents(code, date) }
     ])
   );
+}
+
+/**
+ * `taxCodesOn` for one document of a batch (the cutover backfill, a memo
+ * rebuild): refuses, as live posting does, a code the document names with no
+ * component in force on its tax point, instead of posting its tax unsplit.
+ * `document` names it: "Purchase invoice PI000012".
+ */
+export function taxCodesInForceOn(
+  codes: ReadonlyMap<string, TaxCodeInput>,
+  args: {
+    taxCodeIds: ReadonlyArray<string | null | undefined>;
+    taxPointDate: string;
+    document: string;
+  }
+): Map<string, TaxCodeInput> {
+  if (
+    taxCodesWithoutComponents(codes, args.taxCodeIds, args.taxPointDate)
+      .length > 0
+  ) {
+    throw new InvalidInputError(
+      `${args.document} has a tax code with no component in force on ${args.taxPointDate}, its tax date. Add a component that covers that date, or change the tax code.`
+    );
+  }
+  return taxCodesOn(codes, args.taxPointDate);
 }
 
 /**
@@ -19165,6 +19414,52 @@ export async function loadTaxCodesInForce(
   return codes;
 }
 
+/** A rate as the user reads it: 0.175 -> "17.5%". */
+function percentLabel(rate: number | string | null): string {
+  return `${round(Number(rate ?? 0) * 100, 4)}%`;
+}
+
+/**
+ * Refuses a document whose coded line's stored rate is not its code's
+ * charged rate on the tax point (`lineRateMismatches`): an order line rated
+ * on the order date and invoiced later, or a draft whose date changed after
+ * its lines were rated. `taxCodes` holds the lines' codes
+ * (`loadTaxCodesInForce`) and `lines` every line of the document, so the
+ * refusal can name the line.
+ */
+export async function refuseLineRateMismatches<
+  T extends PositionedLine & {
+    taxCodeId: string | null;
+    taxPercent: number | string | null;
+  }
+>(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    lines: ReadonlyArray<T>;
+    taxCodes: ReadonlyMap<string, TaxCodeInput>;
+    taxPointDate: string;
+    /** Names the document in the refusal: "sales invoice". */
+    document: string;
+  }
+): Promise<void> {
+  const mismatch = lineRateMismatches(
+    args.lines,
+    args.taxCodes,
+    args.taxPointDate
+  )[0];
+  if (!mismatch) return;
+  const named = await db
+    .selectFrom("taxCode")
+    .select("name")
+    .where("companyId", "=", args.companyId)
+    .where("id", "=", mismatch.line.taxCodeId!)
+    .executeTakeFirst();
+  throw new InvalidInputError(
+    `${documentLineLabel(mismatch.line, args.lines)} charges ${percentLabel(mismatch.line.taxPercent)}, but tax code ${named?.name ?? mismatch.line.taxCodeId} is ${percentLabel(mismatch.chargedPercent)} on ${args.taxPointDate}, the ${args.document}'s tax date. Use Recalculate taxes on the ${args.document}, or change the line's tax code.`
+  );
+}
+
 type TaxedPurchaseLine = {
   id: string;
   quantity: number;
@@ -19174,8 +19469,8 @@ type TaxedPurchaseLine = {
   taxCodeId: string | null;
 };
 
-/** What names a purchase line to the user: where the invoice lists it. */
-type PositionedPurchaseLine = {
+/** What names a document line to the user: where the document lists it. */
+type PositionedLine = {
   id: string;
   /** DOUBLE PRECISION: node-postgres hands it over as a string. */
   sortOrder: number | string;
@@ -19191,13 +19486,13 @@ function createdInstant(value: string | Date): number {
 
 /**
  * "Line 2 (Freight services)": the line's 1-based position among the
- * invoice's lines in the order the purchase invoice lists them
- * (`getPurchaseInvoiceLines`: sortOrder, then createdAt), and its
- * description when it has one. `lines` must be every line of the invoice.
+ * document's lines in the order the document lists them (sortOrder, then
+ * createdAt), and its description when it has one. `lines` must be every
+ * line of the document.
  */
-function purchaseInvoiceLineLabel(
-  line: PositionedPurchaseLine,
-  lines: ReadonlyArray<PositionedPurchaseLine>
+function documentLineLabel(
+  line: PositionedLine,
+  lines: ReadonlyArray<PositionedLine>
 ): string {
   const ordered = [...lines].sort(
     (a, b) =>
@@ -19221,9 +19516,7 @@ function purchaseInvoiceLineLabel(
  * supplier AND self-assessed — the same tax twice. `lines` is every line of
  * one invoice, so the refusal can name the line as the invoice lists it.
  */
-export function withPurchaseTax<
-  T extends TaxedPurchaseLine & PositionedPurchaseLine
->(
+export function withPurchaseTax<T extends TaxedPurchaseLine & PositionedLine>(
   lines: ReadonlyArray<T>,
   taxCodes: ReadonlyMap<string, TaxCodeInput>
 ): Array<T & Pick<PurchasePostingLine, "taxParts" | "selfAssessedParts">> {
@@ -19235,7 +19528,7 @@ export function withPurchaseTax<
       !equals(line.taxAmount ?? 0, 0)
     ) {
       throw new InvalidInputError(
-        `${purchaseInvoiceLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
+        `${documentLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
       );
     }
     return {

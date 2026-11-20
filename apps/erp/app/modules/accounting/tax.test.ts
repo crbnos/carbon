@@ -21,8 +21,10 @@ import {
   decideLineTax,
   decidePurchaseTaxAmount,
   decideWrittenLineTax,
+  documentLineTax,
   itemTaxDecision,
   lineTaxForUpsert,
+  newPurchaseLineTax,
   taxCodeRate,
   taxCodeRetireRefusal,
   updatedTaxCodeId
@@ -394,6 +396,91 @@ describe("decideWrittenLineTax", () => {
 
   it("leaves the stored code alone on an update that sends none", () => {
     expect(decideWrittenLineTax(write).data).toEqual({ taxPercent: 0.03 });
+  });
+
+  it("returns no tax keys for an update that sends neither a code nor a percent", () => {
+    expect(
+      decideWrittenLineTax({ ...write, sentTaxPercent: undefined }).data
+    ).toStrictEqual({});
+  });
+
+  it("keeps the stored tax when an update re-sends a code with no rate in force unchanged", () => {
+    const expired: TaxCodeInput = {
+      ...dallas,
+      components: [component({ expirationDate: "2026-01-31" })]
+    };
+    const update = {
+      ...write,
+      sentTaxCodeId: "dallas",
+      sentCode: expired,
+      stored: { taxCodeId: "dallas", taxPercent: 0.0825 }
+    };
+    expect(
+      decideWrittenLineTax({ ...update, sentTaxPercent: 0.0825 })
+    ).toStrictEqual({ data: {}, error: null });
+    expect(
+      decideWrittenLineTax({ ...update, sentTaxPercent: undefined })
+    ).toStrictEqual({ data: {}, error: null });
+    // A changed percent, or another code than the stored one, touches tax.
+    expect(
+      decideWrittenLineTax({ ...update, sentTaxPercent: 0.05 }).error
+    ).toContain("no rate in force");
+    expect(
+      decideWrittenLineTax({
+        ...update,
+        stored: { taxCodeId: "austin", taxPercent: 0.0825 }
+      }).error
+    ).toContain("no rate in force");
+  });
+});
+
+describe("documentLineTax", () => {
+  it("takes the item's decision, else the document's, and refuses a code with no rate", () => {
+    const document = decideLineTax({ ...facts, partyTaxCode: austin });
+    const taxes = {
+      document,
+      byItem: new Map([["free", itemTaxDecision(document, false)]]),
+      date: "2026-10-16"
+    };
+    expect(documentLineTax(taxes, "free").data).toEqual({
+      taxCodeId: null,
+      taxPercent: 0
+    });
+    expect(documentLineTax(taxes, "other").data).toEqual({
+      taxCodeId: "austin",
+      taxPercent: 0.0825
+    });
+    const expired = decideLineTax({
+      ...facts,
+      partyTaxCode: {
+        ...dallas,
+        components: [component({ expirationDate: "2026-01-31" })]
+      }
+    });
+    expect(
+      documentLineTax({ ...taxes, document: expired }, null).error
+    ).toContain("no rate in force on 2026-10-16");
+  });
+});
+
+describe("newPurchaseLineTax", () => {
+  it("restates the supplier amount from the code's rate, and zeroes a non-taxable item", () => {
+    const decision = decideLineTax({
+      ...facts,
+      source: "purchase",
+      partyTaxCode: austin
+    });
+    const args = { date: "2026-10-16", base: 200, currencyDecimals: 2 };
+    expect(
+      newPurchaseLineTax(decision, { ...args, itemTaxable: true }).data
+    ).toEqual({
+      taxCodeId: "austin",
+      taxPercent: 0.0825,
+      supplierTaxAmount: 16.5
+    });
+    expect(
+      newPurchaseLineTax(decision, { ...args, itemTaxable: false }).data
+    ).toEqual({ taxCodeId: null, taxPercent: 0, supplierTaxAmount: 0 });
   });
 });
 

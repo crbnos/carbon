@@ -18197,6 +18197,15 @@ msgstr "추출된 라인 매핑"
 msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "매입의 “No tax code (exempt or non-taxable)” 행을 매핑하세요. 그전까지는 세금 코드가 없는 면세 및 영세율 매입 라인은 세금 없이 동기화되며 부가가치세 신고에 포함되지 않습니다."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "매출과 매입의 “No tax code (exempt or non-taxable)” 행을 매핑하세요. 그전까지는 세금 코드가 없는 면세 및 영세율 라인은 세금 없이 동기화되며 부가가치세 신고에 포함되지 않습니다."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "매출의 “No tax code (exempt or non-taxable)” 행을 매핑하세요. 그전까지는 세금 코드가 없는 면세 및 영세율 매출 라인은 세금 없이 동기화되며 부가가치세 신고에 포함되지 않습니다."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "이 계정들을 {providerName} 연동 설정에서 매핑한 후 다시 끌어오기하거나, 아래에 잔액을 입력하세요."
 
@@ -26329,8 +26338,8 @@ msgstr "세금 코드 폐기"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "세금 코드 {0}을(를) 사용 중지하시겠습니까? 새 라인에서는 더 이상 선택할 수 없습니다. 이미 사용 중인 라인은 그대로 유지됩니다. 고객, 공급업체 또는 배송지 사업장에 아직 지정된 코드는 사용 중지할 수 없습니다."
 
-msgid "Retired, still on documents"
-msgstr "사용 중지됨, 문서에는 남아 있음"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "사용 중지됨, 아직 문서에 남아 있음. 세율 기준 매칭 시 건너뜀"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
@@ -32854,6 +32863,9 @@ msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "숫자 옆의 텍스트가 그 의미를 바꾸고 있어 이 미리보기는 일시 중지되었습니다."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "이 가격 구간에는 리버스 차지(Reverse Charge) 세금 코드가 지정되어 있습니다. 리버스 차지에서는 공급업체가 세금을 청구하지 않으므로 세금 금액은 0이어야 합니다."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "이 가격은 수동으로 입력되었으므로 가격 규칙이 적용되지 않았습니다."

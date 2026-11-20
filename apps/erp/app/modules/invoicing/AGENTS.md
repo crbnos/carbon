@@ -82,7 +82,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   (Tax and Gross are read-only). `upsertMemo` recomputes the tax server-side from the code's
   rate on `memoDate` (`memoTaxAmounts` → `memoAmounts`, `@carbon/utils`) and refuses a code
   with no net ("A tax code needs a net amount"). Stored tax is never dropped silently
-  (`resolveMemoTaxAmounts`, `invoicing.models.ts`, shared with `MemoForm`): an UPDATE that
+  (`resolveMemoTaxAmounts`, `invoicing.utils.ts`, shared with `MemoForm`): an UPDATE that
   keeps the code (both null counts) of a memo with tax keeps the stored rate
   (`deriveRate(taxAmount, amount − taxAmount)`, applied with `applyRate`; an unchanged net
   keeps the tax exactly) — a codeless RMA / return credit with a bare percent, or a coded
@@ -108,8 +108,13 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   on the invoice date (`serviceInvoiceLineTaxes`).
   `post-sales-invoice` / `post-purchase-invoice` write the `taxLedger` rows in
   the journal's transaction, and their voids write the negated rows. The sales invoice PDF's
-  tax summary, invoice messages and "Seller Tax ID" come from
-  `packages/documents/src/utils/tax-summary.ts` and `packages/lib/src/sales-invoice-document.server.tsx`.
+  tax summary, invoice messages and "Seller Tax ID" are read by `loadTaxSummary`
+  (`packages/lib/src/sales-invoice-tax-summary.server.ts`, pure helpers in
+  `packages/documents/src/utils/tax-summary.ts`). Its reads take a required service-role
+  `taxClient`, every one filtered by `companyId`: the tax tables' RLS needs accounting, sales
+  or purchasing view, and an invoicing-only reader must print the same tax as the emailed
+  copy. A route passes it only after its own permission check and after the caller's client
+  has read the invoice.
 - **Payment — THREE payee kinds.** `paymentValidator` requires exactly one of `customerId` /
   `supplierId` / `employeeId` (mirroring the DB `payment_party_check`). An `employeeId` payment
   is a **reimbursement payout**: always `Disbursement`, never AR, never a refund. In

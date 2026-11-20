@@ -1372,10 +1372,13 @@ type LineTaxWriteResult<T> =
  * - A non-taxable item: no code and 0%, whatever was sent.
  * - A code that is sent decides, at its charged rate on `date`: the server
  *   never keeps a percent that disagrees with the code. A code of another
- *   company (`sentCode` null) or with no component in force is refused.
+ *   company (`sentCode` null) or with no component in force is refused,
+ *   unless the update re-sends the stored code and percent unchanged
+ *   (`stored`): an edit that does not touch tax keeps the stored tax.
  * - An empty code is a cleared one: the sent percent stands with no code.
  * - No code sent: on a create, the party's decision (`applyLineTaxDecision`);
  *   on an update (`partyDecision` null), the stored code stays.
+ * - A percent that was not sent is never in the result.
  */
 export function decideWrittenLineTax(args: {
   source: "sales" | "purchase";
@@ -1386,6 +1389,9 @@ export function decideWrittenLineTax(args: {
   sentCode: TaxCodeInput | null;
   partyDecision: LineTaxDecision | null;
   date: string;
+  /** An update's stored tax; null for a create, or an update that changes
+   *  other tax (a purchase line's supplier amount). */
+  stored?: { taxCodeId: string | null; taxPercent: number | null } | null;
 }): LineTaxWriteResult<Partial<LineTax>> {
   if (!args.itemTaxable) {
     return { data: { taxCodeId: null, taxPercent: 0 }, error: null };
@@ -1403,7 +1409,14 @@ export function decideWrittenLineTax(args: {
       date: args.date
     });
     if (hasNoRateInForce(decision)) {
-      return { data: null, error: noRateInForceMessage(args.date) };
+      const untouched =
+        !!args.stored &&
+        args.stored.taxCodeId === args.sentTaxCodeId &&
+        (args.sentTaxPercent === undefined ||
+          equals(args.sentTaxPercent, Number(args.stored.taxPercent ?? 0)));
+      return untouched
+        ? { data: {}, error: null }
+        : { data: null, error: noRateInForceMessage(args.date) };
     }
     return {
       data: { taxCodeId: decision.taxCodeId, taxPercent: decision.taxPercent },
@@ -1414,21 +1427,97 @@ export function decideWrittenLineTax(args: {
     return {
       data: {
         ...(args.sentTaxCodeId === "" ? { taxCodeId: null } : {}),
-        taxPercent: args.sentTaxPercent
+        ...(args.sentTaxPercent !== undefined
+          ? { taxPercent: args.sentTaxPercent }
+          : {})
       },
       error: null
     };
   }
-  if (hasNoRateInForce(args.partyDecision)) {
-    return { data: null, error: noRateInForceMessage(args.date) };
+  return partyLineTax(args.partyDecision, args.date, args.sentTaxPercent);
+}
+
+/**
+ * The tax a new line takes from a party decision when no code was sent
+ * (`applyLineTaxDecision`, the sent percent standing for a bare-percent
+ * decision). A code with no rate in force on `date` is refused.
+ */
+export function partyLineTax(
+  decision: LineTaxDecision,
+  date: string,
+  sentTaxPercent?: number
+): LineTaxWriteResult<LineTax> {
+  if (hasNoRateInForce(decision)) {
+    return { data: null, error: noRateInForceMessage(date) };
   }
   return {
-    data: applyLineTaxDecision(args.partyDecision, {
+    data: applyLineTaxDecision(decision, {
       taxCodeId: null,
-      taxPercent: args.sentTaxPercent ?? 0
+      taxPercent: sentTaxPercent ?? 0
     }),
     error: null
   };
+}
+
+/**
+ * The tax of a purchase order line a server path creates with no code sent,
+ * from the supplier's decision: none for a non-taxable item, else
+ * `partyLineTax`, with the supplier tax amount restated from the rate
+ * (`decidePurchaseTaxAmount`, as a create of a line with no code does).
+ */
+export function newPurchaseLineTax(
+  decision: LineTaxDecision,
+  args: {
+    itemTaxable: boolean;
+    date: string;
+    base: number;
+    currencyDecimals: number | null;
+  }
+): LineTaxWriteResult<LineTax & { supplierTaxAmount?: number }> {
+  const tax = partyLineTax(
+    itemTaxDecision(decision, args.itemTaxable),
+    args.date
+  );
+  if (tax.error !== null) return tax;
+  const amount = decidePurchaseTaxAmount({
+    itemTaxable: args.itemTaxable,
+    tax: tax.data,
+    code: null,
+    codeWasSent: false,
+    sentTaxAmount: undefined,
+    base: args.base,
+    currencyDecimals: args.currencyDecimals
+  });
+  if (amount.error !== null) return amount;
+  return {
+    data: {
+      ...tax.data,
+      ...(amount.data !== undefined ? { supplierTaxAmount: amount.data } : {})
+    },
+    error: null
+  };
+}
+
+/** A document's resolved tax: its decision with no item, each item's, and
+ *  the date the codes were read on. */
+export type DocumentLineTaxes = {
+  document: LineTaxDecision;
+  byItem: Map<string, LineTaxDecision>;
+  date: string;
+};
+
+/** The tax a new line on `itemId` takes from its document's decisions
+ *  (`partyLineTax`); an item missing from `byItem` takes the document's. */
+export function documentLineTax(
+  taxes: DocumentLineTaxes,
+  itemId: string | null | undefined,
+  sentTaxPercent?: number
+): LineTaxWriteResult<LineTax> {
+  return partyLineTax(
+    (itemId ? taxes.byItem.get(itemId) : undefined) ?? taxes.document,
+    taxes.date,
+    sentTaxPercent
+  );
 }
 
 /**

@@ -18197,6 +18197,15 @@ msgstr "Map Extracted Lines"
 msgid "Map Lines Now"
 msgstr "Map Lines Now"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 
@@ -26329,8 +26338,8 @@ msgstr "Retire Tax Code"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 
-msgid "Retired, still on documents"
-msgstr "Retired, still on documents"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "Retired, still on documents. Match by rate skips it"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
@@ -32854,6 +32863,9 @@ msgstr "This PIN will not be shown again. You will need it to exit console mode 
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "This preview is paused because a text changes a figure."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "This price was entered manually, so no pricing rules were applied."

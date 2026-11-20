@@ -23,8 +23,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     data: (taxCodes.data ?? []).map((code) => ({
       ...code,
-      // The rate a line using the code is charged — 0 for a Reverse Charge
-      // code. The forms default a line's `taxPercent` from it.
+      // Today's charged rate (0 for Reverse Charge). Line forms take the rate
+      // on the document's date (`useTaxCodeRateOn`) and fall back to this.
       rate: chargedTaxPercent(toTaxCodeInput(code), today)
     })),
     error: taxCodes.error

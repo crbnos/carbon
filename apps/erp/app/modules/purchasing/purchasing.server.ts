@@ -42,7 +42,6 @@ import {
   applyRate,
   colorNames,
   datetime,
-  deriveRate,
   groupBy,
   isUniqueViolation,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
@@ -924,7 +923,9 @@ export const recordSupplierQuoteLinkVisit = defineServiceFn({
  *
  * @remarks
  * Every line must be the quote's. Writes the price of each selected quantity
- * (the tax rate derived from the amounts), sets the quote Active with who
+ * with its tax (`supplierQuotePriceTaxes`: a code's rate, else the rate
+ * derived from the amounts; a Reverse Charge code refuses a tax amount),
+ * sets the quote Active with who
  * submitted it, stamps the link, and notifies the company's supplier-quote
  * group. A failed notification is logged; the submission stands.
  */
@@ -960,10 +961,11 @@ export const submitDigitalSupplierQuote = defineServiceFn({
     // The line ids come from the link's visitor and every write below runs as
     // the service role: each line must be this quote's.
     const lineIds = [...new Set(prices.map(({ lineId }) => lineId))];
+    const itemByLine = new Map<string, string | null>();
     if (lineIds.length > 0) {
       const owned = await client
         .from("supplierQuoteLine")
-        .select("id")
+        .select("id, itemId")
         .eq("supplierQuoteId", supplierQuoteId)
         .eq("companyId", companyId)
         .in("id", lineIds);
@@ -977,13 +979,14 @@ export const submitDigitalSupplierQuote = defineServiceFn({
       if (owned.data.length !== lineIds.length) {
         return ctx.error("validation", "Invalid selected lines data");
       }
+      for (const line of owned.data) itemByLine.set(line.id, line.itemId);
     }
 
     const existing =
       lineIds.length > 0
         ? await client
             .from("supplierQuoteLinePrice")
-            .select("supplierQuoteLineId, quantity")
+            .select("supplierQuoteLineId, quantity, taxCodeId")
             .eq("supplierQuoteId", supplierQuoteId)
             .in("supplierQuoteLineId", lineIds)
         : { data: [], error: null };
@@ -994,28 +997,43 @@ export const submitDigitalSupplierQuote = defineServiceFn({
         existing.error
       );
     }
-    const stored = new Set(
-      existing.data.map((row) => `${row.supplierQuoteLineId}:${row.quantity}`)
+    const stored = new Map(
+      existing.data.map((row) => [
+        `${row.supplierQuoteLineId}:${row.quantity}`,
+        row.taxCodeId
+      ])
     );
+
+    // The share page collects amounts only. A price takes a code (its own,
+    // else the supplier's) at the code's rate; with none, the rate the
+    // amounts give over unit price × quantity + shipping.
+    const taxes = await service.supplierQuotePriceTaxes(client, {
+      companyId,
+      supplierId: quote.supplierId,
+      date:
+        quote.quotedDate ??
+        datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
+      prices: prices.map(({ lineId, quantity, line }) => ({
+        itemId: itemByLine.get(lineId) ?? null,
+        storedTaxCodeId: stored.get(`${lineId}:${quantity}`),
+        supplierTaxAmount: line.supplierTaxAmount ?? 0,
+        base: taxableBase(
+          line.supplierUnitPrice ?? 0,
+          quantity,
+          line.supplierShippingCost ?? 0
+        )
+      }))
+    });
+    if (taxes.error !== null) return ctx.error("validation", taxes.error);
 
     const now = datetime.timestamp();
     const userId = quote.createdBy;
-    const writes = prices.map(({ lineId, quantity, line }) => {
+    const writes = prices.map(({ lineId, quantity, line }, index) => {
       const fields = {
         supplierUnitPrice: line.supplierUnitPrice ?? 0,
         leadTime: line.leadTime ?? 0,
         supplierShippingCost: line.supplierShippingCost ?? 0,
-        supplierTaxAmount: line.supplierTaxAmount ?? 0,
-        // The share page collects amounts only: the rate is derived from the
-        // canonical denominator (unit price × quantity + shipping).
-        taxPercent: deriveRate(
-          line.supplierTaxAmount ?? 0,
-          taxableBase(
-            line.supplierUnitPrice ?? 0,
-            quantity,
-            line.supplierShippingCost ?? 0
-          )
-        )
+        ...taxes.data[index]
       };
       return stored.has(`${lineId}:${quantity}`)
         ? client

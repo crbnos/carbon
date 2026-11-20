@@ -228,7 +228,8 @@ async function closedAgreementFixture({
         .execute();
     }
     // Two early-return credits, one in each month: the code's rate on each
-    // period's start differs (10% in September, 15% from October).
+    // period's start differs (10% in September, 15% from October), but both
+    // credit at the rate on the memo's date.
     if (withEarlyReturnCredits) {
       await trx
         .insertInto("rentalBillingPeriod")
@@ -465,7 +466,7 @@ databaseTest(
 );
 
 databaseTest(
-  "early-return credits at two tax rates go on two credit memos, each with its tax on top",
+  "early-return credits from two rate periods go on one credit memo at the code's rate on the memo date",
   async () => {
     const f = await closedAgreementFixture({
       withTaxCode: true,
@@ -481,40 +482,32 @@ databaseTest(
       expect(result.error).toBeNull();
       expect(result.data!.failures).toEqual([]);
       const memoIds = result.data!.creditMemos.map((memo) => memo.memoId);
-      expect(memoIds).toHaveLength(2);
+      expect(memoIds).toHaveLength(1);
 
-      const memos = await f.db
+      const memo = await f.db
         .selectFrom("memo")
-        .select(["id", "amount", "taxAmount", "taxCodeId", "status"])
+        .select(["amount", "taxAmount", "taxCodeId", "status", "memoDate"])
         .where("companyId", "=", f.companyId)
-        .where("id", "in", memoIds)
-        .execute();
-      const memo = (id: string) => {
-        const row = memos.find((m) => m.id === id)!;
-        return {
-          amount: Number(row.amount),
-          taxAmount: Number(row.taxAmount),
-          taxCodeId: row.taxCodeId,
-          status: row.status
-        };
-      };
-      // The first memo is the first period's: 100 at 10% (the code's rate on
-      // 1 September), then 60 at 15% (1 October). `amount` is the gross.
-      expect(memo(memoIds[0]!)).toEqual({
-        amount: 110,
-        taxAmount: 10,
+        .where("id", "=", memoIds[0]!)
+        .executeTakeFirstOrThrow();
+      // 100 (a September period) + 60 (October), both at 15%: the code's
+      // rate on 5 October, the memo's date and tax point. `amount` is the
+      // gross.
+      expect({
+        amount: Number(memo.amount),
+        taxAmount: Number(memo.taxAmount),
+        taxCodeId: memo.taxCodeId,
+        status: memo.status,
+        memoDate: String(memo.memoDate)
+      }).toEqual({
+        amount: 184,
+        taxAmount: 24,
         taxCodeId: f.taxCodeId,
-        status: "Draft"
-      });
-      expect(memo(memoIds[1]!)).toEqual({
-        amount: 69,
-        taxAmount: 9,
-        taxCodeId: f.taxCodeId,
-        status: "Draft"
+        status: "Draft",
+        memoDate: "2026-10-05"
       });
 
-      // Each credit is stamped with its own memo, so posting a memo books
-      // only its own periods against its net.
+      // Both credits are stamped with the memo.
       const credits = await f.db
         .selectFrom("rentalBillingPeriod")
         .select(["id", "memoId", "status"])
@@ -525,7 +518,7 @@ databaseTest(
         Object.fromEntries(credits.map((c) => [c.id, [c.memoId, c.status]]))
       ).toEqual({
         [f.septemberCreditId]: [memoIds[0], "Invoiced"],
-        [f.octoberCreditId]: [memoIds[1], "Invoiced"]
+        [f.octoberCreditId]: [memoIds[0], "Invoiced"]
       });
     } finally {
       await f.cleanup();

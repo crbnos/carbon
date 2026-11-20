@@ -8,7 +8,9 @@ import {
   effectiveComponents,
   effectiveTaxPercent,
   groupByTaxRate,
+  lineRateMismatches,
   lineTaxBase,
+  lockedComponentEdits,
   memoAmounts,
   purchaseLineTaxParts,
   receiptLineTax,
@@ -361,6 +363,37 @@ describe("the tax point", () => {
       taxCodesWithoutComponents(codes, ["code", "expired"], "2026-12-30")
     ).toEqual([]);
   });
+
+  it("finds a coded line whose stored rate is not the code's rate on the tax point", () => {
+    const codes = new Map([["code", code]]);
+    // An order line rated on 2026-12-30 (9.5%), invoiced on 2027-01-04 (9.75%).
+    const orderLine = { id: "l1", taxCodeId: "code", taxPercent: "0.095" };
+    const rerated = { id: "l2", taxCodeId: "code", taxPercent: 0.0975 };
+    const uncoded = { id: "l3", taxCodeId: null, taxPercent: 0.05 };
+    expect(
+      lineRateMismatches([orderLine, rerated, uncoded], codes, "2027-01-04")
+    ).toEqual([{ line: orderLine, chargedPercent: 0.0975 }]);
+    expect(
+      lineRateMismatches([orderLine, uncoded], codes, "2026-12-30")
+    ).toEqual([]);
+  });
+
+  it("holds a Reverse Charge line to 0%", () => {
+    const codes = new Map([
+      ["rc", { ...code, calculationType: "Reverse Charge" as const }]
+    ]);
+    const line = { taxCodeId: "rc", taxPercent: 0.095 };
+    expect(lineRateMismatches([line], codes, "2026-12-30")).toEqual([
+      { line, chargedPercent: 0 }
+    ]);
+    expect(
+      lineRateMismatches(
+        [{ taxCodeId: "rc", taxPercent: 0 }],
+        codes,
+        "2026-12-30"
+      )
+    ).toEqual([]);
+  });
 });
 
 describe("purchaseLineTaxParts", () => {
@@ -426,5 +459,41 @@ describe("receiptLineTax", () => {
     expect(
       receiptLineTax({ base: 1000, taxAmount: 80, code: undefined })
     ).toEqual({ taxAmount: 80, recoverableTaxAmount: 0 });
+  });
+});
+
+describe("lockedComponentEdits", () => {
+  const stored = [
+    component({ id: "posted", name: "VAT 20", taxPercent: 0.2 }),
+    component({ id: "fresh", name: "VAT 5", taxPercent: 0.05 })
+  ];
+  const postedThrough = new Map([["posted", "2026-03-31"]]);
+  const keep = (overrides: Partial<TaxComponentInput> = {}) => ({
+    ...stored[0]!,
+    ...overrides
+  });
+  const edits = (
+    submitted: Parameters<typeof lockedComponentEdits>[0]["submitted"]
+  ) => lockedComponentEdits({ stored, submitted, postedThrough });
+
+  it("lets a save keep a posted component, and edit or drop one never posted", () => {
+    expect(edits([keep({ name: "Renamed" })])).toEqual([]);
+  });
+
+  it("refuses a posted component's rate, recoverable percent, compounding or effective date", () => {
+    expect(edits([keep({ taxPercent: 0.175 })])).toEqual(["VAT 20"]);
+    expect(edits([keep({ recoverablePercent: 1 })])).toEqual(["VAT 20"]);
+    expect(edits([keep({ isCompound: true })])).toEqual(["VAT 20"]);
+    expect(edits([keep({ effectiveDate: "2026-01-01" })])).toEqual(["VAT 20"]);
+  });
+
+  it("refuses removing a posted component", () => {
+    expect(edits([stored[1]!])).toEqual(["VAT 20"]);
+  });
+
+  it("lets a posted component expire on or after its last posting, never before", () => {
+    expect(edits([keep({ expirationDate: "2026-03-31" })])).toEqual([]);
+    expect(edits([keep({ expirationDate: "2026-06-30" })])).toEqual([]);
+    expect(edits([keep({ expirationDate: "2026-03-30" })])).toEqual(["VAT 20"]);
   });
 });

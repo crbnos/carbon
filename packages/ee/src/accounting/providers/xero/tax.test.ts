@@ -139,17 +139,38 @@ describe("resolveXeroTaxType", () => {
 });
 
 describe("XeroTaxContextLoader", () => {
-  const db = (codes: Array<Record<string, unknown>>) =>
+  const db = (
+    codes: Array<Record<string, unknown>>,
+    mappings: Array<Record<string, unknown>> = []
+  ) =>
     ({
       selectFrom: (table: string) => {
         const builder: Record<string, unknown> = {
           select: () => builder,
           where: () => builder,
-          execute: async () => (table === "taxCode" ? codes : [])
+          execute: async () =>
+            table === "taxCode"
+              ? codes
+              : table === "externalIntegrationMapping"
+                ? mappings
+                : []
         };
         return builder;
       }
     }) as never;
+  const salesFallback = {
+    entityId: `${NO_TAX_CODE_MAPPING_ID}:sales`,
+    externalId: "ZERORATEDOUTPUT",
+    metadata: { externalName: "Zero Rated Income", externalRate: 0 }
+  };
+  const salesCode = {
+    id: "uk20",
+    name: "UK 20%",
+    active: true,
+    calculationType: "Normal",
+    usedForSales: true,
+    usedForPurchase: false
+  };
   const provider = () => ({
     listTaxRates: vi.fn(async () => RATES),
     listChartOfAccounts: vi.fn(async () => [])
@@ -165,28 +186,44 @@ describe("XeroTaxContextLoader", () => {
     expect(reads.listTaxRates).not.toHaveBeenCalled();
   });
 
-  it("reads the catalog for untaxed lines once the direction uses codes", async () => {
+  it("reads the catalog for untaxed lines once the direction uses codes and maps the fallback", async () => {
     const reads = provider();
     const loader = new XeroTaxContextLoader(
-      db([
-        {
-          id: "uk20",
-          name: "UK 20%",
-          active: true,
-          calculationType: "Normal",
-          usedForSales: true,
-          usedForPurchase: false
-        }
-      ]),
+      db([salesCode], [salesFallback]),
       args,
       reads
     );
     const loaded = await loader.forLines("sales", [untaxed]);
     expect(loaded.catalogLoaded).toBe(true);
     expect(loaded.noTaxCodeFallback).toEqual(new Set(["sales"]));
+    expect(
+      resolveXeroTaxType({
+        ...line,
+        ...untaxed,
+        context: loaded,
+        direction: "sales"
+      })
+    ).toBe("ZERORATEDOUTPUT");
     expect((await loader.forLines("purchase", [untaxed])).catalogLoaded).toBe(
       false
     );
+  });
+
+  it("sends untaxed lines at NONE, never parks, while the fallback is unmapped", async () => {
+    const reads = provider();
+    const loader = new XeroTaxContextLoader(db([salesCode]), args, reads);
+    const loaded = await loader.forLines("sales", [untaxed]);
+    expect(loaded.catalogLoaded).toBe(false);
+    expect(loaded.noTaxCodeFallback).toEqual(new Set());
+    expect(
+      resolveXeroTaxType({
+        ...line,
+        ...untaxed,
+        context: loaded,
+        direction: "sales"
+      })
+    ).toBe(XERO_NO_TAX);
+    expect(reads.listTaxRates).not.toHaveBeenCalled();
   });
 
   it("needs no catalog for a Reverse Charge purchase line", async () => {

@@ -548,6 +548,7 @@ async function fileInvoicePdf(args: {
 
   const document = await loadSalesInvoiceDocument({
     client,
+    taxClient: client,
     companyId,
     companyGroupId,
     invoiceId,

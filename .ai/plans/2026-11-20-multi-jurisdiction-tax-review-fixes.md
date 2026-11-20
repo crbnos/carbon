@@ -57,3 +57,22 @@ Goal: production-ready for a UK VAT company on Xero. Each finding is referred to
 - **Service-job invoice tax reads inside the transaction.** `serviceInvoiceLineTaxes` reads the customer, ship-to and codes through the Kysely transaction (`decideLineTax` + `loadTaxCodes`). It no longer calls the PostgREST resolver from inside a posting transaction.
 - **Shipping-tax snapshot is a migration trigger**, not an event-system interceptor. The dispatcher ignores changes an interceptor makes to `NEW`.
 - **Retired codes keep resolving where assigned.** Retire is refused while a party or ship-to uses the code; a code already on a line keeps billing.
+
+## Round 2 (second review: `.context/review2/`)
+
+### Decisions
+1. **One tax point per document, and the line rate must match it.**
+   - Converting a document (quote → sales order → sales invoice, PO → purchase invoice, supplier quote → PO) keeps the line's code and takes the code's rate on the new document's date.
+   - Posting a sales invoice refuses a coded line whose stored `taxPercent` is not the code's charged rate on the tax point. The message names the line, both rates and the date, and says to use Recalculate taxes.
+   - A purchase document keeps the supplier's tax amount; posting splits it over the components in force on the tax point.
+2. **Credits take the rate on the memo date.** This reverts the round-1 deviation. The memo date is the memo's tax point, and posting splits on it. It is known and documented that a credit across a rate change does not reverse at the original rate.
+3. **Exempt fallback does not block sync.** If the fallback row is unmapped, code-less 0% lines go out as `NONE`, the old behaviour. The Tax Rates tab warns that exempt and zero-rated lines stay off the VAT return until the fallback is mapped.
+4. **Dataset wipe deletes `taxLedger` again.** Round 1 preserved it, which was wrong.
+5. **"No rate in force" is refused only when a write touches tax.** That means a create, a sent code, percent or amount, or posting. Draft receipt creation never refuses; receipt posting does.
+6. **Editing a component referenced by `taxLedger`** may not change its rate, recoverable percent or dates in place, and may not delete it. The user must expire it and add a new component.
+
+### Work split
+- [ ] **P2 posting/ledger/schema**: B review2 B1/B2 + risks, decision 1 (posting guard + conversions), decision 2, decisions 4–6, A review2 findings, E-12 lock.
+- [ ] **L2 lines**: C review2 blocker + risks, decision 5 (line writes), C-R6 create paths.
+- [ ] **X2 provider sync**: D review2 blocker + risks, decision 3, D-R5.
+- [ ] **U2 UI/docs**: E review2 findings, docs freshness, PR body.

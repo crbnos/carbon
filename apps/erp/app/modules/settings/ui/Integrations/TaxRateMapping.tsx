@@ -5,6 +5,8 @@
 import { Combobox, Submit, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
+  Alert,
+  AlertDescription,
   Button,
   Drawer,
   DrawerBody,
@@ -26,7 +28,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { LuLink } from "react-icons/lu";
+import { LuLink, LuTriangleAlert } from "react-icons/lu";
 import { usePercentFormatter, usePermissions } from "~/hooks";
 import { taxCodeMappingUpsertValidator } from "~/modules/settings/settings.models";
 
@@ -95,6 +97,9 @@ type TaxRateMappingProps = {
    *  offers. */
   staleMappingKeys: string[];
   unmapped: UnmappedTaxCodeRow[];
+  /** Directions that use codes but whose fallback row is unmapped: their
+   *  exempt and zero-rated lines go out with no tax. */
+  unmappedFallbackDirections: TaxDirection[];
   proposals: TaxCodeMatchProposalRow[];
 };
 
@@ -110,6 +115,7 @@ export function TaxRateMapping({
   mappings,
   staleMappingKeys,
   unmapped,
+  unmappedFallbackDirections,
   proposals
 }: TaxRateMappingProps) {
   const { t } = useLingui();
@@ -224,6 +230,33 @@ export function TaxRateMapping({
             </Button>
           )}
         </div>
+
+        {noTaxCodeId && unmappedFallbackDirections.length > 0 && (
+          <Alert variant="warning">
+            <LuTriangleAlert />
+            <AlertDescription>
+              {unmappedFallbackDirections.length === 2 ? (
+                <Trans>
+                  Map the "No tax code (exempt or non-taxable)" row for sales
+                  and purchases. Until then, exempt and zero-rated lines with no
+                  tax code sync with no tax and stay off the VAT return.
+                </Trans>
+              ) : unmappedFallbackDirections[0] === "sales" ? (
+                <Trans>
+                  Map the "No tax code (exempt or non-taxable)" row for sales.
+                  Until then, exempt and zero-rated sales lines with no tax code
+                  sync with no tax and stay off the VAT return.
+                </Trans>
+              ) : (
+                <Trans>
+                  Map the "No tax code (exempt or non-taxable)" row for
+                  purchases. Until then, exempt and zero-rated purchase lines
+                  with no tax code sync with no tax and stay off the VAT return.
+                </Trans>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {options.length === 0 && (
           <p className="text-xs text-muted-foreground">
@@ -412,7 +445,7 @@ function TaxCodeMappingRowForm({
   const detail = isFallback
     ? t`Exempt customers, non-taxable items, untaxed shipping`
     : code.retired
-      ? t`Retired, still on documents`
+      ? t`Retired, still on documents. Match by rate skips it`
       : code.reverseCharge
         ? t`Reverse Charge, ${formatRate(0)} charged`
         : formatRate(code.rate ?? 0);

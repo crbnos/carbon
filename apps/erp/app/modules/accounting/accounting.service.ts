@@ -181,6 +181,7 @@ import {
   isAccountClass,
   isBalanced,
   isUniqueViolation,
+  lockedComponentEdits,
   MONTH_NUMBER,
   parseIsoDate,
   quoteFilterValue,
@@ -284,7 +285,7 @@ import {
   resolveInventoryAccount,
   salesTaxLedgerLines,
   syncDraftRecognitionRuns,
-  taxCodesOn,
+  taxCodesInForceOn,
   withPurchaseTax
 } from "../shared/shared.service";
 import type {
@@ -19296,10 +19297,14 @@ export async function buildLegacyPurchaseInvoiceJournals(
     const postingDate = String(invoice.postingDate);
     const amountsByLine = new Map(
       calculatePurchasePostingAmounts({
-        // The tax point, as the live posting splits it.
+        // The tax point, as the live posting splits it (and refuses).
         lines: withPurchaseTax(
           invoiceLines,
-          taxCodesOn(taxCodes, String(invoice.dateIssued ?? postingDate))
+          taxCodesInForceOn(taxCodes, {
+            taxCodeIds: invoiceLines.map((line) => line.taxCodeId),
+            taxPointDate: String(invoice.dateIssued ?? postingDate),
+            document: `Purchase invoice ${invoice.invoiceId}`
+          })
         ),
         exchangeRate: invoice.exchangeRate ?? 1,
         supplierShippingCost: shippingByInvoice.get(invoice.id) ?? 0
@@ -20902,10 +20907,11 @@ export async function buildLegacySalesInvoiceJournals(
       return -Number(costRow.cost);
     };
     const postingDate = String(invoice.postingDate);
-    const codesOnDate = taxCodesOn(
-      taxCodes,
-      String(invoice.dateIssued ?? postingDate)
-    );
+    const codesOnDate = taxCodesInForceOn(taxCodes, {
+      taxCodeIds: invoiceLines.map((line) => line.taxCodeId),
+      taxPointDate: String(invoice.dateIssued ?? postingDate),
+      document: `Sales invoice ${invoice.invoiceId}`
+    });
     const headerShipping = allocateSalesHeaderShipping(
       invoiceLines,
       shippingByInvoice.get(invoice.id) ?? 0
@@ -24311,7 +24317,9 @@ type TaxCodeComponentInput = z.infer<typeof taxCodeComponentValidator>;
 /**
  * Create or update a tax code and replace its components, in one transaction.
  * Components that keep their id are updated, components with no id are
- * inserted, and components missing from the list are deleted.
+ * inserted, and components missing from the list are deleted. A component on
+ * posted tax records keeps its rate and dates (`lockedComponentEdits`). The
+ * code's row is locked first, so two saves never diff the same components.
  */
 export async function upsertTaxCode(
   db: Kysely<KyselyDatabase>,
@@ -24361,6 +24369,14 @@ export async function upsertTaxCode(
 
       let taxCodeId: string;
       if (taxCode.id) {
+        const locked = await trx
+          .selectFrom("taxCode")
+          .select("id")
+          .where("id", "=", taxCode.id)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!locked) throw new Error("Tax code not found");
         const updated = await trx
           .updateTable("taxCode")
           .set({
@@ -24404,18 +24420,51 @@ export async function upsertTaxCode(
       // Only an id this code already has is an update. The upsert conflicts on
       // (id, companyId) alone, so any other id (another code's component, or
       // one deleted since) would rewrite that row: it is inserted as new.
-      const ownedIds = new Set(
-        taxCode.id
-          ? (
-              await trx
-                .selectFrom("taxCodeComponent")
-                .select("id")
-                .where("taxCodeId", "=", taxCodeId)
-                .where("companyId", "=", companyId)
-                .execute()
-            ).map((c) => c.id)
-          : []
-      );
+      const stored = taxCode.id
+        ? await trx
+            .selectFrom("taxCodeComponent")
+            .select([
+              "id",
+              "name",
+              "taxPercent",
+              "recoverablePercent",
+              "isCompound",
+              "effectiveDate",
+              "expirationDate"
+            ])
+            .where("taxCodeId", "=", taxCodeId)
+            .where("companyId", "=", companyId)
+            .execute()
+        : [];
+      const ownedIds = new Set(stored.map((c) => c.id));
+      if (stored.length > 0) {
+        const posted = await trx
+          .selectFrom("taxLedger")
+          .select([
+            "taxCodeComponentId",
+            sql<string>`max("postingDate")::text`.as("lastPosted")
+          ])
+          .where("companyId", "=", companyId)
+          .where("taxCodeComponentId", "in", [...ownedIds])
+          .groupBy("taxCodeComponentId")
+          .execute();
+        const lockedNames = lockedComponentEdits({
+          stored: stored.map((c) => ({
+            ...c,
+            taxPercent: Number(c.taxPercent),
+            recoverablePercent: Number(c.recoverablePercent)
+          })),
+          submitted: components,
+          postedThrough: new Map(
+            posted.map((row) => [row.taxCodeComponentId!, row.lastPosted])
+          )
+        });
+        if (lockedNames.length > 0) {
+          throw new Error(
+            `${lockedNames.join(", ")} ${lockedNames.length === 1 ? "is" : "are"} on posted tax records, so its rate, recoverable percent, compounding and dates cannot change, and it cannot be removed. Set its expiration date (on or after its last posting) and add a new component for the new rate.`
+          );
+        }
+      }
       const kept = components.filter((c) => !!c.id && ownedIds.has(c.id));
       // `row` carries no id, so these take a new one.
       const added = components.filter((c) => !c.id || !ownedIds.has(c.id));
@@ -24783,20 +24832,26 @@ export async function upsertTaxAuthority(
 
 /**
  * Delete a tax authority. Refused while a tax code component or a posted tax
- * ledger row names it: filed figures must keep their authority.
+ * ledger row names it: filed figures must keep their authority (the FKs
+ * RESTRICT too; this gives the counts). `client` is service-role, so the
+ * counts see every row whatever the caller may view; every read and the
+ * delete are scoped to `companyId`.
  */
 export async function deleteTaxAuthority(
   client: SupabaseClient<Database>,
+  companyId: string,
   taxAuthorityId: string
 ) {
   const [components, ledger] = await Promise.all([
     client
       .from("taxCodeComponent")
       .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
       .eq("taxAuthorityId", taxAuthorityId),
     client
       .from("taxLedger")
       .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
       .eq("taxAuthorityId", taxAuthorityId)
   ]);
   if (components.error) return { data: null, error: components.error };
@@ -24810,7 +24865,14 @@ export async function deleteTaxAuthority(
       )
     };
   }
-  return client.from("taxAuthority").delete().eq("id", taxAuthorityId);
+  return requireAffected(
+    client
+      .from("taxAuthority")
+      .delete()
+      .eq("id", taxAuthorityId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getTaxRegistrations(

@@ -18197,6 +18197,15 @@ msgstr "Сопоставить извлеченные строки"
 msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Сопоставьте строку «Без кода налога (освобождено или не облагается налогом)» для закупок. До этого строки закупок с нулевой ставкой и освобождённые от налога, без кода налога, синхронизируются без налога и не попадают в декларацию по НДС."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Сопоставьте строку «Без кода налога (освобождено или не облагается налогом)» для продаж и закупок. До этого строки с нулевой ставкой и освобождённые от налога, без кода налога, синхронизируются без налога и не попадают в декларацию по НДС."
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "Сопоставьте строку «Без кода налога (освобождено или не облагается налогом)» для продаж. До этого строки продаж с нулевой ставкой и освобождённые от налога, без кода налога, синхронизируются без налога и не попадают в декларацию по НДС."
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "Сопоставьте эти счета в параметрах интеграции {providerName} и получите их снова, или введите их остатки ниже."
 
@@ -26329,8 +26338,8 @@ msgstr "Прекратить налоговый код"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "Вывести налоговый код {0} из использования? Его больше нельзя будет выбрать в новых строках. Строки, где он уже используется, сохранят его. Код, который все еще назначен покупателю, поставщику или адресу доставки, вывести из использования нельзя."
 
-msgid "Retired, still on documents"
-msgstr "Выведен из использования, но еще в документах"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "Выведено из употребления, но ещё есть в документах. Сопоставление по ставке его пропускает"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Вывод активов из эксплуатации путем выбраковки или продажи, учет любой прибыли или убытка против остаточной стоимости и установка статуса на Выбыло."
@@ -32854,6 +32863,9 @@ msgstr "Этот PIN больше не будет показан. Он вам п
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Предпросмотр приостановлен, потому что текст меняет числовое значение."
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "Эта ценовая шкала имеет код налога «Обратное начисление». Поставщик не выставляет налог при обратном начислении, поэтому сумма налога должна быть 0."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."

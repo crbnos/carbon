@@ -18197,6 +18197,15 @@ msgstr "抽出行をマップ"
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "仕入用に「No tax code (exempt or non-taxable)」の行を対応付けてください。それまでは、税コードのない非課税・税率ゼロの仕入明細は税なしで同期され、VAT申告の対象外のままになります。"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "販売と仕入の両方について「No tax code (exempt or non-taxable)」の行を対応付けてください。それまでは、税コードのない非課税・税率ゼロの明細は税なしで同期され、VAT申告の対象外のままになります。"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "販売用に「No tax code (exempt or non-taxable)」の行を対応付けてください。それまでは、税コードのない非課税・税率ゼロの売上明細は税なしで同期され、VAT申告の対象外のままになります。"
+
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "これらのアカウントを{providerName}の連携設定でマップしてからもう一度プルするか、以下に残高を入力してください。"
 
@@ -26329,8 +26338,8 @@ msgstr "税コードを廃止"
 msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
 msgstr "税コード {0} を廃止しますか？ 新しい明細では選択できなくなります。既に使用している明細はそのまま保持されます。得意先、仕入先、または出荷先に割り当てられている税コードは廃止できません。"
 
-msgid "Retired, still on documents"
-msgstr "廃止済、文書には残存"
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "廃止済みですが、まだ書類に残っています。税率での照合では対象外になります"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "スクラップまたは販売により資産をサービスから除却し、利益または損失を未償却残高に対して計上し、ステータスを除却済に設定します。"
@@ -32854,6 +32863,9 @@ msgstr "このPINは再度表示されません。MES 端末でコンソール�
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "テキストが数値を変更しているため、このプレビューは一時停止しています。"
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "この価格スケールにはリバースチャージの税コードが設定されています。リバースチャージでは仕入先は税を請求しないため、税額は0でなければなりません。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"

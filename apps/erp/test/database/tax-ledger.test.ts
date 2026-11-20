@@ -22,7 +22,8 @@ import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
 import {
   getTaxLiability,
-  getTaxLiabilityBaseTotals
+  getTaxLiabilityBaseTotals,
+  upsertTaxCode
 } from "~/modules/accounting/accounting.service";
 import {
   postPurchaseInvoice,
@@ -505,6 +506,147 @@ databaseTest(
       expect(
         await getTaxLiabilityBaseTotals(f.db, f.companyId, filters)
       ).toEqual({ taxableSales: 1000, exemptSales: 0, taxablePurchases: 0 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a sales invoice whose line was rated on another date is refused until its taxes are recalculated",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const yesterday = parseDate(f.today).subtract({ days: 1 }).toString();
+      const code = await taxCode(f, "rated-yesterday", [
+        { name: "State", taxPercent: 0.0725 },
+        { name: "County", taxPercent: 0.0225, expirationDate: yesterday },
+        { name: "County 2.5", taxPercent: 0.025, effectiveDate: f.today }
+      ]);
+      // An order line rated yesterday (9.5%), invoiced today (9.75%).
+      const invoiceId = await draftTaxedSalesInvoice(f, "rated-yesterday", {
+        code,
+        taxPercent: 0.095,
+        dateIssued: f.today
+      });
+      const journals = await newJournals(f, async () => {
+        const result = await postSales(f, invoiceId);
+        expect(result.error?.message).toContain("Line 1 charges 9.5%");
+        expect(result.error?.message).toContain(`is 9.75% on ${f.today}`);
+        expect(result.error?.message).toContain("Recalculate taxes");
+      });
+      expect(journals).toEqual([]);
+      expect(await ledgerOf(f, invoiceId)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a component on posted tax records keeps its rate and dates; it can only expire, beside a new component",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const code = await taxCode(f, "locked", [
+        { name: "VAT", taxPercent: 0.2 }
+      ]);
+      const invoiceId = await draftTaxedSalesInvoice(f, "locked", {
+        code,
+        taxPercent: 0.2,
+        dateIssued: f.today
+      });
+      unwrap(await postSales(f, invoiceId));
+
+      const save = (
+        components: Array<{
+          id?: string;
+          name: string;
+          taxPercent: number;
+          effectiveDate?: string;
+          expirationDate?: string;
+        }>
+      ) =>
+        upsertTaxCode(f.db, {
+          companyId: f.companyId,
+          companyGroupId: f.groupId,
+          userId: USER,
+          taxCode: {
+            id: code,
+            name: code,
+            calculationType: "Normal",
+            reportingCategory: "Standard",
+            taxesShipping: false,
+            active: true
+          },
+          components: components.map((c, index) => ({
+            recoverablePercent: 0,
+            sequence: index + 1,
+            isCompound: false,
+            ...c
+          }))
+        } as Parameters<typeof upsertTaxCode>[1]);
+
+      const rateChange = await save([
+        { id: `${code}-0`, name: "VAT", taxPercent: 0.175 }
+      ]);
+      expect(rateChange.error).toContain("VAT is on posted tax records");
+      const removal = await save([{ name: "VAT 17.5", taxPercent: 0.175 }]);
+      expect(removal.error).toContain("VAT is on posted tax records");
+
+      const tomorrow = parseDate(f.today).add({ days: 1 }).toString();
+      const expired = await save([
+        {
+          id: `${code}-0`,
+          name: "VAT",
+          taxPercent: 0.2,
+          expirationDate: f.today
+        },
+        { name: "VAT 17.5", taxPercent: 0.175, effectiveDate: tomorrow }
+      ]);
+      expect(expired.error).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a code's taxes-shipping change reaches its draft invoices' lines, not its posted ones",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const code = await taxCode(f, "shipping", [
+        { name: "VAT", taxPercent: 0.2 }
+      ]);
+      const posted = await draftTaxedSalesInvoice(f, "shipping-posted", {
+        code,
+        taxPercent: 0.2,
+        dateIssued: f.today
+      });
+      unwrap(await postSales(f, posted));
+      const draft = await draftTaxedSalesInvoice(f, "shipping-draft", {
+        code,
+        taxPercent: 0.2,
+        dateIssued: f.today
+      });
+
+      await f.db
+        .updateTable("taxCode")
+        .set({ taxesShipping: true })
+        .where("id", "=", code)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const flags = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select(["invoiceId", "taxesShipping"])
+        .where("companyId", "=", f.companyId)
+        .where("invoiceId", "in", [posted, draft])
+        .execute();
+      expect(
+        Object.fromEntries(flags.map((l) => [l.invoiceId, l.taxesShipping]))
+      ).toEqual({ [posted]: false, [draft]: true });
     } finally {
       await f.cleanup();
     }

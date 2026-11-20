@@ -62,9 +62,9 @@ The July spec designed most of this but none of it was built. Its posting paths 
 - **`taxAuthority`** — who the company pays (HMRC, the Texas Comptroller). An optional `supplierId` lets Phase 2 pay a return through AP.
 - **`taxRegistration`** — the company's own registration numbers by country and state, with dates. Sales documents print the matching one.
 
-UK VAT is one code with one component. Texas is one code with two to four components. Canada GST + PST is two components, with PST compound where the province says so. The effective rate is the compound-aware sum of the components that are effective on the document date. The resolver writes that rate to the line's existing `taxPercent`, so every reader of `taxPercent` (invoice views, PDFs, provider components) keeps working.
+UK VAT is one code with one component. Texas is one code with two to four components. Canada GST + PST is two components, with PST compound where the province says so. The effective rate is the compound-aware sum of the components that are effective on the document date. A line stores the code's charged rate on the document date in its existing `taxPercent` (`chargedTaxPercent`: the effective rate, or 0 for a Reverse Charge code), so every reader of `taxPercent` (invoice views, PDFs, provider components) keeps working.
 
-To change a rate, set `expirationDate` on the old component and add a new row. The resolver picks the rows that are effective on the document date. A posted document never changes, because its tax lives in `taxLedger`.
+To change a rate, set `expirationDate` on the old component to the day before the new row's `effectiveDate`, and add the new row. Two components with the same name and authority may not be in force on the same day. A component that `taxLedger` rows reference keeps its rate, recoverable percent and dates, and cannot be deleted. The resolver picks the rows that are effective on the document date. A posted document never changes, because its tax lives in `taxLedger`.
 
 ### Determination: direct assignment, no matrix
 
@@ -98,7 +98,7 @@ The resolver runs on every in-scope document (grill 3):
 
 Out of scope: `chargeLine` (Ramp card charges) and `reimbursementLine`. They keep tax inside the amount and send "No VAT" to providers. A follow-up spec covers them.
 
-The billing generators (`create-rental-invoices`, `create-contract-invoices`, `create-lease-invoices`) copy the source's `taxCodeId` and rate onto the invoice line. `convert` already copies `taxPercent` between documents (`convert/index.ts:437,733,1014,1637,1822`). It copies `taxCodeId` the same way.
+The billing generators (`create-rental-invoices`, `create-contract-invoices`, `create-lease-invoices`) copy the source's `taxCodeId` onto the invoice line, at the code's rate on the invoice date. `convert` copies `taxCodeId` between documents and does not resolve again; the line takes the code's rate on the new document's date.
 
 ### Header shipping
 
@@ -147,6 +147,8 @@ The migration renames the two columns. It does not rename or reclassify an exist
 | Memo | See Memo tax. |
 | Void | Negates the recorded lines and writes negating `taxLedger` rows, as voids do today. |
 
+Tax point: one date per document (sales invoice `dateIssued`; purchase invoice `dateIssued`, else its posting date; memo date; receipt: the PO's `orderDate`). Each line splits over the components in force on it. A coded line with no component in force is refused. A coded sales invoice line whose stored `taxPercent` is not the code's charged rate on the tax point is refused; the message names the line, both rates and the date, and says to use Recalculate taxes. A purchase line keeps the supplier's tax amount and splits it.
+
 Rounding: per line, half-up. The ledger stores the document-currency tax at the currency's decimals (what the document shows) and the base-currency tax at internal scale (journal parity). Apportioning across components uses `distributeRoundingResidual`.
 
 ### Memo tax
@@ -155,7 +157,7 @@ The user enters a net amount and a tax code (grill 5). Carbon computes the tax f
 
 Posting for a customer Credit memo: Dr reason account (net) / Dr Tax Received (tax) / Cr AR (gross). The other direction and party combinations mirror it. The ledger rows are negative for a credit against sales. A memo without a code posts exactly as today.
 
-A memo made from a source takes the source line's code and rate. The sources are RMA credits (`salesReturnOrderCreditLine`), rental early-return credits and contract credits. A credit that spans two rates becomes two memos. The July design worked tax out backwards from the gross. That is dropped, because the posting-corrections spec forbids inferring tax from a memo's gross amount.
+A memo made from a source takes the source line's code. An RMA credit (`salesReturnOrderCreditLine`) also takes its rate. A rental early-return credit and a contract cancellation credit take the code's rate on the memo date, the memo's tax point; a credit across a rate change does not reverse at the original rate. A credit that spans two rates becomes two memos. The July design worked tax out backwards from the gross. That is dropped, because the posting-corrections spec forbids inferring tax from a memo's gross amount.
 
 ### The tax subledger: `taxLedger`
 
@@ -170,7 +172,7 @@ Each posting path writes one row per line and component in the same Kysely trans
 
 Exempt, non-taxable and zero-rated lines write rows with an exempt base, because returns report exempt totals.
 
-Before the accounting cutover, postings write Provisional journals. Ledger rows always reference their journal. Every reader (the report, the return) joins on `journal.status = 'Posted'`. So a promoted journal brings its rows with it, and the promotion code needs no change.
+Before the accounting cutover, postings write Provisional journals. Ledger rows always reference their journal. The report and the return join on `journal.status = 'Posted'`. So a promoted journal brings its rows with it, and the promotion code needs no change. The sales invoice PDF decides "posted" from the invoice status and reads its earliest journal's rows.
 
 The name `taxLedger` refers to sales tax and VAT only. The income-tax depreciation fields (`assetTaxRate`, `depreciationRunLine.taxAmount`, `buildDeferredTaxJournals`) are a different subject. The rule file says so.
 
@@ -182,7 +184,7 @@ Xero and QuickBooks Online get a mapping (grills 6 and 7). Rillet keeps its head
 - **Catalog.** Xero reads GET `/TaxRates`. The connection already has the `accounting.settings` scope. The choices are `ACTIVE` rates filtered by `CanApplyToRevenue` for sales and by `CanApplyToExpenses` for purchases. QuickBooks Online reuses the catalog loader in `invoice-tax.ts` and takes `SalesTaxRateList` or `PurchaseTaxRateList` by direction.
 - **Proposals.** The drawer proposes the rate whose percentage equals the code's effective rate, as `matchDimensionValuesByName` proposes values. The user confirms.
 - **UI.** The integration drawer (`routes/x+/settings+/integrations.$id.tsx`) gets a "Tax Rates" tab that copies `DimensionMapping.tsx`: one row per active code, with a sales select and a purchase select.
-- **Sync gate.** The `update-sync-enabled` intent refuses while an active code has no mapping for a direction it is used in. This is the same rule as `getUnmappedRequiredAccounts`.
+- **Sync gate.** The `update-sync-enabled` intent refuses while an active code has no mapping for a direction it is used in. This is the same rule as `getUnmappedRequiredAccounts`. The tab also has one "No tax code (exempt or non-taxable)" row per direction for code-less 0% lines. An unmapped fallback does not block: those lines go out as `NONE`, and the tab warns that they stay off the VAT return until it is mapped.
 - **Push** (grill 8). Each line sends Carbon's tax amount and the mapped rate. Before the push, the syncer checks that the amount is within one minor unit of the net × the provider rate's percentage.
 - **Unmapped and legacy lines** (grill 9). If a line's code has no mapping, the document stops with the retryable Warning `UNMAPPED_TAX_CODES`, naming the code. If a legacy line has only `taxPercent`, the syncer matches the percentage to exactly one active rate for that direction. No match, or more than one, gives the same Warning. The hard-coded `OUTPUT` and `INPUT` go away.
 
@@ -205,7 +207,7 @@ A 0% line keeps today's single "No VAT" line. A US company's bills therefore do 
 ### Registrations and documents
 
 - Sales PDFs (`packages/documents`) show a tax summary per component and authority, and the codes' `invoiceMessage` text.
-- They print the seller's `taxRegistration` number for the company's country, else `company.taxId`.
+- They print the seller's `taxRegistration` number for the company's country in force on the issue date (a national one first, else one for the company's state), else `company.taxId` once the company has an active code.
 - They print the customer's VAT number when the code is Reverse Charge or Export.
 - The quote share page, the supplier quote share page and the Stripe invoice builder read the line's `taxPercent`. The resolver sets it, so they need no change.
 
@@ -518,7 +520,7 @@ Phase 1:
 - [ ] A purchase line at a 0% recoverable code posts the same receipt and invoice journals as today, line for line.
 - [ ] A Reverse Charge purchase line, 100% recoverable: Dr Tax Paid / Cr Reverse Charge Sales Tax at the domestic rate, net zero. AP is net.
 - [ ] A customer Credit memo of £1,000 net at 20% stores `amount = 1200`, `taxAmount = 200`. It posts Dr reason £1,000 / Dr Tax Received £200 / Cr AR £1,200 and writes negative ledger rows. A memo without a code posts as today.
-- [ ] A rental early-return credit takes the rent line's code and unwinds its tax.
+- [ ] A rental early-return credit takes the rent line's code at its rate on the memo date and unwinds the tax.
 - [ ] A code with `taxesShipping` on taxes each line's share of header shipping. With it off, header shipping stays untaxed.
 - [ ] A component that expires on 2026-06-30, with a successor at 8.5% from 2026-07-01: invoices dated June 30 and July 1 compute 8.25% and 8.5%.
 - [ ] Voiding a posted sales invoice writes negated ledger rows. The liability report nets that document to zero.
@@ -595,4 +597,5 @@ From the 2026-10-16 grill (`.ai/runs/2026-10-16-grill-multi-jurisdiction-tax.md`
 - 2026-10-16: Created. Replaces the July spec, which moves to `archived/`. Rebased on current code: posting lives in `packages/server-functions` and `packages/database/src`. The sales tax split shipped in #1599. Receipts add tax to cost. Rentals, contracts, discounts and lessee leases now exist. Added recoverable purchase tax at the receipt and the invoice, and the account-default renames. Added `taxesShipping` and forward-computed memo tax. Moved the Xero and QuickBooks Online tax-rate mapping into Phase 1. Resolved grill questions 1–9 with the user. Questions 10 and 11 came up while writing. The user resolved both. Repointed the dependent specs (MTD, e-invoicing, Avalara foundation, public-company readiness, RMA, posting corrections) to this spec.
 - 2026-10-16: Planning corrections. The code assignment moved to `customerTax.taxCodeId` and `supplierTax.taxCodeId` (the Tax card's table). The seeded account numbers changed, because 1310 and 1320 belong to fixed assets: Tax Paid 1170, Tax Receivable 1180, Tax Payable 2240. RLS rules go in the authz manifest. Four line views joined the views list.
 - 2026-11-05: Phase 1 built on branch `xero-invoice-status-taxes` (PR #1957). The posting paths moved from `packages/server-functions` into the ERP module service files when main dissolved that package (#1937), so this spec now names those. The six Phase 1 migrations were re-dated after main's newest migration, and `purchaseOrderLines` was re-forked from main's newest definition. The `defense` demo dataset got its tax codes (AL – Huntsville). Phases 2 and 3 are not started.
-- 2026-11-19: Merged main again. The six Phase 1 migrations moved to `20261119231542` … `20261119231552`, after main's newest. `salesInvoices` now starts from main's newest definition, which adds the customer names. The sales PDFs' per-component tax rows moved into main's shared `DocumentSummary` block.
+- 2026-11-19: Merged main again. The Phase 1 migrations moved after main's newest: `20261119231542`, `…544`, `…546`, `…547` and `…550` (`…552` was later folded into `…542`), plus the authz migration `20261120052902`. `salesInvoices` now starts from main's newest definition, which adds the customer names. The sales PDFs' per-component tax rows moved into main's shared `DocumentSummary` block.
+- 2026-11-20: Review changes (two review rounds on PR #1957). One tax point per document, and posting refuses a coded sales invoice line whose rate does not match its code on that date (use Recalculate taxes). Conversions keep the code and take its rate on the new document's date. Rental and contract credits take the rate on the memo date. A line stores the charged rate (0 for Reverse Charge). Overlapping components are refused, and a component with posted tax cannot change its rate, recoverable percent or dates. Tax codes cannot be deleted, only retired, and retiring is refused while a party or ship-to uses the code. An authority with components or posted tax cannot be deleted. The PDF reads tax with a service-role client after the route's permission check and decides "posted" from the invoice status. On Xero, an unmapped exempt fallback does not block sync. A legacy percent line with several matching rates prefers the standard output or input rate.

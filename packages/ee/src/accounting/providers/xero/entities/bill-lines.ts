@@ -16,10 +16,17 @@ import type { Xero } from "../models";
 import { assertXeroMoneyPrecision } from "../serialize";
 import { resolveXeroTaxType, XERO_NO_TAX, type XeroTaxContext } from "../tax";
 
-/** A leg of an invoice line with no tax code and no tax: the leg the
- *  fallback rate applies to. */
-export function isUntaxedBillLeg(leg: CostingLine): boolean {
+/** A leg of an invoice line with no tax code and no tax. */
+function isUntaxedBillLeg(leg: CostingLine): boolean {
   return Boolean(leg.tax) && !leg.tax!.taxCodeId && leg.tax!.taxPercent === 0;
+}
+
+/** An untaxed bill line the fallback rate applies to: a code-less untaxed
+ *  leg, or the untaxed freight of a fully recoverable code's legs. */
+export function takesBillFallback(line: BillTaxLine): boolean {
+  return (
+    !line.tax && (isUntaxedBillLeg(line.leg) || Boolean(line.untaxedPurchase))
+  );
 }
 
 /**
@@ -33,9 +40,10 @@ export function isUntaxedBillLeg(leg: CostingLine): boolean {
  * (`resolveXeroTaxType`) with that `TaxAmount`; a zero-rated or exempt code
  * carries `TaxAmount` 0, so Xero counts its net on the return (box 7 in the
  * UK). A line with no tax goes out at `NONE` with no `TaxAmount`, except a
- * leg with no code and no tax when `noTaxCodeFallback` is set: it takes the
- * fallback rate with `TaxAmount` 0. `tax` must be set when any line resolves
- * a rate.
+ * line `takesBillFallback` names (a code-less untaxed leg, or the untaxed
+ * freight of a fully recoverable code) when `noTaxCodeFallback` is set: it
+ * takes the fallback rate with `TaxAmount` 0. `tax` must be set when any line
+ * resolves a rate.
  *
  * `ItemCode` is attached ONLY for items known non-tracked (`nonTrackedItemIds`)
  * — a tracked Xero item would make Xero override the AccountCode with the
@@ -111,7 +119,8 @@ export function buildXeroBillLineItems(args: {
     ...args.lines.flatMap((line) => [line.amount, line.tax?.taxAmount ?? 0])
   );
   const nonTracked = args.nonTrackedItemIds;
-  return args.lines.map(({ leg, amount, tax }) => {
+  return args.lines.map((line) => {
+    const { leg, amount, tax } = line;
     const attachItemCode =
       leg.sourceItem && nonTracked?.has(leg.sourceItem.id)
         ? leg.sourceItem.code
@@ -119,7 +128,7 @@ export function buildXeroBillLineItems(args: {
     const accountCode = args.accountCodesById.get(leg.accountId!)!;
     const lineTax =
       tax ??
-      (args.noTaxCodeFallback && isUntaxedBillLeg(leg)
+      (args.noTaxCodeFallback && takesBillFallback(line)
         ? { taxCodeId: null, taxPercent: 0, taxAmount: 0 }
         : null);
     return {

@@ -345,3 +345,50 @@ it("splits the tax across component legs to the exact total, and refuses a leg w
     )
   ).toThrow("Missing Tax Received account default");
 });
+
+it("supplier Debit memo on a Reverse Charge code: DR the reverse-charge account, CR Tax Paid for the recoverable share, CR cost for the rest; balances", () => {
+  // A 2,000 vendor credit on a 7% use-tax code, half recoverable: the bill
+  // self-assessed 140, so the credit takes 140 back off the payable.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 2000,
+      taxAmount: 0,
+      taxAmountBase: 70,
+      taxAccountId: "acct_tax_paid",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense",
+      selfAssessed: {
+        amountBase: 140,
+        accountId: "acct_rc",
+        accountClass: "Liability"
+      }
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ap", -2000],
+    ["acct_reason", -2070],
+    ["acct_tax_paid", -70],
+    ["acct_rc", -140]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("posts the tax legs at the base amount given, to internal scale", () => {
+  // A 1/3-recoverable 10.00 tax: the ledger records 3.33333 recoverable.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 110,
+      taxAmount: 10,
+      taxAmountBase: 3.33333,
+      taxAccountId: "acct_tax_paid",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(line(r, "acct_tax_paid").amount).toBe(-3.33333);
+  expect(line(r, "acct_reason").amount).toBe(-106.66667);
+});

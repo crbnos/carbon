@@ -1116,6 +1116,91 @@ databaseTest(
   }
 );
 
+databaseTest(
+  "a cancellation credit takes the code's rate on the memo date, not on the period it credits",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "rate-change",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      // 17.5% until 4 January, 20% from 5 January.
+      const code = `${contractId}-vat`;
+      await db
+        .insertInto("taxCode")
+        .values({ id: code, name: "UK VAT", companyId, createdBy: USER })
+        .execute();
+      await db
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId: code,
+            name: "VAT 17.5",
+            taxPercent: 0.175,
+            expirationDate: "2026-01-04"
+          },
+          {
+            taxCodeId: code,
+            name: "VAT 20",
+            taxPercent: 0.2,
+            effectiveDate: "2026-01-05"
+          }
+        ].map((c) => ({ ...c, sequence: 1, companyId, createdBy: USER })))
+        .execute();
+      await db
+        .updateTable("customerContractLine")
+        .set({ taxCodeId: code, taxPercent: 0.175 })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      }, postCustomerContract);
+      expect(confirmed.error).toBeNull();
+      const run = await invokePosting(handlesOf(ctx), "create-contract-invoices", {
+        asOf: "2026-01-01",
+        customerContractId: contractId
+      }, createContractInvoices);
+      expect(run.error).toBeNull();
+
+      // January was billed on 1 January at 17.5%; the cancellation on
+      // 10 January credits 16 of its 31 days at 20%, the rate on the memo's
+      // date, its tax point.
+      const cancelled = await invokePosting(handlesOf(ctx), "post-customer-contract", {
+        type: "cancel",
+        customerContractId: contractId,
+        asOf: "2026-01-10",
+        endDate: "2026-01-15",
+        reason: "Customer closed the site",
+        creditUnusedTime: true
+      }, postCustomerContract);
+      expect(cancelled.error).toBeNull();
+      const result = cancelled.data as unknown as ContractCancellationResult;
+      expect(result.memoIds).toHaveLength(1);
+      const memo = await db
+        .selectFrom("memo")
+        .select(["amount", "taxAmount", "taxCodeId"])
+        .where("id", "=", result.memoIds[0]!)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      // 100 × 16/31 = 51.61 net; 20% of it is 10.32 (17.5% would be 9.03).
+      expect({
+        amount: Number(memo.amount),
+        taxAmount: Number(memo.taxAmount),
+        taxCodeId: memo.taxCodeId
+      }).toEqual({ amount: 61.93, taxAmount: 10.32, taxCodeId: code });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
 /** Contract lines, oldest first, with their dates as text. */
 async function contractLines(
   db: Kysely<KyselyDatabase>,

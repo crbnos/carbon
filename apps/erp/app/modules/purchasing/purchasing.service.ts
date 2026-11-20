@@ -90,6 +90,7 @@ import {
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
   datetime,
+  deriveRate,
   EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escalatedLeasePayment,
@@ -178,7 +179,8 @@ import {
   chargedRateOr,
   decidePurchaseTaxAmount,
   decideWrittenLineTax,
-  type LineTaxDecision
+  type LineTaxDecision,
+  newPurchaseLineTax
 } from "../accounting/accounting.utils";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
@@ -3843,7 +3845,9 @@ export type PurchaseLineTax = {
  * - The rate: `decideWrittenLineTax` — a non-taxable item takes none, a sent
  *   code its charged rate on the document's tax point (the order date; the
  *   invoice's issue date, else its posting date), an empty code is a cleared
- *   one, and a create that sends no code takes the supplier's.
+ *   one, and a create that sends no code takes the supplier's. An update
+ *   that leaves the code, percent and amount as stored keeps them, even
+ *   when the code has no rate in force on the tax point.
  * - The amount: `decidePurchaseTaxAmount` — a Reverse Charge code (sent or
  *   stored) refuses a supplier tax amount, as posting does.
  *
@@ -3935,7 +3939,14 @@ export async function resolvePurchaseLineTax(
     sentTaxPercent: sent.taxPercent,
     sentCode: sentCodeId ? (codes.data.get(sentCodeId) ?? null) : null,
     partyDecision,
-    date
+    date,
+    // A changed supplier amount touches tax as much as the code does.
+    stored:
+      line &&
+      (sent.supplierTaxAmount === undefined ||
+        equals(sent.supplierTaxAmount, Number(line.supplierTaxAmount ?? 0)))
+        ? line
+        : null
   });
   if (tax.error !== null) return { data: null, error: tax.error };
 
@@ -3978,6 +3989,195 @@ export async function resolvePurchaseLineTax(
     },
     error: null
   };
+}
+
+/**
+ * The tax of purchase order lines a server path creates with no code sent
+ * (a replacement order, an outside-operation order), the way a create of
+ * `resolvePurchaseLineTax` decides it: the supplier's code at its rate on
+ * the order date (today while the order has none), none for a non-taxable
+ * item, and the supplier tax amount restated from the rate. A supplier code
+ * with no rate in force on that date is refused. One entry per line.
+ */
+export async function newPurchaseOrderLineTaxes(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    purchaseOrderId: string;
+    lines: ReadonlyArray<{ itemId: string | null; base: number }>;
+  }
+): Promise<
+  { data: PurchaseLineTax[]; error: null } | { data: null; error: string }
+> {
+  const { companyId } = args;
+  const header = await readPurchaseTaxDocument(
+    client,
+    companyId,
+    "purchaseOrder",
+    args.purchaseOrderId
+  );
+  if (header.error !== null) return { data: null, error: header.error };
+  const supplierId = header.data.supplierId;
+  if (!supplierId) return { data: args.lines.map(() => ({})), error: null };
+
+  const itemIds = [
+    ...new Set(args.lines.map((line) => line.itemId).filter(Boolean))
+  ] as string[];
+  const [date, items, currencyDecimals] = await Promise.all([
+    header.data.date ??
+      getCompanyTimeZone(client, companyId).then((tz) =>
+        datetime.today(tz).toString()
+      ),
+    itemIds.length > 0
+      ? client
+          .from("item")
+          .select("id, taxable")
+          .in("id", itemIds)
+          .eq("companyId", companyId)
+      : null,
+    settlementDecimals(client, {
+      companyId,
+      companyGroupId: args.companyGroupId,
+      currencyCode: header.data.currencyCode
+    })
+  ]);
+  if (items?.error) return { data: null, error: items.error.message };
+  const resolved = await resolveLineTaxes(client, companyId, {
+    source: "purchase",
+    supplierId,
+    date
+  });
+  if (resolved.error || !resolved.data) {
+    return { data: null, error: resolved.error ?? "Tax was not resolved" };
+  }
+  const taxable = new Map(
+    (items?.data ?? []).map((item) => [item.id, item.taxable !== false])
+  );
+
+  const taxes: PurchaseLineTax[] = [];
+  for (const line of args.lines) {
+    const tax = newPurchaseLineTax(resolved.data, {
+      itemTaxable: line.itemId ? (taxable.get(line.itemId) ?? true) : true,
+      date,
+      base: line.base,
+      currencyDecimals
+    });
+    if (tax.error !== null) return tax;
+    taxes.push(tax.data);
+  }
+  return { data: taxes, error: null };
+}
+
+/**
+ * The tax of the prices a supplier submits from a quote's share page, one per
+ * price. A stored price keeps its code and a new one takes the supplier's,
+ * at the code's rate on `date` (`decideWrittenLineTax`); with no code the
+ * rate is the one the amounts give. The supplier's amount stands, but a
+ * Reverse Charge code refuses one (`decidePurchaseTaxAmount`). A
+ * non-taxable item carries no tax.
+ */
+export async function supplierQuotePriceTaxes(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    supplierId: string | null;
+    date: string;
+    prices: ReadonlyArray<{
+      itemId: string | null;
+      /** undefined: a new price. */
+      storedTaxCodeId: string | null | undefined;
+      supplierTaxAmount: number;
+      base: number;
+    }>;
+  }
+): Promise<
+  | {
+      data: {
+        taxCodeId: string | null;
+        taxPercent: number;
+        supplierTaxAmount: number;
+      }[];
+      error: null;
+    }
+  | { data: null; error: string }
+> {
+  const { companyId } = args;
+  const itemIds = [
+    ...new Set(args.prices.map((price) => price.itemId).filter(Boolean))
+  ] as string[];
+  const [items, supplier] = await Promise.all([
+    itemIds.length > 0
+      ? client
+          .from("item")
+          .select("id, taxable")
+          .in("id", itemIds)
+          .eq("companyId", companyId)
+      : null,
+    args.prices.some((price) => price.storedTaxCodeId === undefined) &&
+    args.supplierId
+      ? resolveLineTaxes(client, companyId, {
+          source: "purchase",
+          supplierId: args.supplierId,
+          date: args.date
+        })
+      : null
+  ]);
+  if (items?.error) return { data: null, error: items.error.message };
+  if (supplier?.error) return { data: null, error: supplier.error };
+  const supplierCodeId = supplier?.data?.taxCodeId ?? null;
+  const codeIdOf = (price: (typeof args.prices)[number]) =>
+    price.storedTaxCodeId === undefined
+      ? supplierCodeId
+      : price.storedTaxCodeId;
+  const codes = await getTaxCodeInputs(
+    client,
+    companyId,
+    args.prices.map(codeIdOf)
+  );
+  if (codes.error) return { data: null, error: codes.error };
+  const taxable = new Map(
+    (items?.data ?? []).map((item) => [item.id, item.taxable !== false])
+  );
+
+  const taxes: {
+    taxCodeId: string | null;
+    taxPercent: number;
+    supplierTaxAmount: number;
+  }[] = [];
+  for (const price of args.prices) {
+    const itemTaxable = price.itemId
+      ? (taxable.get(price.itemId) ?? true)
+      : true;
+    const codeId = codeIdOf(price);
+    const code = codeId ? (codes.data.get(codeId) ?? null) : null;
+    const tax = decideWrittenLineTax({
+      source: "purchase",
+      itemTaxable,
+      sentTaxCodeId: codeId ?? "",
+      sentTaxPercent: deriveRate(price.supplierTaxAmount, price.base),
+      sentCode: code,
+      partyDecision: null,
+      date: args.date
+    });
+    if (tax.error !== null) return tax;
+    const amount = decidePurchaseTaxAmount({
+      itemTaxable,
+      tax: tax.data,
+      code,
+      codeWasSent: true,
+      sentTaxAmount: price.supplierTaxAmount,
+      base: price.base,
+      currencyDecimals: null
+    });
+    if (amount.error !== null) return amount;
+    taxes.push({
+      taxCodeId: tax.data.taxCodeId ?? null,
+      taxPercent: tax.data.taxPercent ?? 0,
+      supplierTaxAmount: amount.data ?? 0
+    });
+  }
+  return { data: taxes, error: null };
 }
 
 async function readPurchaseTaxDocument(
@@ -4041,6 +4241,8 @@ async function readPurchaseTaxLine(
       data: {
         itemId: string | null;
         taxCodeId: string | null;
+        taxPercent: number | null;
+        supplierTaxAmount: number | null;
         unitPrice: number | null;
         quantity: number | null;
         shippingCost: number | null;
@@ -4053,7 +4255,7 @@ async function readPurchaseTaxLine(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "itemId, taxCodeId, supplierUnitPrice, purchaseQuantity, supplierShippingCost"
+        "itemId, taxCodeId, taxPercent, supplierTaxAmount, supplierUnitPrice, purchaseQuantity, supplierShippingCost"
       )
       .eq("id", lineId)
       .eq("companyId", companyId)
@@ -4063,6 +4265,8 @@ async function readPurchaseTaxLine(
       data: {
         itemId: line.data.itemId,
         taxCodeId: line.data.taxCodeId,
+        taxPercent: line.data.taxPercent,
+        supplierTaxAmount: line.data.supplierTaxAmount,
         unitPrice: line.data.supplierUnitPrice,
         quantity: line.data.purchaseQuantity,
         shippingCost: line.data.supplierShippingCost
@@ -4073,7 +4277,7 @@ async function readPurchaseTaxLine(
   const line = await client
     .from("purchaseInvoiceLine")
     .select(
-      "itemId, taxCodeId, supplierUnitPrice, quantity, supplierShippingCost"
+      "itemId, taxCodeId, taxPercent, supplierTaxAmount, supplierUnitPrice, quantity, supplierShippingCost"
     )
     .eq("id", lineId)
     .eq("companyId", companyId)
@@ -4083,6 +4287,8 @@ async function readPurchaseTaxLine(
     data: {
       itemId: line.data.itemId,
       taxCodeId: line.data.taxCodeId,
+      taxPercent: line.data.taxPercent,
+      supplierTaxAmount: line.data.supplierTaxAmount,
       unitPrice: line.data.supplierUnitPrice,
       quantity: line.data.quantity,
       shippingCost: line.data.supplierShippingCost
@@ -7316,9 +7522,26 @@ export async function createReplacementPurchaseOrder(
     };
   });
 
+  // Each line takes the supplier's tax, as a line added on the order does.
+  const taxes = await newPurchaseOrderLineTaxes(client, {
+    companyId,
+    companyGroupId,
+    purchaseOrderId,
+    lines: replacementLines.map((line) => ({
+      itemId: line.itemId,
+      base: taxableBase(line.supplierUnitPrice, line.purchaseQuantity, 0)
+    }))
+  });
+  if (taxes.error !== null) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: { message: taxes.error } as PostgrestError };
+  }
+
   const insertLines = await client
     .from("purchaseOrderLine")
-    .insert(replacementLines);
+    .insert(
+      replacementLines.map((line, index) => ({ ...line, ...taxes.data[index] }))
+    );
   if (insertLines.error) {
     await deletePurchaseOrder(client, purchaseOrderId);
     return { data: null, error: insertLines.error };
@@ -8812,7 +9035,9 @@ export async function sharedSupplierQuote(
 ) {
   const quote = await ctx.asSystem.supabase
     .from("supplierQuote")
-    .select("id, createdBy, exchangeRate, externalLinkId, externalNotes")
+    .select(
+      "id, createdBy, exchangeRate, externalLinkId, externalNotes, supplierId, quotedDate"
+    )
     .eq("id", supplierQuoteId)
     .eq("companyId", ctx.company.id)
     .maybeSingle();

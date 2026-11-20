@@ -5,22 +5,41 @@
 import { describe, expect, it } from "vitest";
 import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
 
-type Rows = Record<string, unknown[]>;
+type Rows = Record<string, Record<string, unknown>[]>;
 
-// A chainable stand-in for a Supabase client: every read of `table` resolves
-// to `rows[table]`, and each table touched is recorded.
+// A chainable stand-in for a Supabase client: a read of `table` resolves to the
+// rows of `rows[table]` that pass its `eq`/`in` filters, so a read that drops
+// its `companyId` filter returns the other company's rows. Each table touched
+// is recorded.
 function fakeClient(rows: Rows) {
   const tables: string[] = [];
   const client = {
     from(table: string) {
       tables.push(table);
-      const result = { data: rows[table] ?? [], error: null };
+      const filters: ((row: Record<string, unknown>) => boolean)[] = [];
+      let limit = Number.POSITIVE_INFINITY;
       const chain: Record<string, unknown> = {
-        then: (resolve: (value: typeof result) => unknown) => resolve(result)
+        select: () => chain,
+        eq: (column: string, value: unknown) => {
+          filters.push((row) => row[column] === value);
+          return chain;
+        },
+        in: (column: string, values: unknown[]) => {
+          filters.push((row) => values.includes(row[column]));
+          return chain;
+        },
+        limit: (count: number) => {
+          limit = count;
+          return chain;
+        },
+        then: (resolve: (value: unknown) => unknown) =>
+          resolve({
+            data: (rows[table] ?? [])
+              .filter((row) => filters.every((passes) => passes(row)))
+              .slice(0, limit),
+            error: null
+          })
       };
-      for (const method of ["select", "eq", "in", "limit"]) {
-        chain[method] = () => chain;
-      }
       return chain;
     }
   };
@@ -46,49 +65,66 @@ const line = {
   taxPercent: 0.2
 } as never;
 
-const taxRows: Rows = {
-  taxCode: [
+const taxCodeRow = (companyId: string, active: boolean, name: string) => ({
+  id: "code-std",
+  companyId,
+  active,
+  calculationType: "Normal",
+  invoiceMessage: companyId === "company-1" ? null : `${name} clause`,
+  taxesShipping: false,
+  taxCodeComponent: [
     {
-      id: "code-std",
-      calculationType: "Normal",
-      invoiceMessage: null,
-      taxesShipping: false,
-      taxCodeComponent: [
-        {
-          id: "cmp-vat",
-          name: "VAT",
-          taxAuthorityId: null,
-          taxPercent: 0.2,
-          recoverablePercent: 1,
-          sequence: 1,
-          isCompound: false,
-          taxReceivedAccountId: null,
-          taxPaidAccountId: null,
-          effectiveDate: null,
-          expirationDate: null
-        }
-      ]
-    }
-  ],
-  taxRegistration: [
-    {
-      countryCode: "GB",
-      state: null,
-      registrationNumber: "GB123456789",
-      effectiveDate: null,
-      endDate: null
-    }
-  ],
-  taxLedger: [
-    {
-      journalId: "jrn-post",
-      createdAt: "2026-10-01T10:00:00.000+00:00",
-      componentName: "VAT (posted)",
+      id: "cmp-vat",
+      name,
+      taxAuthorityId: null,
       taxPercent: 0.2,
-      documentTaxableAmount: 100,
-      documentTaxAmount: 20
+      recoverablePercent: 1,
+      sequence: 1,
+      isCompound: false,
+      taxReceivedAccountId: null,
+      taxPaidAccountId: null,
+      effectiveDate: null,
+      expirationDate: null
     }
   ]
+});
+
+const registrationRow = (companyId: string, registrationNumber: string) => ({
+  companyId,
+  countryCode: "GB",
+  state: null,
+  registrationNumber,
+  effectiveDate: null,
+  endDate: null
+});
+
+const ledgerRow = (companyId: string, componentName: string) => ({
+  companyId,
+  documentType: "Sales Invoice",
+  documentId: "invoice-1",
+  journalId: "jrn-post",
+  createdAt: "2026-10-01T10:00:00.000+00:00",
+  componentName,
+  taxPercent: 0.2,
+  documentTaxableAmount: 100,
+  documentTaxAmount: 20
+});
+
+const taxRows: Rows = {
+  taxCode: [taxCodeRow("company-1", true, "VAT")],
+  taxRegistration: [registrationRow("company-1", "GB123456789")],
+  taxLedger: [ledgerRow("company-1", "VAT (posted)")]
+};
+
+// Company 1 has no registration, no posted rows and no active code; company 2
+// has all three, on the same ids.
+const otherCompanyRows: Rows = {
+  taxCode: [
+    taxCodeRow("company-1", false, "VAT"),
+    taxCodeRow("company-2", true, "LEAK")
+  ],
+  taxRegistration: [registrationRow("company-2", "LEAK-REG")],
+  taxLedger: [ledgerRow("company-2", "LEAK (posted)")]
 };
 
 const load = (status: string, taxClient: never) =>
@@ -124,5 +160,16 @@ describe("loadTaxSummary", () => {
   it("splits the lines for a Draft, ignoring any ledger rows", async () => {
     const summary = await load("Draft", fakeClient(taxRows).client);
     expect(summary.taxSummary?.[0]?.name).toBe("VAT");
+  });
+
+  it("reads only the company's rows from every tax table", async () => {
+    const summary = await load(
+      "Submitted",
+      fakeClient(otherCompanyRows).client
+    );
+    expect(JSON.stringify(summary)).not.toContain("LEAK");
+    expect(summary.taxSummary?.[0]?.name).toBe("VAT");
+    expect(summary.invoiceMessages).toEqual([]);
+    expect(summary.sellerRegistration).toBeNull();
   });
 });

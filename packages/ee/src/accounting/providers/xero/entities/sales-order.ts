@@ -12,7 +12,11 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
-import { resolveXeroTaxType, XeroTaxContextLoader } from "../tax";
+import {
+  resolveXeroTaxType,
+  verifiedXeroAccountCode,
+  XeroTaxContextLoader
+} from "../tax";
 
 // Note: This is a push-only syncer (Carbon -> Xero).
 // Carbon sales orders are pushed as Xero Quotes since Xero
@@ -56,6 +60,7 @@ type SalesOrderLineRow = {
   setupPrice: number | null;
   taxPercent: number | null;
   taxCodeId: string | null;
+  accountId: string | null;
   accountNumber: string | null;
   itemReadableIdWithRevision: string | null;
 };
@@ -65,6 +70,8 @@ export type XeroSalesOrderLine = Accounting.SalesOrderLine & {
   /** 0..1 */
   taxPercent: number;
   taxCodeId: string | null;
+  /** Carbon account.id, for the account-class check. */
+  accountId?: string | null;
 };
 
 /** The sales order a Xero Quote is built from. */
@@ -212,6 +219,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         "salesOrderLine.setupPrice",
         "salesOrderLine.taxPercent",
         "salesOrderLine.taxCodeId",
+        "salesOrderLine.accountId",
         "item.readableIdWithRevision as itemReadableIdWithRevision",
         "account.number as accountNumber"
       ])
@@ -263,6 +271,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
             quantity,
             unitPrice,
             setupPrice,
+            accountId: line.accountId,
             accountNumber: line.accountNumber,
             lineAmount: quantity * unitPrice + setupPrice,
             taxPercent: Number(line.taxPercent) || 0,
@@ -341,6 +350,9 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
     // default to it and the quote total would exceed Carbon's.
     const taxContext = await this.taxContext.forLines("sales", lineTaxes);
     const documentCarriesTax = taxContext.catalogLoaded;
+    const accountCodesById = documentCarriesTax
+      ? await this.taxContext.accountCodesById()
+      : new Map<string, string>();
     const taxTypes = financialLines.map((line, index) =>
       resolveXeroTaxType({
         context: taxContext,
@@ -349,7 +361,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         ...lineTaxes[index]!,
         netAmount: line.lineAmount,
         decimalPlaces: local.currencyDecimalPlaces,
-        accountCode: line.accountNumber
+        accountCode: verifiedXeroAccountCode(line, accountCodesById)
       })
     );
 
