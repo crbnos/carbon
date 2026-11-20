@@ -967,6 +967,9 @@ msgstr "Padrão"
 msgid "Delete"
 msgstr "Excluir"
 
+msgid "Delete {name}"
+msgstr "Excluir {name}"
+
 msgid "Delete {stepLabel}"
 msgstr "Excluir {stepLabel}"
 
@@ -1915,6 +1918,9 @@ msgstr "Novo Registro"
 msgid "New Service Job"
 msgstr "Nova Ordem de Serviço"
 
+msgid "New Version"
+msgstr "Nova Versão"
+
 msgid "Newest first"
 msgstr "Mais recente primeiro"
 
@@ -1975,6 +1981,9 @@ msgstr "Nenhum país encontrado."
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Nenhum ativo do cliente tem o número de série {0}. Escolha o cliente."
+
+msgid "No data yet"
+msgstr "Ainda não há dados"
 
 msgid "No default bin"
 msgstr ""
@@ -3812,6 +3821,9 @@ msgstr "Falha na verificação"
 msgid "Verify"
 msgstr "Verificar"
 
+msgid "Versions"
+msgstr "Versões"
+
 msgid "View"
 msgstr "Visualizar"
 
@@ -3898,6 +3910,9 @@ msgstr "Sua qualificação {processName} venceu em {expiredDate}."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Sua conta ainda não faz parte de uma empresa. Conclua o onboarding no Carbon ERP para continuar."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Seus dados aparecerão aqui assim que você criar ou importar seus primeiros registros"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."

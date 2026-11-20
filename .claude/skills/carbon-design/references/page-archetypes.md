@@ -196,7 +196,7 @@ ScrollArea → VStack py-12 px-4 max-w-[60rem] mx-auto gap-4
 One Card = one independently saved concern (one `intent` each in the route action). A single
 on/off is a `Switch` / `Boolean bordered` toggle card that autosaves; multi-field groups have
 a Save footer. Exemplars: `routes/x+/settings+/sales.tsx`, `routes/x+/settings+/inventory.tsx`,
-`routes/x+/settings+/items.tsx` (toggles), `components/SettingsSectionHeader.tsx`. A toggle's
+`routes/x+/settings+/items.tsx` (toggles), `SettingsSectionHeader` (`@carbon/react`). A toggle's
 label states the current state plus a one-line consequence (`dd560505c1`).
 
 Company-wide preferences go in Settings (`modules/settings/ui/useSettingsSubmodules.tsx`).
