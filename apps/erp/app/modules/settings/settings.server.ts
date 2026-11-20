@@ -1811,7 +1811,8 @@ export const assignPrinter = defineServiceFn({
  * Queues a new print job with the company's original job's content, to its
  * printer or to `printerUrl` when given, and starts its delivery. A job still
  * generating has no content and cannot be reprinted, and a ZPL label is
- * refused for a printer at another dpi, which would print it the wrong size.
+ * refused for another printer at another dpi, which would print it the wrong
+ * size. The printer it was printed on always takes it again.
  * Not published: the server POSTs to `printerUrl`, so an API caller could aim
  * it at any address.
  */
@@ -1852,7 +1853,9 @@ export const reprintPrintJob = defineServiceFn({
       .order("hasApiKey", { ascending: false })
       .limit(1)
       .maybeSingle();
+    // The printer it went to prints the same content the same way again.
     if (
+      targetUrl !== originalMeta.data.printerUrl &&
       !canResendToPrinter(
         original.data.contentType,
         original.data.dpi,

@@ -93,7 +93,7 @@ Each job records its `origin`, one of **auto** (an automatic print behind a busi
 
 You watch the queue under **Settings → Printing → Print jobs** (`printing.jobs.tsx`). The table streams in real time and shows status, description, source, type, origin, and when. Expanding a row exposes the printer URL, attempts, timestamps, and any error.
 
-From there you can **View** the content (ZPL previews via Labelary at the job's own `dpi`, PDF via an inline frame), **Reprint** it (a fresh job with `origin: "reprint"` and the same content), or **Delete** it. A ZPL job is not reprinted to a printer at another dpi, because the copy would print the wrong size.
+From there you can **View** the content (ZPL previews via Labelary at the job's own `dpi`, PDF via an inline frame), **Reprint** it (a fresh job with `origin: "reprint"` and the same content), or **Delete** it. A ZPL job always reprints to the printer it was printed on. It is not reprinted to another printer at another dpi, because the copy would print the wrong size.
 
 <Callout type="note">
 Print jobs are pruned on a schedule: completed jobs after 30 days, failed jobs after 90. A failed job stays around long enough to diagnose.
