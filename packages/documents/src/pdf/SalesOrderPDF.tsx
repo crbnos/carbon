@@ -12,6 +12,7 @@ import {
   type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
+import type { PartNumberDisplay } from "../utils/part-number";
 import {
   getMoneyFormatter,
   getRateFormatter,
@@ -44,6 +45,8 @@ interface SalesOrderPDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The Edit document modal's unsaved display choice for every line. */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 const SalesOrderPDF = ({
@@ -62,7 +65,8 @@ const SalesOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {}
+  sections = {},
+  partNumberDisplayDraft
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -124,7 +128,8 @@ const SalesOrderPDF = ({
     vars,
     headerOptions,
     documentTitle,
-    documentNumber
+    documentNumber,
+    partNumberDisplayDraft
   };
 
   return (

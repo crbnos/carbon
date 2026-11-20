@@ -260,7 +260,8 @@ export const CUSTOMERS = [
     type: "Automotive",
     status: "Active",
     phone: "+1-313-555-0100",
-    website: "https://lakeshoreauto.com"
+    website: "https://lakeshoreauto.com",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Cascade Integration Group",

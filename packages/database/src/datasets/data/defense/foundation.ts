@@ -255,7 +255,8 @@ export const CUSTOMERS = [
     type: "DoD Program Office",
     status: "Active",
     phone: "+1-256-555-0100",
-    website: "https://army-suas-po.example.gov"
+    website: "https://army-suas-po.example.gov",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Northgate Defense Systems",

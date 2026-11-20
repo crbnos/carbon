@@ -35,6 +35,9 @@ export const SAMPLE_PACKING_SLIP = {
     {
       id: "line-1",
       itemReadableId: "WIDGET-100",
+      customerPartId: "C-100",
+      customerPartRevision: "3",
+      partNumberDisplay: "Ours First",
       description: "Precision Widget, anodized",
       shippedQuantity: 10,
       orderQuantity: 10,

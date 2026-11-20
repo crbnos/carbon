@@ -48,6 +48,12 @@ export const SAMPLE_SALES_ORDER = {
       id: "line-1",
       salesOrderLineType: "Part",
       itemReadableId: "WIDGET-100",
+      // The line's own copy of the customer part, not the live cross-reference.
+      customerPartId: "C-100",
+      customerPartRevision: "3",
+      customerPartIdFromCustomer: null,
+      customerPartRevisionFromCustomer: null,
+      partNumberDisplay: "Ours First",
       description: "Precision Widget, anodized",
       saleQuantity: 10,
       unitOfMeasureCode: "EA",

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261121061455",
+  "schemaVersion": "20261121061712",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-20T23:20:28.597Z",
+  "exportedAt": "2026-11-20T23:21:32.152Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -522,7 +522,8 @@
         "deliveryDateControl",
         "receiptBatchNumbersFromPurchaseOrder",
         "sequenceWeekNumbering",
-        "supplierPartNumberDisplay"
+        "supplierPartNumberDisplay",
+        "customerPartNumberDisplay"
       ]
     },
     {
@@ -3352,7 +3353,8 @@
         "salesContactId",
         "defaultCc",
         "intercompanyCompanyId",
-        "readableId"
+        "readableId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -4447,7 +4449,8 @@
         "configuration",
         "pricingRuleId",
         "priceTrace",
-        "sortOrder"
+        "sortOrder",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8158,7 +8161,10 @@
         "earliestDeliveryDate",
         "deliveryDateCheckedAt",
         "deliveryDateOverriddenBy",
-        "deliveryDateOverriddenAt"
+        "deliveryDateOverriddenAt",
+        "partNumberDisplay",
+        "customerPartId",
+        "customerPartRevision"
       ]
     },
     {
@@ -8209,7 +8215,8 @@
         "customerContractInvoiceLineId",
         "projectId",
         "discountPercent",
-        "serviceJobId"
+        "serviceJobId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8440,7 +8447,8 @@
         "fulfillmentId",
         "serialNumber",
         "customerContractInvoiceLineId",
-        "previousInvoiceDate"
+        "previousInvoiceDate",
+        "partNumberDisplay"
       ]
     },
     {

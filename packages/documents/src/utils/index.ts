@@ -6,6 +6,7 @@
 // graph `./pdf` pulls in. Not a wildcard barrel — the per-document util files
 // each export their own `getLineDescription`.
 export {
+  formatLinePartNumber,
   formatPartNumber,
   isPartNumberDisplay,
   LEGACY_PART_NUMBER_DISPLAY,

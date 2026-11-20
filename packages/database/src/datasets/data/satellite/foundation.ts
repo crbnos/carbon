@@ -249,7 +249,8 @@ export const CUSTOMERS = [
     type: "Government",
     status: "Active",
     phone: "+1-703-555-0100",
-    website: "https://orbsec.gov"
+    website: "https://orbsec.gov",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "NovaSat Networks",
