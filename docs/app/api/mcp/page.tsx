@@ -48,6 +48,11 @@ const CURSOR = `{
   }
 }`;
 
+const OLLAMA = `ollmcp mcp add --transport http carbon \\
+  ${ENDPOINT} \\
+  --header "Authorization: Bearer <api-key>"
+ollmcp --model <a tool-capable model available in Ollama>`;
+
 const PROMPTS = [
   "Show all open sales orders due to ship this week.",
   "Which purchase orders are past their promised receipt date?",
@@ -63,7 +68,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "Do I need an API key?",
-    a: "Not for connector clients — Claude.ai, Claude Desktop, and ChatGPT add the URL and authorize in your browser. Keys are for command and config clients (Claude Code, Cursor, VS Code, Codex) and any headless or CI use."
+    a: "Not for connector clients — Claude.ai, Claude Desktop, and ChatGPT add the URL and authorize in your browser. Keys are for command and config clients (Claude Code, Cursor, VS Code, Codex, Ollama through ollmcp) and any headless or CI use."
   },
   {
     q: "Does it respect my Carbon permissions?",
@@ -75,7 +80,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "Where does my data go?",
-    a: "Carbon doesn't send it anywhere new — your MCP client does, to whatever model provider it runs on, under that provider's terms. Scope keys tightly and prefer a read-only key when you only need to read."
+    a: "Carbon doesn't send it anywhere new — your MCP client does, to whatever model provider it runs on, under that provider's terms. With Ollama through ollmcp, a model running on the computer that calls Carbon keeps those tool results there. A cloud model sends them to that provider. The computer still has to reach your Carbon origin. Scope keys tightly and prefer a read-only key when you only need to read."
   },
   {
     q: "Is the Carbon API available on my plan?",
@@ -100,9 +105,10 @@ const FAQ: FaqEntry[] = [
 ];
 
 export default async function ConnectOverMcpPage() {
-  const [code, cursor] = await Promise.all([
+  const [code, cursor, ollama] = await Promise.all([
     highlight(CLAUDE_CODE, "curl"),
-    highlight(CURSOR, "json")
+    highlight(CURSOR, "json"),
+    highlight(OLLAMA, "curl")
   ]);
 
   return (
@@ -111,8 +117,8 @@ export default async function ConnectOverMcpPage() {
       <DocTitle>Connect over MCP</DocTitle>
       <Lead>
         Carbon runs an MCP server, so AI clients — Claude Code, Claude Desktop,
-        Cursor, ChatGPT — can reach the Carbon API and read or write your
-        manufacturing data in plain language.
+        Cursor, ChatGPT, and Ollama through ollmcp — can reach the Carbon API
+        and read or write your manufacturing data in plain language.
       </Lead>
       <P>
         The server lives at <McpEndpoint />. Connect it one of two ways,
@@ -126,7 +132,8 @@ export default async function ConnectOverMcpPage() {
       </P>
       <P>
         <strong>Command &amp; key clients</strong> — Claude Code, Cursor, VS
-        Code, Codex — paste a snippet carrying a scoped API key.
+        Code, Codex, and Ollama through ollmcp — paste a snippet carrying a
+        scoped API key.
       </P>
       <CodeBlock
         html={code}
@@ -134,6 +141,29 @@ export default async function ConnectOverMcpPage() {
         label="Terminal · Claude Code"
       />
       <CodeBlock html={cursor} code={CURSOR} label=".cursor/mcp.json" />
+      <P>
+        Ollama runs the model on your computer. It does not speak MCP.{" "}
+        <DocLink href="https://github.com/jonigl/mcp-client-for-ollama">
+          ollmcp
+        </DocLink>{" "}
+        is the client: it calls a model available in Ollama. A local model keeps
+        the tool results on that computer. A cloud model sends those results
+        to that provider. The computer still has to reach this Carbon origin.
+        Use a scoped API key, View only until you intend a write, and leave
+        ollmcp's scope at its default so the key stays out of the repository.
+        That default applies to the current project, so add the server and
+        start ollmcp in the same directory. Use the user scope when Carbon
+        should load in every project.
+        Do not publish a private or controlled (ITAR) origin so another
+        machine can reach it. <Code>AI_MODEL</Code>, <Code>AI_BASE_URL</Code>,
+        and <Code>AI_API_KEY</Code> configure document extraction only. They do
+        not connect an agent.
+      </P>
+      <CodeBlock
+        html={ollama}
+        code={OLLAMA}
+        label="Terminal · Ollama (ollmcp)"
+      />
 
       <H2 id="discovery">Discovery</H2>
       <P>
