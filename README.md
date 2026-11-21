@@ -352,32 +352,39 @@ The full command reference is in the [local development guide](https://docs.carb
 <details>
 <summary><h3>Optional: the <code>assembler</code> geometry service</h3></summary>
 
-`assembler` is a Rust service (STEP → GLB + assembly motion planning) over C++ FCL and OpenCASCADE. ERP/MES run fine without it — set it up only if you need the 3D `/convert` and `/plan` endpoints.
+`assembler` is a Rust service over the C++ libraries OpenCASCADE (OCCT), FCL, Draco and OpenBLAS. It converts STEP files to 3D models and assembly graphs, plans assembly sequences and renders model thumbnails. ERP/MES run fine without it — set it up only if you need those.
 
-1. **Toolchain + native build deps** (macOS):
+It builds on macOS and Linux. On Windows, run the stack inside WSL2 and follow the Linux steps.
+
+1. **Native libraries and build tools**, once per machine.
+
+   macOS (Homebrew):
 
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust, if not already installed
-   brew install fcl cmake ninja draco                               # collision libs (+ libccd/eigen/octomap), build tools, Draco mesh compression
+   brew install fcl draco openblas cmake ninja
    ```
 
-   On Linux, install the equivalents from your package manager: `libfcl-dev libccd-dev libeigen3-dev liboctomap-dev libdraco-dev cmake ninja-build` plus a C/C++ toolchain.
+   Debian/Ubuntu (other distributions: the same libraries from their package manager):
 
-   `./setup.sh` already installs Draco on macOS. If yours lives outside the Homebrew keg (`/opt/homebrew/opt/draco` on arm64), point `draco-bridge`'s build at it with `DRACO_PREFIX=/path/to/draco cargo build`.
+   ```bash
+   sudo apt install build-essential pkg-config libssl-dev curl git cmake ninja-build libfcl-dev libdraco-dev libopenblas-dev
+   ```
 
-2. **Build OCCT once** — a patched static OpenCASCADE, cached in `~/.cache/carbon-occt`. Slow (~15–30 min) but one-time per machine; re-running is a no-op once cached:
+2. **Rust**, through rustup. Not the distribution's `cargo`: the locked dependencies need Rust 1.88 or later, and Ubuntu's is 1.75.
+
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+
+3. **OCCT**, a patched static OpenCASCADE, built once per machine (~15–30 min) into `~/.cache/carbon-occt/8.0.0-p1` and shared by every worktree. Re-running it is a no-op:
 
    ```bash
    ./apps/assembler/scripts/build-occt.sh
    ```
 
-3. **Build the service** — seconds once OCCT is cached (`build.rs` finds it automatically):
+4. **Run it**: pick Assembler in `crbn up`. `crbn` first checks steps 1–3 and lists everything still missing, with the commands that install it. It then runs `cargo run --release -p assembler`, building into `~/.cache/carbon-cargo-target`, which every worktree shares: the first build takes several minutes, later ones rebuild only what changed. The `asm |` lines show the build, then `assembler (rust) listening on …` once the service is up; from the worktree root, `curl -sf "$(sed -n 's/^ASSEMBLER_SERVICE_URL=//p' .env.local)/health"` checks it. `crbn up --all` leaves the assembler out while anything is missing.
 
-   ```bash
-   cargo build --release -p assembler
-   ```
-
-`crbn up` spawns the binary when it's present. Verify it's up with `curl -sf "$ASSEMBLER_SERVICE_URL/health"` (the URL is in your worktree's `.env.local`) or by watching the `asm |` lines in the `crbn up` output. Without the binary the rest of the stack still runs — only `/convert` and `/plan` are unavailable.
+A library installed somewhere else: point the build at it with `FCL_PREFIX`, `DRACO_PREFIX` or `OCCT_PREFIX`.
 
 </details>
 

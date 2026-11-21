@@ -10,13 +10,16 @@ import {
   rmSync,
   writeFileSync
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PortMap } from "../worktree.js";
 import {
   assemblerCargoTargetDir,
+  assemblerMissingPrerequisite,
   cargoBinary,
+  type MachineProbe,
+  missingAssemblerDependencies,
   spawnApps,
   spawnEmailPreview,
   stopAuxApps,
@@ -257,5 +260,171 @@ describe("cargoBinary", () => {
   it("is null when Rust is not installed", () => {
     const home = mkdtempSync(join(tmpdir(), "cargo-home-"));
     expect(cargoBinary({ PATH: "", CARGO_HOME: home })).toBeNull();
+  });
+});
+
+describe("missingAssemblerDependencies", () => {
+  const occtBuild = join(
+    homedir(),
+    ".cache/carbon-occt/8.0.0-p1/lib/libTKernel.a"
+  );
+  // A Debian/Ubuntu machine after the README's Linux steps.
+  const ubuntu = [
+    "/cargo/bin/cargo",
+    "/usr/bin/c++",
+    "/usr/include/fcl",
+    "/usr/include/draco",
+    "/usr/lib/x86_64-linux-gnu/libopenblas.so",
+    "/usr/bin/pkg-config",
+    "/usr/lib/x86_64-linux-gnu/pkgconfig/openssl.pc",
+    occtBuild
+  ];
+  const machine = ({
+    files = ubuntu,
+    ...overrides
+  }: Partial<MachineProbe> & { files?: string[] } = {}): MachineProbe => ({
+    env: { PATH: "/usr/bin", CARGO_HOME: "/cargo" },
+    platform: "linux",
+    arch: "x64",
+    exists: (path) => files.includes(path),
+    ...overrides
+  });
+
+  it("finds a Debian/Ubuntu install in /usr and the multiarch library directory", () => {
+    expect(missingAssemblerDependencies(machine())).toEqual([]);
+  });
+
+  it("lists every missing dependency, not only the first", () => {
+    expect(missingAssemblerDependencies(machine({ files: [] }))).toEqual([
+      "rust",
+      "compiler",
+      "fcl",
+      "draco",
+      "openblas",
+      "openssl",
+      "occt"
+    ]);
+  });
+
+  it("looks for Homebrew kegs on Apple silicon, where the build scripts do", () => {
+    const homebrew = [
+      "/cargo/bin/cargo",
+      "/opt/homebrew/opt/fcl/include/fcl",
+      "/opt/homebrew/opt/draco/include/draco",
+      "/opt/homebrew/opt/openblas/lib/libopenblas.dylib",
+      occtBuild
+    ];
+    const mac = { platform: "darwin" as const, arch: "arm64" };
+    expect(
+      missingAssemblerDependencies(machine({ ...mac, files: homebrew }))
+    ).toEqual([]);
+    // openblas-src searches only the keg on macOS, so a copy elsewhere does not link.
+    expect(
+      missingAssemblerDependencies(
+        machine({
+          ...mac,
+          files: [
+            ...homebrew.filter((file) => !file.includes("openblas")),
+            "/usr/local/lib/libopenblas.dylib"
+          ]
+        })
+      )
+    ).toEqual(["openblas"]);
+  });
+
+  it("does not count an OCCT cache without its static libraries as built", () => {
+    const files = [
+      ...ubuntu.filter((file) => file !== occtBuild),
+      join(homedir(), ".cache/carbon-occt/8.0.0-p1")
+    ];
+    expect(missingAssemblerDependencies(machine({ files }))).toEqual(["occt"]);
+  });
+
+  it.each([
+    {
+      how: "a pkg-config file on PKG_CONFIG_PATH",
+      env: { PKG_CONFIG_PATH: "/opt/ssl/lib/pkgconfig" },
+      file: "/opt/ssl/lib/pkgconfig/openssl.pc"
+    },
+    {
+      how: "OPENSSL_LIB_DIR with OPENSSL_INCLUDE_DIR",
+      env: {
+        OPENSSL_LIB_DIR: "/opt/ssl/lib",
+        OPENSSL_INCLUDE_DIR: "/opt/ssl/include"
+      },
+      file: "/opt/ssl/include"
+    }
+  ])("finds OpenSSL installed elsewhere through $how", ({ env, file }) => {
+    const files = [
+      ...ubuntu.filter((path) => !path.endsWith("openssl.pc")),
+      file
+    ];
+    expect(
+      missingAssemblerDependencies(
+        machine({
+          env: { PATH: "/usr/bin", CARGO_HOME: "/cargo", ...env },
+          files
+        })
+      )
+    ).toEqual([]);
+  });
+
+  it("uses the *_PREFIX directories the build scripts honour", () => {
+    const files = [
+      "/cargo/bin/cargo",
+      "/usr/bin/c++",
+      "/opt/fcl/include/fcl",
+      "/opt/draco/include/draco",
+      "/usr/lib64/libopenblas.so",
+      "/opt/openssl",
+      "/opt/occt"
+    ];
+    const env = {
+      PATH: "/usr/bin",
+      CARGO_HOME: "/cargo",
+      FCL_PREFIX: "/opt/fcl",
+      DRACO_PREFIX: "/opt/draco",
+      OPENSSL_DIR: "/opt/openssl",
+      OCCT_PREFIX: "/opt/occt"
+    };
+    expect(missingAssemblerDependencies(machine({ env, files }))).toEqual([]);
+  });
+});
+
+describe("assemblerMissingPrerequisite", () => {
+  it("refuses native Windows even with every library present", () => {
+    const windows: MachineProbe = {
+      env: {},
+      platform: "win32",
+      arch: "x64",
+      exists: () => true
+    };
+    expect(assemblerMissingPrerequisite(windows)).not.toBeNull();
+  });
+
+  it("asks for only the OCCT build tools that are not on PATH", () => {
+    // A Mac with every library from Homebrew and no OCCT build yet.
+    const mac = (tools: string[]): MachineProbe => ({
+      env: { PATH: "/opt/homebrew/bin", CARGO_HOME: "/cargo" },
+      platform: "darwin",
+      arch: "arm64",
+      exists: (path) =>
+        [
+          "/cargo/bin/cargo",
+          "/opt/homebrew/opt/fcl/include/fcl",
+          "/opt/homebrew/opt/draco/include/draco",
+          "/opt/homebrew/opt/openblas/lib/libopenblas.dylib",
+          ...tools.map((tool) => `/opt/homebrew/bin/${tool}`)
+        ].includes(path)
+    });
+    expect(assemblerMissingPrerequisite(mac(["cmake", "ninja"]))).not.toContain(
+      "brew install"
+    );
+    expect(assemblerMissingPrerequisite(mac(["cmake"]))).toContain(
+      "brew install ninja\n"
+    );
+    expect(assemblerMissingPrerequisite(mac([]))).toContain(
+      "brew install cmake ninja\n"
+    );
   });
 });
