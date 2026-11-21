@@ -22435,6 +22435,9 @@ msgstr "零件提前期从已过账的采购收货更新。"
 msgid "Part Number"
 msgstr "零件编号"
 
+msgid "Part number display"
+msgstr "零件号显示"
+
 msgid "Part Numbers"
 msgstr "零件号"
 
@@ -25223,6 +25226,9 @@ msgstr "拒绝时间"
 
 msgid "Rejected"
 msgstr "已拒绝"
+
+msgid "Rejected at inspection"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "检验时拒收"

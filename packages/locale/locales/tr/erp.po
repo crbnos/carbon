@@ -22435,6 +22435,9 @@ msgstr "Parça tedarik süreleri muhasebeleştirilmiş mal kabul belgelerinden g
 msgid "Part Number"
 msgstr "Parça Numarası"
 
+msgid "Part number display"
+msgstr "Parça numarası gösterimi"
+
 msgid "Part Numbers"
 msgstr "Parça numaraları"
 
@@ -25223,6 +25226,9 @@ msgstr "Zamanı Reddet"
 
 msgid "Rejected"
 msgstr "Reddedilmiş"
+
+msgid "Rejected at inspection"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "Muayenede reddedildi"

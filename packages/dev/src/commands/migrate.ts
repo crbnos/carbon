@@ -21,6 +21,7 @@ import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   databaseTasks,
   serviceSchemasReady,
+  waitForApi,
   waitForPostgres,
   waitForServiceSchemas
 } from "../services/migrations.js";
@@ -43,6 +44,9 @@ const MIGRATION_SERVICES: Record<StackMode, string[]> = {
   isolated: ["postgres", "gotrue", "storage", "realtime"],
   shared: ["gotrue", "realtime"]
 };
+
+// What swagger reads: PostgREST through the gateway.
+const API_SERVICES = ["postgrest", "api-gw"];
 
 // Migrate the worktree's database. Against the running stack when its
 // database answers; otherwise boot only the services whose schemas the
@@ -113,6 +117,8 @@ async function provision(stack: Stack): Promise<Stack> {
 
 async function migrateStandalone(stack: Stack, regen: boolean) {
   const db = stack.db!;
+  // Null after `crbn down --purge`: it releases the slot and keeps .env.local.
+  const { ports } = stack;
   log.info(`booting migration services (${stack.project})`);
   await ensureDockerRunning();
   if (stack.mode === "shared") {
@@ -143,14 +149,18 @@ async function migrateStandalone(stack: Stack, regen: boolean) {
         {
           migrate: true,
           regen,
-          swagger: false
+          swagger: ports !== null,
+          startApi: ports
+            ? async () => {
+                await bootStack(stack, { services: API_SERVICES });
+                await waitForApi(ports.PORT_API, readDevJwt().serviceKey);
+              }
+            : undefined
         }
       )
     );
-    if (regen) {
-      log.warn(
-        "swagger skipped — requires the API (run `crbn up` for full regen)"
-      );
+    if (regen && !ports) {
+      log.warn("swagger skipped — this worktree has no slot (run `crbn up`)");
     }
   } finally {
     detach();

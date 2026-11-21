@@ -22435,6 +22435,9 @@ msgstr "Los plazos de entrega de piezas se actualizan a partir de recepciones de
 msgid "Part Number"
 msgstr "Número de pieza"
 
+msgid "Part number display"
+msgstr "Visualización del número de pieza"
+
 msgid "Part Numbers"
 msgstr "Números de pieza"
 
@@ -25223,6 +25226,9 @@ msgstr "Rechazar Tiempo"
 
 msgid "Rejected"
 msgstr "Rechazado"
+
+msgid "Rejected at inspection"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "Rechazado en inspección"

@@ -22435,6 +22435,9 @@ msgstr "पार्ट लीड टाइम पोस्ट की गई क
 msgid "Part Number"
 msgstr "भाग संख्या"
 
+msgid "Part number display"
+msgstr "पार्ट नंबर प्रदर्शन"
+
 msgid "Part Numbers"
 msgstr "पार्ट नंबर"
 
@@ -25223,6 +25226,9 @@ msgstr "समय को अस्वीकार करें"
 
 msgid "Rejected"
 msgstr "अस्वीकृत"
+
+msgid "Rejected at inspection"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "निरीक्षण में अस्वीकृत"

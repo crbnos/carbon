@@ -22435,6 +22435,9 @@ msgstr "部品のリードタイムは転記済の購買入荷から更新され
 msgid "Part Number"
 msgstr "部品番号"
 
+msgid "Part number display"
+msgstr "部品番号の表示"
+
 msgid "Part Numbers"
 msgstr "部品番号"
 
@@ -25223,6 +25226,9 @@ msgstr "却下時間"
 
 msgid "Rejected"
 msgstr "却下"
+
+msgid "Rejected at inspection"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "検査で不合格"

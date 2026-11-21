@@ -22435,6 +22435,9 @@ msgstr "Part lead times update from posted purchase receipts."
 msgid "Part Number"
 msgstr "Part Number"
 
+msgid "Part number display"
+msgstr "Part number display"
+
 msgid "Part Numbers"
 msgstr "Part Numbers"
 
@@ -25223,6 +25226,9 @@ msgstr "Reject Time"
 
 msgid "Rejected"
 msgstr "Rejected"
+
+msgid "Rejected at inspection"
+msgstr "Rejected at inspection"
 
 msgid "Rejected at Inspection"
 msgstr "Rejected at Inspection"
