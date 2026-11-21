@@ -6686,6 +6686,15 @@ msgstr "Nur Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon öffnet dieses Konto aus seinen offenen Posten. Der Betrag hier wird nur beim Migrationsausgleich verglichen."
 
+msgid "Carbon part number only"
+msgstr "Nur Carbon-Teilenummer"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon-Teilenummer, dann Kundenteilenummer"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon-Teilenummer, dann Lieferantenteilenummer"
+
 msgid "Carbon Posted"
 msgstr "Carbon gebucht"
 
@@ -9664,6 +9673,12 @@ msgstr "Kundenartikelnummer"
 
 msgid "Customer Part Number"
 msgstr "Kundenteilenummer"
+
+msgid "Customer part number only"
+msgstr "Nur Kundenteilenummer"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "Kundenteilenummer, dann Carbon-Teilenummer"
 
 msgid "Customer Part Revision"
 msgstr "Kundenteils-Revision"
@@ -22096,15 +22111,6 @@ msgstr "Sonstiger Typ"
 msgid "Otherwise"
 msgstr "Andernfalls"
 
-msgid "Our part number only"
-msgstr "Nur unsere Teilenummer"
-
-msgid "Our part number, then the customer's"
-msgstr "Unsere Teilenummer, dann die des Kunden"
-
-msgid "Our part number, then the supplier's"
-msgstr "Unsere Teilenummer, dann die des Lieferanten"
-
 msgid "Out"
 msgstr "Aus"
 
@@ -29958,6 +29964,12 @@ msgstr "Lieferantenartikelnummer"
 msgid "Supplier Part Number"
 msgstr "Lieferantenteilnummer"
 
+msgid "Supplier part number only"
+msgstr "Nur Lieferantenteilenummer"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "Lieferantenteilenummer, dann Carbon-Teilenummer"
+
 msgid "Supplier Part Numbers"
 msgstr "Lieferanten-Teilenummern"
 
@@ -30921,12 +30933,6 @@ msgstr "Der Kunde, dessen Aufträge dieser Portal-Link zeigt. Der Link hat keine
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Die Referenz des Kunden für dieses Dokument – typischerweise ihre Anfrage- oder PO-Nummer in ihrem System; wird in der druckbaren Ausgabe angezeigt und in jedes Dokument übertragen, in das dieses umgewandelt wird."
-
-msgid "The customer's part number only"
-msgstr "Nur die Teilenummer des Kunden"
-
-msgid "The customer's part number, then ours"
-msgstr "Die Teilenummer des Kunden, dann unsere"
 
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "Das Revisions-Tag des Kunden für seine Teil-ID, wenn es sich von unserem unterscheidet; auf der Cross-Reference-Ebene fest, nicht auf unserer Revision."
@@ -31928,12 +31934,6 @@ msgstr "Die eigene Referenz des Lieferanten für diese Bestellung (ihre SO-Numme
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Die Versand-Klebeschein oder Lieferscheinnummer des Lieferanten, aufgezeichnet für die Prüfung; wird von keiner Buchungslogik verwendet."
-
-msgid "The supplier's part number only"
-msgstr "Nur die Teilenummer des Lieferanten"
-
-msgid "The supplier's part number, then ours"
-msgstr "Die Teilenummer des Lieferanten, dann unsere"
 
 msgid "The supplier's return authorization number"
 msgstr "Die Rückgabegenehmigungsnummer des Lieferanten"

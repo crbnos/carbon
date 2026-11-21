@@ -390,10 +390,10 @@ pnpm exec biome check apps/erp/app/modules/settings/settings.utils.ts apps/erp/a
 
 | Value | party = customer | party = supplier |
 |---|---|---|
-| Ours First | Our part number, then the customer's | Our part number, then the supplier's |
-| Theirs First | The customer's part number, then ours | The supplier's part number, then ours |
-| Theirs Only | The customer's part number only | The supplier's part number only |
-| Ours Only | Our part number only | Our part number only |
+| Ours First | Carbon part number, then customer part number | Carbon part number, then supplier part number |
+| Theirs First | Customer part number, then Carbon part number | Supplier part number, then Carbon part number |
+| Theirs Only | Customer part number only | Supplier part number only |
+| Ours Only | Carbon part number only | Carbon part number only |
 
 4. Export the default component `PartNumberDisplay`. It takes `Omit<SelectProps, "options"> & { party: "customer" | "supplier" }`.
 5. Render `<Select {...props} options={usePartNumberDisplayOptions(party)} />` from `@carbon/form`.

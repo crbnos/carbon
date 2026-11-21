@@ -6686,6 +6686,15 @@ msgstr "Carbon only"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 
+msgid "Carbon part number only"
+msgstr "Carbon part number only"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon part number, then customer part number"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon part number, then supplier part number"
+
 msgid "Carbon Posted"
 msgstr "Carbon Posted"
 
@@ -9664,6 +9673,12 @@ msgstr "Customer Part ID"
 
 msgid "Customer Part Number"
 msgstr "Customer Part Number"
+
+msgid "Customer part number only"
+msgstr "Customer part number only"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "Customer part number, then Carbon part number"
 
 msgid "Customer Part Revision"
 msgstr "Customer Part Revision"
@@ -22096,15 +22111,6 @@ msgstr "Other Type"
 msgid "Otherwise"
 msgstr "Otherwise"
 
-msgid "Our part number only"
-msgstr "Our part number only"
-
-msgid "Our part number, then the customer's"
-msgstr "Our part number, then the customer's"
-
-msgid "Our part number, then the supplier's"
-msgstr "Our part number, then the supplier's"
-
 msgid "Out"
 msgstr "Out"
 
@@ -29958,6 +29964,12 @@ msgstr "Supplier Part ID"
 msgid "Supplier Part Number"
 msgstr "Supplier Part Number"
 
+msgid "Supplier part number only"
+msgstr "Supplier part number only"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "Supplier part number, then Carbon part number"
+
 msgid "Supplier Part Numbers"
 msgstr "Supplier Part Numbers"
 
@@ -30921,12 +30933,6 @@ msgstr "The customer whose orders this portal link shows. The link has no sign-i
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
-
-msgid "The customer's part number only"
-msgstr "The customer's part number only"
-
-msgid "The customer's part number, then ours"
-msgstr "The customer's part number, then ours"
 
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
@@ -31928,12 +31934,6 @@ msgstr "The supplier's own reference for this order (their SO number on their sy
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
-
-msgid "The supplier's part number only"
-msgstr "The supplier's part number only"
-
-msgid "The supplier's part number, then ours"
-msgstr "The supplier's part number, then ours"
 
 msgid "The supplier's return authorization number"
 msgstr "The supplier's return authorization number"

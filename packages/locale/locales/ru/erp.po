@@ -6686,6 +6686,15 @@ msgstr "Только Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon открывает этот счет из открытых позиций. Сумма здесь сравнивается только при очистке миграции."
 
+msgid "Carbon part number only"
+msgstr "Только номер детали Carbon"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Номер детали Carbon, затем номер детали покупателя"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Номер детали Carbon, затем номер детали поставщика"
+
 msgid "Carbon Posted"
 msgstr "Carbon проведен"
 
@@ -9664,6 +9673,12 @@ msgstr "Артикул покупателя"
 
 msgid "Customer Part Number"
 msgstr "Номер детали покупателя"
+
+msgid "Customer part number only"
+msgstr "Только номер детали покупателя"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "Номер детали покупателя, затем номер детали Carbon"
 
 msgid "Customer Part Revision"
 msgstr "Ревизия детали покупателя"
@@ -22096,15 +22111,6 @@ msgstr "Другой тип"
 msgid "Otherwise"
 msgstr "В противном случае"
 
-msgid "Our part number only"
-msgstr "Только наш номер детали"
-
-msgid "Our part number, then the customer's"
-msgstr "Наш номер детали, затем номер покупателя"
-
-msgid "Our part number, then the supplier's"
-msgstr "Наш номер детали, затем номер поставщика"
-
 msgid "Out"
 msgstr "Вне"
 
@@ -29958,6 +29964,12 @@ msgstr "Артикул поставщика"
 msgid "Supplier Part Number"
 msgstr "Номер детали поставщика"
 
+msgid "Supplier part number only"
+msgstr "Только номер детали поставщика"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "Номер детали поставщика, затем номер детали Carbon"
+
 msgid "Supplier Part Numbers"
 msgstr "Номера деталей поставщика"
 
@@ -30921,12 +30933,6 @@ msgstr "Клиент, заказы которого показывает эта 
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Собственный номер ссылки покупателя на этот документ — обычно номер их запроса цен или заказа в их системе; отображается в печатном выводе и передается в любой документ, в который преобразуется этот документ."
-
-msgid "The customer's part number only"
-msgstr "Только номер детали покупателя"
-
-msgid "The customer's part number, then ours"
-msgstr "Номер детали покупателя, затем наш"
 
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "Тег ревизии покупателя для их ID детали, когда он отличается от нашего; зафиксирован на уровне перекрестной ссылки, а не на нашей ревизии."
@@ -31928,12 +31934,6 @@ msgstr "Собственная ссылка поставщика на этот �
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Номер упаковочного листа или отгрузки поставщика, записываемый для аудита; не используется никакой логикой проведения."
-
-msgid "The supplier's part number only"
-msgstr "Только номер детали поставщика"
-
-msgid "The supplier's part number, then ours"
-msgstr "Номер детали поставщика, затем наш"
 
 msgid "The supplier's return authorization number"
 msgstr "Номер разрешения на возврат поставщика"

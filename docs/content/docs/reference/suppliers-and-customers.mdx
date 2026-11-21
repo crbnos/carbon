@@ -76,19 +76,19 @@ A supplier often has its own number for one of your items: the supplier part num
 
 | Choice | Prints |
 |---|---|
-| Our part number, then the supplier's | `P000123.B (SW-1045-50R)` |
-| The supplier's part number, then ours | `SW-1045-50R (P000123.B)` |
-| The supplier's part number only | `SW-1045-50R` |
-| Our part number only | `P000123.B` |
+| Carbon part number, then supplier part number | `P000123.B (SW-1045-50R)` |
+| Supplier part number, then Carbon part number | `SW-1045-50R (P000123.B)` |
+| Supplier part number only | `SW-1045-50R` |
+| Carbon part number only | `P000123.B` |
 
-- Our part number includes its revision. The supplier part number has no revision of its own; type it into the number when the supplier needs it.
-- A line with no supplier part number prints our part number, whatever the choice.
-- A new line takes the supplier's choice from the supplier's **Details**, else the company default in **Settings > Purchasing**, which starts as "The supplier's part number, then ours".
+- The Carbon part number includes its revision. The supplier part number has no revision of its own; type it into the number when the supplier needs it.
+- A line with no supplier part number prints the Carbon part number, whatever the choice.
+- A new line takes the supplier's choice from the supplier's **Details**, else the company default in **Settings > Purchasing**, which starts as "Supplier part number, then Carbon part number".
 - Change one line in its **Part Numbers** field, or every item line at once in **Edit document**, until the order is sent. Neither can change it while the order waits for approval.
 - A line keeps its own copy of the supplier part number, so a later edit of the supplier part does not change an order that exists. A line with no number of its own shows the supplier part's current number.
 - Changing the order's supplier gives every line the new supplier's part number, replacing a number typed on the line, and gives every line that has a choice the new supplier's choice.
-- A purchase order line saved before this choice existed prints as it did before: our part number as the line title, and the supplier part number in its own "Supplier Part ID" row.
-- A document template can place each number itself with `{line.itemId}` (our part number) and `{line.supplierPartNumber}` (the supplier's). Both hold their number whatever the line's choice.
+- A purchase order line saved before this choice existed prints as it did before: the Carbon part number as the line title, and the supplier part number in its own "Supplier Part ID" row.
+- A document template can place each number itself with `{line.itemId}` (the Carbon part number) and `{line.supplierPartNumber}` (the supplier part number). Both hold their number whatever the line's choice.
 
 ## Related
 
