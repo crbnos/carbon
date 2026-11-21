@@ -22429,6 +22429,9 @@ msgstr "Сроки поставки деталей обновляются из �
 msgid "Part Number"
 msgstr "Номер детали"
 
+msgid "Part number display"
+msgstr "Отображение номера детали"
+
 msgid "Part Numbers"
 msgstr "Номера деталей"
 

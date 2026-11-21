@@ -22429,6 +22429,9 @@ msgstr "Los plazos de entrega de piezas se actualizan a partir de recepciones de
 msgid "Part Number"
 msgstr "Número de pieza"
 
+msgid "Part number display"
+msgstr "Visualización del número de pieza"
+
 msgid "Part Numbers"
 msgstr "Números de pieza"
 

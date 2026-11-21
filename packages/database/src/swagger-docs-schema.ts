@@ -51646,6 +51646,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51864,6 +51867,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -52034,6 +52040,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -60350,6 +60359,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.suppliers.stage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.partNumberDisplay"
           },
           {
             $ref: "#/parameters/select"
@@ -102280,6 +102292,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.planningGroupId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartIdFromSupplier"
           },
           {
@@ -108208,6 +108223,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.supplierStageId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -108342,6 +108360,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.supplierStageId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -108428,6 +108449,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.supplierStageId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.supplier"
@@ -119824,6 +119848,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.supplierPartNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -120183,6 +120210,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.supplierPartNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -120494,6 +120524,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.supplierPartNumberDisplay"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -165394,6 +165427,11 @@ export default {
         planningGroupId: {
           format: "text",
           type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -169716,6 +169754,11 @@ export default {
         },
         stage: {
           format: "text",
+          type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
           type: "string"
         }
       },
@@ -189384,6 +189427,11 @@ export default {
           format: "text",
           type: "string"
         },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
         supplierPartIdFromSupplier: {
           format: "text",
           type: "string"
@@ -192312,6 +192360,11 @@ export default {
         },
         supplierStageId: {
           format: "text",
+          type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
           type: "string"
         }
       },
@@ -197923,7 +197976,8 @@ export default {
         "autoPickingListOnRelease",
         "deliveryDateControl",
         "receiptBatchNumbersFromPurchaseOrder",
-        "sequenceWeekNumbering"
+        "sequenceWeekNumbering",
+        "supplierPartNumberDisplay"
       ],
       properties: {
         id: {
@@ -198455,6 +198509,12 @@ export default {
         sequenceWeekNumbering: {
           default: "iso",
           format: "text",
+          type: "string"
+        },
+        supplierPartNumberDisplay: {
+          default: "Theirs First",
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
           type: "string"
         }
       },
@@ -226457,6 +226517,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLine.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.stockTransferLines": {
       name: "stockTransferLines",
       description: "stockTransferLines",
@@ -231123,6 +231189,12 @@ export default {
     },
     "rowFilter.suppliers.stage": {
       name: "stage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.suppliers.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
@@ -253158,6 +253230,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLines.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.purchaseOrderLines.supplierPartIdFromSupplier": {
       name: "supplierPartIdFromSupplier",
       required: false,
@@ -256413,6 +256491,12 @@ export default {
     },
     "rowFilter.supplier.supplierStageId": {
       name: "supplierStageId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplier.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
@@ -263171,6 +263255,12 @@ export default {
     },
     "rowFilter.companySettings.sequenceWeekNumbering": {
       name: "sequenceWeekNumbering",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.supplierPartNumberDisplay": {
+      name: "supplierPartNumberDisplay",
       required: false,
       in: "query",
       type: "string"

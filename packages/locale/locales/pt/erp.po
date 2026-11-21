@@ -22429,6 +22429,9 @@ msgstr "Lead times de peças são atualizados a partir de recebimentos de compra
 msgid "Part Number"
 msgstr "Número da Peça"
 
+msgid "Part number display"
+msgstr "Exibição do número de peça"
+
 msgid "Part Numbers"
 msgstr "Números de peça"
 

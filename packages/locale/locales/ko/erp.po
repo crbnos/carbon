@@ -22429,6 +22429,9 @@ msgstr "부품 리드타임은 전기된 구매 입고에서 업데이트됩니�
 msgid "Part Number"
 msgstr "부품 번호"
 
+msgid "Part number display"
+msgstr "품번 표시"
+
 msgid "Part Numbers"
 msgstr "품번"
 

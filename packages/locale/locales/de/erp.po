@@ -22429,6 +22429,9 @@ msgstr "Beschaffungszeiten von Teilen werden aus gebuchten Wareneingängen aktua
 msgid "Part Number"
 msgstr "Teilenummer"
 
+msgid "Part number display"
+msgstr "Teilenummernanzeige"
+
 msgid "Part Numbers"
 msgstr "Teilenummern"
 

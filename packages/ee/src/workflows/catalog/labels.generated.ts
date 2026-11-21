@@ -557,6 +557,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.supplier.intercompanyCompanyId": msg`Intercompany company`,
   "entity.supplier.logo": msg`Logo`,
   "entity.supplier.name": msg`Name`,
+  "entity.supplier.partNumberDisplay": msg`Part number display`,
   "entity.supplier.phone": msg`Phone`,
   "entity.supplier.purchasingContactId": msg`Purchasing contact`,
   "entity.supplier.readableId": msg`Readable`,

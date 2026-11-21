@@ -22429,6 +22429,9 @@ msgstr "Czasy realizacji części są aktualizowane na podstawie zaksięgowanych
 msgid "Part Number"
 msgstr "Numer części"
 
+msgid "Part number display"
+msgstr "Wyświetlanie numeru części"
+
 msgid "Part Numbers"
 msgstr "Numery części"
 

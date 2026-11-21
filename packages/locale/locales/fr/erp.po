@@ -22429,6 +22429,9 @@ msgstr "Les délais d'approvisionnement des pièces sont mis à jour à partir d
 msgid "Part Number"
 msgstr "Numéro de pièce"
 
+msgid "Part number display"
+msgstr "Affichage du numéro de pièce"
+
 msgid "Part Numbers"
 msgstr "Numéros de pièce"
 

@@ -22429,6 +22429,9 @@ msgstr "Parça tedarik süreleri muhasebeleştirilmiş mal kabul belgelerinden g
 msgid "Part Number"
 msgstr "Parça Numarası"
 
+msgid "Part number display"
+msgstr "Parça numarası gösterimi"
+
 msgid "Part Numbers"
 msgstr "Parça numaraları"
 

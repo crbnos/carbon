@@ -22429,6 +22429,9 @@ msgstr "I lead time dei componenti vengono aggiornati dalle entrate merci regist
 msgid "Part Number"
 msgstr "Numero componente"
 
+msgid "Part number display"
+msgstr "Visualizzazione del codice componente"
+
 msgid "Part Numbers"
 msgstr "Codici componente"
 

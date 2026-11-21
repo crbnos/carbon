@@ -22429,6 +22429,9 @@ msgstr "पार्ट लीड टाइम पोस्ट की गई क
 msgid "Part Number"
 msgstr "भाग संख्या"
 
+msgid "Part number display"
+msgstr "पार्ट नंबर प्रदर्शन"
+
 msgid "Part Numbers"
 msgstr "पार्ट नंबर"
 

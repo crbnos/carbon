@@ -22429,6 +22429,9 @@ msgstr "Part lead times update from posted purchase receipts."
 msgid "Part Number"
 msgstr "Part Number"
 
+msgid "Part number display"
+msgstr "Part number display"
+
 msgid "Part Numbers"
 msgstr "Part Numbers"
 

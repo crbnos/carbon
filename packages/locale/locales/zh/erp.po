@@ -22429,6 +22429,9 @@ msgstr "零件提前期从已过账的采购收货更新。"
 msgid "Part Number"
 msgstr "零件编号"
 
+msgid "Part number display"
+msgstr "零件号显示"
+
 msgid "Part Numbers"
 msgstr "零件号"
 
