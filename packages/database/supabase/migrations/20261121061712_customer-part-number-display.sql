@@ -83,8 +83,8 @@ CREATE TRIGGER "shipmentLine_stamp_part_number_display"
   FOR EACH ROW EXECUTE FUNCTION stamp_line_customer_part_number_display();
 
 -- A new order line copies the customer part number of its item for the
--- order's customer, unless the insert sets one. An item change copies it
--- again, unless the same write sets the number.
+-- order's customer, unless the insert sets one. An item change copies the new
+-- item's number and revision, unless the same write changes either of them.
 CREATE OR REPLACE FUNCTION copy_sales_order_line_customer_part()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -100,6 +100,7 @@ BEGIN
   IF TG_OP = 'UPDATE' AND (
     NEW."itemId" IS NOT DISTINCT FROM OLD."itemId"
     OR NEW."customerPartId" IS DISTINCT FROM OLD."customerPartId"
+    OR NEW."customerPartRevision" IS DISTINCT FROM OLD."customerPartRevision"
   ) THEN
     RETURN NEW;
   END IF;

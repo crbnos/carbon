@@ -209,7 +209,7 @@ The migration also adds:
 
 - The stamp trigger on `quoteLine` (through `quoteId`), `salesInvoiceLine` (through `invoiceId`) and `shipmentLine` (through `shipmentId`). A shipment with no customer gives a null, which prints as the legacy packing slip.
 - A customer change trigger: AFTER UPDATE OF `customerId` on `quote`, `salesOrder`, `salesInvoice` and `shipment`. It stamps the new customer's value onto every line that has a value, in one UPDATE per document.
-- `copy_sales_order_line_customer_part()`: BEFORE INSERT OR UPDATE OF `itemId` on `salesOrderLine`. On INSERT with no copy, and on every item change, it writes the pair from `customerPartToItem` for the order's customer. The pair is null when the cross-reference has no row.
+- `copy_sales_order_line_customer_part()`: BEFORE INSERT OR UPDATE OF `itemId` on `salesOrderLine`. On INSERT with no copy, and on an item change whose write leaves the number and revision as they were, it writes the pair from `customerPartToItem` for the order's customer. The pair is null when the cross-reference has no row.
 - On a `quote` or `salesOrder` customer change, the same trigger also writes the new customer's pair onto every line. A line whose values do not change is not written.
 - Every trigger UPDATE stamps `updatedBy` (`COALESCE` of the document's `updatedBy` and `createdBy`) and `updatedAt`, per the lesson on trigger audit columns.
 - `salesOrderLines`: DROP and CREATE, because `sl.*` grows. Copy the body from `20261117063412_delivery-date-check.sql`. `cp."customerPartId"` becomes `"customerPartIdFromCustomer"`, and `cp."customerPartRevision"` becomes `"customerPartRevisionFromCustomer"`.

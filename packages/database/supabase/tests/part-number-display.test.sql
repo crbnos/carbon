@@ -145,6 +145,11 @@ BEGIN
   UPDATE "salesOrderLine" SET "itemId" = v_item, "customerPartId" = 'C-100', "customerPartRevision" = '3' WHERE id = v_line;
   ASSERT (SELECT "customerPartId" FROM "salesOrderLine" WHERE id = v_line) = 'C-100',
     'An item change that sets the number keeps it';
+  UPDATE "salesOrderLine" SET "itemId" = v_other_item, "customerPartRevision" = 'CUSTOM' WHERE id = v_line;
+  SELECT "customerPartId", "customerPartRevision" INTO v_part, v_revision FROM "salesOrderLine" WHERE id = v_line;
+  ASSERT v_part = 'C-100' AND v_revision = 'CUSTOM',
+    format('An item change that sets only the revision keeps the pair, got %s %s', v_part, v_revision);
+  UPDATE "salesOrderLine" SET "itemId" = v_item, "customerPartRevision" = '3' WHERE id = v_line;
 
   -- The view reads the copy, and the live cross-reference under its own name.
   UPDATE "customerPartToItem" SET "customerPartId" = 'C-101' WHERE "customerId" = v_customer AND "itemId" = v_item;
