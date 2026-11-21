@@ -262,6 +262,8 @@ export type BaseCurrencyChangeBlocker =
 // A base currency change moves the customers, suppliers, supplier parts and
 // bank accounts set to the old base onto the new one, unless this is on.
 export const companyDetailsValidator = companyValidator.extend({
+  // Omitted when the form could not read the current base: the save keeps it.
+  baseCurrencyCode: zfd.text(z.string().optional()),
   keepRecordCurrencies: zfd.checkbox()
 });
 

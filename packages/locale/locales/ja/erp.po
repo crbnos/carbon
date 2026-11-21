@@ -30711,6 +30711,9 @@ msgstr "その製造指図を時間通りに保つために、工程が終了す
 msgid "The base currency can't change because:"
 msgstr ""
 
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "バッチが製造現場に移動します。その製造指図は既にリリース済です。"
 

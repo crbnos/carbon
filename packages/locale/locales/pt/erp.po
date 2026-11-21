@@ -30711,6 +30711,9 @@ msgstr "A data calculada retroativamente que uma operação deve terminar para m
 msgid "The base currency can't change because:"
 msgstr ""
 
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "O lote de produção vai para o chão de fábrica. Suas ordens de produção já foram liberadas."
 

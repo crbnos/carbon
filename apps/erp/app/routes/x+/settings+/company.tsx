@@ -101,11 +101,9 @@ export default function Company() {
     countryCode: company.countryCode ?? "",
     timezone: company.timezone ?? "UTC",
     // The preview reads the row on every load; the root's company can lag,
-    // and a stale base would save as a change back to it.
-    baseCurrencyCode:
-      baseCurrencyChange?.baseCurrencyCode ??
-      company.baseCurrencyCode ??
-      undefined,
+    // and a stale base would save as a change back to it. Without a preview
+    // the field stays empty and the save keeps the stored base.
+    baseCurrencyCode: baseCurrencyChange?.baseCurrencyCode,
     phone: company.phone ?? undefined,
     email: company.email ?? undefined,
     website: company.website ?? undefined

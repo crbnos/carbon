@@ -1757,7 +1757,7 @@
     {"name":"settings_setIntegrationSyncEnabled","classification":"WRITE","schema":"fa07001f8501","response":"4111dc6445bb","permission":"settings:update","paginates":false},
     {"name":"settings_transitionSyncOperations","classification":"WRITE","schema":"c5a1f2594d65","response":"401e1aae225f","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountingSettings","classification":"WRITE","schema":"f8736424794b","response":"70bcf2b87ee3","permission":"settings:update","paginates":false},
-    {"name":"settings_updateCompanyDetails","classification":"WRITE","schema":"51ffd11abd8c","response":"3797626bd17e","permission":"settings:update","paginates":false},
+    {"name":"settings_updateCompanyDetails","classification":"WRITE","schema":"bfdd038a1410","response":"3797626bd17e","permission":"settings:update","paginates":false},
     {"name":"settings_updateDimensionSync","classification":"WRITE","schema":"42c99362fccd","response":"f95fa90d0071","permission":"settings:update","paginates":false},
     {"name":"settings_updateInventorySettings","classification":"WRITE","schema":"c37d5ee19a22","response":"d13095155fa8","permission":"settings:update","paginates":false},
     {"name":"settings_updateInvoicingSettings","classification":"WRITE","schema":"48fd9aba9ea8","response":"a32ee5ad2099","permission":"settings:update","paginates":false},

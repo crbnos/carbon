@@ -30711,6 +30711,9 @@ msgstr "Data obliczona wstecz, do której operacja musi być ukończona, aby zle
 msgid "The base currency can't change because:"
 msgstr ""
 
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Partia produkcyjna przechodzi na halę produkcyjną. Jej zlecenia produkcyjne są już zwolnione."
 

@@ -62,6 +62,13 @@ export function BaseCurrencyField({ change }: BaseCurrencyFieldProps) {
         label={t`Base Currency`}
         isReadOnly={!change || blockers.length > 0}
       />
+      {!change && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            The base currency couldn't be loaded. Saving keeps it as it is.
+          </Trans>
+        </p>
+      )}
       {blockers.length > 0 && (
         <div className="text-xs text-muted-foreground">
           <p>

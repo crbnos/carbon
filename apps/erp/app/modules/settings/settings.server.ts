@@ -1256,6 +1256,7 @@ export const getBaseCurrencyChange = defineServiceFn({
  * customers, suppliers, supplier parts and bank accounts set to the old base.
  * The company's cached time zone is dropped, so a new one applies at once.
  *
+ * @param baseCurrencyCode - The new base currency; omit it to keep the current one.
  * @param keepRecordCurrencies - On a base currency change, leave customers, suppliers, supplier parts and bank accounts in the old base.
  * @mcp
  */
@@ -1275,6 +1276,7 @@ export const updateCompanyDetails = defineServiceFn({
     }
 
     const baseCurrencyChanged =
+      !!company.baseCurrencyCode &&
       existing.data.baseCurrencyCode !== company.baseCurrencyCode;
 
     if (baseCurrencyChanged) {

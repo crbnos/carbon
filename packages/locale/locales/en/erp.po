@@ -30711,6 +30711,9 @@ msgstr "The backward-computed date an operation must finish by to keep its job o
 msgid "The base currency can't change because:"
 msgstr "The base currency can't change because:"
 
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr "The base currency couldn't be loaded. Saving keeps it as it is."
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "The batch goes to the shop floor. Its jobs are already released."
 

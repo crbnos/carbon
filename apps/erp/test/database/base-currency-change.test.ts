@@ -122,6 +122,17 @@ async function trialCompany(db: Db) {
     .insertInto("exchangeRateOverride")
     .values({ companyId, currencyCode: "EUR", rate: 0.9, createdBy: USER })
     .execute();
+  await db
+    .insertInto("currency")
+    .values({
+      code: "EUR",
+      decimalPlaces: 2,
+      active: false,
+      historicalExchangeRate: 1.1,
+      companyGroupId: group.id,
+      createdBy: USER
+    })
+    .execute();
 
   const read = async () => {
     const codeOf = (
@@ -178,7 +189,13 @@ async function trialCompany(db: Db) {
         .where("companyGroupId", "=", group.id)
         .where("active", "=", true)
         .execute()
-        .then((rows) => rows.map((row) => row.code))
+        .then((rows) => rows.map((row) => row.code)),
+      historicalRates: await db
+        .selectFrom("currency")
+        .select(["code", "historicalExchangeRate"])
+        .where("companyGroupId", "=", group.id)
+        .where("historicalExchangeRate", "is not", null)
+        .execute()
     };
   };
 
@@ -205,7 +222,14 @@ async function trialCompany(db: Db) {
     await db.deleteFrom("companyGroup").where("id", "=", group.id).execute();
   };
 
-  return { companyId, itemId: item.id, customerId: customer.id, read, cleanup };
+  return {
+    companyId,
+    eliminationId: elimination.id,
+    itemId: item.id,
+    customerId: customer.id,
+    read,
+    cleanup
+  };
 }
 
 const change = (
@@ -221,7 +245,7 @@ const change = (
   });
 
 databaseTest(
-  "a change moves the old base's records, prices, rental rates and elimination entity, and keeps every amount",
+  "a change moves the old base's records, prices, rental rates and elimination entity, clears the group's historical rates, and keeps every amount",
   async () => {
     const db = await connectLocalTestDatabase();
     const f = await trialCompany(db);
@@ -238,7 +262,8 @@ databaseTest(
         rentalRates: [{ currencyCode: "CAD", dayRate: 40 }],
         customerRentalRates: [{ currencyCode: "CAD", dayRate: 35 }],
         overrides: [],
-        activeCurrencies: ["CAD"]
+        activeCurrencies: ["CAD"],
+        historicalRates: []
       });
     } finally {
       await f.cleanup();
@@ -325,16 +350,21 @@ databaseTest(
 );
 
 databaseTest(
-  "a save that keeps the base deletes no exchange-rate override",
+  "a save that keeps the base deletes no exchange-rate override or historical rate",
   async () => {
     const db = await connectLocalTestDatabase();
     const f = await trialCompany(db);
     try {
       await change(db, f.companyId, "USD");
       const after = await f.read();
-      expect({ company: after.company, overrides: after.overrides }).toEqual({
+      expect({
+        company: after.company,
+        overrides: after.overrides,
+        historicalRates: after.historicalRates
+      }).toEqual({
         company: "USD",
-        overrides: [{ currencyCode: "EUR" }]
+        overrides: [{ currencyCode: "EUR" }],
+        historicalRates: [{ code: "EUR", historicalExchangeRate: 1.1 }]
       });
     } finally {
       await f.cleanup();
@@ -377,6 +407,23 @@ databaseTest(
           .execute()
       ).rejects.toThrow(/changes only through the company settings/);
       expect((await f.read()).company).toBe("USD");
+    } finally {
+      await f.cleanup();
+      await db.destroy();
+    }
+  }
+);
+
+databaseTest(
+  "a change of a company with a parent leaves the group's historical rates alone",
+  async () => {
+    const db = await connectLocalTestDatabase();
+    const f = await trialCompany(db);
+    try {
+      await change(db, f.eliminationId, "GBP");
+      expect((await f.read()).historicalRates).toEqual([
+        { code: "EUR", historicalExchangeRate: 1.1 }
+      ]);
     } finally {
       await f.cleanup();
       await db.destroy();

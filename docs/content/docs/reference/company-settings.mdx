@@ -84,17 +84,18 @@ The base currency can change until the company records its first transaction. Se
 - "Stock has been received, moved or used": an entry in the item, cost, supplier or project ledger.
 - "Fixed assets exist": any fixed asset.
 - "Another company in the group has transactions": the company is a parent, and another company of its group has any of the above. A parent's base currency is the group's consolidation currency. A subsidiary is checked on its own data only.
-- "An accounting or spend integration is connected": Xero, Rillet or Ramp is connected, or has synced records for this company. See [accounting integrations](/docs/integrations/accounting).
+- "An accounting or spend integration is connected": Xero, Rillet or Ramp is connected, or still holds records it synced for this company, even after it is disconnected. See [accounting integrations](/docs/integrations/accounting).
 
 A change converts no amounts. Every stored number keeps its value and is read in the new currency. Before you save, the form lists the item costs, item prices, work center rates and approval rules this affects. The save also does the following, all together or not at all:
 
 - Deletes the exchange rates you entered (**Your rate**), because they were stated against the old base currency.
+- For the company at the top of its group, clears the group's historical exchange rates, for the same reason. Enter them again against the new currency.
 - Makes the new currency active.
 - Moves item sale prices, and item, customer and customer type rental rates, from the old currency to the new one. Where a rental rate already exists in the new currency, the old one stays in the old currency.
 - Moves customers, suppliers, supplier parts and bank accounts set to the old currency to the new one, unless you turn on the form's switch to keep them (for example **Keep 3 records in USD**).
 - Moves a parent's elimination entity that used the old currency to the new one.
 
-Only **Settings → Company**, the Companies edit page and the `settings_updateCompanyDetails` tool change the base currency, because only they make these changes with it. A direct write to the company record through the data API is refused, even when nothing blocks a change.
+Only **Settings → Company**, the Companies edit page and the `updateCompanyDetails` operation change the base currency, because only they make these changes with it. The operation is the `settings_updateCompanyDetails` MCP tool and `POST /api/v1/settings/updateCompanyDetails`. A direct write to the company table through the data API is refused, even when nothing blocks a change. If Settings → Company can't load the base currency, the field stays empty and a save keeps the stored one.
 
 ## Theme and tags
 

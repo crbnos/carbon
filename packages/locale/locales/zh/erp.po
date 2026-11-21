@@ -30711,6 +30711,9 @@ msgstr "为保持其工单按时完成，工序必须完成的反向计算日期
 msgid "The base currency can't change because:"
 msgstr ""
 
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "生产批次送往车间。其工单已下达。"
 

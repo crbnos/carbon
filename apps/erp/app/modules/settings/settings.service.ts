@@ -1399,6 +1399,8 @@ export async function getBaseCurrencyChangePreview(
  * the same transaction:
  * - exchange-rate overrides are deleted: they are denominated in the old
  *   base and would rate every new document wrong;
+ * - for the company at the top of its group, the group's historical rates
+ *   are cleared: they are stated against its old base;
  * - the new base is made active in the group's currencies, which posting
  *   reads for its decimal places;
  * - the item price ladders and the item, customer and customer-type rental
@@ -1435,7 +1437,7 @@ export async function updateCompanyWithBaseCurrencyChange(
     );
     const current = await trx
       .selectFrom("company")
-      .select(["baseCurrencyCode", "companyGroupId"])
+      .select(["baseCurrencyCode", "companyGroupId", "parentCompanyId"])
       .where("id", "=", companyId)
       .forUpdate()
       .executeTakeFirstOrThrow();
@@ -1476,6 +1478,16 @@ export async function updateCompanyWithBaseCurrencyChange(
             .doUpdateSet({ active: true, updatedBy: company.updatedBy })
         )
         .execute();
+      // A historical rate is stated against the group's presentation
+      // currency, the base of the company at the top of the group.
+      if (!current.parentCompanyId) {
+        await trx
+          .updateTable("currency")
+          .set({ historicalExchangeRate: null, updatedBy: company.updatedBy })
+          .where("companyGroupId", "=", current.companyGroupId)
+          .where("historicalExchangeRate", "is not", null)
+          .execute();
+      }
     }
 
     await trx

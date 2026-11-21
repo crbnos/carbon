@@ -30711,6 +30711,9 @@ msgstr "공정이 작업 지시를 제때 완료하기 위해 마감일까지 �
 msgid "The base currency can't change because:"
 msgstr ""
 
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "배치가 현장으로 이동합니다. 포함된 작업 지시들은 이미 릴리스되었습니다."
 
