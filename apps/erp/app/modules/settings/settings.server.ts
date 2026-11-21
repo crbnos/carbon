@@ -1293,10 +1293,13 @@ export const updateCompanyDetails = defineServiceFn({
         return ctx.error("internal", "Failed to update company", err);
       }
     } else {
+      // The base stays out of a plain save: written back, it would undo a
+      // change committed after the read above and leave its moves behind.
+      const { baseCurrencyCode: _baseCurrencyCode, ...details } = company;
       const update = await service.updateCompany(
         ctx.asCaller.supabase,
         ctx.company.id,
-        { ...company, updatedBy: ctx.auditUserId }
+        { ...details, updatedBy: ctx.auditUserId }
       );
       if (update.error) {
         return ctx.error("internal", "Failed to update company", update.error);
@@ -1480,8 +1483,10 @@ export const updateSubsidiaryDetails = defineServiceFn({
         return ctx.error("internal", "Failed to update subsidiary", error);
       }
     } else {
+      // As in `updateCompanyDetails`, the base stays out of a plain save.
+      const { baseCurrencyCode: _baseCurrencyCode, ...details } = subsidiary;
       const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
-        ...subsidiary,
+        ...details,
         updatedBy: ctx.auditUserId
       });
       if (result.error) {

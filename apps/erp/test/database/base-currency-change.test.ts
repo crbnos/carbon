@@ -6,7 +6,10 @@
 // written in the old base follow it to the new one in the same transaction.
 
 import { expect } from "vitest";
-import { updateCompanyWithBaseCurrencyChange } from "../../app/modules/settings/settings.service";
+import {
+  getBaseCurrencyChangePreview,
+  updateCompanyWithBaseCurrencyChange
+} from "../../app/modules/settings/settings.service";
 import {
   connectLocalTestDatabase,
   databaseTest
@@ -77,6 +80,16 @@ async function trialCompany(db: Db) {
       createdBy: USER
     })
     .execute();
+  await db
+    .insertInto("supplierBankAccount")
+    .values({
+      supplierId: supplier.id,
+      companyId,
+      name: "Operating",
+      currencyCode: "USD",
+      createdBy: USER
+    })
+    .execute();
   // The item's insert writes its sale price row in the base.
   await db
     .updateTable("itemUnitSalePrice")
@@ -111,7 +124,9 @@ async function trialCompany(db: Db) {
     .execute();
 
   const read = async () => {
-    const codeOf = (table: "customer" | "supplier" | "supplierPart") =>
+    const codeOf = (
+      table: "customer" | "supplier" | "supplierPart" | "supplierBankAccount"
+    ) =>
       db
         .selectFrom(table)
         .select("currencyCode")
@@ -134,6 +149,7 @@ async function trialCompany(db: Db) {
       customer: await codeOf("customer"),
       supplier: await codeOf("supplier"),
       supplierPart: await codeOf("supplierPart"),
+      bankAccount: await codeOf("supplierBankAccount"),
       salePrices: await db
         .selectFrom("itemUnitSalePrice")
         .select(["currencyCode", "unitSalePrice"])
@@ -172,6 +188,7 @@ async function trialCompany(db: Db) {
       "itemRentalRate",
       "itemUnitSalePrice",
       "supplierPart",
+      "supplierBankAccount",
       "exchangeRateOverride",
       "customer",
       "supplier",
@@ -216,6 +233,7 @@ databaseTest(
         customer: "CAD",
         supplier: "CAD",
         supplierPart: "CAD",
+        bankAccount: "CAD",
         salePrices: [{ currencyCode: "CAD", unitSalePrice: 12 }],
         rentalRates: [{ currencyCode: "CAD", dayRate: 40 }],
         customerRentalRates: [{ currencyCode: "CAD", dayRate: 35 }],
@@ -230,7 +248,7 @@ databaseTest(
 );
 
 databaseTest(
-  "keepRecordCurrencies leaves customers, suppliers and supplier parts in the old base",
+  "keepRecordCurrencies leaves customers, suppliers, supplier parts and bank accounts in the old base",
   async () => {
     const db = await connectLocalTestDatabase();
     const f = await trialCompany(db);
@@ -241,11 +259,13 @@ databaseTest(
         customer: after.customer,
         supplier: after.supplier,
         supplierPart: after.supplierPart,
+        bankAccount: after.bankAccount,
         salePrices: after.salePrices
       }).toEqual({
         customer: "USD",
         supplier: "USD",
         supplierPart: "USD",
+        bankAccount: "USD",
         salePrices: [{ currencyCode: "CAD", unitSalePrice: 12 }]
       });
     } finally {
@@ -316,6 +336,26 @@ databaseTest(
         company: "USD",
         overrides: [{ currencyCode: "EUR" }]
       });
+    } finally {
+      await f.cleanup();
+      await db.destroy();
+    }
+  }
+);
+
+databaseTest(
+  "the preview counts every record the keep switch keeps, bank accounts included",
+  async () => {
+    const db = await connectLocalTestDatabase();
+    const f = await trialCompany(db);
+    try {
+      const preview = await getBaseCurrencyChangePreview(db, f.companyId);
+      expect({
+        customers: preview.customers,
+        suppliers: preview.suppliers,
+        supplierParts: preview.supplierParts,
+        bankAccounts: preview.bankAccounts
+      }).toEqual({ customers: 1, suppliers: 1, supplierParts: 1, bankAccounts: 1 });
     } finally {
       await f.cleanup();
       await db.destroy();

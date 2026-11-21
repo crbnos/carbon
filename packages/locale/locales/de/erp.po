@@ -1337,7 +1337,7 @@ msgstr "{readyJobs, plural, =0 {Kein offener Fertigungsauftrag hat alle Teile} o
 msgid "{received} of {ordered}"
 msgstr "{received} von {ordered}"
 
-msgid "{records, plural, one {Keep # customer, supplier or supplier part in {fromCode}} other {Keep # customers, suppliers and supplier parts in {fromCode}}}"
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
 msgstr ""
 
 msgid "{ref} not found"
@@ -9776,6 +9776,9 @@ msgstr "Kunden"
 
 msgid "Customers"
 msgstr "Kunden"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
 
 msgid "Customizations, training, and integrations"
 msgstr "Anpassungen, Schulung und Integrationen"
@@ -22114,9 +22117,6 @@ msgstr "Sonstiger Typ"
 
 msgid "Otherwise"
 msgstr "Andernfalls"
-
-msgid "Otherwise they move to {toCode}, and so do bank accounts in {fromCode}."
-msgstr ""
 
 msgid "Out"
 msgstr "Aus"

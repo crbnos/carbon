@@ -1337,7 +1337,7 @@ msgstr "{readyJobs, plural, =0 {कोई भी खुला जॉब सभ�
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
-msgid "{records, plural, one {Keep # customer, supplier or supplier part in {fromCode}} other {Keep # customers, suppliers and supplier parts in {fromCode}}}"
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
 msgstr ""
 
 msgid "{ref} not found"
@@ -9776,6 +9776,9 @@ msgstr "ग्राहकों"
 
 msgid "Customers"
 msgstr "ग्राहक"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
 
 msgid "Customizations, training, and integrations"
 msgstr "कस्टमाइज़ेशन, प्रशिक्षण और एकीकरण"
@@ -22114,9 +22117,6 @@ msgstr "अन्य प्रकार"
 
 msgid "Otherwise"
 msgstr "अन्यथा"
-
-msgid "Otherwise they move to {toCode}, and so do bank accounts in {fromCode}."
-msgstr ""
 
 msgid "Out"
 msgstr "बाहर"

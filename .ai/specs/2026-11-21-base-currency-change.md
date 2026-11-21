@@ -47,7 +47,9 @@ Kept as entered (shown in the form before saving): item costs, item prices, work
 
 - `getBaseCurrencyChange` (settings, `view`, published): blockers and the counts the form shows. Another company of the group needs multi-company management, as its update does.
 - `updateCompanyDetails` and `updateSubsidiaryDetails` refuse with the reasons (`rule`) instead of a failed write, and take `keepRecordCurrencies`.
-- Settings → Company and Settings → Companies → edit: `BaseCurrencyField` is editable when nothing blocks, lists the reasons otherwise, and states what a change keeps and moves.
+- A save that keeps the base leaves `baseCurrencyCode` out of its write. So it cannot undo a change that commits after its read.
+- Settings → Company takes the form's base from `getBaseCurrencyChange`, which reads the row on every load. The root loader's copy can lag.
+- Settings → Company and Settings → Companies → edit: `BaseCurrencyField` is editable when nothing blocks, lists the reasons otherwise, and states what a change keeps and moves. The keep switch counts customers, suppliers, supplier parts and bank accounts set to the old base, and shows when the count is above 0.
 - The Companies edit page has no link from the Companies list yet; it opens by URL (`/x/settings/companies/:id`). `updateSubsidiaryDetails` refuses a company as its own parent.
 
 ## Out of scope
@@ -59,5 +61,5 @@ Kept as entered (shown in the form before saving): item costs, item prices, work
 ## Tests
 
 - `packages/database/supabase/tests/base-currency-change.test.sql`: no data changes (before and after the enable), a zero journal line does not block, a journal line, a quote, a stock movement, a fixed asset, a provider mapping and a connected provider block, an item or a customer alone does not, a parent blocks on its group's data, a subsidiary with no data changes.
-- `apps/erp/test/database/base-currency-change.test.ts`: a change moves records, prices, rental rates and the elimination entity and keeps every amount; `keepRecordCurrencies` keeps customers, suppliers and supplier parts; rates already in the new base keep both; a save that keeps the base deletes no override.
+- `apps/erp/test/database/base-currency-change.test.ts`: a change moves records, prices, rental rates and the elimination entity and keeps every amount; `keepRecordCurrencies` keeps customers, suppliers, supplier parts and bank accounts; rates already in the new base keep both; a save that keeps the base deletes no override; the preview counts bank accounts.
 - `accounting-cutover-guards.test.sql`: the dataset-apply bypass leaves a base currency its data locks locked.

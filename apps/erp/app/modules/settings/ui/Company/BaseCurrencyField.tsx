@@ -44,13 +44,16 @@ export function BaseCurrencyField({ change }: BaseCurrencyFieldProps) {
       pending.approvalRules
     : 0;
   const records = pending
-    ? pending.customers + pending.suppliers + pending.supplierParts
+    ? pending.customers +
+      pending.suppliers +
+      pending.supplierParts +
+      pending.bankAccounts
     : 0;
   const keepLabel = t`${plural(records, {
-    one: `Keep # customer, supplier or supplier part in ${fromCode}`,
-    other: `Keep # customers, suppliers and supplier parts in ${fromCode}`
+    one: `Keep # record in ${fromCode}`,
+    other: `Keep # records in ${fromCode}`
   })}`;
-  const keepDescription = t`Otherwise they move to ${toCode}, and so do bank accounts in ${fromCode}.`;
+  const keepDescription = t`Customers, suppliers, supplier parts and bank accounts set to ${fromCode}. Otherwise they move to ${toCode}.`;
 
   return (
     <div className="flex w-full flex-col gap-2">

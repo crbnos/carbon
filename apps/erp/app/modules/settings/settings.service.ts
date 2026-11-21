@@ -1358,6 +1358,7 @@ export async function getBaseCurrencyChangePreview(
       customers: number;
       suppliers: number;
       supplierParts: number;
+      bankAccounts: number;
     }>`
       SELECT
         c."baseCurrencyCode",
@@ -1376,7 +1377,11 @@ export async function getBaseCurrencyChangePreview(
         (SELECT count(*)::int FROM "supplier"
           WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "suppliers",
         (SELECT count(*)::int FROM "supplierPart"
-          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "supplierParts"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "supplierParts",
+        (SELECT count(*)::int FROM "customerBankAccount"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode")
+          + (SELECT count(*)::int FROM "supplierBankAccount"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "bankAccounts"
       FROM "company" c
       WHERE c."id" = ${companyId}
     `.execute(db)

@@ -1337,7 +1337,7 @@ msgstr "{readyJobs, plural, =0 {부품이 모두 갖춰진 미결 작업 지시�
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
-msgid "{records, plural, one {Keep # customer, supplier or supplier part in {fromCode}} other {Keep # customers, suppliers and supplier parts in {fromCode}}}"
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
 msgstr ""
 
 msgid "{ref} not found"
@@ -9776,6 +9776,9 @@ msgstr "고객"
 
 msgid "Customers"
 msgstr "고객"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
 
 msgid "Customizations, training, and integrations"
 msgstr "사용자정의, 교육 및 연동"
@@ -22114,9 +22117,6 @@ msgstr "기타 유형"
 
 msgid "Otherwise"
 msgstr "그 외에"
-
-msgid "Otherwise they move to {toCode}, and so do bank accounts in {fromCode}."
-msgstr ""
 
 msgid "Out"
 msgstr "출고"

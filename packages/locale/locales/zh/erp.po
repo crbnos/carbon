@@ -1337,7 +1337,7 @@ msgstr "{readyJobs, plural, =0 {没有未结工单具备全部零件} one {正�
 msgid "{received} of {ordered}"
 msgstr "已收 {received} / 已订购 {ordered}"
 
-msgid "{records, plural, one {Keep # customer, supplier or supplier part in {fromCode}} other {Keep # customers, suppliers and supplier parts in {fromCode}}}"
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
 msgstr ""
 
 msgid "{ref} not found"
@@ -9776,6 +9776,9 @@ msgstr "客户"
 
 msgid "Customers"
 msgstr "客户"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
 
 msgid "Customizations, training, and integrations"
 msgstr "定制、培训和集成"
@@ -22114,9 +22117,6 @@ msgstr "其他类型"
 
 msgid "Otherwise"
 msgstr "否则"
-
-msgid "Otherwise they move to {toCode}, and so do bank accounts in {fromCode}."
-msgstr ""
 
 msgid "Out"
 msgstr "出"

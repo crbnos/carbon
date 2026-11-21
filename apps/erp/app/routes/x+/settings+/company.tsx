@@ -100,7 +100,12 @@ export default function Company() {
     postalCode: company.postalCode ?? "",
     countryCode: company.countryCode ?? "",
     timezone: company.timezone ?? "UTC",
-    baseCurrencyCode: company.baseCurrencyCode ?? undefined,
+    // The preview reads the row on every load; the root's company can lag,
+    // and a stale base would save as a change back to it.
+    baseCurrencyCode:
+      baseCurrencyChange?.baseCurrencyCode ??
+      company.baseCurrencyCode ??
+      undefined,
     phone: company.phone ?? undefined,
     email: company.email ?? undefined,
     website: company.website ?? undefined
