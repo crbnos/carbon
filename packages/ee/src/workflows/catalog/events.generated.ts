@@ -1216,7 +1216,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     internalNotes: { kind: "primitive", of: "string" },
     supplierInteractionId: { kind: "primitive", of: "string" },
     postedBy: { kind: "entity", of: "user" },
-    inspectionStatus: { kind: "primitive", of: "string" }
+    inspectionStatus: { kind: "primitive", of: "string" },
+    rejectedAtInspection: { kind: "primitive", of: "boolean" }
   },
   salesInvoice: {
     id: { kind: "primitive", of: "string" },
