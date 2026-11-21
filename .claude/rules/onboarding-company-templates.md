@@ -413,14 +413,20 @@ Data may already have its own. Kept, a later date would put up to eleven months 
 seeded Posted journals before the cutover, where a void is refused and the readers above
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
-runs `check_accounting_config_locked()` (redefined in
-`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+runs `check_accounting_config_locked()` (newest definition in
+`20261120222959_base-currency-change-before-first-transaction.sql`), which refuses a change of
 `accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
 `accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
 role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
 `SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
-transaction and covers the cutover columns only — the base currency and fiscal year locks
-still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+transaction and covers the cutover columns only. The fiscal year lock (`fiscalYearSettings`
+branch, still keyed on `accountingActivatedAt`) holds. The base currency lock holds too, and
+it depends on the company's data, not on accounting activation: the `company` branch never
+reads `app.dataset_apply` or `accountingActivatedAt`, and refuses a `baseCurrencyCode`
+change for every role while `base_currency_change_blockers(companyId)` returns a row
+(`The base currency is locked: <reasons>`). So a dataset that seeds journals, documents or
+ledger rows locks the company's base currency. Pinned by
+`packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
 
 Demo-template companies that predate the cutover got theirs from section 7 of
 `20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the

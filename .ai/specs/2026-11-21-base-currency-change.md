@@ -32,10 +32,10 @@ The base currency can change while `base_currency_change_blockers(companyId)` re
 
 ## What a change writes (one transaction)
 
-1. The `company` row; the trigger checks the blockers.
+1. The `company` row; the trigger checks the blockers. The old base is read under the row lock; a save that finds it already moved writes nothing else.
 2. Deletes the company's `exchangeRateOverride` rows.
 3. Makes the new base active in the group's `currency` rows (inserts it with its ISO decimals when missing).
-4. Moves `itemUnitSalePrice` and the base `itemRentalRate` ladder to the new code; an item with a ladder in the new code keeps both.
+4. Moves `itemUnitSalePrice`, `itemRentalRate` and `customerItemRentalRate` to the new code; a rate that already exists in the new code (same item, and same customer or customer type) keeps both.
 5. Unless `keepRecordCurrencies`, moves `customer`, `supplier`, `supplierPart`, `customerBankAccount` and `supplierBankAccount` rows set to the old base.
 6. Moves a parent's elimination entity.
 
@@ -45,9 +45,10 @@ Kept as entered (shown in the form before saving): item costs, item prices, work
 
 ## Surfaces
 
-- `getBaseCurrencyChange` (settings, `view`, published): blockers and the counts the form shows.
+- `getBaseCurrencyChange` (settings, `view`, published): blockers and the counts the form shows. Another company of the group needs multi-company management, as its update does.
 - `updateCompanyDetails` and `updateSubsidiaryDetails` refuse with the reasons (`rule`) instead of a failed write, and take `keepRecordCurrencies`.
 - Settings → Company and Settings → Companies → edit: `BaseCurrencyField` is editable when nothing blocks, lists the reasons otherwise, and states what a change keeps and moves.
+- The Companies edit page has no link from the Companies list yet; it opens by URL (`/x/settings/companies/:id`). `updateSubsidiaryDetails` refuses a company as its own parent.
 
 ## Out of scope
 
@@ -57,5 +58,6 @@ Kept as entered (shown in the form before saving): item costs, item prices, work
 
 ## Tests
 
-- `packages/database/supabase/tests/base-currency-change.test.sql`: no data changes (before and after the enable), a zero journal line does not block, a journal line, a quote and a connected provider block, a parent blocks on its group's data, a subsidiary with no data changes.
+- `packages/database/supabase/tests/base-currency-change.test.sql`: no data changes (before and after the enable), a zero journal line does not block, a journal line, a quote, a stock movement, a fixed asset, a provider mapping and a connected provider block, an item or a customer alone does not, a parent blocks on its group's data, a subsidiary with no data changes.
+- `apps/erp/test/database/base-currency-change.test.ts`: a change moves records, prices, rental rates and the elimination entity and keeps every amount; `keepRecordCurrencies` keeps customers, suppliers and supplier parts; rates already in the new base keep both; a save that keeps the base deletes no override.
 - `accounting-cutover-guards.test.sql`: the dataset-apply bypass leaves a base currency its data locks locked.

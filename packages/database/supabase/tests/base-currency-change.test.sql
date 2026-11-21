@@ -18,6 +18,7 @@ DO $proof$
 DECLARE
   group_id text; company_id text; subsidiary_id text;
   cash_id text; journal_id text; customer_id text; quote_id text;
+  item_id text; asset_class_id text; asset_id text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy")
     VALUES ('Base currency change ' || id(), 'system') RETURNING id INTO group_id;
@@ -80,6 +81,41 @@ BEGIN
   ASSERT NOT EXISTS (SELECT 1 FROM base_currency_change_blockers(company_id)),
     'A customer alone does not block';
   RAISE NOTICE 'PASS a document blocks and a customer does not';
+
+  INSERT INTO item ("readableId", name, type, "itemTrackingType", "companyId", "createdBy")
+    VALUES ('BASE-CHANGE-' || id(), 'Base change part', 'Part', 'Inventory', company_id, 'system')
+    RETURNING id INTO item_id;
+  ASSERT NOT EXISTS (SELECT 1 FROM base_currency_change_blockers(company_id)),
+    'An item alone does not block';
+  INSERT INTO "itemLedger" ("entryType", "itemId", quantity, "companyId")
+    VALUES ('Positive Adjmt.', item_id, 1, company_id);
+  ASSERT ARRAY(SELECT reason FROM base_currency_change_blockers(company_id))
+    = ARRAY['has-stock-or-costs'], 'A stock movement blocks';
+  DELETE FROM "itemLedger" WHERE "itemId" = item_id;
+  RAISE NOTICE 'PASS an item does not block and a stock movement does';
+
+  INSERT INTO "fixedAssetClass" (name, "assetAccountId", "accumulatedDepreciationAccountId",
+      "depreciationExpenseAccountId", "writeOffAccountId", "writeDownAccountId",
+      "lossOnDisposalAccountId", "gainOnDisposalAccountId", "companyId", "createdBy")
+    VALUES ('Base change class', cash_id, cash_id, cash_id, cash_id, cash_id, cash_id, cash_id,
+      company_id, 'system')
+    RETURNING id INTO asset_class_id;
+  INSERT INTO "fixedAsset" ("fixedAssetId", "fixedAssetClassId", name, "companyId", "createdBy")
+    VALUES ('BASE-CHANGE-' || id(), asset_class_id, 'Base change asset', company_id, 'system')
+    RETURNING id INTO asset_id;
+  ASSERT ARRAY(SELECT reason FROM base_currency_change_blockers(company_id))
+    = ARRAY['has-fixed-assets'], 'A fixed asset blocks';
+  DELETE FROM "fixedAsset" WHERE id = asset_id;
+  DELETE FROM "fixedAssetClass" WHERE id = asset_class_id;
+  RAISE NOTICE 'PASS a fixed asset refuses the change';
+
+  INSERT INTO "externalIntegrationMapping" ("entityType", "entityId", integration, "companyId")
+    VALUES ('customer', customer_id, 'quickbooks', company_id);
+  ASSERT ARRAY(SELECT reason FROM base_currency_change_blockers(company_id))
+    = ARRAY['accounting-integration'], 'An accounting provider mapping blocks';
+  DELETE FROM "externalIntegrationMapping"
+    WHERE "companyId" = company_id AND integration = 'quickbooks';
+  RAISE NOTICE 'PASS a disconnected provider with mappings refuses the change';
 
   INSERT INTO "companyIntegration" (id, "companyId", active, metadata)
     VALUES ('xero', company_id, true, '{}'::jsonb);

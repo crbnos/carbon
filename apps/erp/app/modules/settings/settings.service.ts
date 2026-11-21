@@ -1396,8 +1396,9 @@ export async function getBaseCurrencyChangePreview(
  *   base and would rate every new document wrong;
  * - the new base is made active in the group's currencies, which posting
  *   reads for its decimal places;
- * - the item price ladders written in the old base move to the new one (the
- *   item page reads the ladder of the base);
+ * - the item price ladders and the item, customer and customer-type rental
+ *   rates written in the old base move to the new one (the item page reads
+ *   the ladder of the base, rentals the rates of the agreement's currency);
  * - unless `keepRecordCurrencies`, the customers, suppliers, supplier parts
  *   and bank accounts set to the old base move with it;
  * - a parent's elimination entity, which copied the parent's base, follows.
@@ -1436,41 +1437,47 @@ export async function updateCompanyWithBaseCurrencyChange(
       .set({ ...fields, updatedBy: company.updatedBy })
       .where("id", "=", companyId)
       .execute();
+    // `oldBase` is read under the row lock: a save that lost a race to the
+    // same change finds the base moved and leaves later overrides alone.
+    if (newBase === oldBase) return;
+
+    const restamp = { currencyCode: newBase, updatedBy: company.updatedBy };
     await trx
       .deleteFrom("exchangeRateOverride")
       .where("companyId", "=", companyId)
       .execute();
-    if (newBase === oldBase || !current.companyGroupId) return;
 
-    const decimalPlaces =
-      currencies.find((currency) => currency.code === newBase)?.decimalPlaces ??
-      2;
-    await trx
-      .insertInto("currency")
-      .values({
-        code: newBase,
-        decimalPlaces,
-        active: true,
-        companyGroupId: current.companyGroupId,
-        createdBy: company.updatedBy
-      })
-      .onConflict((oc) =>
-        oc
-          .columns(["code", "companyGroupId"])
-          .doUpdateSet({ active: true, updatedBy: company.updatedBy })
-      )
-      .execute();
+    if (current.companyGroupId) {
+      const decimalPlaces =
+        currencies.find((currency) => currency.code === newBase)
+          ?.decimalPlaces ?? 2;
+      await trx
+        .insertInto("currency")
+        .values({
+          code: newBase,
+          decimalPlaces,
+          active: true,
+          companyGroupId: current.companyGroupId,
+          createdBy: company.updatedBy
+        })
+        .onConflict((oc) =>
+          oc
+            .columns(["code", "companyGroupId"])
+            .doUpdateSet({ active: true, updatedBy: company.updatedBy })
+        )
+        .execute();
+    }
 
     await trx
       .updateTable("itemUnitSalePrice")
-      .set({ currencyCode: newBase })
+      .set(restamp)
       .where("companyId", "=", companyId)
       .where("currencyCode", "=", oldBase)
       .execute();
-    // An item that already has a ladder in the new base keeps both.
+    // A rate that already exists in the new base keeps both (one per currency).
     await trx
       .updateTable("itemRentalRate")
-      .set({ currencyCode: newBase })
+      .set(restamp)
       .where("companyId", "=", companyId)
       .where("currencyCode", "=", oldBase)
       .where(({ not, exists, selectFrom }) =>
@@ -1481,6 +1488,37 @@ export async function updateCompanyWithBaseCurrencyChange(
               .where("existing.companyId", "=", companyId)
               .where("existing.currencyCode", "=", newBase)
               .whereRef("existing.itemId", "=", "itemRentalRate.itemId")
+          )
+        )
+      )
+      .execute();
+    await trx
+      .updateTable("customerItemRentalRate")
+      .set(restamp)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", oldBase)
+      .where(({ not, exists, selectFrom }) =>
+        not(
+          exists(
+            selectFrom("customerItemRentalRate as existing")
+              .select("existing.id")
+              .where("existing.companyId", "=", companyId)
+              .where("existing.currencyCode", "=", newBase)
+              .whereRef("existing.itemId", "=", "customerItemRentalRate.itemId")
+              .where((sub) =>
+                sub.or([
+                  sub(
+                    "existing.customerId",
+                    "=",
+                    sub.ref("customerItemRentalRate.customerId")
+                  ),
+                  sub(
+                    "existing.customerTypeId",
+                    "=",
+                    sub.ref("customerItemRentalRate.customerTypeId")
+                  )
+                ])
+              )
           )
         )
       )
@@ -1496,13 +1534,14 @@ export async function updateCompanyWithBaseCurrencyChange(
       ] as const) {
         await trx
           .updateTable(table)
-          .set({ currencyCode: newBase })
+          .set(restamp)
           .where("companyId", "=", companyId)
           .where("currencyCode", "=", oldBase)
           .execute();
       }
     }
 
+    if (!current.companyGroupId) return;
     const eliminationEntity = await trx
       .selectFrom("company")
       .select("id")
@@ -3854,7 +3893,6 @@ export async function dcaaTimekeepingRefusal(
   return null;
 }
 
-/** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
 const BASE_CURRENCY_BLOCKER_MESSAGES: Record<
   BaseCurrencyChangeBlocker,
   string
@@ -3889,6 +3927,7 @@ export async function refuseBaseCurrencyChange(
   );
 }
 
+/** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
 export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
 ): Promise<CarbonError | null> {

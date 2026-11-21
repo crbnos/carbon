@@ -1225,6 +1225,8 @@ export const getBaseCurrencyChange = defineServiceFn({
   async run(ctx, { companyId }) {
     const id = companyId ?? ctx.company.id;
     if (id !== ctx.company.id) {
+      const refused = await service.refuseUnlessCanManageCompanies(ctx);
+      if (refused) return refused;
       const inGroup = await ctx.asSystem.supabase
         .from("company")
         .select("id")
@@ -1266,9 +1268,13 @@ export const updateCompanyDetails = defineServiceFn({
       .select("baseCurrencyCode")
       .eq("id", ctx.company.id)
       .single();
+    // Without the current base the change could not be told apart from a
+    // plain save, which would move the base without moving its records.
+    if (existing.error || !existing.data) {
+      return ctx.error("internal", "Failed to update company", existing.error);
+    }
 
     const baseCurrencyChanged =
-      !!existing.data?.baseCurrencyCode &&
       existing.data.baseCurrencyCode !== company.baseCurrencyCode;
 
     if (baseCurrencyChanged) {
@@ -1441,6 +1447,9 @@ export const updateSubsidiaryDetails = defineServiceFn({
       .maybeSingle();
     if (current.error || !current.data) {
       return ctx.error("notFound", "Company not found", current.error);
+    }
+    if (subsidiary.parentCompanyId === id) {
+      return ctx.error("rule", "A company can't be its own parent");
     }
     if (subsidiary.parentCompanyId) {
       const parent = await client

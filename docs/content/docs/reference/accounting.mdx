@@ -143,7 +143,7 @@ Labor and machine absorption of a job is not written again. Carbon does not send
 **Settings → Accounting** then shows a warning with the number of such documents and a **Write missing journals** button. The button writes the same journals the enable writes, with today's account defaults and item costs, and posts them. It needs permission to update settings and to update accounting. If one of the journals falls in a Closed or Locked period, Carbon writes none of them.
 
 <Callout type="warn" title="Setting up accounting cannot be undone">
-The cutover date never changes after you enable. The base currency and the fiscal year start month lock too.
+The cutover date never changes after you enable. The fiscal year start month locks too. The base currency does not lock at the enable: it locks once the company holds data in it, such as a journal line with an amount. A saved trial balance or the opening journal counts. See [base currency](/docs/reference/company-settings#base-currency).
 </Callout>
 
 ## Importing your chart of accounts
@@ -264,8 +264,8 @@ The Migration Clearing default names an account of another class, or a group acc
 ### "Journal … was superseded at the accounting cutover and cannot change"
 A Before cutover journal is permanent. Nothing can edit, post, reverse or delete it.
 
-### "The accounting cutover is one-way and cannot change" / "The base currency is locked: accounting was set up …" / "The fiscal year start is locked: accounting was set up …"
-After accounting is set up, the cutover date, the base currency and the fiscal year start month cannot change.
+### "The accounting cutover is one-way and cannot change" / "The fiscal year start is locked: accounting was set up …"
+After accounting is set up, the cutover date and the fiscal year start month cannot change. The base currency follows its own rule: it locks once the company holds data in it, whether or not accounting is set up. See [base currency](/docs/reference/company-settings#base-currency).
 
 ### "Accounting period is closed. Reopen it before posting."
 The posting date falls in a period whose close status is **Closed**. Reopen the period from the accounting periods screen, or change the document's posting date to fall in an Open period, then post again.

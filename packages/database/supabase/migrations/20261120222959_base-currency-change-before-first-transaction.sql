@@ -11,8 +11,8 @@
 --    converts nothing, so it is safe only when no amount depends on the old
 --    base. An activated company with an empty ledger can change; one with a
 --    journal line cannot. This removes the accountingActivatedAt read from
---    the company branch on purpose (function-redefinition-keeps-changes is
---    baselined for it). The cutover and fiscal year branches are unchanged.
+--    the company branch on purpose. The cutover and fiscal year branches are
+--    unchanged.
 
 -- ── 1. What holds a company's base currency ─────────────────────────────────
 
