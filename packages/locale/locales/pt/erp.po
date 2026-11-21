@@ -25219,6 +25219,9 @@ msgstr "Rejeitar tempo"
 msgid "Rejected"
 msgstr "Rejeitado"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Rejeitado na inspeção"
 
