@@ -76,25 +76,25 @@ A customer or a supplier often has its own number for one of your items. Each do
 
 | Choice | Prints |
 |---|---|
-| Our part number, then the customer's (or the supplier's) | `P000123.B (C-100 Rev 3)` |
-| The customer's (or the supplier's) part number, then ours | `C-100 Rev 3 (P000123.B)` |
-| The customer's (or the supplier's) part number only | `C-100 Rev 3` |
-| Our part number only | `P000123.B` |
+| Carbon part number, then customer or supplier part number | `P000123.B (C-100 Rev 3)` |
+| Customer or supplier part number, then Carbon part number | `C-100 Rev 3 (P000123.B)` |
+| Customer or supplier part number only | `C-100 Rev 3` |
+| Carbon part number only | `P000123.B` |
 
-- "Theirs" is the customer on a quote, sales order, sales invoice and packing slip, and the supplier on a purchase order.
-- Our part number includes its revision. A customer part number prints its own revision when it has one. A supplier part number has no revision; type it into the number when the supplier needs it.
-- A line with no number of theirs prints our part number, whatever the choice.
-- A new line takes the customer's or supplier's choice from its **Details**, else the company default in **Settings > Sales** or **Settings > Purchasing**. The sales default is "Our part number, then the customer's"; the purchasing default is "The supplier's part number, then ours".
+- A quote, sales order, sales invoice and packing slip print the customer part number; a purchase order prints the supplier part number.
+- The Carbon part number includes its revision. A customer part number prints its own revision when it has one. A supplier part number has no revision; type it into the number when the supplier needs it.
+- A line with no customer or supplier part number prints the Carbon part number, whatever the choice.
+- A new line takes the customer's or supplier's choice from its **Details**, else the company default in **Settings > Sales** or **Settings > Purchasing**. The sales default is "Carbon part number, then customer part number"; the purchasing default is "Supplier part number, then Carbon part number".
 - Converting a document copies each line's choice: a quote to an order, an order to an invoice or a shipment, and a shipment to an invoice.
 - Change every item line of a document at once in **Edit document**, while the document is not locked. A purchase order line also has its own **Part Numbers** field. A purchase order's lines keep their choice once it is sent, and while it waits for approval.
-- A new quote, sales order or purchase order line keeps its own copy of the other party's number, so a later edit of the cross-reference does not change that line. A line saved before this change, or one created when no number existed yet, reads the current cross-reference.
+- A new quote, sales order or purchase order line keeps its own copy of the customer or supplier part number, so a later edit of the cross-reference does not change that line. A line saved before this change, or one created when no number existed yet, reads the current cross-reference.
 - Changing a document's customer or supplier gives each line that has a choice the new party's choice. A quote's, sales order's or purchase order's lines also take the new party's numbers, replacing a number typed on the line.
 - A line saved before this choice existed prints as its document did before, with three exceptions:
   - A sales order prints the customer part number once, not a second time under the line.
   - A quote prints `P000123.B (C-200)`, with no space, when the customer part number has no revision.
-  - A purchase order prints our part number as the line title and the supplier part number in its own "Supplier Part ID" row, as it did before the supplier's number replaced the title.
+  - A purchase order prints the Carbon part number as the line title and the supplier part number in its own "Supplier Part ID" row, as it did before the supplier's number replaced the title.
 - A line title wraps between words. A part number too long for its column wraps after one of its own hyphens, so it never gains a hyphen it does not have.
-- A document template can place each number itself: `{line.itemId}` (our part number), `{line.customerPartId}` and `{line.customerPartRevision}` on sales documents, `{line.supplierPartNumber}` on the purchase order. Each holds its number whatever the line's choice.
+- A document template can place each number itself: `{line.itemId}` (the Carbon part number), `{line.customerPartId}` and `{line.customerPartRevision}` on sales documents, `{line.supplierPartNumber}` on the purchase order. Each holds its number whatever the line's choice.
 
 ## Related
 

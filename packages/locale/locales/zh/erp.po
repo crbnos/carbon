@@ -6686,6 +6686,15 @@ msgstr "仅限 Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon从其未结项目中开设此账户。此处的金额仅在迁移清算时比较。"
 
+msgid "Carbon part number only"
+msgstr "仅显示 Carbon 零件号"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon 零件号，然后是客户零件号"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon 零件号，然后是供应商零件号"
+
 msgid "Carbon Posted"
 msgstr "Carbon已过账"
 
@@ -9664,6 +9673,12 @@ msgstr "客户料号"
 
 msgid "Customer Part Number"
 msgstr "客户零件号"
+
+msgid "Customer part number only"
+msgstr "仅显示客户零件号"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "客户零件号，然后是 Carbon 零件号"
 
 msgid "Customer Part Revision"
 msgstr "客户零件修订版"
@@ -22102,15 +22117,6 @@ msgstr "其他类型"
 msgid "Otherwise"
 msgstr "否则"
 
-msgid "Our part number only"
-msgstr "仅显示我方零件号"
-
-msgid "Our part number, then the customer's"
-msgstr "我方零件号，然后是客户零件号"
-
-msgid "Our part number, then the supplier's"
-msgstr "我方零件号，然后是供应商零件号"
-
 msgid "Out"
 msgstr "出"
 
@@ -29964,6 +29970,12 @@ msgstr "供应商料号"
 msgid "Supplier Part Number"
 msgstr "供应商零件号"
 
+msgid "Supplier part number only"
+msgstr "仅显示供应商零件号"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "供应商零件号，然后是 Carbon 零件号"
+
 msgid "Supplier Part Numbers"
 msgstr "供应商零件号"
 
@@ -30927,12 +30939,6 @@ msgstr "此门户链接显示其订单的客户。该链接无需登录，任何
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "客户对此文件的自有参考——通常是他们系统上的询价单或采购单号码；显示在可打印输出上并转入此文件转换成的任何文件。"
-
-msgid "The customer's part number only"
-msgstr "仅显示客户零件号"
-
-msgid "The customer's part number, then ours"
-msgstr "客户零件号，然后是我方零件号"
 
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "客户对其零件 ID 的修订版标记，当其与我们的不同时；固定在交叉参考级别，而不是我们的修订版上。"
@@ -31934,12 +31940,6 @@ msgstr "此订单的供应商自己的参考（他们系统上的SO编号）；�
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "供应商的装箱单或发货号，记录以供审计；不被任何过账逻辑使用。"
-
-msgid "The supplier's part number only"
-msgstr "仅显示供应商零件号"
-
-msgid "The supplier's part number, then ours"
-msgstr "供应商零件号，然后是我方零件号"
 
 msgid "The supplier's return authorization number"
 msgstr "供应商的退货授权号"

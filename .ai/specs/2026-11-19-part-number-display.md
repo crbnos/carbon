@@ -269,7 +269,7 @@ The settings card copies the Delivery Date Control card in `x+/settings+/sales.t
 
 ## UI Changes
 
-- Settings > Sales > Documents (settings page): a new card, "Part Numbers on Documents", with one select of the 4 values. Labels: "Our part number, then the customer's", "The customer's part number, then ours", "The customer's part number only", "Our part number only".
+- Settings > Sales > Documents (settings page): a new card, "Part Numbers on Documents", with one select of the 4 values. Labels: "Carbon part number, then customer part number", "Customer part number, then Carbon part number", "Customer part number only", "Carbon part number only".
 - Customer Details form (record form): a "Part Numbers on Documents" select with the placeholder "Company default". The user clears it to save null.
 - Edit document modal (modal), on a quote, sales order, sales invoice or packing slip: a "Part Numbers" select in the Line Items panel. A pick sets every line. The preview prints the draft choice. A locked record shows the select read-only. The select shows "Mixed" when the lines differ, and "Not set: prints as before" when every line is legacy.
 - Shared quote page (public page): each line heading prints per its line's display choice.
@@ -284,8 +284,8 @@ Fixture: item P000123 Rev B; customer A with cross-reference C-100 Rev 3; custom
 - [ ] With no default or override changed, a new quote PDF for customer A prints `P000123.B (C-100 Rev 3)`.
 - [ ] A new quote PDF for customer B prints `P000123.B (C-200)`, with no space before the bracket.
 - [ ] A new sales order PDF and email for customer A print `C-100 Rev 3` once per line.
-- [ ] The user sets the company default to "The customer's part number only". A new sales order for customer A prints `C-100 Rev 3`. A line for an item with no customer part number prints its own part number.
-- [ ] The user sets customer B's override to "Our part number only". A new invoice for customer B prints `P000123.B`, while the company default stays "The customer's part number only".
+- [ ] The user sets the company default to "Customer part number only". A new sales order for customer A prints `C-100 Rev 3`. A line for an item with no customer part number prints its own part number.
+- [ ] The user sets customer B's override to "Carbon part number only". A new invoice for customer B prints `P000123.B`, while the company default stays "Customer part number only".
 - [ ] A sales order that exists before the migration prints the same text as before, except that the customer part number prints once. A change of the company default leaves it unchanged.
 - [ ] An invoice and a packing slip that exist before the migration print no customer part number.
 - [ ] The user creates an order line, then edits the cross-reference to C-101. The order's PDF still prints C-100.

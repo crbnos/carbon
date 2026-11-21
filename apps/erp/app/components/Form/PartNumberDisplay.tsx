@@ -22,16 +22,16 @@ export function usePartNumberDisplayOptions(party: PartNumberParty) {
     Record<PartNumberDisplayValue, string>
   > = {
     customer: {
-      "Ours First": t`Our part number, then the customer's`,
-      "Theirs First": t`The customer's part number, then ours`,
-      "Theirs Only": t`The customer's part number only`,
-      "Ours Only": t`Our part number only`
+      "Ours First": t`Carbon part number, then customer part number`,
+      "Theirs First": t`Customer part number, then Carbon part number`,
+      "Theirs Only": t`Customer part number only`,
+      "Ours Only": t`Carbon part number only`
     },
     supplier: {
-      "Ours First": t`Our part number, then the supplier's`,
-      "Theirs First": t`The supplier's part number, then ours`,
-      "Theirs Only": t`The supplier's part number only`,
-      "Ours Only": t`Our part number only`
+      "Ours First": t`Carbon part number, then supplier part number`,
+      "Theirs First": t`Supplier part number, then Carbon part number`,
+      "Theirs Only": t`Supplier part number only`,
+      "Ours Only": t`Carbon part number only`
     }
   };
   return PART_NUMBER_DISPLAYS.map((value) => ({

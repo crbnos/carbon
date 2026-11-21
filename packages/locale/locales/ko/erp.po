@@ -6686,6 +6686,15 @@ msgstr "Carbon 전용"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon는 미정산 항목에서 이 계정을 엽니다. 여기의 금액은 마이그레이션 정산에서만 비교됩니다."
 
+msgid "Carbon part number only"
+msgstr "Carbon 품번만"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon 품번, 다음에 고객 품번"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon 품번, 다음에 공급업체 품번"
+
 msgid "Carbon Posted"
 msgstr "Carbon 게시됨"
 
@@ -9664,6 +9673,12 @@ msgstr "고객 품번"
 
 msgid "Customer Part Number"
 msgstr "고객 부품 번호"
+
+msgid "Customer part number only"
+msgstr "고객 품번만"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "고객 품번, 다음에 Carbon 품번"
 
 msgid "Customer Part Revision"
 msgstr "고객 부품 리비전"
@@ -22102,15 +22117,6 @@ msgstr "기타 유형"
 msgid "Otherwise"
 msgstr "그 외에"
 
-msgid "Our part number only"
-msgstr "당사 품번만"
-
-msgid "Our part number, then the customer's"
-msgstr "당사 품번, 다음에 고객 품번"
-
-msgid "Our part number, then the supplier's"
-msgstr "당사 품번, 다음에 공급업체 품번"
-
 msgid "Out"
 msgstr "출고"
 
@@ -29964,6 +29970,12 @@ msgstr "공급업체 품번"
 msgid "Supplier Part Number"
 msgstr "공급업체 부품 번호"
 
+msgid "Supplier part number only"
+msgstr "공급업체 품번만"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "공급업체 품번, 다음에 Carbon 품번"
+
 msgid "Supplier Part Numbers"
 msgstr "공급업체 부품 번호"
 
@@ -30927,12 +30939,6 @@ msgstr "이 포털 링크가 주문을 보여 주는 고객입니다. 링크에�
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "이 문서에 대한 고객 자체 참조 번호로, 일반적으로 고객 시스템상의 RFQ 또는 구매주문 번호입니다. 인쇄 출력물에 표시되며, 이 문서가 전환되는 모든 후속 문서에도 이어집니다."
-
-msgid "The customer's part number only"
-msgstr "고객 품번만"
-
-msgid "The customer's part number, then ours"
-msgstr "고객 품번, 다음에 당사 품번"
 
 msgid "The customer's revision tag for their Part ID, when it differs from ours; pinned at the cross-reference level, not on our revision."
 msgstr "고객의 품목 ID에 대한 리비전 태그가 당사와 다를 경우 사용하는 값으로, 당사의 리비전이 아닌 상호참조 수준에 고정됩니다."
@@ -31934,12 +31940,6 @@ msgstr "이 주문에 대한 공급업체 자체 참조번호(자사 시스템�
 
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "공급업체의 패킹리스트 또는 출하 번호로, 감사를 위해 기록되며 전기 로직에는 사용되지 않습니다."
-
-msgid "The supplier's part number only"
-msgstr "공급업체 품번만"
-
-msgid "The supplier's part number, then ours"
-msgstr "공급업체 품번, 다음에 당사 품번"
 
 msgid "The supplier's return authorization number"
 msgstr "공급업체의 반품 허가 번호"
