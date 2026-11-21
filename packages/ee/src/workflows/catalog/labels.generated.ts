@@ -173,6 +173,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.customer.intercompanyCompanyId": msg`Intercompany company`,
   "entity.customer.logo": msg`Logo`,
   "entity.customer.name": msg`Name`,
+  "entity.customer.partNumberDisplay": msg`Part number display`,
   "entity.customer.phone": msg`Phone`,
   "entity.customer.readableId": msg`Readable`,
   "entity.customer.salesContactId": msg`Sales contact`,

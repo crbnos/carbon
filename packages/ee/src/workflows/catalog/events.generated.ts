@@ -922,7 +922,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     salesContactId: { kind: "primitive", of: "string" },
     defaultCc: { kind: "list", of: { kind: "primitive", of: "string" } },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
-    readableId: { kind: "primitive", of: "string" }
+    readableId: { kind: "primitive", of: "string" },
+    partNumberDisplay: { kind: "primitive", of: "string" }
   },
   group: {
     id: { kind: "primitive", of: "string" },
@@ -1354,6 +1355,14 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
   string,
   Record<string, readonly string[]>
 > = {
+  customer: {
+    partNumberDisplay: [
+      "Ours First",
+      "Theirs First",
+      "Theirs Only",
+      "Ours Only"
+    ]
+  },
   item: {
     type: ["Part", "Material", "Tool", "Service", "Consumable", "Fixture"],
     replenishmentSystem: ["Buy", "Make", "Buy and Make"],
