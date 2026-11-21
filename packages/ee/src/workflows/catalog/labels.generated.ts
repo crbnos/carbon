@@ -452,6 +452,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.receipt.postedBy": msg`Posted by`,
   "entity.receipt.postingDate": msg`Posting date`,
   "entity.receipt.receiptId": msg`Receipt`,
+  "entity.receipt.rejectedAtInspection": msg`Rejected at inspection`,
   "entity.receipt.sourceDocument": msg`Source document`,
   "entity.receipt.sourceDocumentId": msg`Source document`,
   "entity.receipt.sourceDocumentReadableId": msg`Source document readable`,

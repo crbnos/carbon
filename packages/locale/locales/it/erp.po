@@ -25176,6 +25176,9 @@ msgstr "Tempo di rifiuto"
 msgid "Rejected"
 msgstr "Rifiutato"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Rifiutato al controllo"
 

@@ -25176,6 +25176,9 @@ msgstr "Отклонить время"
 msgid "Rejected"
 msgstr "Отклонено"
 
+msgid "Rejected at inspection"
+msgstr ""
+
 msgid "Rejected at Inspection"
 msgstr "Отклонено при контроле"
 
