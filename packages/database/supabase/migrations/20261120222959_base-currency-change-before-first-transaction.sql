@@ -11,8 +11,10 @@
 --    converts nothing, so it is safe only when no amount depends on the old
 --    base. An activated company with an empty ledger can change; one with a
 --    journal line cannot. This removes the accountingActivatedAt read from
---    the company branch on purpose. The cutover and fiscal year branches are
---    unchanged.
+--    the company branch on purpose. A change that nothing blocks is also
+--    refused unless the transaction set app.base_currency_change: only the
+--    ERP's change path moves the rows written in the old base with it. The
+--    cutover and fiscal year branches are unchanged.
 
 -- ── 1. What holds a company's base currency ─────────────────────────────────
 
@@ -156,6 +158,15 @@ BEGIN
       FROM public.base_currency_change_blockers(NEW."id") b;
       IF v_blockers IS NOT NULL THEN
         RAISE EXCEPTION 'The base currency is locked: %', v_blockers;
+      END IF;
+      -- The ERP's change path (updateCompanyWithBaseCurrencyChange) moves the
+      -- prices, rates, records and overrides written in the old base in the
+      -- same transaction, and sets app.base_currency_change with SET LOCAL.
+      -- Any other write would leave them behind. Never honoured for an API
+      -- role.
+      IF coalesce(current_setting('app.base_currency_change', true), '') <> 'true'
+         OR coalesce(current_setting('role', true), 'none') IN ('anon', 'authenticated') THEN
+        RAISE EXCEPTION 'The base currency changes only through the company settings (settings_updateCompanyDetails), which move the rows written in it';
       END IF;
     END IF;
     RETURN NEW;

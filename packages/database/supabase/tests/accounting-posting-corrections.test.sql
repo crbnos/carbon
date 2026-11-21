@@ -102,6 +102,8 @@ DO $pair_rates$
 DECLARE f pg_temp.posting_fixture; other pg_temp.posting_fixture; rates record;
 BEGIN
   f:=pg_temp.seed_posting_company(); other:=pg_temp.seed_posting_company();
+  -- As the ERP's base currency change path does.
+  PERFORM set_config('app.base_currency_change','true',true);
   UPDATE company SET "baseCurrencyCode"='GBP' WHERE id=f.company_id;
   UPDATE company SET "baseCurrencyCode"='EUR' WHERE id=other.company_id;
   INSERT INTO currency(code,"companyGroupId","decimalPlaces","historicalExchangeRate","createdBy")

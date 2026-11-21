@@ -1428,6 +1428,11 @@ export async function updateCompanyWithBaseCurrencyChange(
   ) as Partial<z.infer<typeof subsidiaryValidator>>;
 
   return db.transaction().execute(async (trx) => {
+    // The `company` trigger refuses a base change in a transaction without
+    // this flag: no other writer moves the rows below.
+    await sql`SELECT set_config('app.base_currency_change', 'true', true)`.execute(
+      trx
+    );
     const current = await trx
       .selectFrom("company")
       .select(["baseCurrencyCode", "companyGroupId"])

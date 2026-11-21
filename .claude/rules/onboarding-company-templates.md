@@ -424,9 +424,12 @@ branch, still keyed on `accountingActivatedAt`) holds. The base currency lock ho
 it depends on the company's data, not on accounting activation: the `company` branch never
 reads `app.dataset_apply` or `accountingActivatedAt`, and refuses a `baseCurrencyCode`
 change for every role while `base_currency_change_blockers(companyId)` returns a row
-(`The base currency is locked: <reasons>`). So a dataset that seeds journals, documents or
-ledger rows locks the company's base currency. Pinned by
-`packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+(`The base currency is locked: <reasons>`). When nothing blocks, it still refuses the change
+unless the transaction set `app.base_currency_change`, which only
+`updateCompanyWithBaseCurrencyChange` sets (never honoured for an API role). So a dataset that
+seeds journals, documents or ledger rows locks the company's base currency, and no tier changes
+it. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql` and
+`base-currency-change.test.sql`.
 
 Demo-template companies that predate the cutover got theirs from section 7 of
 `20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the

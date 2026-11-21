@@ -94,6 +94,8 @@ A change converts no amounts. Every stored number keeps its value and is read in
 - Moves customers, suppliers, supplier parts and bank accounts set to the old currency to the new one, unless you turn on the form's switch to keep them (for example **Keep 3 records in USD**).
 - Moves a parent's elimination entity that used the old currency to the new one.
 
+Only **Settings → Company**, the Companies edit page and the `settings_updateCompanyDetails` tool change the base currency, because only they make these changes with it. A direct write to the company record through the data API is refused, even when nothing blocks a change.
+
 ## Theme and tags
 
 Carbon includes eight color themes: Modern, Brutal, Cherry, Apricot, Lemon, Mint, Blueberry, and Lavender. Theme selection is **per user** and stored in a browser cookie. Document templates have a separate theme setting. **Tags** are free-form labels scoped by company and table, so item and job tags have independent vocabularies.
@@ -128,7 +130,7 @@ The warning on Settings → Accounting. `hasLegacyDocuments` found posted docume
 Theme is per-user (a cookie), not per-company. Document templates carry a separate theme setting.
 
 ### I can't change the base currency
-The company already holds data in its base currency, so a change would relabel amounts that depend on it. Settings → Company lists the reasons under the field; see [base currency](#base-currency). A save that changes it anyway is refused with *"The base currency can't change: …"* and the same reasons. A direct database write is refused with *"The base currency is locked: …"*. Setting up accounting does not lock it by itself. Carbon never converts stored amounts, so a company with any of this data keeps its base currency. Subsidiary/parent currency differences reconcile at consolidation, not by switching a base.
+The company already holds data in its base currency, so a change would relabel amounts that depend on it. Settings → Company lists the reasons under the field; see [base currency](#base-currency). A save that changes it anyway is refused with *"The base currency can't change: …"* and the same reasons. A direct database write is refused with *"The base currency is locked: …"* and, when nothing blocks a change, with *"The base currency changes only through the company settings …"*. Setting up accounting does not lock it by itself. Carbon never converts stored amounts, so a company with any of this data keeps its base currency. Subsidiary/parent currency differences reconcile at consolidation, not by switching a base.
 
 ### A Modules toggle does nothing I expect
 Flags are read by modules at runtime, and the feature may also be gated by plan/edition. Check licensing before assuming the toggle is broken.

@@ -362,3 +362,24 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a direct write of the base currency, outside the change path, is refused",
+  async () => {
+    const db = await connectLocalTestDatabase();
+    const f = await trialCompany(db);
+    try {
+      await expect(
+        db
+          .updateTable("company")
+          .set({ baseCurrencyCode: "CAD" })
+          .where("id", "=", f.companyId)
+          .execute()
+      ).rejects.toThrow(/changes only through the company settings/);
+      expect((await f.read()).company).toBe("USD");
+    } finally {
+      await f.cleanup();
+      await db.destroy();
+    }
+  }
+);

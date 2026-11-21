@@ -4,7 +4,9 @@
 --   2. a journal line with an amount, a document or a connected accounting
 --      integration refuses the change, and the refusal names the reason;
 --   3. a parent refuses while a company of its group holds data, and a
---      subsidiary with no data of its own may change.
+--      subsidiary with no data of its own may change;
+--   4. a change outside the ERP's change path, or by an API role, is refused
+--      even when nothing blocks it.
 -- Run from the repository root against an existing migrated local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 \
 --   -f packages/database/supabase/tests/base-currency-change.test.sql
@@ -13,10 +15,12 @@
 BEGIN;
 SET LOCAL "app.sync_in_progress" = 'true';
 SET LOCAL statement_timeout = '30s';
+-- As the ERP's change path (updateCompanyWithBaseCurrencyChange) sets it.
+SET LOCAL "app.base_currency_change" = 'true';
 
 DO $proof$
 DECLARE
-  group_id text; company_id text; subsidiary_id text;
+  group_id text; company_id text; subsidiary_id text; user_id text := gen_random_uuid()::text;
   cash_id text; journal_id text; customer_id text; quote_id text;
   item_id text; asset_class_id text; asset_id text;
 BEGIN
@@ -145,6 +149,40 @@ BEGIN
   ASSERT (SELECT "baseCurrencyCode" FROM company WHERE id = subsidiary_id) = 'GBP',
     'A subsidiary with no data changes its base currency';
   RAISE NOTICE 'PASS a subsidiary with no data changes its base currency';
+
+  -- ── 4. Only the change path moves the base ────────────────────────────────
+  ASSERT NOT EXISTS (SELECT 1 FROM base_currency_change_blockers(subsidiary_id)),
+    'The subsidiary has nothing that blocks';
+  PERFORM set_config('app.base_currency_change', '', true);
+  BEGIN
+    UPDATE company SET "baseCurrencyCode" = 'EUR' WHERE id = subsidiary_id;
+    RAISE EXCEPTION 'The base currency changed outside the change path';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM NOT LIKE '%changes only through the company settings%' THEN RAISE; END IF;
+  END;
+  RAISE NOTICE 'PASS a write outside the change path is refused';
+
+  INSERT INTO "user" (id, email) VALUES (user_id, user_id || '@base-currency.invalid');
+  INSERT INTO "userToCompany" ("userId", "companyId", role)
+    VALUES (user_id, subsidiary_id, 'employee');
+  INSERT INTO "userPermission" (id, permissions)
+    VALUES (user_id, jsonb_build_object(
+      'settings_view', jsonb_build_array(subsidiary_id),
+      'settings_update', jsonb_build_array(subsidiary_id)));
+  PERFORM set_config('request.jwt.claims',
+    jsonb_build_object('sub', user_id, 'role', 'authenticated')::text, true);
+  PERFORM set_config('app.base_currency_change', 'true', true);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    UPDATE company SET "baseCurrencyCode" = 'EUR' WHERE id = subsidiary_id;
+    RAISE EXCEPTION 'An API role changed the base currency';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM NOT LIKE '%changes only through the company settings%' THEN RAISE; END IF;
+  END;
+  RESET ROLE;
+  ASSERT (SELECT "baseCurrencyCode" FROM company WHERE id = subsidiary_id) = 'GBP',
+    'The API role left the base currency as it was';
+  RAISE NOTICE 'PASS an API role never changes the base currency, even with the setting on';
 END
 $proof$;
 
