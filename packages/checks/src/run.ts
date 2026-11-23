@@ -79,6 +79,10 @@ import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import {
+  findStaleOfflinePageCaches,
+  OFFLINE_PAGE_CACHE_BUMPED
+} from "./conformance/offline-page-cache-bumped";
+import {
   findProviderRoleDrift,
   PROVIDER_ROLE_BACKFILLED
 } from "./conformance/provider-role-backfilled";
@@ -116,6 +120,7 @@ import {
   loadModules,
   modulesDir
 } from "./sources/modules";
+import { loadOfflinePageSources } from "./sources/offline-page";
 import { loadServerFiles } from "./sources/server-files";
 import { loadSideEffectPackages } from "./sources/side-effect-packages";
 import { loadTestFiles } from "./sources/test-files";
@@ -265,6 +270,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ),
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
+    ),
+    ...findStaleOfflinePageCaches(loadOfflinePageSources(root)).map(
+      (violation) => ({ checkId: OFFLINE_PAGE_CACHE_BUMPED, violation })
     ),
     ...findDroppedFunctionChanges(migrations).map((violation) => ({
       checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
