@@ -10113,6 +10113,13 @@ export async function convertDocument(
               nonTaxableAddOnCost: addOn - taxableAddOn,
               description: line.description,
               itemId: line.itemId,
+              // The quote line's part number choice and the customer's number
+              // it quoted, so the order prints like the quote.
+              partNumberDisplay: line.partNumberDisplay,
+              customerPartId: line.customerPartId?.trim() || null,
+              customerPartRevision: line.customerPartId?.trim()
+                ? line.customerPartRevision
+                : null,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
               storageUnitId: sourceStorageUnitId(line, price.quantity),
@@ -10217,7 +10224,7 @@ export async function convertDocument(
           .map((line) => ({
             companyId,
             customerId: quote.data?.customerId!,
-            customerPartId: line.customerPartId!,
+            customerPartId: line.customerPartId?.trim() ?? "",
             customerPartRevision: line.customerPartRevision ?? "",
             itemId: line.itemId!
           }))
@@ -10436,6 +10443,7 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
+              partNumberDisplay: line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
@@ -10912,6 +10920,13 @@ export async function convertDocument(
         acc[lineId] = (acc[lineId] || 0) + line.shippedQuantity;
         return acc;
       }, {});
+      // The invoice prints what the packing slip printed, an Edit document
+      // pick included, else the order line's choice.
+      const shippedPartNumberDisplay = new Map(
+        shipmentLines.data
+          .filter((line) => line.lineId && line.partNumberDisplay)
+          .map((line) => [line.lineId!, line.partNumberDisplay])
+      );
 
       // Each shipped fixed asset line counts as quantity 1
       for (const line of shipmentFixedAssetLines.data) {
@@ -11112,6 +11127,8 @@ export async function convertDocument(
               invoiceLineType: line.salesOrderLineType,
               salesOrderId: line.salesOrderId,
               salesOrderLineId: line.id,
+              partNumberDisplay:
+                shippedPartNumberDisplay.get(line.id) ?? line.partNumberDisplay,
               methodType: line.methodType,
               itemId: line.itemId,
               locationId: line.locationId,
@@ -11329,6 +11346,11 @@ export async function convertDocument(
                   : (line.item?.type as "Part"),
                 description: line.description,
                 itemId: isIndirect ? null : line.itemId,
+                // The number the supplier quoted; without one the line copies
+                // the supplier part's number.
+                supplierPartId: isIndirect
+                  ? null
+                  : line.supplierPartId?.trim() || null,
                 accountId: isIndirect ? line.accountId : null,
                 costCenterId: isIndirect ? line.costCenterId : null,
                 locationId: isIndirect ? null : employeeJob.data?.locationId,
@@ -11912,6 +11934,9 @@ async function addJobShipmentLine(
       unitPrice: number | null;
       taxPercent: number;
       unitOfMeasureCode: string | null;
+      partNumberDisplay:
+        | Database["public"]["Enums"]["partNumberDisplay"]
+        | null;
     };
     orderQuantity: number;
     outstandingQuantity: number;
@@ -11962,6 +11987,7 @@ async function addJobShipmentLine(
     .values({
       shipmentId: args.shipmentId,
       lineId: salesOrderLine.id,
+      partNumberDisplay: salesOrderLine.partNumberDisplay,
       companyId,
       fulfillmentId: fulfillment?.id,
       itemId: salesOrderLine.itemId,
@@ -15055,7 +15081,8 @@ export async function createDocument(
                   shippingCost: salesOrderLine.shippingCost,
                   unitPrice: salesOrderLine.unitPrice,
                   taxPercent: salesOrderLine.taxPercent,
-                  unitOfMeasureCode: salesOrderLine.unitOfMeasureCode
+                  unitOfMeasureCode: salesOrderLine.unitOfMeasureCode,
+                  partNumberDisplay: salesOrderLine.partNumberDisplay
                 },
                 orderQuantity: salesOrderLine.saleQuantity,
                 outstandingQuantity:
@@ -15079,6 +15106,7 @@ export async function createDocument(
               .values({
                 shipmentId: shipmentId,
                 lineId: salesOrderLine.id,
+                partNumberDisplay: salesOrderLine.partNumberDisplay,
                 companyId: companyId,
                 itemId: salesOrderLine.itemId,
                 orderQuantity: salesOrderLine.saleQuantity,
@@ -15293,7 +15321,8 @@ export async function createDocument(
                   shippingCost: salesOrderLine.data.shippingCost,
                   unitPrice: salesOrderLine.data.unitPrice,
                   taxPercent: salesOrderLine.data.taxPercent,
-                  unitOfMeasureCode: salesOrderLine.data.unitOfMeasureCode
+                  unitOfMeasureCode: salesOrderLine.data.unitOfMeasureCode,
+                  partNumberDisplay: salesOrderLine.data.partNumberDisplay
                 },
                 orderQuantity: job.productionQuantity ?? 0,
                 outstandingQuantity: Math.max(0, job.productionQuantity ?? 0)
@@ -15344,6 +15373,7 @@ export async function createDocument(
             .values({
               shipmentId: shipmentId,
               lineId: salesOrderLineId,
+              partNumberDisplay: salesOrderLine.data.partNumberDisplay,
               companyId: companyId,
               itemId: salesOrderLine.data.itemId!,
               orderQuantity: salesOrderLine.data.saleQuantity ?? 0,

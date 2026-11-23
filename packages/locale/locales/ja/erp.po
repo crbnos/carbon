@@ -6751,6 +6751,15 @@ msgstr "Carbonのみ"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbonはこのアカウントをその決済待ちアイテムから開きます。ここの金額はマイグレーション清算時にのみ比較されます。"
 
+msgid "Carbon part number only"
+msgstr "Carbonの部品番号のみ"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbonの部品番号、次に得意先の部品番号"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbonの部品番号、次に仕入先の部品番号"
+
 msgid "Carbon Posted"
 msgstr "カーボン転記済み"
 
@@ -7310,6 +7319,12 @@ msgstr "移動先を選択"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "新規の発注書明細に印刷する部品番号を選択します。仕入先ごとにこの設定を上書きでき、各明細でも変更できます。"
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "新規の見積、受注、請求書、納品書の明細に印刷する部品番号を選択します。得意先ごとにこの設定を上書きできます。"
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
@@ -9741,6 +9756,12 @@ msgstr "得意先品番"
 
 msgid "Customer Part Number"
 msgstr "得意先品番"
+
+msgid "Customer part number only"
+msgstr "得意先の部品番号のみ"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "得意先の部品番号、次にCarbonの部品番号"
 
 msgid "Customer Part Revision"
 msgstr "得意先品番リビジョン"
@@ -17570,6 +17591,12 @@ msgstr "明細 {position}"
 msgid "Line Add-On"
 msgstr "行アドオン"
 
+msgid "Line Customer Part ID"
+msgstr "明細の得意先品番"
+
+msgid "Line Customer Part Revision"
+msgstr "明細の得意先リビジョン"
+
 msgid "Line description"
 msgstr "明細の説明"
 
@@ -17618,8 +17645,11 @@ msgstr "行の配送"
 msgid "Line Status"
 msgstr "ラインステータス"
 
-msgid "Line Supplier Part ID"
-msgstr "明細の仕入先部品ID"
+msgid "Line Supplier Part ID Row"
+msgstr "明細の仕入先部品ID行"
+
+msgid "Line Supplier Part Number"
+msgstr "明細の仕入先部品番号"
 
 msgid "Line Total"
 msgstr "行合計"
@@ -18827,6 +18857,9 @@ msgstr "不足時間"
 
 msgid "Missing:"
 msgstr "不足:"
+
+msgid "Mixed"
+msgstr "混在"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20423,6 +20456,9 @@ msgstr "リース実行はまだ転記済ではありません。"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "休暇エレメントが設定されていません。間接プロジェクトで休暇時間のエレメントを開き、「休暇」をオンにしてください。"
 
+msgid "No line of this document has an item yet."
+msgstr "この帳票の明細には、まだ品目がありません。"
+
 msgid "No lines"
 msgstr "ラインなし"
 
@@ -21201,6 +21237,9 @@ msgstr "会社設定で設定されていません"
 
 msgid "Not set up"
 msgstr "未設定"
+
+msgid "Not set: prints as before"
+msgstr "未設定：従来どおり印刷"
 
 msgid "Not started"
 msgstr "未開始"
@@ -22649,6 +22688,18 @@ msgstr "部品のリードタイムは転記済の購買入荷から更新され
 
 msgid "Part Number"
 msgstr "部品番号"
+
+msgid "Part number display"
+msgstr "部品番号の表示"
+
+msgid "Part Numbers"
+msgstr "部品番号"
+
+msgid "Part Numbers on Documents"
+msgstr "帳票の部品番号"
+
+msgid "Part numbers on documents updated"
+msgstr "帳票の部品番号を更新しました"
 
 msgid "Part Supersession"
 msgstr "部品後継切替"
@@ -28530,6 +28581,9 @@ msgstr "バージョン {0} をアクティブバージョンとして設定し�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
 
+msgid "Sets every line of this document when you save."
+msgstr "保存時に、この帳票のすべての明細に適用されます。"
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "シリアルが出荷される時に労務保証を設定します"
 
@@ -30253,6 +30307,9 @@ msgstr "仕入先の場所"
 msgid "Supplier Name"
 msgstr "仕入先名"
 
+msgid "Supplier or company default"
+msgstr "仕入先または会社のデフォルト"
+
 msgid "Supplier Order Number"
 msgstr "仕入先注文番号"
 
@@ -30270,6 +30327,12 @@ msgstr "仕入先品番"
 
 msgid "Supplier Part Number"
 msgstr "仕入先部品番号"
+
+msgid "Supplier part number only"
+msgstr "仕入先の部品番号のみ"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "仕入先の部品番号、次にCarbonの部品番号"
 
 msgid "Supplier Part Numbers"
 msgstr "仕入先品番"
@@ -31777,6 +31840,9 @@ msgstr "この仕入先のライフサイクル状態 — 有効、無効、承�
 msgid "The lines could not be loaded."
 msgstr "明細を読み込めませんでした。"
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "明細ごとに異なる部品番号が印刷されています。いずれかを選択すると、すべての明細に適用されます。"
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "計画グループのオーダーの一部から 1 つのメンバーの需要へのリンク：オーダーが開いている間はソフト（MRP は移動する可能性があります）。受け取られたまたは完了したときはハード（移動しない）。またはプランナーが理由を付けて設定するときはマニュアル。"
 
@@ -31984,6 +32050,9 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
+
+msgid "The part numbers of this document cannot change now."
+msgstr "この帳票の部品番号は、今は変更できません。"
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "政府が進捗支払または成果支払を回収するために納品支払から控除する部分。清算率 × 請求書で計算され、未清算融資額を超えません。"

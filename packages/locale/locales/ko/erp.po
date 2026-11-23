@@ -6751,6 +6751,15 @@ msgstr "Carbon 전용"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon는 미정산 항목에서 이 계정을 엽니다. 여기의 금액은 마이그레이션 정산에서만 비교됩니다."
 
+msgid "Carbon part number only"
+msgstr "Carbon 품번만"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon 품번, 다음에 고객 품번"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon 품번, 다음에 공급업체 품번"
+
 msgid "Carbon Posted"
 msgstr "Carbon 게시됨"
 
@@ -7310,6 +7319,12 @@ msgstr "도착지를 선택하세요"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "품목, 견적서 및 작업 지시의 BoM 탐색기에서 각 라인을 설명으로 표시할지 품목 ID로 표시할지 선택하세요."
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "새 발주서 라인에 인쇄할 품번을 선택합니다. 공급업체 설정으로 이 선택을 바꿀 수 있고, 각 라인에서도 변경할 수 있습니다."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "새 견적서, 주문, 송장, 포장명세서 라인에 인쇄할 품번을 선택합니다. 고객 설정으로 이 선택을 바꿀 수 있습니다."
 
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
@@ -9741,6 +9756,12 @@ msgstr "고객 품번"
 
 msgid "Customer Part Number"
 msgstr "고객 부품 번호"
+
+msgid "Customer part number only"
+msgstr "고객 품번만"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "고객 품번, 다음에 Carbon 품번"
 
 msgid "Customer Part Revision"
 msgstr "고객 부품 리비전"
@@ -17570,6 +17591,12 @@ msgstr "{position}번 라인"
 msgid "Line Add-On"
 msgstr "라인 애드온"
 
+msgid "Line Customer Part ID"
+msgstr "라인 고객 부품 ID"
+
+msgid "Line Customer Part Revision"
+msgstr "라인 고객 리비전"
+
 msgid "Line description"
 msgstr "라인 설명"
 
@@ -17618,8 +17645,11 @@ msgstr "라인 배송"
 msgid "Line Status"
 msgstr "라인 상태"
 
-msgid "Line Supplier Part ID"
-msgstr "라인 공급업체 부품 ID"
+msgid "Line Supplier Part ID Row"
+msgstr "라인 공급업체 부품 ID 행"
+
+msgid "Line Supplier Part Number"
+msgstr "라인 공급업체 품번"
 
 msgid "Line Total"
 msgstr "라인 합계"
@@ -18827,6 +18857,9 @@ msgstr "누락된 시간"
 
 msgid "Missing:"
 msgstr "부족:"
+
+msgid "Mixed"
+msgstr "혼합"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20423,6 +20456,9 @@ msgstr "아직 리스 실행이 전기되지 않았습니다"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "휴가 요소가 설정되지 않았습니다. 간접 프로젝트에서 시간 제외 요소를 열고 휴가를 켜세요."
 
+msgid "No line of this document has an item yet."
+msgstr "이 문서의 라인에 아직 품목이 없습니다."
+
 msgid "No lines"
 msgstr "항목 없음"
 
@@ -21201,6 +21237,9 @@ msgstr "회사 설정에서 설정되지 않음"
 
 msgid "Not set up"
 msgstr "설정되지 않음"
+
+msgid "Not set: prints as before"
+msgstr "미설정: 기존과 같이 인쇄"
 
 msgid "Not started"
 msgstr "시작되지 않음"
@@ -22649,6 +22688,18 @@ msgstr "부품 리드타임은 전기된 구매 입고에서 업데이트됩니�
 
 msgid "Part Number"
 msgstr "부품 번호"
+
+msgid "Part number display"
+msgstr "품번 표시"
+
+msgid "Part Numbers"
+msgstr "품번"
+
+msgid "Part Numbers on Documents"
+msgstr "문서의 품번"
+
+msgid "Part numbers on documents updated"
+msgstr "문서의 품번이 업데이트됨"
 
 msgid "Part Supersession"
 msgstr "부품 대체"
@@ -28530,6 +28581,9 @@ msgstr "버전 {0}을(를) 활성 버전으로 설정하시겠습니까?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "프로필 설정에서 기본 사업장을 설정하여 보관 단위를 선택하세요."
 
+msgid "Sets every line of this document when you save."
+msgstr "저장하면 이 문서의 모든 라인에 적용됩니다."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "배송 시 시리얼의 노무 보증을 설정합니다"
 
@@ -30253,6 +30307,9 @@ msgstr "공급업체 위치"
 msgid "Supplier Name"
 msgstr "공급업체 이름"
 
+msgid "Supplier or company default"
+msgstr "공급업체 또는 회사 기본값"
+
 msgid "Supplier Order Number"
 msgstr "공급업체 주문 번호"
 
@@ -30270,6 +30327,12 @@ msgstr "공급업체 품번"
 
 msgid "Supplier Part Number"
 msgstr "공급업체 부품 번호"
+
+msgid "Supplier part number only"
+msgstr "공급업체 품번만"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "공급업체 품번, 다음에 Carbon 품번"
 
 msgid "Supplier Part Numbers"
 msgstr "공급업체 부품 번호"
@@ -31777,6 +31840,9 @@ msgstr "이 공급업체의 생명주기 상태(활성, 비활성, 승인 대기
 msgid "The lines could not be loaded."
 msgstr "라인을 불러올 수 없습니다."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "라인마다 인쇄되는 품번이 다릅니다. 값을 선택하면 모든 라인에 적용됩니다."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "계획 그룹의 주문의 일부에서 한 구성원의 소요량으로의 링크: 주문이 미결일 동안 소프트(MRP가 이동할 수 있음), 수신되거나 완료됨 일단 하드(이동 안 함), 또는 계획자가 이유와 함께 설정할 때 수동."
 
@@ -31984,6 +32050,9 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오므로, 새로운 작업 지시 또는 발주서가 없습니다."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "지금은 이 문서의 부품 번호를 변경할 수 없습니다."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "정부가 기성금 또는 실적금으로부터의 회수를 위해 보유하는 납기금의 일부: 송장 금액에 정산율을 곱한 금액으로, 미정산 금융액을 초과하지 않음."

@@ -15,7 +15,6 @@ import {
   insertRow,
   maybeOne,
   need,
-  one,
   RICH
 } from "../sql.ts";
 import type { Ctx, FoundationData, PartyAddressSpec } from "../types.ts";
@@ -348,11 +347,11 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  const netThirty = await one<{ id: string }>(
+  const netThirty = (await maybeOne<{ id: string }>(
     client,
     `SELECT id FROM "paymentTerm" WHERE "companyId" = $1 AND name ILIKE '%net%30%' LIMIT 1`,
     [companyId]
-  );
+  )) ?? { id: await bootstrapIdByName(ctx, "paymentTerm", "Net 30") };
   ctx.refs.misc.paymentTermId = netThirty.id;
 
   const paymentTermFor = (spec: { paymentTerm?: string }): Promise<string> =>
@@ -413,7 +412,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       customerStatusId: statusId,
       phone: c.phone,
       website: c.website,
-      currencyCode: c.currencyCode ?? "USD"
+      currencyCode: c.currencyCode ?? "USD",
+      partNumberDisplay: c.partNumberDisplay ?? null
     });
     ctx.refs.customers[c.name] = custId;
 
@@ -488,7 +488,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
-      supplierStatus: s.status ?? "Active"
+      supplierStatus: s.status ?? "Active",
+      partNumberDisplay: s.partNumberDisplay ?? null
     });
     ctx.refs.suppliers[s.name] = supId;
 

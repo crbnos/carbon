@@ -13,6 +13,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   isValidTimeZone,
   labelSizes,
@@ -429,6 +430,15 @@ export const rescheduleToleranceValidator = z.object({
 // Empty clears the default: items without their own horizon then have no fence.
 export const deliveryDateCheckSettingsValidator = z.object({
   deliveryDateControl: z.enum(deliveryDateControlTypes)
+});
+
+// Which part numbers new document lines print, by default for the company.
+export const supplierPartNumberDisplaySettingsValidator = z.object({
+  supplierPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS)
+});
+
+export const customerPartNumberDisplaySettingsValidator = z.object({
+  customerPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS)
 });
 
 export const planningHorizonValidator = z.object({
@@ -1053,7 +1063,8 @@ export const documentEditValidator = zfd.formData({
   notes: jsonField(
     z.record(z.string(), z.unknown()).nullable(),
     "Invalid notes"
-  ).optional()
+  ).optional(),
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
 });
 
 export const documentSectionValidator = zfd.formData({

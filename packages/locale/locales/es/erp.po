@@ -6751,6 +6751,15 @@ msgstr "Solo de Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon abre esta cuenta a partir de sus partidas abiertas. El monto aquí solo se compara en la Liquidación de migración."
 
+msgid "Carbon part number only"
+msgstr "Solo el número de pieza de Carbon"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Número de pieza de Carbon, y después el número de pieza del cliente"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Número de pieza de Carbon, y después el número de pieza del proveedor"
+
 msgid "Carbon Posted"
 msgstr "Carbon Registrado"
 
@@ -7310,6 +7319,12 @@ msgstr "Seleccione el destino"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Elija si el explorador de lista de materiales en artículos, cotizaciones y órdenes de trabajo etiqueta cada línea con su descripción o el ID del artículo."
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Elija qué números de pieza imprimen las líneas nuevas de orden de compra. Un proveedor puede sobrescribir esta elección, y cada línea puede cambiarla."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Elija qué números de pieza imprimen las líneas nuevas de cotización, pedido de venta, factura y albarán de entrega. Un cliente puede sobrescribir esta elección."
 
 msgid "Choose your style"
 msgstr "Elige tu estilo"
@@ -9741,6 +9756,12 @@ msgstr "Referencia del cliente"
 
 msgid "Customer Part Number"
 msgstr "Número de Parte del Cliente"
+
+msgid "Customer part number only"
+msgstr "Solo el número de pieza del cliente"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "Número de pieza del cliente, y después el número de pieza de Carbon"
 
 msgid "Customer Part Revision"
 msgstr "Revisión de Parte del Cliente"
@@ -17570,6 +17591,12 @@ msgstr "línea {position}"
 msgid "Line Add-On"
 msgstr "Complemento de Línea"
 
+msgid "Line Customer Part ID"
+msgstr "ID de pieza del cliente de la línea"
+
+msgid "Line Customer Part Revision"
+msgstr "Revisión del cliente de la línea"
+
 msgid "Line description"
 msgstr "Descripción de la línea"
 
@@ -17618,8 +17645,11 @@ msgstr "Envío de Línea"
 msgid "Line Status"
 msgstr "Estado de la Línea"
 
-msgid "Line Supplier Part ID"
-msgstr "ID de pieza del proveedor de la línea"
+msgid "Line Supplier Part ID Row"
+msgstr "Fila de ID de pieza del proveedor de la línea"
+
+msgid "Line Supplier Part Number"
+msgstr "Número de pieza del proveedor en la línea"
 
 msgid "Line Total"
 msgstr "Total de Línea"
@@ -18827,6 +18857,9 @@ msgstr "Tiempo faltante"
 
 msgid "Missing:"
 msgstr "Faltante:"
+
+msgid "Mixed"
+msgstr "Mixto"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20423,6 +20456,9 @@ msgstr "Todavía no se ha contabilizado ninguna ejecución de arrendamiento."
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "No hay elemento de licencia configurado. En un proyecto Indirecto, abre el elemento de tiempo libre y activa Licencia."
 
+msgid "No line of this document has an item yet."
+msgstr "Ninguna línea de este documento tiene todavía un artículo."
+
 msgid "No lines"
 msgstr "Sin líneas"
 
@@ -21201,6 +21237,9 @@ msgstr "no establecido en la configuración de la empresa"
 
 msgid "Not set up"
 msgstr "No configurado"
+
+msgid "Not set: prints as before"
+msgstr "Sin definir: se imprime como antes"
 
 msgid "Not started"
 msgstr "No iniciado"
@@ -22649,6 +22688,18 @@ msgstr "Los plazos de entrega de piezas se actualizan a partir de recepciones de
 
 msgid "Part Number"
 msgstr "Número de pieza"
+
+msgid "Part number display"
+msgstr "Visualización del número de pieza"
+
+msgid "Part Numbers"
+msgstr "Números de pieza"
+
+msgid "Part Numbers on Documents"
+msgstr "Números de pieza en documentos"
+
+msgid "Part numbers on documents updated"
+msgstr "Números de pieza en documentos actualizados"
 
 msgid "Part Supersession"
 msgstr "Reemplazo de pieza"
@@ -28530,6 +28581,9 @@ msgstr "¿Establecer la versión {0} como versión activa?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Establece tu ubicación predeterminada en la configuración del perfil para seleccionar una unidad de almacenamiento."
 
+msgid "Sets every line of this document when you save."
+msgstr "Se aplica a todas las líneas de este documento al guardar."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Establece la garantía de mano de obra de un serial cuando se envía"
 
@@ -30253,6 +30307,9 @@ msgstr "Ubicación del Proveedor"
 msgid "Supplier Name"
 msgstr "Nombre del Proveedor"
 
+msgid "Supplier or company default"
+msgstr "Predeterminado del proveedor o de la empresa"
+
 msgid "Supplier Order Number"
 msgstr "Número de Pedido del Proveedor"
 
@@ -30270,6 +30327,12 @@ msgstr "Referencia del proveedor"
 
 msgid "Supplier Part Number"
 msgstr "Número de Parte del Proveedor"
+
+msgid "Supplier part number only"
+msgstr "Solo el número de pieza del proveedor"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "Número de pieza del proveedor, y después el número de pieza de Carbon"
 
 msgid "Supplier Part Numbers"
 msgstr "Números de Parte del Proveedor"
@@ -31777,6 +31840,9 @@ msgstr "El estado del ciclo de vida de este proveedor - Activo, Inactivo, Aproba
 msgid "The lines could not be loaded."
 msgstr "No se pudieron cargar las líneas."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "Las líneas imprimen números de pieza distintos. Una selección se aplica a todas las líneas."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "El vínculo de una parte del pedido de un grupo de planificación a la demanda de un miembro: Suave mientras el pedido está abierto (MRP puede moverlo), Duro una vez que se recibe o completa (nunca se mueve), o Manual cuando un planificador lo establece con un motivo."
 
@@ -31984,6 +32050,9 @@ msgstr "La parte se fabrica como su propio trabajo cuando se construye el padre 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La parte se toma del inventario existente cuando se construye su padre - sin nuevo trabajo o orden de compra."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Los números de pieza de este documento no pueden cambiar ahora."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "La parte del pago de entrega que el gobierno retiene para recuperar sus pagos de progreso o basados en desempeño: la tasa de liquidación multiplicada por la factura, nunca más que el financiamiento aún no liquidado."

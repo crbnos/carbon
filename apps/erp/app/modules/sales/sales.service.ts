@@ -1880,6 +1880,34 @@ export async function getQuoteByExternalId(
 }
 
 /**
+ * The quote a public share link names, or null when the company has Digital
+ * Quotes turned off: the page, its PDF and accept/reject all refuse then.
+ */
+export async function getSharedQuote(
+  client: SupabaseClient<Database>,
+  externalId: string
+) {
+  const quote = await getQuoteByExternalId(client, externalId);
+  if (quote.error) return null;
+
+  const settings = await client
+    .from("companySettings")
+    .select("digitalQuoteEnabled")
+    .eq("id", quote.data.companyId)
+    .single();
+  if (settings.error) {
+    logger.error("Failed to read the digital quote setting", {
+      companyId: quote.data.companyId,
+      quoteId: quote.data.id,
+      error: settings.error
+    });
+    return null;
+  }
+
+  return settings.data.digitalQuoteEnabled ? quote.data : null;
+}
+
+/**
  * Whether a Sent quote's share link has expired: from the start (UTC) of its
  * expiration date. The digital quote and its PDF download both refuse it.
  */

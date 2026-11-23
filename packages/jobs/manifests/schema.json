@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-23T13:28:06.069Z",
+  "exportedAt": "2026-11-23T19:40:13.717Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -521,7 +521,9 @@
         "autoPickingListOnRelease",
         "deliveryDateControl",
         "receiptBatchNumbersFromPurchaseOrder",
-        "sequenceWeekNumbering"
+        "sequenceWeekNumbering",
+        "supplierPartNumberDisplay",
+        "customerPartNumberDisplay"
       ]
     },
     {
@@ -3393,7 +3395,8 @@
         "salesContactId",
         "defaultCc",
         "intercompanyCompanyId",
-        "readableId"
+        "readableId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -4494,7 +4497,8 @@
         "pricingRuleId",
         "priceTrace",
         "sortOrder",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -7612,7 +7616,8 @@
         "projectId",
         "projectElementId",
         "planningGroupId",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8241,7 +8246,10 @@
         "deliveryDateCheckedAt",
         "deliveryDateOverriddenBy",
         "deliveryDateOverriddenAt",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay",
+        "customerPartId",
+        "customerPartRevision"
       ]
     },
     {
@@ -8294,7 +8302,8 @@
         "discountPercent",
         "serviceJobId",
         "taxCodeId",
-        "taxesShipping"
+        "taxesShipping",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8525,7 +8534,8 @@
         "fulfillmentId",
         "serialNumber",
         "customerContractInvoiceLineId",
-        "previousInvoiceDate"
+        "previousInvoiceDate",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8618,7 +8628,8 @@
         "supplierStatus",
         "intercompanyCompanyId",
         "readableId",
-        "supplierStageId"
+        "supplierStageId",
+        "partNumberDisplay"
       ]
     },
     {
