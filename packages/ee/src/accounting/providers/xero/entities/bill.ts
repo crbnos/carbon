@@ -3,9 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
+import { assertExchangeRate, datetime, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
-import { loadAccountCodesById } from "../../../core/account-mapping";
+import {
+  getAccountMappings,
+  loadAccountCodesById
+} from "../../../core/account-mapping";
 import {
   billHasReverseCharge,
   planBillTaxLines
@@ -16,13 +19,16 @@ import { JournalEntrySyncError } from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
-  type ShouldSyncContext
+  type BatchSyncResult,
+  type ShouldSyncContext,
+  type SyncResult
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
-import { parseDotnetDate, type Xero } from "../models";
+import { parseDotnetDate, toXeroDateString, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { hasXeroMappedTax, XeroTaxContextLoader } from "../tax";
 import { buildXeroBillLineItems, takesBillFallback } from "./bill-lines";
+import { mergeBatchResults, pushXeroVoids } from "./void";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -127,6 +133,35 @@ export class BillSyncer extends BaseEntitySyncer<
   );
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  // A synced bill voided in Carbon is voided in Xero, not pushed again.
+  async pushToAccounting(entityId: string): Promise<SyncResult> {
+    if (this.config.enabled) {
+      const voids = await this.pushVoids([entityId]);
+      if (voids.results[0]) return voids.results[0];
+    }
+    return super.pushToAccounting(entityId);
+  }
+
+  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
+    if (!this.config.enabled) return super.pushBatchToAccounting(entityIds);
+    const voids = await this.pushVoids(entityIds);
+    const rest =
+      voids.remaining.length > 0
+        ? await super.pushBatchToAccounting(voids.remaining)
+        : null;
+    return mergeBatchResults(voids.results, rest);
+  }
+
+  private pushVoids(entityIds: string[]) {
+    return pushXeroVoids({
+      database: this.database,
+      companyId: this.companyId,
+      provider: this.xeroProvider,
+      entityType: "bill",
+      entityIds
+    });
   }
 
   // =================================================================
@@ -245,7 +280,7 @@ export class BillSyncer extends BaseEntitySyncer<
       );
       for (const supplierId of supplierIds) {
         const externalId = await mappingService.getExternalId(
-          "supplier",
+          "vendor",
           supplierId,
           this.provider.id
         );
@@ -533,7 +568,8 @@ export class BillSyncer extends BaseEntitySyncer<
     if (
       remote.Status === "AUTHORISED" &&
       remote.DueDate &&
-      new Date(remote.DueDate) < new Date()
+      (toXeroDateString(remote.DueDate) ?? "") <
+        datetime.today("UTC").toString()
     ) {
       status = "Overdue";
     }
@@ -567,8 +603,8 @@ export class BillSyncer extends BaseEntitySyncer<
       invoiceId: remote.InvoiceNumber ?? remote.InvoiceID,
       supplierExternalId: remote.Contact.ContactID,
       status,
-      dateIssued: remote.Date ?? null,
-      dateDue: remote.DueDate ?? null,
+      dateIssued: toXeroDateString(remote.Date),
+      dateDue: toXeroDateString(remote.DueDate),
       datePaid: remote.Status === "PAID" ? new Date().toISOString() : null,
       currencyCode,
       exchangeRate,
@@ -608,7 +644,7 @@ export class BillSyncer extends BaseEntitySyncer<
       supplierId = await txMappingService.getEntityId(
         this.provider.id,
         data.supplierExternalId,
-        "supplier"
+        "vendor"
       );
     }
 
@@ -772,26 +808,44 @@ export class BillSyncer extends BaseEntitySyncer<
       }
     }
 
-    // Resolve account IDs from Xero AccountCodes
-    const accountNumbers = [
-      ...new Set(
-        lines.map((l) => l.accountNumber).filter((n): n is string => n !== null)
-      )
-    ];
+    // Resolve Carbon accounts through the integration's account mapping (a
+    // Xero code never matches a Carbon account number). A code that maps to no
+    // account, or to several, refuses the bill instead of guessing.
     const accountIdMap = new Map<string, string>();
-    if (accountNumbers.length > 0) {
-      const companyGroupId = await this.getCompanyGroupId(tx);
-      if (companyGroupId) {
-        const accounts = await tx
-          .selectFrom("account")
-          .select(["id", "number"])
-          .where("companyGroupId", "=", companyGroupId)
-          .where("number", "in", accountNumbers)
-          .where("active", "=", true)
-          .execute();
-        for (const a of accounts) {
-          if (a.number) accountIdMap.set(a.number, a.id);
-        }
+    const accountCodes = new Set(
+      lines
+        .filter((l) => !(l.itemCode && itemMap.has(l.itemCode)))
+        .map((l) => l.accountNumber)
+        .filter((n): n is string => n !== null)
+    );
+    if (accountCodes.size > 0) {
+      const mappings = await getAccountMappings(tx, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      });
+      if (mappings.error) {
+        throw new Error(`Failed to load account mappings: ${mappings.error}`);
+      }
+      const idsByCode = new Map<string, Set<string>>();
+      for (const mapping of mappings.data ?? []) {
+        if (!mapping.externalCode) continue;
+        const ids = idsByCode.get(mapping.externalCode) ?? new Set<string>();
+        ids.add(mapping.accountId);
+        idsByCode.set(mapping.externalCode, ids);
+      }
+      const unresolved: string[] = [];
+      for (const code of accountCodes) {
+        const ids = [...(idsByCode.get(code) ?? [])];
+        if (ids.length === 1) accountIdMap.set(code, ids[0]!);
+        else unresolved.push(code);
+      }
+      if (unresolved.length > 0) {
+        throw new JournalEntrySyncError({
+          errorCode: "UNMAPPED_ACCOUNTS",
+          message: `Cannot import Xero bill: Xero account ${unresolved.join(", ")} maps to no single Carbon account. Map it to exactly one Carbon account on the Account Mapping tab, then retry.`,
+          warning: true,
+          metadata: { xeroAccountCodes: unresolved }
+        });
       }
     }
 

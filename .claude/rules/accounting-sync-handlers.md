@@ -109,7 +109,9 @@ These live in `packages/jobs/src/inngest/functions/integrations/` (+ `events/syn
 
 `metadata.settings.syncEnabled`, read ONLY through `isAccountingSyncEnabled` (`core/models.ts`).
 Absent reads as ON (rows that predate the switch were already syncing); every connect path writes
-an explicit value. A new connection starts OFF so the customer can map accounts first: the
+an explicit value. A reconnect to the same tenant/realm keeps every stored setting and swaps
+only the credentials (`metadataOnConnect`); the OAuth callbacks read the stored row BEFORE the code
+exchange and pass it to the provider, because the exchange persists tokens through `onTokenRefresh`. A new connection starts OFF so the customer can map accounts first: the
 OAuth callbacks (`integrations.{xero,quickbooks}.oauth.ts`) use `syncEnabledOnConnect`, which
 keeps the existing value only for a reconnect to the SAME tenant/realm (a dead-grant reconnect
 must not pause a live integration), and the form install (Rillet) writes `false` when
@@ -939,6 +941,11 @@ A Carbon tax code maps to one provider tax rate per direction: a Xero
   `taxPercent` and `supplierTaxAmount` but no `taxCodeId`, so its posting folds
   the tax into cost, recoverable VAT included. Phase 1 does not map a provider
   rate back to a Carbon code.
+  Each Xero bill line's account resolves through the account mapping (the
+  Xero code must map to exactly one Carbon account); otherwise the bill parks
+  with `UNMAPPED_ACCOUNTS`. A Xero code is never matched against a Carbon
+  account number. Xero dates arrive as `/Date(ms)/` and are read with
+  `toXeroDateString` (`xero/models.ts`).
 <!-- UNVERIFIED: no Xero or QBO sandbox has accepted a document with a mapped tax rate yet (plan Task 39) -->
 
 ## Gotchas
@@ -987,6 +994,16 @@ A Carbon tax code maps to one provider tax rate per direction: a Xero
   invoice mappers (the Rental-line spike above). <!-- UNVERIFIED: no provider
   has been exercised with a Lease or Lease Run journal or a sales-type rental
   invoice -->
+
+## Invoice and bill voids
+
+Voiding a synced invoice or bill in Carbon voids the provider's copy for Rillet
+(DELETE) and Xero. `DEFAULT_NATIVE_VOID_PROVIDERS` (`reconcile-executor.ts`) lists
+both; QBO is not in it, so a QBO document voided in Carbon stays live there. Xero's
+invoice and bill syncers call `pushXeroVoids` (`xero/entities/void.ts`) before the
+normal push: `POST /Invoices/{id}` with `Status: "VOIDED"`, then the mapping gets
+`metadata.voided = true` so the reconciler stops asking. Xero refuses to void a
+document with a payment applied; that fails with Xero's message.
 
 ## Credit memos and supplier credits as provider documents
 

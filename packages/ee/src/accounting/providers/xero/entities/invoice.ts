@@ -29,13 +29,16 @@ import {
 import {
   type Accounting,
   BaseEntitySyncer,
-  type ShouldSyncContext
+  type BatchSyncResult,
+  type ShouldSyncContext,
+  type SyncResult
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
-import { parseDotnetDate, type Xero } from "../models";
+import { parseDotnetDate, toXeroDateString, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
 import { resolveXeroTaxType, XeroTaxContextLoader } from "../tax";
+import { mergeBatchResults, pushXeroVoids } from "./void";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
@@ -157,6 +160,35 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  // A synced invoice voided in Carbon is voided in Xero, not pushed again.
+  async pushToAccounting(entityId: string): Promise<SyncResult> {
+    if (this.config.enabled) {
+      const voids = await this.pushVoids([entityId]);
+      if (voids.results[0]) return voids.results[0];
+    }
+    return super.pushToAccounting(entityId);
+  }
+
+  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
+    if (!this.config.enabled) return super.pushBatchToAccounting(entityIds);
+    const voids = await this.pushVoids(entityIds);
+    const rest =
+      voids.remaining.length > 0
+        ? await super.pushBatchToAccounting(voids.remaining)
+        : null;
+    return mergeBatchResults(voids.results, rest);
+  }
+
+  private pushVoids(entityIds: string[]) {
+    return pushXeroVoids({
+      database: this.database,
+      companyId: this.companyId,
+      provider: this.xeroProvider,
+      entityType: "invoice",
+      entityIds
+    });
   }
 
   /**
@@ -450,8 +482,8 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
 
     return {
       status: XERO_TO_CARBON_STATUS[remote.Status],
-      dateIssued: remote.Date ?? null,
-      dateDue: remote.DueDate ?? null,
+      dateIssued: toXeroDateString(remote.Date),
+      dateDue: toXeroDateString(remote.DueDate),
       customerReference: remote.Reference ?? null,
       subtotal: remote.SubTotal ?? 0,
       totalTax: remote.TotalTax ?? 0,
@@ -604,6 +636,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       if (!SYNCABLE_STATUSES.includes(context.localEntity.status)) {
         return `Invoice must be posted before syncing (current status: ${context.localEntity.status})`;
       }
+    }
+
+    // Carbon owns sales invoices: one raised in Xero is not imported. Skipped,
+    // not Failed, since nothing went wrong.
+    if (context.direction === "pull" && context.isFirstSync) {
+      return "Sales invoices are raised in Carbon; an invoice created in Xero is not imported";
     }
 
     return true;

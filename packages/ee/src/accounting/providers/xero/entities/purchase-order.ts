@@ -11,7 +11,7 @@ import {
   type ShouldSyncContext
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
-import { parseDotnetDate, type Xero } from "../models";
+import { parseDotnetDate, toXeroDateString, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import {
   hasXeroMappedTax,
@@ -157,7 +157,8 @@ const CARBON_TO_XERO_STATUS: Record<
   Planned: "DRAFT",
   "To Receive": "AUTHORISED",
   "To Receive and Invoice": "AUTHORISED",
-  "To Invoice": "BILLED",
+  // "To Invoice" is received and still waiting for its bill, so Xero must keep it open.
+  "To Invoice": "AUTHORISED",
   Completed: "BILLED",
   Closed: "BILLED"
 };
@@ -169,7 +170,7 @@ const XERO_TO_CARBON_STATUS: Record<
   DRAFT: "Draft",
   SUBMITTED: "To Review",
   AUTHORISED: "To Receive",
-  BILLED: "To Invoice",
+  BILLED: "Completed",
   DELETED: "Closed"
 };
 
@@ -289,7 +290,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       );
       for (const supplierId of supplierIds) {
         const externalId = await mappingService.getExternalId(
-          "supplier",
+          "vendor",
           supplierId,
           this.provider.id
         );
@@ -579,8 +580,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       purchaseOrderId: remote.PurchaseOrderNumber ?? remote.PurchaseOrderID,
       supplierExternalId: remote.Contact.ContactID,
       status,
-      orderDate: remote.Date ?? null,
-      deliveryDate: remote.DeliveryDate ?? null,
+      orderDate: toXeroDateString(remote.Date),
+      deliveryDate: toXeroDateString(remote.DeliveryDate),
       deliveryAddress: remote.DeliveryAddress ?? null,
       deliveryInstructions: remote.DeliveryInstructions ?? null,
       currencyCode: remote.CurrencyCode ?? "USD",
@@ -614,7 +615,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       supplierId = await txMappingService.getEntityId(
         this.provider.id,
         data.supplierExternalId,
-        "supplier"
+        "vendor"
       );
     }
 

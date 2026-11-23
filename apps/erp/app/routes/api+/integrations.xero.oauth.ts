@@ -8,10 +8,10 @@ import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Xero } from "@carbon/ee";
 import {
   connectedOrganizationId,
-  DEFAULT_SYNC_CONFIG,
   getProviderIntegration,
+  metadataOnConnect,
   ProviderID,
-  syncEnabledOnConnect
+  type ProviderIntegrationMetadata
 } from "@carbon/ee/accounting";
 import { xeroOnInstall } from "@carbon/ee/xero/hooks.server";
 import { getLogger } from "@carbon/logger";
@@ -76,7 +76,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const provider = getProviderIntegration(client, companyId, ProviderID.XERO);
+    // Read the stored row BEFORE the code exchange: the exchange saves the new
+    // tokens through the provider, and without the stored metadata that save
+    // overwrote the organization and every setting.
+    const existing = await getIntegration(client, Xero.id, companyId);
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      ProviderID.XERO,
+      (existing.data?.metadata ?? undefined) as
+        | ProviderIntegrationMetadata
+        | undefined
+    );
 
     // Exchange the authorization code for tokens. The redirect_uri must match
     // the authorize-time one, which the connect route
@@ -138,7 +149,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // A refused connect must not leave Xero showing the app as connected to
     // an organisation Carbon never saved — unless it is the one already in use.
-    const existing = await getIntegration(client, Xero.id, companyId);
     const keepsExistingConnection =
       connectedOrganizationId(existing.data?.metadata) === tenantId;
     const refuse = async (error: string, status: number) => {
@@ -220,26 +230,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     // Sync starts off on a new connection so accounts can be mapped first; a
-    // reconnect to the same organization keeps the switch where it was.
-    const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, tenantId);
-
+    // reconnect to the same organization keeps the switch and every setting.
     const createdXeroIntegration = await upsertCompanyIntegration(client, {
       id: Xero.id,
       active: true,
       // @ts-expect-error
-      metadata: {
-        syncConfig: DEFAULT_SYNC_CONFIG,
-        settings: { syncEnabled },
+      metadata: metadataOnConnect(existing.data?.metadata, tenantId, {
+        ...auth,
         // Provider-specific fields live under providerMetadata (new
         // credential shape) — legacy rows are upgraded on read
-        credentials: {
-          ...auth,
-          providerMetadata: {
-            tenantId,
-            tenantName: tenantName ?? undefined
-          }
+        providerMetadata: {
+          tenantId,
+          tenantName: tenantName ?? undefined
         }
-      },
+      }),
       updatedBy: userId,
       companyId: companyId
     });

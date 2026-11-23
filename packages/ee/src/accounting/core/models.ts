@@ -1102,6 +1102,38 @@ export function syncEnabledOnConnect(
   );
 }
 
+/**
+ * The integration metadata an OAuth (re)connection saves. A reconnect to the
+ * SAME organization keeps every stored setting (posting families, pull cursor,
+ * dimension slots, sync config) and only swaps the credentials; a new
+ * organization starts from the defaults with sync off.
+ */
+export function metadataOnConnect(
+  existingMetadata: unknown,
+  organizationId: string,
+  credentials: Record<string, unknown>
+): Record<string, unknown> {
+  const sameOrganization =
+    connectedOrganizationId(existingMetadata) === organizationId;
+  const previous =
+    sameOrganization && existingMetadata && typeof existingMetadata === "object"
+      ? (existingMetadata as Record<string, unknown>)
+      : {};
+  const previousSettings =
+    previous.settings && typeof previous.settings === "object"
+      ? (previous.settings as Record<string, unknown>)
+      : {};
+  return {
+    ...previous,
+    syncConfig: previous.syncConfig ?? DEFAULT_SYNC_CONFIG,
+    settings: {
+      ...previousSettings,
+      syncEnabled: syncEnabledOnConnect(existingMetadata, organizationId)
+    },
+    credentials
+  };
+}
+
 // /********************************************************\
 // *              Sync Operation Schemas                    *
 // \********************************************************/

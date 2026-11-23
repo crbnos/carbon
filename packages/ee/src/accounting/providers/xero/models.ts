@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { fromAbsolute, toCalendarDate } from "@internationalized/date";
 import { z } from "zod";
 import type { Accounting } from "../../core/types";
 
@@ -175,7 +176,7 @@ export namespace Xero {
     InvoiceNumber: z.string().optional(),
     Reference: z.string().optional(),
     Contact: InvoiceContactSchema,
-    Date: z.string().optional(), // YYYY-MM-DD
+    Date: z.string().optional(), // "/Date(ms+0000)/" in JSON responses; read with toXeroDateString
     DueDate: z.string().optional(),
     Status: z.enum([
       "DRAFT",
@@ -631,6 +632,15 @@ export const parseDotnetDate = (date: Date | string) => {
   }
 
   return date;
+};
+
+/** A Xero date field ("/Date(ms+0000)/" or "YYYY-MM-DD…") as a calendar date string. */
+export const toXeroDateString = (raw: string | null | undefined) => {
+  if (!raw) return null;
+  const epoch = raw.match(/\/Date\((-?\d+)/);
+  if (epoch)
+    return toCalendarDate(fromAbsolute(Number(epoch[1]), "UTC")).toString();
+  return raw.slice(0, 10);
 };
 
 export const transformXeroPhones = (
