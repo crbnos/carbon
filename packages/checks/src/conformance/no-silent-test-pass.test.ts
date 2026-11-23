@@ -11,8 +11,6 @@ const snippets = (contents: string) => scan(contents).map((v) => v.snippet);
 
 describe("noSilentTestPass", () => {
   it("flags the cancel-job wrapper as it was on main", () => {
-    // apps/erp/test/database/cancel-job.test.ts before it moved to
-    // it.skipIf: without a local stack its five cases passed without running.
     const source = `const caller = hasLocalDatabase ? localServiceRoleClient() : null;
 const cancelTest = (name: string, fn: () => Promise<void>) =>
   databaseTest(name, async () => {

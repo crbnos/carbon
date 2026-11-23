@@ -5,10 +5,8 @@
 import type { ConformanceCheck, Violation } from "../check";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
-// A test case whose callback returns early when its client or database is
-// missing finishes without an assertion, and vitest reports it PASSED. The
-// cancel-job regressions did that: without a local stack all five went green
-// without running. `it.skipIf(...)` and `databaseTest` report SKIPPED instead.
+// vitest reports a case whose callback returns before asserting as PASSED:
+// without a local stack the five cancel-job regressions went green unrun.
 const MESSAGE =
   "A test that returns early passes without running: use `it.skipIf(!x)(…)` / `databaseTest` so it reports skipped, or assert the value exists (.claude/rules/testing.md → Database tests)";
 
@@ -36,7 +34,6 @@ const ARG_MODIFIERS = new Set(["each", "for", "skipIf", "runIf"]);
 const lineOf = (text: string, index: number) =>
   text.slice(0, index).split("\n").length;
 
-/** Index of the bracket closing the one at `open`, in masked text. */
 function closeOf(masked: string, open: number): number {
   let depth = 0;
   for (let i = open; i < masked.length; i++) {
@@ -50,7 +47,6 @@ function closeOf(masked: string, open: number): number {
   return masked.length;
 }
 
-/** Index of the next non-space character at or after `from`. */
 function skipSpace(masked: string, from: number): number {
   let i = from;
   while (i < masked.length && /\s/.test(masked[i] as string)) i++;
@@ -58,10 +54,8 @@ function skipSpace(masked: string, from: number): number {
 }
 
 /**
- * The `(` that opens a test case's own argument list when a test-case callee
- * (`it`, `test`, a wrapper) starts at `start`, past any modifier chain
- * (`it.skipIf(c)(`, `it.each(rows)(`, `it.concurrent(`); -1 for anything else
- * (`it.extend(...)`, `test.describe`).
+ * The `(` of the case's own arguments, past any modifier chain
+ * (`it.skipIf(c)(`, `it.each(rows)(`); -1 for `it.extend(…)`, `test.describe`.
  */
 function caseCallOpen(masked: string, start: number, name: string): number {
   let i = start + name.length;
@@ -127,13 +121,12 @@ function functionBodyOpen(masked: string, start: number, end: number): number {
 }
 
 /**
- * `if` statements that run whenever the body does: at its top level, or in a
- * `try` / `catch` / `finally` block at its top level (the usual shape of a
- * database test that releases its connection).
+ * `if`s at the body's top level, or nested only in `try` / `catch` / `finally`
+ * blocks (a database test that releases its connection).
  */
 function topLevelIfs(masked: string, open: number, close: number): number[] {
   const out: number[] = [];
-  // One entry per open bracket inside the body: whether it is a try block.
+  // One entry per open bracket: whether it opens a try, catch or finally block.
   const stack: boolean[] = [];
   for (let i = open + 1; i < close; i++) {
     const c = masked[i];
@@ -165,7 +158,6 @@ function topLevelIfs(masked: string, open: number, close: number): number[] {
   return out;
 }
 
-/** Index of the `(` closed by the `)` at `close`. */
 function openOf(masked: string, close: number): number {
   let depth = 0;
   for (let i = close; i >= 0; i--) {
@@ -179,7 +171,6 @@ function openOf(masked: string, close: number): number {
   return 0;
 }
 
-/** Split `text` on a top-level operator (`||`, `&&`). */
 function splitTopLevel(text: string, operator: string): string[] {
   const parts: string[] = [];
   let depth = 0;
@@ -216,7 +207,6 @@ function isMissingCondition(condition: string): boolean {
     .some(isMissingTest);
 }
 
-/** End of a bare `return` (no value) at `from` — `return;`, or the block `{ return; }` — or -1. */
 function bareReturnEnd(masked: string, from: number): number {
   const statement = /^return[ \t]*(?:;|(?=\r?\n|\}|$))/.exec(
     masked.slice(from)
@@ -278,7 +268,6 @@ function localWrappers(masked: string, known: string[]): string[] {
   return [...found];
 }
 
-/** End of the declaration starting at `start`: `;` or a blank line at depth 0. */
 function statementEnd(masked: string, start: number): number {
   let depth = 0;
   for (let i = start; i < masked.length; i++) {

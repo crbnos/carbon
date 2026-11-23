@@ -27,8 +27,6 @@ vi.mock("@carbon/env", async (importOriginal) => {
 });
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-// Skipped, not passed, without a local stack: an early return would turn green
-// without running.
 const scanTest = (name: string, fn: () => Promise<void>) =>
   it.skipIf(!client)(name, fn, 60_000);
 

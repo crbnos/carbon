@@ -88,8 +88,8 @@ databaseTest(
     const db = await connectLocalTestDatabase();
     const rollback = new Error("rollback");
     try {
-      // Not a member's row: a database with companies but no users would have
-      // none. The writes roll back.
+      // The system user, not a member: a database with no users has no member
+      // row.
       const { id: companyId } = await db
         .selectFrom("company")
         .select("id")
