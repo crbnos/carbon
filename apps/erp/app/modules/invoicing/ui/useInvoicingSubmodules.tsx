@@ -5,6 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBanknote,
+  LuCalendarClock,
   LuCreditCard,
   LuReceipt,
   LuReceiptText,
@@ -52,6 +53,12 @@ export default function useInvoicingSubmodules() {
           to: path.to.invoicingPurchasing,
           icon: <LuReceiptText />,
           table: "purchaseInvoice",
+          permission: "invoicing"
+        },
+        {
+          name: t`Payment Requests`,
+          to: path.to.paymentRequests,
+          icon: <LuCalendarClock />,
           permission: "invoicing"
         },
         {

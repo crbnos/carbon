@@ -29,6 +29,8 @@ import { Trans } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigate } from "react-router";
+import { useRouteData } from "~/hooks";
+import type { PaymentRequestsData } from "~/modules/invoicing/ui/PaymentRequest";
 import type { action as postAction } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -53,6 +55,12 @@ const PurchaseInvoicePostModal = ({
   const [items] = useItems();
   const navigate = useNavigate();
   const hasLinesToReceive = linesToReceive.length > 0;
+  // The details tab already loaded the requests: no second read.
+  const requestCount =
+    useRouteData<{ paymentRequests: PaymentRequestsData | null }>(
+      path.to.purchaseInvoiceDetails(invoiceId)
+    )?.paymentRequests?.requests.filter((r) => r.status !== "Cancelled")
+      .length ?? 0;
 
   const hasTrackedItems = useMemo(() => {
     return linesToReceive.some((line) => {
@@ -87,6 +95,14 @@ const PurchaseInvoicePostModal = ({
           </ModalTitle>
         </ModalHeader>
         <ModalBody>
+          {requestCount > 0 && (
+            <p className="text-sm text-muted-foreground mb-4">
+              <Trans>
+                No automatic request: this invoice already has {requestCount}{" "}
+                payment requests.
+              </Trans>
+            </p>
+          )}
           {hasLinesToReceive ? (
             <div className="gap-4 w-full flex flex-col">
               {hasTrackedItems ? (

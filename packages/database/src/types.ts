@@ -48490,6 +48490,206 @@ export type Database = {
           }
         ]
       }
+      paymentRequest: {
+        Row: {
+          amount: number | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          customFields: Json | null
+          description: string | null
+          documentPath: string | null
+          dueDate: string | null
+          id: string
+          idempotencyKey: string | null
+          isAutomatic: boolean
+          paymentId: string | null
+          purchaseInvoiceId: string | null
+          purchaseOrderId: string | null
+          requestNumber: number
+          status: Database["public"]["Enums"]["paymentRequestStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amount?: number | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          customFields?: Json | null
+          description?: string | null
+          documentPath?: string | null
+          dueDate?: string | null
+          id?: string
+          idempotencyKey?: string | null
+          isAutomatic?: boolean
+          paymentId?: string | null
+          purchaseInvoiceId?: string | null
+          purchaseOrderId?: string | null
+          requestNumber: number
+          status?: Database["public"]["Enums"]["paymentRequestStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amount?: number | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          customFields?: Json | null
+          description?: string | null
+          documentPath?: string | null
+          dueDate?: string | null
+          id?: string
+          idempotencyKey?: string | null
+          isAutomatic?: boolean
+          paymentId?: string | null
+          purchaseInvoiceId?: string | null
+          purchaseOrderId?: string | null
+          requestNumber?: number
+          status?: Database["public"]["Enums"]["paymentRequestStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paymentRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "paymentRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "paymentRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "paymentRequest_paymentId_companyId_fkey"
+            columns: ["paymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "paymentRequest_purchaseInvoiceId_fkey"
+            columns: ["purchaseInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_purchaseInvoiceId_fkey"
+            columns: ["purchaseInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_purchaseOrderId_companyId_fkey"
+            columns: ["purchaseOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "paymentRequest_purchaseOrderId_companyId_fkey"
+            columns: ["purchaseOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "paymentRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       paymentTerm: {
         Row: {
           active: boolean
@@ -113617,6 +113817,7 @@ export type Database = {
         | "Consumable"
         | "Fixture"
         | "Lease"
+      paymentRequestStatus: "Planned" | "Ready" | "Sent" | "Paid" | "Cancelled"
       paymentStatus: "Draft" | "Posted" | "Voided"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
       paymentType: "Receipt" | "Disbursement"

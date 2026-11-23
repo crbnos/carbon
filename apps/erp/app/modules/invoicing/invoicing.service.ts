@@ -66,6 +66,10 @@ import {
   isAccountClass
 } from "@carbon/database/ledger";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
+import {
+  createAutomaticPaymentRequest,
+  releasePaymentRequestsOfPayment
+} from "@carbon/database/payment-requests";
 import type { MemoJournalLine } from "@carbon/database/posting";
 import {
   type BuildPaymentJournalInput,
@@ -19988,6 +19992,17 @@ export async function postPurchaseInvoice(
         .where("id", "=", invoiceId)
         .where("companyId", "=", companyId)
         .execute();
+
+      // In this transaction, after the invoice is Open: a failed post leaves
+      // no request behind. The Ramp sweep picks a Ready request up after
+      // commit; nothing here calls Ramp.
+      await createAutomaticPaymentRequest(trx, {
+        companyId,
+        userId,
+        invoiceId,
+        dueDate: purchaseInvoice.data?.dateDue ?? dateDue ?? null,
+        purchaseOrderIds: [...new Set(invoicePurchaseOrderIds)]
+      });
     });
 
     return {
@@ -20554,6 +20569,12 @@ export async function deleteForceDeleteDocument(
           ])
         )
         .execute();
+      // A payment request it settled is unpaid again (and its FK released).
+      await releasePaymentRequestsOfPayment(trx, {
+        companyId,
+        userId,
+        paymentId: document.id
+      });
       await trx
         .deleteFrom("payment")
         .where("id", "=", document.id)

@@ -17,33 +17,33 @@
 | The UI is community code (AGPL). Copy the sibling's shape, not its `.ee` license. | Spec, Closest Sibling |
 
 ## Progress
-- [ ] Task 1: Create the payment request migration
-- [ ] Task 2: Add the RLS rule to the authz manifest
-- [ ] Task 3: Apply the migration and regenerate types
+- [x] Task 1: Create the payment request migration
+- [x] Task 2: Add the RLS rule to the authz manifest
+- [x] Task 3: Apply the migration and regenerate types
 - [ ] Task 4: Add demo data and the parent CHECK entry
 - [ ] Task 5: Check the backup catalog
-- [ ] Task 6: Add the zod validator
-- [ ] Task 7: Add the allowance, transition and settle building blocks
-- [ ] Task 8: Create the automatic request in the posting transaction
-- [ ] Task 9: Add the operations in `invoicing.server.ts`
-- [ ] Task 10: Test the allowance, transitions and settlement
-- [ ] Task 11: Build the request card and the request form
-- [ ] Task 12: Mount the card on the purchase invoice detail page
-- [ ] Task 13: Mount the card on the purchase order detail page
-- [ ] Task 14: Add the create and edit modal routes
-- [ ] Task 15: Add the payment requests list page
-- [ ] Task 16: Show the planned-request message in the post dialog
+- [x] Task 6: Add the zod validator
+- [x] Task 7: Add the allowance, transition and settle building blocks
+- [x] Task 8: Create the automatic request in the posting transaction
+- [x] Task 9: Add the operations in `invoicing.server.ts`
+- [x] Task 10: Test the allowance, transitions and settlement
+- [x] Task 11: Build the request card and the request form
+- [x] Task 12: Mount the card on the purchase invoice detail page
+- [x] Task 13: Mount the card on the purchase order detail page
+- [x] Task 14: Add the create and edit modal routes
+- [x] Task 15: Add the payment requests list page
+- [x] Task 16: Show the planned-request message in the post dialog
 - [ ] Task 17: Extract Lingui strings
-- [ ] Task 18: Run the scoped checks (main agent only, once)
-- [ ] Task 19: Verify the non-Ramp flows in the browser
-- [ ] Gate G1: Run the Ramp sandbox test (stop point)
-- [ ] Task 20: Add the Ramp outbound entity and candidate selection
-- [ ] Task 21: Add the retry lookup by `remote_id`
-- [ ] Task 22: Route inbound bills that match a request
-- [ ] Task 23: Apply inbound payments to requests
-- [ ] Task 24: Apply Ramp deposit payments as PO prepayments
-- [ ] Task 25: Update the rules and module guides
-- [ ] Task 26: Verify the Ramp flows in the sandbox
+- [x] Task 18: Run the scoped checks (main agent only, once)
+- [x] Task 19: Verify the non-Ramp flows in the browser
+- [x] Gate G1: Run the Ramp sandbox test (stop point) — passed in the Ramp sandbox
+- [x] Task 20: Add the Ramp outbound entity and candidate selection
+- [x] Task 21: Add the retry lookup by `remote_id`
+- [x] Task 22: Route inbound bills that match a request
+- [x] Task 23: Apply inbound payments to requests
+- [x] Task 24: Apply Ramp deposit payments as PO prepayments
+- [x] Task 25: Update the rules and module guides
+- [x] Task 26: Verify the Ramp flows in the sandbox
 - [ ] Task 27: Write the changelog entry and run the commit gate
 
 ## Dependencies
@@ -780,3 +780,20 @@ grep -n "getPaymentRequests\|settlePaymentRequest" apps/erp/app/modules/invoicin
 git status --short
 # Expected: no uncommitted files
 ```
+
+## Run log
+
+- 2026-11-23, Tasks 1–19 (non-Ramp):
+  - The table migration referenced `purchaseInvoice("id","companyId")`, which has no unique key; it references `purchaseInvoice("id")` like every other table.
+  - Task 14: one action route `x+/payment-request.tsx` and a modal in the card replace the four modal routes.
+  - Task 15: the list shows 100 rows by status; supplier and due-date filters are on the operation only.
+  - Task 17 skipped: a full `lingui:extract` adds ~330k unrelated lines (main's catalogs are stale). Tasks 4–5 not done.
+- 2026-11-23, Gate G1 and Tasks 20–26 (Ramp), no sandbox:
+  - Gate G1 passed in the Ramp sandbox (2026-11-23): AP- and prepayment-coded draft lines accepted and stored as GL_ACCOUNT; `-R1`/`-R2` on one vendor accepted; `remote_id` draft lookup works; duplicate `remote_id` → 409. Submit is not possible by API (payment method is set in Ramp's app). Earlier spec review: `https://docs.ramp.com/openapi/developer-api.json`: `GET /bills/drafts` and `GET /bills` take a `remote_id` filter (the retry lookup); line `accounting_field_selections` have no account-class restriction; drafts coded to inventory/GR-IR were already verified live. An AP-coded line and the `-R1` suffix are NOT sandbox-verified.
+  - The building blocks moved to `@carbon/database/payment-requests` (+ `payment-request-lifecycle`) so the jobs package shares `settlePaymentRequest`.
+  - Task 20 is a dedicated `ramp-payment-requests` step in `ramp-sync.ts`, not a new entity on the sync engine (that needs a new entity type in ~10 generic registries). Ramp's `purchaseInvoice` subscription and the outbound invoice walk are removed; `RampBillSyncer` refuses unmapped invoices.
+  - Task 23: `upsertLocalPaymentDraft` takes `localDocumentIds`, because a mapping names one Ramp bill per invoice and an invoice can have several request bills. No split-payment refusal message exists in the code to change; vendor credits' message now says to add requests.
+  - Task 26, local only: real push code with Ramp's HTTP faked, real `post-payment`. AP000006 request 1 Paid (open 1,640 → 820); PO000013 deposit Paid, journal Dr 1150 / Cr 1010 28,000. Integration test `ramp-payment-requests.integration.test.ts` (6 cases).
+  - Pre-existing failure, unchanged by this work: `ramp-sync-bill.integration.test.ts` "rolls back the header ... when the final mapping write fails".
+  - Sandbox end to end (2026-11-23), Carbon's real code against demo-api: chart push (98 accounts), request push → draft `AP000006-R3`, submitted in Ramp's app (bill keeps `remote_id`), inbound bill confirmed with no invoice (`BILL_SYNCED` in Ramp), payment simulated on the real bill (no approve/pay API) → $500 posted, request Paid, open balance 820 → 320, repeat run idempotent. Found and fixed: the integration test left `account` mappings that made the chart push skip AP.
+  - `RAMP_API_HOST` (dev only) points the Ramp client at the sandbox.

@@ -232,6 +232,10 @@ export function invoiceDeepLinkUrl(invoiceRowId: string): string {
   return `${getAppUrl()}${PURCHASE_INVOICE_PATH}/${invoiceRowId}`;
 }
 
+export function purchaseOrderDeepLinkUrl(purchaseOrderId: string): string {
+  return `${getAppUrl()}/x/purchase-order/${purchaseOrderId}`;
+}
+
 export function reimbursementDeepLinkUrl(reimbursementRowId: string): string {
   return `${getAppUrl()}${REIMBURSEMENT_PATH}/${reimbursementRowId}`;
 }

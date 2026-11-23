@@ -3428,6 +3428,9 @@ msgstr "パスを追加"
 msgid "Add Payment"
 msgstr "支払を追加"
 
+msgid "Add payment request"
+msgstr ""
+
 msgid "Add Permissions"
 msgstr "権限を追加"
 
@@ -3454,6 +3457,9 @@ msgstr "率を追加"
 
 msgid "Add Receipt"
 msgstr "領収書を追加"
+
+msgid "Add request"
+msgstr ""
 
 msgid "Add Requirement"
 msgstr "要求事項を追加"
@@ -6597,6 +6603,9 @@ msgstr "発注書をキャンセル"
 
 msgid "Cancel purchase order {target}"
 msgstr "発注書{target}をキャンセル"
+
+msgid "Cancel request"
+msgstr ""
 
 msgid "Cancel Request"
 msgstr "リクエストをキャンセル"
@@ -10921,11 +10930,17 @@ msgstr "保証金："
 msgid "Deposit for {document} (its invoices only)"
 msgstr "{document}のデポジット（その請求書のみ）"
 
+msgid "Deposit requests"
+msgstr ""
+
 msgid "Deposit:"
 msgstr "デポジット："
 
 msgid "Deposits"
 msgstr "前受金"
+
+msgid "Deposits to pay the supplier before an invoice exists. A Ready request goes to Ramp as its own bill."
+msgstr ""
 
 msgid "Depot"
 msgstr "デポ"
@@ -12168,6 +12183,10 @@ msgstr "理由を編集"
 
 msgid "Edit Receipt"
 msgstr "領収書を編集"
+
+#. placeholder {0}: request.requestNumber
+msgid "Edit request {0}"
+msgstr ""
 
 msgid "Edit Revision"
 msgstr "リビジョンを編集"
@@ -18292,6 +18311,9 @@ msgstr "完了を取り消す"
 msgid "Mark Partial"
 msgstr "一部承諾"
 
+msgid "Mark Ready"
+msgstr ""
+
 msgid "Mark reviewed"
 msgstr "確認済みにマーク"
 
@@ -18988,6 +19010,9 @@ msgstr "{itemName}を上に移動"
 
 msgid "Move {itemName} up in {listLabel}"
 msgstr "{listLabel}内で{itemName}を上に移動"
+
+msgid "Move back to Planned"
+msgstr ""
 
 msgid "Move batch"
 msgstr "バッチを移動"
@@ -19955,6 +19980,9 @@ msgstr "当局がありません"
 
 msgid "No authorization code was returned"
 msgstr "認可コードが返されませんでした"
+
+msgid "No automatic request: this invoice already has {requestCount} payment requests."
+msgstr ""
 
 msgid "No available filters"
 msgstr "利用可能な絞り込みはありません"
@@ -21800,6 +21828,9 @@ msgstr "未払い売掛金"
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
 
+msgid "Open balance"
+msgstr ""
+
 msgid "Open batch"
 msgstr "バッチを開く"
 
@@ -22491,6 +22522,9 @@ msgstr "ページ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
 
+msgid "Paid"
+msgstr ""
+
 msgid "Paid Amount:"
 msgstr "支払済み金額:"
 
@@ -22650,6 +22684,9 @@ msgstr "部品"
 msgid "Parts & items"
 msgstr "部品・品目"
 
+msgid "Parts of the open balance to pay by a date. A Ready request goes to Ramp as its own bill."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "部品が1台のマシン上で順番に実行されます。例：ソーまたはレーザーテーブル。"
 
@@ -22784,6 +22821,12 @@ msgstr "支払いID"
 
 msgid "Payment Rate"
 msgstr "支払の為替レート"
+
+msgid "Payment requests"
+msgstr ""
+
+msgid "Payment Requests"
+msgstr ""
 
 msgid "Payment Rows"
 msgstr "支払行"
@@ -23279,6 +23322,9 @@ msgstr "計画済価値"
 
 msgid "Planned value (BCWS)"
 msgstr "計画値 (BCWS)"
+
+msgid "Planned: expected, not yet due"
+msgstr ""
 
 msgid "Planning"
 msgstr "計画"
@@ -24892,6 +24938,9 @@ msgstr "完成準備完了"
 msgid "ready to keep or revert"
 msgstr "保持または復元の準備完了"
 
+msgid "Ready: due, send to Ramp"
+msgstr ""
+
 msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
 msgstr "実際の注文は最初に自社の週の所要量予測を消費し、その後会社の時間枠内でそれより前の週と後の週を消費するため、予測と実績の所要量が同じユニットに対して両方計画されることはありません。"
 
@@ -25989,6 +26038,12 @@ msgstr "再印刷ジョブが作成されました"
 msgid "Request a new invite"
 msgstr "新しい招待をリクエストする"
 
+msgid "Request actions"
+msgstr ""
+
+msgid "Request added"
+msgstr ""
+
 msgid "Request Approval"
 msgstr "承認を依頼"
 
@@ -26000,6 +26055,9 @@ msgstr "リクエストの強制削除"
 
 msgid "Request Quote"
 msgstr "見積を依頼"
+
+msgid "Request updated"
+msgstr ""
 
 msgid "Requested"
 msgstr "依頼済み"
@@ -28966,6 +29024,9 @@ msgstr "{parentCurrency}で表示"
 msgid "Showing the first {limit} rows. Search or filter to see the rest."
 msgstr "先頭の{limit}行を表示しています。残りを表示するには検索または絞り込みを行ってください。"
 
+msgid "Showing the first {PAGE}. Narrow the filter to see more."
+msgstr ""
+
 msgid "Showing the first 500 lines"
 msgstr "最初の 500 行を表示中"
 
@@ -29617,6 +29678,9 @@ msgstr "未払い"
 
 msgid "Still Owed"
 msgstr "未払い"
+
+msgid "Still to request"
+msgstr ""
 
 msgid "Stock"
 msgstr "在庫"
@@ -33299,6 +33363,9 @@ msgstr "到着地"
 msgid "To next week"
 msgstr "来週へ"
 
+msgid "To pay"
+msgstr ""
+
 msgid "To pick"
 msgstr "ピッキング"
 
@@ -34202,6 +34269,9 @@ msgstr "マップされていない値"
 msgid "Unmatched"
 msgstr "不一致"
 
+msgid "Unpaid order total"
+msgstr ""
+
 msgid "Unpick"
 msgstr "ピック解除"
 
@@ -34290,6 +34360,10 @@ msgstr "UoM"
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Up to {0} {unitOfMeasure}"
 msgstr "最大{0} {unitOfMeasure}"
+
+#. placeholder {0}: formatter.format(allowance)
+msgid "Up to {0} can still be requested."
+msgstr ""
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
@@ -35431,6 +35505,9 @@ msgstr "リースされている内容（例：Forklift FL-12など）"
 
 msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
 msgstr "この拠点の手持ち在庫、完成に必要な部品がそろっているオープンの製造指図、およびそれ以外の製造指図の不足部品を表示します。追加着手は部品表のすべての階層を、各品目のスクラップを含めて確認します。"
+
+msgid "What is still to pay suppliers, earliest due first. Planned requests are reminders; Ready requests go to Ramp."
+msgstr ""
 
 msgid "What is the primary contact?"
 msgstr "主担当者はどなたですか？"

@@ -149,7 +149,9 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
       return `purchase invoice was already handed off to Ramp as draft bill ${existing} — a draft cannot be re-created or updated`;
     }
 
-    return true;
+    // Every new Ramp bill comes from a payment request
+    // (`lib/payment-requests.ts`); bills mapped before that keep their mapping.
+    return "purchase invoices reach Ramp through their payment requests";
   }
 
   protected async mapToRemote(local: SpendBillSource): Promise<RampBillRemote> {

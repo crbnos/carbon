@@ -4,6 +4,10 @@
 
 import { posting } from "@carbon/api/postings.server";
 import {
+  findPaymentRequest,
+  PAYMENT_REQUEST_ID_PREFIX
+} from "@carbon/database/payment-requests";
+import {
   codeSelections,
   confirmSyncs,
   type RampBill,
@@ -22,7 +26,8 @@ import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   type RampCardPaymentAccount,
   rampBillPaymentRoute,
-  syncRampBillPayment
+  syncRampBillPayment,
+  syncRampRequestPayment
 } from "./ramp-sync-payment";
 import {
   isRampEntityInScope,
@@ -36,6 +41,7 @@ import {
   getRampExchangeRate,
   invoiceDeepLinkUrl,
   normalizeVerifiedMinorAmount,
+  purchaseOrderDeepLinkUrl,
   type RampSyncContext,
   recordRampSyncFailures,
   resolveRampSyncOperations,
@@ -299,6 +305,13 @@ async function attachBillDocuments(
   }
 }
 
+/** The payment request a Ramp bill was made from, by its `remote_id`. */
+function findBillPaymentRequest(ctx: RampSyncContext, bill: RampBill) {
+  return bill.remote_id?.startsWith(PAYMENT_REQUEST_ID_PREFIX)
+    ? findPaymentRequest(ctx.db, ctx.companyId, bill.remote_id)
+    : Promise.resolve(undefined);
+}
+
 /**
  * Sync one Ramp bill into Carbon as a posted purchase invoice. Returns `ok` when
  * a new invoice was created + posted, `skip` when an existing invoice was linked
@@ -313,8 +326,22 @@ async function syncBill(
     const vendorCredits = bill.applied_vendor_credits;
     if (Array.isArray(vendorCredits) && vendorCredits.length > 0) {
       throw new Error(
-        "Bill applies vendor credits — vendor credits not supported yet"
+        "Bill applies vendor credits, which Carbon does not sync. Add payment requests in Carbon instead."
       );
+    }
+    // A bill Carbon made from a payment request: its invoice (or order)
+    // already holds the amount. Confirm it and create nothing.
+    const request = await findBillPaymentRequest(ctx, bill);
+    if (request) {
+      return {
+        skip: {
+          id: bill.id,
+          referenceId: request.id,
+          deepLinkUrl: request.purchaseInvoiceId
+            ? invoiceDeepLinkUrl(request.purchaseInvoiceId)
+            : purchaseOrderDeepLinkUrl(request.purchaseOrderId!)
+        }
+      };
     }
     const vendor = extractRampVendor(bill);
     if (!vendor.name)
@@ -579,6 +606,7 @@ export async function syncRampBillPayments(
   const failed: FailItem[] = [];
   let reconfirmed = 0;
   const unconfigured = new Set<"bank" | "card">();
+  const requestWarnings: FailItem[] = [];
 
   try {
     for await (const page of ramp.listBills({
@@ -608,25 +636,33 @@ export async function syncRampBillPayments(
           continue;
         }
 
-        const outcome = await syncRampBillPayment(
-          {
-            companyId: ctx.companyId,
-            baseCurrency: ctx.baseCurrency,
-            statementBankAccountId: metadata.statementBankAccountId ?? null,
-            card,
-            db: ctx.db,
-            client: ctx.client,
-            getMappedInvoiceId: (billRemoteId) =>
-              ctx.mapping.getEntityId("ramp", billRemoteId, "bill"),
-            normalizeAmount: (value, currencyCode, label) =>
-              normalizeVerifiedMinorAmount(ctx, value, currencyCode, label),
-            getExchangeRate: (currencyCode) =>
-              getRampExchangeRate(ctx, currencyCode),
-            invoiceDeepLinkUrl
-          },
-          bill,
-          payment
-        );
+        const deps = {
+          companyId: ctx.companyId,
+          baseCurrency: ctx.baseCurrency,
+          statementBankAccountId: metadata.statementBankAccountId ?? null,
+          card,
+          db: ctx.db,
+          client: ctx.client,
+          getMappedInvoiceId: (billRemoteId: string) =>
+            ctx.mapping.getEntityId("ramp", billRemoteId, "bill"),
+          normalizeAmount: (
+            value: unknown,
+            currencyCode: string,
+            label: string
+          ) => normalizeVerifiedMinorAmount(ctx, value, currencyCode, label),
+          getExchangeRate: (currencyCode: string) =>
+            getRampExchangeRate(ctx, currencyCode),
+          invoiceDeepLinkUrl,
+          purchaseOrderDeepLinkUrl
+        };
+        // A bill made from a payment request pays that request; bills
+        // pushed before requests existed keep their invoice mapping.
+        const request = await findBillPaymentRequest(ctx, bill);
+        const outcome = request
+          ? await syncRampRequestPayment(deps, bill, payment, request)
+          : await syncRampBillPayment(deps, bill, payment);
+        const warning = (outcome as { warning?: FailItem }).warning;
+        if (warning) requestWarnings.push(warning);
         if ("ok" in outcome) {
           successful.push(outcome.ok);
         } else if ("skip" in outcome) {
@@ -680,6 +716,12 @@ export async function syncRampBillPayments(
     entityType: "billPayment",
     direction: "pull-from-accounting",
     failures: failed
+  });
+  // Ramp paid a different amount than a request asked for.
+  await recordRampSyncFailures(ctx, {
+    entityType: "paymentRequest",
+    direction: "pull-from-accounting",
+    failures: requestWarnings
   });
   await resolveRampSyncOperations(ctx, {
     entityType: "billPayment",

@@ -19,10 +19,7 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { SyncProvider } from "@carbon/ee/accounting";
 import { today } from "@internationalized/date";
-import {
-  getSweepFloorDate,
-  SWEPT_BILL_STATUSES
-} from "./accounting-sync-operations";
+import { getSweepFloorDate } from "./accounting-sync-operations";
 import type { ReconcileRef } from "./reconcile";
 
 /** Page size and bound for the outbound candidate walk — the accounting sweep's. */
@@ -59,7 +56,7 @@ const UNRELEASED_PURCHASE_ORDER_STATUSES = [
 async function pageOutboundIds(args: {
   client: ReturnType<typeof getCarbonServiceRole>;
   companyId: string;
-  table: "purchaseOrder" | "purchaseInvoice";
+  table: "purchaseOrder";
   dateColumn: string;
   floor: string;
   statuses?: readonly string[];
@@ -105,7 +102,7 @@ async function pageOutboundIds(args: {
 
 export type RampOutboundCandidates = {
   refs: ReconcileRef[];
-  scanned: { purchaseOrders: number; invoices: number };
+  scanned: { purchaseOrders: number };
   skippedReasons: string[];
 };
 
@@ -126,7 +123,7 @@ export async function loadRampOutboundCandidates(args: {
 }): Promise<RampOutboundCandidates> {
   const todayIso = args.todayIso ?? today("UTC").toString();
   const refs: ReconcileRef[] = [];
-  const scanned = { purchaseOrders: 0, invoices: 0 };
+  const scanned = { purchaseOrders: 0 };
   const skippedReasons: string[] = [];
 
   const purchaseOrderConfig = args.provider.getSyncConfig("purchaseOrder");
@@ -155,26 +152,8 @@ export async function loadRampOutboundCandidates(args: {
     skippedReasons.push("purchase orders: push disabled");
   }
 
-  const billConfig = args.provider.getSyncConfig("bill");
-  if (billConfig?.enabled && billConfig.direction !== "pull-from-accounting") {
-    const ids = await pageOutboundIds({
-      client: args.client,
-      companyId: args.companyId,
-      table: "purchaseInvoice",
-      dateColumn: "postingDate",
-      floor: getSweepFloorDate({
-        todayIso,
-        syncFromDate: billConfig.syncFromDate
-      }),
-      statuses: SWEPT_BILL_STATUSES
-    });
-    scanned.invoices = ids.length;
-    refs.push(
-      ...ids.map((id): ReconcileRef => ({ entityType: "bill", entityId: id }))
-    );
-  } else {
-    skippedReasons.push("invoices: push disabled");
-  }
+  // Invoices no longer push whole: every Ramp bill comes from a payment
+  // request (the `ramp-payment-requests` step, selected by status).
 
   return { refs, scanned, skippedReasons };
 }

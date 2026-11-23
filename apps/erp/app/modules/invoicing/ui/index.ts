@@ -8,6 +8,7 @@ export * from "./Charge";
 export * from "./Dashboard";
 export * from "./Memo";
 export * from "./Payment";
+export * from "./PaymentRequest";
 export * from "./PurchaseInvoice";
 export * from "./Reimbursement";
 export * from "./Workbench";

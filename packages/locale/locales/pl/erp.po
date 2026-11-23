@@ -3428,6 +3428,9 @@ msgstr "Dodaj ścieżkę"
 msgid "Add Payment"
 msgstr "Dodaj płatność"
 
+msgid "Add payment request"
+msgstr ""
+
 msgid "Add Permissions"
 msgstr "Dodaj uprawnienia"
 
@@ -3454,6 +3457,9 @@ msgstr "Dodaj Stawkę"
 
 msgid "Add Receipt"
 msgstr "Dodaj Paragon"
+
+msgid "Add request"
+msgstr ""
 
 msgid "Add Requirement"
 msgstr "Dodaj Wymaganie"
@@ -6597,6 +6603,9 @@ msgstr "Anuluj zamówienie zakupu"
 
 msgid "Cancel purchase order {target}"
 msgstr "Anuluj zamówienie zakupu {target}"
+
+msgid "Cancel request"
+msgstr ""
 
 msgid "Cancel Request"
 msgstr "Anuluj żądanie"
@@ -10921,11 +10930,17 @@ msgstr "Depozyt dla"
 msgid "Deposit for {document} (its invoices only)"
 msgstr "Zaliczka na {document} (tylko faktury)"
 
+msgid "Deposit requests"
+msgstr ""
+
 msgid "Deposit:"
 msgstr "Depozyt:"
 
 msgid "Deposits"
 msgstr "Zaliczki"
+
+msgid "Deposits to pay the supplier before an invoice exists. A Ready request goes to Ramp as its own bill."
+msgstr ""
 
 msgid "Depot"
 msgstr "Magazyn"
@@ -12168,6 +12183,10 @@ msgstr "Edytuj przyczynę"
 
 msgid "Edit Receipt"
 msgstr "Edytuj Paragon"
+
+#. placeholder {0}: request.requestNumber
+msgid "Edit request {0}"
+msgstr ""
 
 msgid "Edit Revision"
 msgstr "Edytuj rewizję"
@@ -18292,6 +18311,9 @@ msgstr "Oznacz jako niegotowe"
 msgid "Mark Partial"
 msgstr "Oznacz jako częściową"
 
+msgid "Mark Ready"
+msgstr ""
+
 msgid "Mark reviewed"
 msgstr "Oznacz jako przejrzane"
 
@@ -18988,6 +19010,9 @@ msgstr "Przenieś {itemName} w górę"
 
 msgid "Move {itemName} up in {listLabel}"
 msgstr "Przenieś {itemName} w górę w {listLabel}"
+
+msgid "Move back to Planned"
+msgstr ""
 
 msgid "Move batch"
 msgstr "Przenieś partię"
@@ -19955,6 +19980,9 @@ msgstr "Brak organu"
 
 msgid "No authorization code was returned"
 msgstr "Nie zwrócono kodu autoryzacji"
+
+msgid "No automatic request: this invoice already has {requestCount} payment requests."
+msgstr ""
 
 msgid "No available filters"
 msgstr "Brak dostępnych filtrów"
@@ -21800,6 +21828,9 @@ msgstr "Otwarte należności"
 msgid "Open Audit Log"
 msgstr "Otwórz dziennik audytu"
 
+msgid "Open balance"
+msgstr ""
+
 msgid "Open batch"
 msgstr "Otwórz partię produkcyjną"
 
@@ -22491,6 +22522,9 @@ msgstr "Strona"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Strona {pdfViewPage} z {documentPageCount}"
 
+msgid "Paid"
+msgstr ""
+
 msgid "Paid Amount:"
 msgstr "Kwota zapłacona:"
 
@@ -22650,6 +22684,9 @@ msgstr "Części"
 msgid "Parts & items"
 msgstr "Części i artykuły"
 
+msgid "Parts of the open balance to pay by a date. A Ready request goes to Ramp as its own bill."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "Części uruchamiane jedna po drugiej — np. piła lub stół laserowy."
 
@@ -22784,6 +22821,12 @@ msgstr "Identyfikator płatności"
 
 msgid "Payment Rate"
 msgstr "Kurs wymiany płatności"
+
+msgid "Payment requests"
+msgstr ""
+
+msgid "Payment Requests"
+msgstr ""
 
 msgid "Payment Rows"
 msgstr "Wiersze płatności"
@@ -23279,6 +23322,9 @@ msgstr "Wartość zaplanowana"
 
 msgid "Planned value (BCWS)"
 msgstr "Wartość zaplanowana (BCWS)"
+
+msgid "Planned: expected, not yet due"
+msgstr ""
 
 msgid "Planning"
 msgstr "Planowanie"
@@ -24892,6 +24938,9 @@ msgstr "Gotowe do zakończenia"
 msgid "ready to keep or revert"
 msgstr "gotowe do zachowania lub przywrócenia"
 
+msgid "Ready: due, send to Ramp"
+msgstr ""
+
 msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
 msgstr "Rzeczywiste zamówienia najpierw zużywają prognozę zapotrzebowania na ich własny tydzień, następnie wcześniejsze i późniejsze tygodnie w ramach okna firmy, dzięki czemu prognoza i rzeczywiste zapotrzebowanie nigdy nie są jednocześnie planowane dla tych samych jednostek."
 
@@ -25989,6 +26038,12 @@ msgstr "Zadanie powtórzenia druku utworzone"
 msgid "Request a new invite"
 msgstr "Poproś o nowe zaproszenie"
 
+msgid "Request actions"
+msgstr ""
+
+msgid "Request added"
+msgstr ""
+
 msgid "Request Approval"
 msgstr "Poproś o zatwierdzenie"
 
@@ -26000,6 +26055,9 @@ msgstr "Wymuszenie usunięcia żądania"
 
 msgid "Request Quote"
 msgstr "Zapytaj o ofertę"
+
+msgid "Request updated"
+msgstr ""
 
 msgid "Requested"
 msgstr "Zgłoszone"
@@ -28966,6 +29024,9 @@ msgstr "Wyświetlanie w {parentCurrency}"
 msgid "Showing the first {limit} rows. Search or filter to see the rest."
 msgstr "Pokazano pierwsze {limit} wierszy. Szukaj lub filtruj, aby zobaczyć resztę."
 
+msgid "Showing the first {PAGE}. Narrow the filter to see more."
+msgstr ""
+
 msgid "Showing the first 500 lines"
 msgstr "Pokazywanie pierwszych 500 linii"
 
@@ -29617,6 +29678,9 @@ msgstr "Wciąż należne"
 
 msgid "Still Owed"
 msgstr "Wciąż Należne"
+
+msgid "Still to request"
+msgstr ""
 
 msgid "Stock"
 msgstr "Zapas"
@@ -33299,6 +33363,9 @@ msgstr "Do lokalizacji"
 msgid "To next week"
 msgstr "Na następny tydzień"
 
+msgid "To pay"
+msgstr ""
+
 msgid "To pick"
 msgstr "Do pobrania"
 
@@ -34202,6 +34269,9 @@ msgstr "Niezamapowane wartości"
 msgid "Unmatched"
 msgstr "Niedopasowane"
 
+msgid "Unpaid order total"
+msgstr ""
+
 msgid "Unpick"
 msgstr "Cofnij pobranie"
 
@@ -34290,6 +34360,10 @@ msgstr "UoM"
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Up to {0} {unitOfMeasure}"
 msgstr "Do {0} {unitOfMeasure}"
+
+#. placeholder {0}: formatter.format(allowance)
+msgid "Up to {0} can still be requested."
+msgstr ""
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
@@ -35431,6 +35505,9 @@ msgstr "Co jest wynajęte, na przykład Wózek FL-12"
 
 msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
 msgstr "Co jest na stanie w tej lokalizacji, które otwarte zlecenia produkcyjne mają części do zakończenia i czego brakuje pozostałym. Możliwość uruchomienia kolejnych zleceń jest sprawdzana na każdym poziomie listy materiałowej, z uwzględnieniem braków każdego artykułu."
+
+msgid "What is still to pay suppliers, earliest due first. Planned requests are reminders; Ready requests go to Ramp."
+msgstr ""
 
 msgid "What is the primary contact?"
 msgstr "Kto jest głównym kontaktem?"

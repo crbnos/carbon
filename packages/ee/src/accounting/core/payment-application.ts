@@ -86,6 +86,12 @@ export interface UpsertPaymentDraftArgs {
   /** Yields the next readable payment id (get_next_sequence). Called on insert. */
   getNextReadableId: () => Promise<string>;
   normalized: NormalizedPayment;
+  /**
+   * The Carbon document each remote document pays, when the caller knows it
+   * without a document mapping. A Ramp payment request's bill is one: an
+   * invoice may have several, and a mapping names one per invoice.
+   */
+  localDocumentIds?: ReadonlyMap<string, string>;
 }
 
 export interface UpsertPaymentDraftResult {
@@ -134,18 +140,23 @@ export async function upsertLocalPaymentDraft(
       ? normalized.linkedDocuments
       : [{ remoteId: normalized.documentRemoteId, amount: normalized.amount }];
 
-  const mappings = await tx
-    .selectFrom("externalIntegrationMapping")
-    .select(["entityId", "externalId"])
-    .where("integration", "=", providerId)
-    .where("entityType", "=", docEntityType)
-    .where(
-      "externalId",
-      "in",
-      linked.map((doc) => doc.remoteId)
-    )
-    .where("companyId", "=", companyId)
-    .execute();
+  const mappings = args.localDocumentIds
+    ? [...args.localDocumentIds].map(([externalId, entityId]) => ({
+        externalId,
+        entityId
+      }))
+    : await tx
+        .selectFrom("externalIntegrationMapping")
+        .select(["entityId", "externalId"])
+        .where("integration", "=", providerId)
+        .where("entityType", "=", docEntityType)
+        .where(
+          "externalId",
+          "in",
+          linked.map((doc) => doc.remoteId)
+        )
+        .where("companyId", "=", companyId)
+        .execute();
   const idByRemote = new Map<string, string>();
   for (const row of mappings) {
     if (!row.externalId || !row.entityId)

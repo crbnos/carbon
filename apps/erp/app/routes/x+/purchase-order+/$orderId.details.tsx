@@ -15,6 +15,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import { PaymentRequests } from "~/modules/invoicing/ui/PaymentRequest";
 import { purchaseOrderValidator } from "~/modules/purchasing/purchasing.models";
 import { getPurchaseOrderPayment } from "~/modules/purchasing/purchasing.service";
 import type {
@@ -46,7 +47,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   // The order itself (and its notes) comes from the parent route's loader.
-  const purchaseOrderPayment = await getPurchaseOrderPayment(client, orderId);
+  const api = await carbon(request);
+  const [purchaseOrderPayment, depositRequests] = await Promise.all([
+    getPurchaseOrderPayment(client, orderId),
+    api.invoicing.getPaymentRequestsForDocument({ purchaseOrderId: orderId })
+  ]);
 
   if (purchaseOrderPayment.error) {
     throw redirect(
@@ -61,7 +66,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { purchaseOrderPayment: purchaseOrderPayment.data };
+  return {
+    purchaseOrderPayment: purchaseOrderPayment.data,
+    // Null without invoicing permission: the card is not shown.
+    depositRequests: depositRequests.data ?? null
+  };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -90,7 +99,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderBasicRoute() {
-  const { purchaseOrderPayment } = useLoaderData<typeof loader>();
+  const { purchaseOrderPayment, depositRequests } =
+    useLoaderData<typeof loader>();
 
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -199,6 +209,15 @@ export default function PurchaseOrderBasicRoute() {
         currencyCode={initialValues.currencyCode || company.baseCurrencyCode}
         defaultCollapsed={false}
       />
+
+      {depositRequests && orderData.purchaseOrder.status !== "Draft" && (
+        <PaymentRequests
+          variant="order"
+          data={depositRequests}
+          target={{ purchaseOrderId: orderId }}
+          currencyCode={initialValues.currencyCode || company.baseCurrencyCode}
+        />
+      )}
 
       <PurchaseOrderPaymentForm
         key={`payment-${orderId}`}

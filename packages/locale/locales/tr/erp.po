@@ -3428,6 +3428,9 @@ msgstr "Yol ekle"
 msgid "Add Payment"
 msgstr "Ödeme Ekle"
 
+msgid "Add payment request"
+msgstr ""
+
 msgid "Add Permissions"
 msgstr "İzin Ekle"
 
@@ -3454,6 +3457,9 @@ msgstr "Oran Ekle"
 
 msgid "Add Receipt"
 msgstr "Makbuz Ekle"
+
+msgid "Add request"
+msgstr ""
 
 msgid "Add Requirement"
 msgstr "Gereklilik Ekle"
@@ -6597,6 +6603,9 @@ msgstr "Satın Alma Siparişini İptal Et"
 
 msgid "Cancel purchase order {target}"
 msgstr "{target} satın alma siparişini iptal et"
+
+msgid "Cancel request"
+msgstr ""
 
 msgid "Cancel Request"
 msgstr "İsteği iptal et"
@@ -10921,11 +10930,17 @@ msgstr "Şunun için depozito"
 msgid "Deposit for {document} (its invoices only)"
 msgstr "{document} için Depozito (sadece faturaları)"
 
+msgid "Deposit requests"
+msgstr ""
+
 msgid "Deposit:"
 msgstr "Depozito:"
 
 msgid "Deposits"
 msgstr "Depozitolar"
+
+msgid "Deposits to pay the supplier before an invoice exists. A Ready request goes to Ramp as its own bill."
+msgstr ""
 
 msgid "Depot"
 msgstr "Depo"
@@ -12168,6 +12183,10 @@ msgstr "Nedeni Düzenle"
 
 msgid "Edit Receipt"
 msgstr "Makbuzu Düzenle"
+
+#. placeholder {0}: request.requestNumber
+msgid "Edit request {0}"
+msgstr ""
 
 msgid "Edit Revision"
 msgstr "Revizyon Düzenle"
@@ -18292,6 +18311,9 @@ msgstr "Bitmedi olarak işaretle"
 msgid "Mark Partial"
 msgstr "Kısmi İşaretle"
 
+msgid "Mark Ready"
+msgstr ""
+
 msgid "Mark reviewed"
 msgstr "İncelendi olarak işaretle"
 
@@ -18988,6 +19010,9 @@ msgstr "{itemName} öğesini yukarı taşı"
 
 msgid "Move {itemName} up in {listLabel}"
 msgstr "{itemName} öğesini {listLabel} içinde yukarı taşı"
+
+msgid "Move back to Planned"
+msgstr ""
 
 msgid "Move batch"
 msgstr "Partiyi taşı"
@@ -19955,6 +19980,9 @@ msgstr "Vergi Dairesi yok"
 
 msgid "No authorization code was returned"
 msgstr "Yetkilendirme kodu döndürülmedi"
+
+msgid "No automatic request: this invoice already has {requestCount} payment requests."
+msgstr ""
 
 msgid "No available filters"
 msgstr "Kullanılabilir filtre yok"
@@ -21800,6 +21828,9 @@ msgstr "Açık Alacak hesapları"
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
 
+msgid "Open balance"
+msgstr ""
+
 msgid "Open batch"
 msgstr "Açık Parti"
 
@@ -22491,6 +22522,9 @@ msgstr "Sayfa"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Sayfa {pdfViewPage} / {documentPageCount}"
 
+msgid "Paid"
+msgstr ""
+
 msgid "Paid Amount:"
 msgstr "Ödenen Tutar:"
 
@@ -22650,6 +22684,9 @@ msgstr "Parçalar"
 msgid "Parts & items"
 msgstr "Parçalar ve ürünler"
 
+msgid "Parts of the open balance to pay by a date. A Ready request goes to Ramp as its own bill."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "Parçalar birbir ardına çalışır — örneğin testere veya lazer masası."
 
@@ -22784,6 +22821,12 @@ msgstr "Ödeme Kimliği"
 
 msgid "Payment Rate"
 msgstr "Ödeme döviz kuru"
+
+msgid "Payment requests"
+msgstr ""
+
+msgid "Payment Requests"
+msgstr ""
 
 msgid "Payment Rows"
 msgstr "Ödeme Satırları"
@@ -23279,6 +23322,9 @@ msgstr "Planlanan değer"
 
 msgid "Planned value (BCWS)"
 msgstr "Planlanan Değer (BCWS)"
+
+msgid "Planned: expected, not yet due"
+msgstr ""
 
 msgid "Planning"
 msgstr "Planlama"
@@ -24892,6 +24938,9 @@ msgstr "Bitirmeye Hazır"
 msgid "ready to keep or revert"
 msgstr "tutmak veya geri almak için hazır"
 
+msgid "Ready: due, send to Ramp"
+msgstr ""
+
 msgid "Real orders use up the demand forecast for their own week first, then earlier and later weeks within the company's window, so forecast and actual demand are never both planned for the same units."
 msgstr "Gerçek siparişler önce kendi haftalı talep tahminlerini tüketir, ardından şirketin penceresindeki daha önceki ve daha sonraki haftaları, böylece tahmin ve gerçek talep hiçbir zaman aynı adetler için planlanmaz."
 
@@ -25989,6 +26038,12 @@ msgstr "Yeniden yazdırma işi oluşturuldu"
 msgid "Request a new invite"
 msgstr "Yeni bir davet iste"
 
+msgid "Request actions"
+msgstr ""
+
+msgid "Request added"
+msgstr ""
+
 msgid "Request Approval"
 msgstr "Onay iste"
 
@@ -26000,6 +26055,9 @@ msgstr "Talebi zorla sil"
 
 msgid "Request Quote"
 msgstr "Teklif iste"
+
+msgid "Request updated"
+msgstr ""
 
 msgid "Requested"
 msgstr "Talep edildi"
@@ -28966,6 +29024,9 @@ msgstr "{parentCurrency} cinsinden gösteriliyor"
 msgid "Showing the first {limit} rows. Search or filter to see the rest."
 msgstr "İlk {limit} satır gösteriliyor. Kalanları görmek için ara veya filtrele."
 
+msgid "Showing the first {PAGE}. Narrow the filter to see more."
+msgstr ""
+
 msgid "Showing the first 500 lines"
 msgstr "İlk 500 satır gösteriliyor"
 
@@ -29617,6 +29678,9 @@ msgstr "Henüz ödenmemiş"
 
 msgid "Still Owed"
 msgstr "Henüz Ödenmemiş"
+
+msgid "Still to request"
+msgstr ""
 
 msgid "Stock"
 msgstr "Stok"
@@ -33299,6 +33363,9 @@ msgstr "Varış Konumu"
 msgid "To next week"
 msgstr "Gelecek haftaya"
 
+msgid "To pay"
+msgstr ""
+
 msgid "To pick"
 msgstr "Toplama"
 
@@ -34202,6 +34269,9 @@ msgstr "Eşlenmemiş değerler"
 msgid "Unmatched"
 msgstr "Eşleşmemiş"
 
+msgid "Unpaid order total"
+msgstr ""
+
 msgid "Unpick"
 msgstr "Çıkart"
 
@@ -34290,6 +34360,10 @@ msgstr "Birim"
 #. placeholder {0}: formatQuantity(quantityOnHand)
 msgid "Up to {0} {unitOfMeasure}"
 msgstr "En fazla {0} {unitOfMeasure}"
+
+#. placeholder {0}: formatter.format(allowance)
+msgid "Up to {0} can still be requested."
+msgstr ""
 
 #. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
 msgid "up to {0} saved"
@@ -35431,6 +35505,9 @@ msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
 msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
 msgstr "Bu lokasyonda elde bulunanlar, hangi açık iş emirlerinin bitirmek için parçalarının olduğu ve diğerlerinin neyi eksik olduğu. Daha fazla başlatma, ürün ağacının her seviyesinde ve her stok kartının firesi dikkate alınarak kontrol edilir."
+
+msgid "What is still to pay suppliers, earliest due first. Planned requests are reminders; Ready requests go to Ramp."
+msgstr ""
 
 msgid "What is the primary contact?"
 msgstr "Birincil ilgili kişi kimdir?"

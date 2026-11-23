@@ -6,6 +6,10 @@ import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  type PaymentRequestRow,
+  settlePaymentRequest
+} from "@carbon/database/payment-requests";
+import {
   type NormalizedPayment,
   upsertLocalPaymentDraft
 } from "@carbon/ee/accounting";
@@ -45,6 +49,7 @@ export type RampBillPaymentDependencies = {
   ) => Promise<NormalizedAmount>;
   getExchangeRate: (currencyCode: string) => Promise<number>;
   invoiceDeepLinkUrl: (invoiceRowId: string) => string;
+  purchaseOrderDeepLinkUrl: (purchaseOrderId: string) => string;
 };
 
 // ApiBillPayment.payment_method in Ramp's OpenAPI contract (2026-09-11).
@@ -112,6 +117,8 @@ export type RampPaymentDraft = {
   /** Exact memo used by the pre-Task-9 non-atomic writer, for safe migration. */
   legacyMemo?: string;
   normalized: NormalizedPayment;
+  /** The invoice a payment request's bill pays (see `upsertLocalPaymentDraft`). */
+  localDocumentIds?: ReadonlyMap<string, string>;
 };
 
 export function assertNoLegacyUntrackedPayment(
@@ -186,6 +193,7 @@ export async function stageRampPaymentDraft(
       bankAccount: args.bankAccount,
       paymentMappingId: args.paymentMappingId,
       normalized,
+      localDocumentIds: args.localDocumentIds,
       getNextReadableId: async () => {
         const sequence = await sql<{ get_next_sequence: string }>`
           SELECT get_next_sequence('payment', ${args.companyId}) as get_next_sequence
@@ -353,6 +361,300 @@ export function rampPaymentDate(
     : paidDate;
 }
 
+/** A thrown Error, or a database/PostgREST error object, as text. */
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
+}
+
+/** The account a Ramp bill payment comes out of, and its card transactions. */
+function resolvePaymentSource(
+  deps: Pick<RampBillPaymentDependencies, "card" | "statementBankAccountId">,
+  payment: RampBillPayment
+): { bankAccount: string; cardTransactionIds: string[] } | { error: string } {
+  const method = payment.payment_method ?? "";
+  const route = rampBillPaymentRoute(method);
+  if (route === "unsupported") {
+    return {
+      error: `Unsupported Ramp bill payment method: ${method || "missing"}`
+    };
+  }
+  if (route === "card") {
+    if ("error" in deps.card) return { error: deps.card.error };
+    const cardTransactionIds = [
+      ...new Set(payment.details?.transaction_ids ?? [])
+    ];
+    if (cardTransactionIds.length === 0) {
+      return {
+        error: "Ramp has matched no card transaction to this bill payment"
+      };
+    }
+    return { bankAccount: deps.card.accountId, cardTransactionIds };
+  }
+  if (!deps.statementBankAccountId) {
+    return {
+      error: "Set the Ramp statement bank account to sync bank-paid bills"
+    };
+  }
+  return { bankAccount: deps.statementBankAccountId, cardTransactionIds: [] };
+}
+
+/**
+ * Stage a deposit request's payment: a Draft supplier prepayment on the
+ * request's purchase order (`payment.purchaseOrderId`), keyed by the Ramp
+ * payment's mapping so a retry resumes it. post-payment then books it on the
+ * supplier prepayment account.
+ */
+export async function stageRampPrepaymentDraft(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    actorId: string;
+    bankAccount: string;
+    paymentMappingId: string;
+    cardTransactionIds: string[];
+    purchaseOrderId: string;
+    supplierId: string;
+    amount: number;
+    currencyCode: string;
+    exchangeRate: number;
+    paymentDate: string;
+    reference: string;
+  }
+): Promise<StageResult> {
+  return db.transaction().execute(async (tx) => {
+    const mapped = await tx
+      .selectFrom("externalIntegrationMapping as m")
+      .innerJoin("payment as p", (join) =>
+        join
+          .onRef("p.id", "=", "m.entityId")
+          .onRef("p.companyId", "=", "m.companyId")
+      )
+      .select(["p.id", "p.status"])
+      .where("m.integration", "=", "ramp")
+      .where("m.entityType", "=", "payment")
+      .where("m.externalId", "=", args.paymentMappingId)
+      .where("m.companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (mapped) {
+      return {
+        paymentRowId: mapped.id,
+        postAction: mapped.status === "Draft" ? "post" : "none"
+      };
+    }
+    const sequence = await sql<{ id: string }>`
+      SELECT get_next_sequence('payment', ${args.companyId}) AS id
+    `.execute(tx);
+    const inserted = await tx
+      .insertInto("payment")
+      .values({
+        paymentId:
+          sequence.rows[0]?.id ?? `PAY-${args.paymentMappingId.slice(0, 8)}`,
+        paymentType: "Disbursement",
+        paymentDate: args.paymentDate,
+        currencyCode: args.currencyCode,
+        exchangeRate: args.exchangeRate,
+        totalAmount: args.amount,
+        bankAccount: args.bankAccount,
+        supplierId: args.supplierId,
+        purchaseOrderId: args.purchaseOrderId,
+        memo: args.reference,
+        status: "Draft",
+        companyId: args.companyId,
+        createdBy: args.actorId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await tx
+      .insertInto("externalIntegrationMapping")
+      .values({
+        entityType: "payment",
+        entityId: inserted.id,
+        integration: "ramp",
+        externalId: args.paymentMappingId,
+        companyId: args.companyId,
+        createdBy: args.actorId
+      })
+      .execute();
+    if (args.cardTransactionIds.length) {
+      await claimCardTransactions(tx, {
+        companyId: args.companyId,
+        actorId: args.actorId,
+        paymentRowId: inserted.id,
+        transactionIds: args.cardTransactionIds
+      });
+    }
+    return { paymentRowId: inserted.id, postAction: "post" };
+  });
+}
+
+/**
+ * Sync the Ramp payment of a bill Carbon made from a payment request.
+ *
+ * An invoice request posts an AP payment settled against its invoice (the
+ * open-balance check stays); a deposit request posts a supplier prepayment on
+ * its order. Either way `settlePaymentRequest` then sets the request Paid —
+ * from Cancelled too, since the cash has left the bank. Carbon records what
+ * Ramp paid; a different amount than requested comes back as `warning`.
+ */
+export async function syncRampRequestPayment(
+  deps: RampBillPaymentDependencies,
+  bill: RampBill,
+  payment: RampBillPayment,
+  request: PaymentRequestRow
+): Promise<({ ok: SyncItem } | { fail: FailItem }) & { warning?: FailItem }> {
+  const paymentRampId = payment.id;
+  if (!paymentRampId) {
+    return { fail: { id: bill.id, message: "Bill payment has no id" } };
+  }
+  const source = resolvePaymentSource(deps, payment);
+  if ("error" in source) {
+    return { fail: { id: paymentRampId, message: source.error } };
+  }
+  const normalizedAmount = await deps.normalizeAmount(
+    payment.amount,
+    request.currencyCode,
+    "Bill payment amount"
+  );
+  if (!normalizedAmount.ok) {
+    return { fail: { id: paymentRampId, message: normalizedAmount.error } };
+  }
+  const amount = Math.abs(normalizedAmount.value);
+  const paidDate = (payment.effective_date ?? payment.payment_date)?.slice(
+    0,
+    10
+  );
+  const reference = `Ramp bill payment ${paymentRampId}`;
+
+  try {
+    const exchangeRate = await deps.getExchangeRate(request.currencyCode);
+    let paymentRowId: string;
+    let deepLink: string;
+    if (request.purchaseInvoiceId) {
+      const invoice = await deps.db
+        .selectFrom("purchaseInvoice")
+        .select("postingDate")
+        .where("id", "=", request.purchaseInvoiceId)
+        .where("companyId", "=", deps.companyId)
+        .executeTakeFirst();
+      const paymentDate = rampPaymentDate(
+        paidDate,
+        invoice?.postingDate ? String(invoice.postingDate).slice(0, 10) : null
+      );
+      if (!paymentDate) throw new Error("Bill payment has no usable date");
+      ({ paymentRowId } = await createOrResumeRampPayment(
+        deps.db,
+        deps.client,
+        {
+          companyId: deps.companyId,
+          actorId: "system",
+          bankAccount: source.bankAccount,
+          paymentMappingId: paymentRampId,
+          cardTransactionIds: source.cardTransactionIds,
+          localDocumentIds: new Map([[bill.id, request.purchaseInvoiceId]]),
+          normalized: {
+            family: "ap",
+            documentRemoteId: bill.id,
+            paymentRemoteId: paymentRampId,
+            amount,
+            currencyCode: request.currencyCode,
+            exchangeRate,
+            paidDate: paymentDate,
+            reference,
+            status: "settled"
+          }
+        }
+      ));
+      deepLink = deps.invoiceDeepLinkUrl(request.purchaseInvoiceId);
+    } else {
+      const order = await deps.db
+        .selectFrom("purchaseOrder")
+        .select("supplierId")
+        .where("id", "=", request.purchaseOrderId!)
+        .where("companyId", "=", deps.companyId)
+        .executeTakeFirst();
+      if (!order?.supplierId)
+        throw new Error("The request's purchase order no longer exists");
+      if (!paidDate) throw new Error("Bill payment has no usable date");
+      ({ paymentRowId } = await ensureRampPaymentPosted({
+        stage: () =>
+          stageRampPrepaymentDraft(deps.db, {
+            companyId: deps.companyId,
+            actorId: "system",
+            bankAccount: source.bankAccount,
+            paymentMappingId: paymentRampId,
+            cardTransactionIds: source.cardTransactionIds,
+            purchaseOrderId: request.purchaseOrderId!,
+            supplierId: order.supplierId,
+            amount,
+            currencyCode: request.currencyCode,
+            exchangeRate,
+            paymentDate: paidDate,
+            reference
+          }),
+        post: async (id) => {
+          const response = await posting(
+            "post-payment",
+            {
+              client: deps.client,
+              db: deps.db,
+              companyId: deps.companyId,
+              userId: "system"
+            },
+            { type: "post", paymentId: id }
+          );
+          return {
+            error: Boolean(response.error),
+            message: response.error?.message
+          };
+        },
+        readStatus: async (id) => {
+          const row = await deps.db
+            .selectFrom("payment")
+            .select("status")
+            .where("id", "=", id)
+            .where("companyId", "=", deps.companyId)
+            .executeTakeFirst();
+          return row?.status ?? null;
+        }
+      }));
+      deepLink = deps.purchaseOrderDeepLinkUrl(request.purchaseOrderId!);
+    }
+
+    // The one writer of Paid. A repeated sync finds it Paid by this payment.
+    await deps.db.transaction().execute((tx) =>
+      settlePaymentRequest(tx, {
+        companyId: deps.companyId,
+        userId: "system",
+        requestId: request.id,
+        paymentId: paymentRowId
+      })
+    );
+
+    const requested = Number(request.amount ?? 0);
+    return {
+      ok: {
+        id: paymentRampId,
+        referenceId: paymentRowId,
+        deepLinkUrl: deepLink
+      },
+      ...(Math.abs(requested - amount) > 0.005
+        ? {
+            warning: {
+              id: request.id,
+              message: `Ramp paid ${amount} ${request.currencyCode} on a request for ${requested}. Carbon recorded what Ramp paid.`
+            }
+          }
+        : {})
+    };
+  } catch (error) {
+    return { fail: { id: paymentRampId, message: errorMessage(error) } };
+  }
+}
+
 /** Sync one Ramp bill payment through the resumable payment stager. */
 export async function syncRampBillPayment(
   deps: RampBillPaymentDependencies,
@@ -364,45 +666,11 @@ export async function syncRampBillPayment(
     return { fail: { id: bill.id, message: "Bill payment has no id" } };
   }
 
-  const method = payment.payment_method ?? "";
-  const route = rampBillPaymentRoute(method);
-  if (route === "unsupported") {
-    return {
-      fail: {
-        id: paymentRampId,
-        message: `Unsupported Ramp bill payment method: ${method || "missing"}`
-      }
-    };
+  const source = resolvePaymentSource(deps, payment);
+  if ("error" in source) {
+    return { fail: { id: paymentRampId, message: source.error } };
   }
-  const cardTransactionIds =
-    route === "card"
-      ? [...new Set(payment.details?.transaction_ids ?? [])]
-      : [];
-  let bankAccount: string;
-  if (route === "card") {
-    if ("error" in deps.card) {
-      return { fail: { id: paymentRampId, message: deps.card.error } };
-    }
-    if (cardTransactionIds.length === 0) {
-      return {
-        fail: {
-          id: paymentRampId,
-          message: "Ramp has matched no card transaction to this bill payment"
-        }
-      };
-    }
-    bankAccount = deps.card.accountId;
-  } else {
-    if (!deps.statementBankAccountId) {
-      return {
-        fail: {
-          id: paymentRampId,
-          message: "Set the Ramp statement bank account to sync bank-paid bills"
-        }
-      };
-    }
-    bankAccount = deps.statementBankAccountId;
-  }
+  const { bankAccount, cardTransactionIds } = source;
 
   const invoiceId = await deps.getMappedInvoiceId(bill.id);
   if (!invoiceId) {

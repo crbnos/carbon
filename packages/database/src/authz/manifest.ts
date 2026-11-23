@@ -1287,6 +1287,7 @@ export const manifest = {
       inCompany("companyId", "invoicing_delete")
     )
   }),
+  paymentRequest: company("invoicing", { read: "invoicing_view" }),
   paymentTerm: company("accounting", {
     read: anyOf("accounting_view", "sales_view", "purchasing_view")
   }),

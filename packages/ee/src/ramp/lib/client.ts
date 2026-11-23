@@ -114,7 +114,9 @@ export class RampClient {
     private readonly credentials: RampCredentials,
     private readonly options: RampClientOptions = {}
   ) {
-    this.host = RAMP_HOST;
+    // `RAMP_API_HOST` points a dev stack at Ramp's sandbox
+    // (https://demo-api.ramp.com). Read lazily, like the OAuth app below.
+    this.host = process.env.RAMP_API_HOST || RAMP_HOST;
     if (credentials.type === "oauth2") {
       this.oauthAccessToken = credentials.accessToken;
       this.oauthExpiresAt = credentials.expiresAt
@@ -674,6 +676,32 @@ export class RampClient {
       body,
       idempotencyKey
     });
+  }
+
+  /**
+   * The id of the draft bill, or the submitted bill, Carbon created with this
+   * `remote_id`; null when Ramp has neither. Both lists take a `remote_id`
+   * filter (OpenAPI: `GET /bills/drafts`, `GET /bills`). A submitted bill has
+   * left the draft list, so both are read before Carbon creates again.
+   */
+  async findBillIdByRemoteId(remoteId: string): Promise<string | null> {
+    type Page = {
+      data?: Array<{ id?: string; draft_bill_id?: string | null }>;
+    };
+    const searchParams = { remote_id: remoteId, page_size: "2" };
+    const drafts = await this.request<Page>(
+      "GET",
+      "/developer/v1/bills/drafts",
+      { searchParams }
+    );
+    const draft = drafts.data?.find((row) => row.id);
+    if (draft?.id) return draft.id;
+    const bills = await this.request<Page>("GET", "/developer/v1/bills", {
+      searchParams
+    });
+    // A submitted bill keeps the draft it came from; the mapping names the draft.
+    const bill = bills.data?.find((row) => row.id);
+    return bill ? (bill.draft_bill_id ?? bill.id ?? null) : null;
   }
 
   // ---- Webhooks ----

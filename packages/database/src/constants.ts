@@ -736,6 +736,7 @@ export const Constants = {
         "Fixture",
         "Lease",
       ],
+      paymentRequestStatus: ["Planned", "Ready", "Sent", "Paid", "Cancelled"],
       paymentStatus: ["Draft", "Posted", "Voided"],
       paymentTermCalculationMethod: ["Net", "End of Month", "Day of Month"],
       paymentType: ["Receipt", "Disbursement"],

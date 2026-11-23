@@ -121,11 +121,11 @@ describe("RampBillSyncer.shouldSync — an already-handed-off bill", () => {
     expect(outcome).toContain("already handed off");
   });
 
-  it("still proceeds for an unmapped bill", async () => {
+  it("refuses an unmapped bill: new bills come from payment requests", async () => {
     const probe = syncer();
     probe.mappedTo = null;
 
-    expect(await probe.ask("pinv_1", invoice)).toBe(true);
+    expect(await probe.ask("pinv_1", invoice)).toContain("payment requests");
   });
 
   it("keeps the earlier gates ahead of the mapping read", async () => {

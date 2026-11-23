@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -32,6 +33,7 @@ import type {
 } from "~/modules/invoicing/types";
 import {
   InvoicePaymentsPanel,
+  PaymentRequests,
   PurchaseInvoiceSummary
 } from "~/modules/invoicing/ui";
 import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
@@ -53,9 +55,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const [invoice, applications] = await Promise.all([
+  const api = await carbon(request);
+  const [invoice, applications, paymentRequests] = await Promise.all([
     getPurchaseInvoice(client, invoiceId),
-    getInvoiceSettlementsForInvoice(client, companyId, "purchase", invoiceId)
+    getInvoiceSettlementsForInvoice(client, companyId, "purchase", invoiceId),
+    api.invoicing.getPaymentRequestsForDocument({
+      purchaseInvoiceId: invoiceId
+    })
   ]);
   if (invoice.error) {
     throw redirect(
@@ -69,7 +75,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
-    paymentApplications: applications.data ?? []
+    paymentApplications: applications.data ?? [],
+    paymentRequests: paymentRequests.data ?? null
   };
 }
 
@@ -154,7 +161,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function PurchaseInvoiceBasicRoute() {
   const { t } = useLingui();
-  const { internalNotes, paymentApplications } = useLoaderData<typeof loader>();
+  const { internalNotes, paymentApplications, paymentRequests } =
+    useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -208,6 +216,15 @@ export default function PurchaseInvoiceBasicRoute() {
   return (
     <Fragment key={invoiceId}>
       <PurchaseInvoiceSummary onEditShippingCost={handleEditShippingCost} />
+      {paymentRequests && purchaseInvoice.status !== "Voided" && (
+        <PaymentRequests
+          data={paymentRequests}
+          target={{ purchaseInvoiceId: invoiceId }}
+          currencyCode={
+            purchaseInvoice.currencyCode ?? company.baseCurrencyCode
+          }
+        />
+      )}
       <InvoicePaymentsPanel rows={paymentApplications} />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}

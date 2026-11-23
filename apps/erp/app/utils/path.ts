@@ -2200,6 +2200,8 @@ export const path = {
     paymentDelete: (id: string) => generatePath(`${x}/payments/${id}/delete`),
     paymentNew: `${x}/payments/new`,
     paymentPost: (id: string) => generatePath(`${x}/payments/${id}/post`),
+    paymentRequestAction: `${x}/payment-request`,
+    paymentRequests: `${x}/invoicing/payment-requests`,
     payments: `${x}/invoicing/payments`,
     paymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/${id}`),

@@ -789,6 +789,41 @@ keyset helpers and its two metadata cursors are gone.
   `POST /bills/drafts/{id}/submit` needs payment method + payee contact (per-vendor Ramp
   bill-pay config Carbon doesn't own; verified `400 BILL_PAY_7145`). PDF attach
   (`POST /bills/drafts/{id}/attachments`) is a deferred follow-up, NOT a create-body field.
+- **Payment requests** (`ramp/lib/payment-requests.ts`, step `ramp-payment-requests` in
+  `ramp-sync.ts`): since 2026-11-23 every NEW Ramp bill comes from a payment request; the
+  whole-invoice push above survives only for invoices already mapped (`RampBillSyncer`
+  refuses unmapped ones, and Ramp's subscriptions no longer include `purchaseInvoice`).
+  The step reads Ready requests in one query, selected by status (no date window, so a
+  pre-cutover invoice goes out), behind the same `pushInvoices` toggle. Per request:
+  existing `paymentRequest` mapping → else `findBillIdByRemoteId` (`GET /bills/drafts` and
+  `GET /bills`, both take `remote_id` per the OpenAPI spec) → else `POST /bills/drafts` with
+  `remote_id` = the request id, `invoice_number` = supplier ref or readable id + `-R{n}`,
+  memo `<doc> · <orders> · request n`, and ONE line coded to `accountDefault.payablesAccount`
+  (invoice request) or `supplierPrepaymentAccount` (deposit). Then the mapping and
+  Ready → Sent commit in one transaction.
+  Verified in the Ramp sandbox 2026-11-23 (demo-api, a "Carbon" API connection): a draft
+  line coded to a LIABILITY (AP) account and one coded to an ASSET (prepayments) account
+  are both accepted and stored as `GL_ACCOUNT` selections; `INV-7731-R1` and `INV-7731-R2`
+  on one vendor are both accepted; `GET /bills/drafts?remote_id=` finds the draft (unknown
+  id → `[]`); `GET /bills?remote_id=` does not list an unsubmitted draft; a second create
+  with the same `remote_id` is `409 DEVELOPER_7153`. Submitting still needs a payment
+  method set in Ramp's app (`BILL_PAY_7145`, even after PATCHing `payment_method`), and
+  `POST /bills` needs a vendor owner (`BILL_PAY_7001`), so a submitted request bill's
+  `remote_id` was not observed by API. End to end the same day through Carbon's real code: the
+  `ramp-payment-requests` push created draft `AP000006-R3` (AP-coded, $500); submitted in
+  Ramp's app it became bill id = draft id, `remote_id` and coding kept (even after a vendor
+  change); `ramp-bills` confirmed it with no new invoice and Ramp then read `BILL_SYNCED`.
+  The API has no approve or pay endpoint, so the PAID payment was simulated on the real
+  bill object: `ramp-bill-payments` posted one $500 payment against the invoice, set the
+  request Paid, and a repeat run changed nothing. A vendor Carbon creates in Ramp is a
+  card/procurement vendor until someone sets it up for Bill Pay in Ramp's app once.
+  Inbound: `syncBill` confirms a bill whose `remote_id` is a `preq_` request and creates no
+  invoice; `syncRampBillPayments` sends its payment to `syncRampRequestPayment`, which posts
+  an AP payment settled against the request's invoice (`upsertLocalPaymentDraft` with
+  `localDocumentIds`, since an invoice can have several request bills) or a supplier
+  prepayment on the request's order (`stageRampPrepaymentDraft`), then
+  `settlePaymentRequest`. A paid amount different from the request is recorded as paid and
+  written to Sync Activity as a `paymentRequest` Warning.
 - **Coding uses the SEAT-HOLDER's identifiers.** `field_option_external_id` is the
   Carbon `account.id` only while Carbon holds Ramp's accounting seat and published
   the options itself. When another system holds it, Ramp's options are THAT

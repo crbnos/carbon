@@ -67,11 +67,10 @@ const providerWith = (configs: Record<string, typeof pushed | typeof off>) => ({
 const TODAY = "2026-09-28";
 
 describe("loadRampOutboundCandidates", () => {
-  it("sweeps released purchase orders and posted invoices", async () => {
-    // The gap this closes: converging the SYNC subscriptions repairs the NEXT
-    // event only. A purchase order released or an invoice posted while the rows
-    // were missing produced no event, so no ledger operation exists — and the
-    // accounting outbound sweep walks `ProviderID`, so it never reaches Ramp.
+  it("sweeps released purchase orders and never invoices", async () => {
+    // Converging the SYNC subscriptions repairs the NEXT event only, so the
+    // sweep finds released orders whose event was lost. Invoices reach Ramp
+    // through their payment requests, selected by status in their own step.
     const { client, recorded } = recordingClient({
       purchaseOrder: [{ id: "po-1" }, { id: "po-2" }],
       purchaseInvoice: [{ id: "pi-1" }]
@@ -86,15 +85,11 @@ describe("loadRampOutboundCandidates", () => {
 
     expect(result.refs).toEqual([
       { entityType: "purchaseOrder", entityId: "po-1" },
-      { entityType: "purchaseOrder", entityId: "po-2" },
-      { entityType: "bill", entityId: "pi-1" }
+      { entityType: "purchaseOrder", entityId: "po-2" }
     ]);
-    expect(result.scanned).toEqual({ purchaseOrders: 2, invoices: 1 });
+    expect(result.scanned).toEqual({ purchaseOrders: 2 });
     expect(result.skippedReasons).toEqual([]);
-    expect(recorded.map((entry) => entry.table)).toEqual([
-      "purchaseOrder",
-      "purchaseInvoice"
-    ]);
+    expect(recorded.map((entry) => entry.table)).toEqual(["purchaseOrder"]);
   });
 
   it("walks the same 7-day window the accounting sweep uses", async () => {
@@ -110,12 +105,6 @@ describe("loadRampOutboundCandidates", () => {
     expect(recorded[0]?.filters).toContainEqual([
       "gte",
       "updatedAt",
-      "2026-09-21"
-    ]);
-    // Bills use `postingDate`, matching the accounting sweep's bill walk.
-    expect(recorded[1]?.filters).toContainEqual([
-      "gte",
-      "postingDate",
       "2026-09-21"
     ]);
   });
@@ -182,10 +171,10 @@ describe("loadRampOutboundCandidates", () => {
     expect(result.refs).toEqual([
       { entityType: "purchaseOrder", entityId: "po-1" }
     ]);
-    expect(result.skippedReasons).toEqual(["invoices: push disabled"]);
+    expect(result.skippedReasons).toEqual([]);
   });
 
-  it("reads nothing at all when both entities are off", async () => {
+  it("reads nothing at all when purchase orders are off", async () => {
     const { client, recorded } = recordingClient({
       purchaseOrder: [{ id: "po-1" }]
     });
@@ -199,10 +188,7 @@ describe("loadRampOutboundCandidates", () => {
 
     expect(recorded).toEqual([]);
     expect(result.refs).toEqual([]);
-    expect(result.skippedReasons).toEqual([
-      "purchase orders: push disabled",
-      "invoices: push disabled"
-    ]);
+    expect(result.skippedReasons).toEqual(["purchase orders: push disabled"]);
   });
 
   it("scopes every read to the company", async () => {

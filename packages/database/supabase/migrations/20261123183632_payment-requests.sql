@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS "paymentRequest" (
   "customFields" JSONB,
   PRIMARY KEY ("id", "companyId"),
   FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("purchaseInvoiceId", "companyId") REFERENCES "purchaseInvoice"("id", "companyId") ON DELETE CASCADE,
+  FOREIGN KEY ("purchaseInvoiceId") REFERENCES "purchaseInvoice"("id") ON DELETE CASCADE,
   FOREIGN KEY ("purchaseOrderId", "companyId") REFERENCES "purchaseOrder"("id", "companyId") ON DELETE CASCADE,
   FOREIGN KEY ("paymentId", "companyId") REFERENCES "payment"("id", "companyId"),
   CONSTRAINT "paymentRequest_target_check" CHECK (num_nonnulls("purchaseInvoiceId", "purchaseOrderId") = 1),

@@ -124,9 +124,10 @@ export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
    * They stay on the `ramp-sync` cron, the same outbound-events /
    * inbound-sweep split the accounting providers already run.
    */
+  // No `purchaseInvoice`: an invoice reaches Ramp through its payment
+  // requests, which the `ramp-sync` step selects by status.
   [SpendProviderID.RAMP]: [
-    { table: "purchaseOrder", operations: ["INSERT", "UPDATE"] },
-    { table: "purchaseInvoice", operations: ["INSERT", "UPDATE"] }
+    { table: "purchaseOrder", operations: ["INSERT", "UPDATE"] }
   ]
 };
 

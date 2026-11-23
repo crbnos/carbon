@@ -9,6 +9,7 @@ export * from "./connection-status";
 export * from "./models";
 export * from "./modes";
 export * from "./money";
+export * from "./payment-requests";
 export * from "./provider";
 export * from "./service";
 export * from "./state";

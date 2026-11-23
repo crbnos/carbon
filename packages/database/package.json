@@ -88,6 +88,8 @@
     "./tax-ledger": "./src/tax-ledger.ts",
     "./ledger": "./src/ledger.ts",
     "./deposit-scope": "./src/deposit-scope.ts",
+    "./payment-request-lifecycle": "./src/payment-request-lifecycle.ts",
+    "./payment-requests": "./src/payment-requests.ts",
     "./payment-processor-fee": "./src/payment-processor-fee.ts",
     "./timesheet-readiness": "./src/timesheet-readiness.ts"
   },

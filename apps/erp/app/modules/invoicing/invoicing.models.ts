@@ -933,3 +933,43 @@ export function purchaseInvoiceRoundingAmount(
   }
   return { amount };
 }
+
+// --- Payment requests ---------------------------------------------------------
+// Spec: .ai/specs/2026-11-23-supplier-payment-requests.md
+
+export {
+  canTransitionPaymentRequest,
+  EDITABLE_PAYMENT_REQUEST_STATUSES,
+  OPEN_PAYMENT_REQUEST_STATUSES,
+  type PaymentRequestStatus,
+  paymentRequestStatusTypes,
+  paymentRequestTransitions
+} from "@carbon/database/payment-request-lifecycle";
+
+const optionalIsoDate = zfd.text(
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Enter a date" })
+    .optional()
+);
+
+export const paymentRequestValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    purchaseInvoiceId: zfd.text(z.string().optional()),
+    purchaseOrderId: zfd.text(z.string().optional()),
+    amount: zfd.numeric(
+      z.number().positive({ message: "Enter an amount above 0" }).optional()
+    ),
+    dueDate: optionalIsoDate,
+    description: zfd.text(z.string().max(500).optional()),
+    status: z.enum(["Planned", "Ready"]).default("Planned"),
+    idempotencyKey: zfd.text(z.string().max(100).optional())
+  })
+  .refine((d) => Boolean(d.purchaseInvoiceId) !== Boolean(d.purchaseOrderId), {
+    message: "A request belongs to one invoice or one purchase order"
+  })
+  .refine((d) => d.status === "Planned" || (d.amount && d.dueDate), {
+    message: "A Ready request needs an amount and a due date",
+    path: ["status"]
+  });

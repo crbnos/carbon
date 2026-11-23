@@ -3,9 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { assertPostingStatusUnchanged } from "@carbon/database/journal-posting-status";
+import * as paymentRequests from "@carbon/database/payment-requests";
 import { isCompanyAdmin } from "@carbon/ee/approvals.server";
 import {
   linkFinancingPayment,
@@ -82,6 +86,8 @@ import * as purchasingPostings from "../purchasing/purchasing.service";
 import { fromServerFn, invokePosting } from "../shared/shared.service";
 import {
   isMemoLocked,
+  paymentRequestStatusTypes,
+  paymentRequestValidator,
   paymentValidator,
   purchaseInvoiceSupplierChange,
   purchaseInvoiceValidator,
@@ -1269,6 +1275,9 @@ export const postPurchaseInvoice = defineServiceFn({
       return ctx.error("internal", "Failed to post purchase invoice", err);
     }
 
+    // The posting may have created a Ready automatic request.
+    await queueRampPaymentRequestPush(ctx, { purchaseInvoiceId: invoiceId });
+
     // Below the rollback: a post returned to Draft fires no workflow.
     await raiseMoment("invoicing.purchaseInvoicePosted", {
       outputs: { purchaseInvoice: { id: invoiceId }, postedBy: { id: userId } },
@@ -1785,6 +1794,23 @@ export const voidPayment = defineServiceFn({
     );
     if (voided.error) {
       return fromServerFn(ctx, voided.error, "Failed to void payment");
+    }
+    // The requests this payment settled are unpaid again.
+    try {
+      await paymentRequests.releasePaymentRequestsOfPayment(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        paymentId
+      });
+    } catch (err) {
+      logger.error(
+        "Failed to release the payment requests of a voided payment",
+        {
+          companyId: ctx.company.id,
+          paymentId,
+          error: err
+        }
+      );
     }
     return { paymentId };
   }
@@ -4687,5 +4713,376 @@ export const getPurchaseInvoiceLinePostedAccount = defineServiceFn({
     return run(ctx, "invoice-line-posted-account", () =>
       service.getInvoiceLinePostedAccount(ctx, { side: "purchase", ...input })
     );
+  }
+});
+
+// --- Payment requests -----------------------------------------------------------
+// Spec: .ai/specs/2026-11-23-supplier-payment-requests.md. The rules live in
+// @carbon/database/payment-requests (building blocks); these operations set the transaction
+// boundary and turn a refusal into a `rule` error.
+
+const paymentRequestTarget = z
+  .object({
+    purchaseInvoiceId: z.string().min(1).optional(),
+    purchaseOrderId: z.string().min(1).optional()
+  })
+  .refine((t) => Boolean(t.purchaseInvoiceId) !== Boolean(t.purchaseOrderId), {
+    message: "Give one purchaseInvoiceId or one purchaseOrderId"
+  });
+
+function asTarget(t: z.infer<typeof paymentRequestTarget>) {
+  return t.purchaseInvoiceId
+    ? { purchaseInvoiceId: t.purchaseInvoiceId }
+    : { purchaseOrderId: t.purchaseOrderId! };
+}
+
+/** Runs `fn` in one transaction; a refusal rolls back and returns as a rule error. */
+async function inPaymentRequestTx<R>(
+  ctx: ServiceContext,
+  fn: (db: ServiceContext["asSystem"]["pg"]) => Promise<R>
+) {
+  const settled = await ctx.transaction(async (tx) => {
+    try {
+      return await fn(tx.asSystem.pg);
+    } catch (err) {
+      if (err instanceof paymentRequests.PaymentRequestRefusal) {
+        return ctx.error("rule", err.message);
+      }
+      throw err;
+    }
+  });
+  return settled.error ? settled.error : settled.data;
+}
+
+/**
+ * After a request becomes Ready, start the Ramp sync instead of waiting for
+ * the hourly sweep. Best effort: the sweep selects Ready requests anyway, so a
+ * lost trigger delays a bill and loses nothing.
+ */
+async function queueRampPaymentRequestPush(
+  ctx: ServiceContext,
+  /** Queue only when this invoice now holds a Ready request. */
+  only?: { purchaseInvoiceId: string }
+) {
+  try {
+    let query = ctx.asSystem.pg
+      .selectFrom("companyIntegration as ci")
+      .select("ci.id")
+      .where("ci.id", "=", "ramp")
+      .where("ci.companyId", "=", ctx.company.id)
+      .where("ci.active", "=", true);
+    if (only) {
+      query = query.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("paymentRequest as r")
+            .select("r.id")
+            .where("r.companyId", "=", ctx.company.id)
+            .where("r.purchaseInvoiceId", "=", only.purchaseInvoiceId)
+            .where("r.status", "=", "Ready")
+        )
+      );
+    }
+    const ramp = await query.executeTakeFirst();
+    if (ramp) {
+      await trigger("ramp-sync", {
+        companyId: ctx.company.id,
+        reason: "payment-request"
+      });
+    }
+  } catch (err) {
+    logger.warning("Failed to queue the Ramp sync for a payment request", {
+      companyId: ctx.company.id,
+      error: err
+    });
+  }
+}
+
+/** Queues the Ramp push when `result` is a Ready request (not a refusal). */
+async function afterPaymentRequestWrite<R>(ctx: ServiceContext, result: R) {
+  if ((result as { status?: string } | null)?.status === "Ready") {
+    await queueRampPaymentRequestPush(ctx);
+  }
+  return result;
+}
+
+/**
+ * Get payment requests
+ *
+ * @remarks
+ * Lists the company's payment requests with their document and supplier.
+ * Without a status filter it lists Planned and Ready requests, earliest due
+ * first: what is still to pay. Pages by offset.
+ *
+ * @mcp read
+ */
+export const getPaymentRequests = defineServiceFn({
+  input: z.object({
+    status: z.array(z.enum(paymentRequestStatusTypes)).optional(),
+    supplierId: z.string().optional(),
+    dueBefore: z.string().optional(),
+    limit: z.number().int().min(1).max(500).default(100),
+    offset: z.number().int().min(0).default(0)
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const status: (typeof paymentRequestStatusTypes)[number][] = input.status
+      ?.length
+      ? input.status
+      : ["Planned", "Ready"];
+    const supplierId = sql<string>`COALESCE(pi."supplierId", po."supplierId")`;
+    let query = ctx.asSystem.pg
+      .selectFrom("paymentRequest as r")
+      .leftJoin("purchaseInvoice as pi", "pi.id", "r.purchaseInvoiceId")
+      .leftJoin("purchaseOrder as po", (join) =>
+        join
+          .onRef("po.id", "=", "r.purchaseOrderId")
+          .onRef("po.companyId", "=", "r.companyId")
+      )
+      .leftJoin("supplier as s", (join) =>
+        join.on(
+          sql<boolean>`s."id" = COALESCE(pi."supplierId", po."supplierId")`
+        )
+      )
+      .select([
+        "r.id",
+        "r.purchaseInvoiceId",
+        "r.purchaseOrderId",
+        "r.requestNumber",
+        "r.status",
+        "r.amount",
+        "r.currencyCode",
+        "r.dueDate",
+        "r.description",
+        "r.isAutomatic",
+        "pi.invoiceId as invoiceReadableId",
+        "po.purchaseOrderId as purchaseOrderReadableId",
+        "s.id as supplierId",
+        "s.name as supplierName"
+      ])
+      .where("r.companyId", "=", companyId)
+      .where("r.status", "in", status);
+    if (input.supplierId)
+      query = query.where(supplierId, "=", input.supplierId);
+    if (input.dueBefore)
+      query = query.where("r.dueDate", "<=", input.dueBefore);
+    // (companyId, status, dueDate) serves the filter and the order.
+    const rows = await query
+      .orderBy(sql`r."dueDate" ASC NULLS LAST`)
+      .orderBy("r.id")
+      .limit(input.limit + 1)
+      .offset(input.offset)
+      .execute();
+    return {
+      requests: rows.slice(0, input.limit),
+      hasMore: rows.length > input.limit
+    };
+  }
+});
+
+/**
+ * Get the payment requests of one invoice or purchase order
+ *
+ * @remarks
+ * Returns the requests in number order with the document's open balance,
+ * the amount its open requests hold, the Planned total and the allowance a
+ * new request may still use. The card and the form show these as they are.
+ *
+ * @mcp read
+ */
+export const getPaymentRequestsForDocument = defineServiceFn({
+  input: paymentRequestTarget,
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paymentRequests.getPaymentRequestsForDocument(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      target: asTarget(input)
+    });
+  }
+});
+
+/**
+ * Create a payment request
+ *
+ * @remarks
+ * Adds a Planned or Ready request to a purchase invoice, or a deposit request
+ * to a purchase order. The amount may not exceed the document's allowance
+ * (`getPaymentRequestsForDocument`). A Ready request needs an amount and a
+ * due date. A repeated `idempotencyKey` returns the first request.
+ *
+ * @mcp
+ */
+export const createPaymentRequest = defineServiceFn({
+  input: paymentRequestValidator,
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    const result = await inPaymentRequestTx(ctx, async (db) => {
+      const { request, replayed } = await paymentRequests.createPaymentRequest(
+        db,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          target: asTarget(input),
+          status: input.status,
+          amount: input.amount,
+          dueDate: input.dueDate,
+          description: input.description,
+          idempotencyKey: input.idempotencyKey
+        }
+      );
+      return { ...request, replayed };
+    });
+    return afterPaymentRequestWrite(ctx, result);
+  }
+});
+
+/**
+ * Update a payment request
+ *
+ * @remarks
+ * Edits the amount, due date, description and status (Planned or Ready) of a
+ * Planned or Ready request. A field left out keeps its value; null clears it.
+ * Refused once Ramp holds the bill. The amount may not exceed the allowance
+ * the other requests leave.
+ *
+ * @mcp
+ */
+export const updatePaymentRequest = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    amount: z.number().positive().nullable().optional(),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
+    description: z.string().max(500).nullable().optional(),
+    status: z.enum(["Planned", "Ready"])
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, { id, ...input }) {
+    const result = await inPaymentRequestTx(ctx, (db) =>
+      paymentRequests.updatePaymentRequest(db, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        requestId: id,
+        ...input
+      })
+    );
+    return afterPaymentRequestWrite(ctx, result);
+  }
+});
+
+/**
+ * Mark a payment request Ready
+ *
+ * @remarks
+ * Planned to Ready: the request is due and goes to Ramp at the next sync.
+ * Requires an amount and a due date, and the amount must still fit the
+ * document's allowance.
+ *
+ * @mcp
+ */
+export const markPaymentRequestReady = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "invoicing" },
+  async run(ctx, { id }) {
+    const result = await inPaymentRequestTx(ctx, (db) =>
+      paymentRequests.markPaymentRequestReady(db, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        requestId: id
+      })
+    );
+    return afterPaymentRequestWrite(ctx, result);
+  }
+});
+
+/**
+ * Mark a payment request Planned
+ *
+ * @remarks
+ * Ready to Planned: only while Ramp does not hold the request's bill.
+ *
+ * @mcp
+ */
+export const markPaymentRequestPlanned = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "invoicing" },
+  async run(ctx, { id }) {
+    return inPaymentRequestTx(ctx, (db) =>
+      paymentRequests.markPaymentRequestPlanned(db, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        requestId: id
+      })
+    );
+  }
+});
+
+/**
+ * Cancel a payment request
+ *
+ * @remarks
+ * Planned, Ready or Sent to Cancelled. For a Sent request `warning` says to
+ * discard its draft bill in Ramp by hand; a payment Ramp still makes on it is
+ * applied all the same.
+ *
+ * @mcp destructive
+ */
+export const cancelPaymentRequest = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "invoicing" },
+  async run(ctx, { id }) {
+    return inPaymentRequestTx(ctx, async (db) => {
+      const before = await db
+        .selectFrom("paymentRequest")
+        .select("status")
+        .where("id", "=", id)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst();
+      if (!before) return ctx.error("notFound", "Payment request not found");
+      const request = await paymentRequests.transitionPaymentRequest(db, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        requestId: id,
+        from: [before.status],
+        to: "Cancelled"
+      });
+      return {
+        ...request,
+        warning:
+          before?.status === "Sent"
+            ? "Ramp still has this request's draft bill. Discard it in Ramp."
+            : null
+      };
+    });
+  }
+});
+
+/**
+ * Link a payment to a payment request
+ *
+ * @remarks
+ * Records that a Posted payment the user entered by hand settled the request,
+ * and sets it Paid. The payment must be to the document's supplier; a deposit
+ * request takes a prepayment on its own purchase order.
+ *
+ * @mcp
+ */
+export const linkPaymentRequestPayment = defineServiceFn({
+  input: z.object({ id: z.string().min(1), paymentId: z.string().min(1) }),
+  permission: { update: "invoicing" },
+  async run(ctx, { id, paymentId }) {
+    return inPaymentRequestTx(ctx, async (db) => {
+      const request = await paymentRequests.settlePaymentRequest(db, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        requestId: id,
+        paymentId
+      });
+      return { id, paymentId, alreadyLinked: request === null };
+    });
   }
 });

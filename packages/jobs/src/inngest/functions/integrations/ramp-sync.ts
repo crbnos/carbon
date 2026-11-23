@@ -20,7 +20,8 @@ import {
   getRampIntegration,
   pushChartOfAccounts,
   pushCostCenters,
-  pushProjects
+  pushProjects,
+  pushReadyPaymentRequests
 } from "@carbon/ee/ramp.server";
 import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
@@ -41,7 +42,11 @@ import {
 } from "./ramp-sync-outbound";
 import { syncRampReimbursements } from "./ramp-sync-reimbursement-family";
 import { syncRampRepayments } from "./ramp-sync-repayment";
-import type { RampSyncContext } from "./ramp-sync-shared";
+import {
+  type RampSyncContext,
+  recordRampSyncFailures,
+  resolveRampSyncOperations
+} from "./ramp-sync-shared";
 import { reconcileEntities } from "./reconcile-executor";
 import { resolveSyncProvider } from "./sync-provider";
 import { loadIntegrationTopology } from "./topology";
@@ -200,7 +205,6 @@ export const rampSyncFunction = inngest.createFunction(
           if (!resolved) {
             return {
               purchaseOrders: 0,
-              invoices: 0,
               enqueued: 0,
               failed: 0,
               skippedReasons: ["ramp provider could not be resolved"]
@@ -258,10 +262,59 @@ export const rampSyncFunction = inngest.createFunction(
           });
           return {
             purchaseOrders: 0,
-            invoices: 0,
             enqueued: 0,
             failed: 1,
             skippedReasons: [],
+            error: err instanceof Error ? err.message : String(err)
+          };
+        }
+      }
+    );
+
+    // After the coding pushes, so a request's account is a Ramp option, and
+    // before the inbound bills, which recognize a request's bill by its
+    // remote_id. Gated on the same "push invoices" setting the whole-invoice
+    // push used; selection is by Ready status, not a date window.
+    const paymentRequestResult = await step.run(
+      "ramp-payment-requests",
+      async () => {
+        try {
+          const resolved = await resolveSyncProvider(
+            client,
+            companyId,
+            SpendProviderID.RAMP
+          );
+          if (!resolved?.provider.getSyncConfig("bill")?.enabled) {
+            return { sent: 0, failed: 0, skipped: "invoice push disabled" };
+          }
+          const pushed = await pushReadyPaymentRequests({
+            db: jobDb,
+            ramp,
+            companyId,
+            userId: ctx.createdBy,
+            codingIdentityIntegrationId: (
+              resolved.provider as { codingIdentityIntegrationId?: string }
+            ).codingIdentityIntegrationId
+          });
+          await recordRampSyncFailures(ctx, {
+            entityType: "paymentRequest",
+            direction: "push-to-accounting",
+            failures: pushed.failed
+          });
+          await resolveRampSyncOperations(ctx, {
+            entityType: "paymentRequest",
+            direction: "push-to-accounting",
+            entityIds: pushed.sent.map((item) => item.id)
+          });
+          return { sent: pushed.sent.length, failed: pushed.failed.length };
+        } catch (err) {
+          logger.error("Ramp payment request push failed", {
+            companyId,
+            error: err
+          });
+          return {
+            sent: 0,
+            failed: 1,
             error: err instanceof Error ? err.message : String(err)
           };
         }
@@ -309,6 +362,7 @@ export const rampSyncFunction = inngest.createFunction(
       costCenterResult,
       projectResult,
       outboundResult,
+      paymentRequestResult,
       cardResult,
       transferResult,
       cashbackResult,
@@ -350,6 +404,7 @@ export const rampSyncFunction = inngest.createFunction(
       costCenters: costCenterResult,
       projects: projectResult,
       outbound: outboundResult,
+      paymentRequests: paymentRequestResult,
       card: cardResult,
       transfers: transferResult,
       cashbacks: cashbackResult,
