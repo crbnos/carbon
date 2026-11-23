@@ -65,23 +65,36 @@ import {
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
+  deleteLabelTemplate,
   deletePrinterRoute,
+  getPrinterApiKey,
   getPrintingSettings,
   getPrintJob,
   getPrintJobContent,
+  labelTemplateValidator,
+  locationPrinterContexts,
   type PrintingSettings,
   printerRouteValidator,
   reprintValidator,
   setContextAssignment,
+  setPrinterApiKey,
   updateAssignmentValidator,
   updatePrintingSettings,
+  upsertLabelTemplate,
   upsertPrinterRoute
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { datetime, requireAffected, unchecked } from "@carbon/utils";
+import {
+  canResendToPrinter,
+  datetime,
+  formatDateTimeInZone,
+  isUniqueViolation,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -89,6 +102,7 @@ import { plmReleaseControl } from "~/modules/items/items.models";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import {
+  getCompanyTimeZone,
   invalidateCompanyTimeZone,
   invokePosting,
   isActiveCompanyEmployee
@@ -113,7 +127,8 @@ import {
   serialNumberTimings,
   subsidiaryValidator,
   timekeepingControlsModes,
-  timesheetTimecardChecks
+  timesheetTimecardChecks,
+  weekNumberings
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
@@ -255,7 +270,8 @@ export const writeMissingJournals = defineServiceFn({
  * material warns or refuses, and when unconsumed picked material is returned
  * (when the job completes, or when each operation is done), and whether a
  * new receipt's lines start at a received quantity of 0 instead of the
- * quantity still to receive.
+ * quantity still to receive, and whether a purchase order receipt numbers
+ * its batches from the purchase order and the day received.
  *
  * @mcp
  */
@@ -275,7 +291,8 @@ export const updateInventorySettings = defineServiceFn({
       .enum(incompletePickingListPolicies)
       .optional(),
     returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional(),
-    receiptQuantitiesStartAtZero: z.boolean().optional()
+    receiptQuantitiesStartAtZero: z.boolean().optional(),
+    receiptBatchNumbersFromPurchaseOrder: z.boolean().optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -913,6 +930,38 @@ export const updateServiceSettings = defineServiceFn({
 });
 
 /**
+ * Update the sequence settings.
+ *
+ * @remarks
+ * How the `%{ww}` token counts weeks in document, serial and batch numbers:
+ * `iso` (ISO 8601, the default: weeks start on Monday, and week 1 is the week
+ * with the year's first Thursday) or `us` (weeks start on Sunday, and week 1
+ * is the week of 1 January). In a format with `%{ww}` and no `%{mm}` or
+ * `%{dd}`, `%{yyyy}` and `%{yy}` are the year the week belongs to. Numbers
+ * already issued keep their week.
+ *
+ * @param sequenceWeekNumbering - `iso` or `us`.
+ *
+ * @mcp
+ */
+export const updateSequenceSettings = defineServiceFn({
+  input: z.object({
+    sequenceWeekNumbering: z.enum(weekNumberings).optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const refused = service.nothingSent(ctx, input);
+    if (refused) return refused;
+    const saved = await service.saveCompanySettings(
+      ctx,
+      input,
+      "Failed to save the sequence settings"
+    );
+    return saved ?? input;
+  }
+});
+
+/**
  * Update the project settings.
  *
  * @remarks
@@ -1393,26 +1442,29 @@ export const updateSubsidiaryDetails = defineServiceFn({
  *
  * @remarks
  * A printer route is a printer the company prints to: its name, format (ZPL
- * labels or PDF documents), media size, URL and optional API key, location
- * and template. With an `id` the company's route is updated, without one a
- * route is created. The cached printer routing is dropped, so the change
- * applies to the next print. Not published: the server POSTs to the URL it
- * saves, so an API caller could aim it at any address.
+ * labels or PDF documents), media size, URL and optional API key, and
+ * location. With an `id` the company's route is updated, without one a
+ * route is created. The API key is kept in Supabase Vault and is write-only:
+ * a blank key keeps the saved one, `removeApiKey` clears it. When the key
+ * cannot be stored, a route this call created is deleted again, so a retry
+ * does not hit the unique name. The cached printer routing is dropped, so the
+ * change applies to the next print. Not published: the server POSTs to the
+ * URL it saves, so an API caller could aim it at any address.
  */
 export const savePrinterRoute = defineServiceFn({
   input: printerRouteValidator,
   permission: { update: "settings" },
   async run(ctx, route) {
+    const created = !route.id;
     const result = await upsertPrinterRoute(ctx.asCaller.supabase, {
       id: route.id || undefined,
       companyId: ctx.company.id,
       name: route.name,
       format: route.format,
       mediaSizeId: route.mediaSizeId || null,
+      dpi: route.dpi,
       printerUrl: route.printerUrl,
-      apiKey: route.apiKey || null,
-      locationId: route.locationId || null,
-      templateId: route.templateId || null
+      locationId: route.locationId || null
     });
     if (result.error) {
       return ctx.error(
@@ -1421,8 +1473,45 @@ export const savePrinterRoute = defineServiceFn({
         result.error
       );
     }
+
+    // The route row is saved even if the key below fails, so drop the cache now.
     await invalidatePrinterCache(ctx.company.id);
-    return { created: !route.id };
+
+    // A key of only whitespace is a blank field: it keeps the saved key.
+    const apiKey = route.removeApiKey
+      ? null
+      : route.apiKey?.trim() || undefined;
+    if (apiKey !== undefined) {
+      const saved = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        result.data.id,
+        apiKey
+      );
+      if (saved.error) {
+        if (created) {
+          // System client: a caller who may create routes may not delete them.
+          const undone = await deletePrinterRoute(
+            ctx.asSystem.supabase,
+            result.data.id,
+            ctx.company.id
+          );
+          if (undone.error) {
+            logger.warning("Failed to delete a printer route after its key", {
+              printerRouteId: result.data.id,
+              error: undone.error
+            });
+          }
+        }
+        return ctx.error(
+          "internal",
+          "Failed to save the printer API key",
+          saved.error
+        );
+      }
+    }
+
+    return { created };
   }
 });
 
@@ -1440,15 +1529,24 @@ export const testPrinterRoute = defineServiceFn({
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
-      .select("printerUrl, format, mediaSizeId, apiKey")
+      .select("printerUrl, format, mediaSizeId, dpi, hasApiKey")
       .eq("id", routeId)
       .eq("companyId", ctx.company.id)
       .single();
     if (!route) return ctx.error("notFound", "Printer route not found");
 
+    const timeZone = await getCompanyTimeZone(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
     const testLabel = service.generateTestLabel(
       route.format,
-      route.mediaSizeId
+      route.mediaSizeId,
+      route.dpi,
+      formatDateTimeInZone(datetime.timestamp(), timeZone, undefined, {
+        dateStyle: "short",
+        timeStyle: "short"
+      })
     );
     if (!testLabel) {
       return ctx.error(
@@ -1460,7 +1558,21 @@ export const testPrinterRoute = defineServiceFn({
     const headers: Record<string, string> = {
       "Content-Type": "application/octet-stream"
     };
-    if (route.apiKey) headers["X-API-Key"] = route.apiKey;
+    if (route.hasApiKey) {
+      const apiKey = await getPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        routeId
+      );
+      if (apiKey.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the printer API key",
+          apiKey.error
+        );
+      }
+      if (apiKey.data) headers["X-API-Key"] = apiKey.data;
+    }
 
     try {
       const response = await fetch(route.printerUrl, {
@@ -1487,12 +1599,71 @@ export const testPrinterRoute = defineServiceFn({
 });
 
 /**
+ * Create or update a label template.
+ *
+ * @remarks
+ * Sets the BinderyPress template a label type prints with on one media size
+ * (a 4x2 kanban card, a 2x1 serial label). Every printer loaded with that
+ * media size uses it; a label with no template renders built-in. One template
+ * per label type and media size: a second is refused as a conflict.
+ */
+export const saveLabelTemplate = defineServiceFn({
+  input: labelTemplateValidator,
+  permission: { update: "settings" },
+  async run(ctx, { id, ...template }) {
+    const result = await upsertLabelTemplate(ctx.asCaller.supabase, {
+      ...template,
+      id: id || undefined,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (isUniqueViolation(result.error)) {
+      return ctx.error(
+        "conflict",
+        "A template for this label type and media size already exists"
+      );
+    }
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save label template",
+        result.error
+      );
+    }
+    return { created: !id };
+  }
+});
+
+/**
+ * Delete a label template. Labels of its type and media size render built-in.
+ */
+export const removeLabelTemplate = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const result = await deleteLabelTemplate(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete label template",
+        result.error
+      );
+    }
+    return { deleted: true };
+  }
+});
+
+/**
  * Delete a printer route.
  *
  * @remarks
- * Deletes the company's printer route, then clears it from every printer
- * assignment that named it (a location's default, its shipping and receiving
- * printers, and its work centers), so no assignment points at a printer that
+ * Deletes the company's printer route and its API key, then clears it from
+ * every printer assignment that named it (a location's default, each of its
+ * context printers, and its work centers), so no assignment points at a printer that
  * is gone. The cached printer routing is dropped.
  *
  * @mcp destructive
@@ -1511,6 +1682,24 @@ export const removePrinterRoute = defineServiceFn({
       );
     }
 
+    // The key of a deleted route can no longer be read; this only tidies it.
+    // Only when a row went: RLS can leave the route in place without an error,
+    // and its key must stay with it.
+    if (result.data?.length) {
+      const cleared = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        id,
+        null
+      );
+      if (cleared.error) {
+        logger.warning("Failed to delete a printer API key", {
+          printerRouteId: id,
+          error: cleared.error
+        });
+      }
+    }
+
     const { data: existing } = await getPrintingSettings(
       client,
       ctx.company.id
@@ -1526,12 +1715,7 @@ export const removePrinterRoute = defineServiceFn({
           next.defaultPrinterRouteId = null;
           dirty = true;
         }
-        for (const context of [
-          "shipping",
-          "receiving",
-          "inventory",
-          "kanban"
-        ] as const) {
+        for (const context of locationPrinterContexts) {
           const assigned = next[context];
           if (assigned?.printerRouteId === id) {
             next[context] = { ...assigned, printerRouteId: null };
@@ -1626,8 +1810,11 @@ export const assignPrinter = defineServiceFn({
  * @remarks
  * Queues a new print job with the company's original job's content, to its
  * printer or to `printerUrl` when given, and starts its delivery. A job still
- * generating has no content and cannot be reprinted. Not published: the
- * server POSTs to `printerUrl`, so an API caller could aim it at any address.
+ * generating has no content and cannot be reprinted, and a ZPL label is
+ * refused for another printer at another dpi, which would print it the wrong
+ * size. The printer it was printed on always takes it again.
+ * Not published: the server POSTs to `printerUrl`, so an API caller could aim
+ * it at any address.
  */
 export const reprintPrintJob = defineServiceFn({
   input: reprintValidator,
@@ -1654,11 +1841,39 @@ export const reprintPrintJob = defineServiceFn({
       return ctx.error("rule", "Cannot reprint a job that is still generating");
     }
 
+    // The job keeps only its finished content, not what it was drawn from, so
+    // a label for another dpi cannot be redrawn here.
+    const targetUrl = printerUrl || originalMeta.data.printerUrl;
+    const { data: target } = await client
+      .from("printerRoute")
+      .select("dpi")
+      .eq("printerUrl", targetUrl)
+      .eq("companyId", ctx.company.id)
+      // The route delivery reads, when several share the URL.
+      .order("hasApiKey", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    // The printer it went to prints the same content the same way again.
+    if (
+      targetUrl !== originalMeta.data.printerUrl &&
+      !canResendToPrinter(
+        original.data.contentType,
+        original.data.dpi,
+        target?.dpi
+      )
+    ) {
+      return ctx.error(
+        "rule",
+        `This label was printed for a ${original.data.dpi} dpi printer. Print it again from the record to send it to a ${target?.dpi} dpi printer.`
+      );
+    }
+
     const job = await createPrintJob(client, {
       companyId: ctx.company.id,
       contentType: original.data.contentType as "zpl" | "pdf",
       content: original.data.content,
-      printerUrl: printerUrl || originalMeta.data.printerUrl,
+      dpi: original.data.dpi,
+      printerUrl: targetUrl,
       sourceDocument: originalMeta.data.sourceDocument,
       sourceDocumentId: originalMeta.data.sourceDocumentId,
       sourceDocumentReadableId:
@@ -1712,7 +1927,7 @@ export const deletePrintJob = defineServiceFn({
   }
 });
 
-/** What a print job printed: its ZPL or PDF content. */
+/** What a print job printed: its ZPL or PDF content, and the dpi it was drawn for. */
 export const viewPrintJobContent = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
@@ -1728,7 +1943,8 @@ export const viewPrintJobContent = defineServiceFn({
     return {
       printJobId: content.data.id,
       content: content.data.content,
-      contentType: content.data.contentType
+      contentType: content.data.contentType,
+      dpi: content.data.dpi
     };
   }
 });

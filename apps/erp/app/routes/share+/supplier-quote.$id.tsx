@@ -67,14 +67,14 @@ import {
   getSupplierQuoteLines,
   signItemFile
 } from "~/modules/purchasing/purchasing.service";
-import type {
-  SupplierQuote,
-  SupplierQuoteLine,
-  SupplierQuoteLinePrice
-} from "~/modules/purchasing/types";
+import {
+  type SharedSupplierQuote,
+  type SharedSupplierQuoteLine,
+  type SharedSupplierQuoteLinePrice,
+  supplierQuoteForSupplier
+} from "~/modules/purchasing/purchasing.utils";
 import { shareLinkContext } from "~/modules/service-context.server";
 import { getCompany } from "~/modules/settings/settings.service";
-import type { Company } from "~/modules/settings/types";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
@@ -218,15 +218,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   // A picked file that can't be signed stays, shown as unavailable.
   const filesByItem = groupBy(await filesPromise, (file) => file.itemId);
 
+  // The page is public: only what it shows or posts back goes to the browser.
   return {
     state: QuoteState.Valid,
     data: {
-      quote: quote.data,
-      company: company.data,
-      quoteLines:
-        quoteLines.data?.map(({ internalNotes, ...line }) => ({
-          ...line
-        })) ?? [],
+      ...supplierQuoteForSupplier({
+        quote: quote.data,
+        company: company.data,
+        lines: quoteLines.data ?? [],
+        prices: quoteLinePrices.data ?? []
+      }),
       thumbnails: thumbnails,
       files: Object.fromEntries(
         (quoteLines.data ?? []).flatMap((line) =>
@@ -234,8 +235,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             ? [[line.id, filesByItem[line.itemId] ?? []]]
             : []
         )
-      ),
-      quoteLinePrices: quoteLinePrices.data ?? []
+      )
     }
   };
 }
@@ -331,7 +331,7 @@ const NotesEditorModal = ({
 }: {
   notes: JSONContent;
   onSave: (content: JSONContent) => void;
-  quoteStatus: SupplierQuote["status"];
+  quoteStatus: SharedSupplierQuote["status"];
 }) => {
   const { t } = useLingui();
   const isDraft = quoteStatus === "Draft";
@@ -444,8 +444,8 @@ const LineItems = ({
   setSelectedLines: Dispatch<
     SetStateAction<Record<string, Record<number, SelectedLine>>>
   >;
-  quoteStatus: SupplierQuote["status"];
-  quoteLinePrices: SupplierQuoteLinePrice[];
+  quoteStatus: SharedSupplierQuote["status"];
+  quoteLinePrices: SharedSupplierQuoteLinePrice[];
   onSaveNotes: (lineId: string, content: JSONContent) => void;
 }) => {
   const { t } = useLingui();
@@ -595,15 +595,15 @@ const LinePricing = ({
   quoteStatus,
   quoteLinePrices
 }: {
-  line: Omit<SupplierQuoteLine, "internalNotes">;
+  line: SharedSupplierQuoteLine;
   currencyCode: string;
   locale: string;
   selectedLines: Record<number, SelectedLine>;
   setSelectedLines: Dispatch<
     SetStateAction<Record<string, Record<number, SelectedLine>>>
   >;
-  quoteStatus: SupplierQuote["status"];
-  quoteLinePrices: SupplierQuoteLinePrice[];
+  quoteStatus: SharedSupplierQuote["status"];
+  quoteLinePrices: SharedSupplierQuoteLinePrice[];
 }) => {
   const { t } = useLingui();
   const lineLabel =
@@ -725,9 +725,11 @@ const LinePricing = ({
               storedPricing?.supplierUnitPrice ??
               pricing?.supplierUnitPrice ??
               0,
-            unitPrice: pricing?.unitPrice ?? 0,
+            // The base-currency prices are the buyer's: never sent, and the
+            // submit ignores them.
+            unitPrice: 0,
             leadTime: storedPricing?.leadTime ?? pricing?.leadTime ?? 0,
-            shippingCost: pricing?.shippingCost ?? 0,
+            shippingCost: 0,
             supplierShippingCost:
               storedPricing?.supplierShippingCost ??
               pricing?.supplierShippingCost ??
@@ -951,10 +953,10 @@ const Quote = ({
   data
 }: {
   data: {
-    company: Company;
-    quote: SupplierQuote;
-    quoteLines: SupplierQuoteLine[];
-    quoteLinePrices: SupplierQuoteLinePrice[];
+    company: ReturnType<typeof supplierQuoteForSupplier>["company"];
+    quote: SharedSupplierQuote;
+    quoteLines: SharedSupplierQuoteLine[];
+    quoteLinePrices: SharedSupplierQuoteLinePrice[];
   };
 }) => {
   const { company, quote, quoteLinePrices } = data;
@@ -995,9 +997,9 @@ const Quote = ({
         initial[price.supplierQuoteLineId][price.quantity] = {
           quantity: price.quantity,
           supplierUnitPrice: price.supplierUnitPrice ?? 0,
-          unitPrice: price.unitPrice ?? 0,
+          unitPrice: 0,
           leadTime: price.leadTime ?? 0,
-          shippingCost: price.shippingCost ?? 0,
+          shippingCost: 0,
           supplierShippingCost: price.supplierShippingCost ?? 0,
           supplierTaxAmount: price.supplierTaxAmount ?? 0
         };

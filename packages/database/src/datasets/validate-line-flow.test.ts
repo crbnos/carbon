@@ -130,21 +130,20 @@ describe("line-flow validation", () => {
     expect(violations[0]).toContain("shelf");
   });
 
-  it("refuses a Scrapped entity on a tracked shelf", () => {
+  it("refuses a Scrapped lot scrapped from another shelf than its tracked shelf", () => {
     const tracked = motor.inventory.onHandTracked.find(
       (t) => t.item === "MAG-NDFB-38"
     )!;
     const [first, second] = tracked.entities;
     const violations = violationsOn(
       withTracked("MAG-NDFB-38", {
-        shelf: "Magnet-Vault",
         entities: [
           first!,
           {
             ...second!,
             status: "Scrapped",
             scrap: {
-              shelf: "Magnet-Vault",
+              shelf: "A1-L3",
               reason: "Quality",
               dateOffset: -10,
               comment: "Chipped"
@@ -152,19 +151,22 @@ describe("line-flow validation", () => {
           }
         ]
       }),
-      "Scrapped entity"
+      "is scrapped from"
     );
     expect(violations).toHaveLength(1);
-    expect(violations[0]).toContain("shelf");
+    expect(violations[0]).toContain('"A1-L3", not "Magnet-Vault"');
   });
 
   it("refuses tracked lots that do not sum to the opening stock", () => {
+    const tracked = motor.inventory.onHandTracked.find(
+      (t) => t.item === "MAG-NDFB-45"
+    )!;
     const violations = violationsOn(
-      withTracked("MAG-NDFB-45", { shelf: "Magnet-Vault" }),
+      withTracked("MAG-NDFB-45", { entities: tracked.entities.slice(1) }),
       "entity quantities"
     );
     expect(violations).toHaveLength(1);
-    expect(violations[0]).toContain("openingStock 480");
+    expect(violations[0]).toContain("openingStock 483");
   });
 
   it("accepts tracked lots that sum to the opening stock", () => {

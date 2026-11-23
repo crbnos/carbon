@@ -2,7 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type FailureReason, isFailureReason } from "@carbon/utils";
+import {
+  type FailureReason,
+  isFailureReason,
+  readFormError
+} from "@carbon/utils";
 
 /** How a finished action turned out, from the shape route actions return. */
 export function actionOutcome(data: unknown): "success" | "error" | null {
@@ -13,8 +17,8 @@ export function actionOutcome(data: unknown): "success" | "error" | null {
       error?: unknown;
       fieldErrors?: unknown;
     };
-    // `validationError`: the form shows the field errors itself.
-    if (result.fieldErrors) return null;
+    // `validationError` and a refused save (`respond`): the form shows them itself.
+    if (result.fieldErrors || readFormError(data)) return null;
     if (result.success === false || result.error) return "error";
   }
   return "success";

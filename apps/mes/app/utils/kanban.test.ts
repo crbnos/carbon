@@ -6,10 +6,33 @@ import { describe, expect, it } from "vitest";
 import {
   isKanbanCompleteScan,
   kanbanCompleteTarget,
+  kanbanScanPath,
   soleUnitId
 } from "./kanban";
 
 const kanban = { id: "kbn_8f3k2m1q", completedBarcodeOverride: null };
+
+describe("kanbanScanPath", () => {
+  it.each([
+    ["https://app.carbon.ms/api/kanban/kb1", "/api/kanban/kb1"],
+    ["http://other-host.example/api/kanban/start/kb1", "/api/kanban/start/kb1"],
+    [
+      "https://www.example.com/api/kanban/link/kb1?x=1",
+      "/api/kanban/link/kb1?x=1"
+    ]
+  ])("reads the path of a label printed from any origin: %s", (input, path) => {
+    expect(kanbanScanPath(input)).toBe(path);
+  });
+
+  it.each([
+    "https://app.carbon.ms/api/kanban/complete/kb1",
+    "https://app.carbon.ms/x/traveler/te1",
+    "https://app.carbon.ms/api/kanban/start/kb1/extra",
+    "kb1"
+  ])("is not a create, start or link label: %s", (input) => {
+    expect(kanbanScanPath(input)).toBeNull();
+  });
+});
 
 describe("isKanbanCompleteScan", () => {
   it("accepts the label whatever host it was printed from", () => {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLineSupplierPartId } from "@carbon/documents/utils";
 import {
   Badge,
   Button,
@@ -114,6 +115,9 @@ const LineItems = ({
       : isFixedAsset
         ? line.description || "Fixed Asset"
         : distinctItemText(itemReadableId, line.description);
+    const supplierPartId = isIndirect
+      ? null
+      : getLineSupplierPartId(line, itemReadableId);
     const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
     const supplierLineTotal =
       (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
@@ -141,6 +145,7 @@ const LineItems = ({
             <>
               {line.purchaseQuantity} × {formatter.format(line.unitPrice ?? 0)}{" "}
               {unitOfMeasureLabel}
+              {supplierPartId && <> · {supplierPartId}</>}
             </>
           }
         />
@@ -191,6 +196,11 @@ const LineItems = ({
                       </Link>
                     </Button>
                   </HStack>
+                  {supplierPartId && (
+                    <span className="text-sm truncate w-full">
+                      <Trans>Supplier Part: {supplierPartId}</Trans>
+                    </span>
+                  )}
                   {lineDescription && (
                     <TruncatedTooltipText
                       className="text-muted-foreground text-sm truncate w-full"

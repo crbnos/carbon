@@ -63,6 +63,8 @@ export function renderEnv(opts: {
   mode: StackMode;
   /** The database the apps use: the worktree's own in shared mode. */
   database: string;
+  /** Compose CPU limits capped at Docker's CPU count (`worktreeCpuLimits`). */
+  cpuLimits?: Record<string, string>;
 }): string {
   const {
     slug,
@@ -136,6 +138,12 @@ export function renderEnv(opts: {
   for (const { key, fallback } of FROM_DOT_ENV) {
     const value = process.env[key] || fallback;
     if (value) lines.push(`${key}=${value}`);
+  }
+  const cpuLimits = Object.entries(opts.cpuLimits ?? {});
+  if (cpuLimits.length > 0) {
+    lines.push("");
+    lines.push("# Compose CPU limits above Docker's CPU count, capped at it");
+    for (const [key, cpus] of cpuLimits) lines.push(`${key}=${cpus}`);
   }
   lines.push("");
   lines.push(

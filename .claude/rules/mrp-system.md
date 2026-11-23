@@ -719,8 +719,8 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `demandForecast` | `(itemId, locationId, periodId, planningSegmentId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'\|'Project Material'\|'Project Borrow'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId` / `plannedOrderId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261021004600`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, plannedOrderId, periodId)` (`plannedOrderId` from `20261117063500`: a change action may target a planned order; FK `(plannedOrderId, companyId)` `ON DELETE CASCADE`; `planningAction_change_target_chk` keeps Order / Make / Transfer / Borrow targetless and gives every change type exactly one target). `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
-| `plannedOrder` | `(id, companyId)` | `orderType` (`Make` / `Buy` / reserved `Transfer`), `status` (`Planned` / `Firm` / `Converted`), `quantity`, `scrapQuantity`, `quantityTrace`, `dueDate`, `releaseDate`, `periodId`, `splitIndex`, `firmedBy` / `firmedAt`, `jobId` / `purchaseOrderLineId` | MRP v2 Phase 2a (`20261117063500`), see *Planned orders* below. Unique per (company, item, location, segment, type, week, `splitIndex`) while Planned (`plannedOrder_natural_key_idx`); `plannedOrder_firm_chk` ties `firmedBy` to Firm, `plannedOrder_converted_chk` ties a document to Converted. Read-only through the API (read `production_view` or `purchasing_view`) |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId` / `plannedOrderId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261021004600`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, plannedOrderId, periodId)` (`plannedOrderId` from `20261123100400`: a change action may target a planned order; FK `(plannedOrderId, companyId)` `ON DELETE CASCADE`; `planningAction_change_target_chk` keeps Order / Make / Transfer / Borrow targetless and gives every change type exactly one target). `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `plannedOrder` | `(id, companyId)` | `orderType` (`Make` / `Buy` / reserved `Transfer`), `status` (`Planned` / `Firm` / `Converted`), `quantity`, `scrapQuantity`, `quantityTrace`, `dueDate`, `releaseDate`, `periodId`, `splitIndex`, `firmedBy` / `firmedAt`, `jobId` / `purchaseOrderLineId` | MRP v2 Phase 2a (`20261123100400`), see *Planned orders* below. Unique per (company, item, location, segment, type, week, `splitIndex`) while Planned (`plannedOrder_natural_key_idx`); `plannedOrder_firm_chk` ties `firmedBy` to Firm, `plannedOrder_converted_chk` ties a document to Converted. Read-only through the API (read `production_view` or `purchasing_view`) |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'\|'Project Borrow'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 | `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261006130000`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261006130100`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |
@@ -786,7 +786,7 @@ to child demand. Note current `methodType` enum is
 
 ## Source views (open demand/supply)
 
-Newest defs: `openPurchaseOrderLines` in `20260811123616_widen-purchasing-scale.sql`,
+Newest defs: `openPurchaseOrderLines` in `20261117123417_open-po-lines-exclude-outside-processing.sql`,
 `openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
 `openSalesOrderLines` in `20261006130001_demand-forecast-consumption.sql`.
@@ -808,7 +808,8 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
   (make-to-stock jobs only); `quantityToReceive = productionQuantity − received`.
-- `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, status IN
+- `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, `purchaseOrderType <>
+  'Outside Processing'` (the job it serves is the supply; receiving it stocks nothing), status IN
   `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = the line's
   `requiredDate`, `promisedDate` = the line's promised date, else the order
   delivery's `receiptPromisedDate`.
@@ -1156,7 +1157,7 @@ never offered a Cancel, Defer or Expedite.
   items with a matching OPEN action inside the item's planning horizon. An action
   counts for a page when it is that page's Order / Make, targets a PO line / job,
   or targets a planned order of the page's `orderType` (Buy for purchasing, Make
-  for production — `20261117063504`; the grid's `latestOrderDate` reads the same
+  for production — `20261123100404`; the grid's `latestOrderDate` reads the same
   set). Before that, a row whose only action was on a planned order was hidden. The
   loader then reads the actions for the rows ON THE PAGE (`getPlanningActions`
   with `itemIds`, paged). An earlier version loaded the location's first 500
@@ -1322,7 +1323,7 @@ never offered a Cancel, Defer or Expedite.
   The earlier single list mixed both: an edit to an existing order sat unsaved
   until Order was pressed and was dropped by Close.
 - **Grid RPCs are wrappers.** `get_purchasing_planning_grid` /
-  `get_production_planning_grid` (latest: `20261117063504_planning-grid-planned-order-actions.sql`) select
+  `get_production_planning_grid` (latest: `20261123100404_planning-grid-planned-order-actions.sql`) select
   `p.*` from the base RPC and add `itemPostingGroupId` (**Item Group** column +
   filter), `planningHorizonDays`, `timeFenceDate`, `firstNegativeDate` (**1st
   Negative On Hand**: the start of the first week whose projection is below

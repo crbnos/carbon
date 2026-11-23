@@ -56,7 +56,10 @@ import {
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import {
   postReceipt,
   RECEIPT_VOID_STOCK_MOVED_ERROR
@@ -91,7 +94,14 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
-import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
+import {
+  incoterms,
+  optionalTiptapDoc,
+  purchaseOrderExternalNotesNote,
+  purchaseOrderLineDescriptionNote,
+  rfqLineDescriptionNote,
+  supplierQuoteLineDescriptionNote
+} from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
@@ -6569,7 +6579,7 @@ export const insertPurchaseOrder = defineServiceFn({
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
     notes: optionalTiptapDoc,
-    externalNotes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc.describe(purchaseOrderExternalNotesNote),
     customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },
@@ -6718,7 +6728,10 @@ export const createPurchaseOrderLine = defineServiceFn({
     costCenterId: z.string().optional(),
     assetId: z.string().optional(),
     conversionFactor: z.number().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(purchaseOrderLineDescriptionNote),
     exchangeRate: z.number().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     jobId: z.string().optional(),
@@ -6748,11 +6761,14 @@ export const createPurchaseOrderLine = defineServiceFn({
       .optional()
   }),
   permission: { create: "purchasing" },
-  async run(ctx, { id: _id, ...input }) {
+  async run(ctx, { id: _id, ...fields }) {
     // Always a new line: an `id` would turn the write into an update of a
     // line on another order, past that order's own gate.
-    const held = await service.unreleasedChangeOrderRefusal(ctx, input.itemId);
+    const held = await service.unreleasedChangeOrderRefusal(ctx, fields.itemId);
     if (held) return held;
+    const jobId = await service.lineOperationJob(ctx, fields);
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -6796,7 +6812,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
       costCenterId: z.string().optional(),
       assetId: z.string().optional(),
       conversionFactor: z.number().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(purchaseOrderLineDescriptionNote),
       exchangeRate: z.number().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       jobId: z.string().optional(),
@@ -6827,7 +6846,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
     })
     .required({ id: true }),
   permission: { update: "purchasing" },
-  async run(ctx, input) {
+  async run(ctx, fields) {
+    const jobId = fields.jobOperationId
+      ? await service.lineOperationJob(ctx, fields)
+      : null;
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
     const line = await service.getPurchaseOrderLineForAmendment(ctx, input.id);
     if (line.error) {
       return ctx.error(
@@ -6866,7 +6890,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
             itemId: input.itemId,
             assetId: input.assetId,
             purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
-            conversionFactor: input.conversionFactor
+            conversionFactor: input.conversionFactor,
+            // A field the edit sends empty is written as null.
+            ...("jobId" in input ? { jobId: input.jobId ?? null } : {}),
+            ...("jobOperationId" in input
+              ? { jobOperationId: input.jobOperationId ?? null }
+              : {})
           },
           dates: {
             requiredDate: input.requiredDate,
@@ -7202,7 +7231,10 @@ export const createSupplierQuoteLine = defineServiceFn({
     itemId: z.string().optional(),
     accountId: z.string().optional(),
     costCenterId: z.string().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(supplierQuoteLineDescriptionNote),
     supplierPartId: z.string().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7250,7 +7282,10 @@ export const updateSupplierQuoteLine = defineServiceFn({
       itemId: z.string().optional(),
       accountId: z.string().optional(),
       costCenterId: z.string().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(supplierQuoteLineDescriptionNote),
       supplierPartId: z.string().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7518,7 +7553,7 @@ export const createPurchasingRFQLine = defineServiceFn({
   input: z.looseObject({
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -7551,7 +7586,7 @@ export const updatePurchasingRFQLine = defineServiceFn({
     id: z.string(),
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -8130,6 +8165,35 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for a supplier interaction (purchase order/supplier quote/RFQ) document
+ *
+ * @remarks
+ * A signed link to a file on the supplier interaction's Files tab, valid for an
+ * hour (`expiresIn`, in seconds). The response carries the link, never the
+ * file. `name` is the file's name as
+ * `purchasing_getSupplierInteractionDocuments` lists it, or the name given to
+ * `purchasing_createSupplierInteractionDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    interactionId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  permission: { view: "purchasing" },
+  async run(ctx, { interactionId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction",
+      entityId: interactionId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for a supplier interaction LINE document
  *
  * @mcp
@@ -8145,6 +8209,32 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a supplier interaction LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `purchasing_getSupplierInteractionLineDocuments`
+ * lists it, or the name given to
+ * `purchasing_createSupplierInteractionLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is
+ * not there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 

@@ -63,6 +63,8 @@ declare module "@tanstack/react-table" {
 
 export type ColumnSizeMap = Map<string, { width: number; startX: number }>;
 
+export type ServerExportLinks = { csv: string; xlsx: string };
+
 /**
  * Turns on infinite scroll for a list whose loader pages with a cursor
  * (`toPage`). The Table fetches the next page from the same route loader.

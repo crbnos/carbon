@@ -37,6 +37,7 @@ export * from "./entity-drain";
 export * from "./error-reason";
 export * from "./errors";
 export * from "./field-registry";
+export * from "./form-error";
 export * from "./format";
 export * from "./geo";
 export * from "./hash";

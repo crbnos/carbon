@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type {
-  ContextAssignment,
-  LocationAssignment,
-  PrinterContext,
-  PrinterRoute,
-  PrintingSettings
+import {
+  type ContextAssignment,
+  defaultAutoPrint,
+  type LocationAssignment,
+  type PrinterContext,
+  type PrinterRoute,
+  type PrintingSettings
 } from "@carbon/printing";
 import { useAction } from "@carbon/query";
 import {
@@ -26,6 +27,7 @@ import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
 import {
   LuBlocks,
+  LuFileText,
   LuHandCoins,
   LuLocateFixed,
   LuMapPin,
@@ -212,6 +214,12 @@ function LocationSection({
       icon: <LuSquareKanban />,
       explicit: assignment?.kanban ?? null
     },
+    {
+      context: "documents",
+      label: "Documents",
+      icon: <LuFileText />,
+      explicit: assignment?.documents ?? null
+    },
     ...workCenters.map<AssignmentRowModel>((wc) => ({
       context: "workCenter",
       contextId: wc.id,
@@ -232,7 +240,7 @@ function LocationSection({
           isIndented={!row.isDefault}
           printerRouteId={row.explicit?.printerRouteId ?? null}
           inheritedName={row.isDefault ? null : defaultPrinterName}
-          autoPrint={row.explicit?.autoPrint ?? true}
+          autoPrint={row.explicit?.autoPrint ?? defaultAutoPrint(row.context)}
           printerRouteOptions={printerRouteOptions}
           onPrinterChange={(printerRouteId) =>
             onUpdate({

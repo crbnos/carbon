@@ -32,6 +32,7 @@ type CompanySettings = Partial<
     | "requireCustomerContactEmail"
     | "requirePromisedDateToFinalizePurchaseOrder"
     | "requireSupplierContactEmail"
+    | "sequenceWeekNumbering"
     | "serialNumberTiming"
     | "showBomExplorerReadableId"
     | "showCurrencyTrailingZeros"

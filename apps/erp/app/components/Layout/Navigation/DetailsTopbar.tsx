@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   useShortcutKeyMap,
+  useSlidingHoverCard,
   useViewport
 } from "@carbon/react";
 import { useMemo } from "react";
@@ -22,7 +23,6 @@ import { useOptimisticLocation, useUrlParams } from "~/hooks";
 import type { CompactTabItem } from "../CompactTabRow";
 import { CompactTabRow } from "../CompactTabRow";
 import { recordFrameSlot, recordTabsSlot } from "../Panels";
-import { useSlidingHoverCard } from "./useSlidingHoverCard";
 
 type DetailTopbarProps = {
   links: {
@@ -139,7 +139,7 @@ const DetailTopbar = ({
                   "relative w-full inline-flex items-center justify-center whitespace-nowrap rounded-[6px] border border-transparent px-3 py-1 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring",
                   isActive
                     ? "bg-background text-foreground shadow-button-base"
-                    : "hover:text-foreground"
+                    : "hover:text-foreground data-[hover-card]:text-foreground"
                 )}
               >
                 {route.icon && <route.icon className="mr-2" />}

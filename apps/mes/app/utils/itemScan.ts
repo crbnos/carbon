@@ -2,11 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  jobMaterialShortfall,
-  pickTravelerMaterial,
-  type TravelerMaterial
-} from "./traveler";
+import { round } from "@carbon/utils";
+import { pickTravelerMaterial, type TravelerMaterial } from "./traveler";
 
 /**
  * The item id in a scanned ERP item link (`/x/part/<id>`, and the same for a
@@ -33,25 +30,37 @@ export function parseItemCode(input: string): string | null {
 
 /** The job material fields an item scan reads. */
 export type ItemScanMaterial = TravelerMaterial & {
+  itemType: string | null;
   methodType: "Purchase to Order" | "Pull from Inventory" | "Make to Order";
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
 };
 
 /**
- * What a scanned item sticker does at an operation. It issues everything the
- * job still needs of the item into the first material that is short (this
- * operation's, then one with no operation). A sticker names no unit, so a
- * serial part, or a part the job makes, opens the Issue dialog instead.
+ * Stock issued by measure (bar, sheet, adhesive), not counted off a shelf:
+ * one scan of its sticker issues what the job still needs.
+ */
+const isMeasuredStock = (material: ItemScanMaterial) =>
+  material.itemType === "Material" || material.itemType === "Consumable";
+
+/**
+ * What scanned item stickers do at an operation. Each scan of a part or tool
+ * is one piece: `pieces` scans issue that many (or the rest, when less is
+ * still short) into the first material that is short (this operation's, then
+ * one with no operation), so the operator scans once for each piece taken off
+ * the shelf. A material or consumable is issued by measure: one scan issues
+ * all the job still needs. A sticker names no unit, so a serial part, or a
+ * part the job makes, opens the Issue dialog instead.
  */
 export function planItemScanIssue<T extends ItemScanMaterial>(
   materials: T[],
-  jobOperationId: string
+  jobOperationId: string,
+  pieces = 1
 ):
   | { kind: "notUsed" }
   | { kind: "full" }
   | { kind: "dialog"; material: T }
-  | { kind: "untracked"; material: T; required: number }
+  | { kind: "untracked"; material: T; quantity: number }
   | { kind: "batch"; material: T; quantity: number } {
   const picked = pickTravelerMaterial({
     materials,
@@ -68,16 +77,36 @@ export function planItemScanIssue<T extends ItemScanMaterial>(
   ) {
     return { kind: "dialog", material };
   }
+  const quantity = isMeasuredStock(material)
+    ? picked.needed
+    : Math.min(pieces, picked.needed);
   if (material.requiresBatchTracking) {
-    return {
-      kind: "batch",
-      material,
-      quantity: jobMaterialShortfall(material)
-    };
+    return { kind: "batch", material, quantity };
   }
+  return { kind: "untracked", material, quantity };
+}
+
+/**
+ * What the operation requires of a scanned item and has of it, over every
+ * material a scan can fill (this operation's, and those with no operation),
+ * so the count in the toast does not restart when the item is on two lines.
+ */
+export function itemScanTotals(
+  materials: ItemScanMaterial[],
+  jobOperationId: string
+): { required: number; issued: number } {
+  const eligible = materials.filter(
+    (material) =>
+      material.jobOperationId === jobOperationId ||
+      material.jobOperationId === null
+  );
   return {
-    kind: "untracked",
-    material,
-    required: material.estimatedQuantity ?? material.quantity ?? 0
+    required: round(
+      eligible.reduce(
+        (sum, m) => sum + (m.estimatedQuantity ?? m.quantity ?? 0),
+        0
+      )
+    ),
+    issued: round(eligible.reduce((sum, m) => sum + (m.quantityIssued ?? 0), 0))
   };
 }

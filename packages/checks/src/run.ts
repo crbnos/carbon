@@ -38,6 +38,7 @@ import {
   findUnselectedListColumns,
   LIST_SELECT_COVERS_COLUMNS
 } from "./conformance/list-select-covers-columns";
+import { mesUnitWriteResolvesUnit } from "./conformance/mes-unit-write-resolves-unit";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -155,7 +156,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noNoopOpenChange,
   noUnmountingDialog,
   noPostgresChanges,
-  journalStatusFilter
+  journalStatusFilter,
+  mesUnitWriteResolvesUnit
 ];
 
 /** Checks that run over git-tracked vitest files (apps, packages, scripts, docs). */

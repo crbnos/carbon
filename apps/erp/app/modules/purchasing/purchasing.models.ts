@@ -1047,6 +1047,8 @@ export type PurchaseOrderLineIdentity = {
   assetId: string | null;
   purchaseUnitOfMeasureCode: string | null;
   conversionFactor: number | null;
+  jobId: string | null;
+  jobOperationId: string | null;
 };
 
 /**
@@ -1104,6 +1106,14 @@ export function purchaseOrderLineAmendRefusal(
       Number(edit.conversionFactor) !== Number(line.conversionFactor ?? 1)
     ) {
       return "Cannot change the conversion factor of a line that has been received or invoiced.";
+    }
+    // An outside processing receipt's cost is the job's through these.
+    if (
+      (edit.jobId !== undefined && edit.jobId !== (line.jobId ?? null)) ||
+      (edit.jobOperationId !== undefined &&
+        edit.jobOperationId !== (line.jobOperationId ?? null))
+    ) {
+      return "Cannot change the job or operation of a line that has been received or invoiced.";
     }
   }
   return null;

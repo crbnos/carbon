@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { LabelSize } from "@carbon/utils";
+import { DEFAULT_LABEL_DPI, type LabelSize } from "@carbon/utils";
 import { zplFieldData } from "./utils";
 
 export type KanbanLabelItem = {
@@ -218,7 +218,7 @@ export function generateKanbanLabelZPL(
     throw new Error("Invalid label size or missing ZPL configuration");
   }
   const { width, height } = labelSize.zpl;
-  const dpi = labelSize.zpl.dpi || 203;
+  const dpi = labelSize.zpl.dpi || DEFAULT_LABEL_DPI;
   const dots = (inches: number) => Math.round(inches * dpi);
 
   const code = kanbanLabelCode(item, baseUrl, action);

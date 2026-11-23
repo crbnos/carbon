@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ColumnDef } from "@tanstack/react-table";
+import type { ServerExportLinks } from "./types";
 
 export function getAccessorKey<T>(columnDef: ColumnDef<T, unknown>) {
   return "accessorKey" in columnDef
@@ -134,6 +135,23 @@ export function selectExportColumns(args: {
       // else follows the visible-in-the-current-view rule.
       (exportOnlyColumns.includes(id) || columnVisibility[id] !== false)
   );
+}
+
+/** Keep the list's query and active view columns, but always start at row one. */
+export function serverExportLinks(args: {
+  search: string;
+  urls: ServerExportLinks;
+  columns: { key: string; label: string }[];
+}): ServerExportLinks {
+  const params = new URLSearchParams(args.search);
+  params.delete("after");
+  params.delete("count");
+  params.set("columns", JSON.stringify(args.columns));
+  const query = params.toString();
+  return {
+    csv: `${args.urls.csv}?${query}`,
+    xlsx: `${args.urls.xlsx}?${query}`
+  };
 }
 
 // A column that exists only to add a field to the CSV — never rendered in the

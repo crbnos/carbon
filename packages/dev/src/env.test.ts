@@ -41,6 +41,11 @@ const base = (overrides: Partial<Parameters<typeof renderEnv>[0]> = {}) =>
   });
 
 describe("renderEnv", () => {
+  it("writes the capped CPU limits it is given, and none without them", () => {
+    expect(base({ cpuLimits: { CPU_EDGE: "2" } })).toContain("\nCPU_EDGE=2\n");
+    expect(base()).not.toMatch(/^CPU_/m);
+  });
+
   it.each([
     {
       portless: false,

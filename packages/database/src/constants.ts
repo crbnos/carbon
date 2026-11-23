@@ -29,6 +29,7 @@ export const Constants = {
         "Other Current Asset",
         "Other Asset",
         "Other Current Liability",
+        "Credit Card",
         "Long Term Liability",
         "Equity - No Close",
         "Equity - Close",
@@ -488,6 +489,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
+      jobMaterialScrapReplacement: ["Shelf", "Water Spider"],
       jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",

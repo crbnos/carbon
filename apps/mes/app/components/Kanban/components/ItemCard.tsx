@@ -200,8 +200,6 @@ export function ItemCard({
                 // link's name; the time left is spelled out below.
                 <HStack className="mt-2" aria-hidden="true">
                   <BarProgress
-                    gradient
-                    invertGradient
                     activeClassName={
                       progress > (item.duration ?? 0)
                         ? "bg-red-500"
@@ -271,6 +269,10 @@ export function ItemCard({
             <div className="flex justify-center max-md:hidden">
               <img
                 src={getPrivateUrl(item.thumbnailPath)}
+                loading="lazy"
+                decoding="async"
+                width={300}
+                height={300}
                 alt=""
                 className="w-full h-auto rounded-lg"
               />

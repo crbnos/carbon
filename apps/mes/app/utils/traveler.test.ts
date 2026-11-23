@@ -5,12 +5,13 @@
 import { describe, expect, it } from "vitest";
 import {
   batchScanQuantity,
+  decideTravelerClaim,
   isUnitInOperationScope,
   parseTravelerCode,
+  pickTravelerClaims,
   pickTravelerMaterial,
   pickTravelerOperation,
-  travelerIssueCandidates,
-  travelerScanAction
+  travelerIssueCandidates
 } from "./traveler";
 
 describe("parseTravelerCode", () => {
@@ -20,10 +21,10 @@ describe("parseTravelerCode", () => {
     ).toBe("te_9k2m1q");
   });
 
-  it("returns null for a raw id, the resolve route and other paths", () => {
+  it("returns null for a raw id, the scan endpoint and other paths", () => {
     expect(parseTravelerCode("te_9k2m1q")).toBeNull();
     expect(
-      parseTravelerCode("https://mes.carbon.ms/x/traveler/resolve")
+      parseTravelerCode("https://mes.carbon.ms/x/traveler/scan")
     ).toBeNull();
     expect(
       parseTravelerCode("https://mes.carbon.ms/x/operation/op_1")
@@ -178,64 +179,236 @@ describe("travelerIssueCandidates", () => {
   });
 });
 
-describe("travelerScanAction", () => {
-  const base = {
-    scannedStatus: "Consumed",
-    targetTrackedEntityId: "te_engine",
-    targetStatus: "Reserved",
-    targetJobMakeMethodId: "jmm_engine",
-    targetInProduction: false,
-    operationJobMakeMethodId: "jmm_engine"
+describe("pickTravelerClaims", () => {
+  // A chamber job of 3 serial units; the kit is fitted at op_fit.
+  const kit = {
+    id: "jm_kit",
+    jobMakeMethodId: "jmm_cc",
+    jobOperationId: "op_fit",
+    quantity: 1,
+    estimatedQuantity: 3,
+    quantityIssued: 0
   };
+  const base = {
+    operations: [{ id: "op_fit", jobMakeMethodId: "jmm_cc" }],
+    unitIds: new Map([["jmm_cc", ["u1", "u2", "u3"]]]),
+    isOpenAt: () => true,
+    serialMakeMethodIds: new Set(["jmm_cc"]),
+    materials: [kit],
+    itemId: "item_kit",
+    consumed: new Map()
+  };
+  const hasKit = [{ materialId: "jm_kit", itemId: "item_kit", quantity: 1 }];
 
-  it("issues an available unit", () => {
-    expect(
-      travelerScanAction({
-        ...base,
-        scannedStatus: "Available",
-        targetTrackedEntityId: "te_chamber",
-        targetStatus: "Available",
-        targetJobMakeMethodId: null
-      })
-    ).toEqual({ kind: "issue" });
+  it("claims the first unit for the first kit", () => {
+    expect(pickTravelerClaims(base)).toEqual([
+      {
+        operationId: "op_fit",
+        parentTrackedEntityId: "u1",
+        materialId: "jm_kit"
+      }
+    ]);
   });
 
-  it("opens the unit a consumed unit is already inside in this job", () => {
-    expect(travelerScanAction(base)).toEqual({
-      kind: "open",
-      trackedEntityId: "te_engine"
+  it("gives the next kit the next unit while earlier kits are still in work", () => {
+    const consumed = new Map([
+      ["u1", hasKit],
+      ["u2", hasKit]
+    ]);
+    expect(pickTravelerClaims({ ...base, consumed })[0]).toMatchObject({
+      parentTrackedEntityId: "u3"
     });
   });
 
-  it("navigates for a unit inside another job", () => {
+  it("prefers the unit on screen when it still needs the kit", () => {
     expect(
-      travelerScanAction({ ...base, targetJobMakeMethodId: "jmm_other" })
-    ).toEqual({ kind: "navigate" });
+      pickTravelerClaims({ ...base, preferredUnitId: "u2" })[0]
+    ).toMatchObject({ parentTrackedEntityId: "u2" });
   });
 
-  it("opens this job's own unit after a completed operation made it Available", () => {
+  it("moves past the unit on screen when it already has its kit", () => {
+    const consumed = new Map([["u2", hasKit]]);
     expect(
-      travelerScanAction({
-        ...base,
-        scannedStatus: "Available",
-        targetTrackedEntityId: "te_engine",
-        targetStatus: "Available",
-        targetInProduction: true
-      })
-    ).toEqual({ kind: "open", trackedEntityId: "te_engine" });
+      pickTravelerClaims({ ...base, consumed, preferredUnitId: "u2" })[0]
+    ).toMatchObject({ parentTrackedEntityId: "u1" });
   });
 
-  it("never issues a unit that is still in production in another job", () => {
+  it("skips units already done at the operation", () => {
     expect(
-      travelerScanAction({
+      pickTravelerClaims({ ...base, isOpenAt: (unitId) => unitId === "u3" })[0]
+    ).toMatchObject({ parentTrackedEntityId: "u3" });
+  });
+
+  it("offers nothing once every unit has its kit", () => {
+    const consumed = new Map([
+      ["u1", hasKit],
+      ["u2", hasKit],
+      ["u3", hasKit]
+    ]);
+    expect(pickTravelerClaims({ ...base, consumed })).toEqual([]);
+  });
+
+  it("issues a non-serial job's next unit against the job's need", () => {
+    const batch = { ...kit, jobMakeMethodId: "jmm_b", quantityIssued: 2 };
+    const claims = pickTravelerClaims({
+      ...base,
+      operations: [{ id: "op_fit", jobMakeMethodId: "jmm_b" }],
+      unitIds: new Map([["jmm_b", ["lot"]]]),
+      serialMakeMethodIds: new Set<string>(),
+      materials: [batch]
+    });
+    expect(claims).toEqual([
+      {
+        operationId: "op_fit",
+        parentTrackedEntityId: "lot",
+        materialId: "jm_kit"
+      }
+    ]);
+    expect(
+      pickTravelerClaims({
         ...base,
-        scannedStatus: "Available",
-        targetTrackedEntityId: "te_chamber",
-        targetStatus: "Available",
-        targetJobMakeMethodId: "jmm_chamber",
-        targetInProduction: true
+        operations: [{ id: "op_fit", jobMakeMethodId: "jmm_b" }],
+        unitIds: new Map([["jmm_b", ["lot"]]]),
+        serialMakeMethodIds: new Set<string>(),
+        materials: [{ ...batch, quantityIssued: 3 }]
       })
-    ).toEqual({ kind: "navigate" });
+    ).toEqual([]);
+  });
+
+  it("keeps the operations' order, one claim each", () => {
+    const claims = pickTravelerClaims({
+      ...base,
+      operations: [
+        { id: "op_b", jobMakeMethodId: "jmm_cc2" },
+        { id: "op_fit", jobMakeMethodId: "jmm_cc" }
+      ],
+      unitIds: new Map([
+        ["jmm_cc", ["u1", "u2"]],
+        ["jmm_cc2", ["v1"]]
+      ]),
+      serialMakeMethodIds: new Set(["jmm_cc", "jmm_cc2"]),
+      materials: [
+        kit,
+        {
+          ...kit,
+          id: "jm_kit2",
+          jobMakeMethodId: "jmm_cc2",
+          jobOperationId: "op_b"
+        }
+      ]
+    });
+    expect(claims.map((c) => c.parentTrackedEntityId)).toEqual(["v1", "u1"]);
+  });
+});
+
+describe("decideTravelerClaim", () => {
+  // The server's claims, best first: unit 1 needs the part, so it leads.
+  const claim = (
+    parentTrackedEntityId: string,
+    over: { laterSerial?: boolean; workCenterId?: string | null } = {}
+  ) => ({
+    parentTrackedEntityId,
+    laterSerial: over.laterSerial ?? false,
+    operation: { workCenterId: over.workCenterId ?? "wc_a3" }
+  });
+  const base = {
+    onOperationPage: false,
+    heldUnitId: null as string | null,
+    isSerial: true,
+    workCenterId: "wc_a3" as string | null,
+    options: [claim("SN-1"), claim("SN-3", { workCenterId: "wc_m" })]
+  };
+  const later = [
+    claim("SN-1", { laterSerial: true }),
+    claim("SN-3", { laterSerial: true })
+  ];
+
+  it("claims a kit at the operator's station", () => {
+    expect(decideTravelerClaim(base)).toEqual({
+      kind: "claim",
+      options: base.options,
+      auto: true
+    });
+  });
+
+  it("asks when the best claim is at another station", () => {
+    const options = [claim("SN-3", { workCenterId: "wc_m" })];
+    expect(decideTravelerClaim({ ...base, options })).toEqual({
+      kind: "claim",
+      options,
+      auto: false
+    });
+  });
+
+  it("claims the one place that needs it for an operator with no station", () => {
+    const options = [claim("SN-3", { workCenterId: "wc_m" })];
+    expect(
+      decideTravelerClaim({ ...base, workCenterId: null, options })
+    ).toEqual({ kind: "claim", options, auto: true });
+    expect(decideTravelerClaim({ ...base, workCenterId: null })).toEqual({
+      kind: "claim",
+      options: base.options,
+      auto: false
+    });
+  });
+
+  it("asks before issuing a batch lot from the board", () => {
+    expect(decideTravelerClaim({ ...base, isSerial: false })).toEqual({
+      kind: "claim",
+      options: base.options,
+      auto: false
+    });
+  });
+
+  it("claims on an operation page, inside that operation", () => {
+    expect(
+      decideTravelerClaim({ ...base, onOperationPage: true, isSerial: false })
+    ).toEqual({ kind: "claim", options: base.options, auto: true });
+  });
+
+  it("asks for the unit on a later serial operation with none held", () => {
+    expect(
+      decideTravelerClaim({ ...base, onOperationPage: true, options: later })
+    ).toEqual({ kind: "pickUnit" });
+  });
+
+  it("issues only into the held unit on a later serial operation, never the server's first choice", () => {
+    expect(
+      decideTravelerClaim({
+        ...base,
+        onOperationPage: true,
+        heldUnitId: "SN-3",
+        options: later
+      })
+    ).toEqual({ kind: "claim", options: [later[1]], auto: true });
+  });
+
+  it("issues nowhere when the held unit does not need the part", () => {
+    expect(
+      decideTravelerClaim({
+        ...base,
+        onOperationPage: true,
+        heldUnitId: "SN-2",
+        options: later
+      })
+    ).toEqual({ kind: "claim", options: [], auto: true });
+  });
+
+  it("never takes a later serial claim unasked off the operation page, even at the operator's station", () => {
+    expect(decideTravelerClaim({ ...base, options: later })).toEqual({
+      kind: "claim",
+      options: later,
+      auto: false
+    });
+  });
+
+  it("still takes a first-operation claim at the station when a later one is also offered", () => {
+    const options = [claim("SN-1"), claim("SN-7", { laterSerial: true })];
+    expect(decideTravelerClaim({ ...base, options })).toEqual({
+      kind: "claim",
+      options,
+      auto: true
+    });
   });
 });
 

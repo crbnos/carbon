@@ -4,7 +4,8 @@
 
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
-import { type Kysely, sql } from "kysely";
+import type { Kysely } from "kysely";
+import { loadActiveBomLines } from "./active-bom.ts";
 
 /** Same fallback MRP uses when an item has no itemReplenishment.leadTime. */
 export const DEFAULT_LEAD_TIME_DAYS = 7;
@@ -81,9 +82,8 @@ export type ItemLeadTimes = {
 };
 
 /**
- * Load the BOM tree under each root item (one recursive query over the active
- * make methods) and each tree item's lead time, then return each root's own
- * and cumulative lead time.
+ * Load the BOM tree under each root item (`loadActiveBomLines`) and each tree
+ * item's lead time, then return each root's own and cumulative lead time.
  */
 export async function loadCumulativeLeadTimes(
   db: Kysely<DB>,
@@ -93,37 +93,7 @@ export async function loadCumulativeLeadTimes(
   const roots = Array.from(new Set(itemIds));
   if (roots.length === 0) return new Map();
 
-  // UNION (not UNION ALL) drops a repeated edge, so a cycle stops. The BOM is
-  // the one MRP explodes (`bomChildren`): no quantity-0 line (a configured
-  // item's other configurations) and no correction material.
-  const edgeRows = await sql<{ parentItemId: string; childItemId: string }>`
-    WITH RECURSIVE "edge" AS (
-      SELECT am."itemId" AS "parentItemId", mm."itemId" AS "childItemId"
-      FROM "activeMakeMethods" am
-      JOIN "item" i
-        ON i."id" = am."itemId" AND i."companyId" = am."companyId"
-      JOIN "methodMaterial" mm
-        ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
-        AND mm."quantity" > 0 AND mm."methodCorrectionId" IS NULL
-      WHERE am."companyId" = ${companyId}
-        AND am."itemId" IN (${sql.join(roots)})
-        AND i."replenishmentSystem" <> 'Buy'
-      UNION
-      SELECT am."itemId", mm."itemId"
-      FROM "edge" e
-      JOIN "item" i
-        ON i."id" = e."childItemId" AND i."companyId" = ${companyId}
-        AND i."replenishmentSystem" <> 'Buy'
-      JOIN "activeMakeMethods" am
-        ON am."itemId" = e."childItemId" AND am."companyId" = ${companyId}
-      JOIN "methodMaterial" mm
-        ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
-        AND mm."quantity" > 0 AND mm."methodCorrectionId" IS NULL
-    )
-    SELECT "parentItemId", "childItemId" FROM "edge"
-  `.execute(db);
-
-  const edges = edgeRows.rows;
+  const edges = await loadActiveBomLines(db, companyId, roots);
   const treeItemIds = Array.from(
     new Set([
       ...roots,

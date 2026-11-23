@@ -120,6 +120,11 @@ const ReceiptHeader = () => {
     action: path.to.receiptPutAway(receiptId)
   });
   const isCreatingPutAway = putAwayRules.fetcher.state !== "idle";
+  // An open Put Away already speaks for its stock, so nothing is ready until
+  // it completes (a reopened one included). The button then opens it.
+  const openPutAway = putAwayTransfers.find(
+    (transfer) => transfer.status !== "Completed"
+  );
 
   // Only a purchase-order receipt is billed from here; once it is, the
   // invoice is listed under Documents instead.
@@ -215,17 +220,24 @@ const ReceiptHeader = () => {
         }
         actions={
           <>
-            {isPosted && putAwayReadyCount > 0 && (
-              <Button
-                variant="primary"
-                leftIcon={<LuPackageCheck />}
-                isDisabled={!canPutAway || isCreatingPutAway}
-                isLoading={isCreatingPutAway}
-                onClick={() => putAwayRules.submit(new FormData())}
-              >
-                <Trans>Put Away</Trans>
-              </Button>
-            )}
+            {isPosted &&
+              (putAwayReadyCount > 0 ? (
+                <Button
+                  variant="primary"
+                  leftIcon={<LuPackageCheck />}
+                  isDisabled={!canPutAway || isCreatingPutAway}
+                  isLoading={isCreatingPutAway}
+                  onClick={() => putAwayRules.submit(new FormData())}
+                >
+                  <Trans>Put Away</Trans>
+                </Button>
+              ) : openPutAway ? (
+                <Button variant="primary" leftIcon={<LuPackageCheck />} asChild>
+                  <Link to={path.to.stockTransfer(openPutAway.id)}>
+                    <Trans>Put Away</Trans>
+                  </Link>
+                </Button>
+              ) : null)}
             {hasTrackingLabels && (
               <PrintButton
                 sourceDocument="Receipt"

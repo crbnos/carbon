@@ -268,20 +268,28 @@ export const rampSyncFunction = inngest.createFunction(
       }
     );
 
+    // Bill payments run before charges: a card-paid bill's payment claims its
+    // card transactions, so the charge sync does not book them again.
+    const billResult = await step.run("ramp-bills", () =>
+      syncRampBills(ctx, ramp, entityId)
+    );
+    const billPaymentResult = await step.run("ramp-bill-payments", () =>
+      syncRampBillPayments(ctx, ramp, entityId)
+    );
     const cardResult = await step.run("ramp-charges", () =>
-      syncRampCharges(ctx, ramp, entityId, cardLiabilityAccountId)
+      syncRampCharges(
+        ctx,
+        ramp,
+        entityId,
+        cardLiabilityAccountId,
+        billPaymentResult.cardTransactionIds
+      )
     );
     const transferResult = await step.run("ramp-transfers", () =>
       syncRampTransfers(ctx, ramp, entityId, cardLiabilityAccountId)
     );
     const cashbackResult = await step.run("ramp-cashbacks", () =>
       syncRampCashbacks(ctx, ramp, entityId, cardLiabilityAccountId)
-    );
-    const billResult = await step.run("ramp-bills", () =>
-      syncRampBills(ctx, ramp, entityId)
-    );
-    const billPaymentResult = await step.run("ramp-bill-payments", () =>
-      syncRampBillPayments(ctx, ramp, entityId)
     );
     const reimbursementResult = await step.run("ramp-reimbursements", () =>
       syncRampReimbursements(ctx, ramp, entityId)

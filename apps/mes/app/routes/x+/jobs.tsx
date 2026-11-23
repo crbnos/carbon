@@ -8,6 +8,7 @@ import { getLogger } from "@carbon/logger";
 import {
   Button,
   Input,
+  MultiSelect,
   Status,
   Table,
   Tbody,
@@ -15,6 +16,7 @@ import {
   Th,
   Thead,
   Tr,
+  useLocalStorage,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -28,9 +30,12 @@ import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { userContext } from "~/context";
+import { useUser } from "~/hooks";
 import {
   getOpenJobs,
-  getTrackedEntitiesByJobMakeMethodIds
+  getOpenWorkCenterIdsByJob,
+  getTrackedEntitiesByJobMakeMethodIds,
+  getWorkCenterOptionsByLocation
 } from "~/services/operations.service";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
@@ -49,28 +54,47 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const locationId = context.get(userContext)?.locationId;
 
-  const jobs = await getOpenJobs(serviceRole, { companyId, locationId });
+  const [jobs, workCenters] = await Promise.all([
+    getOpenJobs(serviceRole, { companyId, locationId }),
+    getWorkCenterOptionsByLocation(serviceRole, { companyId, locationId })
+  ]);
 
   if (jobs.error) {
     log.error("getOpenJobs error", { error: jobs.error });
   }
+  if (workCenters.error) {
+    log.error("getWorkCenterOptionsByLocation error", {
+      error: workCenters.error
+    });
+  }
 
-  const jobMakeMethodIds = (jobs.data ?? []).reduce<string[]>((acc, job) => {
-    if (job.jobMakeMethodId) acc.push(job.jobMakeMethodId);
-    return acc;
-  }, []);
+  const jobIds: string[] = [];
+  const jobMakeMethodIds: string[] = [];
+  for (const job of jobs.data ?? []) {
+    if (job.id) jobIds.push(job.id);
+    if (job.jobMakeMethodId) jobMakeMethodIds.push(job.jobMakeMethodId);
+  }
 
-  const trackedEntities = await getTrackedEntitiesByJobMakeMethodIds(
-    serviceRole,
-    jobMakeMethodIds,
-    companyId
-  );
+  const [trackedEntities, workCenterIdsByJob] = await Promise.all([
+    getTrackedEntitiesByJobMakeMethodIds(
+      serviceRole,
+      jobMakeMethodIds,
+      companyId
+    ),
+    getOpenWorkCenterIdsByJob(serviceRole, { companyId, jobIds })
+  ]);
 
   return {
-    jobs: jobs.data ?? [],
+    jobs: (jobs.data ?? []).map((job) => ({
+      ...job,
+      workCenterIds: (job.id && workCenterIdsByJob[job.id]) || []
+    })),
+    workCenters: workCenters.data ?? [],
     trackedEntities
   };
 }
+
+const WORK_CENTER_FILTER_KEY = "mes-jobs-work-center-filter";
 
 type Job = {
   id: string;
@@ -84,6 +108,7 @@ type Job = {
   deadlineType: string | null;
   assignee: string | null;
   jobMakeMethodId: string | null;
+  workCenterIds: string[];
 };
 
 const STATUS_COLORS: Record<
@@ -111,19 +136,44 @@ function JobStatus({ status }: { status: string | null }) {
 export default function JobsRoute() {
   const { isPhone } = useViewport();
   const { t } = useLingui();
-  const { jobs, trackedEntities } = useLoaderData<typeof loader>();
+  const { id: userId, company } = useUser();
+  const { jobs, workCenters, trackedEntities } = useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
+  const [storedWorkCenterIds, setStoredWorkCenterIds] = useLocalStorage<
+    string[]
+  >(`${WORK_CENTER_FILTER_KEY}:${userId}:${company.id}`, []);
+
+  const workCenterOptions = useMemo(
+    () => workCenters.map((wc) => ({ label: wc.name, value: wc.id })),
+    [workCenters]
+  );
+
+  // A stored id from another location, or a work center since deactivated,
+  // must not hide every job.
+  const selectedWorkCenterIds = useMemo(() => {
+    const available = new Set(workCenters.map((wc) => wc.id));
+    return storedWorkCenterIds.filter((id) => available.has(id));
+  }, [storedWorkCenterIds, workCenters]);
 
   const filteredJobs = useMemo(() => {
-    if (!searchTerm) return jobs as Job[];
+    const selected = new Set(selectedWorkCenterIds);
     const term = searchTerm.toLowerCase();
     return (jobs as Job[]).filter(
       (job) =>
-        job.jobId?.toLowerCase().includes(term) ||
-        job.itemReadableIdWithRevision?.toLowerCase().includes(term) ||
-        job.name?.toLowerCase().includes(term)
+        (selected.size === 0 ||
+          job.workCenterIds.some((id) => selected.has(id))) &&
+        (!term ||
+          job.jobId?.toLowerCase().includes(term) ||
+          job.itemReadableIdWithRevision?.toLowerCase().includes(term) ||
+          job.name?.toLowerCase().includes(term))
     );
-  }, [jobs, searchTerm]);
+  }, [jobs, searchTerm, selectedWorkCenterIds]);
+
+  const isFiltered = searchTerm !== "" || selectedWorkCenterIds.length > 0;
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStoredWorkCenterIds([]);
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -132,15 +182,29 @@ export default function JobsRoute() {
 
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="p-4">
-          <div className="relative mb-4">
-            <LuSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label={t`Search jobs`}
-              placeholder={t`Search by job or item ID`}
-              className="pl-8"
-            />
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <LuSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label={t`Search jobs`}
+                placeholder={t`Search by job or item ID`}
+                className="pl-8"
+              />
+            </div>
+            {/* Fixed slot, so the clear button doesn't shrink the search box. */}
+            <div className="flex sm:w-80 sm:shrink-0">
+              <MultiSelect
+                aria-label={t`Filter by work center`}
+                placeholder={t`All work centers`}
+                options={workCenterOptions}
+                value={selectedWorkCenterIds}
+                onChange={setStoredWorkCenterIds}
+                isClearable
+                maxPreview={2}
+              />
+            </div>
           </div>
 
           {filteredJobs.length > 0 ? (
@@ -289,13 +353,13 @@ export default function JobsRoute() {
                 </div>
               )}
             </>
-          ) : searchTerm ? (
+          ) : isFiltered ? (
             <MesEmptyState
               className="py-16"
               title={<Trans>No results</Trans>}
               action={
-                <Button onClick={() => setSearchTerm("")}>
-                  <Trans>Clear Search</Trans>
+                <Button onClick={clearFilters}>
+                  <Trans>Clear Filters</Trans>
                 </Button>
               }
             />

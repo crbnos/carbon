@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { weekNumberings } from "@carbon/database/sequence-tokens";
 import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
@@ -507,6 +508,15 @@ export {
 
 export const serialNumberTimingValidator = z.object({
   serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
+});
+
+export {
+  type WeekNumbering,
+  weekNumberings
+} from "@carbon/database/sequence-tokens";
+
+export const sequenceWeekNumberingValidator = z.object({
+  sequenceWeekNumbering: z.enum(weekNumberings).default("iso")
 });
 
 export const updateLeadTimesOnReceiptValidator = z.object({

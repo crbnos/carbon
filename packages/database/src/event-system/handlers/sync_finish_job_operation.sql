@@ -70,6 +70,9 @@ BEGIN
     --   * a rework branch triggered at the final operation (trigger-rework)
     --     carries only the reworked units, which the operation it came from
     --     reports as reworked, not complete: those add on top.
+    -- This runs BEFORE the update is written, so the table still holds the
+    -- finishing operation's old row: its quantity comes from p_new. An outside
+    -- processing receipt sets Done and quantityComplete in one update.
     v_quantity_complete := (
       SELECT COALESCE(MIN(terminal_jo."quantityComplete") FILTER (
                WHERE terminal_jo."reworkId" IS NULL AND terminal_jo."quantityComplete" > 0
@@ -77,7 +80,15 @@ BEGIN
            + COALESCE(SUM(terminal_jo."quantityComplete") FILTER (
                WHERE terminal_jo."reworkId" IS NOT NULL
              ), 0)
-      FROM "jobOperation" terminal_jo
+      FROM (
+        SELECT jo.id, jo."jobId", jo."jobMakeMethodId", jo."reworkId", jo.status,
+               CASE WHEN jo.id = p_new->>'id'
+                 THEN COALESCE((p_new->>'quantityComplete')::NUMERIC, 0)
+                 ELSE jo."quantityComplete"
+               END AS "quantityComplete"
+        FROM "jobOperation" jo
+        WHERE jo."jobId" = p_new->>'jobId'
+      ) terminal_jo
       INNER JOIN "jobMakeMethod" terminal_jmm ON terminal_jmm.id = terminal_jo."jobMakeMethodId"
       WHERE terminal_jo."jobId" = p_new->>'jobId'
         AND terminal_jmm."parentMaterialId" IS NULL
