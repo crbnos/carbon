@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
+import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -34,11 +36,18 @@ export async function action(args: ActionFunctionArgs) {
   // A blocking rule: the violation modal reads these.
   if ("violations" in result.data) return result.data;
   const to = path.to.shipmentDetails(shipmentId);
-  // Posted with expired batches, as the company's policy allows.
-  if (result.data.warning) {
-    return respond(args.request, result).redirect(to, {
-      message: result.data.warning
-    });
+  // One flash: the expired-batch warning (posted with expired batches, as the
+  // company's policy allows) and the auto-issued certificate's outcome.
+  const { warning, certificate } = result.data;
+  const message = [warning, certificate?.message]
+    .filter((part): part is string => !!part)
+    .join(" ");
+  // The post stands either way; a failed certificate only turns it red.
+  if (certificate && !certificate.ok) {
+    throw redirect(to, await flash(args.request, error(null, message)));
+  }
+  if (message) {
+    return respond(args.request, result).redirect(to, { message });
   }
   throw redirect(to);
 }

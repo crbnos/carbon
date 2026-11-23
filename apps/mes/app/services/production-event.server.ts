@@ -22,6 +22,7 @@ import {
   startMachineProductionEvent,
   startProductionEvent
 } from "~/services/operations.service";
+import type { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import type { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { resolveWorkUnit } from "~/services/work-unit.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
@@ -37,6 +38,11 @@ export type ProductionEventDeps = {
   ) => Promise<boolean>;
   /** Numbers a unit on its first touch (`assignSerialNumberOnFirstTouch`). */
   numberUnit: typeof assignSerialNumberOnFirstTouch;
+  /**
+   * Creates the first article lots of a job this start released (a Draft /
+   * Planned job auto-started here), `generateFirstArticlesForStartedJob`.
+   */
+  generateFirstArticles?: typeof generateFirstArticlesForStartedJob;
 };
 
 export async function productionEventAction(
@@ -161,15 +167,32 @@ export async function productionEventAction(
       companyId,
       createdBy: userId
     };
+    const onJobReleased = deps.generateFirstArticles
+      ? (jobId: string) =>
+          deps.generateFirstArticles!(deps.serviceRole, {
+            jobId,
+            companyId,
+            userId
+          })
+      : undefined;
     const startEvent = machineWorkCenterId
       ? await startMachineProductionEvent(
           deps.db(),
           client,
           { ...event, workCenterId: machineWorkCenterId },
           unitId,
-          unitAt
+          unitAt,
+          "mes",
+          onJobReleased
         )
-      : await startProductionEvent(client, event, unitId, unitAt);
+      : await startProductionEvent(
+          client,
+          event,
+          unitId,
+          unitAt,
+          "mes",
+          onJobReleased
+        );
 
     if (startEvent.error) {
       return data(

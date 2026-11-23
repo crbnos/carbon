@@ -197,6 +197,8 @@ export const path = {
       }
     },
     finish: `${x}/finish`,
+    firstArticle: (inspectionId: string) =>
+      generatePath(`${x}/first-article/${inspectionId}`),
     health: "/health",
     inspection: (operationId: string) =>
       generatePath(`${x}/inspection/${operationId}`),

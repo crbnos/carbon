@@ -9,6 +9,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { productionEventAction } from "~/services/production-event.server";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -45,7 +46,8 @@ async function startOrEnd({ request }: ActionFunctionArgs) {
           throw thrown;
         }
       },
-      numberUnit: assignSerialNumberOnFirstTouch
+      numberUnit: assignSerialNumberOnFirstTouch,
+      generateFirstArticles: generateFirstArticlesForStartedJob
     },
     { request, companyId, userId }
   );

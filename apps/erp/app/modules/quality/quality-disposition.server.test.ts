@@ -115,6 +115,7 @@ const db = {
 
 import {
   linkEntitiesToIssueItemRow,
+  nonTrackedOrigin,
   updateIssueItemQuantity
 } from "./quality.service";
 
@@ -328,5 +329,21 @@ describe("linkEntitiesToIssueItemRow", () => {
     await link([{ id: "te-1", quantity: 2 }], 12);
 
     expect(itemRow().quantity).toBe(0);
+  });
+});
+
+describe("nonTrackedOrigin", () => {
+  it("treats a receipt reject as already written off", () => {
+    expect(nonTrackedOrigin(["Receipt"])).toBe("receipt");
+    expect(nonTrackedOrigin(["First Article", "Receipt"])).toBe("receipt");
+  });
+
+  it("moves no stock for work-in-process inspections", () => {
+    expect(nonTrackedOrigin(["First Article"])).toBe("production");
+    expect(nonTrackedOrigin(["Job Operation"])).toBe("production");
+  });
+
+  it("writes off stock that no inspection touched", () => {
+    expect(nonTrackedOrigin([])).toBe("none");
   });
 });

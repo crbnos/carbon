@@ -37,6 +37,8 @@ import {
   isFirstOpenOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import { getFirstArticlePlansMissingForJob } from "~/services/quality.server";
+import { getOpenFirstArticleInspectionsForJob } from "~/services/quality.service";
 import type { OperationWithDetails } from "~/services/types";
 import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { recordMeta } from "~/utils/meta";
@@ -205,6 +207,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companySettings,
     abilityWarning,
     isFirstOperation,
+    openFirstArticles,
+    firstArticlePlansMissingForJob,
     isFirstOpenOperation,
     materialItems
   ] = await Promise.all([
@@ -254,6 +258,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethodId
       ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
       : false,
+    getOpenFirstArticleInspectionsForJob(serviceRole, jobId, companyId),
+    getFirstArticlePlansMissingForJob(serviceRole, { jobId, companyId }),
     jobMakeMethodId
       ? isFirstOpenOperationOfMakeMethod(
           serviceRole,
@@ -386,6 +392,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The make method's open First Article lot, if any: every operation of the
+  // method shows the "First article required" banner until it is decided.
+  const firstArticles = (openFirstArticles.data ?? [])
+    .filter((lot) => lot.sourceDocumentLineId === op.jobMakeMethodId)
+    .map((lot) => ({
+      id: lot.id,
+      inspectionId: lot.inspectionId,
+      itemReadableId: lot.item?.readableId ?? lot.itemReadableId ?? null
+    }));
+  // A part of this make method that needs a first article but has no plan to
+  // inspect against — the ERP release blocker, which an MES auto-start skips.
+  const firstArticlePlansMissing = firstArticlePlansMissingForJob
+    .filter((need) => need.jobMakeMethodId === op.jobMakeMethodId)
+    .map((need) => need.description);
+
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
@@ -484,6 +505,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
+    firstArticles,
+    firstArticlePlansMissing,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
     workCenter: getWorkCenter(
       serviceRole,
@@ -515,6 +538,8 @@ export default function OperationRoute() {
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
     files,
+    firstArticles,
+    firstArticlePlansMissing,
     job,
     jobMakeMethod,
     kanban,
@@ -544,6 +569,8 @@ export default function OperationRoute() {
         autoSelectMaterialWithoutPickingList
       }
       files={files}
+      firstArticles={firstArticles}
+      firstArticlePlansMissing={firstArticlePlansMissing}
       kanban={kanban}
       materials={materials}
       method={jobMakeMethod}

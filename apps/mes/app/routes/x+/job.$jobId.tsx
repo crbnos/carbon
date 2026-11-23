@@ -6,6 +6,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
   Heading,
   IconButton,
   SidebarTrigger,
@@ -16,7 +20,13 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuArrowLeft, LuList, LuWorkflow } from "react-icons/lu";
+import {
+  LuArrowLeft,
+  LuClipboardCheck,
+  LuList,
+  LuTriangleAlert,
+  LuWorkflow
+} from "react-icons/lu";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
@@ -26,6 +36,8 @@ import {
   getJobOperationDependencies,
   getJobOperations
 } from "~/services/operations.service";
+import { getFirstArticlePlansMissingForJob } from "~/services/quality.server";
+import { getOpenFirstArticleInspectionsForJob } from "~/services/quality.service";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -66,15 +78,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.jobs);
   }
 
-  const [operations, dependencies] = await Promise.all([
-    getJobOperations(serviceRole, jobId),
-    getJobOperationDependencies(serviceRole, jobId)
-  ]);
+  const [operations, dependencies, firstArticles, firstArticlePlansMissing] =
+    await Promise.all([
+      getJobOperations(serviceRole, jobId),
+      getJobOperationDependencies(serviceRole, jobId),
+      getOpenFirstArticleInspectionsForJob(serviceRole, jobId, companyId),
+      // Parts that need a first article but resolve no plan — the ERP release
+      // blocker, which an MES auto-start skips. Warned about, never blocking.
+      getFirstArticlePlansMissingForJob(serviceRole, { jobId, companyId })
+    ]);
 
   return {
     readableId: job.data.jobId ?? jobId,
     operations: operations.data ?? [],
-    dependencies: dependencies.data ?? []
+    dependencies: dependencies.data ?? [],
+    firstArticles: (firstArticles.data ?? []).map((lot) => ({
+      id: lot.id,
+      inspectionId: lot.inspectionId,
+      itemReadableId: lot.item?.readableId ?? lot.itemReadableId ?? null
+    })),
+    firstArticlePlansMissing
   };
 }
 
@@ -84,8 +107,13 @@ type JobView = "list" | "chart";
 const JOB_VIEW_KEY = "mes-job-operations-view";
 
 export default function JobDagRoute() {
-  const { readableId, operations, dependencies } =
-    useLoaderData<typeof loader>();
+  const {
+    readableId,
+    operations,
+    dependencies,
+    firstArticles,
+    firstArticlePlansMissing
+  } = useLoaderData<typeof loader>();
   const { isPhone } = useViewport();
   const { t } = useLingui();
   const [view, setView] = useLocalStorage<JobView>(JOB_VIEW_KEY, "list");
@@ -139,6 +167,48 @@ export default function JobDagRoute() {
           </ToggleGroup>
         </header>
       )}
+
+      {firstArticles.length > 0 || firstArticlePlansMissing.length > 0 ? (
+        <div className="flex flex-col gap-2 border-b bg-card px-4 py-3">
+          {firstArticlePlansMissing.map(({ jobMakeMethodId, description }) => (
+            <Alert key={jobMakeMethodId} variant="warning">
+              <LuTriangleAlert />
+              <AlertTitle>
+                <Trans>First article plan missing for {description}</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>
+                  Tell quality — this part needs a first article, but it has no
+                  active inspection plan.
+                </Trans>
+              </AlertDescription>
+            </Alert>
+          ))}
+          {firstArticles.map((firstArticle) => (
+            <Alert key={firstArticle.id} variant="warning">
+              <LuClipboardCheck />
+              <AlertTitle>
+                <Trans>
+                  First article required for{" "}
+                  {firstArticle.itemReadableId ?? firstArticle.inspectionId}
+                </Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                  <span className="text-pretty tabular-nums">
+                    {firstArticle.inspectionId}
+                  </span>
+                  <Button variant="secondary" asChild>
+                    <Link to={path.to.firstArticle(firstArticle.id)}>
+                      <Trans>Inspect</Trans>
+                    </Link>
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ))}
+        </div>
+      ) : null}
 
       {view === "chart" ? (
         <div className="flex-1 min-h-0 overflow-hidden">

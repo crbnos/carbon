@@ -28,10 +28,17 @@ export async function action(args: ActionFunctionArgs) {
     reason: input.data.reason
   });
   if (result.error) return result;
+  // A First Article lot's verdict is read on its FAI.
+  const { firstArticleId } = result.data;
   if (!result.data.issueId) {
-    return respond(args.request, result).redirect(path.to.inspection(id), {
-      message: "Lot rejected"
-    });
+    return respond(args.request, result).redirect(
+      firstArticleId
+        ? path.to.firstArticle(firstArticleId)
+        : path.to.inspection(id),
+      {
+        message: firstArticleId ? "First article rejected" : "Lot rejected"
+      }
+    );
   }
   return respond(args.request, result).redirect(
     path.to.issue(result.data.issueId),

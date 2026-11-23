@@ -13,7 +13,6 @@ import {
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
-import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -23,22 +22,16 @@ import {
   floorRefusal,
   getAbilityShortfall,
   getJob,
-  getJobMakeMethod,
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
-  getReworkCorrectionName,
-  getTrackedEntitiesForOperation
+  getReworkCorrectionName
 } from "~/services/operations.service";
 import {
   getInspection,
-  getInspectionDocumentWithBalloons,
-  getInspectionGauges,
-  getInspectionMeasurements,
-  getInspectionSamplingPlans,
-  getIssueTypesList
+  getInspectionViewData
 } from "~/services/quality.service";
-import type { InspectionSample, OperationWithDetails } from "~/services/types";
+import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
@@ -206,28 +199,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [
-    features,
-    measurements,
-    issueTypes,
-    trackedEntities,
-    jobMakeMethod,
+    viewData,
     events,
     quantities,
     linkedQuantities,
-    document,
-    gauges,
     recentGauges,
     correctionName
   ] = await Promise.all([
-    getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
-    getInspectionMeasurements(serviceRole, lot.data.id, companyId),
-    getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesForOperation(serviceRole, {
-      operationId,
+    getInspectionViewData(serviceRole, {
+      inspection,
       jobMakeMethodId: op.jobMakeMethodId,
       companyId
     }),
-    getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
     // Verdict-driven postings link back to their sample — the UI derives
@@ -236,13 +219,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .from("productionQuantity")
       .select("id, type, quantity, inspectionSampleId")
       .eq("inspectionId", lot.data.id),
-    inspection.inspectionDocumentId
-      ? getInspectionDocumentWithBalloons(
-          serviceRole,
-          inspection.inspectionDocumentId
-        )
-      : Promise.resolve(null),
-    getInspectionGauges(serviceRole, companyId, lot.data.id),
+    // The gauges most recently recorded at this operation, offered first.
     getRecentInspectionGauges(getDatabaseClient(), {
       inspectionId: lot.data.id,
       companyId
@@ -264,16 +241,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     { scrap: 0, production: 0, rework: 0 }
   );
 
-  // Sample column order must match the engine's required-feature derivation
-  // (createdAt asc, id asc).
-  const samples = (
-    [...(inspection.inspectionSample ?? [])] as InspectionSample[]
-  ).sort(
-    (a, b) =>
-      (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
-      a.id.localeCompare(b.id)
-  );
-
   const abilityWarning = await getAbilityShortfall(serviceRole, {
     operationId,
     employeeId: userId,
@@ -281,20 +248,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   return {
+    ...viewData,
     abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     correctionName,
     inspection,
-    samples,
-    features: features.data ?? [],
-    measurements: measurements.data ?? [],
-    gauges: gauges.data ?? [],
     recentGaugeIds: recentGauges.data ?? [],
-    issueTypes: issueTypes.data ?? [],
-    trackedEntities: trackedEntities.data ?? [],
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
     events: events.data ?? [],
     productionQuantities,
     linkedSampleIds: linkedProductionRows
@@ -304,14 +264,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (sum, row) => sum + (row.quantity ?? 0),
       0
     ),
-    jobId: job.data.id ?? null,
-    balloons: document?.data?.balloons ?? [],
-    documentName: document?.data?.name ?? null,
-    parameters: document?.data?.parameters ?? [],
-    workInstruction: (document?.data?.workInstruction ??
-      null) as JSONContent | null,
-    pdfUrl: document?.data?.pdfUrl ?? null,
-    model: document?.data?.model ?? null
+    jobId: job.data.id ?? null
   };
 }
 

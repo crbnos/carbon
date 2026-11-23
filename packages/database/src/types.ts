@@ -5904,6 +5904,486 @@ export type Database = {
           }
         ]
       }
+      certificate: {
+        Row: {
+          certificateNumber: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          documentId: string | null
+          id: string
+          jobOperationId: string | null
+          notes: string | null
+          receiptLineId: string | null
+          specification: string | null
+          supplierId: string | null
+          type: Database["public"]["Enums"]["certificateType"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          certificateNumber: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          documentId?: string | null
+          id?: string
+          jobOperationId?: string | null
+          notes?: string | null
+          receiptLineId?: string | null
+          specification?: string | null
+          supplierId?: string | null
+          type?: Database["public"]["Enums"]["certificateType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          certificateNumber?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          documentId?: string | null
+          id?: string
+          jobOperationId?: string | null
+          notes?: string | null
+          receiptLineId?: string | null
+          specification?: string | null
+          supplierId?: string | null
+          type?: Database["public"]["Enums"]["certificateType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "certificate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "certificate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "certificate_documentId_fkey"
+            columns: ["documentId"]
+            isOneToOne: false
+            referencedRelation: "document"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_documentId_fkey"
+            columns: ["documentId"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationQueueTime"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_receiptLineId_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_receiptLineId_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "certificate_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "certificate_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      certificateOfConformance: {
+        Row: {
+          certificateId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerId: string | null
+          documentId: string | null
+          id: string
+          lastSentAt: string | null
+          lastSentTo: string[] | null
+          reasonForUpdate: string | null
+          revision: number
+          shipmentId: string
+          signedAt: string
+          signedBy: string
+          signedByName: string
+          signedByTitle: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          certificateId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerId?: string | null
+          documentId?: string | null
+          id?: string
+          lastSentAt?: string | null
+          lastSentTo?: string[] | null
+          reasonForUpdate?: string | null
+          revision?: number
+          shipmentId: string
+          signedAt?: string
+          signedBy: string
+          signedByName: string
+          signedByTitle?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          certificateId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerId?: string | null
+          documentId?: string | null
+          id?: string
+          lastSentAt?: string | null
+          lastSentTo?: string[] | null
+          reasonForUpdate?: string | null
+          revision?: number
+          shipmentId?: string
+          signedAt?: string
+          signedBy?: string
+          signedByName?: string
+          signedByTitle?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificateOfConformance_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_documentId_fkey"
+            columns: ["documentId"]
+            isOneToOne: false
+            referencedRelation: "document"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_documentId_fkey"
+            columns: ["documentId"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_shipmentId_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_signedBy_fkey"
+            columns: ["signedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_signedBy_fkey"
+            columns: ["signedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_signedBy_fkey"
+            columns: ["signedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_signedBy_fkey"
+            columns: ["signedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_signedBy_fkey"
+            columns: ["signedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificateOfConformance_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       challengeAttempt: {
         Row: {
           courseId: string
@@ -8509,6 +8989,7 @@ export type Database = {
           requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
           requireCustomerContactEmail: boolean
+          requireFirstArticle: boolean
           requireMfa: boolean
           requireProjectElement: boolean
           requirePromisedDateToFinalizePurchaseOrder: boolean
@@ -8611,6 +9092,7 @@ export type Database = {
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireCustomerContactEmail?: boolean
+          requireFirstArticle?: boolean
           requireMfa?: boolean
           requireProjectElement?: boolean
           requirePromisedDateToFinalizePurchaseOrder?: boolean
@@ -8713,6 +9195,7 @@ export type Database = {
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireCustomerContactEmail?: boolean
+          requireFirstArticle?: boolean
           requireMfa?: boolean
           requireProjectElement?: boolean
           requirePromisedDateToFinalizePurchaseOrder?: boolean
@@ -8908,6 +9391,349 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          }
+        ]
+      }
+      complianceStatement: {
+        Row: {
+          active: boolean
+          appliesToAllCustomers: boolean
+          companyId: string
+          content: string
+          createdAt: string
+          createdBy: string
+          id: string
+          name: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          appliesToAllCustomers?: boolean
+          companyId: string
+          content: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          name: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          appliesToAllCustomers?: boolean
+          companyId?: string
+          content?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          name?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complianceStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "complianceStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "complianceStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "complianceStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      complianceStatementAssignment: {
+        Row: {
+          companyId: string
+          complianceStatementId: string
+          createdAt: string
+          createdBy: string
+          customerId: string | null
+          id: string
+          itemId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          complianceStatementId: string
+          createdAt?: string
+          createdBy: string
+          customerId?: string | null
+          id?: string
+          itemId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          complianceStatementId?: string
+          createdAt?: string
+          createdBy?: string
+          customerId?: string | null
+          id?: string
+          itemId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complianceStatementAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_complianceStatementId_compan_fkey"
+            columns: ["complianceStatementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "complianceStatement"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complianceStatementAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -15124,6 +15950,8 @@ export type Database = {
           customerId: string
           incoterm: Database["public"]["Enums"]["incoterm"] | null
           incotermLocation: string | null
+          requiresCertificateOfConformance: boolean
+          requiresFirstArticle: boolean
           shippingCustomerContactId: string | null
           shippingCustomerId: string | null
           shippingCustomerLocationId: string | null
@@ -15137,6 +15965,8 @@ export type Database = {
           customerId: string
           incoterm?: Database["public"]["Enums"]["incoterm"] | null
           incotermLocation?: string | null
+          requiresCertificateOfConformance?: boolean
+          requiresFirstArticle?: boolean
           shippingCustomerContactId?: string | null
           shippingCustomerId?: string | null
           shippingCustomerLocationId?: string | null
@@ -15150,6 +15980,8 @@ export type Database = {
           customerId?: string
           incoterm?: Database["public"]["Enums"]["incoterm"] | null
           incotermLocation?: string | null
+          requiresCertificateOfConformance?: boolean
+          requiresFirstArticle?: boolean
           shippingCustomerContactId?: string | null
           shippingCustomerId?: string | null
           shippingCustomerLocationId?: string | null
@@ -20380,6 +21212,595 @@ export type Database = {
           }
         ]
       }
+      firstArticleInspection: {
+        Row: {
+          additionalChanges: string | null
+          approvedAt: string | null
+          approvedBy: string | null
+          approvedByName: string | null
+          approvedByTitle: string | null
+          baselineFirstArticleInspectionId: string | null
+          baselineReference: string | null
+          comments: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerApprovalDate: string | null
+          customerApprovalName: string | null
+          customFields: Json | null
+          documentId: string | null
+          drawingNumber: string | null
+          drawingRevision: string | null
+          hasNonconformance: boolean | null
+          id: string
+          inspectionId: string
+          itemId: string
+          jobId: string | null
+          jobMakeMethodId: string | null
+          manufacturingProcessReference: string
+          organizationName: string
+          partName: string
+          partNumber: string
+          partRevision: string | null
+          purchaseOrderNumber: string | null
+          reason: Database["public"]["Enums"]["firstArticleInspectionReason"]
+          scope: Database["public"]["Enums"]["firstArticleInspectionScope"]
+          status: Database["public"]["Enums"]["firstArticleInspectionStatus"]
+          supplierCode: string | null
+          type: Database["public"]["Enums"]["firstArticleInspectionType"]
+          updatedAt: string | null
+          updatedBy: string | null
+          verifiedAt: string | null
+          verifiedBy: string | null
+          verifiedByName: string | null
+          verifiedByTitle: string | null
+        }
+        Insert: {
+          additionalChanges?: string | null
+          approvedAt?: string | null
+          approvedBy?: string | null
+          approvedByName?: string | null
+          approvedByTitle?: string | null
+          baselineFirstArticleInspectionId?: string | null
+          baselineReference?: string | null
+          comments?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerApprovalDate?: string | null
+          customerApprovalName?: string | null
+          customFields?: Json | null
+          documentId?: string | null
+          drawingNumber?: string | null
+          drawingRevision?: string | null
+          hasNonconformance?: boolean | null
+          id?: string
+          inspectionId: string
+          itemId: string
+          jobId?: string | null
+          jobMakeMethodId?: string | null
+          manufacturingProcessReference: string
+          organizationName: string
+          partName: string
+          partNumber: string
+          partRevision?: string | null
+          purchaseOrderNumber?: string | null
+          reason?: Database["public"]["Enums"]["firstArticleInspectionReason"]
+          scope?: Database["public"]["Enums"]["firstArticleInspectionScope"]
+          status?: Database["public"]["Enums"]["firstArticleInspectionStatus"]
+          supplierCode?: string | null
+          type?: Database["public"]["Enums"]["firstArticleInspectionType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          verifiedAt?: string | null
+          verifiedBy?: string | null
+          verifiedByName?: string | null
+          verifiedByTitle?: string | null
+        }
+        Update: {
+          additionalChanges?: string | null
+          approvedAt?: string | null
+          approvedBy?: string | null
+          approvedByName?: string | null
+          approvedByTitle?: string | null
+          baselineFirstArticleInspectionId?: string | null
+          baselineReference?: string | null
+          comments?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerApprovalDate?: string | null
+          customerApprovalName?: string | null
+          customFields?: Json | null
+          documentId?: string | null
+          drawingNumber?: string | null
+          drawingRevision?: string | null
+          hasNonconformance?: boolean | null
+          id?: string
+          inspectionId?: string
+          itemId?: string
+          jobId?: string | null
+          jobMakeMethodId?: string | null
+          manufacturingProcessReference?: string
+          organizationName?: string
+          partName?: string
+          partNumber?: string
+          partRevision?: string | null
+          purchaseOrderNumber?: string | null
+          reason?: Database["public"]["Enums"]["firstArticleInspectionReason"]
+          scope?: Database["public"]["Enums"]["firstArticleInspectionScope"]
+          status?: Database["public"]["Enums"]["firstArticleInspectionStatus"]
+          supplierCode?: string | null
+          type?: Database["public"]["Enums"]["firstArticleInspectionType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          verifiedAt?: string | null
+          verifiedBy?: string | null
+          verifiedByName?: string | null
+          verifiedByTitle?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firstArticleInspection_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_baselineFirstArticleInspectionId_co_fkey"
+            columns: ["baselineFirstArticleInspectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "firstArticleInspection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_documentId_fkey"
+            columns: ["documentId"]
+            isOneToOne: false
+            referencedRelation: "document"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_documentId_fkey"
+            columns: ["documentId"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_inspectionId_fkey"
+            columns: ["inspectionId"]
+            isOneToOne: false
+            referencedRelation: "inspection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["jobMaterialMakeMethodId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["jobMakeMethodId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspection_verifiedBy_fkey"
+            columns: ["verifiedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      firstArticleInspectionProduct: {
+        Row: {
+          acceptanceReportNumber: string | null
+          certificateId: string | null
+          certificateNumber: string | null
+          code: string | null
+          comments: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerApprovalVerification: Database["public"]["Enums"]["customerApprovalVerification"]
+          firstArticleInspectionId: string
+          functionalTestProcedureNumber: string | null
+          id: string
+          kind: Database["public"]["Enums"]["certificateType"]
+          name: string
+          sortOrder: number
+          specification: string | null
+          supplier: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          acceptanceReportNumber?: string | null
+          certificateId?: string | null
+          certificateNumber?: string | null
+          code?: string | null
+          comments?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerApprovalVerification?: Database["public"]["Enums"]["customerApprovalVerification"]
+          firstArticleInspectionId: string
+          functionalTestProcedureNumber?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["certificateType"]
+          name: string
+          sortOrder?: number
+          specification?: string | null
+          supplier?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          acceptanceReportNumber?: string | null
+          certificateId?: string | null
+          certificateNumber?: string | null
+          code?: string | null
+          comments?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerApprovalVerification?: Database["public"]["Enums"]["customerApprovalVerification"]
+          firstArticleInspectionId?: string
+          functionalTestProcedureNumber?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["certificateType"]
+          name?: string
+          sortOrder?: number
+          specification?: string | null
+          supplier?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firstArticleInspectionProduct_certificateId_companyId_fkey"
+            columns: ["certificateId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "certificate"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_firstArticleInspectionId_com_fkey"
+            columns: ["firstArticleInspectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "firstArticleInspection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firstArticleInspectionProduct_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       fiscalYearSettings: {
         Row: {
           companyId: string
@@ -25218,6 +26639,7 @@ export type Database = {
           createdBy: string
           defaultPageHeight: number | null
           defaultPageWidth: number | null
+          drawingRevision: string | null
           fileName: string | null
           id: string
           modelUploadId: string | null
@@ -25251,6 +26673,7 @@ export type Database = {
           createdBy: string
           defaultPageHeight?: number | null
           defaultPageWidth?: number | null
+          drawingRevision?: string | null
           fileName?: string | null
           id?: string
           modelUploadId?: string | null
@@ -25284,6 +26707,7 @@ export type Database = {
           createdBy?: string
           defaultPageHeight?: number | null
           defaultPageWidth?: number | null
+          drawingRevision?: string | null
           fileName?: string | null
           id?: string
           modelUploadId?: string | null
@@ -25682,13 +27106,19 @@ export type Database = {
           createdAt: string
           createdBy: string
           description: string | null
+          designator: string | null
+          featureOfSize: Database["public"]["Enums"]["featureOfSizeType"] | null
           gaugeTypeId: string | null
           id: string
           inspectionDocumentId: string
           label: string
+          materialCondition:
+            | Database["public"]["Enums"]["materialCondition"]
+            | null
           nominalValue: string | null
           pageNumber: number
           pmiItemId: string | null
+          referenceLocation: string | null
           samplingAql: number | null
           samplingInspectionLevel:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -25701,6 +27131,7 @@ export type Database = {
           samplingSeverity:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          sizeFeatureId: string | null
           toleranceMinus: string | null
           tolerancePlus: string | null
           type: Database["public"]["Enums"]["procedureStepType"]
@@ -25713,13 +27144,21 @@ export type Database = {
           createdAt?: string
           createdBy: string
           description?: string | null
+          designator?: string | null
+          featureOfSize?:
+            | Database["public"]["Enums"]["featureOfSizeType"]
+            | null
           gaugeTypeId?: string | null
           id?: string
           inspectionDocumentId: string
           label: string
+          materialCondition?:
+            | Database["public"]["Enums"]["materialCondition"]
+            | null
           nominalValue?: string | null
           pageNumber: number
           pmiItemId?: string | null
+          referenceLocation?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -25732,6 +27171,7 @@ export type Database = {
           samplingSeverity?:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          sizeFeatureId?: string | null
           toleranceMinus?: string | null
           tolerancePlus?: string | null
           type?: Database["public"]["Enums"]["procedureStepType"]
@@ -25744,13 +27184,21 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           description?: string | null
+          designator?: string | null
+          featureOfSize?:
+            | Database["public"]["Enums"]["featureOfSizeType"]
+            | null
           gaugeTypeId?: string | null
           id?: string
           inspectionDocumentId?: string
           label?: string
+          materialCondition?:
+            | Database["public"]["Enums"]["materialCondition"]
+            | null
           nominalValue?: string | null
           pageNumber?: number
           pmiItemId?: string | null
+          referenceLocation?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -25763,6 +27211,7 @@ export type Database = {
           samplingSeverity?:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          sizeFeatureId?: string | null
           toleranceMinus?: string | null
           tolerancePlus?: string | null
           type?: Database["public"]["Enums"]["procedureStepType"]
@@ -25853,6 +27302,13 @@ export type Database = {
             columns: ["gaugeTypeId"]
             isOneToOne: false
             referencedRelation: "gaugeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionFeature_sizeFeatureId_fkey"
+            columns: ["sizeFeatureId"]
+            isOneToOne: false
+            referencedRelation: "inspectionFeature"
             referencedColumns: ["id"]
           },
           {
@@ -26124,6 +27580,8 @@ export type Database = {
       }
       inspectionMeasurement: {
         Row: {
+          allowable: number | null
+          bonus: number | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -26140,6 +27598,8 @@ export type Database = {
           value: number | null
         }
         Insert: {
+          allowable?: number | null
+          bonus?: number | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -26156,6 +27616,8 @@ export type Database = {
           value?: number | null
         }
         Update: {
+          allowable?: number | null
+          bonus?: number | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -92022,6 +93484,7 @@ export type Database = {
           createdBy: string | null
           defaultPageHeight: number | null
           defaultPageWidth: number | null
+          drawingRevision: string | null
           fileName: string | null
           id: string | null
           modelUploadId: string | null
@@ -111831,6 +113294,11 @@ export type Database = {
       batchType: "Sequential" | "Simultaneous"
       budgetControl: "None" | "Warn" | "Block"
       capacityResourceKind: "WorkCenter" | "OperatorPool" | "Employee"
+      certificateType:
+        | "Material"
+        | "Special Process"
+        | "Functional Test"
+        | "Other"
       changeOrderChangeType:
         | "Version"
         | "Revision"
@@ -111894,6 +113362,7 @@ export type Database = {
         | "Indirect Cost"
         | "Variance"
         | "Total"
+      customerApprovalVerification: "Yes" | "No" | "N/A"
       customerAssetStatus: "In Service" | "At Depot" | "Returned"
       customerContractStatus: "Draft" | "Active" | "Ended"
       customerContractType:
@@ -112059,6 +113528,24 @@ export type Database = {
         | "Seconds/Piece"
         | "Total Hours"
         | "Total Minutes"
+      featureOfSizeType: "Internal" | "External"
+      firstArticleInspectionReason:
+        | "New Part"
+        | "Design Change"
+        | "Manufacturing Source Change"
+        | "Process Change"
+        | "Inspection Method Change"
+        | "Tooling Change"
+        | "Material Change"
+        | "Location Change"
+        | "NC Program Change"
+        | "Natural or Man-made Event"
+        | "Production Lapse"
+        | "Corrective Action"
+        | "Other"
+      firstArticleInspectionScope: "Full" | "Partial"
+      firstArticleInspectionStatus: "Draft" | "Verified" | "Approved"
+      firstArticleInspectionType: "Detail" | "Assembly"
       fixedAssetStatus:
         | "Draft"
         | "Active"
@@ -112132,11 +113619,15 @@ export type Database = {
         | "Service Center"
       indirectRateType: "Provisional" | "Target" | "Actual" | "Final"
       inspectionDocumentStatus: "Draft" | "Active" | "Archived"
-      inspectionDocumentUsage: "Receipt"
+      inspectionDocumentUsage: "Receipt" | "First Article"
       inspectionLevel: "I" | "II" | "III" | "S1" | "S2" | "S3" | "S4"
       inspectionSampleStatusType: "Pending" | "Passed" | "Failed"
       inspectionSeverity: "Normal" | "Tightened" | "Reduced"
-      inspectionSourceDocument: "Receipt" | "Job Operation" | "Manual"
+      inspectionSourceDocument:
+        | "Receipt"
+        | "Job Operation"
+        | "First Article"
+        | "Manual"
       inspectionStatus: "Pass" | "Fail"
       inspectionStatusType:
         | "Pending"
@@ -112374,6 +113865,7 @@ export type Database = {
         | "OEM Required"
       maintenanceSource: "Scheduled" | "Reactive" | "Non-Conformance"
       makeMethodStatus: "Draft" | "Active" | "Archived"
+      materialCondition: "RFS" | "MMC" | "LMC"
       materialRequestStatus: "Open" | "Resolved"
       memoDirection: "Credit" | "Debit"
       memoStatus: "Draft" | "Posted" | "Voided"

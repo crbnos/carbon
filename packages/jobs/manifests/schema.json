@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-23T04:32:32.658Z",
+  "exportedAt": "2026-11-23T10:59:55.513Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -472,6 +472,7 @@
         "requireMfa",
         "allowLowercaseItemIds",
         "includeOperationsOnTraveler",
+        "requireFirstArticle",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
         "showBomExplorerReadableId",
@@ -535,6 +536,22 @@
         "nextResetDatetime",
         "companyId",
         "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "complianceStatement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "content",
+        "appliesToAllCustomers",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
         "updatedAt"
       ]
     },
@@ -2936,6 +2953,7 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
+        "drawingRevision",
         "modelUploadId",
         "status",
         "rootInspectionDocumentId",
@@ -2983,6 +3001,11 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
+        "designator",
+        "referenceLocation",
+        "materialCondition",
+        "sizeFeatureId",
+        "featureOfSize",
         "gaugeTypeId",
         "pmiItemId"
       ]
@@ -3298,6 +3321,21 @@
       ]
     },
     {
+      "name": "complianceStatementAssignment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "complianceStatementId",
+        "customerId",
+        "itemId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "contractor",
       "rows": 0,
       "columns": [
@@ -3512,7 +3550,9 @@
         "updatedAt",
         "updatedBy",
         "incoterm",
-        "incotermLocation"
+        "incotermLocation",
+        "requiresCertificateOfConformance",
+        "requiresFirstArticle"
       ]
     },
     {
@@ -3559,6 +3599,30 @@
         "purchaseOrderDocumentPath",
         "requestForQuoteDocumentPath",
         "customerId"
+      ]
+    },
+    {
+      "name": "certificateOfConformance",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "certificateId",
+        "revision",
+        "shipmentId",
+        "customerId",
+        "reasonForUpdate",
+        "documentId",
+        "signedBy",
+        "signedByName",
+        "signedByTitle",
+        "signedAt",
+        "lastSentAt",
+        "lastSentTo",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3861,7 +3925,9 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "bonus",
+        "allowable"
       ]
     },
     {
@@ -6902,6 +6968,77 @@
       ]
     },
     {
+      "name": "firstArticleInspection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "inspectionId",
+        "status",
+        "itemId",
+        "jobId",
+        "jobMakeMethodId",
+        "type",
+        "scope",
+        "reason",
+        "baselineFirstArticleInspectionId",
+        "baselineReference",
+        "partNumber",
+        "partName",
+        "partRevision",
+        "drawingNumber",
+        "drawingRevision",
+        "additionalChanges",
+        "manufacturingProcessReference",
+        "organizationName",
+        "supplierCode",
+        "purchaseOrderNumber",
+        "hasNonconformance",
+        "comments",
+        "verifiedBy",
+        "verifiedByName",
+        "verifiedByTitle",
+        "verifiedAt",
+        "approvedBy",
+        "approvedByName",
+        "approvedByTitle",
+        "approvedAt",
+        "customerApprovalName",
+        "customerApprovalDate",
+        "documentId",
+        "customFields",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "firstArticleInspectionProduct",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "firstArticleInspectionId",
+        "sortOrder",
+        "kind",
+        "name",
+        "specification",
+        "code",
+        "supplier",
+        "customerApprovalVerification",
+        "certificateNumber",
+        "functionalTestProcedureNumber",
+        "acceptanceReportNumber",
+        "comments",
+        "certificateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "fulfillment",
       "rows": 0,
       "columns": [
@@ -7969,6 +8106,26 @@
         "requiresSerialTracking",
         "requiresBatchTracking",
         "requiresInspection"
+      ]
+    },
+    {
+      "name": "certificate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "certificateNumber",
+        "specification",
+        "supplierId",
+        "receiptLineId",
+        "jobOperationId",
+        "documentId",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

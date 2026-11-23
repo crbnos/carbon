@@ -94,6 +94,22 @@ export async function completeOperationQuantity(
     );
   }
 
+  // An Inspection operation completes only through its inspection, never a
+  // quantity posted here.
+  if (jobOperation.data.operationType === "Inspection") {
+    log.warning("Refused to complete an Inspection operation directly", {
+      jobOperationId: jobOperation.data.id,
+      companyId
+    });
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, "Record this operation through its inspection"),
+        flash: "error"
+      })
+    );
+  }
+
   // A serial completion names the unit the operator scanned or picked, open
   // here; the server never picks one for them (only the one left).
   const work = await resolveWorkUnit({

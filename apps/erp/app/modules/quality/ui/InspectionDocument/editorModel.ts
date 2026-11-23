@@ -6,7 +6,11 @@
 // editor, its hooks and its drawing components share these.
 
 import { BALLOON_H_NORM, BALLOON_W_NORM } from "@carbon/utils";
-import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
+import type {
+  BalloonRegionAnalysis,
+  featureOfSizeTypes,
+  materialConditions
+} from "~/modules/quality/quality.models";
 import type { procedureStepType } from "~/modules/shared/shared.models";
 import type { SamplingRule } from "./SamplingRuleModal";
 
@@ -88,11 +92,91 @@ export type FeatureRow = {
   samplingSeverity: SamplingRule["samplingSeverity"];
   /** Optional gauge type the feature must be measured with. */
   gaugeTypeId: string | null;
+  /** AS9102 Form 3 characteristic designator (e.g. "KC", "Critical"). */
+  designator: string;
+  /** Drawing zone / sheet the characteristic is found at. */
+  referenceLocation: string;
+  /** RFS = no bonus; MMC/LMC take their bonus from `sizeFeatureId`. */
+  materialCondition: MaterialCondition;
+  featureOfSize: FeatureOfSize | "";
+  /** Another row's featureId (the editor mints ids); "" = none. */
+  sizeFeatureId: string;
   /** The PMI item a model plan's feature was made from (read-only). */
   pmiItemId: string | null;
   featureDirty?: boolean;
   geometryDirty?: boolean;
 };
+
+export type MaterialCondition = (typeof materialConditions)[number];
+export type FeatureOfSize = (typeof featureOfSizeTypes)[number];
+
+/** Defaults of the AS9102 fields a new characteristic starts without. */
+export const EMPTY_CHARACTERISTIC_FIELDS = {
+  designator: "",
+  referenceLocation: "",
+  materialCondition: "RFS",
+  featureOfSize: "",
+  sizeFeatureId: ""
+} satisfies Pick<
+  FeatureRow,
+  | "designator"
+  | "referenceLocation"
+  | "materialCondition"
+  | "featureOfSize"
+  | "sizeFeatureId"
+>;
+
+/** A Measurement characteristic whose tolerance takes a bonus (MMC/LMC). */
+export function hasBonusTolerance(
+  row: Pick<FeatureRow, "type" | "materialCondition">
+) {
+  return (
+    row.type === "Measurement" &&
+    (row.materialCondition === "MMC" || row.materialCondition === "LMC")
+  );
+}
+
+function valueOrNull(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/** The characteristic keys of a feature's save item. `sizeFeatureId` is the
+ * referenced row's featureId — the editor mints ids, so a row created in the
+ * same save is named by the id it will be inserted with. */
+export function featureCharacteristicPayload(r: FeatureRow) {
+  const bonus = hasBonusTolerance(r);
+  return {
+    designator: valueOrNull(r.designator),
+    referenceLocation: valueOrNull(r.referenceLocation),
+    materialCondition: r.type === "Measurement" ? r.materialCondition : null,
+    featureOfSize: bonus && r.featureOfSize ? r.featureOfSize : null,
+    sizeFeatureId: bonus && r.sizeFeatureId ? r.sizeFeatureId : null
+  };
+}
+
+/** Why the rows cannot be saved as they are, or null when they can: an MMC/LMC
+ * characteristic needs a size feature (another Measurement row) and a declared
+ * feature of size. The save validators refuse both. */
+export function invalidBonusCharacteristic(
+  rows: FeatureRow[]
+): "sizeFeature" | "featureOfSize" | null {
+  const bonusRows = rows.filter(hasBonusTolerance);
+  if (bonusRows.length === 0) return null;
+  const measurementIds = new Set(
+    rows.filter((r) => r.type === "Measurement").map((r) => r.featureId)
+  );
+  if (
+    bonusRows.some(
+      (r) =>
+        r.sizeFeatureId === r.featureId || !measurementIds.has(r.sizeFeatureId)
+    )
+  ) {
+    return "sizeFeature";
+  }
+  if (bonusRows.some((r) => !r.featureOfSize)) return "featureOfSize";
+  return null;
+}
 
 /**
  * What a grid cell's mutation resolves to for an edit kept in the browser:
@@ -142,6 +226,7 @@ export function newFeatureRow(
     samplingInspectionLevel: null,
     samplingSeverity: null,
     gaugeTypeId: null,
+    ...EMPTY_CHARACTERISTIC_FIELDS,
     pmiItemId: null
   };
 }
@@ -405,6 +490,12 @@ function mapFeatureRowFromRecords(
     samplingSeverity:
       (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
     gaugeTypeId: (feature.gaugeTypeId as string | null) ?? null,
+    designator: String(feature.designator ?? ""),
+    referenceLocation: String(feature.referenceLocation ?? ""),
+    materialCondition:
+      (feature.materialCondition as MaterialCondition | null) ?? "RFS",
+    featureOfSize: (feature.featureOfSize as FeatureOfSize | null) ?? "",
+    sizeFeatureId: String(feature.sizeFeatureId ?? ""),
     pmiItemId: (feature.pmiItemId as string | null) ?? null,
     featureDirty: false,
     geometryDirty: false

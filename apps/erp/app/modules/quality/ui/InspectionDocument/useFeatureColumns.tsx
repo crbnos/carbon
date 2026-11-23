@@ -26,13 +26,24 @@ import {
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableList, EditableText } from "~/components/Editable";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { materialConditions } from "~/modules/quality/quality.models";
 import { procedureStepType } from "~/modules/shared/shared.models";
-import { type FeatureRow, LOCAL_EDIT_RESULT } from "./editorModel";
+import {
+  type FeatureOfSize,
+  type FeatureRow,
+  hasBonusTolerance,
+  LOCAL_EDIT_RESULT
+} from "./editorModel";
 import type { SamplingRule } from "./SamplingRuleModal";
 
 const featureTypeOptions = procedureStepType.map((t) => ({
   label: t,
   value: t
+}));
+
+const materialConditionOptions = materialConditions.map((condition) => ({
+  label: condition,
+  value: condition
 }));
 
 type FeatureMutationFn = (
@@ -49,7 +60,12 @@ type EditableFeatureField =
   | "toleranceMinus"
   | "units"
   | "type"
-  | "gaugeTypeId";
+  | "gaugeTypeId"
+  | "designator"
+  | "referenceLocation"
+  | "materialCondition"
+  | "featureOfSize"
+  | "sizeFeatureId";
 
 const ConditionalMeasurementText =
   (baseMutation: FeatureMutationFn) =>
@@ -70,6 +86,19 @@ const ConditionalMeasurementList =
       return <span className="text-muted-foreground text-sm">&mdash;</span>;
     }
     return EditableList(baseMutation, options)(props);
+  };
+
+/** Editable only on MMC/LMC Measurement rows; options may depend on the row. */
+const ConditionalBonusList =
+  (
+    baseMutation: FeatureMutationFn,
+    getOptions: (row: FeatureRow) => { label: string; value: string }[]
+  ) =>
+  (props: EditableTableCellComponentProps<FeatureRow>) => {
+    if (!hasBonusTolerance(props.row)) {
+      return <span className="text-muted-foreground text-sm">&mdash;</span>;
+    }
+    return EditableList(baseMutation, getOptions(props.row))(props);
   };
 
 // Optional gauge type: a clearable list (cleared = any gauge may be used).
@@ -130,6 +159,8 @@ export function useSamplingRuleSummary() {
 }
 
 type UseFeatureColumnsArgs = {
+  /** The rows, for the MMC/LMC size feature choices. */
+  featureRows: FeatureRow[];
   setFeatureRows: Dispatch<SetStateAction<FeatureRow[]>>;
   unitOfMeasures: Array<{ code: string; name: string }>;
   gaugeTypes: Array<{ id: string; name: string }>;
@@ -149,6 +180,7 @@ type UseFeatureColumnsArgs = {
 
 /** The Characteristics grid's columns and its cell editors. */
 export function useFeatureColumns({
+  featureRows,
   setFeatureRows,
   unitOfMeasures,
   gaugeTypes,
@@ -204,6 +236,34 @@ export function useFeatureColumns({
     [gaugeTypes]
   );
 
+  const featureOfSizeOptions = useMemo(
+    () =>
+      [
+        { label: t`Internal`, value: "Internal" },
+        { label: t`External`, value: "External" }
+      ] satisfies { label: string; value: FeatureOfSize }[],
+    [t]
+  );
+
+  // Measurement rows a MMC/LMC characteristic can take its size from. Keyed on
+  // id + label only, so unrelated row edits don't rebuild the grid's editors.
+  const sizeFeatureCandidatesKey = JSON.stringify(
+    featureRows
+      .filter((r) => r.type === "Measurement")
+      .map((r) => [r.featureId, r.label])
+  );
+  const sizeFeatureCandidates = useMemo(
+    () =>
+      (JSON.parse(sizeFeatureCandidatesKey) as [string, string][]).map(
+        ([value, label]) => ({ value, label })
+      ),
+    [sizeFeatureCandidatesKey]
+  );
+  const sizeFeatureLabelById = useMemo(
+    () => new Map(sizeFeatureCandidates.map((c) => [c.value, c.label])),
+    [sizeFeatureCandidates]
+  );
+
   const featureEditableComponents = useMemo(
     () => ({
       type: EditableList(featureMutation, featureTypeOptions),
@@ -213,9 +273,28 @@ export function useFeatureColumns({
       tolerancePlus: ConditionalMeasurementText(featureMutation),
       toleranceMinus: ConditionalMeasurementText(featureMutation),
       units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions),
-      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions)
+      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions),
+      designator: EditableText(featureMutation),
+      referenceLocation: EditableText(featureMutation),
+      materialCondition: ConditionalMeasurementList(
+        featureMutation,
+        materialConditionOptions
+      ),
+      sizeFeatureId: ConditionalBonusList(featureMutation, (row) =>
+        sizeFeatureCandidates.filter((c) => c.value !== row.featureId)
+      ),
+      featureOfSize: ConditionalBonusList(
+        featureMutation,
+        () => featureOfSizeOptions
+      )
     }),
-    [featureMutation, unitOfMeasureOptions, gaugeTypeOptions]
+    [
+      featureMutation,
+      unitOfMeasureOptions,
+      gaugeTypeOptions,
+      sizeFeatureCandidates,
+      featureOfSizeOptions
+    ]
   );
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
@@ -283,6 +362,41 @@ export function useFeatureColumns({
           ) : (
             <span className="text-muted-foreground">{t`Any`}</span>
           )
+      },
+      { accessorKey: "designator", header: t`Designator`, size: 120 },
+      {
+        accessorKey: "referenceLocation",
+        header: t`Ref. location`,
+        size: 120
+      },
+      {
+        accessorKey: "materialCondition",
+        header: t`Material condition`,
+        size: 140,
+        cell: ({ row }) =>
+          row.original.type === "Measurement"
+            ? row.original.materialCondition
+            : null
+      },
+      {
+        accessorKey: "sizeFeatureId",
+        header: t`Size feature`,
+        size: 128,
+        cell: ({ row }) =>
+          hasBonusTolerance(row.original)
+            ? (sizeFeatureLabelById.get(row.original.sizeFeatureId) ?? null)
+            : null
+      },
+      {
+        accessorKey: "featureOfSize",
+        header: t`Feature of size`,
+        size: 128,
+        cell: ({ row }) =>
+          hasBonusTolerance(row.original)
+            ? (featureOfSizeOptions.find(
+                (o) => o.value === row.original.featureOfSize
+              )?.label ?? null)
+            : null
       },
       {
         id: "sampling",
@@ -401,6 +515,8 @@ export function useFeatureColumns({
       onEditSampling,
       uomCodeToName,
       gaugeTypeIdToName,
+      sizeFeatureLabelById,
+      featureOfSizeOptions,
       samplingRuleSummary,
       t
     ]

@@ -11529,6 +11529,151 @@ export function fromServerFn(
 }
 const createDocumentLogger = getLogger("erp", "shared", "create");
 
+/**
+ * Replace every line of a receipt with `lines`, carrying its certificates
+ * across. Regenerating a receipt (new source document or location) rebuilds
+ * its lines, and `certificate.receiptLineId` is ON DELETE CASCADE, so deleting
+ * the old lines first silently deleted every certificate attached to them.
+ *
+ * The new lines go in BEFORE the old ones are deleted, and each certificate is
+ * MOVED (an UPDATE, so it keeps its id) to the new line with the same source
+ * line — `receiptLine.lineId`, or the `itemId` when the old line had no
+ * `lineId`. Keeping the id matters: a First Article Form 2 row points at the
+ * certificate (`firstArticleInspectionProduct.certificateId`, ON DELETE SET
+ * NULL), and a Draft outside-processing receipt's certificates are on Form 2.
+ * A certificate whose source line is no longer on the receipt has nowhere to
+ * go (`certificate_one_target` needs a target) and is deleted with its old
+ * line, and is logged.
+ *
+ * `rebuild` (an existing receipt) first locks it, refuses it unless it is a
+ * Draft, and releases the batches and serials tagged with its old lines
+ * (`releaseDraftReceiptEntities`). Returns the new lines, for batch numbering.
+ */
+async function replaceReceiptLines(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    receiptId: string;
+    companyId: string;
+    userId: string;
+    rebuild: boolean;
+    lines: Database["public"]["Tables"]["receiptLine"]["Insert"][];
+  }
+): Promise<
+  {
+    id: string;
+    lineId: string | null;
+    itemId: string | null;
+    receivedQuantity: number | null;
+    requiresBatchTracking: boolean | null;
+  }[]
+> {
+  const { receiptId, companyId, userId, lines } = args;
+
+  if (args.rebuild) {
+    await releaseDraftReceiptEntities(trx, companyId, receiptId);
+  }
+
+  const certificates = await trx
+    .selectFrom("certificate")
+    .innerJoin("receiptLine", "receiptLine.id", "certificate.receiptLineId")
+    .select([
+      "certificate.id",
+      "certificate.certificateNumber",
+      "receiptLine.lineId",
+      "receiptLine.itemId"
+    ])
+    .where("receiptLine.receiptId", "=", receiptId)
+    .where("certificate.companyId", "=", companyId)
+    .execute();
+
+  const inserted =
+    lines.length > 0
+      ? await trx
+          .insertInto("receiptLine")
+          .values(lines)
+          .returning([
+            "id",
+            "lineId",
+            "itemId",
+            "receivedQuantity",
+            "requiresBatchTracking"
+          ])
+          .execute()
+      : [];
+
+  if (certificates.length > 0) {
+    const newLineBySourceLine = new Map<string, string>();
+    const newLineByItem = new Map<string, string>();
+    for (const line of inserted) {
+      if (line.lineId && !newLineBySourceLine.has(line.lineId)) {
+        newLineBySourceLine.set(line.lineId, line.id);
+      }
+      if (line.itemId && !newLineByItem.has(line.itemId)) {
+        newLineByItem.set(line.itemId, line.id);
+      }
+    }
+
+    const moves: { id: string; receiptLineId: string }[] = [];
+    const dropped: { id: string; certificateNumber: string }[] = [];
+    for (const certificate of certificates) {
+      const receiptLineId = certificate.lineId
+        ? newLineBySourceLine.get(certificate.lineId)
+        : newLineByItem.get(certificate.itemId);
+      if (receiptLineId) {
+        moves.push({ id: certificate.id, receiptLineId });
+      } else {
+        dropped.push({
+          id: certificate.id,
+          certificateNumber: certificate.certificateNumber
+        });
+      }
+    }
+
+    if (moves.length > 0) {
+      await trx
+        .updateTable("certificate")
+        .set({
+          receiptLineId: sql<string>`CASE "id" ${sql.join(
+            moves.map(
+              (move) => sql`WHEN ${move.id} THEN ${move.receiptLineId}`
+            ),
+            sql` `
+          )} END`,
+          updatedBy: userId,
+          updatedAt: sql<string>`NOW()`
+        })
+        .where(
+          "id",
+          "in",
+          moves.map((move) => move.id)
+        )
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    if (dropped.length > 0) {
+      createDocumentLogger.warning(
+        "Receipt regenerated without the source line of {count} certificate(s); they are deleted with their old lines",
+        { receiptId, companyId, count: dropped.length, certificates: dropped }
+      );
+    }
+  }
+
+  let deleteOldLines = trx
+    .deleteFrom("receiptLine")
+    .where("receiptId", "=", receiptId)
+    .where("companyId", "=", companyId);
+  if (inserted.length > 0) {
+    deleteOldLines = deleteOldLines.where(
+      "id",
+      "not in",
+      inserted.map((line) => line.id)
+    );
+  }
+  await deleteOldLines.execute();
+  return inserted;
+}
+
 // Resolves a fallback location when a caller omits locationId, so creating a
 // blank shipment degrades gracefully instead of failing payload validation.
 // Prefers the creating user's assigned employeeJob location, then the company's
@@ -11576,12 +11721,13 @@ async function receiptSettings(
 }
 
 /**
- * Deletes a Draft receipt's lines so they can be rebuilt from a new source,
- * releasing the batches and serials tagged with them (deleted with no stock
- * history, else unlinked) rather than leaving them on dead line ids. The
- * receipt is locked and re-read here: a post that won the race refuses.
+ * Before a Draft receipt's lines are rebuilt from a new source, releases the
+ * batches and serials tagged with them (deleted with no stock history, else
+ * unlinked) rather than leaving them on dead line ids. The receipt is locked
+ * and re-read here: a post that won the race refuses. `replaceReceiptLines`
+ * then inserts the new lines, moves the certificates and deletes the old ones.
  */
-async function deleteDraftReceiptLines(
+async function releaseDraftReceiptEntities(
   trx: Kysely<KyselyDatabase>,
   companyId: string,
   receiptId: string
@@ -11609,11 +11755,6 @@ async function deleteDraftReceiptLines(
     companyId,
     entities.map((entity) => entity.id)
   );
-  await trx
-    .deleteFrom("receiptLine")
-    .where("receiptId", "=", receiptId)
-    .where("companyId", "=", companyId)
-    .execute();
 }
 
 export const createDocumentPermission = {
@@ -12899,7 +13040,6 @@ export async function createDocument(
             .returning(["id", "receiptId"])
             .where("companyId", "=", companyId)
             .execute();
-          await deleteDraftReceiptLines(trx, companyId, receiptId);
         } else {
           receiptIdReadable = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
@@ -12922,43 +13062,36 @@ export async function createDocument(
           receiptIdReadable = newReceipt?.[0]?.receiptId!;
         }
 
-        if (receiptLineItems.length > 0) {
-          const lines = await trx
-            .insertInto("receiptLine")
-            .values(
-              receiptLineItems.map((line) => ({
-                ...line,
-                receiptId: receiptId,
-                locationId
-              }))
-            )
-            .returning([
-              "id",
-              "itemId",
-              "receivedQuantity",
-              "requiresBatchTracking"
-            ])
-            .execute();
+        const lines = await replaceReceiptLines(trx, {
+          receiptId,
+          companyId,
+          userId,
+          rebuild: hasReceipt,
+          lines: receiptLineItems.map((line) => ({
+            ...line,
+            receiptId: receiptId,
+            locationId
+          }))
+        });
 
-          if (batchNumberBase) {
-            await assignReceiptBatchNumbers(trx, {
-              companyId,
-              receiptId,
-              purchaseOrderId: purchaseOrder.data.id!,
-              base: batchNumberBase,
-              lines: lines.flatMap((line) =>
-                line.requiresBatchTracking && line.itemId
-                  ? [
-                      {
-                        id: line.id,
-                        itemId: line.itemId,
-                        receivedQuantity: Number(line.receivedQuantity ?? 0)
-                      }
-                    ]
-                  : []
-              )
-            });
-          }
+        if (batchNumberBase) {
+          await assignReceiptBatchNumbers(trx, {
+            companyId,
+            receiptId,
+            purchaseOrderId: purchaseOrder.data.id!,
+            base: batchNumberBase,
+            lines: lines.flatMap((line) =>
+              line.requiresBatchTracking && line.itemId
+                ? [
+                    {
+                      id: line.id,
+                      itemId: line.itemId,
+                      receivedQuantity: Number(line.receivedQuantity ?? 0)
+                    }
+                  ]
+                : []
+            )
+          });
         }
 
         const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
@@ -13135,17 +13268,16 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
-
-        await trx
-          .insertInto("receiptLine")
-          .values(
-            receiptLineItems.map((lineItem) => ({
-              ...lineItem,
-              receiptId: id
-            }))
-          )
-          .execute();
+        await replaceReceiptLines(trx, {
+          receiptId: id,
+          companyId,
+          userId,
+          rebuild: hasReceipt,
+          lines: receiptLineItems.map((lineItem) => ({
+            ...lineItem,
+            receiptId: id
+          }))
+        });
 
         return { id };
       });
@@ -13335,17 +13467,16 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
-
-        await trx
-          .insertInto("receiptLine")
-          .values(
-            receiptLineItems.map((lineItem) => ({
-              ...lineItem,
-              receiptId: id
-            }))
-          )
-          .execute();
+        await replaceReceiptLines(trx, {
+          receiptId: id,
+          companyId,
+          userId,
+          rebuild: hasReceipt,
+          lines: receiptLineItems.map((lineItem) => ({
+            ...lineItem,
+            receiptId: id
+          }))
+        });
 
         return { id };
       });

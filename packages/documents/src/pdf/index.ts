@@ -6,17 +6,36 @@ import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
 import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
+import type {
+  CertificateOfConformanceConformity,
+  CertificateOfConformanceData,
+  CertificateOfConformanceHeader,
+  CertificateOfConformanceLine,
+  CertificateSigner
+} from "./blocks/certificateOfConformance";
+import { CONFORMITY_STATEMENT } from "./blocks/certificateOfConformance";
 import {
   buildJobTravelerVars,
   type JobTravelerMaterial
 } from "./blocks/jobTraveler";
 import type { PurchaseOrderApproval } from "./blocks/purchaseOrder";
+import CertificateOfConformancePDF from "./CertificateOfConformancePDF";
 import type {
   ContractFinancingEventRow,
   ContractFinancingRow
 } from "./ContractFinancingRequestPDF";
 import ContractFinancingRequestPDF from "./ContractFinancingRequestPDF";
+import { SAMPLE_CERTIFICATE_OF_CONFORMANCE } from "./certificateOfConformance.samples";
 import { Footer } from "./components";
+import type {
+  FirstArticleInspectionPDFCharacteristic,
+  FirstArticleInspectionPDFHeader,
+  FirstArticleInspectionPDFIndexRow,
+  FirstArticleInspectionPDFProduct,
+  FirstArticleInspectionPDFProps
+} from "./FirstArticleInspectionPDF";
+import FirstArticleInspectionPDF from "./FirstArticleInspectionPDF";
+import { SAMPLE_FIRST_ARTICLE_INSPECTION } from "./firstArticleInspection.samples";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
 import { SAMPLE_ISSUE } from "./issue.samples";
@@ -51,8 +70,18 @@ import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
 export { documentChrome } from "./blocks/documentChrome";
 export type {
   BatchListMember,
+  CertificateOfConformanceConformity,
+  CertificateOfConformanceData,
+  CertificateOfConformanceHeader,
+  CertificateOfConformanceLine,
+  CertificateSigner,
   ContractFinancingEventRow,
   ContractFinancingRow,
+  FirstArticleInspectionPDFCharacteristic,
+  FirstArticleInspectionPDFHeader,
+  FirstArticleInspectionPDFIndexRow,
+  FirstArticleInspectionPDFProduct,
+  FirstArticleInspectionPDFProps,
   JobTravelerMaterial,
   ProjectReaderSection,
   PurchaseOrderApproval,
@@ -62,9 +91,12 @@ export type {
 export {
   BatchListPDF,
   buildJobTravelerVars,
+  CertificateOfConformancePDF,
+  CONFORMITY_STATEMENT,
   ContractFinancingRequestPDF,
   DOCUMENT_PDFS,
   ensureFont,
+  FirstArticleInspectionPDF,
   Footer,
   getPurchaseOrderDisplayId,
   getQuoteDisplayId,
@@ -81,6 +113,8 @@ export {
   PurchasingRfqPDF,
   QuotePDF,
   registerDocumentFonts,
+  SAMPLE_CERTIFICATE_OF_CONFORMANCE,
+  SAMPLE_FIRST_ARTICLE_INSPECTION,
   SAMPLE_ISSUE,
   SAMPLE_JOB_TRAVELER,
   SAMPLE_PURCHASE_RETURN_ORDER,

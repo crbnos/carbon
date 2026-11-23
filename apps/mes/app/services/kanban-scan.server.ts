@@ -30,7 +30,10 @@ import {
   startProductionEvent
 } from "~/services/operations.service";
 import { autoPrintOperationLabel } from "~/services/printing.server";
-import { checkStrictBackflush } from "~/services/quality.server";
+import {
+  checkStrictBackflush,
+  generateFirstArticlesForStartedJob
+} from "~/services/quality.server";
 import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { resolveWorkUnit } from "~/services/work-unit.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
@@ -268,6 +271,14 @@ export async function startOperationByScan(
     companyId,
     createdBy: userId
   };
+  // A scan that auto-starts a Draft / Planned job released it: create its
+  // first article lots, as every release does.
+  const onJobReleased = (jobId: string) =>
+    generateFirstArticlesForStartedJob(serviceRole, {
+      jobId,
+      companyId,
+      userId
+    });
   const startEvent = machineWorkCenterId
     ? await startMachineProductionEvent(
         deps.db(),
@@ -275,14 +286,16 @@ export async function startOperationByScan(
         { ...event, workCenterId: machineWorkCenterId },
         trackedEntityId || undefined,
         undefined,
-        "mes_qr"
+        "mes_qr",
+        onJobReleased
       )
     : await startProductionEvent(
         serviceRole,
         event,
         trackedEntityId || undefined,
         undefined,
-        "mes_qr"
+        "mes_qr",
+        onJobReleased
       );
 
   if (startEvent.error) {
@@ -371,6 +384,12 @@ export async function endOperationByScan(
         flash: "error"
       })
     );
+  }
+
+  // An Inspection operation completes only through its inspection: the
+  // traveler's Complete QR opens the inspection view and posts nothing.
+  if (jobOperation.data.operationType === "Inspection") {
+    return redirect(path.to.inspection(operationId));
   }
 
   const abilityRefusal = await abilityBlockRefusal(serviceRole, {
