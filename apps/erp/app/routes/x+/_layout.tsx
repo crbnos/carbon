@@ -72,6 +72,7 @@ import { Await, data, Outlet, useLoaderData } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
 import {
+  CollapsibleSidebarProvider,
   ModuleSidebarLayout,
   PrimaryNavigation,
   Topbar
@@ -601,30 +602,34 @@ export default function AuthenticatedRoute() {
                           Mounted only on phones so their hooks
                           (notifications, sheets) never run on desktop. */}
                       {isPhone && <MobileAppBar />}
-                      <Topbar />
-                      <AnnouncementBar
-                        announcement={announcement}
-                        userId={user?.id ?? ""}
-                        dismissLabel={t`Dismiss`}
-                        defaultLinkLabel={t`Learn more`}
-                      />
-                      <main className="flex-1 overflow-y-auto scrollbar-hide relative">
-                        <ModuleSidebarLayout>
-                          {/* A company switch stays on the same page. Without the key the page
-                              keeps its state, so a form still held the previous company's
-                              values and saving wrote them to the new one. */}
-                          <Outlet key={companyId} />
-                        </ModuleSidebarLayout>
-                        {/* Room to scroll a page's end out from under the
-                            floating dock. A spacer, not padding: padding would
-                            shrink h-full pages and end them above the dock. */}
-                        {isPhone && (
-                          <div
-                            aria-hidden
-                            className="h-[var(--dock-height,0px)] md:hidden"
-                          />
-                        )}
-                      </main>
+                      {/* Wraps the top bar too, so its toggle can reopen the
+                          module sidebar from any page, not only from a table. */}
+                      <CollapsibleSidebarProvider>
+                        <Topbar />
+                        <AnnouncementBar
+                          announcement={announcement}
+                          userId={user?.id ?? ""}
+                          dismissLabel={t`Dismiss`}
+                          defaultLinkLabel={t`Learn more`}
+                        />
+                        <main className="flex-1 overflow-y-auto scrollbar-hide relative">
+                          <ModuleSidebarLayout>
+                            {/* A company switch stays on the same page. Without the key the page
+                                keeps its state, so a form still held the previous company's
+                                values and saving wrote them to the new one. */}
+                            <Outlet key={companyId} />
+                          </ModuleSidebarLayout>
+                          {/* Room to scroll a page's end out from under the
+                              floating dock. A spacer, not padding: padding would
+                              shrink h-full pages and end them above the dock. */}
+                          {isPhone && (
+                            <div
+                              aria-hidden
+                              className="h-[var(--dock-height,0px)] md:hidden"
+                            />
+                          )}
+                        </main>
+                      </CollapsibleSidebarProvider>
                       {isPhone && (
                         <MobileBottomChrome>
                           <MobileDock />

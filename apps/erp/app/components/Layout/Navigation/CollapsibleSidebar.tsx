@@ -39,10 +39,13 @@ export function useCollapsibleSidebar() {
   return context;
 }
 
-function CollapsibleSidebarProvider({
-  hasSidebar,
-  children
-}: PropsWithChildren<{ hasSidebar: boolean }>) {
+/**
+ * The module sidebar's state for the app shell. It wraps the top bar as well
+ * as the page, so the top bar can show the toggle on every page that has a
+ * sidebar, not only on pages with a table.
+ */
+export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
+  const hasSidebar = Boolean(useModuleSidebar());
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
@@ -163,30 +166,29 @@ export function useCompactModuleSidebar() {
  * module layout names its sub-navigation on its route handle (`sidebar`) and
  * the shell renders it here, so the sidebar's frame, width and collapsed
  * state stay put from module to module and only its links change. Pages
- * outside a module (detail pages) have none and get the full width.
+ * outside a module (detail pages) have none and get the full width. It
+ * renders inside `CollapsibleSidebarProvider`.
  */
 export function ModuleSidebarLayout({ children }: PropsWithChildren) {
   const Sidebar = useModuleSidebar();
 
   return (
-    <CollapsibleSidebarProvider hasSidebar={Boolean(Sidebar)}>
-      {/* `contents` when there is no sidebar: the page lays out exactly as if
-          this wrapper were not here, and stays in the same place in the tree. */}
-      <div
-        className={
-          Sidebar
-            ? "grid grid-cols-[auto_minmax(0,1fr)] w-full h-full"
-            : "contents"
-        }
-      >
-        {Sidebar ? (
-          <CollapsibleSidebar>
-            <Sidebar />
-          </CollapsibleSidebar>
-        ) : null}
-        {children}
-      </div>
-    </CollapsibleSidebarProvider>
+    // `contents` when there is no sidebar: the page lays out exactly as if
+    // this wrapper were not here, and stays in the same place in the tree.
+    <div
+      className={
+        Sidebar
+          ? "grid grid-cols-[auto_minmax(0,1fr)] w-full h-full"
+          : "contents"
+      }
+    >
+      {Sidebar ? (
+        <CollapsibleSidebar>
+          <Sidebar />
+        </CollapsibleSidebar>
+      ) : null}
+      {children}
+    </div>
   );
 }
 

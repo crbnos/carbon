@@ -5,6 +5,7 @@
 import Background from "./Background";
 
 import {
+  CollapsibleSidebarProvider,
   ContentSidebar,
   DetailSidebar,
   DetailsTopbar,
@@ -18,6 +19,7 @@ import Topbar from "./Topbar";
 
 export {
   Background,
+  CollapsibleSidebarProvider,
   ContentSidebar,
   DetailSidebar,
   DetailsTopbar,
