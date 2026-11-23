@@ -97,7 +97,10 @@ pnpm --silent --filter @carbon/models touched
 
 `confirm` runs `verify` first and writes the new `fingerprints` and
 `confirmedAt` only when it passes; on a failure it prints `verify failed:
-nothing confirmed.` and changes nothing. `touched` must then print
+nothing confirmed.` and changes nothing. It refuses a tree with any staged,
+unstaged or untracked change, before and after `verify`, because `confirmedAt`
+names HEAD. Name every model in one `confirm`: the first one's record dirties
+the tree. `touched` must then print
 `<model>: unchanged since <sha>`. Commit `packages/models/coverage.json` with
 the change.
 

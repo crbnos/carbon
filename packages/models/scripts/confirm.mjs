@@ -14,7 +14,9 @@ import {
 
 /**
  * Records the code as it reads now as confirmed for the named models, but only
- * after verify passes for them: the record never moves ahead of a check.
+ * after verify passes for them: the record never moves ahead of a check. The
+ * record names HEAD, so the tree must be clean before and after verify: an
+ * uncommitted edit would be verified but not be in the commit it names.
  */
 
 const models = process.argv.slice(2);
@@ -23,6 +25,20 @@ if (models.length === 0) {
   process.exit(1);
 }
 
+function requireCleanTree() {
+  const status = execFileSync("git", ["status", "--porcelain"], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+  if (status.trim() !== "") {
+    console.error(
+      `Commit every change before confirming: the record names HEAD.\n${status}`
+    );
+    process.exit(1);
+  }
+}
+
+requireCleanTree();
 const verify = spawnSync(
   process.execPath,
   [join(packageDir, "scripts/verify.mjs"), ...models],
@@ -33,6 +49,7 @@ if (verify.status !== 0) {
   process.exit(1);
 }
 
+requireCleanTree();
 const head = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
   cwd: repoRoot,
   encoding: "utf8"
