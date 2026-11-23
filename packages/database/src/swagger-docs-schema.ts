@@ -98752,10 +98752,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.planningTimeFenceDays"
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+            $ref: "#/parameters/rowFilter.itemPlanning.planningTimeFenceDays"
           },
           {
             $ref: "#/parameters/select"
@@ -98889,10 +98889,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.planningTimeFenceDays"
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+            $ref: "#/parameters/rowFilter.itemPlanning.planningTimeFenceDays"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -98980,10 +98980,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.planningTimeFenceDays"
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+            $ref: "#/parameters/rowFilter.itemPlanning.planningTimeFenceDays"
           },
           {
             $ref: "#/parameters/body.itemPlanning"
@@ -188029,14 +188029,14 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        planningTimeFenceDays: {
-          format: "integer",
-          type: "integer"
-        },
         deliveryDateControl: {
           enum: ["None", "Lead Time", "Stock", "Capacity"],
           format: 'public."deliveryDateControl"',
           type: "string"
+        },
+        planningTimeFenceDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -251700,14 +251700,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.itemPlanning.planningTimeFenceDays": {
-      name: "planningTimeFenceDays",
+    "rowFilter.itemPlanning.deliveryDateControl": {
+      name: "deliveryDateControl",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemPlanning.deliveryDateControl": {
-      name: "deliveryDateControl",
+    "rowFilter.itemPlanning.planningTimeFenceDays": {
+      name: "planningTimeFenceDays",
       required: false,
       in: "query",
       type: "string"
