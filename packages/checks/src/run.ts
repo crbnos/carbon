@@ -39,6 +39,7 @@ import {
   LIST_SELECT_COVERS_COLUMNS
 } from "./conformance/list-select-covers-columns";
 import { mesUnitWriteResolvesUnit } from "./conformance/mes-unit-write-resolves-unit";
+import { migrationReplaySafe } from "./conformance/migration-replay-safe";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -131,7 +132,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noDerivedPercentColumn,
   noRequiredColumnWithoutDefault,
   noViewWithoutInvoker,
-  journalStatusFilter
+  journalStatusFilter,
+  migrationReplaySafe
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */

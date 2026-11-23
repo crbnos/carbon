@@ -14,6 +14,7 @@ export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-author
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
+export { migrationReplaySafe } from "./conformance/migration-replay-safe";
 export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
