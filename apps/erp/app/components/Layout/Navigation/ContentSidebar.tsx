@@ -67,7 +67,8 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
                 onClick={(event) => pulseNavIcon(event)}
                 className={cn(
                   "w-full justify-start active:scale-100",
-                  !active && "hover:bg-transparent hover:text-active-foreground"
+                  !active &&
+                    "hover:bg-transparent hover:text-active-foreground data-[hover-card]:text-active-foreground"
                 )}
               >
                 <PrefetchLink

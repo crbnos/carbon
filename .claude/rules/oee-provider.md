@@ -75,7 +75,8 @@ UI:
   and `modules/production/ui/MachineTime/`. The nav item appears only while an
   `oee` integration is active (`useProductionSubmodules`, through
   `getIntegrationIdsByRole("oee")` and `useIntegrations`).
-- **MES press rules** — `apps/mes/app/routes/x+/event.tsx` and
+- **MES press rules** — `apps/mes/app/routes/x+/event.tsx` (its body is
+  `productionEventAction` in `services/production-event.server.ts`) and
   `x+/start.$operationId.tsx`.
 - **MES machine state** — the work center display
   (`display+/$workCenterId.work.tsx`) shows `DeviceStateBadge`

@@ -165,6 +165,12 @@ Key service functions (verified):
   `quantityIssued` and returns stock to the bins and stripes the job's `Job Consumption` rows
   of that item drew from, the operation's own draws first. It reads by job and item, because
   the job-completion SQL backflush writes no `documentLineId`.
+- A picking list line's lineside (`toStorageUnitId`) can be empty: a release picking list is
+  made before the scheduler gives an operation with only a process its work center. Each pick
+  (`inventory`, `serial`, `batch` in `postPicking`) fills it under the line lock
+  (`resolvePickDestination`) from the operation's current work center
+  (`get_or_create_work_center_lineside`) and saves it, or refuses when the operation still has
+  none. The posting is the one check; the ERP and MES callers do not refuse first.
 - Picking: `generatePickingList`, `getPickingListAvailability` (RPC `get_picking_list_availability`),
   `getPickingSchedule` (RPC `get_picking_schedule`). These honor `itemSupersession`
   (`20260730143512_picking-supersession.sql` + `inventory/supersession-pick.ts`

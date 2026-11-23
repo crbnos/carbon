@@ -44,9 +44,10 @@ options, so nothing could be put between a request and React Router.
   path of `//other.host/x` would name another host, and React Router checks
   a form's `Origin` against that URL. `@mjackson/node-fetch-server`
   resolves, which is why `src/request.ts` is ours.
-- **Fastify's defaults are not all kept.** `keepAliveTimeout` is above any
-  proxy's idle timeout, and `requestTimeout` is Node's 300s (Fastify sets
-  none). `bodyLimit` does not apply: no body is parsed here. A request whose `Content-Type` is not a
+- **Fastify's defaults are not all kept.** `keepAliveTimeout` (620s) is above
+  any proxy's idle timeout — the ALB's is 600s, which is also its request
+  timeout, so it cannot be lowered — and `requestTimeout` is Node's 300s
+  (Fastify sets none). `bodyLimit` does not apply: no body is parsed here. A request whose `Content-Type` is not a
   media type at all is a 415 from Fastify before React Router sees it.
 - **What a library already answers is left to it.** `negotiator` reads
   `Accept-Encoding` (a `br;q=0` is a refusal), `@fastify/send` names a

@@ -30,10 +30,13 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
   booleanField,
+  itemDescriptionNote,
+  itemNameNote,
   methodType,
   optionalTiptapDoc,
   requiredTiptapDoc,
@@ -143,8 +146,8 @@ export const setItemTrackingType = defineServiceFn({
 export const setItemFields = defineServiceFn({
   input: z.object({
     ids: itemIdsInput,
-    name: z.string().optional(),
-    description: z.string().optional(),
+    name: z.string().optional().describe(itemNameNote),
+    description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     unitOfMeasureCode: z.string().optional()
   }),
@@ -270,6 +273,33 @@ export const setItemActive = defineServiceFn({
       })
       .in("id", ids)
       .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error("internal", update.error.message, update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Mark items taxable or not taxable.
+ *
+ * @remarks
+ * A taxable item's sales and purchase lines take the tax code's rate; a line
+ * for a non-taxable item charges no tax.
+ *
+ * @mcp
+ */
+export const setItemTaxable = defineServiceFn({
+  input: z.object({ ids: itemIdsInput, taxable: z.boolean() }),
+  permission: { update: "parts" },
+
+  async run(ctx, { ids, taxable }) {
+    const update = await service.updateItemTaxable(ctx.asCaller.supabase, {
+      ids,
+      taxable,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
     if (update.error) {
       return ctx.error("internal", update.error.message, update.error);
     }
@@ -497,7 +527,10 @@ export const setItemReadableId = defineServiceFn({
  * @mcp
  */
 export const renameService = defineServiceFn({
-  input: z.object({ itemId: z.string(), name: z.string() }),
+  input: z.object({
+    itemId: z.string(),
+    name: z.string().describe(itemNameNote)
+  }),
   permission: { update: "parts" },
 
   async run(ctx, { itemId, name }) {
@@ -584,7 +617,11 @@ export const setMaterialProperties = defineServiceFn({
 // ── Part and tool details, manufacturing and planning ───────────────────────
 
 const partInput = applyStorageAndShelfLifeRefines(
-  partFields.extend({ customFields: customFieldsInput })
+  partFields.extend({
+    name: partFields.shape.name.describe(itemNameNote),
+    description: partFields.shape.description.describe(itemDescriptionNote),
+    customFields: customFieldsInput
+  })
 );
 
 /**
@@ -622,7 +659,8 @@ export const createPart = defineServiceFn({
  * @remarks
  * `id` is the item id or the part number. A full replace: an optional field
  * left out is cleared (`upsertPart`), including the default storage unit and
- * shelf life.
+ * shelf life. It never changes whether the part is active: `setItemActive`
+ * does.
  *
  * @mcp
  */
@@ -648,13 +686,18 @@ export const updatePart = defineServiceFn({
  *
  * @remarks
  * `id` is the item id or the tool number. A full replace: an optional field
- * left out is cleared (`upsertTool`).
+ * left out is cleared (`upsertTool`). It never changes whether the tool is
+ * active: `setItemActive` does.
  *
  * @mcp
  */
 export const updateTool = defineServiceFn({
   input: applyStorageAndShelfLifeRefines(
-    toolFields.extend({ customFields: customFieldsInput })
+    toolFields.extend({
+      name: toolFields.shape.name.describe(itemNameNote),
+      description: toolFields.shape.description.describe(itemDescriptionNote),
+      customFields: customFieldsInput
+    })
   ),
   permission: { update: "parts" },
 
@@ -4189,8 +4232,8 @@ export const createConsumable = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z.string().min(1).max(255).describe(itemNameNote),
+    description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -4225,7 +4268,9 @@ export const createConsumable = defineServiceFn({
  * Update a consumable
  *
  * @remarks
- * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
+ * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full replace, so omitted optional fields are cleared.
+ * An update never changes whether the consumable is active: `setItemActive`
+ * does.
  *
  * @mcp
  */
@@ -4240,8 +4285,8 @@ export const updateConsumable = defineServiceFn({
           "Updates the existing record with this key; creates one when there is none."
         ),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(255),
-      description: z.string().optional(),
+      name: z.string().min(1).max(255).describe(itemNameNote),
+      description: z.string().optional().describe(itemDescriptionNote),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
       defaultMethodType: z.enum([
@@ -4324,8 +4369,8 @@ export const updateItem = defineServiceFn({
   input: z.looseObject({
     id: z.string().min(1).max(255),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z.string().min(1).max(255).describe(itemNameNote),
+    description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -5549,8 +5594,8 @@ export const createMaterial = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z.string().min(1).max(255).describe(itemNameNote),
+    description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -5593,7 +5638,9 @@ export const createMaterial = defineServiceFn({
  * Update a material
  *
  * @remarks
- * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
+ * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size.
+ * An update never changes whether the material is active: `setItemActive`
+ * does.
  *
  * @mcp
  */
@@ -5608,8 +5655,8 @@ export const updateMaterial = defineServiceFn({
           "Updates the existing record with this key; creates one when there is none."
         ),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(255),
-      description: z.string().optional(),
+      name: z.string().min(1).max(255).describe(itemNameNote),
+      description: z.string().optional().describe(itemDescriptionNote),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
       defaultMethodType: z.enum([
@@ -5995,8 +6042,8 @@ export const createService = defineServiceFn({
       )
       .optional(),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(100),
-    description: z.string().optional(),
+    name: z.string().min(1).max(100).describe(itemNameNote),
+    description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make"]),
     defaultMethodType: z.enum([
@@ -6036,7 +6083,8 @@ export const createService = defineServiceFn({
  * Update a service
  *
  * @remarks
- * Creates a service (item row and service row) or updates one
+ * Creates a service (item row and service row) or updates one. An update never
+ * changes whether the service is active: `setItemActive` does.
  *
  * @mcp
  */
@@ -6051,8 +6099,8 @@ export const updateService = defineServiceFn({
         )
         .optional(),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(100),
-      description: z.string().optional(),
+      name: z.string().min(1).max(100).describe(itemNameNote),
+      description: z.string().optional().describe(itemDescriptionNote),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make"]),
       defaultMethodType: z.enum([
@@ -6221,8 +6269,8 @@ export const createTool = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
+    name: z.string().min(1).max(255).describe(itemNameNote),
+    description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
     defaultMethodType: z.enum([
@@ -7019,6 +7067,31 @@ export const createItemDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for an item (part/material/tool/consumable/service) document
+ *
+ * @remarks
+ * A signed link to a file on the item's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `items_getItemFiles` lists it, or the name given
+ * to `items_createItemDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not there is not
+ * found.
+ *
+ * @mcp read
+ */
+export const getItemDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "parts" },
+  async run(ctx, { itemId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "parts",
+      entityId: itemId,
+      name
+    });
   }
 });
 

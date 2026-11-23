@@ -123,6 +123,9 @@ export const inspectionFailedResult = "Failed";
 
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
+  // The unit a serial step is recorded for; the server keys the record by its
+  // place in the unit axis, not by the client's index.
+  trackedEntityId: zfd.text(z.string().optional()),
   jobOperationStepId: z.string(),
   value: zfd.text(z.string().optional()),
   numericValue: zfd.numeric(z.number().optional()),
@@ -311,24 +314,34 @@ export const completeJobOperationBatchValidator = z.object({
     .min(1)
 });
 
+/** A rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
+/** The correction a rework target names, or null for an earlier operation. */
+export function correctionIdOfTarget(target: string) {
+  return target.startsWith(CORRECTION_TARGET_PREFIX)
+    ? target.slice(CORRECTION_TARGET_PREFIX.length)
+    : null;
+}
+
 export const triggerReworkValidator = z.object({
   jobId: z.string().min(1),
   triggeredAtJobOperationId: z.string().min(1),
   targetJobOperationId: z
     .string()
-    .min(1, { message: "Target operation is required" }),
+    .min(1, { message: "Target operation is required" })
+    .refine((target) => correctionIdOfTarget(target) !== "", {
+      message: "Choose a correction"
+    }),
   reason: z.string().min(1, { message: "Reason is required" }),
   quantity: zfd.numeric(
     z.number().positive({ message: "Quantity must be greater than 0" })
   ),
-  trackedEntityIds: zfd.text(z.string().optional()),
+  trackedEntityIds: zfd.json(z.array(z.string()).optional()),
   // Provenance link when the rework was triggered by an inspection
   // disposition (stamped on the Rework productionQuantity row).
   inspectionId: zfd.text(z.string().optional())
 });
-
-/** A disposition rework target naming a correction instead of an operation. */
-export const CORRECTION_TARGET_PREFIX = "correction:";
 
 export const triggerCorrectionValidator = z.object({
   jobId: z.string().min(1),
@@ -443,11 +456,17 @@ export const scrapPartsValidator = z.object({
   idempotencyKey: z.string().min(1)
 });
 
-export const materialRequestValidator = z.object({
-  jobOperationId: z.string().min(1),
-  itemId: zfd.text(z.string().optional()),
-  note: zfd.text(z.string().optional())
-});
+export const materialRequestValidator = z
+  .object({
+    jobOperationId: z.string().min(1),
+    itemId: zfd.text(z.string().optional()),
+    note: zfd.text(z.string().trim().optional())
+  })
+  // A UI hint: createMaterialRequest enforces it.
+  .refine((request) => request.itemId || request.note, {
+    path: ["note"],
+    message: "Describe what you need"
+  });
 
 export const maintenanceDispatchIssueValidator = z.object({
   maintenanceDispatchItemId: z.string().min(1, {

@@ -27,7 +27,7 @@ import type { InvoiceLinePostedAccount } from "~/modules/invoicing/invoicing.ser
 type ChangeInvoiceLineAccountProps = {
   action: string;
   currentAccountPath: string;
-  accountClass: AccountClass;
+  accountClasses: readonly AccountClass[];
 };
 
 type PostedAccountResult =
@@ -39,7 +39,7 @@ type PostedAccountResult =
 export function ChangeInvoiceLineAccount({
   action,
   currentAccountPath,
-  accountClass
+  accountClasses
 }: ChangeInvoiceLineAccountProps) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -92,7 +92,7 @@ export function ChangeInvoiceLineAccount({
               failed={current.isError}
             />
             <AccountControlled
-              classes={[accountClass]}
+              classes={accountClasses}
               value={accountId}
               onChange={setAccountId}
               placeholder={t`Select an account`}

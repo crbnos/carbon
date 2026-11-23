@@ -78,6 +78,10 @@ import Location from "./Location";
 import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
+import PartNumberDisplay, {
+  type PartNumberParty,
+  usePartNumberDisplayOptions
+} from "./PartNumberDisplay";
 import PaymentTerm from "./PaymentTerm";
 import Procedure from "./Procedure";
 import Process from "./Process";
@@ -103,6 +107,7 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import TaxCode, { useTaxCodes } from "./TaxCode";
 import { TaxFields, useTaxPair } from "./TaxFields";
 import Timezone from "./Timezone";
 import Tool from "./Tool";
@@ -176,6 +181,8 @@ export {
   Number,
   NumberControlled,
   Part,
+  PartNumberDisplay,
+  type PartNumberParty,
   Password,
   PaymentTerm,
   PhoneInput,
@@ -205,6 +212,7 @@ export {
   Suppliers,
   SupplierType,
   Tags,
+  TaxCode,
   TaxFields,
   TextArea,
   TimePicker,
@@ -219,6 +227,8 @@ export {
   useConfigurableItems,
   useEmptyState,
   useLaborCategories,
+  usePartNumberDisplayOptions,
+  useTaxCodes,
   useTaxPair,
   WorkCenter,
   WorkCenters

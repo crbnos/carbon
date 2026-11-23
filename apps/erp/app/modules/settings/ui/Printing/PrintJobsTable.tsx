@@ -46,6 +46,8 @@ type ViewContent = {
   content: string;
   contentType: string;
   printJobId: string;
+  /** The dpi the job's ZPL was drawn for. */
+  dpi: number;
 };
 
 const statusConfig: Record<
@@ -142,10 +144,9 @@ const ExpandedRowContent = memo(({ job }: { job: PrintJob }) => {
 });
 ExpandedRowContent.displayName = "ExpandedRowContent";
 
-function parseZplDimensions(zplContent: string) {
+function parseZplDimensions(zplContent: string, dpi: number) {
   const pwMatch = zplContent.match(/\^PW(\d+)/);
   const llMatch = zplContent.match(/\^LL(\d+)/);
-  const dpi = 203;
   const dpmm = Math.round(dpi / 25.4);
 
   const widthInches = pwMatch
@@ -158,7 +159,7 @@ function parseZplDimensions(zplContent: string) {
   return { dpmm, width: widthInches, height: heightInches };
 }
 
-function ZplPreview({ zpl }: { zpl: string }) {
+function ZplPreview({ zpl, dpi }: { zpl: string; dpi: number }) {
   const { t } = useLingui();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +168,7 @@ function ZplPreview({ zpl }: { zpl: string }) {
   useEffect(() => {
     let revoked = false;
     let objectUrl: string | null = null;
-    const { dpmm, width, height } = parseZplDimensions(zpl);
+    const { dpmm, width, height } = parseZplDimensions(zpl, dpi);
 
     fetch(
       `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`,
@@ -200,7 +201,7 @@ function ZplPreview({ zpl }: { zpl: string }) {
       revoked = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [zpl]);
+  }, [zpl, dpi]);
 
   if (loading) {
     return (
@@ -250,7 +251,8 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
           setViewContent({
             content: data.content,
             contentType: data.contentType as string,
-            printJobId: data.printJobId as string
+            printJobId: data.printJobId as string,
+            dpi: data.dpi
           });
           setIsViewOpen(true);
         }
@@ -470,7 +472,7 @@ const PrintJobsTable = memo((props: PrintJobsTableProps) => {
             </ModalHeader>
             <ModalBody>
               {viewContent.contentType === "zpl" ? (
-                <ZplPreview zpl={viewContent.content} />
+                <ZplPreview zpl={viewContent.content} dpi={viewContent.dpi} />
               ) : viewContent.contentType === "pdf" ? (
                 <iframe
                   src={`data:application/pdf;base64,${viewContent.content}`}

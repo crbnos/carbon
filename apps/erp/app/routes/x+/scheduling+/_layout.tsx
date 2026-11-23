@@ -18,9 +18,7 @@ export const handle: Handle = {
   breadcrumb: msg`Production`,
   to: path.to.production,
   module: "production",
-  // Phones: this route is a section of its module, so it gets the module's
-  // section switcher there (desktop shows no sidebar here, unchanged).
-  compactSidebar: ProductionSections
+  boardSidebar: ProductionSections
 };
 
 export default function SchedulingRoute() {

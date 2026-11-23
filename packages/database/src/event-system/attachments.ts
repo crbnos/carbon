@@ -394,7 +394,10 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   salesInvoiceLine: { events: true, statement: ["broadcast_table_changes"] },
-  salesInvoiceShipment: { events: true },
+  salesInvoiceShipment: {
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   salesOrder: {
     before: ["sync_update_sales_order_exchange_rate"],
     after: ["sync_advance_document_sequence"],
@@ -487,6 +490,18 @@ export const attachments = {
   supplierType: {
     before: ["sync_update_supplier_type_group_name"],
     after: ["sync_create_supplier_type_group"],
+    events: true,
+    statement: ["broadcast_reference_changes"]
+  },
+  // Audited (audit.config.ts): the audit log reaches them only through
+  // these event triggers.
+  taxAuthority: { events: true, statement: ["broadcast_reference_changes"] },
+  taxCode: { events: true, statement: ["broadcast_reference_changes"] },
+  taxCodeComponent: {
+    events: true,
+    statement: ["broadcast_reference_changes"]
+  },
+  taxRegistration: {
     events: true,
     statement: ["broadcast_reference_changes"]
   },

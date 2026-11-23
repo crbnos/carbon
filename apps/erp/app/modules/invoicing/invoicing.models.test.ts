@@ -9,6 +9,7 @@ import {
   memoValidator,
   paymentJournalDifference,
   paymentValidator,
+  purchaseInvoiceRoundingAmount,
   purchaseInvoiceSupplierChange,
   salesInvoiceCustomerChange,
   salesInvoiceLineValidator
@@ -151,6 +152,47 @@ describe("memoValidator", () => {
       memoValidator.safeParse({ ...base, customerId: "cust_1" }).success
     ).toBe(false);
   });
+
+  it("takes the form's net amount and tax code", () => {
+    const { amount: _gross, ...withoutGross } = base;
+    const result = memoValidator.safeParse({
+      ...withoutGross,
+      direction: "Credit",
+      customerId: "cust_1",
+      netAmount: "1000",
+      taxCodeId: "txc_1"
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toMatchObject({
+        netAmount: 1000,
+        taxCodeId: "txc_1"
+      });
+      expect(result.data.amount).toBeUndefined();
+    }
+  });
+
+  it("refuses a memo with neither a net nor a gross amount", () => {
+    const { amount: _gross, ...withoutGross } = base;
+    expect(
+      memoValidator.safeParse({
+        ...withoutGross,
+        direction: "Credit",
+        customerId: "cust_1"
+      }).success
+    ).toBe(false);
+  });
+
+  it("refuses a tax code on a gross amount, which would need tax worked out backwards", () => {
+    expect(
+      memoValidator.safeParse({
+        ...base,
+        direction: "Credit",
+        customerId: "cust_1",
+        taxCodeId: "txc_1"
+      }).success
+    ).toBe(false);
+  });
 });
 
 describe("invoice party change", () => {
@@ -261,5 +303,48 @@ describe("paymentJournalDifference", () => {
   it("is empty when nothing changed", () => {
     const lines = [line("bank", "Bank / Cash", 10)];
     expect(paymentJournalDifference(lines, lines)).toEqual([]);
+  });
+});
+
+describe("purchaseInvoiceRoundingAmount", () => {
+  it("returns the cent that brings a 93.46 invoice to a 93.47 charge", () => {
+    expect(purchaseInvoiceRoundingAmount(93.46, 93.47, 2)).toEqual({
+      amount: 0.01
+    });
+  });
+
+  it("takes a cent off when the invoice is above the charge", () => {
+    expect(purchaseInvoiceRoundingAmount(93.47, 93.46, 2)).toEqual({
+      amount: -0.01
+    });
+  });
+
+  it("is zero when the totals already match", () => {
+    expect(
+      purchaseInvoiceRoundingAmount(75.53 + 5.29 + 12.64, 93.46, 2)
+    ).toEqual({ amount: 0 });
+  });
+
+  it("measures from the total as shown, so a half-unit remainder adds nothing", () => {
+    // 10.125 already shows as 10.13; a 0.01 line would make it 10.14.
+    expect(purchaseInvoiceRoundingAmount(10.125, 10.13, 2)).toEqual({
+      amount: 0
+    });
+  });
+
+  it("allows exactly 100 minor units and refuses more", () => {
+    expect(purchaseInvoiceRoundingAmount(10, 11, 2)).toEqual({ amount: 1 });
+    expect(purchaseInvoiceRoundingAmount(10, 11.01, 2)).toHaveProperty(
+      "refusal"
+    );
+  });
+
+  it("scales the limit to the currency's decimals", () => {
+    expect(purchaseInvoiceRoundingAmount(1000, 1100, 0)).toEqual({
+      amount: 100
+    });
+    expect(purchaseInvoiceRoundingAmount(1000, 1101, 0)).toHaveProperty(
+      "refusal"
+    );
   });
 });

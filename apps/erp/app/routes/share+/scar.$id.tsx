@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toResult } from "@carbon/api/service-fn.server";
+import { toPublicResult } from "@carbon/api/service-fn.server";
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
@@ -45,7 +45,10 @@ import {
   getIssueFromExternalLink,
   scarLinkContext
 } from "~/modules/quality/quality.service";
-import type { IssueActionTask } from "~/modules/quality/types";
+import {
+  type ScarActionTask,
+  scarForSupplier
+} from "~/modules/quality/quality.utils";
 import { TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { getCompany } from "~/modules/settings/settings.service";
@@ -95,8 +98,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     serviceRole,
     externalLink.data.documentId
   );
-  if (!issue.data || issue.data.companyId !== externalLink.data.companyId) {
-    if (issue.data) {
+  if (
+    !issue.data?.nonConformance ||
+    issue.data.companyId !== externalLink.data.companyId
+  ) {
+    if (issue.data && issue.data.companyId !== externalLink.data.companyId) {
       logger.error("SCAR link names an issue of another company", {
         companyId: externalLink.data.companyId,
         externalLinkId: id
@@ -119,14 +125,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     )
   ]);
 
+  // The page is public: only what it shows or posts back goes to the browser.
   return {
     state: IssueState.Valid,
-    data: {
+    data: scarForSupplier({
       issue: issue.data.nonConformance,
       company: company.data,
       supplier: supplier.data,
-      actionTasks: actionTasks.data
-    }
+      actionTasks: actionTasks.data ?? []
+    })
   };
 }
 
@@ -168,12 +175,12 @@ export async function action(args: ActionFunctionArgs) {
 
   const { taskId, status, content } = input.data;
   if (status) {
-    return toResult(
+    return toPublicResult(
       await setScarTaskStatus(ctx, { externalLinkId, taskId, status })
     );
   }
   if (content) {
-    return toResult(
+    return toPublicResult(
       await updateScarTaskNotes(ctx, { externalLinkId, taskId, notes: content })
     );
   }
@@ -221,11 +228,11 @@ function useTaskStatus({
 }: {
   task: {
     id?: string;
-    status: IssueActionTask["status"];
+    status: ScarActionTask["status"];
     supplierId: string | null;
   };
   type: "action" | "approval" | "review";
-  onChange?: (status: IssueActionTask["status"]) => void;
+  onChange?: (status: ScarActionTask["status"]) => void;
 }) {
   const { id } = useParams();
   if (!id) throw new Error("Could not find external quote id");
@@ -236,7 +243,7 @@ function useTaskStatus({
   });
 
   const onOperationStatusChange = useCallback(
-    (taskId: string, status: IssueActionTask["status"]) => {
+    (taskId: string, status: ScarActionTask["status"]) => {
       onChange?.(status);
       submit(
         {
@@ -299,7 +306,7 @@ export function TaskItem({
   type,
   isDisabled = false
 }: {
-  task: IssueActionTask;
+  task: ScarActionTask;
   type: "action" | "review";
   isDisabled?: boolean;
   permissionsOverride?: Permissions;
@@ -398,7 +405,7 @@ export function TaskList({
   tasks,
   isDisabled
 }: {
-  tasks: IssueActionTask[];
+  tasks: ScarActionTask[];
   isDisabled: boolean;
 }) {
   if (tasks.length === 0) return null;
@@ -458,10 +465,7 @@ const Issue = ({ data }: { data: IssueData }) => {
   );
 };
 
-type IssueData = NonNullable<
-  // @ts-expect-error TS2339 - TODO: fix type
-  Awaited<ReturnType<Awaited<ReturnType<typeof loader>>["json"]>>["data"]
->;
+type IssueData = ReturnType<typeof scarForSupplier>;
 
 export default function ExternalQuote() {
   const { state, data } = useLoaderData<typeof loader>();

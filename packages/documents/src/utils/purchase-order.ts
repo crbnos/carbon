@@ -4,12 +4,17 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
+import {
+  formatPartNumber,
+  type PartNumberDisplay,
+  resolvePartNumberDisplay
+} from "./part-number";
 import { withRevisionSuffix } from "./revision";
 
 /**
  * A PO line's title in the purchase order email: the asset name, the
- * description for G/L Account and Comment lines, else the item ID with the
- * supplier's part number in brackets.
+ * description for G/L Account and Comment lines, else the line's part numbers
+ * per its display choice.
  */
 export function getLineDescription(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
@@ -21,18 +26,26 @@ export function getLineDescription(
       return line?.description;
     case "Comment":
       return line?.description;
-    default: {
-      const supplierPartId = getLineSupplierPartId(line);
-      // `itemReadableId` is the view's `readableIdWithRevision` — the only
-      // place the revision reaches the document, so the supplier part number
-      // goes beside it rather than in its place (as the sales order does with
-      // the customer part number).
-      if (!line?.itemReadableId) return supplierPartId;
-      return supplierPartId
-        ? `${line.itemReadableId} (${supplierPartId})`
-        : line.itemReadableId;
-    }
+    default:
+      return getLinePartNumber(
+        line,
+        resolvePartNumberDisplay("purchaseOrderEmail", line?.partNumberDisplay)
+      );
   }
+}
+
+/**
+ * A PO line's part numbers for one display choice: our item ID (with its
+ * revision) and the supplier's number, which carries no revision.
+ */
+export function getLinePartNumber(
+  line: Database["public"]["Views"]["purchaseOrderLines"]["Row"],
+  display: PartNumberDisplay
+) {
+  return formatPartNumber(
+    { ours: line?.itemReadableId, theirs: getLineSupplierPartId(line, null) },
+    display
+  );
 }
 
 /**

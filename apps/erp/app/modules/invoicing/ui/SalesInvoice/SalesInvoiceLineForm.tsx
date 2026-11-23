@@ -67,11 +67,14 @@ import {
   SelectControlled,
   StorageUnit,
   Submit,
+  TaxCode,
   TaxFields,
   useTaxPair
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
@@ -101,6 +104,8 @@ function netUnitPrice(unitPrice: number, discountPoints: number) {
     : 0;
   return unitPrice * (1 - discount / 100);
 }
+
+const SALES_LINE_ACCOUNT_CLASSES = ["Revenue"] as const;
 
 type SalesInvoiceLineFormProps = {
   initialValues: z.infer<typeof salesInvoiceLineValidator> & {
@@ -161,7 +166,11 @@ const SalesInvoiceItemLineForm = ({
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
     currency: { decimalPlaces: number } | null;
+    taxDate: string | null;
   }>(path.to.salesInvoice(invoiceId));
+  // A picked code's rate on the document's date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(routeData?.taxDate ?? companyToday);
 
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
@@ -240,6 +249,10 @@ const SalesInvoiceItemLineForm = ({
     ).amount,
     taxPercent: initialValues.taxPercent ?? 0
   });
+
+  const [itemTaxCodeId, setItemTaxCodeId] = useState(
+    initialValues.taxCodeId ?? ""
+  );
 
   // Tax is charged on the discounted merchandise, so the pair's base takes the
   // NET unit price.
@@ -349,7 +362,7 @@ const SalesInvoiceItemLineForm = ({
       unitOfMeasureCode: "",
       storageUnitId: "",
       taxAmount: 0,
-      taxPercent: 0
+      taxPercent: initialValues.taxPercent ?? 0
     });
   };
 
@@ -369,7 +382,7 @@ const SalesInvoiceItemLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, itemCost(unitCost)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, taxable, itemCost(unitCost)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -404,11 +417,14 @@ const SalesInvoiceItemLineForm = ({
             unitOfMeasureCode: "",
             storageUnitId: "",
             taxAmount: 0,
-            taxPercent: 0
+            taxPercent: initialValues.taxPercent ?? 0
           });
           return;
         }
 
+        // A non-taxable item takes no tax.
+        const isTaxable = item.data?.taxable !== false;
+        if (!isTaxable) setItemTaxCodeId("");
         setItemData((prev) => ({
           ...prev,
           itemId: itemId,
@@ -424,8 +440,10 @@ const SalesInvoiceItemLineForm = ({
               ? "EA"
               : (item.data?.unitOfMeasureCode ?? "EA"),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
-          taxAmount: 0,
-          taxPercent: 0
+          // The rate the line opened with (the document's resolved tax) stays;
+          // useTaxPair re-derives the amount from the new price.
+          taxAmount: isTaxable ? prev.taxAmount : 0,
+          taxPercent: isTaxable ? prev.taxPercent : 0
         }));
 
         if (item.data?.type) {
@@ -603,7 +621,7 @@ const SalesInvoiceItemLineForm = ({
                         invoiceId,
                         initialValues.id!
                       )}
-                      accountClass="Revenue"
+                      accountClasses={SALES_LINE_ACCOUNT_CLASSES}
                     />
                   </CardAction>
                 )}
@@ -888,6 +906,24 @@ const SalesInvoiceItemLineForm = ({
                               costsDisclosure.isOpen ? "" : "hidden"
                             }`}
                           >
+                            <TaxCode
+                              name="taxCodeId"
+                              label={t`Tax Code`}
+                              value={itemTaxCodeId}
+                              onChange={(option) => {
+                                setItemTaxCodeId(option?.value ?? "");
+                                if (!option) return;
+                                // Through the pair, so the amount re-derives
+                                // from the code's rate.
+                                itemTax.onChange(
+                                  taxPairFromPercent(
+                                    itemTax.subtotal,
+                                    taxCodeRateOn(option.value) ?? option.rate,
+                                    currencyDecimals
+                                  )
+                                );
+                              }}
+                            />
                             <TaxFields
                               {...itemTax}
                               amountName="taxAmount"
@@ -1036,6 +1072,18 @@ const SalesInvoiceItemLineForm = ({
                             assetCostsDisclosure.isOpen ? "" : "hidden"
                           }`}
                         >
+                          <TaxCode
+                            name="taxCodeId"
+                            label={t`Tax Code`}
+                            onChange={(option) => {
+                              if (option)
+                                setAssetData((d) => ({
+                                  ...d,
+                                  taxPercent:
+                                    taxCodeRateOn(option.value) ?? option.rate
+                                }));
+                            }}
+                          />
                           <NumberControlled
                             name="taxPercent"
                             label={t`Tax Percent`}

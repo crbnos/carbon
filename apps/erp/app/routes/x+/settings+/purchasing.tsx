@@ -50,12 +50,14 @@ import {
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   settingsToggle,
+  supplierPartNumberDisplaySettingsValidator,
   supplierQuoteNotificationValidator
 } from "~/modules/settings/settings.models";
 import {
   getAccountsPayableBillingAddress,
   getCompanySettings
 } from "~/modules/settings/settings.service";
+import { PartNumbersCard } from "~/modules/settings/ui/PartNumbers/PartNumbersCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -135,6 +137,11 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     .extend({ intent: z.literal("emails") })
     .transform(({ defaultSupplierCc }) => ({
       defaultSupplierCc: defaultSupplierCc ?? []
+    })),
+  supplierPartNumberDisplaySettingsValidator
+    .extend({ intent: z.literal("supplierPartNumberDisplay") })
+    .transform(({ supplierPartNumberDisplay }) => ({
+      supplierPartNumberDisplay
     }))
 ]);
 
@@ -737,6 +744,11 @@ export default function PurchasingSettingsRoute() {
             </ValidatedForm>
           </Card>
         )}
+
+        <PartNumbersCard
+          party="supplier"
+          value={companySettings.supplierPartNumberDisplay}
+        />
 
         <SettingsSectionHeader>
           <Trans>Automatic Updates</Trans>

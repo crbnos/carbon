@@ -202,7 +202,7 @@ Method: Ground
 PAYMENT
 Terms: Net 30
 Description Qty
-WIDGET-100
+WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 10 / 10 EA
 BRACKET-22
@@ -244,9 +244,9 @@ United States
 NOTES
 Please confirm lead times.
 # Description Qty UOM Required Unit Price Net Value Tax Value Total
-1 STEEL-BAR-50
+1 SW-1045-50R
+(STEEL-BAR-50)
 Steel Bar, 50mm
-Supplier Part ID: SW-1045-50R
 Shipping: 5.00
 100 EA Jun 20,
 2026
@@ -398,7 +398,7 @@ Payment Terms: Net 30
 NOTES
 Pricing valid for 30 days.
 Description Qty Unit Price Lead Time Total
-WIDGET-100
+WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 Tax & Fees
 - Tax (6%) 14.70
@@ -408,14 +408,15 @@ Mounting Bracket
 Tax & Fees
 - Tax (6%) 2.88
 4 EA 12.00 7 days 48.00
-ASSEMBLY-HOUSING-AN…
+ASSEMBLY-HOUSING-ANODIZED-…
 Fully machined precision aluminium hous…
 Tax & Fees
 - Tax (6%) 14.40
 2 EA 120.00 21 days 240.00
 Subtotal (USD) 533.00
 Shipping (USD) 0.00
-Taxes (USD) 31.98
+City Tax 2% on 533.00 (USD) 10.66
+State Tax 4% on 533.00 (USD) 21.32
 Total (USD) 564.98
 Acme Manufacturing Co. is registered in United States QUO-001042 Page 1 of 2",
   "TERMS & CONDITIONS
@@ -446,10 +447,11 @@ Customer Ref: PO-88421
 Payment Terms: Net 30
 Shipping: Ground
 Shipping Terms: FOB Origin
+Seller Tax ID: MI-0001234
 NOTES
 Thank you for your business.
 # Description Qty Unit Price Total
-1 WIDGET-100
+1 WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 Tax & Fees
 - Tax (6%) 11.76
@@ -465,8 +467,10 @@ Tax & Fees
 Subtotal (USD) 293.00
 Discount (USD) -49.00
 Add-Ons (USD) 5.00
-Taxes (USD) 14.94
+City Tax 2% on 249.00 (USD) 4.98
+State Tax 4% on 249.00 (USD) 9.96
 Total (USD) 263.94
+Sales tax charged at the combined state and city rate.
 Acme Manufacturing Co. is registered in United States INV-001042 Page 1 of 2",
   "TERMS & CONDITIONS
 Payment due within 30 days. Late payments accrue 1.5% monthly interest.
@@ -496,7 +500,7 @@ Shipping: Ground
 NOTES
 Thank you for your business.
 Description Qty Unit Price Total
-WIDGET-100
+WIDGET-100 (C-100 Rev 3)
 Precision Widget, anodized
 Tax & Fees
 - Tax (6%) 14.70
@@ -509,7 +513,8 @@ Tax & Fees
 4 EA 12.00 56.18
 Subtotal (USD) 293.00
 Add-Ons (USD) 5.00
-Taxes (USD) 17.88
+City Tax 2% on 298.00 (USD) 5.96
+State Tax 4% on 298.00 (USD) 11.92
 Total (USD) 315.88
 Acme Manufacturing Co. is registered in United States SO-001042 Page 1 of 2",
   "TERMS & CONDITIONS

@@ -9,5 +9,6 @@ export { default as PaymentApplyTable } from "./PaymentApplyTable";
 export { default as PaymentDocuments } from "./PaymentDocuments";
 export { default as PaymentForm } from "./PaymentForm";
 export { default as PaymentHeader } from "./PaymentHeader";
+export { default as PaymentPostingNotice } from "./PaymentPostingNotice";
 export { default as PaymentStatus } from "./PaymentStatus";
 export { default as PaymentsTable } from "./PaymentsTable";

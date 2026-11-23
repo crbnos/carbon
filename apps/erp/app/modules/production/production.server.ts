@@ -24,6 +24,7 @@ import {
 import { sql } from "kysely";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import {
   cancelOpenPickingListsForJob,
   issueMaterial,
@@ -50,6 +51,7 @@ import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import {
   inspectionPlanRequired,
+  jobOperationDescriptionNote,
   methodItemType,
   methodType,
   optionalTiptapDoc,
@@ -915,10 +917,12 @@ export const reopenJob = defineServiceFn({
  * Close a completed job.
  *
  * @remarks
- * Only a Completed job can be closed. The status flips to Closed, then
- * whatever is left in WIP for the job is written off as production variance
- * (`close-job`; Provisional before the accounting cutover, Posted after). A
- * failed write-off leaves the job Closed and is returned as `warning`.
+ * Only a Completed job can be closed, and not while an outside processing
+ * order line for it is still to receive (receive it or stop receiving the
+ * line first). The status flips to Closed, then whatever is left in WIP for
+ * the job is written off as production variance (`close-job`; Provisional
+ * before the accounting cutover, Posted after). A failed write-off leaves
+ * the job Closed and is returned as `warning`.
  *
  * @mcp
  */
@@ -927,6 +931,11 @@ export const closeJob = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { jobId }) {
+    const toReceive = await service.outsideProcessingToReceiveRefusal(
+      ctx,
+      jobId
+    );
+    if (toReceive) return toReceive;
     const closed = await service.moveJobStatus(ctx, jobId, {
       from: ["Completed"],
       to: "Closed",
@@ -2863,6 +2872,9 @@ export const deleteJobMaterials = defineServiceFn({
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
 const jobOperationFields = baseJobOperationValidator.extend({
+  description: baseJobOperationValidator.shape.description.describe(
+    jobOperationDescriptionNote
+  ),
   workCenterId: zfd.text(z.string().optional()),
   jobId: z.string(),
   customFields: customFieldsInput
@@ -11096,5 +11108,33 @@ export const createJobDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a job document
+ *
+ * @remarks
+ * A signed link to a file on the job's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `production_getJobDocuments` lists it, or the
+ * name given to `production_createJobDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found. `production_getJobDocuments` also lists the item's files
+ * (`bucket` `parts`) and the sales line's (`opportunity-line`): get those with
+ * `items_getItemDocumentDownloadUrl` and
+ * `sales_getOpportunityLineDocumentDownloadUrl`.
+ *
+ * @mcp read
+ */
+export const getJobDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ jobId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "production" },
+  async run(ctx, { jobId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "job",
+      entityId: jobId,
+      name
+    });
   }
 });

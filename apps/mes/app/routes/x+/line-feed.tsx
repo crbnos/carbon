@@ -14,8 +14,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  Input,
-  toast
+  Input
 } from "@carbon/react";
 import { formatQuantity } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -24,7 +23,6 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   LuArrowRightLeft,
-  LuCheck,
   LuChevronDown,
   LuChevronRight,
   LuExternalLink
@@ -35,6 +33,7 @@ import { DateTime } from "~/components";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
+import { ResolveMaterialRequestButton } from "~/components/ResolveMaterialRequestButton";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
 import { useRealtimeRevalidator, useUser } from "~/hooks";
@@ -1230,7 +1229,9 @@ function StationLine({
         <p className="text-sm text-muted-foreground line-clamp-2">{row.note}</p>
       )}
       {row.materialRequestId && (
-        <ResolveButton materialRequestId={row.materialRequestId} />
+        <ResolveMaterialRequestButton
+          materialRequestId={row.materialRequestId}
+        />
       )}
     </li>
   );
@@ -1318,34 +1319,6 @@ function TransferButton({
         ) : (
           <Trans>Move {quantity}</Trans>
         )}
-      </Button>
-    </fetcher.Form>
-  );
-}
-
-function ResolveButton({ materialRequestId }: { materialRequestId: string }) {
-  const { t } = useLingui();
-  const fetcher = useAction<{ success: boolean; message?: string }>({
-    onError: (data) => toast.error(data.message ?? t`Failed to resolve request`)
-  });
-  const isSubmitting = fetcher.isPending;
-
-  return (
-    <fetcher.Form
-      method="post"
-      action={path.to.lineFeedResolve(materialRequestId)}
-      className="w-full"
-    >
-      <Button
-        type="submit"
-        variant="secondary"
-        size="lg"
-        leftIcon={<LuCheck />}
-        isLoading={isSubmitting}
-        isDisabled={isSubmitting}
-        className="w-full"
-      >
-        <Trans>Resolve</Trans>
       </Button>
     </fetcher.Form>
   );

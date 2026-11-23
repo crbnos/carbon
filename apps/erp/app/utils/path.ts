@@ -387,6 +387,8 @@ export const path = {
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesInvoiceLineAccount: (invoiceId: string, lineId: string) =>
         generatePath(`${api}/sales-invoice/${invoiceId}/${lineId}/account`),
+      salesInvoicePostFacts: (invoiceId: string) =>
+        generatePath(`${api}/sales-invoice/${invoiceId}/post-facts`),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrderDeliveryDate: (orderId: string, line: Record<string, string>) =>
         `${generatePath(`${api}/sales-order/${orderId}/delivery-date`)}?${new URLSearchParams(
@@ -472,6 +474,7 @@ export const path = {
       tableExport: `${api}/table/export`,
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
+      taxCodes: `${api}/accounting/tax-codes`,
       timecard: `${api}/people/timecard`,
       timezones: `${api}/timezones?${build}`,
       unitOfMeasures: `${api}/items/uoms`,
@@ -582,6 +585,7 @@ export const path = {
     billing: `${x}/settings/billing`,
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkReleaseJob: `${x}/job/release`,
+    bulkUpdateCustomers: `${x}/customer/update`,
     bulkUpdateIssue: `${x}/issue/update`,
     bulkUpdateIssueWorkflow: `${x}/issue-workflow/update`,
     bulkUpdateItems: `${x}/items/update`,
@@ -601,6 +605,7 @@ export const path = {
     bulkUpdateShipmentLine: `${x}/shipment/lines/update`,
     bulkUpdateStockTransferLine: `${x}/stock-transfer/lines/update`,
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
+    bulkUpdateSuppliers: `${x}/supplier/update`,
     bulkUpdateTraining: `${x}/training/update`,
     calibrations: `${x}/quality/calibrations`,
     callback: "/callback",
@@ -1170,6 +1175,12 @@ export const path = {
       generatePath(`${x}/purchasing/supplier-stages/delete/${id}`),
     deleteSupplierType: (id: string) =>
       generatePath(`${x}/purchasing/supplier-types/delete/${id}`),
+    deleteTaxAuthority: (id: string) =>
+      generatePath(`${x}/accounting/tax-authorities/delete/${id}`),
+    deleteTaxCode: (id: string) =>
+      generatePath(`${x}/accounting/tax-codes/delete/${id}`),
+    deleteTaxRegistration: (id: string) =>
+      generatePath(`${x}/accounting/tax-registrations/delete/${id}`),
     deleteTimecard: (id: string) =>
       generatePath(`${x}/people/timecard/delete/${id}`),
     deleteToolSupplier: (itemId: string, id: string) =>
@@ -2117,6 +2128,9 @@ export const path = {
     newSupplierStage: `${x}/purchasing/supplier-stages/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTag: `${x}/settings/tags/new`,
+    newTaxAuthority: `${x}/accounting/tax-authorities/new`,
+    newTaxCode: `${x}/accounting/tax-codes/new`,
+    newTaxRegistration: `${x}/accounting/tax-registrations/new`,
     newTimecard: `${x}/people/timecard/new`,
     newTool: `${x}/tool/new`,
     newToolSupplier: (id: string) =>
@@ -2357,6 +2371,8 @@ export const path = {
     purchaseInvoicePost: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/post`),
     purchaseInvoiceRoot: `${x}/purchase-invoice`,
+    purchaseInvoiceRounding: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/rounding`),
     purchaseInvoiceVoid: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/void`),
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),
@@ -2617,6 +2633,8 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/line-order`),
     salesInvoicePost: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/post`),
+    salesInvoiceRecalculateTaxes: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/recalculate-taxes`),
     salesInvoiceSend: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/send`),
     salesInvoiceShipment: (id: string) =>
@@ -2649,6 +2667,8 @@ export const path = {
       generatePath(`${x}/sales-order/${orderId}/${lineId}/job`),
     salesOrderPayment: (id: string) =>
       generatePath(`${x}/sales-order/${id}/payment`),
+    salesOrderRecalculateTaxes: (id: string) =>
+      generatePath(`${x}/sales-order/${id}/recalculate-taxes`),
     salesOrderRelease: (id: string) =>
       generatePath(`${x}/sales-order/${id}/release`),
     salesOrderShipment: (id: string) =>
@@ -2894,6 +2914,16 @@ export const path = {
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
     tags: `${x}/settings/tags`,
+    taxAuthorities: `${x}/accounting/tax-authorities`,
+    taxAuthority: (id: string) =>
+      generatePath(`${x}/accounting/tax-authorities/${id}`),
+    taxCode: (id: string) => generatePath(`${x}/accounting/tax-codes/${id}`),
+    taxCodes: `${x}/accounting/tax-codes`,
+    taxLiability: `${x}/reports/tax-liability`,
+    taxRegistration: (id: string) =>
+      generatePath(`${x}/accounting/tax-registrations/${id}`),
+    taxRegistrations: `${x}/accounting/tax-registrations`,
+    timeAnalysis: `${x}/production/time-analysis`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
     timeSettings: `${x}/settings/time`,

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { asWeekNumbering } from "@carbon/database/sequence-tokens";
 import { validator } from "@carbon/form";
 import {
   Button,
@@ -19,15 +20,20 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare, LuRocket } from "react-icons/lu";
-import type { ActionFunctionArgs } from "react-router";
-import { Link } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import { z } from "zod";
 import { AppBarActions } from "~/components/Layout/Mobile";
 import { SettingsPage } from "~/components/SettingsPage";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import { companyValidator } from "~/modules/settings/settings.models";
+import {
+  companyDetailsValidator,
+  sequenceWeekNumberingValidator
+} from "~/modules/settings/settings.models";
 import type { Company as CompanyType } from "~/modules/settings/types";
 import { CompanyForm } from "~/modules/settings/ui";
+import { WeekNumberingCard } from "~/modules/settings/ui/Company/WeekNumberingCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -36,11 +42,29 @@ export const handle: Handle = {
   to: path.to.company
 };
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const api = await carbon(request);
+  const change = await api.settings.getBaseCurrencyChange({});
+  // Unknown blockers keep the base currency read-only.
+  return { baseCurrencyChange: change.error ? null : change.data };
+}
+
+const companySettingsForm = z.discriminatedUnion("intent", [
+  companyDetailsValidator.extend({ intent: z.literal("about") }),
+  sequenceWeekNumberingValidator.extend({ intent: z.literal("weekNumbering") })
+]);
+
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(companyValidator).request(args);
+  const input = await validator(companySettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.updateCompanyDetails(input.data);
+  if (input.data.intent === "weekNumbering") {
+    return api.settings.updateSequenceSettings({
+      sequenceWeekNumbering: input.data.sequenceWeekNumbering
+    });
+  }
+  const { intent: _intent, ...company } = input.data;
+  const result = await api.settings.updateCompanyDetails(company);
   return respond(args.request, result).redirect(path.to.company, {
     message: "Updated company"
   });
@@ -48,11 +72,15 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function Company() {
   const { t } = useLingui();
+  const { baseCurrencyChange } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{ company: CompanyType }>(
     path.to.authenticatedRoot
   );
 
   const company = routeData?.company;
+  const weekNumbering = asWeekNumbering(
+    useCompanySettings()?.sequenceWeekNumbering
+  );
   if (!company) throw new Error("Company not found");
 
   // Buried reopen entry for a finished implementation hub — only present once the
@@ -72,7 +100,10 @@ export default function Company() {
     postalCode: company.postalCode ?? "",
     countryCode: company.countryCode ?? "",
     timezone: company.timezone ?? "UTC",
-    baseCurrencyCode: company.baseCurrencyCode ?? undefined,
+    // The preview reads the row on every load; the root's company can lag,
+    // and a stale base would save as a change back to it. Without a preview
+    // the field stays empty and the save keeps the stored base.
+    baseCurrencyCode: baseCurrencyChange?.baseCurrencyCode,
     phone: company.phone ?? undefined,
     email: company.email ?? undefined,
     website: company.website ?? undefined
@@ -131,10 +162,14 @@ export default function Company() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* @ts-expect-error */}
-            <CompanyForm company={initialValues} />
+            <CompanyForm
+              // @ts-expect-error
+              company={initialValues}
+              baseCurrencyChange={baseCurrencyChange}
+            />
           </CardContent>
         </Card>
+        <WeekNumberingCard weekNumbering={weekNumbering} />
       </SettingsPage>
     </ScrollArea>
   );

@@ -6,6 +6,7 @@ import { debitSigned } from "@carbon/database/ledger";
 import { describe, expect, it } from "vitest";
 import {
   buildLineAccountChangeLines,
+  buildRoundingJournalLines,
   findInvoiceLinePosition,
   type InvoiceLineLeg,
   LINE_ACCOUNT_CHANGE_PREFIX,
@@ -30,7 +31,8 @@ const CLASSES: Record<string, InvoiceLineLeg["accountClass"]> = {
   [TAX]: "Liability",
   "acc-6000": "Expense",
   "acc-6100": "Expense",
-  "acc-2000": "Liability"
+  "acc-2000": "Liability",
+  "acc-3100": "Equity"
 };
 
 let nextId = 0;
@@ -238,6 +240,36 @@ describe("changing a posted line's account", () => {
     });
   });
 
+  it("moves a G/L Account line's cost from an expense to an equity account", () => {
+    const posted = [
+      leg("acc-6000", 11895.2, { description: "Office Supplies" }),
+      leg("acc-2000", 11895.2, { description: "Accounts Payable" })
+    ];
+    const { lines, legs } = apply(
+      posted,
+      {
+        accountId: "acc-6000",
+        quantity: 1,
+        documentLineReference: null,
+        amount: 11895.2,
+        dimensions: {}
+      },
+      "acc-3100"
+    );
+    // An equity debit stores negative.
+    expect(
+      lines.map(({ accountId, amount }) => ({ accountId, amount }))
+    ).toEqual([
+      { accountId: "acc-6000", amount: -11895.2 },
+      { accountId: "acc-3100", amount: -11895.2 }
+    ]);
+    expect(balances(legs)).toEqual({
+      "acc-6000": 0,
+      "acc-3100": 11895.2,
+      "acc-2000": -11895.2
+    });
+  });
+
   it("finds nothing on an account the line was never posted to", () => {
     expect(
       findInvoiceLinePosition(salesLine("ref-1", 100), salesTarget(PARTS, 100))
@@ -430,5 +462,45 @@ describe("the original posting's period", () => {
     expect(
       lineAccountChangePeriodRefusal({ ...period, closeStatus: "Open" })
     ).toBe(null);
+  });
+});
+
+describe("a posted invoice's rounding journal", () => {
+  const base = (amount: number, accountClass: "Expense" | "Revenue") =>
+    buildRoundingJournalLines({
+      amount,
+      rounding: { accountId: "acc-7105", name: "Rounding", accountClass },
+      payable: {
+        accountId: "acc-2000",
+        accountDefaultRole: null,
+        externalDocumentId: "1116ABUNN-3"
+      },
+      invoiceId: "pi-1",
+      companyId: "co-1",
+      journalLineReference: "ref-1"
+    }).map(({ accountId, amount, description }) => ({
+      accountId,
+      amount,
+      description
+    }));
+
+  it("debits the rounding account and credits payables for a higher total", () => {
+    // Stored natural-signed: an expense debit and a liability credit are positive.
+    expect(base(0.01, "Expense")).toEqual([
+      { accountId: "acc-7105", amount: 0.01, description: "Rounding" },
+      { accountId: "acc-2000", amount: 0.01, description: "Accounts Payable" }
+    ]);
+  });
+
+  it("reverses both legs for a lower total", () => {
+    expect(base(-0.01, "Expense")).toEqual([
+      { accountId: "acc-7105", amount: -0.01, description: "Rounding" },
+      { accountId: "acc-2000", amount: -0.01, description: "Accounts Payable" }
+    ]);
+  });
+
+  it("signs the debit by the rounding account's own class", () => {
+    // A revenue account stores a debit negative.
+    expect(base(0.01, "Revenue")[0]!.amount).toBe(-0.01);
   });
 });

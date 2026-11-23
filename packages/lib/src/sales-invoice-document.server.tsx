@@ -15,11 +15,16 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getBase64Image,
-  getCompanyWithPublicLogos,
+  getCompany,
   renderPdfToBuffer,
-  resolveSections
+  resolveSections,
+  withEmailLogos,
+  withPdfLogos
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
+import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
+
+export { loadTaxSummary };
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -49,22 +54,27 @@ type Client = SupabaseClient<Database>;
  */
 export async function loadSalesInvoiceDocument(args: {
   client: Client;
+  /**
+   * Service-role client for the tax reads, whose RLS needs accounting, sales
+   * or purchasing view, so an invoicing-only reader prints the same tax as the
+   * emailed copy. Pass it only after checking the caller's permission; a
+   * caller that already holds a service-role `client` passes it again.
+   */
+  taxClient: Client;
   companyId: string;
   companyGroupId: string;
   invoiceId: string;
   locale: string;
-  /** Base for public logo URLs (`SUPABASE_URL`). */
-  storageUrl: string;
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
   const {
     client,
+    taxClient,
     companyId,
     companyGroupId,
     invoiceId,
     locale,
-    storageUrl,
     edit
   } = args;
 
@@ -82,7 +92,7 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms,
     templateConfig
   ] = await Promise.all([
-    getCompanyWithPublicLogos(client, companyId, storageUrl),
+    getCompany(client, companyId),
     client.from("companySettings").select("*").eq("id", companyId).single(),
     client
       .from("companyAccountsReceivableBillingAddress")
@@ -262,13 +272,31 @@ export async function loadSalesInvoiceDocument(args: {
     contactEmail: invoiceContact?.data?.contact?.email ?? null
   };
 
-  // `company` (table, logos rewritten to public URLs) stands in for the
-  // `companies` view row the documents type against, as the routes always did.
-  const companyRow = company.data as unknown as SalesInvoicePDFProps["company"];
+  const tax = await loadTaxSummary({
+    taxClient,
+    companyId,
+    invoiceId,
+    company: company.data,
+    salesInvoice: salesInvoice.data,
+    lines: salesInvoiceLines.data ?? [],
+    headerShipping:
+      (salesInvoiceShipment.data?.shippingCost ?? 0) *
+      (salesInvoice.data.exchangeRate ?? 1),
+    currencyDecimals
+  });
+
+  // `company` (the table row) stands in for the `companies` view row the
+  // documents type against, as the routes always did.
+  const pdfCompany = withPdfLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
+  const emailCompany = withEmailLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
   const lines = salesInvoiceLines.data ?? [];
 
   const pdfProps: SalesInvoicePDFProps = {
-    company: companyRow,
+    company: pdfCompany,
     companySettings: companySettings.data,
     locale,
     currencyDecimals,
@@ -292,7 +320,9 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
-    sections
+    sections,
+    partNumberDisplayDraft: edit?.partNumberDisplay,
+    ...tax
   };
 
   // The view types every column nullable; the table's invoiceId never is.
@@ -301,7 +331,7 @@ export async function loadSalesInvoiceDocument(args: {
   return {
     pdfProps,
     email: {
-      company: companyRow,
+      company: emailCompany,
       currencyDecimals,
       salesInvoice: salesInvoice.data,
       salesInvoiceLines: lines,

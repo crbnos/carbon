@@ -8,6 +8,9 @@ paths:
   - "apps/mes/app/routes/x+/line-feed*"
   - "apps/mes/app/utils/traveler.ts"
   - "apps/mes/app/utils/trackedMaterials.ts"
+  - "apps/mes/app/utils/workUnit.ts"
+  - "apps/mes/app/services/work-unit.server.ts"
+  - "apps/mes/app/services/kanban-scan.server.ts"
 ---
 
 # MES Job Operation UI
@@ -39,14 +42,29 @@ redirects kinds it does not serve (no loops).
   `workCenter`, `nonConformanceActions`. `operation` is wrapped with
   `makeDurations(...)` → `OperationWithDetails`. Quantities are reduced into
   `{ scrap, production, rework }`.
-- If serial-tracked and no `?trackedEntityId` is set, the loader **redirects** to the
-  same URL with the last tracked entity appended.
+- On a serial part's **first** operation with no `?trackedEntityId`, the loader
+  redirects to the same URL with the first unit still open there. A later
+  operation gets no redirect, and with no unit in the URL its `materials`
+  carry no unit's scanned inputs (a batch part reads its lot's). See Serial
+  unit selection.
 - The default export passes everything to `<JobOperation key={...} .../>`.
 - **Mutations are separate routes**, not actions on this route. `Controls` posts to
   `path.to.startOperation(id)` (`/x/start/:operationId`) and
   `path.to.endOperation(id)` (`/x/end/:operationId`); rework targets at
   `path.to.reworkTargets(id)`. Start/end routes write `productionEvent` /
-  `productionQuantity` (end calls `finishJobOperation`).
+  `productionQuantity` (end calls `finishJobOperation`). Their bodies are
+  `startOperationByScan` / `endOperationByScan` (`services/kanban-scan.server.ts`);
+  `complete.tsx` and `record.tsx` run `completeOperationQuantity`
+  (`services/complete.server.ts`) and `recordStep` (`services/step-record.server.ts`).
+  Each route authenticates and passes its clients in, so the tests drive them
+  over an in-memory client.
+- **Rework** (`ReworkModal` → `x+/trigger-rework.tsx`): the target list is the
+  earlier operations plus the part's corrections (`rework-targets` returns
+  both). A correction is sent as `correction:<jobCorrectionId>`
+  (`CORRECTION_TARGET_PREFIX`) in `targetJobOperationId`; the route then calls
+  the `trigger-correction` posting instead of `trigger-rework`, with the
+  selected serials. This is how an operator sends a unit to a generic rework
+  station: a correction whose one operation sits at the rework work center.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `x+/scrap.tsx` makes
   ONE `issue` `jobOperationScrap` invoke (replacing the old
   `insertScrapQuantity` + backflush pair) — it records the Scrap
@@ -262,7 +280,11 @@ Space (Start/Pause) or clicks the focused button with its Enter. A scan with no
 Enter or Tab ends after 700 ms of quiet. Ending sooner acted on the first half
 of a paused URL, which is itself a valid link.
 
-- The MES layout opens MES/ERP links. On an operation or assembly page
+- The MES layout opens MES/ERP links. A kanban Create, Start or Link label
+  (`kanbanScanPath`, `~/utils/kanban`) opens its path on this deployment's
+  `ERP_URL`, whatever origin it was printed from; matching the whole origin
+  sent a label printed from another address to the traveler lookup ("Nothing on
+  this page uses that barcode"). On an operation or assembly page
   (`/x/operation/`, `/x/assembly/`) it leaves a traveler link to the page's own
   `useTravelerScan` (see Traveler scan below). `JobOperation` and `AssemblyView`
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
@@ -287,7 +309,7 @@ of a paused URL, which is itself a valid link.
   `itemScanTotals`), and the hook words the toast with `formatQuantity`.
 - **The scan queue** (`useItemScan`, `~/utils/itemScanQueue`, tested). No scan
   may be lost, so a scan made while an issue is in flight waits; scans of one
-  item are sent together as `pieces`. A loading toast shows how many wait.
+  item for one unit are sent together as `pieces`, into that unit. A loading toast shows how many wait.
   The wedge callback returns no promise and sets `whilePending`
   (`useKeyboardWedge`): a pending scan otherwise makes the wedge drop every
   other scan. A refusal drops the waiting scans of that item only; one the
@@ -297,23 +319,29 @@ of a paused URL, which is itself a valid link.
   serial part, a part the job makes, a short lot or a work-center rule opens
   the Issue dialog on the material. The scan also issues while the Issue
   dialog is open, and the dialog then closes. On the assembly page an item
-  scan opens the Issue dialog on the part (each unit takes its own scan). The
-  layout never opens an item link on either page.
+  scan opens the Issue dialog on the part (each unit takes its own scan). On
+  a serial operation with no unit held, neither view issues: it asks for the
+  unit (see Serial unit selection). The layout never opens an item link on
+  either page.
 - The layout sends a raw-id scan to the scan endpoint with a POST
   (`postTravelerScan`), not a fetcher load. A fetcher load is loaded again
   after EVERY action on the page, and acting on each reload reopened the last
   scanned unit's traveler page after each issue.
-- A kanban Complete scan on a serial part completes the unit ON SCREEN:
-  `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
-  `?trackedEntityId` to `end.$operationId` when that unit is still open at the
-  operation. With none, the first operation lets the route take the next unit
-  in order; a later operation opens the serial picker instead, because the
-  route's own pick (first incomplete by `createdAt`) need not be the unit in
-  the operator's hands. The route refuses a named unit already complete there,
-  and at a later operation redirects back onto the completed unit (never a
-  next or spawned one), so the view's held-unit edge (`useOperation`, and
-  `heldEntityRef` in `AssemblyView`) asks for the next scan. A scan through the
-  ERP URL names no unit and still takes the route's pick.
+- A kanban Complete scan on a serial part completes the unit the operator
+  holds: `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the held unit
+  (`useWorkUnit`) to `end.$operationId` when it is still open here. With none,
+  the first operation lets the route take the next unit in order; a later
+  operation asks for the unit instead. The route decides the same way with
+  `resolveWorkUnit` (mode `advance`), so a scan from outside the MES (the ERP
+  kanban card, a printed traveler QR) on a later operation with more than one
+  open unit and no unit named completes nothing: it redirects to the
+  operation with "Select a unit first". It takes the one unit left, and it
+  refuses a named unit already complete there. At a later operation it
+  redirects back onto the completed unit, so the screen asks for the next.
+  The kanban Start scan (`start.$operationId`) resolves in mode `start`
+  before it touches a timer: as `advance`, except that a later operation with
+  several open units and none named starts with no unit, as the in-app Start
+  does.
 - A completion is recorded once per unit. The ERP refuses a serial unit
   already complete on the operation (its `Operation <id>` marker, which also
   hides the unit here). No production row names its unit, so deleting one
@@ -338,6 +366,121 @@ of a paused URL, which is itself a valid link.
   20 s). A kanban start label loads the ERP and then the MES, so without
   this state operators scanned it twice.
 
+## Serial unit selection
+
+The rule: on a later operation of a serial part, every write names a unit
+the operator picked or scanned. It has two owners, one on each side.
+
+**The server: `resolveWorkUnit`** (`services/work-unit.server.ts`, tested by
+value and over an in-memory client). It reads, company-scoped and in one
+query with embeds, whether the operation's make method is serial and whether
+the operation is the first of its make method (no dependency on an operation
+of the same make method; a failed read refuses). It reads the units with their
+operation scope (`getOperationUnitAxis`: `id, status, attributes`, paged past
+PostgREST's 1000-row cap; skipped for `member` with none named and for
+`optional` with none named on a later operation),
+then answers `unit` (with its place in the unit axis),
+`none` (not serial) or `refuse` ("Select a unit first", `SELECT_UNIT_FIRST`,
+with `pickUnit`). A named unit must be one of this make method's, in the
+operation's scope and (except `member`) open here. In `optional` (a timer) a
+named unit that is done here or outside the operation is dropped: the first
+operation then takes the next open unit, a later one names none. With none
+named, the first operation in `advance` mode (the kanban scans) and in
+`optional` takes the next open unit (never a done one: every unit done
+refuses in `advance` and names none in `optional`), and any mode but
+`optional` and `member` takes the one unit left. "Next" and "the one left" read the screens' list
+(`operationUnits`: scope, then quantity); a named unit is checked against the
+whole axis.
+
+| Write | Mode |
+|---|---|
+| `complete.tsx` (`completeOperationQuantity`), `scrap.tsx` (`scrapOperationQuantity`), `rework.tsx`, `issue-tracked-entity.tsx`, `issueScannedItem` (item scan) | `require` |
+| `record.tsx` (`recordStep`): the server keys the record by the unit's axis index, not the client's `index`. A request with no `trackedEntityId` (an older page) names the unit at its `index` on a first operation only (`legacyUnitIndex`) | `require` |
+| `start.$operationId`, `end.$operationId` (kanban scans) | `advance` |
+| `event.tsx` Start (`productionEventAction`, `services/production-event.server.ts`): a timer names a unit only when one is held open; when the server drops the named unit, the toast says the timer runs on the next open unit or on none. Not serial, the id passes through as `lotId` | `optional` |
+| `steps.complete-all.tsx` (`completeAllSteps`, `step-record.server.ts`): the manager override (Production delete permission) records every step left for the held unit, keyed by its axis index like `record.tsx` | `require` |
+| `quality-issue.new.tsx`, `trigger-correction.tsx`, `entity+/…scrap.tsx` (with `?operationId`) | `member` |
+| `unconsume.tsx` (`unconsumeFromUnit`, `issue.server.ts`): the parent, at the material's operation; then `childrenConsumedInto` (one read) refuses parts whose newest Consume did not output that parent | `member` |
+| a traveler claim (`issueTravelerUnit`) | `claim`: on a later operation only the unit on screen or the one left |
+
+Not routed through it, each for a reason (`UNIT_WRITE_ALLOW_LIST`):
+`trigger-rework.tsx`
+(the units are ticked in the dialog), and the inspection lot's disposition and `quality.server.ts` (the
+lot's samples are the units). The `mes-unit-write-resolves-unit` check
+(`@carbon/checks`) fails an MES route or service that writes a unit without
+calling the resolver or being listed; its test lists every unit writer, so a
+new one has to be reviewed.
+
+**The screen: `useWorkUnit`** (`JobOperation/hooks/useWorkUnit.ts`) over the
+pure `serialUnitSelection` and `workUnitReducer` (`~/utils/workUnit`, tested),
+the same for `JobOperation` and `AssemblyView`.
+
+- **The units** are `operationUnits`: those in the operation's scope, capped to
+  its quantity. Both views use the same list, and so does the server for
+  "next" and "the one left". The loaders read it with
+  `getTrackedEntitiesForOperation`, which pages through the same reader as
+  `getOperationUnitAxis` (same order), so the screens and the server agree
+  past 1000 units.
+- **First operation**: units flow in order. The unit is the URL's while it is
+  open, else the next open one. The operation loader redirects to the first
+  open unit; after a completion the next one follows from the reloaded units.
+  A finished unit the operator picks to look back at stays on screen, and no
+  write that needs an open unit names it (`writesBlocked`). A timer started
+  there sends no unit, so it runs on the next open unit.
+- **Later operations**: a unit is held only when the operator picked it (the
+  picker, the unit list, the assembly pager) or scanned its label in this
+  session, or when it is the one unit left. The pick is React state, set in
+  the click or scan handler, so it holds in that render. The URL only mirrors
+  it (history replace), so the loader reads that unit and a refresh lands on
+  it, but a URL unit alone is never held: a refresh, a link, Back or a server
+  redirect asks again. `?scanned` (`TRAVELER_PARAM`, added only to a scan of
+  the unit's own label on another page) is read once when the screen opens,
+  then dropped from the URL.
+- The picker opens while no open unit is held and one is left to pick, until
+  the operator closes it on that state; it opens again when the held unit is
+  done here. "Select a unit" and a scan that needs a unit open it.
+- While no open unit is on screen (`writesBlocked`: none held, or a finished
+  unit looked back at): Complete / Log completed, Scrap, Rework, step
+  records, Complete all steps and issuing are disabled, and no write that
+  needs an open unit names one (`workUnitId` is open units only). Complete
+  stays disabled while the held unit is done here. Paging to a unit in
+  `AssemblyView` picks it.
+- On a later serial operation with no unit on screen, neither view shows any
+  unit's records (`shownRecordIndex`, `~/utils/workUnit`): steps read "not
+  recorded", the steps bar shows none, and the unit counter reads "No unit
+  selected".
+- A finished unit looked back at still takes the `member` writes, which name
+  it (`reviewUnitId`): a quality issue, and Unconsume. The Issue dialog opens
+  on it with `issueBlocked`: Unconsume works, Issue stays disabled with a
+  note.
+- `AssemblyView` shows the unit `useWorkUnit` holds (picked or looked back
+  at), so the steps on screen, their done state, the auto-complete check and
+  the complete-all index are the held unit's. The assembly loader still reads
+  materials for a default unit; the view ignores them while no unit is shown.
+- Scans while no unit is held: an item sticker issues nothing, and the
+  server refuses a part's traveler with `pickUnit`. Both say "Select a unit
+  first" and open the picker. A traveler scan of a unit of this operation
+  picks it and closes the picker (`useTravelerScan`'s `onUnitOpened`). A pick
+  of a unit the screen does not list (`pickEvent` returns null) holds nothing
+  and says "This unit is not part of this operation".
+- Item scans already queued go into the unit held when they were scanned
+  (each queue entry keeps it). When the held unit changes, the scans waiting
+  for the old one are dropped with the "not issued" toast. The Issue dialog
+  opens only on the unit the scan was made for, never while no unit is held
+  (`keepScansForUnit`, `canChooseInDialog`, `~/utils/itemScanQueue`, tested).
+- **Inspection view.** A lot decides its units through Reject / Partial, which
+  name each one. Its action-sheet Scrap and Quality Issue name a serial unit
+  only when one is left open; Scrap is disabled for a serial lot with more.
+- What the server cannot know: whether the operator held the unit a request
+  names. A client that echoes a unit gets past the rule. Tablets on an older
+  bundle still send their old default until they reload.
+- The picker's field takes a unit id, a serial number or a traveler link
+  (Enter or paste).
+- Single-option fields: `Select` and `Combobox` (`@carbon/form`) take
+  `autoSelectSingleOption`, which fills an empty field that has exactly one
+  option. On here: scrap reason, rework target (also the inspection one),
+  rework batch, quality issue type.
+
 ## Traveler scan
 
 A unit's label QR holds its traveler link, `<MES_URL>/x/traveler/<trackedEntityId>`.
@@ -358,16 +501,30 @@ was printed from.
 - **`useTravelerScan`** (`JobOperation/hooks/useTravelerScan.ts`) is the
   traveler wedge on `JobOperation` and `AssemblyView`. It is off while the Issue
   dialog is open and under an ability Block. On `JobOperation` it is also off in
-  batch mode. It loads `x+/traveler.resolve.tsx`, then
-  `travelerScanAction` decides:
-  1. An `Available` unit: the hook issues it into this operation.
-  2. A unit whose target is `Reserved` on this operation's make method opens that unit here, with no issue.
+  batch mode. It posts the code, the operation and the unit on screen
+  (`postTravelerScan`) to `x+/traveler.scan.tsx`, which calls `scanTraveler`
+  (`services/traveler.server.ts`). The server decides:
+  1. A unit of this operation's job opens here, with no issue: the screen
+     picks it (`onUnitOpened`).
+  2. A free part is issued into this operation: into the unit on screen when it
+     needs it, else, on a first operation or a non-serial part, the next unit
+     that does. On a later serial operation only the unit on screen takes it;
+     with none on screen the scan is refused with `pickUnit` and the screen
+     asks for the unit.
   3. Anything else navigates to the traveler route.
-
-  The hook keeps the unit the scan was made for: the operation, the parent
-  unit, the step and the unit number. If any of them changes before the
-  lookup returns, the hook does not issue. It shows "The unit changed. Scan
-  again.".
+- **Later operations of a serial part** (`decideTravelerClaim`,
+  `~/utils/traveler`, tested). Each claim option carries `laterSerial`: its
+  make method is serial and it is not the first operation of it
+  (`readOperationUnitFacts`, `services/work-unit.server.ts`: the rule
+  `resolveWorkUnit` uses, read once for all candidates in `getClaimOptions`;
+  a failed read refuses the scan). Such a claim goes only into a unit the
+  request names. Off the operation page (the layout wedge, a phone camera) no
+  unit is named, so it is never taken without asking: the traveler page shows
+  it with no unit, and its button opens the operation, where the operator
+  picks the unit and scans the part again. A claim's redirect never adds
+  `?scanned`. The issue itself (`issueTravelerUnit`) asks `resolveWorkUnit`
+  (mode `claim`) first, so a later operation's claim goes in only for the
+  unit on screen or the one left, whatever chose it.
 - **Rework scope.** An open operation tells you that a unit is still in
   production only if the operation applies to that unit. An operation with
   `jobOperationTrackedEntity` rows applies only to the units in those rows.
@@ -599,7 +756,7 @@ while its serial or batch materials are not scanned in.
 
 ## Components
 
-- **`JobOperation/JobOperation.tsx`** — large root component (~1700 lines). Holds the
+- **`JobOperation/JobOperation.tsx`** — large root component (~3300 lines). Holds the
   `Tabs`, header/job-info bar, and all detail sections.
 - **`JobOperation/components/Controls.tsx`** — exports `Controls`, `Times`,
   `WorkTypeToggle`, `StartStopButton`, `IconButtonWithTooltip`, `FloatingActionMenu`,
@@ -636,8 +793,8 @@ while its serial or batch materials are not scanned in.
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.
 - `NeedMaterialModal` (Need material, see above).
-- **Hooks:** `hooks/useTravelerScan.ts` (see Traveler scan), `hooks/useOperation.tsx` (modal disclosures, live progress via
-  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection, serial selection),
+- **Hooks:** `hooks/useTravelerScan.ts` (see Traveler scan), `hooks/useWorkUnit.ts` (see Serial unit selection), `hooks/useOperation.tsx` (modal disclosures, live progress via
+  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 
 ## Tabs

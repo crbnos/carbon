@@ -702,7 +702,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
 
-**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed.
+**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed. A branch that adds migrations commits the regenerated `types.ts` and `swagger-docs-schema.ts`: the Database types CI job (`.github/workflows/database-types.yml`) fails when either lags the migrations, so never revert a swagger diff that traces to a migration.
 
 **Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`; any branch running turbo tasks that build `@carbon/database`.
 
@@ -1028,7 +1028,7 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
 
-**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres. `swagger-docs-schema.ts` reads PostgREST: with the stack up, `pnpm generate:swagger`, then `pnpm generate:workflow-catalog`. No build regenerates it, and CI fails when it lags the migrations. `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
 
 **Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
 
@@ -3481,6 +3481,16 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
 
+## Lingui: a string literal with braces inside `<Trans>` loses its braces
+
+**Context:** The sequence forms' week year warning named the tokens in its text: `<Trans>On 1 January 2027 {"%{yy}%{ww}"} gives 2753.</Trans>`.
+
+**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, Biome and `lingui:extract` all pass.
+
+**Rule:** Text that contains `{` or `}` goes into `<Trans>` or `t` as a named variable (`const token = "%{yy}"; … {token}`), which Lingui keeps as a placeholder and fills at runtime. Read the rendered text once after adding such a string.
+
+**Applies to:** any `<Trans>` or `` t` ` `` that quotes sequence tokens, template syntax or JSON.
+
 ## A row stayed off a screen only because a column happened to be null
 
 **Context:** The MES Work Centers board, the ERP Priority board and the API read `get_active_job_operations_by_location`. Both boards group operations into work-center columns.
@@ -3955,6 +3965,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## The license-header fixer skips a file that is not staged
+
+**Context:** Multi-jurisdiction tax (2026-10-17). Two new files were committed with no SPDX header, although the fixer had run before each commit.
+
+**Problem:** `pnpm --filter @carbon/checks license-headers` walks `git ls-files --cached`. An untracked file is outside that walk, so the fixer reports "0 fixed" and the file stays bare. The conformance test then fails later, on someone else's run.
+
+**Rule:** Stage a new source file (`git add`) before you run the license-header fixer, then stage it again after the fixer writes the header.
+
+**Applies to:** every new source file, and `packages/checks/src/sources/license-files.ts`.
 
 ## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
 
@@ -5196,10 +5216,67 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 - **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
 - **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
 
+## A gate on the buttons is not a gate: a rule needs one owner and a list of its writers
+
+- **Context:** On a later operation of a serial part, every write names a unit the operator picked or scanned.
+- **Problem:** The rule was copied into each entry point: buttons, scan hooks, the scan queue, a few routes. Nobody listed the writers, so three review rounds each found another one: a scan hook, the off-page traveler scan, then the kanban end route (and the start route still picked its own unit). The held unit lived only in the URL, which redirects, links, refresh and Back also write, so every fix filtered the URL after the fact and opened a new window. The two screens ran two different copies of the selection logic, and the tests checked helpers, not the routes.
+- **Rule:** Give a rule one owner per side and make a missed writer fail a check. On the server one function decides from the database and every writer calls it before it writes; a conformance check lists the writers and fails one that does not call it (or is not on an allow-list with its reason). On the client one pure decision is computed during render; the operator's pick is state set in the click or scan handler, and the URL only mirrors it. Test the write paths themselves over an in-memory client, and revert each call to see the test go red (not every route has such a test yet). An allow-list reason must be checked by code, not just written down (`unconsume` now checks the parts were consumed into the parent; "a manager override" did not cover writing a unit nobody picked, so complete-all now resolves its unit too). Gate a write by what the server accepts for it: a finished unit blocks `require` writes only, not `member` ones (unconsume, quality issue). The owner's reads, and the screens' reads of the same list, must not depend on PostgREST's 1000-row cap (one paged reader). A new gate must keep an older page's safe requests working: tablets keep the old bundle for hours, so a first-operation step with no unit still uses its index, and a timer naming a finished unit is not refused. When the server changes what a request named, it says so in the toast.
+- **Applies to:** MES `resolveWorkUnit` (`services/work-unit.server.ts`) and its `mes-unit-write-resolves-unit` check, `useWorkUnit` / `serialUnitSelection` (`~/utils/workUnit`) in `JobOperation` and `AssemblyView`, and any future rule on per-unit work.
+
+## A tag that points at a line is cleared by every write that removes the line
+
+- **Context:** A serial unit on a shipment carries `Shipment` and `Shipment Line` in `trackedEntity.attributes`; posting ships the units tagged to the shipment.
+- **Problem:** Deleting a line, deleting the shipment or re-sourcing a Draft removed the lines but left the tags. The post then shipped units no line asked for. A post-time filter hid the stale tag, so a test that checked only after posting still passed when the clear was removed.
+- **Rule:** A tag must name a live record. Every write that deletes or rebuilds the record clears its tags in the same place, and the reader still ignores tags to dead records. Test the clear right after the write, before any reader that would also hide it, and remove the clear once to see the test go red.
+- **Applies to:** `clearShipmentTags` callers (`deleteShipment`, `deleteShipmentLine`, the `create` re-source), `liveShipmentTags`, and any attribute that names another row (`Receipt Line`, `Job Make Method`).
+
+## A job's WIP is not only the lines documented against the job
+
+- **Context:** Finished goods from a job with an outside processing operation came out without the supplier's cost.
+- **Problem:** The receipt of an outside processing purchase order debits WIP with `documentId` = the receipt and the purchase order line in `documentLineReference`. The job completion, `closeJob` and `attachJob` each summed WIP `WHERE documentId = <job>`, so the supplier's cost was never moved to finished goods and never written off. And when the receipt finished the job's last operation, `postReceipt` set the operation Done before it wrote its journal, so the completion that update triggers ran before the debit existed.
+- **Rule:** Read a job's WIP with SQL `job_wip_balance`, never with a `documentId` filter of your own. A reader that cannot call it per job (a set-based read of every job, such as the accounting cutover's per-job WIP items) attributes lines through SQL `job_receipt_line_references`, the rule `job_wip_balance` uses. A posting that can trigger a job completion (any write that sets a `jobOperation` Done) writes its own journal first.
+- **Applies to:** `complete_job_to_inventory`, `closeJob`, `attachJob`, `postReceipt`, `getWorkInProgressItems` (`accounting-cutover/open-items.ts`), and any new reader of a job's cost or writer of a job operation's status.
+
+## A link minted for an API key names its creator, not the key
+
+- **Context:** `generateDownloadToken` signs a `/download/<token>` link for a user; the route re-checks access as that user on every download. For an API key caller, `ctx.auditUserId` is the key's creator.
+- **Problem:** A link without an expiry kept downloading after the key that asked for it was revoked: the creator still had access, and nothing in the token named the key. A link copied into an agent's log or transcript outlived the key.
+- **Rule:** Any link or token minted for an API or MCP caller carries an expiry (`expiresInSeconds`, as `FILE_LINK_SECONDS` sets). Re-checking the named user's access is not enough when that user is not the caller.
+- **Applies to:** `documents_getDocumentDownloadUrl` and any future operation that returns a shareable link, share token or signed URL to an API caller.
+
+## A `NonRetriableError` subclass must keep its name
+
+**Context:** `AssemblerJobError extends NonRetriableError` (`packages/jobs/.../tasks/assembler-client.ts`) set `this.name = "AssemblerJobError"`.
+
+**Problem:** `@carbon/lib` (which creates the Inngest client, so runs the functions) and `@carbon/jobs` resolve different installed copies of `inngest`, so `error instanceof NonRetriableError` is false inside the SDK. Its fallback is `error.name === "NonRetriableError"`, which the rename defeated. Every "give up" error was retried twice, as 500s from `/api/inngest`, before `onFailure` ran.
+
+**Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
+
+**Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
+
+## A trigger that fills a default skips only a backup load
+
+**Context:** The part number display triggers (`20261121061455_supplier-part-number-display.sql` and the customer migration after it) first skipped when `app.sync_in_progress` was set, so the dataset apply could stamp the seeded lines itself. Then they skipped `app.dataset_apply`, and a TypeScript helper stamped the seeded lines after the tiers.
+
+**Problem:** `app.sync_in_progress` is also the accounting sync's flag (`withTriggersDisabled`, `@carbon/ee/accounting`). The Xero purchase order pull deletes and re-inserts every line under it, so every synced line came back with no display choice and no copy of the supplier part number. The `app.dataset_apply` skip needed a second copy of the trigger's rule in TypeScript, and that helper's company-wide UPDATE stamped a real company's legacy lines on a dev seed without a wipe.
+
+**Rule:** A trigger that fills a default for a new row skips only `app.backup_load`: a restore brings its own values. Let it run during a dataset apply: the tiers insert parents before children, so it gives seeded rows the values it gives any row. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
+
+**Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.
+
+## `pg_temp.allows` cannot see a policy's role list
+
+**Context:** `authz-pieces.test.sql` evaluates a policy with `pg_temp.allows(table, command, clause, row)`, which reads the policy's `USING` or `WITH CHECK` text from `pg_policies` and runs it as the current role.
+
+**Problem:** It ignores `pg_policies.roles`. `exchangeRate` kept API keys out with `TO authenticated USING (true)`, so an `allows('exchangeRate', …)` assertion made as `anon` passed against the old policy: the test could not fail.
+
+**Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
+
+**Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
 ## A nullable enum must list null, or the API refuses the null its type allows
 
 - **Context:** The generator publishes each operation's input as JSON Schema, and the API validates every call with `z.fromJSONSchema` (`jsonSchemaInput`).
 - **Problem:** A nullable string-literal union was published as `{ "type": ["string", "null"], "enum": [...] }`. The validator checks `enum` apart from `type`, so it refused `null` although the operation's own zod input took it. Update inputs typed `.optional()` refused `null` before the operation ran. An API or MCP caller could not clear a field the app's form clears.
 - **Rule:** A nullable enum lists `null` in `enum` (`unionToJsonSchema` does this). An update's optional field over a nullable column is `.nullable().optional()`. Test a clear by sending `null` through `jsonSchemaInput`, not only through the zod input.
 - **Applies to:** `scripts/lib/response-schema.ts`, every published update or upsert operation.
-

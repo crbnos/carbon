@@ -38,6 +38,10 @@ export const path = {
           `${api}/issue-inventory-bins?itemId=${itemId}&operationId=${operationId}`
         ),
       loginVerifyCode: `${api}/login/verify-code`,
+      materialRequestCatalog: (search: string) =>
+        `${api}/material-request/catalog?${new URLSearchParams({ search })}`,
+      materialRequestJobItems: (jobOperationId: string) =>
+        `${api}/material-request/job-items?${new URLSearchParams({ jobOperationId })}`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelDownload: (modelUploadId: string) =>
@@ -239,6 +243,7 @@ export const path = {
       generatePath(`${x}/manual-inspection/${id}`),
     manualPrint: `${x}/print`,
     materialRequestNew: `${x}/material-request/new`,
+    materialRequests: `${x}/material-requests`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
@@ -267,9 +272,18 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+    scrapEntity: (
+      materialId: string,
+      id: string,
+      parentId?: string,
+      operationId?: string
+    ) => {
       const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
-      return parentId ? `${basePath}?parentId=${parentId}` : basePath;
+      const search = new URLSearchParams();
+      if (parentId) search.set("parentId", parentId);
+      if (operationId) search.set("operationId", operationId);
+      const query = search.toString();
+      return query ? `${basePath}?${query}` : basePath;
     },
     scrapParts: (operationId: string) =>
       generatePath(`${x}/scrap-parts/${operationId}`),

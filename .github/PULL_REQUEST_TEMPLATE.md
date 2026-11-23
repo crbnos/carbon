@@ -1,42 +1,33 @@
-## What does this PR do?
+<!--
+Keep it short: no preamble, brief prose. Use Carbon's domain terms (docs/content/src/glossary).
+Link the issue if there is one: Closes #1234
+-->
 
-<!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change. -->
+## Summary
 
-- Fixes #XXXX (GitHub issue number)
+<!--
+The smallest view that makes the change clear. Usually one of:
+- pseudocode for logic
+- a call tree for control flow
+- a component tree for UI structure
+- a shallow file tree for a refactor
+- a Mermaid diagram for data flow between parts
+- a ```diff of any of the above, when the point is what changed
+-->
 
-## Visual Demo (For contributors especially)
+## Evidence
 
-A visual demonstration is strongly recommended, for both the original and new change **(video / image - any one)**.
+<!-- Show it works. Screenshots are best for UI changes; otherwise a test run or console output. Name the test that failed before and passes now. -->
 
-#### Video Demo (if applicable):
+- **Before:**
+  **After:**
 
-- Show screen recordings of the issue or feature.
-- Demonstrate how to reproduce the issue, the behavior before and after the change.
+## Merge Danger
 
-#### Image Demo (if applicable):
+<!-- Two-way door: cheap to roll back. One-way door: hard to undo (migrations that drop or rewrite data, public API changes, destructive actions). -->
 
-- Add side-by-side screenshots of the original and updated change.
-- Highlight any significant change(s).
+**Door:** <!-- one-way / two-way -->
 
-## Mandatory Tasks (DO NOT REMOVE)
+**Blast Radius:** <!-- one word: e.g. none, local, module, app-wide -->
 
-- [ ] I have self-reviewed the code (A decent size PR without self-review might be rejected).
-- [ ] I confirm automated tests are in place that prove my fix is effective or that my feature works.
-
-## How should this be tested?
-
-<!-- Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration. Write details that help to start the tests -->
-
-- Are there environment variables that should be set?
-- What are the minimal test data to have?
-- What is expected (happy path) to have (input and output)?
-- Any other important info that could help to test that PR
-
-## Checklist
-
-<!-- Remove bullet points below that don't apply to you -->
-
-- I haven't read the [contributing guide](https://github.com/crbnos/carbon/blob/main/.github/CONTRIBUTING.md)
-- My code doesn't follow the style guidelines of this project
-- I haven't commented my code, particularly in hard-to-understand areas
-- I haven't checked if my changes generate no new warnings
+<!-- Optional: what could break if this is wrong (consumers, layout, mobile, other modules). -->

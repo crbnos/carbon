@@ -204,7 +204,9 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
     itemId: "a",
     assetId: null,
     purchaseUnitOfMeasureCode: "EA",
-    conversionFactor: 1
+    conversionFactor: 1,
+    jobId: "job_1",
+    jobOperationId: "op_1"
   };
 
   it.each([
@@ -212,7 +214,11 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
     { itemId: "b" },
     { assetId: "fa_1" },
     { purchaseUnitOfMeasureCode: "BX" },
-    { conversionFactor: 10 }
+    { conversionFactor: 10 },
+    { jobId: "job_2" },
+    { jobId: null },
+    { jobOperationId: "op_2" },
+    { jobOperationId: null }
   ])("keeps a received line's %o", (edit) => {
     expect(purchaseOrderLineAmendRefusal(received, 5, edit)).not.toBeNull();
   });
@@ -222,7 +228,9 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
       purchaseOrderLineAmendRefusal(received, 5, {
         itemId: "a",
         purchaseUnitOfMeasureCode: "EA",
-        conversionFactor: 1
+        conversionFactor: 1,
+        jobId: "job_1",
+        jobOperationId: "op_1"
       })
     ).toBeNull();
   });
@@ -330,6 +338,28 @@ describe("planPurchaseOrderRestore", () => {
         line({ id: "l2", quantityReceived: 1 })
       ])
     ).toEqual({ restorable: false });
+  });
+
+  it("puts back the tax code with its rate and amount", () => {
+    const plan = planPurchaseOrderRestore(
+      {
+        ...version,
+        lines: [
+          {
+            id: "l1",
+            taxCodeId: "vat20",
+            taxPercent: 0.2,
+            supplierTaxAmount: 16
+          }
+        ]
+      },
+      [line()]
+    );
+    expect(plan.restorable && plan.updates[0]!.data).toEqual({
+      taxCodeId: "vat20",
+      taxPercent: 0.2,
+      supplierTaxAmount: 16
+    });
   });
 
   it("writes only the columns a version may restore", () => {

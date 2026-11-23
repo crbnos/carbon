@@ -240,6 +240,9 @@ msgstr "{onHand} of {need}"
 msgid "{onHand} on hand · covers {covers} of {demand}"
 msgstr "{onHand} on hand · covers {covers} of {demand}"
 
+msgid "{open} open"
+msgstr "{open} open"
+
 msgid "{quantity} in this operation"
 msgstr "{quantity} in this operation"
 
@@ -249,6 +252,9 @@ msgstr "{quantity} used in this operation"
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} jobs"
+
+msgid "{scrapped} scrapped"
+msgstr "{scrapped} scrapped"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} in stock, in no bin"
@@ -988,6 +994,9 @@ msgstr "Density"
 msgid "Depot"
 msgstr "Depot"
 
+msgid "Describe it: what, how many, where"
+msgstr "Describe it: what, how many, where"
+
 msgid "Describe the problem..."
 msgstr "Describe the problem..."
 
@@ -1216,6 +1225,9 @@ msgstr "Failed to fetch storageUnits"
 msgid "Failed to get options"
 msgstr "Failed to get options"
 
+msgid "Failed to load material requests"
+msgstr "Failed to load material requests"
+
 msgid "Failed to process image"
 msgstr "Failed to process image"
 
@@ -1319,6 +1331,9 @@ msgstr "Fix the highlighted quantities before completing."
 msgid "Flag issue"
 msgstr "Flag issue"
 
+msgid "Flow chart view"
+msgstr "Flow chart view"
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
@@ -1330,6 +1345,9 @@ msgstr "Gauge for characteristic {characteristicLabel}: {currentGauge}"
 
 msgid "General"
 msgstr "General"
+
+msgid "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
+msgstr "Go back to an earlier operation to redo every operation from there, or send the unit through a correction, such as a rework station."
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
@@ -1388,6 +1406,9 @@ msgstr "How Carbon looks in this browser."
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
+
+msgid "How many, where, anything the feeder should know"
+msgstr "How many, where, anything the feeder should know"
 
 msgid "How many?"
 msgstr "How many?"
@@ -1703,6 +1724,9 @@ msgstr "Log Completed"
 msgid "Log completed for {0}"
 msgstr "Log completed for {0}"
 
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr "Log completed for {trackedEntityReadableId}"
+
 msgid "Log Rework"
 msgstr "Log Rework"
 
@@ -1801,6 +1825,9 @@ msgstr "matches"
 
 msgid "Material requested"
 msgstr "Material requested"
+
+msgid "Material requests"
+msgstr "Material requests"
 
 msgid "Materials"
 msgstr "Materials"
@@ -2018,6 +2045,9 @@ msgstr "No open inspections"
 msgid "No open jobs"
 msgstr "No open jobs"
 
+msgid "No open material requests"
+msgstr "No open material requests"
+
 msgid "No open service jobs at this location"
 msgstr "No open service jobs at this location"
 
@@ -2114,6 +2144,9 @@ msgstr "No time entries for this week"
 msgid "No unit"
 msgstr "No unit"
 
+msgid "No unit selected"
+msgstr "No unit selected"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -2149,6 +2182,9 @@ msgstr "Normal"
 
 msgid "Not in this operation"
 msgstr "Not in this operation"
+
+msgid "Not on the list: describe it below"
+msgstr "Not on the list: describe it below"
 
 msgid "Not scheduled"
 msgstr "Not scheduled"
@@ -2268,6 +2304,9 @@ msgstr "Open Jobs"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Open sub-assembly {0}: {1}"
+
+msgid "Open the operation to pick the unit"
+msgstr "Open the operation to pick the unit"
 
 msgid "Operation"
 msgstr "Operation"
@@ -2425,6 +2464,12 @@ msgstr "Pick {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "Pick a style, a color and a face."
+
+msgid "Pick an open unit to issue parts."
+msgstr "Pick an open unit to issue parts."
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Pick the job. It shows with no hours until you add some."
@@ -2789,9 +2834,6 @@ msgstr "Return part"
 msgid "Rework"
 msgstr "Rework"
 
-msgid "Rework created successfully"
-msgstr "Rework created successfully"
-
 msgid "Rework quantity"
 msgstr "Rework quantity"
 
@@ -2866,9 +2908,6 @@ msgstr "Scan or search serial number..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "Scan or select the unit, then scan the kanban card again"
 
 msgid "Scan received"
 msgstr "Scan received"
@@ -2972,6 +3011,9 @@ msgstr "Search operators"
 msgid "Search operators..."
 msgstr "Search operators..."
 
+msgid "Search parts, consumables and tools"
+msgstr "Search parts, consumables and tools"
+
 msgid "Search projects and tasks"
 msgstr "Search projects and tasks"
 
@@ -3002,6 +3044,9 @@ msgstr "Select a completion quantity"
 msgid "Select a customer"
 msgstr "Select a customer"
 
+msgid "Select a location to see its material requests"
+msgstr "Select a location to see its material requests"
+
 msgid "Select a location to see its stations"
 msgstr "Select a location to see its stations"
 
@@ -3013,6 +3058,12 @@ msgstr "Select a scrap quantity and reason"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Select a serial number to continue with this operation"
+
+msgid "Select a unit"
+msgstr "Select a unit"
+
+msgid "Select a unit first"
+msgstr "Select a unit first"
 
 msgid "Select an issue type"
 msgstr "Select an issue type"
@@ -3219,6 +3270,9 @@ msgstr "Soft deadline"
 msgid "Solid"
 msgstr "Solid"
 
+msgid "Something else"
+msgstr "Something else"
+
 msgid "Source"
 msgstr "Source"
 
@@ -3420,6 +3474,9 @@ msgstr "The jobs make different items — keep each job's parts apart."
 msgid "the kit"
 msgstr "the kit"
 
+msgid "The list failed to load. You can still describe what you need."
+msgstr "The list failed to load. You can still describe what you need."
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 
@@ -3478,11 +3535,17 @@ msgstr "This inspection plan has no work instructions."
 msgid "This is a pass / fail check. Press P or F."
 msgstr "This is a pass / fail check. Press P or F."
 
+msgid "This job"
+msgstr "This job"
+
 msgid "This job does not use that part"
 msgstr "This job does not use that part"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "This job has no bill rate. Ask the office to set it before the time is billed."
+
+msgid "This job has no operations"
+msgstr "This job has no operations"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "This label does not belong to a unit in this company"
@@ -3510,6 +3573,12 @@ msgstr "This stops your clock and posts the job's time. The job can no longer ch
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+
+msgid "This unit is complete here"
+msgstr "This unit is complete here"
+
+msgid "This unit is not part of this operation"
+msgstr "This unit is not part of this operation"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "This unit will be permanently scrapped and a replacement unit will be created."
@@ -3708,6 +3777,9 @@ msgstr "Unsaved changes"
 
 msgid "Until <0/>"
 msgstr "Until <0/>"
+
+msgid "Untitled"
+msgstr "Untitled"
 
 msgid "Up next"
 msgstr "Up next"
