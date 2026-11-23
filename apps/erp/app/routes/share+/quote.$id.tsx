@@ -85,12 +85,12 @@ import { externalQuoteValidator } from "~/modules/sales/sales.models";
 import {
   getFinalizedQuotePdf,
   getOpportunity,
-  getQuoteByExternalId,
   getQuoteCustomerDetails,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
   getSalesTerms,
+  getSharedQuote,
   isExternalQuoteExpired
 } from "~/modules/sales/sales.service";
 import {
@@ -127,16 +127,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const quote = await getQuoteByExternalId(serviceRole, id);
+  const quote = await getSharedQuote(serviceRole, id);
 
-  if (quote.error) {
+  if (!quote) {
     return {
       state: QuoteState.NotFound,
       data: null
     };
   }
 
-  if (isExternalQuoteExpired(quote.data)) {
+  if (isExternalQuoteExpired(quote)) {
     return {
       state: QuoteState.Expired,
       data: null
@@ -157,18 +157,18 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     opportunity,
     finalizedPdf
   ] = await Promise.all([
-    getCompany(serviceRole, quote.data.companyId),
-    getCompanySettings(serviceRole, quote.data.companyId),
-    getQuoteLines(serviceRole, quote.data.id),
-    getQuoteLinePricesByQuoteId(serviceRole, quote.data.id),
-    getQuoteCustomerDetails(serviceRole, quote.data.id),
-    getQuotePayment(serviceRole, quote.data.id),
-    getQuoteShipment(serviceRole, quote.data.id),
-    getPaymentTermsList(serviceRole, quote.data.companyId),
-    getSalesTerms(serviceRole, quote.data.companyId),
-    getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunity(serviceRole, quote.data.opportunityId),
-    getFinalizedQuotePdf(serviceRole, quote.data)
+    getCompany(serviceRole, quote.companyId),
+    getCompanySettings(serviceRole, quote.companyId),
+    getQuoteLines(serviceRole, quote.id),
+    getQuoteLinePricesByQuoteId(serviceRole, quote.id),
+    getQuoteCustomerDetails(serviceRole, quote.id),
+    getQuotePayment(serviceRole, quote.id),
+    getQuoteShipment(serviceRole, quote.id),
+    getPaymentTermsList(serviceRole, quote.companyId),
+    getSalesTerms(serviceRole, quote.companyId),
+    getShippingMethodsList(serviceRole, quote.companyId),
+    getOpportunity(serviceRole, quote.opportunityId),
+    getFinalizedQuotePdf(serviceRole, quote)
   ]);
 
   // A No Quote line is the company's own decision not to bid — the customer
@@ -233,7 +233,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   // Anyone holding the share link receives this payload, so it carries only
   // what the page renders — never whole rows (unit cost, price trace, pricing
   // rule, category markups, internal notes, notification groups…).
-  const { internalNotes: _internalNotes, ...publicQuote } = quote.data;
+  const { internalNotes: _internalNotes, ...publicQuote } = quote;
 
   return {
     state: QuoteState.Valid,
