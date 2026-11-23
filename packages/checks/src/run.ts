@@ -71,6 +71,7 @@ import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
+import { noSilentTestPass } from "./conformance/no-silent-test-pass";
 import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnmountingDialog } from "./conformance/no-unmounting-dialog";
@@ -168,7 +169,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
 /** Checks that run over git-tracked vitest files (apps, packages, scripts, docs). */
 export const TEST_CHECKS: ConformanceCheck[] = [
   testReadsSource,
-  testMocksOwnModule
+  testMocksOwnModule,
+  noSilentTestPass
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
