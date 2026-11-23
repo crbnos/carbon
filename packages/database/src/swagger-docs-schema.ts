@@ -277,6 +277,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractLine.parentLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -459,6 +462,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractLine.parentLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -593,6 +599,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContractLine.parentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.taxCodeId"
           },
           {
             $ref: "#/parameters/body.customerContractLine"
@@ -3709,6 +3718,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.sortOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLine.partNumberDisplay"
           },
           {
@@ -3864,6 +3876,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.sortOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLine.partNumberDisplay"
           },
           {
@@ -3971,6 +3986,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.taxCodeId"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.partNumberDisplay"
@@ -6103,6 +6121,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -6183,6 +6204,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -6215,6 +6239,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerLocation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerLocation.taxCodeId"
           },
           {
             $ref: "#/parameters/body.customerLocation"
@@ -19057,6 +19084,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreements.invoiceAutomation"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreements.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.rentalAgreements.customerName"
           },
           {
@@ -22030,6 +22060,12 @@ export default {
             $ref: "#/parameters/rowFilter.memo.rentalAgreementId"
           },
           {
+            $ref: "#/parameters/rowFilter.memo.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -22176,6 +22212,12 @@ export default {
             $ref: "#/parameters/rowFilter.memo.rentalAgreementId"
           },
           {
+            $ref: "#/parameters/rowFilter.memo.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -22274,6 +22316,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.memo.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.memo.taxCodeId"
           },
           {
             $ref: "#/parameters/body.memo"
@@ -24889,6 +24937,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreement.invoiceAutomation"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreement.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -25044,6 +25095,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreement.invoiceAutomation"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreement.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -25151,6 +25205,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreement.invoiceAutomation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreement.taxCodeId"
           },
           {
             $ref: "#/parameters/body.rentalAgreement"
@@ -35139,6 +35196,177 @@ export default {
         tags: ["contractorAbility"]
       }
     },
+    "/taxAuthority": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/taxAuthority"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["taxAuthority"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.taxAuthority"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["taxAuthority"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxAuthority"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxAuthority.customFields"
+          },
+          {
+            $ref: "#/parameters/body.taxAuthority"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxAuthority"]
+      }
+    },
     "/trainingCompletion": {
       get: {
         parameters: [
@@ -35638,6 +35866,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierTax.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierTax.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -35730,6 +35961,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierTax.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierTax.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -35774,6 +36008,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierTax.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierTax.taxCodeId"
           },
           {
             $ref: "#/parameters/body.supplierTax"
@@ -39347,6 +39584,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.leasePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxCodeId"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath"
@@ -46819,6 +47062,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.invoiceSeparately"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -46923,6 +47169,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.invoiceSeparately"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -46979,6 +47228,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.invoiceSeparately"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.taxCodeId"
           },
           {
             $ref: "#/parameters/body.rentalAgreementCharge"
@@ -48064,6 +48316,204 @@ export default {
           }
         },
         tags: ["peopleAbsence"]
+      }
+    },
+    "/taxRegistration": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.registrationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/taxRegistration"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["taxRegistration"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.taxRegistration"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["taxRegistration"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.registrationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxRegistration"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.registrationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxRegistration.customFields"
+          },
+          {
+            $ref: "#/parameters/body.taxRegistration"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxRegistration"]
       }
     },
     "/depreciationRunLine": {
@@ -51661,6 +52111,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51882,6 +52335,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -52055,6 +52511,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -52270,10 +52729,10 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.payablesAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.salesTaxPayableAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.taxReceivedAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.purchaseTaxPayableAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.taxPaidAccount"
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.reverseChargeSalesTaxPayableAccount"
@@ -52557,10 +53016,10 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.payablesAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.salesTaxPayableAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.taxReceivedAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.purchaseTaxPayableAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.taxPaidAccount"
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.reverseChargeSalesTaxPayableAccount"
@@ -52798,10 +53257,10 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.payablesAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.salesTaxPayableAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.taxReceivedAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.purchaseTaxPayableAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.taxPaidAccount"
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.reverseChargeSalesTaxPayableAccount"
@@ -57418,6 +57877,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57588,6 +58050,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57710,6 +58175,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLineVersion.taxCodeId"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLineVersion"
@@ -64114,6 +64582,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectElementId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -64308,6 +64779,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectElementId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -64454,6 +64928,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxCodeId"
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine"
@@ -65627,6 +66104,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.serviceJobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.taxesShipping"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.partNumberDisplay"
@@ -73554,6 +74037,366 @@ export default {
         tags: ["labelTemplate"]
       }
     },
+    "/taxLedger": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxCodeComponentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.componentName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxAuthorityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.recoverablePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.recoverableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exemptAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentTaxableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentTaxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxExemptionReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exemptionCertificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/taxLedger"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["taxLedger"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.taxLedger"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["taxLedger"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxCodeComponentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.componentName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxAuthorityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.recoverablePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.recoverableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exemptAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentTaxableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentTaxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxExemptionReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exemptionCertificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxLedger"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxCodeComponentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.componentName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxAuthorityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.recoverablePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.recoverableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exemptAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentTaxableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.documentTaxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.taxExemptionReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.exemptionCertificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.taxLedger"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxLedger"]
+      }
+    },
     "/inspectionDocument": {
       get: {
         parameters: [
@@ -79225,6 +80068,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverriddenAt"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.partNumberDisplay"
           },
           {
@@ -83770,6 +84616,9 @@ export default {
             $ref: "#/parameters/rowFilter.printJob.completedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.printJob.dpi"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -83883,6 +84732,9 @@ export default {
             $ref: "#/parameters/rowFilter.printJob.completedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.printJob.dpi"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -83948,6 +84800,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.printJob.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.printJob.dpi"
           },
           {
             $ref: "#/parameters/body.printJob"
@@ -87907,6 +88762,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.sortOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLines.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLines.partNumberDisplay"
           },
           {
@@ -90136,6 +90994,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -90252,6 +91113,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -90320,6 +91184,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxCodeId"
           },
           {
             $ref: "#/parameters/body.supplierQuoteLinePrice"
@@ -93442,6 +94309,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLine.partNumberDisplay"
           },
           {
@@ -93675,6 +94545,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLine.partNumberDisplay"
           },
           {
@@ -93860,6 +94733,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.taxCodeId"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.partNumberDisplay"
@@ -95407,6 +96283,240 @@ export default {
           }
         },
         tags: ["forceDeleteRequest"]
+      }
+    },
+    "/taxCode": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxCode.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.calculationType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.reportingCategory"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.taxesShipping"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.invoiceMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/taxCode"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["taxCode"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.taxCode"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["taxCode"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxCode.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.calculationType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.reportingCategory"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.taxesShipping"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.invoiceMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxCode"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxCode.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.calculationType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.reportingCategory"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.taxesShipping"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.invoiceMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCode.customFields"
+          },
+          {
+            $ref: "#/parameters/body.taxCode"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxCode"]
       }
     },
     "/user": {
@@ -101893,6 +103003,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerTax.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.customerTax.taxCodeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -101985,6 +103098,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerTax.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.customerTax.taxCodeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -102029,6 +103145,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerTax.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerTax.taxCodeId"
           },
           {
             $ref: "#/parameters/body.customerTax"
@@ -102389,6 +103508,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.partNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.taxCodeId"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartIdFromSupplier"
@@ -103408,6 +104530,9 @@ export default {
             $ref: "#/parameters/rowFilter.printerRoute.hasApiKey"
           },
           {
+            $ref: "#/parameters/rowFilter.printerRoute.dpi"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -103497,6 +104622,9 @@ export default {
             $ref: "#/parameters/rowFilter.printerRoute.hasApiKey"
           },
           {
+            $ref: "#/parameters/rowFilter.printerRoute.dpi"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -103538,6 +104666,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.printerRoute.hasApiKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.printerRoute.dpi"
           },
           {
             $ref: "#/parameters/body.printerRoute"
@@ -109774,6 +110905,9 @@ export default {
             $ref: "#/parameters/rowFilter.item.changeOrderId"
           },
           {
+            $ref: "#/parameters/rowFilter.item.taxable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -109914,6 +111048,9 @@ export default {
             $ref: "#/parameters/rowFilter.item.changeOrderId"
           },
           {
+            $ref: "#/parameters/rowFilter.item.taxable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -110006,6 +111143,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.item.changeOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.taxable"
           },
           {
             $ref: "#/parameters/body.item"
@@ -111664,6 +112804,249 @@ export default {
           }
         },
         tags: ["holiday"]
+      }
+    },
+    "/taxCodeComponent": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxAuthorityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.recoverablePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.isCompound"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxReceivedAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxPaidAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/taxCodeComponent"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["taxCodeComponent"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.taxCodeComponent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["taxCodeComponent"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxAuthorityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.recoverablePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.isCompound"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxReceivedAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxPaidAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxCodeComponent"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxAuthorityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.recoverablePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.isCompound"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxReceivedAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.taxPaidAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.expirationDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxCodeComponent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.taxCodeComponent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["taxCodeComponent"]
       }
     },
     "/purchaseOrderForceDeleteRequest": {
@@ -118375,6 +119758,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.serviceJobId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.partNumberDisplay"
           },
           {
@@ -118593,6 +119982,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.serviceJobId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.partNumberDisplay"
           },
           {
@@ -118763,6 +120158,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.serviceJobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.partNumberDisplay"
@@ -141749,6 +143150,10 @@ export default {
         parentLineId: {
           format: "text",
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143265,6 +144670,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
@@ -144123,6 +145532,10 @@ export default {
           type: "array"
         },
         companyId: {
+          format: "text",
+          type: "string"
+        },
+        taxCodeId: {
           format: "text",
           type: "string"
         }
@@ -150062,6 +151475,10 @@ export default {
           format: 'public."invoiceAutomation"',
           type: "string"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         customerName: {
           format: "text",
           type: "string"
@@ -151441,7 +152858,8 @@ export default {
         "amount",
         "companyId",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "taxAmount"
       ],
       properties: {
         id: {
@@ -151581,6 +152999,15 @@ export default {
           type: "string"
         },
         rentalAgreementId: {
+          format: "text",
+          type: "string"
+        },
+        taxAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        taxCodeId: {
           format: "text",
           type: "string"
         }
@@ -153164,6 +154591,10 @@ export default {
             "Post and Send via Stripe"
           ],
           format: 'public."invoiceAutomation"',
+          type: "string"
+        },
+        taxCodeId: {
+          format: "text",
           type: "string"
         }
       },
@@ -157880,6 +159311,56 @@ export default {
       },
       type: "object"
     },
+    taxAuthority: {
+      required: ["id", "companyId", "name", "createdBy", "createdAt"],
+      properties: {
+        id: {
+          default: "public.id('txa'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     trainingCompletion: {
       required: [
         "id",
@@ -158174,6 +159655,10 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        taxCodeId: {
           format: "text",
           type: "string"
         }
@@ -159945,6 +161430,14 @@ export default {
           type: "string"
         },
         leasePaymentId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        taxCodeId: {
           format: "text",
           type: "string"
         },
@@ -163267,6 +164760,10 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -163820,6 +165317,77 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    taxRegistration: {
+      required: [
+        "id",
+        "companyId",
+        "countryCode",
+        "registrationNumber",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('txr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        countryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string"
+        },
+        state: {
+          format: "text",
+          type: "string"
+        },
+        registrationNumber: {
+          format: "text",
+          type: "string"
+        },
+        effectiveDate: {
+          format: "date",
+          type: "string"
+        },
+        endDate: {
+          format: "date",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -165556,6 +167124,10 @@ export default {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -165709,8 +167281,8 @@ export default {
         "bankForeignCurrencyAccount",
         "prepaymentAccount",
         "payablesAccount",
-        "salesTaxPayableAccount",
-        "purchaseTaxPayableAccount",
+        "taxReceivedAccount",
+        "taxPaidAccount",
         "reverseChargeSalesTaxPayableAccount",
         "retainedEarningsAccount",
         "goodsReceivedNotInvoicedAccount",
@@ -165891,13 +167463,13 @@ export default {
           format: "text",
           type: "string"
         },
-        salesTaxPayableAccount: {
+        taxReceivedAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
         },
-        purchaseTaxPayableAccount: {
+        taxPaidAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
@@ -168563,6 +170135,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        taxCodeId: {
+          format: "text",
           type: "string"
         }
       },
@@ -171653,6 +173229,10 @@ export default {
         projectElementId: {
           format: "text",
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -172346,6 +173926,14 @@ export default {
         serviceJobId: {
           format: "text",
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
+        taxesShipping: {
+          format: "boolean",
+          type: "boolean"
         },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
@@ -175773,6 +177361,184 @@ export default {
       },
       type: "object"
     },
+    taxLedger: {
+      required: [
+        "id",
+        "companyId",
+        "source",
+        "documentType",
+        "documentId",
+        "journalId",
+        "postingDate",
+        "taxPercent",
+        "recoverablePercent",
+        "taxableAmount",
+        "taxAmount",
+        "recoverableAmount",
+        "exemptAmount",
+        "documentTaxableAmount",
+        "documentTaxAmount",
+        "selfAssessed",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('txl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        source: {
+          enum: ["Sales", "Purchase"],
+          format: 'public."taxLedgerSource"',
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentLineId: {
+          format: "text",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postingDate: {
+          format: "date",
+          type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
+        taxCodeComponentId: {
+          format: "text",
+          type: "string"
+        },
+        componentName: {
+          format: "text",
+          type: "string"
+        },
+        taxAuthorityId: {
+          format: "text",
+          type: "string"
+        },
+        taxPercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        recoverablePercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        customerId: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        taxableAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        taxAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        recoverableAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        exemptAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        documentTaxableAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        documentTaxAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number"
+        },
+        taxExemptionReason: {
+          enum: [
+            "Resale",
+            "Government",
+            "Nonprofit",
+            "Agriculture",
+            "Industrial",
+            "Export",
+            "Medical",
+            "Educational",
+            "Religious",
+            "Other"
+          ],
+          format: 'public."taxExemptionReason"',
+          type: "string"
+        },
+        exemptionCertificateNumber: {
+          format: "text",
+          type: "string"
+        },
+        selfAssessed: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     inspectionDocument: {
       required: [
         "id",
@@ -178331,6 +180097,10 @@ export default {
           format: "timestamp with time zone",
           type: "string"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
@@ -180524,7 +182294,8 @@ export default {
         "origin",
         "attempts",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "dpi"
       ],
       properties: {
         id: {
@@ -180608,6 +182379,11 @@ export default {
         completedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        dpi: {
+          default: 203,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -182607,6 +184383,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
@@ -183841,6 +185621,10 @@ export default {
         taxAmount: {
           format: "numeric",
           type: "number"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -185597,6 +187381,10 @@ export default {
           format: "timestamp with time zone",
           type: "string"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
@@ -186259,6 +188047,110 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    taxCode: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "calculationType",
+        "reportingCategory",
+        "taxesShipping",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('txc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        calculationType: {
+          default: "Normal",
+          enum: ["Normal", "Reverse Charge"],
+          format: 'public."taxCalculationType"',
+          type: "string"
+        },
+        reportingCategory: {
+          default: "Standard",
+          enum: [
+            "Standard",
+            "Reduced",
+            "Zero-Rated",
+            "Exempt",
+            "Reverse Charge",
+            "Export",
+            "Out of Scope"
+          ],
+          format: 'public."taxReportingCategory"',
+          type: "string"
+        },
+        taxesShipping: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        invoiceMessage: {
+          format: "text",
+          type: "string"
+        },
+        countryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string"
+        },
+        state: {
+          format: "text",
+          type: "string"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -189312,6 +191204,10 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -189633,6 +191529,10 @@ export default {
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
+          type: "string"
+        },
+        taxCodeId: {
+          format: "text",
           type: "string"
         },
         supplierPartIdFromSupplier: {
@@ -190093,7 +191993,8 @@ export default {
         "format",
         "printerUrl",
         "createdAt",
-        "hasApiKey"
+        "hasApiKey",
+        "dpi"
       ],
       properties: {
         id: {
@@ -190143,6 +192044,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        dpi: {
+          default: 203,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -193213,7 +195119,8 @@ export default {
         "createdBy",
         "createdAt",
         "sourcingType",
-        "revisionStatus"
+        "revisionStatus",
+        "taxable"
       ],
       properties: {
         id: {
@@ -193356,6 +195263,11 @@ export default {
             "Note:\nThis is a Foreign Key to `changeOrder.id`.<fk table='changeOrder' column='id'/>",
           format: "text",
           type: "string"
+        },
+        taxable: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -194400,6 +196312,107 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    taxCodeComponent: {
+      required: [
+        "id",
+        "companyId",
+        "taxCodeId",
+        "name",
+        "taxPercent",
+        "recoverablePercent",
+        "sequence",
+        "isCompound",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('txcc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        taxAuthorityId: {
+          format: "text",
+          type: "string"
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number"
+        },
+        recoverablePercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        sequence: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        isCompound: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        taxReceivedAccountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        taxPaidAccountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        effectiveDate: {
+          format: "date",
+          type: "string"
+        },
+        expirationDate: {
+          format: "date",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -197486,7 +199499,8 @@ export default {
         "createdBy",
         "nonTaxableAddOnCost",
         "sortOrder",
-        "discountPercent"
+        "discountPercent",
+        "taxesShipping"
       ],
       properties: {
         id: {
@@ -197747,6 +199761,15 @@ export default {
         serviceJobId: {
           format: "text",
           type: "string"
+        },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
+        taxesShipping: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
@@ -200099,6 +202122,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customerContractLine.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.procedures": {
       name: "procedures",
       description: "procedures",
@@ -201821,6 +203850,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteLine.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteLine.partNumberDisplay": {
       name: "partNumberDisplay",
       required: false,
@@ -202774,6 +204809,12 @@ export default {
     },
     "rowFilter.customerLocation.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerLocation.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -209329,6 +211370,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.rentalAgreements.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.rentalAgreements.customerName": {
       name: "customerName",
       required: false,
@@ -211112,6 +213159,18 @@ export default {
     },
     "rowFilter.memo.rentalAgreementId": {
       name: "rentalAgreementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.memo.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.memo.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -212901,6 +214960,12 @@ export default {
     },
     "rowFilter.rentalAgreement.invoiceAutomation": {
       name: "invoiceAutomation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreement.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -218216,6 +220281,69 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.taxAuthority": {
+      name: "taxAuthority",
+      description: "taxAuthority",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/taxAuthority"
+      }
+    },
+    "rowFilter.taxAuthority.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxAuthority.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.trainingCompletion": {
       name: "trainingCompletion",
       description: "trainingCompletion",
@@ -218554,6 +220682,12 @@ export default {
     },
     "rowFilter.supplierTax.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierTax.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -220533,6 +222667,18 @@ export default {
     },
     "rowFilter.purchaseInvoiceLines.leasePaymentId": {
       name: "leasePaymentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -224204,6 +226350,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.rentalAgreementCharge.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.journalEntries": {
       name: "journalEntries",
       description: "journalEntries",
@@ -224786,6 +226938,87 @@ export default {
     },
     "rowFilter.peopleAbsence.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.taxRegistration": {
+      name: "taxRegistration",
+      description: "taxRegistration",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/taxRegistration"
+      }
+    },
+    "rowFilter.taxRegistration.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.countryCode": {
+      name: "countryCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.state": {
+      name: "state",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.registrationNumber": {
+      name: "registrationNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.effectiveDate": {
+      name: "effectiveDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.endDate": {
+      name: "endDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxRegistration.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"
@@ -226750,6 +228983,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLine.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.stockTransferLines": {
       name: "stockTransferLines",
       description: "stockTransferLines",
@@ -227074,14 +229313,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.accountDefault.salesTaxPayableAccount": {
-      name: "salesTaxPayableAccount",
+    "rowFilter.accountDefault.taxReceivedAccount": {
+      name: "taxReceivedAccount",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.accountDefault.purchaseTaxPayableAccount": {
-      name: "purchaseTaxPayableAccount",
+    "rowFilter.accountDefault.taxPaidAccount": {
+      name: "taxPaidAccount",
       required: false,
       in: "query",
       type: "string"
@@ -230018,6 +232257,12 @@ export default {
     },
     "rowFilter.purchaseOrderLineVersion.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLineVersion.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -233394,6 +235639,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseInvoiceLine.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.indirectExpenseStatement": {
       name: "indirectExpenseStatement",
       description: "indirectExpenseStatement",
@@ -234215,6 +236466,18 @@ export default {
     },
     "rowFilter.salesInvoiceLines.serviceJobId": {
       name: "serviceJobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLines.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLines.taxesShipping": {
+      name: "taxesShipping",
       required: false,
       in: "query",
       type: "string"
@@ -238068,6 +240331,195 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.taxLedger": {
+      name: "taxLedger",
+      description: "taxLedger",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/taxLedger"
+      }
+    },
+    "rowFilter.taxLedger.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.source": {
+      name: "source",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.documentLineId": {
+      name: "documentLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.postingDate": {
+      name: "postingDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxCodeComponentId": {
+      name: "taxCodeComponentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.componentName": {
+      name: "componentName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxAuthorityId": {
+      name: "taxAuthorityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.recoverablePercent": {
+      name: "recoverablePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxableAmount": {
+      name: "taxableAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.recoverableAmount": {
+      name: "recoverableAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.exemptAmount": {
+      name: "exemptAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.documentTaxableAmount": {
+      name: "documentTaxableAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.documentTaxAmount": {
+      name: "documentTaxAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.taxExemptionReason": {
+      name: "taxExemptionReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.exemptionCertificateNumber": {
+      name: "exemptionCertificateNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.selfAssessed": {
+      name: "selfAssessed",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.inspectionDocument": {
       name: "inspectionDocument",
       description: "inspectionDocument",
@@ -240910,6 +243362,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLines.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLines.partNumberDisplay": {
       name: "partNumberDisplay",
       required: false,
@@ -243504,6 +245962,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.printJob.dpi": {
+      name: "dpi",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.journalLines": {
       name: "journalLines",
       description: "journalLines",
@@ -245656,6 +248120,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteLines.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteLines.partNumberDisplay": {
       name: "partNumberDisplay",
       required: false,
@@ -247007,6 +249477,12 @@ export default {
     },
     "rowFilter.supplierQuoteLinePrice.taxAmount": {
       name: "taxAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierQuoteLinePrice.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -248972,6 +251448,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLine.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLine.partNumberDisplay": {
       name: "partNumberDisplay",
       required: false,
@@ -249766,6 +252248,111 @@ export default {
     },
     "rowFilter.forceDeleteRequest.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.taxCode": {
+      name: "taxCode",
+      description: "taxCode",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/taxCode"
+      }
+    },
+    "rowFilter.taxCode.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.calculationType": {
+      name: "calculationType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.reportingCategory": {
+      name: "reportingCategory",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.taxesShipping": {
+      name: "taxesShipping",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.invoiceMessage": {
+      name: "invoiceMessage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.countryCode": {
+      name: "countryCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.state": {
+      name: "state",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCode.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"
@@ -253169,6 +255756,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customerTax.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.slackDocumentThread": {
       name: "slackDocumentThread",
       description: "slackDocumentThread",
@@ -253567,6 +256160,12 @@ export default {
     },
     "rowFilter.purchaseOrderLines.partNumberDisplay": {
       name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLines.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
@@ -254132,6 +256731,12 @@ export default {
     },
     "rowFilter.printerRoute.hasApiKey": {
       name: "hasApiKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.printerRoute.dpi": {
+      name: "dpi",
       required: false,
       in: "query",
       type: "string"
@@ -257679,6 +260284,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.item.taxable": {
+      name: "taxable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.inspectionDocuments": {
       name: "inspectionDocuments",
       description: "inspectionDocuments",
@@ -258929,6 +261540,117 @@ export default {
     },
     "rowFilter.holiday.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.taxCodeComponent": {
+      name: "taxCodeComponent",
+      description: "taxCodeComponent",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/taxCodeComponent"
+      }
+    },
+    "rowFilter.taxCodeComponent.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.taxAuthorityId": {
+      name: "taxAuthorityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.recoverablePercent": {
+      name: "recoverablePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.sequence": {
+      name: "sequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.isCompound": {
+      name: "isCompound",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.taxReceivedAccountId": {
+      name: "taxReceivedAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.taxPaidAccountId": {
+      name: "taxPaidAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.effectiveDate": {
+      name: "effectiveDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.expirationDate": {
+      name: "expirationDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxCodeComponent.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -262602,6 +265324,18 @@ export default {
     },
     "rowFilter.salesInvoiceLine.serviceJobId": {
       name: "serviceJobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLine.taxCodeId": {
+      name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLine.taxesShipping": {
+      name: "taxesShipping",
       required: false,
       in: "query",
       type: "string"

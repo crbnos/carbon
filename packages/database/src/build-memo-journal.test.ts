@@ -226,3 +226,169 @@ it("invalid memo snapshots are rejected before journal construction", () => {
     expect(() => buildMemoJournal(base({ amount }))).toThrow();
   }
 });
+
+it("customer Credit memo with tax: CR AR gross, DR reason net, DR Tax Received; balances", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: true,
+      direction: "Credit",
+      amount: 1200,
+      taxAmount: 200,
+      taxAccountId: "acct_tax_received",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ar", -1200],
+    ["acct_reason", 1000],
+    ["acct_tax_received", -200]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("supplier Debit memo with tax: DR AP gross, CR reason net, CR Tax Paid; balances", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 1200,
+      taxAmount: 200,
+      taxAccountId: "acct_tax_paid",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ap", -1200],
+    ["acct_reason", -1000],
+    ["acct_tax_paid", -200]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("supplier Debit memo against one liability VAT control account: CR Tax Paid as a liability; balances", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 1200,
+      taxAmount: 200,
+      taxAccountId: "acct_vat",
+      taxAccountClass: "Liability",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ap", -1200],
+    ["acct_reason", -1000],
+    ["acct_vat", 200]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("a memo with no tax posts the two lines it always did", () => {
+  expect(buildMemoJournal(base({ taxAmount: 0 })).lines).toHaveLength(2);
+});
+
+it("customer Credit memo with a two-component code: one Tax Received leg per component account, the default for a component with none", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: true,
+      direction: "Credit",
+      amount: 1082.5,
+      taxAmount: 82.5,
+      taxAccountId: "acct_tax_default",
+      reasonAccountClass: "Expense",
+      taxLegs: [
+        {
+          accountId: "acct_tax_state",
+          accountClass: "Liability",
+          weight: 62.5
+        },
+        { accountId: null, weight: 20 }
+      ]
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ar", -1082.5],
+    ["acct_reason", 1000],
+    ["acct_tax_state", -62.5],
+    ["acct_tax_default", -20]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("splits the tax across component legs to the exact total, and refuses a leg with no account", () => {
+  const r = buildMemoJournal(
+    base({
+      amount: 110,
+      taxAmount: 10,
+      reasonAccountClass: "Expense",
+      taxLegs: [
+        { accountId: "a", accountClass: "Liability", weight: 1 },
+        { accountId: "b", accountClass: "Liability", weight: 1 },
+        { accountId: "c", accountClass: "Liability", weight: 1 }
+      ]
+    })
+  );
+  const tax = r.lines.filter((l) => ["a", "b", "c"].includes(l.accountId));
+  expect(tax).toHaveLength(3);
+  expect(tax.reduce((t, l) => t + l.amount, 0)).toBeCloseTo(-10, 5);
+  expect(() =>
+    buildMemoJournal(
+      base({
+        amount: 110,
+        taxAmount: 10,
+        taxLegs: [{ accountId: null, weight: 1 }]
+      })
+    )
+  ).toThrow("Missing Tax Received account default");
+});
+
+it("supplier Debit memo on a Reverse Charge code: DR the reverse-charge account, CR Tax Paid for the recoverable share, CR cost for the rest; balances", () => {
+  // A 2,000 vendor credit on a 7% use-tax code, half recoverable: the bill
+  // self-assessed 140, so the credit takes 140 back off the payable.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 2000,
+      taxAmount: 0,
+      taxAmountBase: 70,
+      taxAccountId: "acct_tax_paid",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense",
+      selfAssessed: {
+        amountBase: 140,
+        accountId: "acct_rc",
+        accountClass: "Liability"
+      }
+    })
+  );
+  expect(r.lines.map((l) => [l.accountId, l.amount])).toEqual([
+    ["acct_ap", -2000],
+    ["acct_reason", -2070],
+    ["acct_tax_paid", -70],
+    ["acct_rc", -140]
+  ]);
+  expect(Math.abs(r.signedDebitTotal)).toBeLessThan(0.005);
+});
+
+it("posts the tax legs at the base amount given, to internal scale", () => {
+  // A 1/3-recoverable 10.00 tax: the ledger records 3.33333 recoverable.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amount: 110,
+      taxAmount: 10,
+      taxAmountBase: 3.33333,
+      taxAccountId: "acct_tax_paid",
+      controlAccountId: "acct_ap",
+      reasonAccountClass: "Expense"
+    })
+  );
+  expect(line(r, "acct_tax_paid").amount).toBe(-3.33333);
+  expect(line(r, "acct_reason").amount).toBe(-106.66667);
+});

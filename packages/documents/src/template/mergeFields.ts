@@ -71,6 +71,7 @@ const SALES_INVOICE_MERGE_FIELDS = [
   value("invoice.shippingMethod", "Shipping Method", "Invoice"),
   value("invoice.shippingTerms", "Shipping Terms", "Invoice"),
   value("invoice.incoterm", "Incoterm", "Invoice"),
+  value("invoice.sellerTaxId", "Seller Tax ID", "Invoice"),
   figure("invoice.subtotal", "Subtotal", "Totals"),
   figure("invoice.discount", "Discount", "Totals"),
   figure("invoice.addOns", "Add-Ons", "Totals"),
@@ -347,7 +348,11 @@ const LINE = {
   reason: value("line.reason", "Return Reason", "Line"),
   shippedQuantity: figure("line.shippedQuantity", "Shipped Quantity", "Line"),
   orderQuantity: figure("line.orderQuantity", "Ordered Quantity", "Line"),
-  serialBatch: locked("line.serialBatch", "Serial or Batch", "Line")
+  serialBatch: locked("line.serialBatch", "Serial or Batch", "Line"),
+  // A summary row per tax component (`taxComponent`).
+  taxName: locked("tax.name", "Tax Component", "Tax"),
+  taxRate: locked("tax.rate", "Tax Component Rate", "Tax"),
+  taxBase: figure("tax.base", "Tax Component Base", "Tax")
 } as const satisfies Record<string, MergeField>;
 
 const RETURN_ORDER_LINE_FIELDS = [
@@ -381,7 +386,10 @@ export const LINE_MERGE_FIELDS = {
     locked("price.taxPercent", "Tax Percent", "Price"),
     figure("price.tax", "Tax Amount", "Price"),
     value("charge.description", "Charge Name", "Charge"),
-    figure("charge.amount", "Charge Amount", "Charge")
+    figure("charge.amount", "Charge Amount", "Charge"),
+    LINE.taxName,
+    LINE.taxRate,
+    LINE.taxBase
   ],
   jobTraveler: [
     locked("operation.seq", "Sequence", "Operation"),
@@ -426,7 +434,10 @@ export const LINE_MERGE_FIELDS = {
     LINE.addOn,
     LINE.nonTaxableAddOn,
     LINE.taxPercent,
-    LINE.taxAmount
+    LINE.taxAmount,
+    LINE.taxName,
+    LINE.taxRate,
+    LINE.taxBase
   ],
   salesInvoice: [
     LINE.number,
@@ -444,7 +455,10 @@ export const LINE_MERGE_FIELDS = {
     LINE.addOn,
     LINE.nonTaxableAddOn,
     LINE.taxAmount,
-    LINE.taxPercent
+    LINE.taxPercent,
+    LINE.taxName,
+    LINE.taxRate,
+    LINE.taxBase
   ],
   stockTransfer: [
     LINE.number,

@@ -5,7 +5,11 @@
 import {
   cn,
   IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useMode,
+  useRouteData,
   useShellThemeStyle,
   useSlidingHoverCard,
   useViewport
@@ -13,12 +17,24 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
-import { createContext, forwardRef, useContext, useMemo } from "react";
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useMemo,
+  useSyncExternalStore
+} from "react";
 import { LuPanelLeft } from "react-icons/lu";
 import type { Location } from "react-router";
 import { useLocation, useMatches, useNavigation } from "react-router";
 import { useUIStore } from "~/stores/ui";
 import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+import {
+  boardSidebarCookie,
+  isBoardSidebarShown,
+  resolveModuleSidebar
+} from "./moduleSidebar";
 
 interface CollapsibleSidebarContextValue {
   hasSidebar: boolean;
@@ -136,26 +152,87 @@ export function SidebarLinks({ children }: PropsWithChildren) {
   );
 }
 
+const boardSidebarListeners = new Set<() => void>();
+
+function subscribeBoardSidebar(onChange: () => void) {
+  boardSidebarListeners.add(onChange);
+  return () => {
+    boardSidebarListeners.delete(onChange);
+  };
+}
+
+const readBoardSidebar = () => isBoardSidebarShown(document.cookie);
+
 /**
- * The current module's sub-navigation component from the route handles, or
- * undefined. The desktop sidebar and the compact section switcher both read it.
+ * Whether the person shows the module sidebar on boards (`handle.boardSidebar`).
+ * The cookie is the store; the server render reads it in the shell loader.
  */
-export function useModuleSidebar() {
+function useBoardSidebarShown() {
+  const serverShown =
+    useRouteData<{ boardSidebarShown?: boolean }>(path.to.authenticatedRoot)
+      ?.boardSidebarShown ?? false;
+  return useSyncExternalStore(
+    subscribeBoardSidebar,
+    readBoardSidebar,
+    () => serverShown
+  );
+}
+
+function setBoardSidebarShown(shown: boolean) {
+  document.cookie = boardSidebarCookie(shown);
+  for (const listener of boardSidebarListeners) listener();
+}
+
+function useResolvedModuleSidebar() {
   const matches = useMatches();
-  const handles = matches.map((match) => match.handle as Handle | undefined);
-  return handles.some((handle) => handle?.hideModuleSidebar)
-    ? undefined
-    : handles.find((handle) => handle?.sidebar)?.sidebar;
+  const shown = useBoardSidebarShown();
+  return resolveModuleSidebar(
+    matches.map((match) => match.handle as Handle | undefined),
+    shown
+  );
+}
+
+/** The current module's desktop sub-navigation, or undefined. */
+export function useModuleSidebar() {
+  return useResolvedModuleSidebar().desktop;
 }
 
 /** Phones: the module sidebar, or a route's phone-only section switcher. */
 export function useCompactModuleSidebar() {
-  const matches = useMatches();
-  const Sidebar = useModuleSidebar();
-  if (Sidebar) return Sidebar;
-  return matches
-    .map((match) => match.handle as Handle | undefined)
-    .find((handle) => handle?.compactSidebar)?.compactSidebar;
+  return useResolvedModuleSidebar().compact;
+}
+
+/**
+ * Boards only: the button before the breadcrumbs that shows or hides the
+ * module sidebar. The choice is remembered for every board.
+ */
+export function BoardSidebarToggle() {
+  const { t } = useLingui();
+  const { isBoard } = useResolvedModuleSidebar();
+  const shown = useBoardSidebarShown();
+  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
+
+  if (!isBoard) return null;
+
+  const label = shown ? t`Hide menu` : t`Show menu`;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          variant={shown ? "active" : "ghost"}
+          aria-label={label}
+          aria-pressed={shown}
+          icon={<LuPanelLeft />}
+          onClick={() => {
+            // A sidebar collapsed on a list page would open at zero width.
+            if (!shown) setSidebarOpen(true);
+            setBoardSidebarShown(!shown);
+          }}
+        />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 /**

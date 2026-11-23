@@ -39,6 +39,10 @@ export const quoteBlockRegistry: Partial<
         texts={quoteTexts.summary}
         vars={data.vars}
         currencyCode={data.currencyCode}
+        taxSummary={data.taxSummary}
+        values={data.values}
+        locale={data.locale}
+        numberFormatter={data.numberFormatter}
         rows={[
           { label: "subtotal", value: "subtotalValue", always: true },
           { label: "shipping", value: "shippingValue", always: true },

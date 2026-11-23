@@ -115,6 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id: _id,
     requiredDate: _requiredDate,
     promisedDate: _promisedDate,
+    taxCodeId,
     ...d
   } = validation.data;
 
@@ -173,6 +174,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const api = await carbon(request);
   const result = await api.purchasing.updatePurchaseOrderLine({
     ...d,
+    // A posted empty field clears the code; an absent one keeps it.
+    ...(formData.has("taxCodeId") ? { taxCodeId: taxCodeId ?? "" } : {}),
     id: lineId,
     purchaseOrderId: orderId,
     customFields: setCustomFields(formData)
@@ -224,6 +227,7 @@ export default function EditPurchaseOrderLineRoute() {
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    taxCodeId: line?.taxCodeId ?? undefined,
     projectId: chargeNumber?.projectId ?? "",
     projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: line?.taxPercent ?? 0,

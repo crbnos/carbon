@@ -123,7 +123,11 @@ export function respond(
   return {
     async redirect(
       to: string,
-      { message, onError }: { message?: string; onError?: string } = {}
+      {
+        message,
+        description,
+        onError
+      }: { message?: string; description?: string; onError?: string } = {}
     ): Promise<never> {
       if (result.error) {
         const failure = {
@@ -140,7 +144,15 @@ export function respond(
         // Typed `never` like the redirects: only the form reads `formError`, never the route.
         return flashData(request, failure, { formError }) as unknown as never;
       }
-      if (message) throw redirect(to, await flash(request, success(message)));
+      if (message) {
+        throw redirect(
+          to,
+          await flash(request, {
+            ...success(message),
+            ...(description && { description })
+          })
+        );
+      }
       throw redirect(to);
     }
   };

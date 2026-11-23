@@ -237,6 +237,7 @@ export default function QuoteLine() {
     quantity: line.quantity ?? [1],
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",
     taxPercent: line.taxPercent ?? 0,
+    taxCodeId: line.taxCodeId ?? undefined,
     // A configuration is stored as an object of parameter values.
     configuration: line.configuration as Record<string, any> | null,
     ...getCustomFields(line.customFields)

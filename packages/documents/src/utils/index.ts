@@ -24,4 +24,22 @@ export {
 } from "./purchase-order";
 export { getQuoteDisplayId } from "./quote";
 export { withRevisionSuffix } from "./revision";
+export { getTaxTotal as getSalesInvoiceTaxTotal } from "./sales-invoice";
 export { getLineTotal as getSalesOrderLineTotal } from "./sales-order";
+export {
+  buildTaxSummary,
+  getInvoiceMessages,
+  isPostedSalesInvoiceStatus,
+  lineTaxSummaryEntries,
+  postedTaxSummaryEntries,
+  resolveSellerRegistration,
+  salesInvoiceTaxSummaryLines,
+  TAX_CODE_SUMMARY_SELECT,
+  type TaxCodeSummaryRow,
+  type TaxLedgerSummaryRow,
+  type TaxRegistrationRow,
+  type TaxSummaryCode,
+  type TaxSummaryEntry,
+  type TaxSummaryLine,
+  toTaxSummaryCodes
+} from "./tax-summary";

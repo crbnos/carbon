@@ -123,6 +123,9 @@ export const inspectionFailedResult = "Failed";
 
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
+  // The unit a serial step is recorded for; the server keys the record by its
+  // place in the unit axis, not by the client's index.
+  trackedEntityId: zfd.text(z.string().optional()),
   jobOperationStepId: z.string(),
   value: zfd.text(z.string().optional()),
   numericValue: zfd.numeric(z.number().optional()),

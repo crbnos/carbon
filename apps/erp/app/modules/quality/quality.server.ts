@@ -45,7 +45,10 @@ import {
   setPurchaseReturnOrderLineTrackedEntities,
   upsertPurchaseReturnOrderLine
 } from "~/modules/purchasing/purchasing.service";
-import { optionalTiptapDoc } from "~/modules/shared/shared.models";
+import {
+  issueNameNote,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { updateSortOrder } from "~/modules/shared/sort-order";
 import { ERP_URL, path } from "~/utils/path";
@@ -103,6 +106,7 @@ const customFieldValues = z.record(
  */
 export const createIssue = defineServiceFn({
   input: issueValidator.extend({
+    name: issueValidator.shape.name.describe(issueNameNote),
     customFields: customFieldValues.optional(),
     trackedEntityIds: z.array(z.string()).optional(),
     changeOrderId: z.string().optional()
@@ -3719,7 +3723,7 @@ export const updateGaugeType = defineServiceFn({
 export const insertIssue = defineServiceFn({
   input: z.looseObject({
     nonConformanceId: z.string().optional(),
-    name: z.string(),
+    name: z.string().describe(issueNameNote),
     priority: z.enum(["Low", "Medium", "High", "Critical"]),
     source: z.enum(["Internal", "External"]),
     locationId: z.string(),
@@ -3760,7 +3764,7 @@ export const updateIssue = defineServiceFn({
   input: z.looseObject({
     id: z.string(),
     nonConformanceId: z.string().optional(),
-    name: z.string().optional(),
+    name: z.string().optional().describe(issueNameNote),
     priority: z.enum(["Low", "Medium", "High", "Critical"]).optional(),
     source: z.enum(["Internal", "External"]).optional(),
     locationId: z.string().optional(),

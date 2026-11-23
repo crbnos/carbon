@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   batchScanQuantity,
-  isTravelerClaimAuto,
+  decideTravelerClaim,
   isUnitInOperationScope,
   parseTravelerCode,
   pickTravelerClaims,
@@ -301,48 +301,114 @@ describe("pickTravelerClaims", () => {
   });
 });
 
-describe("isTravelerClaimAuto", () => {
+describe("decideTravelerClaim", () => {
+  // The server's claims, best first: unit 1 needs the part, so it leads.
+  const claim = (
+    parentTrackedEntityId: string,
+    over: { laterSerial?: boolean; workCenterId?: string | null } = {}
+  ) => ({
+    parentTrackedEntityId,
+    laterSerial: over.laterSerial ?? false,
+    operation: { workCenterId: over.workCenterId ?? "wc_a3" }
+  });
   const base = {
     onOperationPage: false,
+    heldUnitId: null as string | null,
     isSerial: true,
-    workCenterId: "wc_a3",
-    optionWorkCenterIds: ["wc_a3", "wc_m"]
+    workCenterId: "wc_a3" as string | null,
+    options: [claim("SN-1"), claim("SN-3", { workCenterId: "wc_m" })]
   };
+  const later = [
+    claim("SN-1", { laterSerial: true }),
+    claim("SN-3", { laterSerial: true })
+  ];
 
   it("claims a kit at the operator's station", () => {
-    expect(isTravelerClaimAuto(base)).toBe(true);
+    expect(decideTravelerClaim(base)).toEqual({
+      kind: "claim",
+      options: base.options,
+      auto: true
+    });
   });
 
   it("asks when the best claim is at another station", () => {
-    expect(
-      isTravelerClaimAuto({ ...base, optionWorkCenterIds: ["wc_m"] })
-    ).toBe(false);
+    const options = [claim("SN-3", { workCenterId: "wc_m" })];
+    expect(decideTravelerClaim({ ...base, options })).toEqual({
+      kind: "claim",
+      options,
+      auto: false
+    });
   });
 
   it("claims the one place that needs it for an operator with no station", () => {
+    const options = [claim("SN-3", { workCenterId: "wc_m" })];
     expect(
-      isTravelerClaimAuto({
-        ...base,
-        workCenterId: null,
-        optionWorkCenterIds: ["wc_m"]
-      })
-    ).toBe(true);
-    expect(isTravelerClaimAuto({ ...base, workCenterId: null })).toBe(false);
+      decideTravelerClaim({ ...base, workCenterId: null, options })
+    ).toEqual({ kind: "claim", options, auto: true });
+    expect(decideTravelerClaim({ ...base, workCenterId: null })).toEqual({
+      kind: "claim",
+      options: base.options,
+      auto: false
+    });
   });
 
   it("asks before issuing a batch lot from the board", () => {
-    expect(isTravelerClaimAuto({ ...base, isSerial: false })).toBe(false);
+    expect(decideTravelerClaim({ ...base, isSerial: false })).toEqual({
+      kind: "claim",
+      options: base.options,
+      auto: false
+    });
   });
 
   it("claims on an operation page, inside that operation", () => {
     expect(
-      isTravelerClaimAuto({
+      decideTravelerClaim({ ...base, onOperationPage: true, isSerial: false })
+    ).toEqual({ kind: "claim", options: base.options, auto: true });
+  });
+
+  it("asks for the unit on a later serial operation with none held", () => {
+    expect(
+      decideTravelerClaim({ ...base, onOperationPage: true, options: later })
+    ).toEqual({ kind: "pickUnit" });
+  });
+
+  it("issues only into the held unit on a later serial operation, never the server's first choice", () => {
+    expect(
+      decideTravelerClaim({
         ...base,
         onOperationPage: true,
-        isSerial: false,
-        optionWorkCenterIds: ["wc_m"]
+        heldUnitId: "SN-3",
+        options: later
       })
-    ).toBe(true);
+    ).toEqual({ kind: "claim", options: [later[1]], auto: true });
+  });
+
+  it("issues nowhere when the held unit does not need the part", () => {
+    expect(
+      decideTravelerClaim({
+        ...base,
+        onOperationPage: true,
+        heldUnitId: "SN-2",
+        options: later
+      })
+    ).toEqual({ kind: "claim", options: [], auto: true });
+  });
+
+  it("never takes a later serial claim unasked off the operation page, even at the operator's station", () => {
+    expect(decideTravelerClaim({ ...base, options: later })).toEqual({
+      kind: "claim",
+      options: later,
+      auto: false
+    });
+  });
+
+  it("still takes a first-operation claim at the station when a later one is also offered", () => {
+    const options = [claim("SN-1"), claim("SN-7", { laterSerial: true })];
+    expect(decideTravelerClaim({ ...base, options })).toEqual({
+      kind: "claim",
+      options,
+      auto: true
+    });
   });
 });
 

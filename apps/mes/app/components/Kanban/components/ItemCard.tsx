@@ -200,8 +200,6 @@ export function ItemCard({
                 // link's name; the time left is spelled out below.
                 <HStack className="mt-2" aria-hidden="true">
                   <BarProgress
-                    gradient
-                    invertGradient
                     activeClassName={
                       progress > (item.duration ?? 0)
                         ? "bg-red-500"

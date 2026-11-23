@@ -924,6 +924,60 @@ export const dimensionValueMappingBulkUpsertValidator = z.object({
   )
 });
 
+/**
+ * Saves one tax code's provider rates from the Tax Rates tab: a sales rate,
+ * a purchase rate, or both. `taxCodeId` may be the "no tax code" fallback
+ * row. The server reads each rate's name and percentage from the provider.
+ */
+export const taxCodeMappingUpsertValidator = z
+  .object({
+    intent: z.literal("upsert-tax-code-mapping"),
+    taxCodeId: z.string().min(1, { message: "Tax code is required" }),
+    salesExternalId: zfd.text(z.string().optional()),
+    purchaseExternalId: zfd.text(z.string().optional())
+  })
+  .refine(
+    (value) => Boolean(value.salesExternalId || value.purchaseExternalId),
+    {
+      message: "Select a sales or purchase rate",
+      path: ["salesExternalId"]
+    }
+  );
+
+export const taxCodeMappingEntrySchema = z.object({
+  taxCodeId: z.string().min(1),
+  direction: z.enum(["sales", "purchase"]),
+  externalId: z.string().min(1)
+});
+
+/**
+ * Confirm-all from the match-by-rate drawer. `mappings` is a repeated
+ * JSON-encoded form field, as in dimensionValueMappingBulkUpsertValidator.
+ */
+export const taxCodeMappingBulkUpsertValidator = z.object({
+  intent: z.literal("bulk-upsert-tax-code-mappings"),
+  mappings: zfd.repeatable(
+    z
+      .array(
+        z
+          .string()
+          .transform((value, ctx) => {
+            try {
+              return JSON.parse(value);
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Invalid tax code mapping payload"
+              });
+              return z.NEVER;
+            }
+          })
+          .pipe(taxCodeMappingEntrySchema)
+      )
+      .min(1, { message: "No tax code mappings to save" })
+  )
+});
+
 export const quoteLineCategoryMarkupsSettingsValidator = z.object({
   materialCost: zfd.numeric(z.number().min(0).default(0)),
   partCost: zfd.numeric(z.number().min(0).default(0)),

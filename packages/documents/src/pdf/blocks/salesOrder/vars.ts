@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { formatDate, formatPercent } from "@carbon/utils";
-import type { LineMergeToken, MergeToken } from "../../../template";
+import type { MergeToken, RowVars } from "../../../template";
 import {
   getLineDescription,
   getLineDescriptionDetails,
@@ -129,7 +129,7 @@ export function buildSalesOrderLineVars(
     SalesOrderData,
     "numberFormatter" | "rateFormatter" | "locale" | "partNumberDisplayDraft"
   >
-): Record<LineMergeToken<"salesOrder">, string> {
+): RowVars<"salesOrder", "line"> {
   const money = (v: number) => data.numberFormatter.format(v);
   const positive = (v: number) => (v > 0 ? money(v) : "");
   const taxPercent = line.taxPercent ?? 0;
