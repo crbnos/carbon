@@ -10,6 +10,10 @@ export type {
   Violation
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
+export {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";

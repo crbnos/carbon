@@ -1,4 +1,7 @@
 [
+  "account-fk-restrict::20261021000300_projects-workspace.sql::\"costAccountId\" TEXT REFERENCES \"account\"(\"id\") ON DELETE SET NULL",
+  "account-fk-restrict::20261021000300_projects-workspace.sql::ADD CONSTRAINT \"project_costAccount_fkey\" FOREIGN KEY (\"costAccountId\") REFERENCES \"account\"(\"id\") ON DELETE SET NULL",
+  "account-fk-restrict::20261105210039_purchase-order-versions.sql::FOREIGN KEY (\"accountId\") REFERENCES \"account\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE",
   "form-field-budget::apps/erp/app/modules/accounting/ui/FixedAssets/AssetClassForm.tsx::<ValidatedForm>",
   "form-field-budget::apps/erp/app/modules/accounting/ui/FixedAssets/FixedAssetForm.tsx::<ValidatedForm>",
   "form-field-budget::apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceLineForm.tsx::<ValidatedForm>",
