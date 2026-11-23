@@ -6604,11 +6604,17 @@ export async function cancelSalesOrder(
 export async function upsertSalesOrderShipment(
   client: SupabaseClient<Database>,
   salesOrderShipment:
-    | (z.infer<typeof salesOrderShipmentValidator> & {
+    | (Omit<
+        z.infer<typeof salesOrderShipmentValidator>,
+        "shipToCustomerLocationId"
+      > & {
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof salesOrderShipmentValidator> & {
+    | (Omit<
+        z.infer<typeof salesOrderShipmentValidator>,
+        "shipToCustomerLocationId"
+      > & {
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -6627,6 +6633,50 @@ export async function upsertSalesOrderShipment(
     .insert([salesOrderShipment])
     .select("id")
     .single();
+}
+
+/**
+ * The sales order's Shipping card in one transaction: the shipment row, and
+ * the order's own ship-to unless it is a drop shipment.
+ */
+export async function updateSalesOrderShipping(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    salesOrderId: string;
+    shipping: Omit<
+      z.infer<typeof salesOrderShipmentValidator>,
+      "id" | "shipToCustomerLocationId"
+    >;
+    shipToCustomerLocationId: string | undefined;
+    customFields?: Json;
+  }
+) {
+  const audit = { updatedBy: args.userId, updatedAt: datetime.timestamp() };
+  await withTransaction(db, async (trx) => {
+    await trx
+      .updateTable("salesOrderShipment")
+      .set({
+        ...sanitize(args.shipping),
+        customFields: args.customFields ?? null,
+        ...audit
+      })
+      .where("id", "=", args.salesOrderId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    if (!args.shipping.dropShipment) {
+      await trx
+        .updateTable("salesOrder")
+        .set({
+          customerLocationId: args.shipToCustomerLocationId ?? null,
+          ...audit
+        })
+        .where("id", "=", args.salesOrderId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+  });
 }
 
 /** Not published: `sales.order.line.create` / `update` also refuse a locked order. */

@@ -14,7 +14,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -33,12 +32,10 @@ import {
   Currency,
   Customer,
   CustomerContact,
-  CustomerLocation,
   Employee,
   Location
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
-import { Confirm } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
@@ -63,7 +60,6 @@ const SalesOrderProperties = () => {
   });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
-  const recalculateTaxesModal = useDisclosure();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -230,49 +226,6 @@ const SalesOrderProperties = () => {
           }}
         />
       </ValidatedForm>
-
-      <HStack className="w-full items-end" spacing={1}>
-        <ValidatedForm
-          defaultValues={{
-            customerLocationId: routeData?.salesOrder?.customerLocationId ?? ""
-          }}
-          validator={z.object({
-            customerLocationId: zfd.text(z.string().optional())
-          })}
-          className="w-full"
-        >
-          <CustomerLocation
-            name="customerLocationId"
-            customer={routeData?.salesOrder?.customerId ?? ""}
-            inline
-            isReadOnly={isDisabled}
-            onChange={(customerLocation) => {
-              if (customerLocation?.id) {
-                onUpdate("customerLocationId", customerLocation.id);
-              }
-            }}
-          />
-        </ValidatedForm>
-        {/* A new ship-to can mean a new tax code: re-resolve every line. */}
-        <IconButton
-          size="sm"
-          variant="secondary"
-          aria-label={t`Recalculate taxes`}
-          title={t`Recalculate taxes`}
-          icon={<LuRefreshCcw />}
-          isDisabled={isDisabled}
-          onClick={recalculateTaxesModal.onOpen}
-        />
-      </HStack>
-      <Confirm
-        isOpen={recalculateTaxesModal.isOpen}
-        action={path.to.salesOrderRecalculateTaxes(orderId)}
-        title={t`Recalculate taxes`}
-        text={t`Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line.`}
-        confirmText={t`Recalculate`}
-        onCancel={recalculateTaxesModal.onClose}
-        onSubmit={recalculateTaxesModal.onClose}
-      />
 
       <ValidatedForm
         defaultValues={{
