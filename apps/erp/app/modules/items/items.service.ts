@@ -3541,7 +3541,8 @@ async function resolveTypedItemRevision(
  * The update half of upsertPart / upsertTool / upsertConsumable /
  * upsertService: resolves the item, then writes the item row and the typed
  * row. Each write selects its row back so a miss fails instead of reporting
- * success.
+ * success. It never writes `active`: `setItemActive` is the only writer, so a
+ * details save cannot activate an item an unreleased change notice holds.
  */
 async function updateTypedItem(
   client: SupabaseClient<Database>,
@@ -3550,7 +3551,7 @@ async function updateTypedItem(
     companyId: string;
     updatedBy: string;
     type: "Part" | "Tool" | "Consumable" | "Service";
-    item: Database["public"]["Tables"]["item"]["Update"];
+    item: Omit<Database["public"]["Tables"]["item"]["Update"], "active">;
     typed: { customFields?: Json };
   }
 ): Promise<
@@ -3594,7 +3595,8 @@ const typedItemTables = {
 /**
  * Creates a consumable (item row and consumable row) or updates one; on update
  * `id` is the item id (uuid) or the consumable's readable id and the write is
- * a full replace, so omitted optional fields are cleared.
+ * a full replace, so omitted optional fields are cleared, but `active` is left
+ * as stored.
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
@@ -3694,8 +3696,7 @@ export async function upsertConsumable(
       replenishmentSystem: consumable.replenishmentSystem,
       defaultMethodType: consumable.defaultMethodType,
       itemTrackingType: consumable.itemTrackingType,
-      unitOfMeasureCode: consumable.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: consumable.unitOfMeasureCode
     },
     typed: { customFields: consumable.customFields }
   });
@@ -3870,8 +3871,9 @@ export async function resolveItemIdFromExtractedText(
 /**
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
- * omitted optional fields are cleared. `createPart` / `updatePart` are the
- * operations; create also queues the part's model optimisation.
+ * omitted optional fields are cleared, but `active` is left as stored.
+ * `createPart` / `updatePart` are the operations; create also queues the
+ * part's model optimisation.
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -3987,8 +3989,7 @@ export async function upsertPart(
       replenishmentSystem: part.replenishmentSystem,
       defaultMethodType: part.defaultMethodType,
       itemTrackingType: part.itemTrackingType,
-      unitOfMeasureCode: part.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: part.unitOfMeasureCode
     },
     typed: { customFields: part.customFields }
   });
@@ -6509,7 +6510,7 @@ export async function upsertMaterialSubstance(
  * a changed name renames the readable id with it (a name another service uses
  * is refused). On update `id` is the item id (uuid) or the
  * service's readable id and the write is a full replace, so omitted optional
- * fields are cleared.
+ * fields are cleared, but `active` is left as stored.
  */
 export async function upsertService(
   client: SupabaseClient<Database>,
@@ -6616,8 +6617,7 @@ export async function upsertService(
       defaultMethodType: service.defaultMethodType,
       itemTrackingType: "Non-Inventory",
       // A service is always counted in Each, whatever unit a caller sends.
-      unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE,
-      active: true
+      unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE
     },
     typed: { customFields: service.customFields }
   });
@@ -6763,7 +6763,7 @@ export async function upsertUnitOfMeasure(
 /**
  * Creates a tool (item row and tool row) or updates one; on update `id` is the
  * item id (uuid) or the tool's readable id and the write is a full replace, so
- * omitted optional fields are cleared.
+ * omitted optional fields are cleared, but `active` is left as stored.
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
@@ -6865,8 +6865,7 @@ export async function upsertTool(
       replenishmentSystem: tool.replenishmentSystem,
       defaultMethodType: tool.defaultMethodType,
       itemTrackingType: tool.itemTrackingType,
-      unitOfMeasureCode: tool.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: tool.unitOfMeasureCode
     },
     typed: { customFields: tool.customFields }
   });
