@@ -5,9 +5,9 @@
 // The authorization rules for every public table. `authz sync` makes a database match this
 // file; `authz migration` ships a change to databases that do not sync yet (see migration.ts).
 import {
-  always,
   and,
   anyOf,
+  apiKey,
   authenticated,
   company,
   custom,
@@ -32,6 +32,13 @@ import {
   viaParent,
   where
 } from "./rules";
+
+/**
+ * Reference data with no company that the API's own reads and writes need: any signed-in
+ * user, or a request with an API key. `get_exchange_rate` runs as the caller, so without the
+ * key branch on `exchangeRate` every foreign-currency document created over the API fails.
+ */
+const referenceData = or(authenticated, apiKey);
 
 /** The payment and memo a settlement applies are both still Draft (or absent). */
 const draftSettlement = and(
@@ -271,7 +278,7 @@ export const manifest = {
   }),
   assemblyPlanJob: company("production"),
   assemblyUnit: company("production"),
-  attributeDataType: policies({ select: authenticated }),
+  attributeDataType: policies({ select: referenceData }),
   auditLogArchive: serviceOnly(),
   balloon: company("quality"),
   batchProperty: policies({
@@ -383,9 +390,9 @@ export const manifest = {
   costLedger: policies({
     select: inCompany("companyId", anyOf("accounting_view", "parts_view"))
   }),
-  country: policies({ select: authenticated }),
+  country: policies({ select: referenceData }),
   currency: group("accounting"),
-  currencyCode: policies({ select: authenticated }),
+  currencyCode: policies({ select: referenceData }),
   customer: policies({
     select: or(
       inCompany("companyId", "sales_view"),
@@ -519,7 +526,7 @@ export const manifest = {
   }),
   customerType: company("sales", { read: "member" }),
   customField: company("settings", { read: "member" }),
-  customFieldTable: policies({ select: authenticated }),
+  customFieldTable: policies({ select: referenceData }),
   demandActual: policies({
     select: or(
       inCompany("companyId", "parts_view"),
@@ -706,7 +713,7 @@ export const manifest = {
     delete: inCompany("companyId", "resources_delete")
   }),
   eventSystemSubscription: company("settings"),
-  exchangeRate: policies({ select: always, to: "authenticated" }),
+  exchangeRate: policies({ select: referenceData }),
   exchangeRateOverride: company("accounting", {
     create: "accounting_update",
     delete: "accounting_update"
@@ -781,7 +788,7 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  industry: policies({ select: authenticated }),
+  industry: policies({ select: referenceData }),
   inspection: company("quality", { read: "quality_view" }),
   inspectionDocument: company("quality"),
   inspectionDocumentParameter: company("quality"),
@@ -795,7 +802,7 @@ export const manifest = {
   inspectionSample: company("quality", { read: "quality_view" }),
   inspectionSamplingPlan: company("quality", { read: "quality_view" }),
   inspectionTrackedEntity: company("quality", { read: "quality_view" }),
-  integration: policies({ select: authenticated }),
+  integration: policies({ select: referenceData }),
   // Read-only to API roles: a user-written row could claim another company's Slack
   // team_id or point secretRef at someone else's vault secret. The server writes it
   // with the service role after its own permission check.
@@ -1295,7 +1302,7 @@ export const manifest = {
   peopleAbsence: company("production"),
   performanceBasedPaymentEvent: company("sales", { read: "sales_view" }),
   peopleAssignment: company("production"),
-  period: policies({ select: authenticated }),
+  period: policies({ select: referenceData }),
   periodCloseTask: company("accounting"),
   periodCloseTaskDefinition: company("accounting"),
   pickingList: company("inventory", { read: "inventory_view" }),
@@ -2081,7 +2088,7 @@ export const manifest = {
   warehouseTransfer: company("inventory", { read: "inventory_view" }),
   warehouseTransferLine: company("inventory", { read: "inventory_view" }),
   webhook: company("settings", { read: "settings_view" }),
-  webhookTable: policies({ select: authenticated }),
+  webhookTable: policies({ select: referenceData }),
   workCenter: company("resources"),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
