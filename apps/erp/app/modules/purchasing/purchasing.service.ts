@@ -3952,11 +3952,17 @@ export async function resolvePurchaseLineTax(
 
   // The line's code after the write. A supplier's code is applied at its
   // charged rate, 0 for Reverse Charge, so restating its amount zeroes it.
-  const code = sentCodeId
-    ? (codes.data.get(sentCodeId) ?? null)
-    : storedCodeId
-      ? (codes.data.get(storedCodeId) ?? null)
-      : null;
+  const knownCodeId = sentCodeId ?? storedCodeId;
+  let code = knownCodeId ? (codes.data.get(knownCodeId) ?? null) : null;
+  // A supplier's code was not among the codes read: read it, so a Reverse
+  // Charge code still refuses a typed supplier tax amount.
+  if (!code && tax.data.taxCodeId) {
+    const partyCodes = await getTaxCodeInputs(client, companyId, [
+      tax.data.taxCodeId
+    ]);
+    if (partyCodes.error) return { data: null, error: partyCodes.error };
+    code = partyCodes.data.get(tax.data.taxCodeId) ?? null;
+  }
   const base = taxableBase(
     sent.unitPrice ?? Number(line?.unitPrice ?? 0),
     sent.quantity ?? Number(line?.quantity ?? 0),

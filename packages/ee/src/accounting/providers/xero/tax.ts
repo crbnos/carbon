@@ -93,7 +93,8 @@ export class XeroTaxContextLoader {
           noTaxCodeFallback: noTaxCodeFallbackDirections(
             usage,
             mappings.data ?? []
-          )
+          ),
+          taxCodeNames: new Map(usage.map((code) => [code.id, code.name]))
         };
       })
       .catch((error) => {
@@ -260,6 +261,7 @@ export function resolveXeroTaxType(args: {
     mappings: args.context.mappings,
     options: args.context.options,
     noTaxCodeFallback: args.context.noTaxCodeFallback.has(args.direction),
+    taxCodeNames: args.context.taxCodeNames,
     account:
       args.accountCode && accountClass
         ? { code: args.accountCode, class: accountClass }

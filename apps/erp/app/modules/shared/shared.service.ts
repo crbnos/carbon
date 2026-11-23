@@ -19456,7 +19456,7 @@ export async function refuseLineRateMismatches<
     .where("id", "=", mismatch.line.taxCodeId!)
     .executeTakeFirst();
   throw new InvalidInputError(
-    `${documentLineLabel(mismatch.line, args.lines)} charges ${percentLabel(mismatch.line.taxPercent)}, but tax code ${named?.name ?? mismatch.line.taxCodeId} is ${percentLabel(mismatch.chargedPercent)} on ${args.taxPointDate}, the ${args.document}'s tax date. Use Recalculate taxes on the ${args.document}, or change the line's tax code.`
+    `${documentLineLabel(mismatch.line, args.lines)} charges ${percentLabel(mismatch.line.taxPercent)}, but tax code ${named?.name ?? mismatch.line.taxCodeId} is ${percentLabel(mismatch.chargedPercent)} on ${args.taxPointDate}, the ${args.document}'s tax date. Save the line again to take the code's rate on that date. Recalculate taxes replaces every line's code with the customer's default.`
   );
 }
 

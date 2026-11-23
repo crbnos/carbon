@@ -1073,24 +1073,31 @@ export function isAccountingSyncEnabled(metadata: unknown): boolean {
  * where it was — an expired grant must not pause an integration that was
  * live. A first connection, or one to a different organization, starts off.
  */
-export function syncEnabledOnConnect(
-  existingMetadata: unknown,
-  organizationId: string
-): boolean {
-  if (!existingMetadata || typeof existingMetadata !== "object") return false;
+/** The provider organization (Xero tenant, QBO realm) a stored integration is connected to. */
+export function connectedOrganizationId(
+  existingMetadata: unknown
+): string | undefined {
+  if (!existingMetadata || typeof existingMetadata !== "object") return;
   const credentials = (existingMetadata as { credentials?: unknown })
     .credentials as Record<string, unknown> | undefined;
   const providerMetadata = credentials?.providerMetadata as
     | Record<string, unknown>
     | undefined;
   // Legacy rows kept the organization id directly on credentials.
-  const previousOrganizationId =
+  const id =
     providerMetadata?.tenantId ??
     providerMetadata?.realmId ??
     credentials?.tenantId ??
     credentials?.realmId;
+  return typeof id === "string" ? id : undefined;
+}
+
+export function syncEnabledOnConnect(
+  existingMetadata: unknown,
+  organizationId: string
+): boolean {
   return (
-    previousOrganizationId === organizationId &&
+    connectedOrganizationId(existingMetadata) === organizationId &&
     isAccountingSyncEnabled(existingMetadata)
   );
 }

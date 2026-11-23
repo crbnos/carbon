@@ -33,6 +33,8 @@ export type ProviderTaxCodeFacts = {
   /** Directions whose untaxed code-less lines send the fallback rate
    *  (`noTaxCodeFallbackDirections`). */
   noTaxCodeFallback: ReadonlySet<TaxDirection>;
+  /** Code id → name, so a refusal names the code the user knows. */
+  taxCodeNames?: ReadonlyMap<string, string>;
 };
 
 /**
@@ -88,6 +90,7 @@ export function resolveProviderTaxRate(args: {
   options: ReadonlyArray<TaxRateOption>;
   /** An untaxed code-less line resolves through the fallback mapping. */
   noTaxCodeFallback?: boolean;
+  taxCodeNames?: ReadonlyMap<string, string>;
   /** The class of the provider account the line posts to, when known. */
   account?: { code: string; class: ProviderAccountClass } | null;
 }): {
@@ -125,7 +128,7 @@ export function resolveProviderTaxRate(args: {
 
   if (mappingId) {
     const label = args.taxCodeId
-      ? `tax code ${args.taxCodeId}`
+      ? `tax code ${args.taxCodeNames?.get(args.taxCodeId) ?? args.taxCodeId}`
       : "lines with no tax code (exempt or non-taxable)";
     const mapping = args.mappings.get(
       buildTaxCodeMappingEntityId(mappingId, args.direction)

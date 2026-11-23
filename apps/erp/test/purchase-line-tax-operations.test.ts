@@ -309,6 +309,22 @@ describe("createPurchaseInvoiceLine", () => {
     expect(writes).toHaveLength(0);
   });
 
+  it("refuses a supplier tax amount when the supplier's own code is Reverse Charge", async () => {
+    const t = tables();
+    t.supplierTax = t.supplierTax.map((row) =>
+      row.companyId === "company-1" ? { ...row, taxCodeId: "tc-eu-rc" } : row
+    );
+    const { client, writes } = filteringSupabase(t);
+
+    const result = await createPurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...piLine, supplierTaxAmount: 40 }
+    );
+
+    expect(result.error?.message).toContain("Reverse Charge");
+    expect(writes).toHaveLength(0);
+  });
+
   it("stores a Reverse Charge line with no supplier tax at 0%", async () => {
     const { client, writes } = filteringSupabase(tables());
 

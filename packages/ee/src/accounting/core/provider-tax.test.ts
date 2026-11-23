@@ -232,6 +232,26 @@ describe("resolveProviderTaxRate (review fixes)", () => {
     );
   });
 
+  it("names the unmapped code by its name, not its id", () => {
+    const message = warning(() =>
+      resolveProviderTaxRate({
+        documentId: "doc-1",
+        direction: "sales",
+        taxCodeId: "txc_123",
+        taxPercent: 0.2,
+        netAmount: 100,
+        taxAmount: 20,
+        decimalPlaces: 2,
+        mappings: buildTaxCodeMappingLookup([]),
+        options: [],
+        taxCodeNames: new Map([["txc_123", "UK Standard 20%"]])
+      })
+    ).message;
+    expect(message).toContain(
+      "tax code UK Standard 20% has no sales tax rate mapping"
+    );
+  });
+
   it("refuses a rate that cannot apply to the line's account class", () => {
     const failure = warning(() =>
       resolveProviderTaxRate({
