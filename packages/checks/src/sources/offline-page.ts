@@ -10,7 +10,6 @@ import {
   type OfflinePageSources
 } from "../conformance/offline-page-cache-bumped";
 
-/** Each app's offline.html and service-worker.js, for `findStaleOfflinePageCaches`. */
 export function loadOfflinePageSources(root: string): OfflinePageSources {
   const load = (file: string): SourceFile => ({
     file,

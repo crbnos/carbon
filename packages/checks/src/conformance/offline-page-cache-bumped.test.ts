@@ -8,11 +8,10 @@ import {
   type OfflinePageSources
 } from "./offline-page-cache-bumped";
 
-// sha256 of "<p>Offline</p>", computed with `shasum -a 256`
+// Computed with `shasum -a 256`, not by the code under test.
 const PAGE = "<p>Offline</p>";
 const PAGE_SHA256 =
   "ce53a2ab0e456d4f8189945bf64ba13093c20ead35e8831abc86d76c0454b668";
-// sha256 of "<p>Offline!</p>"
 const EDITED_PAGE = "<p>Offline!</p>";
 const EDITED_SHA256 =
   "349ee485babf6eed5f92443d5cc3e4ccbedded9960c07df50b0001f8d176cf04";

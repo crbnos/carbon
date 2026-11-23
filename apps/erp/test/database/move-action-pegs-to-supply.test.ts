@@ -77,7 +77,6 @@ async function currentPegs() {
     );
 }
 
-/** Who wrote each current peg. */
 async function currentPegAuthors() {
   const rows = await f.db
     .selectFrom("projectPeg")
@@ -138,7 +137,6 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
   });
 
   afterEach(async () => {
-    // The user row cannot go while the planner's pegs still name it.
     await seed(f, async (trx) => {
       await sql`SET LOCAL session_replication_role = replica`.execute(trx);
       await trx
@@ -173,7 +171,6 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
         { supply: "Job:job_1", projectId: projectB, quantity: 30, state: "Soft" }
       ]);
       expect(await supersededCount()).toBe(2);
-      // the moved pegs are stamped by the planner who applied the order
       expect(await currentPegAuthors()).toEqual([planner, planner]);
     }
   );
@@ -291,7 +288,6 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
           }
         ]
       });
-      // and only the remainder: the pegs the first order superseded stay history
       expect(await currentPegs()).toEqual([
         {
           supply: "Purchase Order Line:pol_1",

@@ -364,7 +364,6 @@ describe("jobStatusMoment", () => {
   });
 
   it("announces nothing when the guarded write no longer matched the job", () => {
-    // read as Planned, then cancelled by someone else before the release wrote
     expect(
       jobStatusMoment({
         updated: false,

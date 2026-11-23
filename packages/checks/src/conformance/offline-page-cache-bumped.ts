@@ -9,7 +9,6 @@ export const OFFLINE_PAGE_CACHE_BUMPED = "offline-page-cache-bumped";
 
 const PIN_FILE = "packages/checks/src/conformance/offline-page-cache-bumped.ts";
 
-/** Each app's offline page, the worker that caches it, and the constant that names the cache. */
 export const OFFLINE_APPS = {
   erp: {
     page: "apps/erp/public/offline.html",
@@ -26,10 +25,8 @@ export const OFFLINE_APPS = {
 export type OfflineApp = keyof typeof OFFLINE_APPS;
 
 /**
- * The offline page both apps serve, and the cache names the workers were
- * bumped to for it. A worker saves offline.html only when it installs, and it
- * installs only when service-worker.js changes: a new page without new cache
- * names stays invisible to every browser that has the worker.
+ * A worker re-caches offline.html only when it reinstalls, which takes a
+ * change to service-worker.js: a new page needs new cache names.
  */
 export const OFFLINE_PAGE: {
   sha256: string;
@@ -46,7 +43,6 @@ export type OfflinePageSources = Record<
 
 const APPS = Object.keys(OFFLINE_APPS) as OfflineApp[];
 
-/** "erp-offline-v5" → "erp-offline-v6"; a name without a version gets one. */
 function nextCacheName(name: string): string {
   const match = name.match(/^(.*-v)(\d+)$/);
   return match ? `${match[1]}${Number(match[2]) + 1}` : `${name}-v2`;
@@ -57,10 +53,6 @@ function lineOf(contents: string, text: string): number {
   return index === -1 ? 0 : contents.slice(0, index).split("\n").length;
 }
 
-/**
- * Both apps' offline.html match the pinned page, so ERP and MES serve the
- * same one, and each worker declares the cache name pinned with it.
- */
 export function findStaleOfflinePageCaches(
   sources: OfflinePageSources,
   pinned: typeof OFFLINE_PAGE = OFFLINE_PAGE

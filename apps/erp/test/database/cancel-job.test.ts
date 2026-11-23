@@ -31,8 +31,6 @@ import { handlesOf } from "./fixtures/handles";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 const caller = hasLocalDatabase ? localServiceRoleClient() : null;
-// Skipped, not passed, without a local stack: an early return would turn green
-// without running.
 const cancelTest = (name: string, fn: () => Promise<void>) =>
   it.skipIf(!caller)(name, fn, 60_000);
 

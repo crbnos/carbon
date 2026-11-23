@@ -4063,9 +4063,8 @@ export async function updateJobStatus(
 }
 
 /**
- * The workflow moment a job status write announces. Only a write that changed
- * the row from another status is a release or a hold: a re-save, or a guarded
- * write whose job had moved on in the meantime, announces nothing.
+ * `updated: false` (a guarded write that found the job moved on) announces
+ * nothing.
  */
 export function jobStatusMoment(change: {
   updated: boolean;
