@@ -141,6 +141,7 @@ import {
   indexBy,
   indexByMapped,
   isFullDraw,
+  isJobLocked,
   PickGuardError,
   pluckUnique,
   requireAffected,
@@ -5601,12 +5602,6 @@ export async function setPickingListLineTrackedEntity(
   if (!isSerial && !isBatch) {
     return { data: null, error: "This line is not a tracked item" };
   }
-  if (!args.unpick && !line.toStorageUnitId) {
-    return {
-      data: null,
-      error: "No lineside destination is set for this line"
-    };
-  }
 
   const type = args.unpick
     ? isSerial
@@ -6942,14 +6937,7 @@ export async function pickPickingListLine(
   if (delta !== 0) {
     // A null source is allowed: the kitter can pick material the system shows no
     // stock for (counts are often wrong) — on-hand simply goes negative at the
-    // source until it's reconciled. Only the lineside destination is required.
-    if (delta > 0 && !line.toStorageUnitId) {
-      return {
-        data: null,
-        error: "No lineside destination is set for this line"
-      };
-    }
-
+    // source until it's reconciled. post-picking resolves the destination.
     const body =
       delta > 0
         ? {
@@ -7572,6 +7560,114 @@ export async function inspectionHoldAdjustmentRefusal(
     return null;
   }
   return `${await partName()} is held for inspection in ${hold.name ?? args.storageUnitId}. Quality must decide its inspection lot before it can move.`;
+}
+
+/**
+ * Locks the jobs an outside processing receipt's purchase order lines serve
+ * (SQL `job_receipt_line_references`), in id order, and refuses a Closed one.
+ * Taken before the receipt writes: a close that waits on it reads WIP with
+ * this receipt in it, and a receipt after the close is refused, since the
+ * close writes the job's WIP off once. FOR UPDATE, as the job completion the
+ * receipt can trigger takes it.
+ */
+async function lockOutsideProcessingJobs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderLineIds: string[]
+) {
+  if (purchaseOrderLineIds.length === 0) return;
+  const jobs = await trx
+    .selectFrom("job")
+    .select(["id", "jobId", "status"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", (eb) =>
+      eb
+        .selectFrom(
+          sql<{
+            jobId: string;
+            purchaseOrderLineId: string;
+          }>`job_receipt_line_references(${companyId})`.as("ref")
+        )
+        .select("ref.jobId")
+        .where("ref.purchaseOrderLineId", "in", purchaseOrderLineIds)
+    )
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const closed = jobs.find((job) => job.status === "Closed");
+  if (closed) {
+    throw new InvalidInputError(
+      `Job ${closed.jobId} is closed, so its outside processing can no longer be received or voided.`
+    );
+  }
+}
+
+/**
+ * Sets each outside processing operation from every purchase order line that
+ * serves it, after the lines are written: `quantityComplete` is what they
+ * have received in the job's units, and the operation is Done once each line
+ * on a released order is received complete (a Closed order's lines count as
+ * complete). One line's receipt no longer overwrites what another line of the
+ * same operation received. A Canceled operation is left alone, and with
+ * `keepLockedJobs` (a void) so is a Completed, Closed or Cancelled job's.
+ */
+async function restateOutsideOperations(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobOperationIds: string[],
+  { keepLockedJobs }: { keepLockedJobs: boolean }
+) {
+  if (jobOperationIds.length === 0) return;
+  const counted = sql.join(
+    [...PURCHASE_ORDER_RELEASED_STATUSES, "Closed"].map(
+      (status) => sql`${status}`
+    )
+  );
+  const { rows } = await sql<{
+    id: string;
+    status: Database["public"]["Enums"]["jobOperationStatus"];
+    jobStatus: Database["public"]["Enums"]["jobStatus"];
+    received: number;
+    lines: number;
+    complete: boolean | null;
+  }>`
+    SELECT
+      jo.id,
+      jo.status,
+      j.status AS "jobStatus",
+      COALESCE(SUM(pol."quantityReceived" * COALESCE(pol."conversionFactor", 1))
+        FILTER (WHERE po.status IN (${counted})), 0)::float8 AS received,
+      (COUNT(pol.id) FILTER (WHERE po.status IN (${counted})))::int AS lines,
+      BOOL_AND(po.status = 'Closed' OR pol."receivedComplete")
+        FILTER (WHERE po.status IN (${counted})) AS complete
+    FROM "jobOperation" jo
+    INNER JOIN "job" j ON j.id = jo."jobId" AND j."companyId" = jo."companyId"
+    LEFT JOIN "purchaseOrderLine" pol
+      ON pol."jobOperationId" = jo.id AND pol."companyId" = jo."companyId"
+    LEFT JOIN "purchaseOrder" po
+      ON po.id = pol."purchaseOrderId" AND po."companyId" = pol."companyId"
+    WHERE jo."companyId" = ${companyId}
+      AND jo.id IN (${sql.join(jobOperationIds)})
+    GROUP BY jo.id, jo.status, j.status
+  `.execute(trx);
+  await updateRowsById(
+    trx,
+    "jobOperation",
+    companyId,
+    rows
+      .filter(
+        (row) =>
+          row.status !== "Canceled" &&
+          !(keepLockedJobs && isJobLocked(row.jobStatus))
+      )
+      .map((row) => ({
+        id: row.id,
+        data: {
+          status: row.lines > 0 && row.complete ? "Done" : "In Progress",
+          quantityComplete: round(row.received)
+        }
+      }))
+  );
 }
 
 export function isConsumedByProjectAtReceipt(line: {
@@ -14108,7 +14204,11 @@ export function buildPurchaseReceiptJournalLines({
     if (line.projectDebit) {
       debitSide = {
         accountId: line.projectDebit.accountId,
-        description: "Project Account"
+        // A capital job's receipt keeps WIP for its asset.
+        description:
+          line.projectDebit.accountId === accounts.workInProgressAccount
+            ? "WIP Account"
+            : "Project Account"
       };
     } else if (trackingType(line) !== "Non-Inventory" && !isOutsideProcessing) {
       const inventory = resolveInventoryAccount(
@@ -15348,31 +15448,44 @@ export async function postReceipt(
         return { success: true };
       }
 
-      const [originalItemLedger, originalJournalLines, purchaseOrderLinesVoid] =
-        await inOrder([
-          () =>
-            // A line consumed by its project at receipt also wrote a
-            // Project Issue row against the receipt.
-            many(db, "itemLedger", {
-              documentId: receiptId,
-              documentType: ["Purchase Receipt", "Project Issue"],
-              companyId
-            }),
-          () =>
-            documentJournalLines(db, companyId, {
-              documentId: receiptId,
-              documentType: "Receipt"
-            }),
-          () =>
-            many(db, "purchaseOrderLine", {
-              purchaseOrderId: receiptHeader.sourceDocumentId
-            })
-        ]);
+      const [
+        originalItemLedger,
+        originalJournalLines,
+        purchaseOrderLinesVoid,
+        purchaseOrderVoid
+      ] = await inOrder([
+        () =>
+          // A line consumed by its project at receipt also wrote a
+          // Project Issue row against the receipt.
+          many(db, "itemLedger", {
+            documentId: receiptId,
+            documentType: ["Purchase Receipt", "Project Issue"],
+            companyId
+          }),
+        () =>
+          documentJournalLines(db, companyId, {
+            documentId: receiptId,
+            documentType: "Receipt"
+          }),
+        () =>
+          many(db, "purchaseOrderLine", {
+            purchaseOrderId: receiptHeader.sourceDocumentId
+          }),
+        () =>
+          single(
+            db,
+            "purchaseOrder",
+            { id: receiptHeader.sourceDocumentId!, companyId },
+            { columns: ["purchaseOrderType"] }
+          )
+      ]);
 
       if (originalItemLedger.error)
         throw new Error("Failed to fetch item ledger entries");
       if (purchaseOrderLinesVoid.error)
         throw new Error("Failed to fetch purchase order lines");
+      if (purchaseOrderVoid.error)
+        throw new Error("Failed to fetch purchase order");
 
       const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
         originalItemLedger.data.map((entry) => ({
@@ -15424,6 +15537,19 @@ export async function postReceipt(
       > = receivedAfterReceiptReversal(
         purchaseOrderLinesVoid.data,
         receiptLines.data
+      );
+
+      // An outside operation completes what its lines have received, so the
+      // void takes its units back off it (restateOutsideOperations).
+      const outsideLineIdsVoid =
+        purchaseOrderVoid.data.purchaseOrderType === "Outside Processing"
+          ? Object.keys(purchaseOrderLineUpdatesVoid)
+          : [];
+      const outsideOperationIdsVoid = pluckUnique(
+        purchaseOrderLinesVoid.data.filter((line) =>
+          outsideLineIdsVoid.includes(line.id)
+        ),
+        (line) => line.jobOperationId
       );
 
       // Reverse FA PO line received status on void
@@ -15620,6 +15746,7 @@ export async function postReceipt(
             .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOutsideProcessingJobs(trx, companyId, outsideLineIdsVoid);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
           await removeUnpickedPutAways(trx, companyId, receiptId);
           const moveReversals = await rejectedMoveReversals(trx, {
@@ -15737,6 +15864,12 @@ export async function postReceipt(
               id,
               data
             }))
+          );
+          await restateOutsideOperations(
+            trx,
+            companyId,
+            outsideOperationIdsVoid,
+            { keepLockedJobs: true }
           );
 
           await trx
@@ -16284,60 +16417,6 @@ export async function postReceipt(
             return acc;
           }, {}) ?? {};
 
-        const jobOperationUpdates = isOutsideProcessing
-          ? purchaseOrderLines.data.reduce<
-              Record<
-                string,
-                Database["public"]["Tables"]["jobOperation"]["Update"]
-              >
-            >((acc, purchaseOrderLine) => {
-              const receiptLines =
-                receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
-              if (
-                receiptLines &&
-                receiptLines.length > 0 &&
-                purchaseOrderLine.purchaseQuantity &&
-                purchaseOrderLine.purchaseQuantity > 0 &&
-                purchaseOrderLine.jobOperationId
-              ) {
-                const recivedQuantityInPurchaseUnit =
-                  receiptLines.reduce((acc, receiptLine) => {
-                    const safeReceivedQuantity =
-                      isNaN(receiptLine.receivedQuantity) ||
-                      receiptLine.receivedQuantity == null
-                        ? 0
-                        : receiptLine.receivedQuantity;
-                    return acc + safeReceivedQuantity;
-                  }, 0) / (receiptLines[0]!.conversionFactor ?? 1);
-
-                const receivedComplete =
-                  purchaseOrderLine.receivedComplete ||
-                  recivedQuantityInPurchaseUnit >=
-                    (purchaseOrderLine.quantityToReceive ??
-                      purchaseOrderLine.purchaseQuantity);
-
-                // The receipt is the only record of what the supplier
-                // finished, so the operation completes what the line has
-                // received across all its receipts, in the job's units.
-                const quantityComplete = round(
-                  ((purchaseOrderLine.quantityReceived ?? 0) +
-                    recivedQuantityInPurchaseUnit) *
-                    (receiptLines[0]!.conversionFactor ?? 1)
-                );
-
-                return {
-                  ...acc,
-                  [purchaseOrderLine.jobOperationId]: {
-                    status: receivedComplete ? "Done" : "In Progress",
-                    quantityComplete
-                  }
-                };
-              }
-
-              return acc;
-            }, {})
-          : {};
-
         const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
           Record<
             string,
@@ -16384,6 +16463,19 @@ export async function postReceipt(
 
           return acc;
         }, {});
+
+        // The receipt is the only record of what the supplier finished, so
+        // each outside operation it touches completes what its lines have
+        // received (restateOutsideOperations, after the lines are written).
+        const outsideLineIds = isOutsideProcessing
+          ? Object.keys(purchaseOrderLineUpdates)
+          : [];
+        const outsideOperationIds = pluckUnique(
+          purchaseOrderLines.data.filter((line) =>
+            outsideLineIds.includes(line.id)
+          ),
+          (line) => line.jobOperationId
+        );
 
         // Get account defaults (once for all lines) for the journal entries
         const accountDefaults = await getDefaultPostingGroup(db, companyId);
@@ -17066,6 +17158,7 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,
@@ -17381,16 +17474,6 @@ export async function postReceipt(
             }))
           );
 
-          await updateRowsById(
-            trx,
-            "jobOperation",
-            companyId,
-            Object.entries(jobOperationUpdates).map(([id, data]) => ({
-              id,
-              data
-            }))
-          );
-
           const purchaseOrderLines = await trx
             .selectFrom("purchaseOrderLine")
             .select([
@@ -17514,6 +17597,13 @@ export async function postReceipt(
                 .execute();
             }
           }
+
+          // After the receipt's journal: an outside operation set Done here
+          // can complete its job (sync_finish_job_operation), and the
+          // completion costs the job from the WIP lines already written.
+          await restateOutsideOperations(trx, companyId, outsideOperationIds, {
+            keepLockedJobs: false
+          });
 
           if (projectLedgerDrafts.length > 0) {
             await insertProjectLedgerRows(trx, {
@@ -25755,6 +25845,56 @@ async function assertPickSourceNettable(
   }
 }
 
+/** A release picking list runs before the scheduler gives an operation its work
+ *  center, so a line can have no lineside: take it from the work center now. */
+async function resolvePickDestination<
+  T extends {
+    id: string;
+    jobOperationId: string | null;
+    toStorageUnitId: string | null;
+  }
+>(
+  trx: Transaction<KyselyDatabase>,
+  line: T,
+  companyId: string,
+  userId: string
+): Promise<T & { toStorageUnitId: string }> {
+  if (line.toStorageUnitId) {
+    return { ...line, toStorageUnitId: line.toStorageUnitId };
+  }
+  const operation = line.jobOperationId
+    ? await trx
+        .selectFrom("jobOperation")
+        .where("id", "=", line.jobOperationId)
+        .where("companyId", "=", companyId)
+        .select("workCenterId")
+        .executeTakeFirst()
+    : undefined;
+  const lineside = operation?.workCenterId
+    ? ((
+        await sql<{ id: string | null }>`
+          SELECT get_or_create_work_center_lineside(${operation.workCenterId}, ${companyId}, ${userId}) AS id
+        `.execute(trx)
+      ).rows[0]?.id ?? null)
+    : null;
+  if (!lineside) {
+    throw new InvalidInputError(
+      "No lineside destination is set for this line. Set a work center on its operation, then pick again."
+    );
+  }
+  await trx
+    .updateTable("pickingListLine")
+    .set({
+      toStorageUnitId: lineside,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", line.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  return { ...line, toStorageUnitId: lineside };
+}
+
 export async function postPicking(
   ctx: ServiceContext,
   raw: z.input<typeof postPickingInput>
@@ -25836,13 +25976,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         const nextQuantity = resolvePick({
           lineQuantity: line.quantityToPick ?? 0,
           pickedQuantity: line.quantityPicked ?? 0,
@@ -26088,13 +26233,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // A pick line draws one stripe at the list's location: the serial
@@ -26242,13 +26392,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // Lock the source lot too: the split below draws against this

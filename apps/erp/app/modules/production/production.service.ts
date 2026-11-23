@@ -74,6 +74,7 @@ import {
   neq,
   newIds,
   notNull,
+  rpcValue,
   selectRow,
   selectRows,
   single,
@@ -3355,6 +3356,70 @@ export async function getTrackedEntitiesByJobId(
     .eq("companyId", jobMakeMethod.data.companyId)
     .is("attributes ->> Split Entity ID", null)
     .is("attributes ->> Split From Entity ID", null);
+}
+
+/** How many of a job's tracking numbers the job page shows as editable fields. */
+export const JOB_TRACKED_ENTITY_PREVIEW_LIMIT = 10;
+
+/**
+ * The first tracking numbers of a job, with how many it has and the last one,
+ * for the job page. A serial job holds one row per unit, and a page that drew
+ * every one of a 2,000-unit job's serials as an input froze the browser.
+ */
+export async function getJobTrackedEntitiesPreview(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  const jobMakeMethod = await client
+    .from("jobMakeMethod")
+    .select("id, companyId")
+    .eq("jobId", jobId)
+    .is("parentMaterialId", null)
+    .single();
+  if (jobMakeMethod.error) {
+    return {
+      data: null,
+      count: 0,
+      lastReadableId: null,
+      error: jobMakeMethod.error
+    };
+  }
+
+  const { id: makeMethodId, companyId } = jobMakeMethod.data;
+
+  // Unit-axis order, as getTrackedEntitiesByMakeMethodId. An exact count is
+  // cheap here: it counts one job's rows, never the company's.
+  const [first, last] = await Promise.all([
+    client
+      .from("trackedEntity")
+      .select("*", { count: "exact" })
+      .eq("attributes ->> Job Make Method", makeMethodId)
+      .eq("companyId", companyId)
+      .is("attributes ->> Split Entity ID", null)
+      .is("attributes ->> Split From Entity ID", null)
+      .order("createdAt", { ascending: true })
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(JOB_TRACKED_ENTITY_PREVIEW_LIMIT),
+    client
+      .from("trackedEntity")
+      .select("readableId")
+      .eq("attributes ->> Job Make Method", makeMethodId)
+      .eq("companyId", companyId)
+      .is("attributes ->> Split Entity ID", null)
+      .is("attributes ->> Split From Entity ID", null)
+      .order("createdAt", { ascending: false })
+      .order("readableId", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+  ]);
+
+  return {
+    data: first.data,
+    count: first.count ?? first.data?.length ?? 0,
+    lastReadableId: last.data?.[0]?.readableId ?? null,
+    error: first.error ?? last.error
+  };
 }
 
 /**
@@ -14437,6 +14502,47 @@ export const closeJobInput = z.object({
  * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
  * stay in the residual.
  */
+/**
+ * A `rule` refusal while a job has outside processing still to receive: a
+ * line of an outside processing order To Receive that is not received
+ * complete. The close writes the job's WIP off once and a receipt after it is
+ * refused, so the supplier's cost would never reach the job. Stopping the
+ * line's receiving releases it.
+ */
+export async function outsideProcessingToReceiveRefusal(
+  ctx: ServiceContext,
+  jobId: string
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const orders = await ctx.asSystem.pg
+    .selectFrom(
+      sql<{
+        purchaseOrderLineId: string;
+      }>`job_receipt_line_references(${companyId}, ${jobId})`.as("ref")
+    )
+    .innerJoin("purchaseOrderLine as pol", (join) =>
+      join.onRef("pol.id", "=", "ref.purchaseOrderLineId")
+    )
+    .innerJoin("purchaseOrder as po", (join) =>
+      join
+        .onRef("po.id", "=", "pol.purchaseOrderId")
+        .onRef("po.companyId", "=", "pol.companyId")
+    )
+    .select("po.purchaseOrderId")
+    .distinct()
+    .where("pol.companyId", "=", companyId)
+    .where("pol.receivedComplete", "=", false)
+    .where("po.purchaseOrderType", "=", "Outside Processing")
+    .where("po.status", "in", ["To Receive", "To Receive and Invoice"])
+    .orderBy("po.purchaseOrderId")
+    .execute();
+  if (orders.length === 0) return null;
+  return ctx.error(
+    "rule",
+    `Outside processing on ${orders.map((order) => order.purchaseOrderId).join(", ")} is still to receive. Receive it, or stop receiving the line, before closing the job.`
+  );
+}
+
 export async function closeJob(
   ctx: ServiceContext,
   raw: z.input<typeof closeJobInput>
@@ -14482,34 +14588,13 @@ export async function closeJob(
       .executeTakeFirstOrThrow();
     const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
 
-    const wipBalance = await trx
-      .selectFrom("journalLine")
-      .innerJoin("journal", "journal.id", "journalLine.journalId")
-      .select((eb) => eb.fn.sum("journalLine.amount").as("balance"))
-      .where(
-        "journalLine.accountId",
-        "=",
-        accountDefaults.data!.workInProgressAccount
-      )
-      .where("journalLine.documentId", "=", jobId)
-      .where("journal.companyId", "=", companyId)
-      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .$if(!keepsWip, (qb) =>
-        qb.where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("projectLedger")
-                .select("projectLedger.id")
-                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
-                .where("projectLedger.companyId", "=", companyId)
-            )
-          )
-        )
-      )
-      .executeTakeFirst();
+    const wipBalance = await rpcValue(trx, "job_wip_balance", {
+      p_job_id: jobId,
+      p_company_id: companyId,
+      p_exclude_project_lines: !keepsWip
+    });
 
-    const remainingWip = Number(wipBalance?.balance ?? 0);
+    const remainingWip = wipBalance.data ?? 0;
 
     if (Math.abs(remainingWip) < 0.01) return;
 

@@ -269,6 +269,10 @@ export function ItemCard({
             <div className="flex justify-center max-md:hidden">
               <img
                 src={getPrivateUrl(item.thumbnailPath)}
+                loading="lazy"
+                decoding="async"
+                width={300}
+                height={300}
                 alt=""
                 className="w-full h-auto rounded-lg"
               />

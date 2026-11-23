@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { DocumentEdit, ValueCollector } from "@carbon/documents/template";
 import {
@@ -41,7 +40,6 @@ export async function renderPackingSlip({
     companyId,
     shipmentId,
     locale,
-    storageUrl: SUPABASE_URL ?? "",
     edit
   }).catch((error: unknown) => {
     if (error instanceof DocumentNotFoundError) {

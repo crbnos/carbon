@@ -59,10 +59,7 @@ import {
   getCutoverInventory,
   getMigrationClearing
 } from "@carbon/database/accounting-cutover-reads";
-import {
-  DOCUMENT_JOURNAL_STATUSES,
-  OPEN_ITEM_JOURNAL_STATUSES
-} from "@carbon/database/accounting-posting";
+import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
   KyselyDatabase as DB,
   Kysely,
@@ -120,7 +117,7 @@ import {
   shipmentCostRows
 } from "@carbon/database/legacy-documents";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
-import { inOrder, updateRowsById } from "@carbon/database/rows";
+import { inOrder, rpcValue, updateRowsById } from "@carbon/database/rows";
 import {
   buildDeferredTaxJournals,
   buildDepreciationJournals,
@@ -8129,6 +8126,11 @@ export async function reverseJournalEntry(
     companyId: line.companyId,
     description: line.description,
     amount: -Number(line.amount),
+    // The original stays in its document's balance as Reversed; the reversal
+    // nets it only if it names the same document (a job's WIP, for one).
+    documentType: line.documentType,
+    documentId: line.documentId,
+    documentLineReference: line.documentLineReference,
     journalLineReference: crypto.randomUUID()
   }));
 
@@ -14427,7 +14429,8 @@ async function attachJob(
           "locationId",
           "salesOrderLineId",
           "fixedAssetClassId",
-          "fixedAssetId"
+          "fixedAssetId",
+          "consumeToProject"
         ])
         .where("id", "=", jobId)
         .where("companyId", "=", companyId)
@@ -14461,6 +14464,13 @@ async function attachJob(
       `Job ${job.jobId} already completes to a fixed asset`
     );
   }
+  // Its cost is its project's (complete_job_to_inventory refuses such a job
+  // with an asset target), and the sweep below would capitalize it.
+  if (job.consumeToProject) {
+    throw new InvalidInputError(
+      `Job ${job.jobId} consumes to its project and cannot build an asset`
+    );
+  }
 
   const today = datetime
     .today(await getCompanyTimeZone(db, companyId))
@@ -14473,30 +14483,28 @@ async function attachJob(
       companyId,
       accounting.postingStatus
     );
+    // Locked before the WIP read: a completion or close that commits after
+    // the checks above would otherwise sweep the same balance twice.
+    const locked = await trx
+      .selectFrom("job")
+      .select("status")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (CLOSED_JOB_STATUSES.has(locked.status)) {
+      throw new InvalidInputError(
+        `Job ${job.jobId} is ${locked.status} and can no longer be attached to an asset`
+      );
+    }
     // The job's WIP balance so far: cost leaves WIP at attachment (SAP AuC).
     // Before the cutover it sits in Provisional journals and is swept by one.
-    const wip = await trx
-      .selectFrom("journalLine as jl")
-      .innerJoin("journal as j", (join) =>
-        join
-          .onRef("j.id", "=", "jl.journalId")
-          .onRef("j.companyId", "=", "jl.companyId")
-      )
-      .select((eb) =>
-        eb.fn
-          .coalesce(eb.fn.sum<number>("jl.amount"), sql<number>`0`)
-          .as("balance")
-      )
-      .where(
-        "jl.accountId",
-        "=",
-        accounting.accountDefaults.workInProgressAccount
-      )
-      .where("jl.documentId", "=", jobId)
-      .where("jl.companyId", "=", companyId)
-      .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .executeTakeFirst();
-    const balance = round(Number(wip?.balance ?? 0));
+    // A negative balance is not swept; it stays in WIP for the close.
+    const wip = await rpcValue(trx, "job_wip_balance", {
+      p_job_id: jobId,
+      p_company_id: companyId
+    });
+    const balance = Math.max(round(wip.data ?? 0), 0);
 
     let result: Pick<AssetTransferResult, "id" | "transferId"> = {
       id: null,

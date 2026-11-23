@@ -22,7 +22,7 @@ import {
   getJobMaterialsWithQuantityOnHand,
   getJobOrderStatusMap,
   getJobProjectCharge,
-  getTrackedEntitiesByJobId
+  getJobTrackedEntitiesPreview
 } from "~/modules/production/production.service";
 import type { JobMethodTreeItem } from "~/modules/production/production.utils";
 import { getJobMethodTree } from "~/modules/production/production.utils";
@@ -154,7 +154,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     projectCharge: projectCharge.data ?? null,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
-    trackedEntities: getTrackedEntitiesByJobId(client, jobId),
+    trackedEntities: getJobTrackedEntitiesPreview(client, jobId),
     method: getJobMethodTree(client, jobId), // returns a promise
     orderStatus: getJobOrderStatus(
       client,

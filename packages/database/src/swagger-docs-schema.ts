@@ -127313,6 +127313,74 @@ export default {
         tags: ["(rpc) get_or_create_work_center_lineside"]
       }
     },
+    "/rpc/job_receipt_line_references": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_id",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) job_receipt_line_references"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) job_receipt_line_references"]
+      }
+    },
     "/rpc/get_job_operations_by_work_center": {
       post: {
         parameters: [
@@ -129936,6 +130004,85 @@ export default {
           }
         },
         tags: ["(rpc) terminal_job_operations"]
+      }
+    },
+    "/rpc/job_wip_balance": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_exclude_project_lines",
+            required: false,
+            type: "boolean"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) job_wip_balance"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_exclude_project_lines: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_job_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) job_wip_balance"]
       }
     },
     "/rpc/sync_check_method_material_self_reference": {

@@ -917,10 +917,12 @@ export const reopenJob = defineServiceFn({
  * Close a completed job.
  *
  * @remarks
- * Only a Completed job can be closed. The status flips to Closed, then
- * whatever is left in WIP for the job is written off as production variance
- * (`close-job`; Provisional before the accounting cutover, Posted after). A
- * failed write-off leaves the job Closed and is returned as `warning`.
+ * Only a Completed job can be closed, and not while an outside processing
+ * order line for it is still to receive (receive it or stop receiving the
+ * line first). The status flips to Closed, then whatever is left in WIP for
+ * the job is written off as production variance (`close-job`; Provisional
+ * before the accounting cutover, Posted after). A failed write-off leaves
+ * the job Closed and is returned as `warning`.
  *
  * @mcp
  */
@@ -929,6 +931,11 @@ export const closeJob = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { jobId }) {
+    const toReceive = await service.outsideProcessingToReceiveRefusal(
+      ctx,
+      jobId
+    );
+    if (toReceive) return toReceive;
     const closed = await service.moveJobStatus(ctx, jobId, {
       from: ["Completed"],
       to: "Closed",

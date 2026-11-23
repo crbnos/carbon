@@ -28696,6 +28696,12 @@ msgstr "Mostrati {0} di {1}. Cerca per restringere i risultati."
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Visualizzazione {0} di {totalFiltered} — perfeziona la ricerca"
 
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
+
 msgid "Showing in {parentCurrency}"
 msgstr "Visualizzazione in {parentCurrency}"
 

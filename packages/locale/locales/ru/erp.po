@@ -28696,6 +28696,12 @@ msgstr "Показано {0} из {1}. Выполните поиск, чтобы
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Показано {0} из {totalFiltered} — уточните поиск"
 
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
+
 msgid "Showing in {parentCurrency}"
 msgstr "Отображение в {parentCurrency}"
 

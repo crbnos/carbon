@@ -214,7 +214,7 @@ const PurchaseInvoicesTable = memo(
         },
         {
           accessorKey: "orderTotal",
-          header: t`Order Total`,
+          header: t`Invoice Total`,
           cell: (item) => currencyFormatter.format(item.getValue<number>()),
           meta: {
             mobile: "P2",
