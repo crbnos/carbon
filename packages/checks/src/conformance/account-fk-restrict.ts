@@ -7,7 +7,6 @@ import type { ConformanceCheck, Violation } from "../check";
 /** The migration that made every foreign key to `account` RESTRICT. Older ones are history. */
 const SINCE = "20261013005642";
 
-/** Where the chart of accounts import classifies every column that names an account. */
 export const ACCOUNT_REFERENCE_POLICY_FILE =
   "packages/database/src/account-import.ts";
 
@@ -61,10 +60,7 @@ function unquote(identifier: string): string {
     : identifier.toLowerCase();
 }
 
-/**
- * Blank out `--` and `/* … *\/` comments, keeping every newline so line numbers
- * stay right.
- */
+/** Keeps every newline, so line numbers stay right. */
 function stripComments(sql: string): string {
   return sql
     .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
@@ -72,9 +68,8 @@ function stripComments(sql: string): string {
 }
 
 /**
- * The `table.column` a foreign key starting at `at` belongs to, or undefined
- * when the statement is not one this can read (dynamic SQL, an unusual column
- * type). The live test still covers those.
+ * Undefined for a statement this cannot read (dynamic SQL, an unusual column
+ * type); the apply-account-import live test covers those.
  */
 function referencingColumn(sql: string, at: number): string | undefined {
   const statement = sql.slice(sql.lastIndexOf(";", at) + 1, at);
@@ -143,11 +138,6 @@ const provenance = {
   since: "20261013005642_account-delete-restrict.sql"
 };
 
-/**
- * A foreign key to `account` must be `ON DELETE RESTRICT`: `SET NULL` let a
- * deleted account silently empty Draft and Provisional journal lines. Leaving
- * the action out fails too, because the default is not a stated decision.
- */
 export const accountFkRestrict: ConformanceCheck = {
   id: "account-fk-restrict",
   description: "A foreign key to account must be ON DELETE RESTRICT.",
@@ -166,10 +156,8 @@ export const accountFkRestrict: ConformanceCheck = {
 };
 
 /**
- * A column with a foreign key to `account` must be in REFERENCE_POLICY, so the
- * chart of accounts import knows whether a merge may move it. The
- * apply-account-import live test checks the catalog; this catches it without a
- * database.
+ * The apply-account-import live test checks the catalog; this catches a
+ * missing class without a database.
  */
 export function accountFkClassified(
   classified: ReadonlySet<string>

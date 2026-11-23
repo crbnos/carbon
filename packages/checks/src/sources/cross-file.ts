@@ -34,7 +34,6 @@ const readIfPresent = (root: string, files: string[]): SourceFile[] =>
     .filter((file) => existsSync(join(root, file)))
     .map((f) => read(root, f));
 
-/** The `table.column` pairs REFERENCE_POLICY classifies. */
 export function loadAccountReferencePolicy(root: string): Set<string> {
   return parseReferencePolicy(
     read(root, ACCOUNT_REFERENCE_POLICY_FILE).contents
