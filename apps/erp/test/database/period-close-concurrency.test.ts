@@ -400,8 +400,6 @@ postgrestTest(
   }
 );
 
-// packages/models/src/accounting-period.ts finds this interleaving: the unlock
-// reads Locked, the close commits, then the unlock's update lands.
 postgrestTest(
   "an unlock that read the period Locked refuses when a close commits before its update",
   async (client) => {

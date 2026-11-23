@@ -3539,9 +3539,8 @@ export async function unlockAccountingPeriod(
   );
 }
 
-/** Moves the period only while it is still in `from`: a close or reopen that
- *  committed after the caller's read leaves it untouched and refused.
- *  packages/models/src/accounting-period.ts checks the lifecycle. */
+/** Updates only while the period is still in `from`: a status change
+ *  committed after the caller's read refuses the move. */
 async function setPeriodCloseStatus(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string },

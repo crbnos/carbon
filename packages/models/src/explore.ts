@@ -25,7 +25,6 @@ export type Actor<S> = { name: string; steps: Step<S>[] };
 export type Model<S> = {
   init: S;
   actors: Actor<S>[];
-  /** Must hold in every reachable state. */
   invariants: Record<string, (state: S) => boolean>;
 };
 

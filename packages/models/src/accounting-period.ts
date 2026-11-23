@@ -23,7 +23,6 @@ export type State = {
   rowLocks: (string | null)[];
   /** Each open transaction's writes, invisible to the others until commit. */
   pending: Record<string, Record<number, Partial<Period>>>;
-  /** A committed status change outside the lifecycle's edges. */
   illegalTransition: string | null;
 };
 
@@ -138,7 +137,7 @@ function takeLifecycleLock(actor: string): Step<State> {
   };
 }
 
-/** An autocommit UPDATE of one period: waits for the row, then re-checks `where`. */
+/** An autocommit UPDATE: applied at once, not staged in `pending`. */
 function updateRow(
   actor: string,
   i: number,
