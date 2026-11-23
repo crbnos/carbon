@@ -28304,6 +28304,34 @@ async function issueJobOperationMaterials(
     throw new Error("Job location is required");
   }
 
+  // The job's backflush (backflush_job_materials) reads quantityIssued under
+  // these locks: read it again under them, or a backflush that committed
+  // after the read above is issued a second time.
+  if (!dryRun) {
+    await lockUntrackedDraws(trx, {
+      companyId,
+      locationId: job.locationId,
+      itemIds: pluckUnique(materialsToIssue, (m) => m.itemId)
+    });
+    const issued = await trx
+      .selectFrom("jobMaterial")
+      .select(["id", "quantityIssued"])
+      .where(
+        "id",
+        "in",
+        materialsToIssue.map((m) => m.id)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
+    const issuedById = new Map(
+      issued.map((row) => [row.id, row.quantityIssued])
+    );
+    for (const material of materialsToIssue) {
+      material.quantityIssued =
+        issuedById.get(material.id) ?? material.quantityIssued;
+    }
+  }
+
   // The stock stripes this job's demand may draw (Projects Phase 2a).
   const stripes = await loadDemandStripes(trx, companyId, job.projectId);
 
