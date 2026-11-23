@@ -20,6 +20,7 @@ import {
   type rentalBillingCycles,
   type rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import { useRentalTermSave } from "./RentalSetupSteps";
 import type { RentalAgreement } from "./types";
 
@@ -84,6 +85,7 @@ const RentalAgreementBilling = ({
   };
   const companyLabel =
     invoiceAutomationLabels[companySettings.invoiceAutomation];
+  const invoiceAutomationHint = useInvoiceAutomationHint();
 
   return (
     <>
@@ -256,7 +258,10 @@ const RentalAgreementBilling = ({
               label={t`Invoicing`}
               helperText={
                 contactEmail
-                  ? t`What happens to an invoice once it is created`
+                  ? invoiceAutomationHint(
+                      rentalAgreement.invoiceAutomation ??
+                        companySettings.invoiceAutomation
+                    )
                   : t`Add a contact with an email to send invoices`
               }
               isReadOnly={!permissions.can("update", "sales")}

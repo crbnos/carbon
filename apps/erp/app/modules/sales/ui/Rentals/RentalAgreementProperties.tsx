@@ -51,6 +51,7 @@ import {
   rentalBillingCycles,
   rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { RentalAgreement, RentalAgreementRouteData } from "./types";
 
 type Term =
@@ -111,6 +112,7 @@ const RentalAgreementProperties = () => {
   const agreement = routeData?.rentalAgreement;
   const contactEmail = routeData?.contactEmail ?? null;
   const permissions = usePermissions();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   const companySettings = useSettings();
   const currencyCode = agreement?.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -424,7 +426,9 @@ const RentalAgreementProperties = () => {
           helperText={
             !contactEmail && !isInvoicingReadOnly
               ? t`Add a contact with an email to send invoices`
-              : undefined
+              : agreement.effectiveInvoiceAutomation
+                ? invoiceAutomationHint(agreement.effectiveInvoiceAutomation)
+                : undefined
           }
           options={invoiceAutomationOptions}
           onChange={(option) => {

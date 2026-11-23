@@ -11652,6 +11652,9 @@ msgstr "Ogni riga è un collegamento dai dati di questa Azienda a una riga che n
 msgid "Each line shows its item ID and revision."
 msgstr "Ogni riga mostra il suo ID articolo e la revisione."
 
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Ogni mese l'esecuzione della locazione registra gli interessi e l'ammortamento del diritto di utilizzo di ogni bene."
 
@@ -15134,8 +15137,8 @@ msgstr "Come appare Carbon in questo browser."
 msgid "How coverage is worked out"
 msgstr "Come viene calcolata la copertura"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "In che modo ogni riga realizza i suoi ricavi: distribuito per giorno o uniformemente per mese, da go-live o dalla sua data di inizio."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Come il noleggio di ogni unità è diviso in periodi e quando in un periodo viene fatturato."
@@ -16208,6 +16211,9 @@ msgstr "Fatture"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Le fatture e i conti si sincronizzano dopo aver attivato la contabilità"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Le fatture vengono create automaticamente ogni giorno per quanto è dovuto. Utilizzare questa opzione per fatturare ciò che è dovuto immediatamente, ad esempio dopo l'aggiunta di una commissione. Le fatture quindi seguono l'impostazione di fatturazione di questo accordo."
 
@@ -16231,6 +16237,15 @@ msgstr "Le fatture vengono redatte, registrate e inviate per e-mail automaticame
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Le fatture vengono redatte, registrate e inviate tramite Stripe automaticamente."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Le fatture vengono inviate al cliente Stripe già collegato al cliente di fatturazione."
@@ -20058,6 +20073,9 @@ msgstr "Nessun dipendente trovato"
 msgid "No end"
 msgstr "Nessuna fine"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Nessuna riga di preventivo"
 
@@ -21394,14 +21412,14 @@ msgstr "Un pagamento per ogni anno del termine."
 msgid "One payment for every three months."
 msgstr "Un pagamento ogni tre mesi."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Una riga per caratteristica"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Una riga per fattura, una colonna per riga. Cambia una data o un importo, aggiungi una fattura o eliminane una."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Una riga per mese, una colonna per riga. Ogni riga riconosce esattamente ciò che le sue fatture fatturano."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Una riga per componente"
@@ -21767,9 +21785,6 @@ msgstr "Apri Workflow"
 
 msgid "Open-ended"
 msgstr "A tempo indeterminato"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Aperto indefinitamente: il valore delle fatture pianificate finora."
 
 msgid "Opened"
 msgstr "Aperto"
@@ -26292,6 +26307,9 @@ msgstr "Conto contabile «Ricavi» per il reddito da noleggio operativo riconosc
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Ricavi Fatturati prima di essere guadagnati, trattenuti come passività e rilasciati ai Ricavi dal run di riconoscimento al passare del periodo di servizio."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "I ricavi vengono visualizzati in anteprima una volta che il contratto ha righe."
@@ -34989,12 +35007,6 @@ msgstr "L'importo del pagamento di ogni periodo per questo cespite nel primo ann
 
 msgid "What employees read or watch before the questions"
 msgstr "Cosa leggono o guardano i dipendenti prima delle domande"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Cosa accade a una fattura una volta creata"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Cosa succede a una fattura una volta che è in bozza"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Cosa accade alle fatture create automaticamente ogni giorno da contratti di locazione e contratti. Le fatture con addebiti di locazione, crediti, rifatturazioni di fatture stornate o violazioni di regole attendono sempre la revisione."

@@ -11652,6 +11652,9 @@ msgstr "Jede Zeile ist ein Link aus den Daten dieses Unternehmens zu einer Zeile
 msgid "Each line shows its item ID and revision."
 msgstr "Jede Position zeigt ihre Artikel-ID und Revision."
 
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Jeden Monat bucht der Leasinglauf die Zinsen und die Abschreibung des Nutzungsrechts jeder Anlage."
 
@@ -15134,8 +15137,8 @@ msgstr "So sieht Carbon in diesem Browser aus."
 msgid "How coverage is worked out"
 msgstr "Wie die Abdeckung berechnet wird"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "Wie jede Position ihre Umsatzerlöse verdient: verteilt nach Tag oder gleichmäßig pro Monat, ab Inbetriebnahme oder ihrem Startdatum."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Wie die Miete jeder Einheit in Perioden aufgeteilt wird und wann in einer Periode sie fakturiert wird."
@@ -16208,6 +16211,9 @@ msgstr "Rechnungen"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Rechnungen und Eingangsrechnungen werden synchronisiert, nachdem Sie die Buchhaltung aktiviert haben"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Rechnungen werden jeden Tag automatisch für fällige Posten erstellt. Verwenden Sie dies, um fällige Posten sofort in Rechnung zu stellen — z. B. nach dem Hinzufügen einer Gebühr. Rechnungen folgen dann der Rechnungseinstellung dieser Vereinbarung."
 
@@ -16231,6 +16237,15 @@ msgstr "Rechnungen werden automatisch entworfen, gebucht und per E-Mail versende
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Rechnungen werden automatisch entworfen, gebucht und über Stripe versendet."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Rechnungen werden an den Stripe-Kunden versendet, der bereits mit dem Abrechnungskunden verknüpft ist."
@@ -20058,6 +20073,9 @@ msgstr "Keine Mitarbeiter gefunden"
 msgid "No end"
 msgstr "Kein Ende"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Keine Angebotslinien"
 
@@ -21394,14 +21412,14 @@ msgstr "Eine Zahlung für jedes Jahr der Laufzeit."
 msgid "One payment for every three months."
 msgstr "Eine Zahlung alle drei Monate."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Eine Zeile pro Merkmal"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Eine Zeile pro Rechnung, eine Spalte pro Position. Ändern Sie ein Datum oder einen Betrag, fügen Sie eine Rechnung hinzu oder löschen Sie eine."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Eine Zeile pro Monat, eine Spalte pro Position. Jede Position erfasst genau das, was ihre Rechnungen abrechnen."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Eine Zeile pro Teil"
@@ -21767,9 +21785,6 @@ msgstr "Workflow öffnen"
 
 msgid "Open-ended"
 msgstr "Offen"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Offen: der Wert der bisherigen geplanten Rechnungen."
 
 msgid "Opened"
 msgstr "Geöffnet"
@@ -26292,6 +26307,9 @@ msgstr "Umsatzerlöse-Sachkonto für Betriebsmieterlöse, die linear über den M
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Umsatzerlöse, die fakturiert werden, bevor sie verdient werden, als Verbindlichkeit gehalten und vom Abgrenzungslauf als Umsatzerlöse freigegeben, wenn die Serviceperiode verstreicht."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Der Umsatzerlös wird in der Vorschau angezeigt, sobald der Vertrag Positionen hat."
@@ -34989,12 +35007,6 @@ msgstr "Welche Zahlung jeder Periode für dieses Anlagegut im ersten Jahr ist"
 
 msgid "What employees read or watch before the questions"
 msgstr "Was Mitarbeiter vor den Fragen lesen oder ansehen"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Was mit einer Rechnung geschieht, nachdem sie erstellt wird"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Was mit einer Rechnung geschieht, wenn sie als Entwurf erstellt wird."
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Was mit Rechnungen geschieht, die täglich automatisch aus Mietverträgen und Verträgen erstellt werden. Rechnungen mit Mietgebühren, Gutschriften, Neuabrechnungen stornierter Rechnungen oder Regelverletzungen warten immer auf Überprüfung."

@@ -11652,6 +11652,9 @@ msgstr "प्रत्येक पंक्ति इस कंपनी क�
 msgid "Each line shows its item ID and revision."
 msgstr "प्रत्येक पंक्ति अपना आइटम ID और रिवीजन दिखाती है।"
 
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "प्रत्येक मासिक पट्टे रन प्रत्येक संपत्ति के ब्याज और उपयोग के अधिकार के बकाया को पोस्ट करता है।"
 
@@ -15134,8 +15137,8 @@ msgstr "यह Carbon इस ब्राउज़र में कैसा द
 msgid "How coverage is worked out"
 msgstr "कवरेज कैसे काम किया जाता है"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "प्रत्येक पंक्ति अपने राजस्व को कैसे अर्जित करती है: दिन दर दिन या महीने में समान रूप से, शुरुआत से या इसकी प्रारंभ तिथि से।"
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "प्रत्येक इकाई का किराया अवधि में कैसे काटा जाता है, और अवधि में इसे कब चालान दिया जाता है।"
@@ -16208,6 +16211,9 @@ msgstr "चालान"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "आप लेखांकन को सक्रिय करने के बाद चालान और बिल सिंक हो जाते हैं"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "चालान हर दिन स्वचालित रूप से जो भी देय हो उसके लिए बनाए जाते हैं। इसका उपयोग करके तुरंत देय राशि का चालान करें — उदाहरण के लिए शुल्क जोड़ने के बाद। चालान फिर इस समझौते की बिलिंग सेटिंग का पालन करते हैं।"
 
@@ -16231,6 +16237,15 @@ msgstr "चालान स्वचालित रूप से ड्रा�
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "चालान स्वचालित रूप से ड्राफ्ट, पोस्ट और Stripe के माध्यम से भेजे जाते हैं।"
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "चालान Stripe ग्राहक को भेजे जाते हैं जो पहले से बिलिंग ग्राहक से जुड़ा हुआ है।"
@@ -20058,6 +20073,9 @@ msgstr "कोई कर्मचारी नहीं मिला"
 msgid "No end"
 msgstr "कोई अंत नहीं"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "कोई अनुमान पंक्ति नहीं"
 
@@ -21394,14 +21412,14 @@ msgstr "अवधि के प्रत्येक वर्ष के लि�
 msgid "One payment for every three months."
 msgstr "हर तीन महीने में एक भुगतान।"
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "प्रति विशेषता एक पंक्ति"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "प्रति चालान एक पंक्ति, प्रति पंक्ति एक स्तंभ। एक तारीख या राशि बदलें, एक चालान जोड़ें या एक को हटाएँ।"
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "प्रति माह एक पंक्ति, प्रति पंक्ति एक स्तंभ। प्रत्येक पंक्ति बिल्कुल उसे मान्यता देती है जो इसके चालान बिल करते हैं।"
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "प्रति पार्ट एक पंक्ति"
@@ -21767,9 +21785,6 @@ msgstr "वर्कफ़्लो खोलें"
 
 msgid "Open-ended"
 msgstr "खुली अवधि"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "खुला-अंत: अब तक योजनाबद्ध चालानों का मूल्य।"
 
 msgid "Opened"
 msgstr "खुला हुआ"
@@ -26292,6 +26307,9 @@ msgstr "संचालन किराये की आय के लिए र
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "राजस्व जो चालान किया गया है इससे पहले कि यह अर्जित हो, देयता के रूप में रखा गया और मान्यता चलाना द्वारा राजस्व में स्वीकृत किया गया जैसे सेवा अवधि बीत जाती है।"
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "राजस्व अनुबंध की पंक्तियों के साथ पूर्वावलोकन किया जाता है।"
@@ -34989,12 +35007,6 @@ msgstr "पहले वर्ष में इस संपत्ति के 
 
 msgid "What employees read or watch before the questions"
 msgstr "प्रश्नों से पहले कर्मचारियों द्वारा जो पढ़ा या देखा जाता है"
-
-msgid "What happens to an invoice once it is created"
-msgstr "एक चालान बनाए जाने के बाद क्या होता है"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "एक बार चालान तैयार होने के बाद उसके साथ क्या होता है"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "किराया समझौतों और अनुबंधों से प्रतिदिन स्वचालित रूप से बनाए गए चालानों का क्या होता है। किराये के शुल्क, जमा, अमान्य चालान के पुनः-बिल या नियम उल्लंघन के साथ चालान हमेशा समीक्षा के लिए प्रतीक्षा करते हैं।"

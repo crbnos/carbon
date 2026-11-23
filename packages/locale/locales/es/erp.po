@@ -11652,6 +11652,9 @@ msgstr "Cada línea es un vínculo de los datos de esta empresa a una fila que n
 msgid "Each line shows its item ID and revision."
 msgstr "Cada línea muestra su ID del artículo y revisión."
 
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Cada mes, la ejecución del arrendamiento contabiliza el interés y la amortización del derecho de uso de cada activo."
 
@@ -15134,8 +15137,8 @@ msgstr "Cómo se ve Carbon en este navegador."
 msgid "How coverage is worked out"
 msgstr "Cómo se calcula la cobertura"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "Cómo cada línea gana sus ingresos por ventas: distribuido por día o uniformemente por mes, desde la puesta en marcha o su fecha de inicio."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Cómo se divide la renta de cada unidad en períodos, y cuándo en un período se factura."
@@ -16208,6 +16211,9 @@ msgstr "Facturas"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Las facturas se sincronizan después de activar la contabilidad"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Las facturas se crean automáticamente cada día para lo que vence. Usa esto para facturar lo que vence de inmediato — por ejemplo después de agregar un cargo. Las facturas entonces siguen la configuración de facturación de este acuerdo."
 
@@ -16231,6 +16237,15 @@ msgstr "Las facturas se redactan, se contabilizan y se envían por correo autom�
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Las facturas se redactan, se contabilizan y se envían a través de Stripe automáticamente."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Las facturas se envían al cliente de Stripe ya vinculado al cliente de facturación."
@@ -20058,6 +20073,9 @@ msgstr "No se encontraron empleados"
 msgid "No end"
 msgstr "Sin fin"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Sin líneas de presupuesto"
 
@@ -21394,14 +21412,14 @@ msgstr "Un pago por cada año del término."
 msgid "One payment for every three months."
 msgstr "Un pago por cada tres meses."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Una fila por característica"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Una fila por factura, una columna por línea. Cambie una fecha o un monto, agregue una factura o elimine una."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Una fila por mes, una columna por línea. Cada línea reconoce exactamente lo que facturan sus facturas."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Una fila por pieza"
@@ -21767,9 +21785,6 @@ msgstr "Abrir flujo de trabajo"
 
 msgid "Open-ended"
 msgstr "Sin fecha de vencimiento"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Sin fecha de fin: el valor de las facturas planificadas hasta ahora."
 
 msgid "Opened"
 msgstr "Abierto"
@@ -26292,6 +26307,9 @@ msgstr "Cuenta contable de Ingresos por ventas para ingresos de alquiler operati
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Ingresos por ventas facturados antes de ser ganados, mantenidos como pasivo y reconocidos como ingresos por ventas por la ejecución del reconocimiento conforme el período de servicio transcurre."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Los ingresos por ventas se previsualizan una vez que el contrato tiene líneas."
@@ -34989,12 +35007,6 @@ msgstr "Cuál es el pago de cada período para este activo en el primer año"
 
 msgid "What employees read or watch before the questions"
 msgstr "Lo que los empleados leen o ven antes de las preguntas"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Qué sucede a una factura una vez que se crea"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Qué sucede con una factura una vez que se redacta"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Lo que sucede con las facturas creadas automáticamente cada día desde acuerdos de arrendamiento y contratos. Las facturas con cargos de arrendamiento, créditos, re-facturas de facturas anuladas o violaciones de reglas siempre esperan revisión."

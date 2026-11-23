@@ -11652,6 +11652,9 @@ msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir
 msgid "Each line shows its item ID and revision."
 msgstr "Her satır stok kartı kimliğini ve revizyonunu gösterir."
 
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "Her ay kiralama çalışması, her varlığın faizini ve kullanım hakkı amortismanını muhasebeleştirir."
 
@@ -15134,8 +15137,8 @@ msgstr "Carbon'un bu tarayıcıda nasıl göründüğü."
 msgid "How coverage is worked out"
 msgstr "Kapasite nasıl hesaplanır"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "Her satırın hasılatını nasıl kazandığı: gün bazında dağıtılmış veya ayda eşit olarak, yayın başlangıcından veya başlangıç tarihinden."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Her adetin kirası dönemlere nasıl bölündüğü ve bir dönem içinde ne zaman faturalandırıldığı."
@@ -16208,6 +16211,9 @@ msgstr "Faturalar"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Muhasebeleştirmeyi etkinleştirdikten sonra faturalar senkronize olur"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Faturalar her gün vadesini gelen her şey için otomatik olarak oluşturulur. Bunu, örneğin masraf ekledikten sonra, vadesini gelen şeyi hemen faturalandırmak için kullanın. Faturalar sonra bu anlaşmanın faturalama ayarını takip eder."
 
@@ -16231,6 +16237,15 @@ msgstr "Faturalar otomatik olarak oluşturulur, muhasebeleştirilir ve e-posta i
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Faturalar otomatik olarak oluşturulur, muhasebeleştirilir ve Stripe aracılığıyla gönderilir."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Faturalar, faturalandırma müşterisiyle zaten bağlı olan Stripe müşterisine gönderilir."
@@ -20058,6 +20073,9 @@ msgstr "Hiç çalışan bulunamadı"
 msgid "No end"
 msgstr "Bitiş tarihi yok"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Tahmin satırı yok"
 
@@ -21394,14 +21412,14 @@ msgstr "Dönemin her yılı için bir ödeme."
 msgid "One payment for every three months."
 msgstr "Her üç ay için bir ödeme."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Özellik başına bir satır"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Her fatura için bir satır, her satır için bir sütun. Bir tarihi veya tutarı değiştirin, bir fatura ekleyin veya silin."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Her ay için bir satır, her satır için bir sütun. Her satır, faturalarının faturalandırdığını tam olarak tanır."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Parça başına bir satır"
@@ -21767,9 +21785,6 @@ msgstr "İş Akışını Aç"
 
 msgid "Open-ended"
 msgstr "Açık Uçlu"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Sonu belirsiz: şimdiye kadarki planlanmış faturaların değeri."
 
 msgid "Opened"
 msgstr "Açık"
@@ -26292,6 +26307,9 @@ msgstr "Kira döneminde doğrusal olarak muhasebeleştirilen işletme kira gelir
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Kazanılmadan önce faturalandırılmış hasılat, borç hesabında tutulur ve muhasebeleştirme çalıştırması tarafından hizmet dönemi geçerken hasılata aktarılır."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Sözleşmede satırlar eklendikten sonra hasılat önizlemesi gösterilir."
@@ -34989,12 +35007,6 @@ msgstr "İlk yılda bu varlık için her dönemin ödeme tutarı"
 
 msgid "What employees read or watch before the questions"
 msgstr "Çalışanların soruları cevaplamadan önce okuduğu veya izlediği şey"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Fatura oluşturulduktan sonra ne olur"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Bir fatura taslaklandıktan sonra ne olur"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Kiralama anlaşmaları ve sözleşmelerden her gün otomatik olarak oluşturulan faturaların işlenmesi. Kiralama ücretleri, krediler, hükümsüz faturaların yeniden faturalandırılması veya kural ihlalleri içeren faturalar her zaman inceleme için bekler."
