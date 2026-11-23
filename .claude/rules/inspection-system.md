@@ -717,7 +717,11 @@ upload, the same `generateHTML` read-only render.
   lot's passed quantity also adds its **Use As Is** part
   (`inspection_use_as_is`, `20261116122219`), so a receipt whose NCR keeps
   rejected parts reads Put Away only once those are put away too. The
-  roll-up ignores Non-Inventory lots.
+  roll-up ignores Non-Inventory lots. The same refresh sets
+  `receipt.rejectedAtInspection` (`20261117143127`): true while a counted lot
+  is `Failed` or `Partial`. The Inventory sidebar's "Inspection failed" link
+  filters on it, not on the status, because a receipt with a Partial lot reads
+  Put Away once its passed stock is put away.
 - **Use As Is → Put Away.** Once a receipt lot's NCR is Closed, the parts it
   dispositioned Use As Is are put away like passed stock; Rework, Scrap and
   Return to Supplier parts are not (they are moved by hand). One SQL
@@ -1132,8 +1136,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   **Positions are bound to sample ids.** `getInspection` (ERP and MES) orders the embedded
   samples by `createdAt`, then `id` (an embed has no order, and an UPDATE moves a row). The grids
   map each column/row to a sample with `placeSamples` (`@carbon/utils`): a sample keeps its
-  position for the page, a new one takes the lowest free position, and cell state is keyed by
-  sample id. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
+  position for the page, then a sample takes the position stored on it
+  (`inspectionSample.position`, `20261117131942`: the save that creates an anonymous sample
+  sends its grid position, and the engine keeps it only inside the lot's `lotSize` columns),
+  then the rest take the lowest free position; cell state is keyed by sample id. So a part
+  reloads in the column it was typed in, on any device. Serial samples and samples made
+  before the column store none. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
   `inspectionSample`, the page reloads, and the index then names another sample.
   Serial lots pass `dropMissing`: their samples come only from a scan, so a sample the loader
   no longer returns was deleted (its tracked entity removed) and its position is freed. The

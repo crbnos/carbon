@@ -966,6 +966,12 @@ export const manifest = {
   }),
   jobMakeMethod: company("production"),
   jobMaterial: company("production"),
+  // Written only by the scrapJobPart posting (system connection).
+  jobMaterialScrap: company("production", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   jobMaterialStep: policies({
     select: exists("jobMaterial", "jobMaterialId", "employee"),
     insert: exists("jobMaterial", "jobMaterialId", "production_create"),
@@ -1073,6 +1079,7 @@ export const manifest = {
   kanban: company("inventory"),
   laborCategory: company("projects"),
   laborCategoryRate: company("projects"),
+  labelTemplate: company("printing", { read: "printing_view" }),
   lease: company("purchasing", { read: "purchasing_view" }),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
   leaseEvent: company("purchasing", {

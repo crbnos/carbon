@@ -10,7 +10,8 @@ import {
   ModalHeader,
   ModalTitle,
   pulseNavIcon,
-  Subheading
+  Subheading,
+  useSlidingHoverCard
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactElement } from "react";
@@ -75,6 +76,9 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
   const openAccountSettings = useAccountSettings((s) => s.open);
   const closeAccountSettings = useAccountSettings((s) => s.close);
   const name = `${user.firstName} ${user.lastName}`;
+  // The module sidebar's hover card: one card slides to the tab under the
+  // pointer; the active tab keeps its own background.
+  const hoverCard = useSlidingHoverCard<HTMLElement>();
 
   const tabs: { id: AccountSettingsTab; name: string; icon: ReactElement }[] = [
     { id: "profile", name: t`Profile`, icon: <CgProfile /> },
@@ -129,9 +133,16 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
             </div>
           </div>
           <nav
+            ref={hoverCard.containerRef}
             aria-label={t`Account settings`}
-            className="flex flex-col gap-0.5 max-md:flex-row max-md:overflow-x-auto max-md:scrollbar-hide"
+            className="relative flex flex-col gap-0.5 max-md:flex-row max-md:overflow-x-auto max-md:scrollbar-hide"
+            {...hoverCard.handlers}
           >
+            <span
+              ref={hoverCard.cardRef}
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none"
+            />
             <Subheading
               as="h4"
               variant="light"
@@ -148,6 +159,7 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
                   leftIcon={item.icon}
                   variant={active ? "active" : "ghost"}
                   aria-current={active ? "page" : undefined}
+                  data-nav-item=""
                   onClick={(event) => {
                     pulseNavIcon(event);
                     openAccountSettings(item.id);
@@ -156,7 +168,7 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
                     "justify-start shrink-0 active:scale-100",
                     active
                       ? "shadow-none dark:shadow-button-base"
-                      : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+                      : "hover:bg-transparent hover:text-active-foreground data-[hover-card]:text-active-foreground hover:scale-100 focus-visible:scale-100"
                   )}
                 >
                   {item.name}

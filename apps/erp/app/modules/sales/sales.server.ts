@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
+import {
+  paged,
+  payload,
+  run,
+  serverFnRefusal,
+  unwrap
+} from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -32,7 +38,10 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
 import { linkStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 import {
@@ -2508,7 +2517,8 @@ export const updateSalesOrderLine = defineServiceFn({
  *
  * @remarks
  * The line needs a location; the shipment is created there through the
- * `create` server function.
+ * `create` server function. A serial job line whose finished units are not
+ * yet in stock there is refused with why.
  *
  * @mcp
  */
@@ -2544,10 +2554,17 @@ export const shipSalesOrderLine = defineServiceFn({
         salesOrderLineId
       }
     );
+    if (shipment.error && shipment.error.status < 500) {
+      // A refusal (no finished units in stock) is written for the person.
+      return serverFnRefusal(ctx, shipment.error);
+    }
     if (!shipment.data || shipment.error) {
       return ctx.error("internal", "Failed to create shipment", shipment.error);
     }
-    return { shipmentId: shipment.data.id };
+    return {
+      shipmentId: shipment.data.id,
+      warnings: shipment.data.warnings
+    };
   }
 });
 
@@ -10114,6 +10131,34 @@ export const createOpportunityDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for an opportunity (quote/sales order/RFQ/sales invoice) document
+ *
+ * @remarks
+ * A signed link to a file on the opportunity's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `sales_getOpportunityDocuments` lists it, or the
+ * name given to `sales_createOpportunityDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getOpportunityDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    opportunityId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  permission: { view: "sales" },
+  async run(ctx, { opportunityId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "opportunity",
+      entityId: opportunityId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for an opportunity LINE document
  *
  * @mcp
@@ -10129,6 +10174,31 @@ export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for an opportunity LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `sales_getOpportunityLineDocuments` lists it, or
+ * the name given to `sales_createOpportunityLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that
+ * is not there is not found.
+ *
+ * @mcp read
+ */
+export const getOpportunityLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "sales" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "opportunity-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 

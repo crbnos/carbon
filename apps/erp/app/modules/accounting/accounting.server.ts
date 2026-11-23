@@ -1104,6 +1104,35 @@ export const unlockPeriod = defineServiceFn({
 });
 
 /**
+ * Reopen a closed accounting period.
+ *
+ * @remarks
+ * Only a Closed period can be reopened, and only when no later period is
+ * still Closed: periods reopen from the most recent close backwards. It
+ * returns to Open, its close stamps are cleared, and the balance snapshots
+ * of it and of every later period are deleted. Postings dated in it are
+ * accepted again until it is locked and closed again. Needs accounting
+ * update and delete.
+ *
+ * @mcp
+ */
+export const reopenPeriod = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { update: "accounting", delete: "accounting" },
+  async run(ctx, { periodId }) {
+    const result = await service.reopenAccountingPeriod(ctx.asSystem.pg, {
+      periodId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (result.error) {
+      return service.refusal(ctx, result.error, "Failed to reopen period");
+    }
+    return { periodId, closeStatus: "Open" as const };
+  }
+});
+
+/**
  * Close an accounting period.
  *
  * @remarks
@@ -1206,7 +1235,8 @@ export const createRunForPeriod = defineServiceFn({
  *
  * @remarks
  * For Action and Manual tasks: an automatic task is evaluated by the system
- * and cannot be completed by hand. `notes` are kept on the task.
+ * and cannot be completed by hand. `notes` are kept on the task. Refused
+ * while the task's period is Closed.
  *
  * @mcp
  */
@@ -1232,7 +1262,7 @@ export const closeTaskComplete = defineServiceFn({
  *
  * @remarks
  * A Blocker task can never be skipped: resolve what it checks instead. The
- * reason is required.
+ * reason is required. Refused while the task's period is Closed.
  *
  * @mcp
  */
@@ -1999,7 +2029,8 @@ export const updateCurrency = defineServiceFn({
  * @remarks
  * `parentId` is the group account it moves under; without it the account
  * moves to the top of the chart. It takes the new group's class and balance
- * type (Balance Sheet or Income Statement). The parent must be a group of
+ * type (Balance Sheet or Income Statement), and a ledger account also takes
+ * the group's account type. The parent must be a group of
  * the company group's chart, and not the account itself or one of its own
  * accounts.
  *
@@ -2015,12 +2046,13 @@ export const moveAccount = defineServiceFn({
       updatedBy: string;
       class?: Database["public"]["Enums"]["glAccountClass"];
       incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"];
+      accountType?: Database["public"]["Enums"]["accountType"];
     } = { parentId: parentId || null, updatedBy: ctx.auditUserId };
 
     if (parentId) {
       const accounts = await client
         .from("account")
-        .select("id, parentId, isGroup, class, incomeBalance")
+        .select("id, parentId, isGroup, class, incomeBalance, accountType")
         .eq("companyGroupId", ctx.company.groupId);
       if (accounts.error) {
         return ctx.error(
@@ -2032,10 +2064,16 @@ export const moveAccount = defineServiceFn({
       const refused = accountMoveRefusal(accounts.data, accountId, parentId);
       if (refused) return ctx.error("rule", refused);
       const parent = accounts.data.find((a) => a.id === parentId);
+      const moved = accounts.data.find((a) => a.id === accountId);
       update = {
         ...update,
         class: parent?.class ?? undefined,
-        incomeBalance: parent?.incomeBalance ?? undefined
+        incomeBalance: parent?.incomeBalance ?? undefined,
+        // A ledger account takes its group's type, as the account form does.
+        accountType:
+          moved && !moved.isGroup
+            ? (parent?.accountType ?? undefined)
+            : undefined
       };
     }
 
@@ -2292,6 +2330,7 @@ export const getAccountsInScope = defineServiceFn({
             "Other Current Asset",
             "Other Asset",
             "Other Current Liability",
+            "Credit Card",
             "Long Term Liability",
             "Equity - No Close",
             "Equity - Close",
@@ -2358,6 +2397,7 @@ export const getDimensionPivot = defineServiceFn({
               "Other Current Asset",
               "Other Asset",
               "Other Current Liability",
+              "Credit Card",
               "Long Term Liability",
               "Equity - No Close",
               "Equity - Close",
@@ -2460,6 +2500,7 @@ export const getDimensionPivotLines = defineServiceFn({
               "Other Current Asset",
               "Other Asset",
               "Other Current Liability",
+              "Credit Card",
               "Long Term Liability",
               "Equity - No Close",
               "Equity - Close",
@@ -3347,6 +3388,7 @@ export const createAccount = defineServiceFn({
           "Other Current Asset",
           "Other Asset",
           "Other Current Liability",
+          "Credit Card",
           "Long Term Liability",
           "Equity - No Close",
           "Equity - Close",
@@ -3413,6 +3455,7 @@ export const updateAccount = defineServiceFn({
           "Other Current Asset",
           "Other Asset",
           "Other Current Liability",
+          "Credit Card",
           "Long Term Liability",
           "Equity - No Close",
           "Equity - Close",

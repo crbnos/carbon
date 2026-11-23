@@ -30,6 +30,11 @@ export async function createMaterialRequest(
     fallbackLocationId?: string | null;
   }
 ): Promise<{ data: { id: string } | null; error: string | null }> {
+  const itemId = args.itemId || null;
+  const note = args.note?.trim() || null;
+  // A request for something off the list has only its note to say what.
+  if (!itemId && !note) return { data: null, error: "Describe what you need" };
+
   const operation = await client
     .from("jobOperation")
     .select("id, workCenterId, workCenter(locationId)")
@@ -39,7 +44,6 @@ export async function createMaterialRequest(
   if (operation.error) return { data: null, error: operation.error.message };
   if (!operation.data) return { data: null, error: "Operation not found" };
 
-  const itemId = args.itemId || null;
   if (itemId) {
     const item = await client
       .from("item")
@@ -63,7 +67,7 @@ export async function createMaterialRequest(
       workCenterId: operation.data.workCenterId,
       jobOperationId: operation.data.id,
       itemId,
-      note: args.note || null,
+      note,
       createdBy: args.userId
     })
     .select("id")

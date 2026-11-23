@@ -16,10 +16,13 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
+  /** Fill the field when it is empty and there is exactly one option. */
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   termId?: TermId;
@@ -44,6 +47,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
 };
 
 const Combobox = ({
+  autoSelectSingleOption = false,
   name,
   label,
   termId,
@@ -73,6 +77,14 @@ const Combobox = ({
     if (props.value !== null && props.value !== undefined)
       setValue(props.value ?? "");
   }, [props.value, setValue]);
+
+  useAutoSelectSingleOption({
+    enabled: autoSelectSingleOption,
+    options: props.options,
+    value,
+    setValue,
+    onChange: props.onChange
+  });
 
   const onChange = (value: string) => {
     if (value) {

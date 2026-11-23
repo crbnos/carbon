@@ -11,6 +11,7 @@ import {
   ASSEMBLER_SERVICE_URL,
   ASSEMBLER_STORAGE_PUBLIC_URL,
   ERP_URL,
+  internalSupabaseUrl,
   PORT_API,
   SESSION_SECRET,
   SUPABASE_URL
@@ -20,6 +21,7 @@ import {
   isUnsafeStoragePath,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
+import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError, RetryAfterError } from "inngest";
 import { getJobDatabaseClient } from "../../../db";
@@ -183,13 +185,19 @@ export async function requireModelSourceBucket(
 }
 
 /**
- * Dev-only URL surgery on assembler-bound signed storage URLs. The portless
- * `.dev` proxy exists only on this machine (/etc/hosts + local CA), so: a LOCAL
- * assembler gets a direct `localhost:<kong>` rewrite (the proxy also times out
- * on multi-GB transfers), and a REMOTE assembler (staging Lambda) gets the
- * public tunnel origin when one is configured. No-op in prod/preview.
+ * A signed storage URL as the assembler must fetch it. On a cluster with an
+ * in-cluster address the assembler runs beside the server, so it gets
+ * `SUPABASE_INTERNAL_URL`.
+ *
+ * Otherwise only dev rewrites it. The portless `.dev` proxy exists only on this
+ * machine (/etc/hosts + local CA), so: a LOCAL assembler gets a direct
+ * `localhost:<kong>` rewrite (the proxy also times out on multi-GB transfers),
+ * and a REMOTE assembler (staging Lambda) gets the public tunnel origin when
+ * one is configured.
  */
 export function internalizeStorageUrl(url: string): string {
+  const internal = internalSupabaseUrl(url);
+  if (internal !== url) return internal;
   if (!SUPABASE_URL) return url;
   let publicHost: string;
   try {
@@ -508,18 +516,22 @@ export function decideJobStep(
       if (runningSince !== null && now - runningSince > maxWaitMs) {
         return {
           kind: "fail",
-          message: `assembler ${action} did not finish within ${maxWaitMs}ms of starting`
+          message: `assembler ${action} timed out: still ${outcome.status} ${minutes(now - runningSince)} min after it started (limit ${minutes(maxWaitMs)} min, ${minutes(now - submittedAt)} min since submit)`
         };
       }
       if (now - submittedAt > MAX_QUEUED_MS + maxWaitMs) {
         return {
           kind: "fail",
-          message: `assembler ${action} waited more than ${MAX_QUEUED_MS}ms for the service`
+          message: `assembler ${action} never started: still ${outcome.status} ${minutes(now - submittedAt)} min after submit (limit ${minutes(MAX_QUEUED_MS + maxWaitMs)} min)`
         };
       }
       return { kind: "wait", runningSince };
     }
   }
+}
+
+function minutes(ms: number): number {
+  return round(ms / 60_000, 0);
 }
 
 /**
@@ -547,7 +559,8 @@ export class AssemblerJobError extends NonRetriableError {
   readonly code?: string;
   constructor(message: string, code?: string) {
     super(message);
-    this.name = "AssemblerJobError";
+    // Keep the inherited name: Inngest falls back to `name === "NonRetriableError"`
+    // when `instanceof` fails across its two installed copies, else it retries.
     this.code = code;
   }
 }

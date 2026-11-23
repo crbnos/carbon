@@ -22,7 +22,8 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   React components (`pdf/ProductLabelPDF`, `pdf/StorageUnitLabelPDF`, `pdf/KanbanLabelPDF`, plus
   invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`,
   `zpl/KanbanLabelZPL` (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`,
-  `generateKanbanLabelZPL`).
+  `generateKanbanLabelZPL`), and the printer test label `zpl/TestLabelZPL` (`generateTestLabelZPL`,
+  stamped in the company's timezone by `testPrinterRoute`).
 
 ## Document type registry — `packages/printing/src/registry.ts`
 
@@ -66,13 +67,22 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
      for delivery (else mark `completed`). After the step, one `step.sendEvent("deliver", …)` sends a
      `carbon/print-job-deliver` event per collected job.
 3. **Deliver** — `print-job-deliver.ts` (event `carbon/print-job-deliver`, `retries: 0`): loads the job,
-   sets `printing`, looks up the route `apiKey` by `printerUrl`, `sendToProxyBox` (PDF content is
+   sets `printing`, finds the route by `printerUrl` and, when it `hasApiKey`, reads the key with
+   `getPrinterApiKey` (the `get_printer_api_key` RPC), `sendToProxyBox` (PDF content is
    base64 → Buffer), then `completed`. Timeouts throw `NonRetriableError` (content may already have
    printed — avoid duplicate copies).
 
 ## PDF/ZPL generation — `print-job/renderers.tsx`
 
-- `renderItemWithTemplate` — used when the route has a `templateId` **and** `BINDERY_PRESS_API_KEY`
+- **Label templates** (`labelTemplate`, `lt` id, `20261116162754_label-templates.sql`): company-wide
+  BinderyPress template ids keyed by `(labelType, mediaSizeId)`, unique on
+  `(companyId, mediaSizeId, labelType)`. Label types (`labelTemplateTypes`, `registry.ts`):
+  `serialLabel`, `batchLabel`, `kanbanCard`, `storageUnitLabel`; `getLabelTemplateType` maps a
+  `productLabel` to serial or batch by the item's `trackingType`. In `create-print-jobs`, when the
+  resolved printer has a media size, `getLabelTemplatesForMediaSize` loads that size's templates once
+  (one query) and each label takes the one for its label type. Managed under Settings → Printing →
+  Label Templates (`saveLabelTemplate` / `removeLabelTemplate`, unpublished).
+- `renderItemWithTemplate` — used when the label has a template **and** `BINDERY_PRESS_API_KEY`
   is set; calls `renderWithBinderyPress` (POST `https://api.binderypress.dev/v1/render`, `delivery:
   "inline"`; ZPL returns text, PDF/PNG returns base64).
 - `renderItemBuiltIn` — used when no template but `builtInRenderer !== null`. PDF path renders the
@@ -85,13 +95,25 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   height below its top (`fitQrModule`), so a long traveler URL is never cropped. A kanban card needs media that
   `canHoldKanbanLabel` accepts for ZPL; a PDF printer with smaller media prints the company's
   `kanbanLabelSize` instead.
-- If neither (`builtInRenderer === null`, no template) → job fails asking for a BinderyPress template.
+- If neither (`builtInRenderer === null`, no template) → job fails naming the label type and media size to add a template for.
 
 ## Printer routing & assignments
 
 - **`printerRoute`** table (`pr` id) = physical printer: `companyId, locationId?, name, format(zpl|pdf
-  CHECK), mediaSizeId?, printerUrl, apiKey?, templateId?`. Unique `(companyId, COALESCE(locationId,''),
-  name)`. (`20260326000000_print-manager.sql`; `templateId` added `20260509000000`.)
+  CHECK), mediaSizeId?, dpi(203|300|600 CHECK, default 203), printerUrl, hasApiKey`. The print job
+  renders built-in ZPL at the route's dpi (`withLabelDpi`, `@carbon/utils` labels); the interactive
+  download routes have no printer and stay at 203. Known limits: custom (BinderyPress) templates
+  are drawn at 203 dpi whatever the route says, and a QR code prints smaller at 300/600 dpi because
+  ZPL caps `^BQ` magnification at 10. `printerRouteValidator.dpi` is optional
+  (`zfd.numeric(z.literal(labelDpis))`): the form leaves it out for a PDF printer, so saving one keeps
+  the stored dpi. The ProxyBox API key is in Supabase Vault
+  as `printer:<companyId>:<routeId>` (`20261117091847_printer-api-key-vault.sql`), never in a column
+  and never sent to the browser: `set_printer_api_key` / `get_printer_api_key` are service role only
+  (`setPrinterApiKey` / `getPrinterApiKey`). The settings form treats it as write-only (blank keeps
+  it, `removeApiKey` clears it); deleting a route clears its key, and a key whose route is gone is
+  never read. Unique `(companyId, COALESCE(locationId,''),
+  name)`. (`20260326000000_print-manager.sql`.) A route has no template: templates are per label type
+  and media size (above).
 - **Assignments** live in `companySettings.printing` JSONB (`PrintingSettings` →
   `assignments[locationId]: LocationAssignment`). Contexts (`printerContexts`, `assignments.ts`):
   `default | shipping | receiving | inventory | kanban | workCenter`. `getPrinterContextForSource` maps
@@ -108,7 +130,7 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Redis printer-config cache — `packages/printing/src/cache.server.ts`
 
 `getCachedPrinterConfig(...)` → `CachedPrinterConfig { printerRouteId, printerUrl, format, mediaSizeId,
-templateId, autoPrint }`. Key `printing:{companyId}:{locationId}:{context}` (workCenter →
+dpi?, autoPrint }` (`dpi` is absent on entries cached before the column; readers default it to 203). Key `printing:{companyId}:{locationId}:{context}` (workCenter →
 `...:wc:{contextId}`), TTL 1h (`@carbon/kv` redis). Redis failures fall through to DB silently.
 `invalidatePrinterCache(companyId)` deletes `printing:{companyId}:*` — call it after any printer-route
 upsert/delete or assignment update.
@@ -117,7 +139,12 @@ upsert/delete or assignment update.
 
 `pj` id; `status` (`generating|queued|printing|completed|failed`), `contentType?(zpl|pdf)`, `content?`
 (ZPL text or base64 PDF), `printerUrl`, `sourceDocument`, `sourceDocumentId`, `sourceDocumentReadableId?`,
-`description`, `origin(auto|manual|reprint)`, `error?`, `attempts`, audit cols, `completedAt?`.
+`description`, `origin(auto|manual|reprint)`, `dpi(203|300|600 CHECK, default 203)`, `error?`, `attempts`,
+audit cols, `completedAt?`. `dpi` is what the content was drawn for (`20261119102744_print-job-dpi.sql`):
+`create-print-jobs` writes the route's dpi for a built-in label and 203 for a custom template
+(`updatePrintJobContent`). The jobs preview renders at it, and `reprintPrintJob` refuses a ZPL job for a
+printer route at another dpi (`canResendToPrinter`, `@carbon/utils` labels): the row keeps only the
+finished content, not what it was drawn from, so it cannot be redrawn.
 Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Cleanup
 (`scheduled/cleanup.ts`): completed > 30d and failed > 90d deleted.
 
@@ -200,7 +227,7 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
 ## Gotchas
 
 - Built-in **ZPL** needs `labelSize.zpl`; a kanban card also needs media of at least 3" x 2"
-  (`label3x2`, `label4x2`, `label100x50mm`), or the job fails.
+  (`label3x2`, `label4x2`, `label4x3`, `label4x6`, `label100x50mm`), or the job fails.
 - Both Inngest fns use `retries: 0`; delivery timeouts are intentionally non-retriable to avoid dupes.
 - `print-job/` is a **directory** (`index.tsx` / `renderers.tsx` / `resolvers.ts`), not a single file.
   `.tsx` because renderers instantiate React-PDF components.

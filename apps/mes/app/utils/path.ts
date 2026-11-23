@@ -16,6 +16,9 @@ const file = `/file`;
 // operator chrome (sidebar, pin-in overlay, time-card warning).
 const display = "/display";
 
+/** Marks an operation link a traveler scan opened (`?scanned`). */
+export const TRAVELER_PARAM = "scanned";
+
 export const path = {
   to: {
     acknowledge: `${x}/acknowledge`,
@@ -35,6 +38,10 @@ export const path = {
           `${api}/issue-inventory-bins?itemId=${itemId}&operationId=${operationId}`
         ),
       loginVerifyCode: `${api}/login/verify-code`,
+      materialRequestCatalog: (search: string) =>
+        `${api}/material-request/catalog?${new URLSearchParams({ search })}`,
+      materialRequestJobItems: (jobOperationId: string) =>
+        `${api}/material-request/job-items?${new URLSearchParams({ jobOperationId })}`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelDownload: (modelUploadId: string) =>
@@ -238,6 +245,7 @@ export const path = {
       generatePath(`${x}/manual-inspection/${id}`),
     manualPrint: `${x}/print`,
     materialRequestNew: `${x}/material-request/new`,
+    materialRequests: `${x}/material-requests`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
@@ -266,10 +274,21 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+    scrapEntity: (
+      materialId: string,
+      id: string,
+      parentId?: string,
+      operationId?: string
+    ) => {
       const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
-      return parentId ? `${basePath}?parentId=${parentId}` : basePath;
+      const search = new URLSearchParams();
+      if (parentId) search.set("parentId", parentId);
+      if (operationId) search.set("operationId", operationId);
+      const query = search.toString();
+      return query ? `${basePath}?${query}` : basePath;
     },
+    scrapParts: (operationId: string) =>
+      generatePath(`${x}/scrap-parts/${operationId}`),
     scrapReasons: `${api}/scrap-reasons`,
     service: `${x}/service`,
     serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
@@ -285,7 +304,7 @@ export const path = {
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
     traveler: (id: string) => generatePath(`${x}/traveler/${id}`),
-    travelerResolve: `${x}/traveler/resolve`,
+    travelerScan: `${x}/traveler/scan`,
     triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,

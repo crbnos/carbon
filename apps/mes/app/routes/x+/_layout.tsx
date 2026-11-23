@@ -65,7 +65,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -77,7 +77,6 @@ import {
   data,
   Form,
   Outlet,
-  useFetcher,
   useLoaderData,
   useLocation,
   useNavigate
@@ -95,9 +94,9 @@ import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
-import type { loader as resolveLoader } from "~/routes/x+/traveler.resolve";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
+import { getOpenMaterialRequestCount } from "~/services/material-request.service";
 import {
   getActiveJobCount,
   getLocationsByCompany
@@ -110,8 +109,10 @@ import {
   CONSOLE_PIN_SOURCE_ID
 } from "~/utils/console-pin-activity";
 import { parseItemCode } from "~/utils/itemScan";
+import { kanbanScanPath } from "~/utils/kanban";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 import { parseTravelerCode } from "~/utils/traveler";
+import { postTravelerScan } from "~/utils/travelerScan";
 
 const log = getLogger("mes", "auth");
 const CONSOLE_PIN_PEER_TIMEOUT_MS = 30_000;
@@ -187,7 +188,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     openClockEntry,
     locationEmployees,
     printerRoutes,
-    openServiceJobCount
+    openServiceJobCount,
+    openMaterialRequestCount
   ] = await Promise.all([
     getCompanies(client, userId),
     getUser(client, userId),
@@ -215,7 +217,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           .eq("companyId", companyId)
       : Promise.resolve({ data: [] as { id: string }[] }),
     getPrinterRoutes(serviceRole, companyId),
-    getOpenServiceJobsCount(client, companyId, locationId)
+    getOpenServiceJobsCount(client, companyId, locationId),
+    locationId
+      ? getOpenMaterialRequestCount(client, { companyId, locationId })
+      : Promise.resolve({ count: 0 })
   ]);
 
   // A failed read is the database or the API being briefly away — a deploy
@@ -314,6 +319,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     activeEvents: activeEvents.data ?? 0,
     activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
     openServiceJobCount: openServiceJobCount.count ?? 0,
+    openMaterialRequestCount: openMaterialRequestCount.count ?? 0,
     company,
     companies: companies.data ?? [],
     consoleEnabled,
@@ -361,6 +367,7 @@ export default function AuthenticatedRoute() {
     activeEvents,
     activeMaintenanceCount,
     openServiceJobCount,
+    openMaterialRequestCount,
     company,
     companies,
     consoleEnabled,
@@ -444,49 +451,60 @@ export default function AuthenticatedRoute() {
   const userId = user?.id;
   const { t } = useLingui();
   const navigate = useNavigate();
-  // The operation and assembly pages read a traveler scan themselves.
   const onOperationPage =
     pathname.startsWith("/x/operation/") || pathname.startsWith("/x/assembly/");
-  const resolveFetcher = useFetcher<typeof resolveLoader>();
+  // A traveler label goes to the scan endpoint, from any origin and also from
+  // a focused text field. The operation and assembly pages take it themselves.
+  const sendScan = async (code: string) => {
+    const result = await postTravelerScan({ code });
+    if (result.href) {
+      if (result.message) toast.success(result.message);
+      return navigate(result.href);
+    }
+    toast.error(
+      !parseTravelerCode(code) && result.status === 404
+        ? t`Nothing on this page uses that barcode`
+        : (result.message ?? t`Could not look up this label. Try again.`)
+    );
+  };
+  useKeyboardWedge({
+    test: (input) => !!parseTravelerCode(input),
+    callback: sendScan,
+    inTextFields: true,
+    active: !onOperationPage
+  });
+  // A kanban Create, Start or Link label opens on this deployment's ERP,
+  // whatever origin it was printed from.
+  useKeyboardWedge({
+    test: (input) => !!kanbanScanPath(input),
+    callback: (input) => {
+      window.location.assign(`${ERP_URL}${kanbanScanPath(input)}`);
+      // The page unloads when the ERP answers; until then the scan is pending.
+      return new Promise<void>((resolve) => {
+        window.addEventListener("pageshow", () => resolve(), { once: true });
+      });
+    },
+    inTextFields: true
+  });
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
+      !kanbanScanPath(input) &&
       !input.includes("/kanban/complete/") && // we handle this more gracefully in JobOperation
-      !(onOperationPage && parseTravelerCode(input)) &&
+      !parseTravelerCode(input) &&
       // Both pages take a scanned item sticker themselves: the operator
       // stays on the job.
       !(onOperationPage && parseItemCode(input)),
     inTextFields: true,
     onUnrecognized: (input) => {
       const travelerId = parseTravelerCode(input);
+      // An operation page whose own scan is off (a batched operation): show
+      // the label's traveler page, which only reads.
       if (travelerId) return navigate(path.to.traveler(travelerId));
-      // A raw id from an old label: the server finds the unit it names.
-      return resolveFetcher.load(
-        `${path.to.travelerResolve}?code=${encodeURIComponent(input)}`
-      );
+      // A raw id from an old label: the server decides.
+      return sendScan(input);
     }
   });
-  const processedResolveData = useRef<typeof resolveFetcher.data | null>(null);
-  useEffect(() => {
-    const result = resolveFetcher.data;
-    if (
-      resolveFetcher.state !== "idle" ||
-      !result ||
-      result === processedResolveData.current
-    ) {
-      return;
-    }
-    processedResolveData.current = result;
-    if (result.status === "found") {
-      navigate(path.to.traveler(result.trackedEntityId));
-    } else if (result.status === "ambiguous") {
-      toast.error(t`This barcode matches more than one unit`);
-    } else if (result.status === "error") {
-      toast.error(t`Could not look up this label. Try again.`);
-    } else {
-      toast.error(t`Nothing on this page uses that barcode`);
-    }
-  }, [resolveFetcher.state, resolveFetcher.data, navigate, t]);
   const scanPending = useScanPending();
   // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
@@ -628,6 +646,7 @@ export default function AuthenticatedRoute() {
                       activeEvents={activeEvents}
                       activeMaintenanceCount={activeMaintenanceCount}
                       openServiceJobCount={openServiceJobCount}
+                      openMaterialRequestCount={openMaterialRequestCount}
                       company={company}
                       companies={companies}
                       consoleEnabled={

@@ -23,7 +23,9 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import {
   LuGitBranchPlus,
+  LuMapPin,
   LuPackageCheck,
+  LuPackageX,
   LuQrCode,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -170,6 +172,43 @@ function isTracked(material: JobMaterial) {
   return material.requiresBatchTracking || material.requiresSerialTracking;
 }
 
+// A hint only: the server lists what can actually be scrapped (the part
+// itself when untracked, or the parts inside a kit).
+function canScrapParts(material: JobMaterial) {
+  return material.methodType === "Pull from Inventory";
+}
+
+function ScrapPartsButton({
+  material,
+  onScrap,
+  disabled,
+  size
+}: {
+  material: JobMaterial;
+  onScrap?: (material: JobMaterial) => void;
+  disabled?: boolean;
+  size?: "lg";
+}) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  if (!onScrap || !canScrapParts(material)) return null;
+  const label =
+    getItemReadableId(items, material.itemId ?? "") ||
+    material.description ||
+    "";
+  return (
+    <IconButton
+      aria-label={t`Scrap parts of ${label}`}
+      variant="ghost"
+      size={size}
+      icon={<LuPackageX />}
+      className={size ? undefined : "h-8 w-8"}
+      isDisabled={disabled}
+      onClick={() => onScrap(material)}
+    />
+  );
+}
+
 function estimatedQuantity(material: JobMaterial, parentIsSerial: boolean) {
   return parentIsSerial && isTracked(material)
     ? `${material.quantity ?? material.estimatedQuantity}/${
@@ -266,7 +305,13 @@ function PickedBreakdown({
  * The stock the job can draw does not cover what it still needs of the part.
  * `available of needed`, so the operator sees how much to expect.
  */
-export function ShortStockBadge({ material }: { material: JobMaterial }) {
+export function ShortStockBadge({
+  material,
+  className
+}: {
+  material: JobMaterial;
+  className?: string;
+}) {
   const { t } = useLingui();
   const shortage = material.stockShortage;
   if (!shortage) return null;
@@ -274,7 +319,7 @@ export function ShortStockBadge({ material }: { material: JobMaterial }) {
   return (
     <Badge
       variant="red"
-      className="w-fit gap-1 shrink-0 tabular-nums"
+      className={cn("w-fit gap-1 shrink-0 tabular-nums", className)}
       title={t`In stock: ${available}. Still needed: ${needed}.`}
     >
       <LuTriangleAlert className="size-3" />
@@ -318,8 +363,24 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
 }
 
 /** Where a part comes from: the bins that hold it now, or that it is made here. */
-export function MaterialSource({ material }: { material: JobMaterial }) {
+export function MaterialSource({
+  material,
+  size
+}: {
+  material: JobMaterial;
+  /**
+   * Compact: smaller badges, for a dense card where they sit under the part's
+   * name. Large: for a phone, where the bin is what the picker reads first.
+   */
+  size?: "compact" | "large";
+}) {
   const { t } = useLingui();
+  const compact = size === "compact";
+  const badgeClass = compact
+    ? "min-h-5 px-2 text-xs"
+    : size === "large"
+      ? "min-h-8 px-3 text-base font-semibold text-foreground whitespace-normal"
+      : undefined;
   const madeHere = material.methodType === "Make to Order";
   const liveStorageUnits = (
     material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
@@ -333,9 +394,10 @@ export function MaterialSource({ material }: { material: JobMaterial }) {
       : [material.storageUnitName ?? t`Location not known`];
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    // Compact: the badges join the caller's own wrapping row.
+    <div className={compact ? "contents" : "flex flex-wrap items-center gap-1"}>
       {material.methodType !== "Pull from Inventory" && (
-        <Badge variant="secondary">
+        <Badge variant="secondary" className={badgeClass}>
           <MethodIcon
             type={material.methodType ?? ""}
             isKit={material.kit ?? false}
@@ -349,7 +411,11 @@ export function MaterialSource({ material }: { material: JobMaterial }) {
         </Badge>
       )}
       {locations.map((location, index) => (
-        <Badge key={`${location}-${index}`} variant="secondary">
+        <Badge
+          key={`${location}-${index}`}
+          variant="secondary"
+          className={badgeClass}
+        >
           {location}
         </Badge>
       ))}
@@ -367,6 +433,8 @@ type OperationMaterialsProps = {
   /** Only for batched operations. */
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
   onIssue: (material: JobMaterial) => void;
+  /** Scrap parts of a pulled material, or parts inside a kit. */
+  onScrap?: (material: JobMaterial) => void;
   // The operator may not issue on this operation (ability policy 'block')
   disabled?: boolean;
 };
@@ -388,6 +456,7 @@ function MaterialsTable({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -516,7 +585,16 @@ function MaterialsTable({
                         </div>
                       )}
                     </Td>
-                    <Td className="text-right">{issueButton(parent)}</Td>
+                    <Td className="text-right">
+                      <HStack spacing={1} className="justify-end">
+                        <ScrapPartsButton
+                          material={material}
+                          onScrap={onScrap}
+                          disabled={disabled}
+                        />
+                        {issueButton(parent)}
+                      </HStack>
+                    </Td>
                   </Tr>
 
                   {kitChildren.map((child, index) => (
@@ -564,7 +642,16 @@ function MaterialsTable({
                         {estimatedQuantity(child.material, parentIsSerial)}
                       </Td>
                       <Td>{actualQuantity(child.material, parentIsSerial)}</Td>
-                      <Td className="text-right">{issueButton(child)}</Td>
+                      <Td className="text-right">
+                        <HStack spacing={1} className="justify-end">
+                          <ScrapPartsButton
+                            material={child.material}
+                            onScrap={onScrap}
+                            disabled={disabled}
+                          />
+                          {issueButton(child)}
+                        </HStack>
+                      </Td>
                     </Tr>
                   ))}
                 </Fragment>
@@ -581,6 +668,7 @@ function MaterialsList({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -594,81 +682,94 @@ function MaterialsList({
     return t`Issue ${item}`;
   };
 
+  // Stacked, so the part, its bins and the Issue button each get the full width.
   const renderRow = (row: MaterialRow) => {
     const { material, batchTotal } = row;
     return (
       <li
         key={`material-row-${material.id}`}
         className={cn(
-          "flex items-center gap-3 px-4 py-3",
-          row.isKitChild && "pl-8",
+          "flex flex-col gap-3 px-4 py-4",
+          row.isKitChild && "ml-4 border-l-2 border-l-border pl-4",
           !row.isRelatedToOperation && "opacity-50"
         )}
       >
-        <MaterialThumbnail material={material} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="truncate font-semibold">
+        <div className="flex items-start gap-3">
+          <MaterialThumbnail material={material} />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="break-words text-base font-semibold leading-tight">
               {getItemReadableId(items, material.itemId ?? "")}
             </span>
-            <span className="flex shrink-0 items-center gap-1 text-sm tabular-nums text-foreground font-medium">
+            {material.description ? (
+              <span className="line-clamp-2 text-sm text-muted-foreground">
+                {material.description}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-end">
+            <span className="flex items-center gap-1 text-xl font-semibold leading-tight tabular-nums">
               {actualQuantity(material, parentIsSerial)}
-              <span aria-hidden>/</span>
+              <span aria-hidden className="text-muted-foreground">
+                /
+              </span>
               {estimatedQuantity(material, parentIsSerial)}
             </span>
-          </div>
-          {material.description ? (
-            <span className="truncate text-sm text-muted-foreground">
-              {material.description}
-            </span>
-          ) : null}
-          <MaterialSource material={material} />
-          <div className="flex flex-wrap items-center gap-1">
-            <ShortStockBadge material={material} />
-            <TrackingBadge material={material} />
-            <ExpiredConsumedBadge material={material} />
-            <PickedBadge
-              quantityPicked={material.quantityPicked}
-              quantityToPick={material.quantityToPick}
-            />
-          </div>
-          <PickedBreakdown
-            materialItemId={material.itemId}
-            pickedByItem={material.pickedByItem}
-          />
-          {batchTotal ? (
             <span className="text-xs text-muted-foreground">
-              <Trans>Batch</Trans>: {batchTotal.issued} / {batchTotal.required}
+              <Trans>Issued</Trans>
             </span>
-          ) : null}
+            {batchTotal ? (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                <Trans>Batch</Trans>: {batchTotal.issued} /{" "}
+                {batchTotal.required}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {/* A fixed slot, so the quantities line up. */}
-        <div className="flex min-w-28 shrink-0 justify-end">
-          {row.issue === "scan" && row.isKitChild ? (
-            <IconButton
-              aria-label={issueLabel(material)}
-              variant="secondary"
+        <div className="flex items-start gap-2">
+          <LuMapPin
+            aria-hidden
+            className="mt-2 size-4 shrink-0 text-muted-foreground"
+          />
+          <MaterialSource material={material} size="large" />
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+          <ShortStockBadge material={material} />
+          <TrackingBadge material={material} />
+          <ExpiredConsumedBadge material={material} />
+          <PickedBadge
+            quantityPicked={material.quantityPicked}
+            quantityToPick={material.quantityToPick}
+          />
+        </div>
+        <PickedBreakdown
+          materialItemId={material.itemId}
+          pickedByItem={material.pickedByItem}
+        />
+        {row.issue || (onScrap && canScrapParts(material)) ? (
+          <div className="flex items-center gap-2">
+            {row.issue ? (
+              <Button
+                size="lg"
+                className="flex-1"
+                variant={row.isPrimaryIssue ? "primary" : "secondary"}
+                leftIcon={
+                  row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
+                }
+                isDisabled={disabled}
+                onClick={() => onIssue(material)}
+                aria-label={issueLabel(material)}
+              >
+                <Trans>Issue</Trans>
+              </Button>
+            ) : null}
+            <ScrapPartsButton
+              material={material}
+              onScrap={onScrap}
+              disabled={disabled}
               size="lg"
-              icon={<LuQrCode />}
-              isDisabled={disabled}
-              onClick={() => onIssue(material)}
             />
-          ) : row.issue ? (
-            <Button
-              size="lg"
-              className="shrink-0"
-              variant={row.isPrimaryIssue ? "primary" : "secondary"}
-              leftIcon={
-                row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
-              }
-              isDisabled={disabled}
-              onClick={() => onIssue(material)}
-              aria-label={issueLabel(material)}
-            >
-              <Trans>Issue</Trans>
-            </Button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </li>
     );
   };

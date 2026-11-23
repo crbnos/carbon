@@ -47,6 +47,7 @@ import {
   LuEllipsisVertical,
   LuFlag,
   LuGitPullRequest,
+  LuPackageX,
   LuPause,
   LuPlay,
   LuScan,
@@ -58,10 +59,14 @@ import { AbilityWarning } from "~/components/AbilityWarning";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
+import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsModal";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
-import type { AbilityShortfall } from "~/services/operations.service";
+import {
+  type AbilityShortfall,
+  isSerialEntityIncompleteForOperation
+} from "~/services/operations.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,
@@ -75,6 +80,7 @@ import type {
 } from "~/services/types";
 import { OriginInput, useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { operationUnits } from "~/utils/workUnit";
 import type { AllocatableUnit, FailedFeatureSummary } from "./DispositionModal";
 import DispositionModal from "./DispositionModal";
 import {
@@ -171,7 +177,6 @@ export function InspectionView({
   // Which entity the produced lot samples come from: the job make method's
   // WIP entities (the part being made), not receipt entities.
   const isSerial = requiresSerialTracking;
-  const isTracked = requiresSerialTracking || requiresBatchTracking;
 
   const lotClosed =
     inspection.dispositionedAt != null &&
@@ -218,6 +223,7 @@ export function InspectionView({
   const partialDisclosure = useDisclosure();
   const acceptDisclosure = useDisclosure();
   const actionsSheet = useDisclosure();
+  const scrapParts = useScrapParts(operationId ?? "");
   const qualityModal = useDisclosure();
   const scrapModal = useDisclosure();
   const finishModal = useDisclosure();
@@ -373,17 +379,22 @@ export function InspectionView({
       | ProductionEvent
       | undefined;
 
-  // The next unit still to build is the natural target for completes; a batch
-  // parent shares one lot entity across every unit.
-  const quantityComplete = Math.max(
-    0,
-    Math.round((operation?.quantityComplete as number) ?? 0)
-  );
+  // The lot is decided per unit through Reject / Partial, which name each
+  // unit. Scrap and a quality issue from the action sheet name a serial unit
+  // only when one is left open here; never one by position. A batch parent
+  // shares one lot entity across every unit. A First Article lot has no
+  // operation, so it names no unit here.
+  const openSerialUnits =
+    requiresSerialTracking && operationId !== null && operation !== null
+      ? operationUnits(trackedEntities, operation.operationQuantity).filter(
+          (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
+        )
+      : [];
+  const soleSerialUnitId =
+    openSerialUnits.length === 1 ? openSerialUnits[0]!.id : undefined;
   const completeEntityId = requiresBatchTracking
     ? (trackedEntities[0]?.id ?? "")
-    : requiresSerialTracking
-      ? (trackedEntities[quantityComplete]?.id ?? trackedEntities[0]?.id ?? "")
-      : "";
+    : (soleSerialUnitId ?? "");
 
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
@@ -712,7 +723,9 @@ export function InspectionView({
         <QualityIssueModal
           operationId={operationId}
           trackedEntityId={
-            isTracked ? (trackedEntities[0]?.id ?? undefined) : undefined
+            requiresBatchTracking
+              ? (trackedEntities[0]?.id ?? undefined)
+              : soleSerialUnitId
           }
           isOpen={qualityModal.isOpen}
           onClose={qualityModal.onClose}
@@ -779,7 +792,11 @@ export function InspectionView({
                   <ActionSheetButton
                     icon={<LuTrash className="size-4 shrink-0" />}
                     label={t`Scrap`}
-                    disabled={abilityBlocked}
+                    // A serial lot scraps a unit through Reject or Partial, which name it.
+                    disabled={
+                      abilityBlocked ||
+                      (requiresSerialTracking && !soleSerialUnitId)
+                    }
                     onClick={() => {
                       actionsSheet.onClose();
                       scrapModal.onOpen();
@@ -801,6 +818,15 @@ export function InspectionView({
                     onClick={() => {
                       actionsSheet.onClose();
                       finishModal.onOpen();
+                    }}
+                  />
+                  <ActionSheetButton
+                    icon={<LuPackageX className="size-4 shrink-0" />}
+                    label={t`Scrap parts`}
+                    disabled={abilityBlocked}
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      scrapParts.open();
                     }}
                   />
                   <ActionSheetButton
@@ -827,6 +853,7 @@ export function InspectionView({
           </BottomSheetBody>
         </BottomSheetContent>
       </BottomSheet>
+      {operationId !== null ? scrapParts.modal : null}
 
       {/* Inspecting is work: start the labor clock on open whenever no clock
           is running (any work type — the exclusive start would end it).

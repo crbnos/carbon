@@ -2302,11 +2302,16 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
     need("item", "inventory.onHandTracked", tracked.item);
     if (tracked.shelf !== undefined) {
       // Tier 03 writes the opening ledger per lot at this shelf, so the lots
-      // must be live and must add up to the (item, shelf) opening stock.
+      // must add up to the (item, shelf) opening stock; a Scrapped lot is
+      // written there first, so it must be scrapped from this shelf too.
       const where = `inventory.onHandTracked "${tracked.item}" shelf`;
       need("shelf", where, tracked.shelf);
-      if (tracked.entities.some((entity) => entity.status === "Scrapped")) {
-        fail(`${where}: a Scrapped entity cannot sit on a tracked shelf`);
+      for (const entity of tracked.entities) {
+        if (entity.scrap && entity.scrap.shelf !== tracked.shelf) {
+          fail(
+            `${where}: Scrapped "${entity.readableId}" is scrapped from "${entity.scrap.shelf}", not "${tracked.shelf}"`
+          );
+        }
       }
       // Compared at database precision: 0.1 + 0.2 is not 0.3 in floats.
       const lotSum = round(

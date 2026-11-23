@@ -1265,6 +1265,19 @@ export const accounts = [
     consolidatedRate: "Current",
     createdBy: "system"
   },
+  // A supplier payment can be paid from an account in this group.
+  {
+    key: "credit-cards",
+    number: null,
+    name: "Credit Cards",
+    isGroup: true,
+    parentKey: "current-liabilities",
+    accountType: "Credit Card",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
   {
     key: "2110",
     number: "2110",

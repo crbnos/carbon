@@ -8,7 +8,8 @@ import {
   type CallExpression,
   Node,
   SyntaxKind,
-  type VariableDeclaration
+  type VariableDeclaration,
+  VariableDeclarationKind
 } from "ts-morph";
 
 /** The `input:` expression of a `defineServiceFn({ … })` call. */
@@ -36,8 +37,28 @@ function baseValidator(expression: Node): Node | undefined {
     : undefined;
 }
 
+function literalText(node: Node | undefined): string | undefined {
+  return Node.isStringLiteral(node) || Node.isNoSubstitutionTemplateLiteral(node)
+    ? node.getLiteralValue()
+    : undefined;
+}
+
 /**
- * The text of a `.describe("…")` on a field's own schema: its method chain
+ * The text of a `.describe(…)` argument: a string literal, or a `const`
+ * declared as one, in the same file or imported.
+ */
+function describeArgumentText(argument: Node | undefined): string | undefined {
+  if (!Node.isIdentifier(argument)) return literalText(argument);
+  const definition = argument.getDefinitionNodes()[0];
+  return Node.isVariableDeclaration(definition) &&
+    definition.getVariableStatement()?.getDeclarationKind() ===
+      VariableDeclarationKind.Const
+    ? literalText(definition.getInitializer())
+    : undefined;
+}
+
+/**
+ * The text of a `.describe(…)` on a field's own schema: its method chain
  * (`z.string().min(1).describe("…").optional()`), never a call inside an
  * argument, so a nested field's description stays on the nested field.
  */
@@ -47,11 +68,7 @@ function describeText(initializer: Node | undefined): string | undefined {
     const callee = node.getExpression();
     if (!Node.isPropertyAccessExpression(callee)) return undefined;
     if (callee.getName() === "describe") {
-      const text = node.getArguments()[0];
-      return Node.isStringLiteral(text) ||
-        Node.isNoSubstitutionTemplateLiteral(text)
-        ? text.getLiteralValue()
-        : undefined;
+      return describeArgumentText(node.getArguments()[0]);
     }
     node = callee.getExpression();
   }

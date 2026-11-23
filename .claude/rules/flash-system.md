@@ -49,6 +49,10 @@ if (result.error) {
 throw redirect(path.to.things, await flash(request, success("Created")));
 ```
 
+- `flashData(request, result, value)` (`@carbon/auth/session.server`) is the same
+  stay-on-page response in one call. `respond(...).redirect` uses it for a refused
+  save: `{ formError }` plus the flash, so the toast shows and `ValidatedForm` shows the
+  error on the form (see `module-files.md`).
 - One `flash` call per response (the cookie holds a single message).
 - On success, **`throw redirect(...)`** with the flash headers (not `return redirect`).
 - Validation failures use `validationError(validation.error)` instead (no flash).

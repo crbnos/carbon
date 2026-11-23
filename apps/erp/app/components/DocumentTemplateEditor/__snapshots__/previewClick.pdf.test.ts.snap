@@ -851,13 +851,10 @@ exports[`clicking a real PDF > opens the right text on the purchaseOrder sample 
     "1": "lineItems:numberCell",
   },
   {
-    "STEEL-BAR-50": "lineItems:descriptionCell",
+    "SW-1045-50R": "lineItems:descriptionCell",
   },
   {
     "Steel Bar, 50mm": "lineItems:detailsCell",
-  },
-  {
-    "Supplier Part ID: SW-1045-50R": "lineItems:supplierPartCell",
   },
   {
     "Shipping: 5.00": "lineItems:shipping",

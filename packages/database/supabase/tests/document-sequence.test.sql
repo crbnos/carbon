@@ -69,6 +69,43 @@ SELECT pg_temp.expect(
 UPDATE "sequence" SET "next" = 501
 WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
 
+-- Beside a week, with no month or day, the year is the week's: Friday
+-- 1 January 2027 is in ISO week 53 of 2026, and in US week 1 of 2027. Beside a
+-- month the year stays the calendar year.
+SELECT pg_temp.expect('ISO week and its year at a new year', '2653', interpolate_sequence_date('%{yy}%{ww}', '2027-01-01 13:05:09', 'iso'));
+SELECT pg_temp.expect('US week and its year at a new year', '2701', interpolate_sequence_date('%{yy}%{ww}', '2027-01-01 13:05:09', 'us'));
+SELECT pg_temp.expect('a month keeps the calendar year', '2027-01-W53', interpolate_sequence_date('%{yyyy}-%{mm}-W%{ww}', '2027-01-01 13:05:09', 'iso'));
+SELECT pg_temp.expect('the whole format decides the year', '26-', interpolate_sequence_date('%{yy}-', '2027-01-01 13:05:09', 'iso', '%{yy}-W%{ww}'));
+SELECT pg_temp.expect('serial segment keeps its location', 'HQ-2653-', interpolate_serial_segment('%{location}-%{yy}%{ww}-', '2027-01-03 23:59:59', 'HQ'));
+SELECT pg_temp.expect('serial segment counts US weeks', 'HQ-2702-', interpolate_serial_segment('%{location}-%{yy}%{ww}-', '2027-01-03 23:59:59', 'HQ', 'us'));
+
+-- A document number takes the company's week numbering in its timezone.
+UPDATE "sequence" SET "prefix" = 'WK%{yy}%{ww}-', "suffix" = '/%{yyyy}', "size" = 4, "next" = 501
+WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
+UPDATE "companySettings" SET "sequenceWeekNumbering" = 'iso'
+WHERE "id" = (SELECT "companyId" FROM picked);
+SELECT pg_temp.expect(
+  'a document number in ISO 8601 weeks',
+  (SELECT 'WK' || to_char(v, 'IY') || to_char(v, 'IW') || '-0502/' || to_char(v, 'IYYY')
+   FROM (SELECT now() AT TIME ZONE COALESCE(
+     (SELECT "timezone" FROM "company" WHERE "id" = (SELECT "companyId" FROM picked)), 'UTC') AS v) t),
+  get_next_sequence('salesOrder', (SELECT "companyId" FROM picked))
+);
+UPDATE "companySettings" SET "sequenceWeekNumbering" = 'us'
+WHERE "id" = (SELECT "companyId" FROM picked);
+SELECT pg_temp.expect(
+  'a document number in US weeks',
+  (SELECT interpolate_sequence_date('WK%{yy}%{ww}-', v, 'us', 'WK%{yy}%{ww}-/%{yyyy}')
+     || '0503' || interpolate_sequence_date('/%{yyyy}', v, 'us', 'WK%{yy}%{ww}-/%{yyyy}')
+   FROM (SELECT now() AT TIME ZONE COALESCE(
+     (SELECT "timezone" FROM "company" WHERE "id" = (SELECT "companyId" FROM picked)), 'UTC') AS v) t),
+  get_next_sequence('salesOrder', (SELECT "companyId" FROM picked))
+);
+UPDATE "companySettings" SET "sequenceWeekNumbering" = 'iso'
+WHERE "id" = (SELECT "companyId" FROM picked);
+UPDATE "sequence" SET "prefix" = 'SO', "suffix" = NULL, "size" = 6, "next" = 501
+WHERE "table" = 'salesOrder' AND "companyId" = (SELECT "companyId" FROM picked);
+
 -- A memo's direction picks its sequence.
 UPDATE "sequence" SET "prefix" = 'CM', "suffix" = NULL, "size" = 6, "next" = 1
 WHERE "table" = 'creditMemo' AND "companyId" = (SELECT "companyId" FROM picked);

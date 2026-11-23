@@ -21,6 +21,14 @@ export {
   jobCompletionDate,
   purchaseOrderLineArrivalDate
 } from "./mrp/supply-date.ts";
+// How many of an item can be made now, through every BOM level, and what limits it.
+export {
+  type Buildable,
+  type BuildableItem,
+  type BuildableJobShortage,
+  computeBuildable,
+  loadBuildable
+} from "./promising/buildable.ts";
 export {
   buildDecisionInputs,
   type CapacityAnswer,

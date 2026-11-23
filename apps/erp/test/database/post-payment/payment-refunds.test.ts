@@ -86,10 +86,12 @@ for (const isAR of [true, false]) {
       try {
         const p = await party(f, isAR);
         const memoId = await memo(f, isAR, p.id, 55, 1.1);
+        // A refund is dated on or after the memo it refunds.
         const paymentId = await f.payment({
           amount: 55,
           rate: 1.25,
-          noApplication: true
+          noApplication: true,
+          paymentDate: "2026-09-07"
         });
         await f.db
           .updateTable("payment")
@@ -176,7 +178,8 @@ for (const isAR of [true, false]) {
         const excessive = await f.payment({
           amount: 55,
           rate: 1.25,
-          noApplication: true
+          noApplication: true,
+          paymentDate: "2026-09-07"
         });
         await f.db
           .updateTable("payment")
@@ -204,7 +207,7 @@ for (const isAR of [true, false]) {
           .execute();
         await expect(
           postPaymentTransaction(f.db, { ...f.args, paymentId: excessive })
-        ).rejects.toThrow();
+        ).rejects.toThrow("Application exceeds target balance");
         expect(
           (
             await f.db
@@ -332,7 +335,8 @@ for (const isAR of [true, false]) {
           const paymentId = await f.payment({
             amount: 0,
             rate: 16000,
-            noApplication: true
+            noApplication: true,
+            paymentDate: "2026-09-07"
           });
           if (!isAR) {
             await f.db

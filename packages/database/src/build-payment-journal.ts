@@ -95,6 +95,9 @@ export interface BuildPaymentJournalInput {
   totalAmount: number;
   exchangeRate: number;
   bankAccount: string;
+  /** The class of `bankAccount`: Asset for a bank or cash account, Liability
+   *  for a credit card. Defaults to Asset. */
+  bankAccountClass?: "Asset" | "Liability";
   // Resolved once by the driver (nanoid) so this stays pure.
   journalLineReference: string;
   applications: PaymentJournalApplicationInput[];
@@ -203,7 +206,7 @@ export function buildPaymentJournal(
   };
   push(
     cashIn ? "debit" : "credit",
-    "asset",
+    accountTypeFromClass(input.bankAccountClass ?? "Asset"),
     round(grossBase - feeBase),
     bankAccount,
     "Bank / Cash"

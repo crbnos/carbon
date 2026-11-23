@@ -204,7 +204,9 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
     itemId: "a",
     assetId: null,
     purchaseUnitOfMeasureCode: "EA",
-    conversionFactor: 1
+    conversionFactor: 1,
+    jobId: "job_1",
+    jobOperationId: "op_1"
   };
 
   it.each([
@@ -212,7 +214,11 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
     { itemId: "b" },
     { assetId: "fa_1" },
     { purchaseUnitOfMeasureCode: "BX" },
-    { conversionFactor: 10 }
+    { conversionFactor: 10 },
+    { jobId: "job_2" },
+    { jobId: null },
+    { jobOperationId: "op_2" },
+    { jobOperationId: null }
   ])("keeps a received line's %o", (edit) => {
     expect(purchaseOrderLineAmendRefusal(received, 5, edit)).not.toBeNull();
   });
@@ -222,7 +228,9 @@ describe("purchaseOrderLineAmendRefusal identity", () => {
       purchaseOrderLineAmendRefusal(received, 5, {
         itemId: "a",
         purchaseUnitOfMeasureCode: "EA",
-        conversionFactor: 1
+        conversionFactor: 1,
+        jobId: "job_1",
+        jobOperationId: "op_1"
       })
     ).toBeNull();
   });

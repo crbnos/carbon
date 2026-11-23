@@ -58,7 +58,7 @@ const ItemQualityView = ({
   const canUpdate = permissions.can("update", "quality");
   const newDocumentDisclosure = useDisclosure();
   // Archived plans are retired versions — hide them from the list. They stay
-  // reachable from Quality → Inspection Plans and the assignment picker.
+  // reachable from Quality → Inspection Plans.
   const visibleDocuments = documents.filter((doc) => doc.status !== "Archived");
 
   const usageSlots: Record<

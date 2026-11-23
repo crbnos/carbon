@@ -57,6 +57,10 @@ import {
   supplierStages
 } from "@carbon/database/seed-data";
 import {
+  asWeekNumbering,
+  interpolateSequenceFormat
+} from "@carbon/database/sequence-tokens";
+import {
   getPullFromLocations,
   missingPullFromLocations,
   PULLED_ITEM_TYPES
@@ -82,6 +86,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
+import { generateTestLabelZPL } from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -245,7 +250,8 @@ import {
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
-  searchFilter
+  searchFilter,
+  withLabelDpi
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -320,7 +326,6 @@ import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
-import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   type CompanyBackupSummary,
@@ -579,10 +584,22 @@ export async function getCurrentSequence(
 
   const currentSequence = next.toString().padStart(size, "0");
   // Same calendar as get_next_sequence (SQL): tokens roll over at the
-  // company's midnight, or the preview disagrees with the issued number.
-  const timezone = await getCompanyTimeZone(client, companyId);
-  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
-  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
+  // company's midnight and count weeks its way, or the preview disagrees with
+  // the issued number.
+  const [timezone, settings] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    client
+      .from("companySettings")
+      .select("sequenceWeekNumbering")
+      .eq("id", companyId)
+      .maybeSingle()
+  ]);
+  if (settings.error) return settings;
+  const { prefix: derivedPrefix, suffix: derivedSuffix } =
+    interpolateSequenceFormat(prefix, suffix, {
+      timezone,
+      weekNumbering: asWeekNumbering(settings.data?.sequenceWeekNumbering)
+    });
 
   return {
     data: `${derivedPrefix}${currentSequence}${derivedSuffix}`,
@@ -3767,27 +3784,14 @@ export async function createHeadquarters(
 /** A one-label ZPL test page for the route's media size; null for a PDF route or no size. */
 export function generateTestLabel(
   format: string,
-  mediaSizeId: string | null
+  mediaSizeId: string | null,
+  dpi: number,
+  printedAt: string
 ): string | null {
   if (format !== "zpl" || !mediaSizeId) return null;
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
-  const { width, height } = labelSize.zpl;
-  const dpi = labelSize.zpl.dpi || 203;
-  const widthDots = Math.round(width * dpi);
-  const heightDots = Math.round(height * dpi);
-  const now = new Date();
-  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-  return [
-    "^XA",
-    `^PW${widthDots}`,
-    `^LL${heightDots}`,
-    "^MNW",
-    "^FO20,20^A0N,30,30^FDTest Print^FS",
-    `^FO20,60^A0N,20,20^FD${mediaSizeId} — ${width}x${height}"^FS`,
-    `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
-    "^XZ"
-  ].join("\n");
+  return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
 }
 
 /** An API key action on a company without the plan. */

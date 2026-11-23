@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261117063413",
+  "schemaVersion": "20261119125737",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T19:02:24.632Z",
+  "exportedAt": "2026-11-23T10:59:55.513Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -520,7 +520,9 @@
         "travelerLabels",
         "requireTrackedMaterialsIssued",
         "autoPickingListOnRelease",
-        "deliveryDateControl"
+        "deliveryDateControl",
+        "receiptBatchNumbersFromPurchaseOrder",
+        "sequenceWeekNumbering"
       ]
     },
     {
@@ -1404,6 +1406,21 @@
       ]
     },
     {
+      "name": "labelTemplate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "labelType",
+        "mediaSizeId",
+        "templateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "laborCategory",
       "rows": 0,
       "columns": [
@@ -1864,7 +1881,8 @@
         "createdAt",
         "updatedAt",
         "updatedBy",
-        "completedAt"
+        "completedAt",
+        "dpi"
       ]
     },
     {
@@ -3886,7 +3904,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "position"
       ]
     },
     {
@@ -4048,6 +4067,26 @@
       "name": "jobFavorite",
       "rows": 0,
       "columns": ["jobId", "userId"]
+    },
+    {
+      "name": "jobMaterialScrap",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobMaterialId",
+        "jobOperationId",
+        "itemId",
+        "trackedEntityId",
+        "quantity",
+        "scrapReasonId",
+        "replacement",
+        "materialRequestId",
+        "notes",
+        "idempotencyKey",
+        "createdBy",
+        "createdAt"
+      ]
     },
     {
       "name": "jobOperationNote",
@@ -4338,10 +4377,10 @@
         "format",
         "mediaSizeId",
         "printerUrl",
-        "apiKey",
         "createdAt",
         "updatedAt",
-        "templateId"
+        "hasApiKey",
+        "dpi"
       ]
     },
     {
@@ -8717,7 +8756,8 @@
         "internalNotes",
         "supplierInteractionId",
         "postedBy",
-        "inspectionStatus"
+        "inspectionStatus",
+        "rejectedAtInspection"
       ]
     },
     {
@@ -8937,7 +8977,8 @@
         "salesOrderId",
         "rentalAgreementId",
         "customerContractId",
-        "purchaseOrderId"
+        "purchaseOrderId",
+        "postError"
       ]
     },
     {

@@ -415,11 +415,17 @@ export async function seedPrinting(
     ]
   );
   const printerRouteResult = await client.query(
-    `INSERT INTO "printerRoute" ("companyId", "name", "format", "mediaSizeId", "printerUrl", "templateId")
-     VALUES ($1, 'Zebra 2x1', 'zpl', 'label2x1', 'https://your-proxybox-address.pbxz.cloud/api/v1/print/tag_2x1', 'carbon:product-label-2x1'),
-            ($1, 'Document Printer', 'pdf', NULL, 'https://your-proxybox-address.pbxz.cloud/api/v1/print/tag_BWLASER', NULL)
+    `INSERT INTO "printerRoute" ("companyId", "name", "format", "mediaSizeId", "printerUrl")
+     VALUES ($1, 'Zebra 2x1', 'zpl', 'label2x1', 'https://your-proxybox-address.pbxz.cloud/api/v1/print/tag_2x1'),
+            ($1, 'Document Printer', 'pdf', NULL, 'https://your-proxybox-address.pbxz.cloud/api/v1/print/tag_BWLASER')
      RETURNING id, name`,
     [companyId]
+  );
+  await client.query(
+    `INSERT INTO "labelTemplate" ("companyId", "labelType", "mediaSizeId", "templateId", "createdBy")
+     VALUES ($1, 'serialLabel', 'label2x1', 'carbon:product-label-2x1', $2),
+            ($1, 'batchLabel', 'label2x1', 'carbon:product-label-2x1', $2)`,
+    [companyId, userId]
   );
 
   const zplRouteId = printerRouteResult.rows.find(

@@ -102,6 +102,11 @@ import {
   resolveSamplingPlan,
   type SamplingStandard
 } from "@carbon/database/sampling";
+import {
+  getScrappableParts,
+  type ScrappableEntity,
+  type ScrappableOperation
+} from "@carbon/database/scrappable-parts";
 import * as sequence from "@carbon/database/sequence";
 import {
   expandSerialTrackedLines,
@@ -119,6 +124,7 @@ import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { defaultAutoPrint } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
@@ -140,6 +146,7 @@ import {
   indexBy,
   indexByMapped,
   isFullDraw,
+  isJobLocked,
   PickGuardError,
   pluckUnique,
   requireAffected,
@@ -211,6 +218,7 @@ import {
   buildOffsetLines,
   calculateCOGS,
   chunked,
+  clearShipmentTags,
   createAdjustmentJournal,
   documentJournalLines,
   type ExpiredEntityPolicy,
@@ -329,6 +337,9 @@ import {
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
   inventoryCountGroupId,
+  liveShipmentTags,
+  serialLineShortfalls,
+  serialShortfallMessage,
   spreadBatchCount,
   writeOffRestoreQuantity
 } from "./inventory.utils";
@@ -6192,12 +6203,6 @@ export async function setPickingListLineTrackedEntity(
   if (!isSerial && !isBatch) {
     return { data: null, error: "This line is not a tracked item" };
   }
-  if (!args.unpick && !line.toStorageUnitId) {
-    return {
-      data: null,
-      error: "No lineside destination is set for this line"
-    };
-  }
 
   const type = args.unpick
     ? isSerial
@@ -7533,14 +7538,7 @@ export async function pickPickingListLine(
   if (delta !== 0) {
     // A null source is allowed: the kitter can pick material the system shows no
     // stock for (counts are often wrong) — on-hand simply goes negative at the
-    // source until it's reconciled. Only the lineside destination is required.
-    if (delta > 0 && !line.toStorageUnitId) {
-      return {
-        data: null,
-        error: "No lineside destination is set for this line"
-      };
-    }
-
+    // source until it's reconciled. post-picking resolves the destination.
     const body =
       delta > 0
         ? {
@@ -8163,6 +8161,114 @@ export async function inspectionHoldAdjustmentRefusal(
     return null;
   }
   return `${await partName()} is held for inspection in ${hold.name ?? args.storageUnitId}. Quality must decide its inspection lot before it can move.`;
+}
+
+/**
+ * Locks the jobs an outside processing receipt's purchase order lines serve
+ * (SQL `job_receipt_line_references`), in id order, and refuses a Closed one.
+ * Taken before the receipt writes: a close that waits on it reads WIP with
+ * this receipt in it, and a receipt after the close is refused, since the
+ * close writes the job's WIP off once. FOR UPDATE, as the job completion the
+ * receipt can trigger takes it.
+ */
+async function lockOutsideProcessingJobs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderLineIds: string[]
+) {
+  if (purchaseOrderLineIds.length === 0) return;
+  const jobs = await trx
+    .selectFrom("job")
+    .select(["id", "jobId", "status"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", (eb) =>
+      eb
+        .selectFrom(
+          sql<{
+            jobId: string;
+            purchaseOrderLineId: string;
+          }>`job_receipt_line_references(${companyId})`.as("ref")
+        )
+        .select("ref.jobId")
+        .where("ref.purchaseOrderLineId", "in", purchaseOrderLineIds)
+    )
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const closed = jobs.find((job) => job.status === "Closed");
+  if (closed) {
+    throw new InvalidInputError(
+      `Job ${closed.jobId} is closed, so its outside processing can no longer be received or voided.`
+    );
+  }
+}
+
+/**
+ * Sets each outside processing operation from every purchase order line that
+ * serves it, after the lines are written: `quantityComplete` is what they
+ * have received in the job's units, and the operation is Done once each line
+ * on a released order is received complete (a Closed order's lines count as
+ * complete). One line's receipt no longer overwrites what another line of the
+ * same operation received. A Canceled operation is left alone, and with
+ * `keepLockedJobs` (a void) so is a Completed, Closed or Cancelled job's.
+ */
+async function restateOutsideOperations(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobOperationIds: string[],
+  { keepLockedJobs }: { keepLockedJobs: boolean }
+) {
+  if (jobOperationIds.length === 0) return;
+  const counted = sql.join(
+    [...PURCHASE_ORDER_RELEASED_STATUSES, "Closed"].map(
+      (status) => sql`${status}`
+    )
+  );
+  const { rows } = await sql<{
+    id: string;
+    status: Database["public"]["Enums"]["jobOperationStatus"];
+    jobStatus: Database["public"]["Enums"]["jobStatus"];
+    received: number;
+    lines: number;
+    complete: boolean | null;
+  }>`
+    SELECT
+      jo.id,
+      jo.status,
+      j.status AS "jobStatus",
+      COALESCE(SUM(pol."quantityReceived" * COALESCE(pol."conversionFactor", 1))
+        FILTER (WHERE po.status IN (${counted})), 0)::float8 AS received,
+      (COUNT(pol.id) FILTER (WHERE po.status IN (${counted})))::int AS lines,
+      BOOL_AND(po.status = 'Closed' OR pol."receivedComplete")
+        FILTER (WHERE po.status IN (${counted})) AS complete
+    FROM "jobOperation" jo
+    INNER JOIN "job" j ON j.id = jo."jobId" AND j."companyId" = jo."companyId"
+    LEFT JOIN "purchaseOrderLine" pol
+      ON pol."jobOperationId" = jo.id AND pol."companyId" = jo."companyId"
+    LEFT JOIN "purchaseOrder" po
+      ON po.id = pol."purchaseOrderId" AND po."companyId" = pol."companyId"
+    WHERE jo."companyId" = ${companyId}
+      AND jo.id IN (${sql.join(jobOperationIds)})
+    GROUP BY jo.id, jo.status, j.status
+  `.execute(trx);
+  await updateRowsById(
+    trx,
+    "jobOperation",
+    companyId,
+    rows
+      .filter(
+        (row) =>
+          row.status !== "Canceled" &&
+          !(keepLockedJobs && isJobLocked(row.jobStatus))
+      )
+      .map((row) => ({
+        id: row.id,
+        data: {
+          status: row.lines > 0 && row.complete ? "Done" : "In Progress",
+          quantityComplete: round(row.received)
+        }
+      }))
+  );
 }
 
 export function isConsumedByProjectAtReceipt(line: {
@@ -9291,7 +9397,10 @@ export async function salesOrderShipmentLocationOf(
   };
 }
 
-/** Print a document's labels (or a new kanban's cards) when its location's printer auto-prints. */
+/**
+ * Print a document's labels (a new kanban's cards, a shipment's packing slip)
+ * when its location's printer auto-prints.
+ */
 export async function autoPrint(
   ctx: ServiceContext,
   {
@@ -9300,10 +9409,15 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment" | "Kanban" | "PickingList";
+    sourceDocument:
+      | "Receipt"
+      | "Shipment"
+      | "Kanban"
+      | "PickingList"
+      | "PackingSlip";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping" | "kanban" | "inventory";
+    context: "receiving" | "shipping" | "kanban" | "inventory" | "documents";
   }
 ) {
   if (!locationId) return;
@@ -9314,7 +9428,7 @@ export async function autoPrint(
       locationId,
       context
     );
-    if (config?.autoPrint ?? true) {
+    if (config?.autoPrint ?? defaultAutoPrint(context)) {
       await trigger("print-job", {
         sourceDocument,
         sourceDocumentId,
@@ -14763,7 +14877,11 @@ export function buildPurchaseReceiptJournalLines({
     if (line.projectDebit) {
       debitSide = {
         accountId: line.projectDebit.accountId,
-        description: "Project Account"
+        // A capital job's receipt keeps WIP for its asset.
+        description:
+          line.projectDebit.accountId === accounts.workInProgressAccount
+            ? "WIP Account"
+            : "Project Account"
       };
     } else if (trackingType(line) !== "Non-Inventory" && !isOutsideProcessing) {
       const inventory = resolveInventoryAccount(
@@ -16003,31 +16121,44 @@ export async function postReceipt(
         return { success: true };
       }
 
-      const [originalItemLedger, originalJournalLines, purchaseOrderLinesVoid] =
-        await inOrder([
-          () =>
-            // A line consumed by its project at receipt also wrote a
-            // Project Issue row against the receipt.
-            many(db, "itemLedger", {
-              documentId: receiptId,
-              documentType: ["Purchase Receipt", "Project Issue"],
-              companyId
-            }),
-          () =>
-            documentJournalLines(db, companyId, {
-              documentId: receiptId,
-              documentType: "Receipt"
-            }),
-          () =>
-            many(db, "purchaseOrderLine", {
-              purchaseOrderId: receiptHeader.sourceDocumentId
-            })
-        ]);
+      const [
+        originalItemLedger,
+        originalJournalLines,
+        purchaseOrderLinesVoid,
+        purchaseOrderVoid
+      ] = await inOrder([
+        () =>
+          // A line consumed by its project at receipt also wrote a
+          // Project Issue row against the receipt.
+          many(db, "itemLedger", {
+            documentId: receiptId,
+            documentType: ["Purchase Receipt", "Project Issue"],
+            companyId
+          }),
+        () =>
+          documentJournalLines(db, companyId, {
+            documentId: receiptId,
+            documentType: "Receipt"
+          }),
+        () =>
+          many(db, "purchaseOrderLine", {
+            purchaseOrderId: receiptHeader.sourceDocumentId
+          }),
+        () =>
+          single(
+            db,
+            "purchaseOrder",
+            { id: receiptHeader.sourceDocumentId!, companyId },
+            { columns: ["purchaseOrderType"] }
+          )
+      ]);
 
       if (originalItemLedger.error)
         throw new Error("Failed to fetch item ledger entries");
       if (purchaseOrderLinesVoid.error)
         throw new Error("Failed to fetch purchase order lines");
+      if (purchaseOrderVoid.error)
+        throw new Error("Failed to fetch purchase order");
 
       const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
         originalItemLedger.data.map((entry) => ({
@@ -16079,6 +16210,19 @@ export async function postReceipt(
       > = receivedAfterReceiptReversal(
         purchaseOrderLinesVoid.data,
         receiptLines.data
+      );
+
+      // An outside operation completes what its lines have received, so the
+      // void takes its units back off it (restateOutsideOperations).
+      const outsideLineIdsVoid =
+        purchaseOrderVoid.data.purchaseOrderType === "Outside Processing"
+          ? Object.keys(purchaseOrderLineUpdatesVoid)
+          : [];
+      const outsideOperationIdsVoid = pluckUnique(
+        purchaseOrderLinesVoid.data.filter((line) =>
+          outsideLineIdsVoid.includes(line.id)
+        ),
+        (line) => line.jobOperationId
       );
 
       // Reverse FA PO line received status on void
@@ -16275,6 +16419,7 @@ export async function postReceipt(
             .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOutsideProcessingJobs(trx, companyId, outsideLineIdsVoid);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
           await removeUnpickedPutAways(trx, companyId, receiptId);
           const moveReversals = await rejectedMoveReversals(trx, {
@@ -16392,6 +16537,12 @@ export async function postReceipt(
               id,
               data
             }))
+          );
+          await restateOutsideOperations(
+            trx,
+            companyId,
+            outsideOperationIdsVoid,
+            { keepLockedJobs: true }
           );
 
           await trx
@@ -16939,50 +17090,6 @@ export async function postReceipt(
             return acc;
           }, {}) ?? {};
 
-        const jobOperationUpdates = isOutsideProcessing
-          ? purchaseOrderLines.data.reduce<
-              Record<
-                string,
-                Database["public"]["Tables"]["jobOperation"]["Update"]
-              >
-            >((acc, purchaseOrderLine) => {
-              const receiptLines =
-                receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
-              if (
-                receiptLines &&
-                receiptLines.length > 0 &&
-                purchaseOrderLine.purchaseQuantity &&
-                purchaseOrderLine.purchaseQuantity > 0 &&
-                purchaseOrderLine.jobOperationId
-              ) {
-                const recivedQuantityInPurchaseUnit =
-                  receiptLines.reduce((acc, receiptLine) => {
-                    const safeReceivedQuantity =
-                      isNaN(receiptLine.receivedQuantity) ||
-                      receiptLine.receivedQuantity == null
-                        ? 0
-                        : receiptLine.receivedQuantity;
-                    return acc + safeReceivedQuantity;
-                  }, 0) / (receiptLines[0]!.conversionFactor ?? 1);
-
-                const receivedComplete =
-                  purchaseOrderLine.receivedComplete ||
-                  recivedQuantityInPurchaseUnit >=
-                    (purchaseOrderLine.quantityToReceive ??
-                      purchaseOrderLine.purchaseQuantity);
-
-                return {
-                  ...acc,
-                  [purchaseOrderLine.jobOperationId]: {
-                    status: receivedComplete ? "Done" : "In Progress"
-                  }
-                };
-              }
-
-              return acc;
-            }, {})
-          : {};
-
         const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
           Record<
             string,
@@ -17029,6 +17136,19 @@ export async function postReceipt(
 
           return acc;
         }, {});
+
+        // The receipt is the only record of what the supplier finished, so
+        // each outside operation it touches completes what its lines have
+        // received (restateOutsideOperations, after the lines are written).
+        const outsideLineIds = isOutsideProcessing
+          ? Object.keys(purchaseOrderLineUpdates)
+          : [];
+        const outsideOperationIds = pluckUnique(
+          purchaseOrderLines.data.filter((line) =>
+            outsideLineIds.includes(line.id)
+          ),
+          (line) => line.jobOperationId
+        );
 
         // Get account defaults (once for all lines) for the journal entries
         const accountDefaults = await getDefaultPostingGroup(db, companyId);
@@ -17711,6 +17831,7 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,
@@ -18026,16 +18147,6 @@ export async function postReceipt(
             }))
           );
 
-          await updateRowsById(
-            trx,
-            "jobOperation",
-            companyId,
-            Object.entries(jobOperationUpdates).map(([id, data]) => ({
-              id,
-              data
-            }))
-          );
-
           const purchaseOrderLines = await trx
             .selectFrom("purchaseOrderLine")
             .select([
@@ -18159,6 +18270,13 @@ export async function postReceipt(
                 .execute();
             }
           }
+
+          // After the receipt's journal: an outside operation set Done here
+          // can complete its job (sync_finish_job_operation), and the
+          // completion costs the job from the WIP lines already written.
+          await restateOutsideOperations(trx, companyId, outsideOperationIds, {
+            keepLockedJobs: false
+          });
 
           if (projectLedgerDrafts.length > 0) {
             await insertProjectLedgerRows(trx, {
@@ -20324,7 +20442,7 @@ export async function postShipment(
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [shipment, shipmentLines, shipmentLineTracking] = await inOrder([
+    const [shipment, shipmentLines, taggedUnits] = await inOrder([
       // The client is service-role: authorization proved the caller may
       // act in companyId, not that shipmentId belongs to it.
       () => maybeSingle(db, "shipment", { id: shipmentId, companyId }),
@@ -20356,6 +20474,30 @@ export async function postShipment(
     const shipmentHeader = shipment.data;
     if (shipmentLines.error) throw new Error("Failed to fetch shipment lines");
 
+    // A post ships only units tagged to a line the shipment still has, and
+    // clears the tags of deleted lines, so a later void cannot touch them. A
+    // void reads every tag: a posted shipment's lines cannot be deleted.
+    const shipmentLineTracking =
+      type === "post"
+        ? {
+            ...taggedUnits,
+            data: liveShipmentTags(
+              taggedUnits.data ?? [],
+              shipmentLines.data.map((line) => line.id)
+            )
+          }
+        : taggedUnits;
+    if (
+      type === "post" &&
+      (taggedUnits.data?.length ?? 0) > shipmentLineTracking.data.length
+    ) {
+      await clearShipmentTags(db, {
+        companyId,
+        shipmentId,
+        orphansOnly: true
+      });
+    }
+
     const itemIds = shipmentLines.data.reduce<string[]>((acc, shipmentLine) => {
       if (shipmentLine.itemId && !acc.includes(shipmentLine.itemId)) {
         acc.push(shipmentLine.itemId);
@@ -20379,7 +20521,14 @@ export async function postShipment(
           db,
           "item",
           { id: itemIds, companyId },
-          { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          {
+            columns: [
+              "id",
+              "itemTrackingType",
+              "replenishmentSystem",
+              "readableIdWithRevision"
+            ]
+          }
         ),
       () =>
         many(
@@ -20412,6 +20561,26 @@ export async function postShipment(
     }
     if (jobs.error) {
       throw new Error("Failed to fetch jobs");
+    }
+
+    // The postShipment operation refuses this before any write; checked again
+    // here for every other caller of the posting.
+    if (type === "post") {
+      const [shortfall] = serialLineShortfalls(
+        shipmentHeader.sourceDocument,
+        shipmentLines.data,
+        shipmentLineTracking.data ?? []
+      );
+      if (shortfall) {
+        throw new ServerFnError(
+          serialShortfallMessage(
+            shortfall,
+            items.data.find((row) => row.id === shortfall.itemId)
+              ?.readableIdWithRevision
+          ),
+          422
+        );
+      }
     }
 
     const splitEntityIds: string[] = [];
@@ -21096,14 +21265,9 @@ export async function postShipment(
 
                 acc[trackedEntity.id] = {
                   status: "Consumed",
-                  // Keep the ?? fallback exactly as it was and just round it:
-                  // a null shippedQuantity must still fall through to the
-                  // entity's own quantity, which `!== undefined` would not do.
-                  quantity: round(
-                    Number(
-                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
-                    )
-                  )
+                  // The whole lot leaves, so it keeps its own quantity: a line
+                  // ships several serials or lots, never one at the line's total.
+                  quantity: entityQuantity
                 };
 
                 return acc;
@@ -21659,14 +21823,9 @@ export async function postShipment(
                 }
 
                 acc[trackedEntity.id] = {
-                  // Keep the ?? fallback exactly as it was and just round it:
-                  // a null shippedQuantity must still fall through to the
-                  // entity's own quantity, which `!== undefined` would not do.
-                  quantity: round(
-                    Number(
-                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
-                    )
-                  )
+                  // The whole lot leaves, so it keeps its own quantity: a line
+                  // ships several serials or lots, never one at the line's total.
+                  quantity: entityQuantity
                 };
 
                 return acc;
@@ -22175,14 +22334,6 @@ export async function postShipment(
                 shipmentLine.lineId &&
                 serviceLineIds.has(shipmentLine.lineId)
               ) {
-                if (
-                  itemTrackingType === "Serial" &&
-                  lineEntities.length !== shippedQuantity
-                ) {
-                  throw new InvalidInputError(
-                    `Shipment line ${shipmentLine.id}: assign the serviced unit's serial before posting`
-                  );
-                }
                 serviceUnits.push({
                   salesReturnOrderLineId: shipmentLine.lineId,
                   trackedEntityId:
@@ -25415,18 +25566,37 @@ export async function postInventoryAdjustment(
   const trackingRows = (storageUnitQuantities.data ??
     []) as TrackingQuantityRow[];
 
+  const fullest = (rows: TrackingQuantityRow[]) =>
+    rows.reduce<TrackingQuantityRow | null>(
+      (best, q) =>
+        !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
+      null
+    );
+  const rowsOfLot = (lotId: string) =>
+    trackingRows.filter((q) => q.trackedEntityId === lotId);
+  // Non-empty when the payload names a lot that already has stock movements
+  // here. That lot is then the target: a batch number is not unique per lot.
+  const lotRows = trackedEntityId ? rowsOfLot(trackedEntityId) : [];
+  const lotRowIn = (bin: string | null | undefined) =>
+    fullest(lotRows.filter((q) => q.storageUnitId == bin));
+  // A lot's total on-hand after a movement, for settleQuantity. Below zero
+  // means one of its bins is already negative: refused as input the user can
+  // correct, where settleQuantity would throw a 500.
+  const lotOnHandAfter = (lotId: string, movement: number) => {
+    const total = round(
+      rowsOfLot(lotId).reduce((sum, q) => sum + (q.quantity ?? 0), movement)
+    );
+    if (total < 0) {
+      throw new InvalidInputError(
+        "This tracked entity has a negative quantity in a storage unit — correct that row first"
+      );
+    }
+    return total;
+  };
   // A tracked entity's movements stay in the stripe that holds it: the
   // stripe of its row with the most on-hand. Untracked stock, and a new
   // entity, are adjusted in the requested stripe (common by default).
-  const entityHolding = trackedEntityId
-    ? trackingRows
-        .filter((q) => q.trackedEntityId == trackedEntityId)
-        .reduce<TrackingQuantityRow | null>(
-          (best, q) =>
-            !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
-          null
-        )
-    : null;
+  const entityHolding = fullest(lotRows);
   const entityStripe = entityHolding
     ? (entityHolding.projectId ?? null)
     : requestedStripe;
@@ -25445,14 +25615,14 @@ export async function postInventoryAdjustment(
     createdBy: userId
   };
 
+  // The row an adjustment that names no lot is measured against.
   // null == undefined — loose equality is deliberate (ported behavior).
   const currentQuantity = trackedEntityId
-    ? trackingRows.find((q) => q.trackedEntityId == trackedEntityId)
+    ? undefined
     : trackingRows.find(
         (q) =>
           q.storageUnitId == storageUnitId && q.projectId == requestedStripe
       );
-  const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
 
   // Fixed Duration shelf-life fallback for NEW tracked entities when the
   // user did not type an expiry. Other modes stay NULL (resolved at
@@ -25599,7 +25769,15 @@ export async function postInventoryAdjustment(
         if (scrapQuantity > entityQuantity) {
           throw new InvalidInputError("Insufficient quantity for scrap");
         }
-        const bin = currentQuantity?.storageUnitId ?? storageUnitId ?? null;
+        // The lot's row in the payload's bin when it has stock there, else
+        // the row holding most of it (a serial UI sends no bin). The scrap
+        // leaves that row's bin and stripe.
+        const scrappedFrom =
+          [lotRowIn(storageUnitId), entityHolding].find(
+            (row) => (row?.quantity ?? 0) > 0
+          ) ?? null;
+        const bin =
+          (scrappedFrom ? scrappedFrom.storageUnitId : storageUnitId) ?? null;
 
         let scrappedEntityId = trackedEntityId;
         if (!isFullDraw(entityQuantity, scrapQuantity)) {
@@ -25720,6 +25898,9 @@ export async function postInventoryAdjustment(
             ...scrapLedgerBase,
             trackedEntityId: scrappedEntityId,
             storageUnitId: bin,
+            projectId: scrappedFrom
+              ? (scrappedFrom.projectId ?? null)
+              : scrapLedgerBase.projectId,
             quantity: -Math.abs(scrapQuantity)
           },
           item,
@@ -25989,12 +26170,20 @@ export async function postInventoryAdjustment(
       }
       await applyExpirationOverride(trx, trackedEntityId!);
 
+      // What the lot holds in the bin it leaves, on that row's stripe.
+      const leaving = lotRowIn(originalStorageUnitId);
+      const moved = leaving?.quantity ?? 0;
+      if (moved <= 0) return;
+      const transferBase = {
+        ...ledgerBase,
+        projectId: leaving?.projectId ?? null
+      };
       await bookAdjustment(trx, {
         ledger: {
-          ...ledgerBase,
+          ...transferBase,
           storageUnitId: originalStorageUnitId!,
           entryType: "Negative Adjmt.",
-          quantity: -currentQuantityOnHand
+          quantity: -moved
         },
         item,
         itemCost,
@@ -26003,9 +26192,9 @@ export async function postInventoryAdjustment(
       });
       const positive = await bookAdjustment(trx, {
         ledger: {
-          ...ledgerBase,
+          ...transferBase,
           entryType: "Positive Adjmt.",
-          quantity: currentQuantityOnHand
+          quantity: moved
         },
         item,
         itemCost,
@@ -26020,8 +26209,15 @@ export async function postInventoryAdjustment(
       adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType;
     let adjustmentQuantity = quantity;
 
-    if (adjustmentType === "Set Quantity" && currentQuantity) {
-      const quantityDifference = quantity - currentQuantityOnHand;
+    // What the adjustment is measured against and booked on: the named lot's
+    // row in the payload's bin (one row per lot, bin and stripe), else the
+    // loose lookup. A lot elsewhere at the location has nothing in this bin.
+    const namesLot = lotRows.length > 0;
+    const adjustedRow = namesLot ? lotRowIn(storageUnitId) : currentQuantity;
+    const adjustedOnHand = adjustedRow?.quantity ?? 0;
+
+    if (adjustmentType === "Set Quantity" && (namesLot || currentQuantity)) {
+      const quantityDifference = quantity - adjustedOnHand;
       if (quantityDifference > 0) {
         entryType = "Positive Adjmt.";
         adjustmentQuantity = quantityDifference;
@@ -26050,47 +26246,41 @@ export async function postInventoryAdjustment(
       }
     }
 
-    // Resolve the stock target for a negative adjustment when a serial
-    // number is provided or nothing matched the loose lookup.
-    if (entryType === "Negative Adjmt." && (readableId || !currentQuantity)) {
-      if (readableId) {
-        const resolvedQtyRow = trackingRows.find(
-          (q) =>
-            q.readableId === readableId &&
-            q.trackedEntityId != null &&
-            (q.quantity ?? 0) > 0
-        );
-        if (!resolvedQtyRow) {
-          throw new InvalidInputError("Serial number not found");
-        }
-        const resolvedId = resolvedQtyRow.trackedEntityId as string;
-        const resolvedQty = round(resolvedQtyRow.quantity ?? 0);
-        if (round(adjustmentQuantity) > resolvedQty) {
+    // Resolve the stock target for a negative adjustment that names no
+    // existing lot, when a serial or batch number is provided or nothing
+    // matched the loose lookup.
+    if (
+      entryType === "Negative Adjmt." &&
+      !namesLot &&
+      (readableId || !currentQuantity)
+    ) {
+      // Reduces the lot of a resolved on-hand row, in that row's bin and
+      // stripe. Draining the lot's total to zero Consumes it; settleQuantity
+      // is the shared rule, so a Scrapped lot stays Scrapped.
+      const reduceLotOf = async (row: TrackingQuantityRow, rename?: string) => {
+        const lotId = row.trackedEntityId as string;
+        if (round(adjustmentQuantity) > round(row.quantity ?? 0)) {
           throw new InvalidInputError(
             "Insufficient quantity for negative adjustment"
           );
         }
-        // A negative adjustment draws down Available stock; when it lands
-        // on zero the lot is Consumed, not a zero-quantity Available husk.
-        // settleQuantity is the shared rule, so this path also preserves a
-        // Scrapped lot — which the inline flip it replaces did not.
         await trx
           .updateTable("trackedEntity")
           .set({
             ...settleQuantity({
-              quantity: resolvedQty - adjustmentQuantity,
-              status: await currentEntityStatus(trx, resolvedId, companyId)
+              quantity: lotOnHandAfter(lotId, -adjustmentQuantity),
+              status: await currentEntityStatus(trx, lotId, companyId)
             }),
-            readableId
+            ...(rename ? { readableId: rename } : {})
           })
-          .where("id", "=", resolvedId)
+          .where("id", "=", lotId)
           .where("companyId", "=", companyId)
           .execute();
         const booked = await bookAdjustment(trx, {
           ledger: {
             ...ledgerBase,
-            trackedEntityId: resolvedId,
-            projectId: resolvedQtyRow.projectId ?? null,
+            trackedEntityId: lotId,
+            projectId: row.projectId ?? null,
             entryType,
             quantity: -Math.abs(adjustmentQuantity)
           },
@@ -26099,6 +26289,30 @@ export async function postInventoryAdjustment(
           accounting
         });
         resultLedgerId = booked.itemLedgerId;
+      };
+
+      if (readableId) {
+        const matches = trackingRows.filter(
+          (q) =>
+            q.readableId === readableId &&
+            q.trackedEntityId != null &&
+            q.storageUnitId == storageUnitId &&
+            (q.quantity ?? 0) > 0
+        );
+        const resolvedQtyRow = matches[0];
+        if (!resolvedQtyRow) {
+          throw new InvalidInputError("Serial number not found");
+        }
+        if (
+          matches.some(
+            (q) => q.trackedEntityId !== resolvedQtyRow.trackedEntityId
+          )
+        ) {
+          throw new InvalidInputError(
+            "Multiple tracked entities in this storage unit — select a specific row to adjust"
+          );
+        }
+        await reduceLotOf(resolvedQtyRow, readableId);
         return;
       }
 
@@ -26149,44 +26363,13 @@ export async function postInventoryAdjustment(
           "Multiple tracked entities in this storage unit — select a specific row to adjust"
         );
       }
-      const targetRow = trackedRowsInUnit[0]!;
-      const targetQty = round(targetRow.quantity ?? 0);
-      if (round(adjustmentQuantity) > targetQty) {
-        throw new InvalidInputError(
-          "Insufficient quantity for negative adjustment"
-        );
-      }
-      const targetId = targetRow.trackedEntityId as string;
-      await trx
-        .updateTable("trackedEntity")
-        .set(
-          settleQuantity({
-            quantity: targetQty - adjustmentQuantity,
-            status: await currentEntityStatus(trx, targetId, companyId)
-          })
-        )
-        .where("id", "=", targetId)
-        .where("companyId", "=", companyId)
-        .execute();
-      const booked = await bookAdjustment(trx, {
-        ledger: {
-          ...ledgerBase,
-          trackedEntityId: targetId,
-          projectId: targetRow.projectId ?? null,
-          entryType,
-          quantity: -Math.abs(adjustmentQuantity)
-        },
-        item,
-        itemCost,
-        accounting
-      });
-      resultLedgerId = booked.itemLedgerId;
+      await reduceLotOf(trackedRowsInUnit[0]!);
       return;
     }
 
     let signedQuantity = adjustmentQuantity;
     if (entryType === "Negative Adjmt.") {
-      if (adjustmentQuantity > currentQuantityOnHand) {
+      if (adjustmentQuantity > adjustedOnHand) {
         throw new InvalidInputError(
           "Insufficient quantity for negative adjustment"
         );
@@ -26195,13 +26378,14 @@ export async function postInventoryAdjustment(
     }
 
     if (trackedEntityId) {
-      if (currentQuantity) {
+      if (namesLot) {
         // Draining a lot to zero Consumes it (a Set Quantity to 0 or a full
         // negative adjustment); above zero its status is untouched. This path
         // takes an arbitrary trackedEntityId from the payload, so it is the
         // one that can land on a Scrapped lot — settleQuantity preserves it.
+        // Settled on the lot's total, so stock in another bin keeps it open.
         const entityUpdate: Record<string, unknown> = settleQuantity({
-          quantity: signedQuantity + currentQuantityOnHand,
+          quantity: lotOnHandAfter(trackedEntityId, signedQuantity),
           status: await currentEntityStatus(trx, trackedEntityId, companyId)
         });
         if (readableId !== undefined && readableId !== null) {
@@ -26272,6 +26456,9 @@ export async function postInventoryAdjustment(
     const booked = await bookAdjustment(trx, {
       ledger: {
         ...ledgerBase,
+        ...(namesLot && adjustedRow
+          ? { projectId: adjustedRow.projectId ?? null }
+          : {}),
         entryType,
         quantity: signedQuantity
       },
@@ -26329,6 +26516,56 @@ async function assertPickSourceNettable(
       `${unit.name} is non-nettable. A picking list never takes stock from a non-nettable storage unit: move the stock with a stock transfer, or generate the picking list again.`
     );
   }
+}
+
+/** A release picking list runs before the scheduler gives an operation its work
+ *  center, so a line can have no lineside: take it from the work center now. */
+async function resolvePickDestination<
+  T extends {
+    id: string;
+    jobOperationId: string | null;
+    toStorageUnitId: string | null;
+  }
+>(
+  trx: Transaction<KyselyDatabase>,
+  line: T,
+  companyId: string,
+  userId: string
+): Promise<T & { toStorageUnitId: string }> {
+  if (line.toStorageUnitId) {
+    return { ...line, toStorageUnitId: line.toStorageUnitId };
+  }
+  const operation = line.jobOperationId
+    ? await trx
+        .selectFrom("jobOperation")
+        .where("id", "=", line.jobOperationId)
+        .where("companyId", "=", companyId)
+        .select("workCenterId")
+        .executeTakeFirst()
+    : undefined;
+  const lineside = operation?.workCenterId
+    ? ((
+        await sql<{ id: string | null }>`
+          SELECT get_or_create_work_center_lineside(${operation.workCenterId}, ${companyId}, ${userId}) AS id
+        `.execute(trx)
+      ).rows[0]?.id ?? null)
+    : null;
+  if (!lineside) {
+    throw new InvalidInputError(
+      "No lineside destination is set for this line. Set a work center on its operation, then pick again."
+    );
+  }
+  await trx
+    .updateTable("pickingListLine")
+    .set({
+      toStorageUnitId: lineside,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", line.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  return { ...line, toStorageUnitId: lineside };
 }
 
 export async function postPicking(
@@ -26412,13 +26649,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         const nextQuantity = resolvePick({
           lineQuantity: line.quantityToPick ?? 0,
           pickedQuantity: line.quantityPicked ?? 0,
@@ -26664,13 +26906,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // A pick line draws one stripe at the list's location: the serial
@@ -26818,13 +27065,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // Lock the source lot too: the split below draws against this
@@ -31168,6 +31420,7 @@ export const issueMaterialPermission = {
     jobOperationSerialComplete: { update: "production" },
     jobOperationScrap: { update: "production" },
     partToOperation: { update: "production" },
+    scrapJobPart: { update: "production" },
     scrapTrackedEntity: { update: "production" },
     mergeTrackedEntities: { update: "inventory" },
     trackedEntitiesToBatch: { update: "production" },
@@ -31240,6 +31493,453 @@ export async function dryRunJobOperationIssues(
   } catch (err) {
     if (!(err instanceof DryRunRollback)) throw err;
   }
+}
+
+/**
+ * Scrap a serial or batch that was consumed at an operation: split off the
+ * scrapped quantity of a batch, mark it Scrapped under a Scrap activity (its
+ * genealogy keeps where it was used), relieve its cost from WIP, and reopen
+ * the requirement so a replacement is scanned in: the material's own, or for
+ * a part inside a kit serial, a line for that part on the job.
+ */
+async function scrapConsumedEntity(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    scrapId: string;
+    jobOperationId: string;
+    materialId: string;
+    entity: ScrappableEntity;
+    quantity: number;
+    item: {
+      id: string;
+      name: string | null;
+      type: Database["public"]["Enums"]["itemType"] | null;
+      itemTrackingType: string | null;
+      readableIdWithRevision: string | null;
+    };
+    itemPostingGroupId: string | null;
+    unitCost: number;
+    scrapReasonId: string;
+    operation: ScrappableOperation;
+    accounting: Parameters<typeof relieveConsumedToScrap>[1]["accounting"];
+  }
+) {
+  const { companyId, userId, entity, quantity, item, operation } = args;
+  const current = await trx
+    .selectFrom("trackedEntity")
+    .selectAll()
+    .where("id", "=", entity.trackedEntityId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirstOrThrow();
+  if (current.status !== "Consumed") {
+    throw new InvalidInputError(
+      `${entity.readableId} was already scrapped or given back`
+    );
+  }
+  // Read before the lock: another scrap may have taken part of the batch.
+  if (round(quantity) > round(Number(current.quantity))) {
+    throw new InvalidInputError(
+      `${entity.readableId} holds ${round(Number(current.quantity))}`
+    );
+  }
+
+  let scrappedId = current.id;
+  if (!isFullDraw(Number(current.quantity), quantity)) {
+    scrappedId = nanoid();
+    const split = buildBatchSplitRecords({
+      parent: {
+        id: current.id,
+        readableId: current.readableId,
+        quantity: Number(current.quantity),
+        sourceDocument: current.sourceDocument,
+        sourceDocumentId: current.sourceDocumentId,
+        sourceDocumentReadableId: current.sourceDocumentReadableId,
+        itemId: current.itemId ?? null,
+        expirationDate: current.expirationDate ?? null,
+        attributes: current.attributes as Record<string, unknown> | null
+      },
+      drawQuantity: quantity,
+      childId: scrappedId,
+      splitActivityId: nanoid(),
+      activitySourceDocument: "Job Material",
+      activitySourceDocumentId: args.materialId,
+      bin: { storageUnitId: null, locationId: operation.locationId },
+      itemLedgerItemId: item.id,
+      companyId,
+      userId,
+      postingDate: args.accounting.today,
+      childStatus: "Scrapped"
+    });
+    // A consumed batch holds no stock, so the split books no ledger rows.
+    await trx
+      .insertInto("trackedActivity")
+      .values(
+        split.activityInsert as Insertable<KyselyDatabase["trackedActivity"]>
+      )
+      .execute();
+    await trx
+      .insertInto("trackedEntity")
+      .values(
+        split.childEntityInsert as Insertable<KyselyDatabase["trackedEntity"]>
+      )
+      .execute();
+    await trx
+      .insertInto("trackedActivityInput")
+      .values(split.activityInputInsert)
+      .execute();
+    await trx
+      .insertInto("trackedActivityOutput")
+      .values(split.activityOutputInsert)
+      .execute();
+    await trx
+      .updateTable("trackedEntity")
+      .set(split.parentUpdate)
+      .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  } else {
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Scrapped" })
+      .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+
+  const activityId = nanoid();
+  await trx
+    .insertInto("trackedActivity")
+    .values({
+      id: activityId,
+      type: "Scrap",
+      sourceDocument: "Job Material",
+      sourceDocumentId: args.materialId,
+      sourceDocumentReadableId: item.readableIdWithRevision ?? "",
+      attributes: {
+        Job: operation.jobId,
+        "Job Material": args.materialId,
+        "Scrap Reason": args.scrapReasonId,
+        Employee: userId
+      },
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+  await trx
+    .insertInto("trackedActivityInput")
+    .values({
+      trackedActivityId: activityId,
+      trackedEntityId: scrappedId,
+      quantity,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+  if (entity.parentEntityId) {
+    await trx
+      .insertInto("trackedActivityOutput")
+      .values({
+        trackedActivityId: activityId,
+        trackedEntityId: entity.parentEntityId,
+        quantity,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+  }
+
+  await relieveConsumedToScrap(trx, {
+    companyId,
+    userId,
+    jobId: operation.jobId,
+    locationId: operation.locationId,
+    itemId: item.id,
+    itemReadableId: item.readableIdWithRevision ?? "",
+    itemPostingGroupId: args.itemPostingGroupId,
+    unitCost: args.unitCost,
+    quantity,
+    scrapReasonId: args.scrapReasonId,
+    workCenterId: operation.workCenterId,
+    lineReference: `scrapJobPart:${args.scrapId}`,
+    accounting: args.accounting
+  });
+
+  if (!entity.kitReadableId) {
+    // Consumed into the material: its requirement reopens.
+    await trx
+      .updateTable("jobMaterial")
+      .set((eb) => ({
+        quantityIssued: sql<number>`greatest(0, ${eb.ref("quantityIssued")} - ${quantity})`
+      }))
+      .where("id", "=", args.materialId)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  // Inside a kit serial: the job now needs the replacement part itself.
+  const existing = await trx
+    .selectFrom("jobMaterial")
+    .select("id")
+    .where("jobMakeMethodId", "=", operation.jobMakeMethodId)
+    .where("itemId", "=", item.id)
+    .where("methodType", "=", "Pull from Inventory")
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (existing) {
+    await trx
+      .updateTable("jobMaterial")
+      .set((eb) => ({
+        estimatedQuantity: sql<number>`coalesce(${eb.ref("estimatedQuantity")}, 0) + ${quantity}`
+      }))
+      .where("id", "=", existing.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  await trx
+    .insertInto("jobMaterial")
+    .values({
+      companyId,
+      createdBy: userId,
+      description: item.name ?? "",
+      itemId: item.id,
+      jobId: operation.jobId,
+      jobMakeMethodId: operation.jobMakeMethodId,
+      jobOperationId: args.jobOperationId,
+      itemType: item.type ?? "Part",
+      methodType: "Pull from Inventory",
+      quantity: 0,
+      estimatedQuantity: quantity,
+      quantityIssued: 0,
+      requiresBatchTracking: item.itemTrackingType === "Batch",
+      requiresSerialTracking: item.itemTrackingType === "Serial",
+      unitCost: args.unitCost
+    })
+    .execute();
+}
+
+/**
+ * Relieve a consumed part's cost from WIP to scrap: Dr scrapAccount / Cr WIP
+ * (or the project account of a consume-to-project job) at the item's unit
+ * cost, with the scrap dimensions. A part with no cost posts nothing.
+ */
+async function relieveConsumedToScrap(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    jobId: string | null;
+    locationId: string | null;
+    itemId: string;
+    itemReadableId: string;
+    itemPostingGroupId: string | null;
+    unitCost: number;
+    quantity: number;
+    scrapReasonId: string;
+    workCenterId: string | null;
+    lineReference: string;
+    accounting: {
+      postingStatus: AutomaticJournalStatus;
+      accountingPeriodId: string | null;
+      today: string;
+      scrapAccountId: string;
+      workInProgressAccount: string;
+      dimensionMap: Map<string, string>;
+      /** The job's project charge, when the caller already read it. */
+      projectCharge?: Awaited<ReturnType<typeof loadJobProjectCharge>>;
+    };
+  }
+) {
+  const { companyId, userId, jobId, quantity, accounting } = args;
+  const scrapCost = args.unitCost * quantity;
+  if (scrapCost <= 0) return;
+  // A consume-to-project job charged the part to the project, not WIP.
+  const scrapProjectCharge =
+    accounting.projectCharge !== undefined
+      ? accounting.projectCharge
+      : jobId
+        ? await loadJobProjectCharge(trx, companyId, jobId)
+        : null;
+  const journalEntryId = await sequence.getNextSequence(
+    trx,
+    "journalEntry",
+    companyId
+  );
+  const journalResult = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId: accounting.accountingPeriodId,
+      description: `Scrap — ${args.itemReadableId}`,
+      postingDate: accounting.today,
+      companyId,
+      sourceType: "Job Consumption",
+      status: accounting.postingStatus,
+      postedAt: datetime.timestamp(),
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  const journalLineReference = nanoid();
+  const line = {
+    journalId: journalResult.id,
+    quantity,
+    documentType: "Scrap" as const,
+    documentId: jobId,
+    documentLineReference: args.lineReference,
+    journalLineReference,
+    companyId
+  };
+  const journalLineResults = await trx
+    .insertInto("journalLine")
+    .values([
+      {
+        ...line,
+        accountId: accounting.scrapAccountId,
+        description: "Scrap Account",
+        amount: debit("expense", scrapCost)
+      },
+      {
+        ...line,
+        accountId:
+          scrapProjectCharge?.accountId ?? accounting.workInProgressAccount,
+        description:
+          scrapProjectCharge && !scrapProjectCharge.keepsWip
+            ? "Project Material"
+            : "WIP Account",
+        amount: credit("asset", scrapCost)
+      }
+    ])
+    .returning(["id"])
+    .execute();
+
+  const dimensionValues: Array<[string, string | null]> = [
+    ["Item", args.itemId],
+    ["ItemPostingGroup", args.itemPostingGroupId],
+    ["Location", args.locationId],
+    ["ScrapReason", args.scrapReasonId],
+    ["WorkCenter", args.workCenterId],
+    ["Employee", userId]
+  ];
+  const dimensionInserts = journalLineResults.flatMap((row, index) =>
+    [
+      ...dimensionValues,
+      // The project tags go on the project credit only.
+      ...(scrapProjectCharge && index === 1
+        ? ([
+            ["Project", scrapProjectCharge.projectId],
+            ["ProjectElement", scrapProjectCharge.projectElementId]
+          ] as Array<[string, string | null]>)
+        : [])
+    ]
+      .filter(
+        ([entityType, valueId]) =>
+          accounting.dimensionMap.has(entityType) && valueId
+      )
+      .map(([entityType, valueId]) => ({
+        journalLineId: row.id,
+        dimensionId: accounting.dimensionMap.get(entityType)!,
+        valueId: valueId as string,
+        companyId
+      }))
+  );
+  if (dimensionInserts.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionInserts)
+      .execute();
+  }
+
+  if (scrapProjectCharge && jobId) {
+    await insertJobProjectLedgerRows(trx, {
+      charge: scrapProjectCharge,
+      jobId,
+      companyId,
+      userId,
+      documentType: "Scrap",
+      rows: [
+        {
+          itemId: args.itemId,
+          quantity: -quantity,
+          amount: -scrapCost,
+          journalLineId: journalLineResults[1]?.id ?? null
+        }
+      ]
+    });
+  }
+}
+
+/**
+ * The accounting a scrap posts with: the posting status, the default accounts,
+ * the active dimensions, today and its period, and the scrap account. Read
+ * before the transaction parks the (size 1) pool.
+ */
+async function loadScrapAccountingContext(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+) {
+  const [company, postingStatus, accountDefaults, timeZone] = await Promise.all(
+    [
+      single(db, "company", { id: companyId }, { columns: ["companyGroupId"] }),
+      // Provisional before the company's accounting cutover, Posted after it.
+      journalPostingStatus(db, companyId),
+      getDefaultPostingGroup(db, companyId),
+      getCompanyTimeZone(db, companyId)
+    ]
+  );
+  if (company.error) throw new Error("Failed to fetch company");
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: company.data.companyGroupId!,
+      active: true,
+      entityType: [
+        "ItemPostingGroup",
+        "Item",
+        "Location",
+        "ScrapReason",
+        "WorkCenter",
+        "Employee",
+        "Project",
+        "ProjectElement"
+      ]
+    },
+    { columns: ["id", "entityType"] }
+  );
+  const dimensionMap = new Map<string, string>();
+  for (const dim of dimensions.data ?? []) {
+    if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+  }
+
+  const today = datetime.today(timeZone).toString();
+  return {
+    postingStatus,
+    accountDefaults: accountDefaults.data,
+    dimensionMap,
+    today,
+    // A Provisional journal has no accounting period.
+    accountingPeriodId:
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, today)
+        : null,
+    // An empty scrapAccount falls back to the variance account.
+    scrapAccountId: resolveDefaultAccount(
+      accountDefaults.data,
+      "scrapAccount",
+      postingStatus
+    ).accountId
+  };
 }
 
 export async function issueMaterial(
@@ -32312,7 +33012,8 @@ export async function issueMaterial(
         quantity,
         materialId,
         jobOperationStepId,
-        adjustmentType
+        adjustmentType,
+        refuseOverIssue
       } = validatedPayload;
 
       // Written into jobMaterialStep for an unplanned part (no companyId there).
@@ -32608,6 +33309,29 @@ export async function issueMaterial(
             throw new InvalidInputError(
               "Cannot unissue more than the material's issued quantity"
             );
+          }
+          // An item scan counts pieces against the requirement it read
+          // before this lock. Another device, or the completion backflush,
+          // may have filled the material since: refuse rather than over-issue.
+          if (refuseOverIssue && adjustmentType === "Negative Adjmt.") {
+            const stillNeeded = round(
+              (material.estimatedQuantity ?? material.quantity ?? 0) -
+                previouslyIssued
+            );
+            const name =
+              item?.readableIdWithRevision ??
+              material.description ??
+              "material";
+            if (stillNeeded <= EPSILON) {
+              throw new InvalidInputError(
+                `This job already has all its ${name}`
+              );
+            }
+            if (round(quantity) - stillNeeded > EPSILON) {
+              throw new InvalidInputError(
+                `This job needs only ${stillNeeded} more ${name}`
+              );
+            }
           }
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
@@ -32925,6 +33649,350 @@ export async function issueMaterial(
       });
       break;
     }
+    case "scrapJobPart": {
+      const {
+        jobOperationId,
+        scrapReasonId,
+        replacement,
+        notes,
+        idempotencyKey,
+        companyId,
+        userId
+      } = validatedPayload;
+
+      // A retry of a scrap already booked: its serials are no longer listed,
+      // so it is answered before they are checked. Concurrent copies are
+      // caught by the key's unique constraint below.
+      const booked = await db
+        .selectFrom("jobMaterialScrap")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where("idempotencyKey", "=", idempotencyKey)
+        .executeTakeFirst();
+      if (booked) break;
+
+      const [, operation, scrapAccounting] = await Promise.all([
+        assertCompanyRecords(
+          db,
+          "scrapReason",
+          [scrapReasonId],
+          companyId,
+          "Scrap reason"
+        ),
+        getScrappableParts(db, { companyId, jobOperationId }),
+        loadScrapAccountingContext(db, companyId)
+      ]);
+      if (!operation) throw new NotFoundError("Job operation not found");
+
+      // Each line against what the operation lists: an untracked part by
+      // item, a tracked one by the serial or batch that was used.
+      const materialById = new Map(operation.materials.map((m) => [m.id, m]));
+      const lineKey = (
+        materialId: string,
+        itemId: string,
+        trackedEntityId: string | null
+      ) => `${materialId}:${itemId}:${trackedEntityId ?? ""}`;
+      const lines = validatedPayload.lines.map((line) => {
+        const material = materialById.get(line.materialId);
+        const quantity = round(line.quantity);
+        if (quantity <= 0) {
+          throw new InvalidInputError("Scrap a quantity above zero");
+        }
+        if ("trackedEntityId" in line) {
+          const entity = material?.tracked.find(
+            (e) => e.trackedEntityId === line.trackedEntityId
+          );
+          if (!entity) {
+            throw new InvalidInputError(
+              "This serial or batch was not used at this operation"
+            );
+          }
+          if (
+            quantity > round(entity.quantity) ||
+            (entity.trackingType === "Serial" &&
+              !isFullDraw(entity.quantity, quantity))
+          ) {
+            throw new InvalidInputError(
+              `${entity.readableId} holds ${entity.quantity}`
+            );
+          }
+          return {
+            materialId: line.materialId,
+            itemId: entity.itemId,
+            quantity,
+            entity
+          };
+        }
+        if (!material?.parts.some((p) => p.itemId === line.itemId)) {
+          throw new InvalidInputError(
+            "This part cannot be scrapped at this operation"
+          );
+        }
+        return {
+          materialId: line.materialId,
+          itemId: line.itemId,
+          quantity,
+          entity: null
+        };
+      });
+      const keys = lines.map((l) =>
+        lineKey(l.materialId, l.itemId, l.entity?.trackedEntityId ?? null)
+      );
+      if (new Set(keys).size !== keys.length) {
+        throw new InvalidInputError("Each part can be listed once");
+      }
+      const lineByKey = new Map(lines.map((l, i) => [keys[i], l]));
+      // A used part's cost is relieved from WIP, which a finished job has
+      // already closed out.
+      if (
+        lines.some((line) => line.entity) &&
+        ["Completed", "Closed", "Cancelled"].includes(operation.jobStatus ?? "")
+      ) {
+        throw new InvalidInputError(
+          "This job is finished: its used parts can no longer be scrapped"
+        );
+      }
+      const itemIds = [...new Set(lines.map((line) => line.itemId))];
+
+      await db.transaction().execute(async (trx) => {
+        await assertPostingStatusUnchanged(
+          trx,
+          companyId,
+          scrapAccounting.postingStatus
+        );
+
+        // The retry guard: a replay finds its key taken and books nothing.
+        const scraps = await trx
+          .insertInto("jobMaterialScrap")
+          .values(
+            lines.map((line) => ({
+              companyId,
+              jobMaterialId: line.materialId,
+              jobOperationId,
+              itemId: line.itemId,
+              trackedEntityId: line.entity?.trackedEntityId ?? null,
+              quantity: line.quantity,
+              scrapReasonId,
+              replacement,
+              notes: notes || null,
+              idempotencyKey,
+              createdBy: userId
+            }))
+          )
+          .onConflict((oc) =>
+            oc
+              .columns([
+                "companyId",
+                "idempotencyKey",
+                "jobMaterialId",
+                "itemId",
+                "trackedEntityId"
+              ])
+              .doNothing()
+          )
+          .returning(["id", "jobMaterialId", "itemId", "trackedEntityId"])
+          .execute();
+        if (scraps.length === 0) return;
+
+        const [items, itemCosts, stripes] = await Promise.all([
+          trx
+            .selectFrom("item")
+            .select([
+              "id",
+              "name",
+              "type",
+              "itemTrackingType",
+              "replenishmentSystem",
+              "readableIdWithRevision"
+            ])
+            .where("id", "in", itemIds)
+            .execute(),
+          trx
+            .selectFrom("itemCost")
+            .select([
+              "itemId",
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ])
+            .where("itemId", "in", itemIds)
+            .where("companyId", "=", companyId)
+            .execute(),
+          loadDemandStripes(trx, companyId, operation.projectId)
+        ]);
+        const itemById = new Map(items.map((item) => [item.id, item]));
+        const costByItem = new Map(itemCosts.map((c) => [c.itemId, c]));
+        const projectCharge = lines.some((line) => line.entity)
+          ? await loadJobProjectCharge(trx, companyId, operation.jobId)
+          : null;
+        const wipAccounting = {
+          postingStatus: scrapAccounting.postingStatus,
+          accountingPeriodId: scrapAccounting.accountingPeriodId,
+          today: scrapAccounting.today,
+          scrapAccountId: scrapAccounting.scrapAccountId,
+          workInProgressAccount:
+            scrapAccounting.accountDefaults.workInProgressAccount,
+          dimensionMap: scrapAccounting.dimensionMap,
+          projectCharge
+        };
+        // Replacements for the water spider, one request per part.
+        const toRequest = new Map<
+          string,
+          { quantity: number; scrapIds: string[] }
+        >();
+
+        for (const scrap of scraps) {
+          const line = lineByKey.get(
+            lineKey(scrap.jobMaterialId, scrap.itemId, scrap.trackedEntityId)
+          )!;
+          const { itemId, quantity } = line;
+          const item = itemById.get(itemId)!;
+          const itemCost = costByItem.get(itemId);
+
+          if (line.entity) {
+            await scrapConsumedEntity(trx, {
+              companyId,
+              userId,
+              scrapId: scrap.id,
+              jobOperationId,
+              materialId: line.materialId,
+              entity: line.entity,
+              quantity,
+              item,
+              itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+              unitCost: Number(itemCost?.unitCost ?? 0),
+              scrapReasonId,
+              operation,
+              accounting: wipAccounting
+            });
+          } else {
+            // The bad parts go to scrap and good ones come off the shelf, so
+            // the material stays whole: a scrap from the shelf bin.
+            const storageUnitId =
+              (await getNettableDefaultStorageUnitId(
+                trx,
+                itemId,
+                operation.locationId,
+                companyId
+              )) ??
+              (
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId,
+                  locationId: operation.locationId,
+                  stripes
+                })
+              )?.storageUnitId ??
+              null;
+            const draws = await drawUntrackedAtBin(trx, {
+              companyId,
+              itemId,
+              locationId: operation.locationId,
+              storageUnitId,
+              stripes,
+              quantity
+            });
+
+            for (const draw of draws) {
+              await bookAdjustment(trx, {
+                ledger: {
+                  postingDate: scrapAccounting.today,
+                  itemId,
+                  quantity: -draw.quantity,
+                  locationId: operation.locationId,
+                  storageUnitId,
+                  trackedEntityId: null,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Scrap",
+                  documentId: operation.jobId,
+                  documentLineId: scrap.id,
+                  scrapReasonId,
+                  projectId: draw.stripe,
+                  companyId,
+                  createdBy: userId
+                },
+                item: {
+                  itemTrackingType: item.itemTrackingType,
+                  replenishmentSystem: item.replenishmentSystem,
+                  itemPostingGroupId: itemCost?.itemPostingGroupId ?? null
+                },
+                itemCost: {
+                  costingMethod: itemCost?.costingMethod ?? "Average",
+                  unitCost: Number(itemCost?.unitCost ?? 0),
+                  standardCost: Number(itemCost?.standardCost ?? 0)
+                },
+                accounting: {
+                  postingStatus: scrapAccounting.postingStatus,
+                  accountingPeriodId: scrapAccounting.accountingPeriodId,
+                  accountDefaults: {
+                    rawMaterialsAccount:
+                      scrapAccounting.accountDefaults.rawMaterialsAccount,
+                    finishedGoodsAccount:
+                      scrapAccounting.accountDefaults.finishedGoodsAccount,
+                    inventoryAdjustmentVarianceAccount:
+                      scrapAccounting.accountDefaults
+                        .inventoryAdjustmentVarianceAccount
+                  },
+                  offsetAccount: scrapAccounting.scrapAccountId,
+                  offsetDescription: "Scrap Account",
+                  description: `Scrap — ${item.readableIdWithRevision ?? ""}`,
+                  userId,
+                  dimensions: Object.fromEntries(scrapAccounting.dimensionMap),
+                  extraDimensions: [
+                    { entityType: "ScrapReason", valueId: scrapReasonId },
+                    ...(operation.workCenterId
+                      ? [
+                          {
+                            entityType: "WorkCenter",
+                            valueId: operation.workCenterId
+                          }
+                        ]
+                      : []),
+                    { entityType: "Employee", valueId: userId }
+                  ]
+                }
+              });
+            }
+          }
+
+          if (replacement === "Water Spider") {
+            const pending = toRequest.get(itemId) ?? {
+              quantity: 0,
+              scrapIds: []
+            };
+            pending.quantity = round(pending.quantity + quantity);
+            pending.scrapIds.push(scrap.id);
+            toRequest.set(itemId, pending);
+          }
+        }
+
+        for (const [itemId, pending] of toRequest) {
+          const request = await trx
+            .insertInto("materialRequest")
+            .values({
+              companyId,
+              // The station's line feed, as createMaterialRequest files it.
+              locationId: operation.requestLocationId,
+              workCenterId: operation.workCenterId,
+              jobOperationId,
+              itemId,
+              note: `${pending.quantity} to replace scrap`,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+          await trx
+            .updateTable("jobMaterialScrap")
+            .set({ materialRequestId: request.id })
+            .where("id", "in", pending.scrapIds)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+      });
+
+      break;
+    }
     case "scrapTrackedEntity": {
       const {
         trackedEntityId,
@@ -32968,63 +34036,14 @@ export async function issueMaterial(
         throw new Error("Tracked entity has already been scrapped");
       }
 
-      const companyRecordScrap = await single(
-        db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
-      );
-      if (companyRecordScrap.error) throw new Error("Failed to fetch company");
-      // Provisional before the company's accounting cutover, Posted after it.
-      const postingStatusScrap = await journalPostingStatus(db, companyId);
-
-      const accountDefaultsScrap = await getDefaultPostingGroup(db, companyId);
-      if (accountDefaultsScrap.error || !accountDefaultsScrap.data) {
-        throw new Error("Error getting account defaults");
-      }
-
-      const dimensionsScrap = await many(
-        db,
-        "dimension",
-        {
-          companyGroupId: companyRecordScrap.data.companyGroupId!,
-          active: true,
-          entityType: [
-            "ItemPostingGroup",
-            "Item",
-            "Location",
-            "ScrapReason",
-            "WorkCenter",
-            "Employee",
-            "Project",
-            "ProjectElement"
-          ]
-        },
-        { columns: ["id", "entityType"] }
-      );
-
-      const dimensionMapScrap = new Map<string, string>();
-      if (dimensionsScrap.data) {
-        for (const dim of dimensionsScrap.data) {
-          if (dim.entityType) dimensionMapScrap.set(dim.entityType, dim.id);
-        }
-      }
-
-      const todayScrap = datetime
-        .today(await getCompanyTimeZone(db, companyId))
-        .toString();
-      // Resolve the period BEFORE the transaction parks the (size 1) pool.
-      // A Provisional journal has no accounting period.
-      const accountingPeriodIdScrap =
-        postingStatusScrap === "Posted"
-          ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
-          : null;
-      // An empty scrapAccount falls back to the variance account.
-      const scrapAccountIdScrap = resolveDefaultAccount(
-        accountDefaultsScrap.data,
-        "scrapAccount",
-        postingStatusScrap
-      ).accountId;
+      const {
+        postingStatus: postingStatusScrap,
+        accountDefaults: accountDefaultsScrap,
+        dimensionMap: dimensionMapScrap,
+        today: todayScrap,
+        accountingPeriodId: accountingPeriodIdScrap,
+        scrapAccountId: scrapAccountIdScrap
+      } = await loadScrapAccountingContext(db, companyId);
 
       let didReplace = false;
       await db.transaction().execute(async (trx) => {
@@ -33201,12 +34220,10 @@ export async function issueMaterial(
               postingStatus: postingStatusScrap,
               accountingPeriodId: accountingPeriodIdScrap,
               accountDefaults: {
-                rawMaterialsAccount:
-                  accountDefaultsScrap.data.rawMaterialsAccount,
-                finishedGoodsAccount:
-                  accountDefaultsScrap.data.finishedGoodsAccount,
+                rawMaterialsAccount: accountDefaultsScrap.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsScrap.finishedGoodsAccount,
                 inventoryAdjustmentVarianceAccount:
-                  accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount
+                  accountDefaultsScrap.inventoryAdjustmentVarianceAccount
               },
               offsetAccount: scrapAccountIdScrap,
               offsetDescription: "Scrap Account",
@@ -33221,127 +34238,28 @@ export async function issueMaterial(
           // Relieve it to scrap (Dr scrapAccount / Cr WIP at the item's unit
           // cost — materials-only, spec decision 6) and reopen the material
           // requirement so a replacement can be issued.
-          const scrapCost = resolvedItemCost.unitCost * quantity;
-          if (scrapCost > 0) {
-            // A consume-to-project job charged the part to the project, not
-            // WIP, so the scrap is relieved from the project account.
-            const scrapProjectCharge = job?.id
-              ? await loadJobProjectCharge(trx, companyId, job.id)
-              : null;
-            const journalEntryId = await sequence.getNextSequence(
-              trx,
-              "journalEntry",
-              companyId
-            );
-            const journalResult = await trx
-              .insertInto("journal")
-              .values({
-                journalEntryId,
-                accountingPeriodId: accountingPeriodIdScrap,
-                description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
-                postingDate: todayScrap,
-                companyId,
-                sourceType: "Job Consumption",
-                status: postingStatusScrap,
-                postedAt: datetime.timestamp(),
-                postedBy: userId,
-                createdBy: userId
-              })
-              .returning(["id"])
-              .executeTakeFirstOrThrow();
-
-            const journalLineReference = nanoid();
-            const journalLineResults = await trx
-              .insertInto("journalLine")
-              .values([
-                {
-                  journalId: journalResult.id,
-                  accountId: scrapAccountIdScrap,
-                  description: "Scrap Account",
-                  amount: debit("expense", scrapCost),
-                  quantity,
-                  documentType: "Scrap",
-                  documentId: job?.id ?? null,
-                  documentLineReference: `scrapTrackedEntity:${materialId}`,
-                  journalLineReference,
-                  companyId
-                },
-                {
-                  journalId: journalResult.id,
-                  accountId:
-                    scrapProjectCharge?.accountId ??
-                    accountDefaultsScrap.data.workInProgressAccount,
-                  description:
-                    scrapProjectCharge && !scrapProjectCharge.keepsWip
-                      ? "Project Material"
-                      : "WIP Account",
-                  amount: credit("asset", scrapCost),
-                  quantity,
-                  documentType: "Scrap",
-                  documentId: job?.id ?? null,
-                  documentLineReference: `scrapTrackedEntity:${materialId}`,
-                  journalLineReference,
-                  companyId
-                }
-              ])
-              .returning(["id"])
-              .execute();
-
-            const scrapDimensionValues: Array<[string, string | null]> = [
-              ["Item", consumedItemId],
-              ["ItemPostingGroup", resolvedItemCost.itemPostingGroupId],
-              ["Location", job?.locationId ?? null],
-              ["ScrapReason", scrapReasonId],
-              ["WorkCenter", scrapWorkCenterId],
-              ["Employee", userId]
-            ];
-            const dimensionInserts = journalLineResults.flatMap((line, index) =>
-              [
-                ...scrapDimensionValues,
-                // The project tags go on the project credit only.
-                ...(scrapProjectCharge && index === 1
-                  ? ([
-                      ["Project", scrapProjectCharge.projectId],
-                      ["ProjectElement", scrapProjectCharge.projectElementId]
-                    ] as Array<[string, string | null]>)
-                  : [])
-              ]
-                .filter(
-                  ([entityType, valueId]) =>
-                    dimensionMapScrap.has(entityType) && valueId
-                )
-                .map(([entityType, valueId]) => ({
-                  journalLineId: line.id,
-                  dimensionId: dimensionMapScrap.get(entityType)!,
-                  valueId: valueId as string,
-                  companyId
-                }))
-            );
-            if (dimensionInserts.length > 0) {
-              await trx
-                .insertInto("journalLineDimension")
-                .values(dimensionInserts)
-                .execute();
+          await relieveConsumedToScrap(trx, {
+            companyId,
+            userId,
+            jobId: job?.id ?? null,
+            locationId: job?.locationId ?? null,
+            itemId: consumedItemId,
+            itemReadableId: item?.readableIdWithRevision ?? "",
+            itemPostingGroupId: resolvedItemCost.itemPostingGroupId,
+            unitCost: resolvedItemCost.unitCost,
+            quantity,
+            scrapReasonId,
+            workCenterId: scrapWorkCenterId,
+            lineReference: `scrapTrackedEntity:${materialId}`,
+            accounting: {
+              postingStatus: postingStatusScrap,
+              accountingPeriodId: accountingPeriodIdScrap,
+              today: todayScrap,
+              scrapAccountId: scrapAccountIdScrap,
+              workInProgressAccount: accountDefaultsScrap.workInProgressAccount,
+              dimensionMap: dimensionMapScrap
             }
-
-            if (scrapProjectCharge && job?.id) {
-              await insertJobProjectLedgerRows(trx, {
-                charge: scrapProjectCharge,
-                jobId: job.id,
-                companyId,
-                userId,
-                documentType: "Scrap",
-                rows: [
-                  {
-                    itemId: consumedItemId,
-                    quantity: -quantity,
-                    amount: -scrapCost,
-                    journalLineId: journalLineResults[1]?.id ?? null
-                  }
-                ]
-              });
-            }
-          }
+          });
 
           // Reopen the requirement — the consumed part is gone, so the
           // assembly needs a replacement issued.

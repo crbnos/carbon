@@ -15,7 +15,10 @@ export type StationTransfer = {
   itemId: string;
   /** The bin the feeder grabbed it from. */
   fromStorageUnitId: string;
-  /** The most to move; the station's need caps it. */
+  /**
+   * How much to move. The feeder may bring more than the station needs now;
+   * the source bin's stock caps it. A serial is capped at the need.
+   */
   quantity: number;
   /** The serial or batch to move, when the line feed knows it (a kit). */
   trackedEntityId?: string;
@@ -32,11 +35,14 @@ const refused = (message: string): StationTransferResult => ({
  * Bring a part to a station: a stock transfer from the bin the feeder grabbed
  * it from to the station's bin, moved at once.
  *
- * The caller only says what to move and from where. The destination and the
- * most that may move are read here: the station's shortage less the transfers
- * already on their way to it. A named serial or batch must still be in the
- * source bin. So a second send of the same move finds nothing left to bring,
- * or the unit gone, and creates nothing. The ERP creates and posts the
+ * The caller says what to move, how much and from where. The destination and
+ * whether the station still needs it are read here: its shortage less the
+ * transfers already on their way to it. A named serial or batch must still be
+ * in the source bin. So a second send of a move that covered the need finds
+ * the station no longer short, or the unit gone, and creates nothing. A loose
+ * part may move in a larger quantity than the need (a whole box), up to what
+ * its source bin holds, read here just before the move: the ERP's transfer
+ * pick takes a bin below zero without refusing. The ERP creates and posts the
  * transfer (its storage rules, tracking and stock checks apply), as the
  * caller: `request` carries their session.
  */
@@ -48,7 +54,7 @@ export async function transferToStation(
   const { companyId, locationId, workCenterId, itemId, fromStorageUnitId } =
     args;
 
-  const [shortage, inbound, unit] = await Promise.all([
+  const [shortage, inbound, unit, bins] = await Promise.all([
     client
       .rpc("get_line_feed_shortages", {
         p_location_id: locationId,
@@ -79,9 +85,23 @@ export async function transferToStation(
           .eq("storageUnitId", fromStorageUnitId)
           .gt("quantity", 0)
           .limit(1)
-      : null
+      : null,
+    // What the source bin holds of a loose part, as the board read it: the
+    // ERP's transfer pick does not refuse a bin it takes below zero.
+    args.trackedEntityId
+      ? null
+      : client
+          .rpc("get_line_feed_lanes", {
+            p_location_id: locationId,
+            p_company_id: companyId
+          })
+          .eq("workCenterId", workCenterId)
+          .eq("itemId", itemId)
+          .eq("tier", "raw")
+          .in("state", ["source", "bin"])
+          .eq("storageUnitId", fromStorageUnitId)
   ]);
-  const failure = shortage.error ?? inbound.error ?? unit?.error;
+  const failure = shortage.error ?? inbound.error ?? unit?.error ?? bins?.error;
   if (failure) {
     logger.error("Failed to read what a station needs", {
       companyId,
@@ -107,6 +127,16 @@ export async function transferToStation(
   if (unit && (unit.data ?? []).length === 0) {
     return refused("It is no longer in that bin");
   }
+  if (bins) {
+    const inBin = Math.max(
+      0,
+      ...(bins.data ?? []).map((row) => row.quantity ?? 0)
+    );
+    if (inBin <= 0) return refused("It is no longer in that bin");
+    if (args.quantity > inBin) {
+      return refused(`That bin holds only ${inBin}`);
+    }
+  }
 
   const body = new FormData();
   body.set("locationId", locationId);
@@ -117,7 +147,9 @@ export async function transferToStation(
         itemId,
         fromStorageUnitId,
         toStorageUnitId: shortage.data.storageUnitId,
-        quantity: Math.min(args.quantity, need),
+        quantity: args.trackedEntityId
+          ? Math.min(args.quantity, need)
+          : args.quantity,
         trackedEntityId: args.trackedEntityId
       }
     ])

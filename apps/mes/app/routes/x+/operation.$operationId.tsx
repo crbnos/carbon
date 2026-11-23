@@ -26,7 +26,6 @@ import {
   getJobOperationForCompany,
   getJobOperationProcedure,
   getKanbanByJobId,
-  getNextIncompleteSerialEntity,
   getNonConformanceActions,
   getProductionEventsForBatch,
   getProductionEventsForJobOperation,
@@ -36,12 +35,12 @@ import {
   getTrackedEntitiesForOperation,
   getWorkCenter,
   isFirstOpenOperationOfMakeMethod,
-  isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import { getFirstArticlePlansMissingForJob } from "~/services/quality.server";
 import { getOpenFirstArticleInspectionsForJob } from "~/services/quality.service";
 import type { OperationWithDetails } from "~/services/types";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { recordMeta } from "~/utils/meta";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
@@ -257,7 +256,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     }),
     jobMakeMethodId
-      ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
       : false,
     getOpenFirstArticleInspectionsForJob(serviceRole, jobId, companyId),
     getFirstArticlePlansMissingForJob(serviceRole, { jobId, companyId }),
@@ -480,10 +479,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
+      // A serial part shows a unit's inputs only for the unit in the URL; a
+      // batch part shows its lot's.
       trackedEntityId:
         trackedEntityId ??
-        getNextIncompleteSerialEntity(trackedEntities?.data ?? [], operationId)
-          ?.id,
+        (jobMakeMethod?.data?.requiresSerialTracking
+          ? undefined
+          : trackedEntities?.data?.find(
+              (entity) =>
+                entity.status !== "Consumed" && entity.status !== "Scrapped"
+            )?.id),
       requiresSerialTracking:
         jobMakeMethod?.data?.requiresSerialTracking ?? false
     }),

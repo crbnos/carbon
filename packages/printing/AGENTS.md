@@ -49,7 +49,7 @@ import { PrintingProvider, PrintButton } from "@carbon/printing/ui";
 ## Architecture
 
 1. **Enqueue** → `trigger("print-job", payload)` fires Inngest event
-2. **Generate** → `print-job/index.tsx` resolves printer config, renders PDF/ZPL (built-in or BinderyPress template), creates `printJob` rows
+2. **Generate** → `print-job/index.tsx` resolves printer config, loads the company's label templates for the printer's media size (`getLabelTemplatesForMediaSize`), renders each label with its label type's BinderyPress template or built-in, creates `printJob` rows
 3. **Deliver** → `print-job-deliver.ts` sends content to ProxyBox printer endpoint
 4. **Status**: `generating → queued → printing → completed | failed`
 

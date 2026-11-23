@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { LabelDpi } from "@carbon/utils";
+
 export type ContextAssignment = {
   printerRouteId: string | null;
   autoPrint: boolean;
@@ -14,6 +16,8 @@ export type LocationAssignment = {
   receiving: ContextAssignment;
   inventory: ContextAssignment;
   kanban: ContextAssignment;
+  /** Full-page documents (packing slips, invoices); absent on older settings. */
+  documents?: ContextAssignment;
   workCenters: Record<string, ContextAssignment>;
 };
 
@@ -28,9 +32,10 @@ export type PrinterRoute = {
   name: string;
   format: "zpl" | "pdf";
   mediaSizeId: string | null;
+  dpi: LabelDpi;
   printerUrl: string;
-  apiKey: string | null;
-  templateId: string | null;
+  /** The API key itself is in Supabase Vault and never leaves the server. */
+  hasApiKey: boolean;
 };
 
 export type PrintJobStatus =

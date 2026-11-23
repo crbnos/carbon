@@ -4,7 +4,7 @@
 
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement, type ReactElement } from "react";
-import { extractText } from "unpdf";
+import { extractText, getDocumentProxy } from "unpdf";
 import { describe, expect, it } from "vitest";
 import {
   allMergeFields,
@@ -17,6 +17,7 @@ import {
   resolveTemplate
 } from "../template";
 import { DOCUMENT_PDFS } from "./preview-documents";
+import { SAMPLE_SIGNATURE } from "./purchaseOrder.samples";
 
 const documentTypes = Object.keys(DOCUMENT_PDFS) as DocumentTemplateType[];
 
@@ -358,5 +359,28 @@ describe("DOCUMENT_PDFS", () => {
     const { text } = await extractText(new Uint8Array(pdf));
     expect(text.join(" ")).not.toContain("Unit Price");
     expect(text.join(" ")).toContain("Qty");
+  });
+
+  // react-pdf lays out a text once, at its first measured width, so a title
+  // squeezed by a wide logo kept one line and ran through the margin.
+  it("prints nothing past the RMA's right margin beside a wide logo", async () => {
+    const { Component, sample } = DOCUMENT_PDFS.salesReturnOrder;
+    const pdf = await renderToBuffer(
+      createElement(Component, {
+        locale: "en-US",
+        ...sample,
+        company: { ...sample.company, logoLight: SAMPLE_SIGNATURE }
+      }) as ReactElement
+    );
+    const page = await (await getDocumentProxy(new Uint8Array(pdf))).getPage(1);
+    // Template pads the page 16pt on each side; the body's text ends there.
+    const margin = page.getViewport({ scale: 1 }).width - 16;
+    const { items } = await page.getTextContent();
+    const pastMargin = items.flatMap((item) =>
+      "str" in item && item.transform[4] + item.width > margin + 0.5
+        ? [item.str]
+        : []
+    );
+    expect(pastMargin).toEqual([]);
   });
 });

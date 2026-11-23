@@ -7,6 +7,7 @@
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { dispositionInspection } from "@carbon/database/quality";
+import { refreshReceiptInspectionStatuses } from "@carbon/jobs/backups";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -271,6 +272,15 @@ describe.skipIf(!hasLocalDatabase)("Use As Is goes to Put Away", () => {
         .executeTakeFirstOrThrow()
     ).inspectionStatus;
 
+  const rejectedAtInspection = async (receiptId: string) =>
+    (
+      await f.db
+        .selectFrom("receipt")
+        .select("rejectedAtInspection")
+        .where("id", "=", receiptId)
+        .executeTakeFirstOrThrow()
+    ).rejectedAtInspection;
+
   it.skipIf(!client)(
     "Use As Is on a rejected lot puts it away, and the receipt waits for it",
     async () => {
@@ -342,6 +352,8 @@ describe.skipIf(!hasLocalDatabase)("Use As Is goes to Put Away", () => {
       }
       expect(await putAwayLines(receiptId)).toEqual([]);
       expect(await receiptStatus(receiptId)).toBe("Put Away");
+      // Its lot stays Failed, so the receipt stays rejected at inspection.
+      expect(await rejectedAtInspection(receiptId)).toBe(true);
     },
     120_000
   );
@@ -637,6 +649,9 @@ describe.skipIf(!hasLocalDatabase)("Use As Is goes to Put Away", () => {
       expect(await putAwayLines(receiptId)).toEqual([
         { from: unitOf("acc"), to: shelf, quantity: 1 }
       ]);
+      // The lot is Passed, but the Accept set its failed unit Rejected.
+      expect(await receiptStatus(receiptId)).toBe("Inspection Passed");
+      expect(await rejectedAtInspection(receiptId)).toBe(true);
 
       // The passed unit goes to the shelf: the receipt is put away.
       await seed(f, async (trx) => {
@@ -690,7 +705,22 @@ describe.skipIf(!hasLocalDatabase)("Use As Is goes to Put Away", () => {
         f.db
       );
       expect(await receiptStatus(receiptId)).toBe("Put Away");
+      expect(await rejectedAtInspection(receiptId)).toBe(true);
       expect(await putAwayLines(receiptId)).toEqual([]);
+
+      // A backup taken before the flag existed loads it false; the load's
+      // refresh sets it again from the lots.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("receipt")
+          .set({ rejectedAtInspection: false })
+          .where("id", "=", receiptId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      await refreshReceiptInspectionStatuses(f.db, f.companyId);
+      expect(await rejectedAtInspection(receiptId)).toBe(true);
+      expect(await receiptStatus(receiptId)).toBe("Put Away");
 
       const opened = await withGuard(() =>
         openInspectionNcr(stackContext(), {

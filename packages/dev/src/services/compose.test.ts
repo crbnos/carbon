@@ -16,7 +16,9 @@ import { afterAll, describe, expect, it } from "vitest";
 import { REDIS_DB_MAX } from "../topology.js";
 import {
   buildDownArgs,
+  buildImagesArgs,
   buildUpArgs,
+  cpuLimitOverrides,
   isTransientPullError,
   missingSharedServices,
   planSharedFiles,
@@ -119,6 +121,28 @@ describe("buildUpArgs", () => {
   });
 });
 
+describe("buildImagesArgs", () => {
+  const compose = ["compose", "-f", "shared.yml", "-p", "crbn-shared"];
+
+  it("lists every image when no service is named", () => {
+    expect(buildImagesArgs(compose)).toEqual([
+      ...compose,
+      "config",
+      "--images"
+    ]);
+  });
+
+  it("names the services after the subcommand", () => {
+    expect(buildImagesArgs(compose, ["redis", "edge-runtime"])).toEqual([
+      ...compose,
+      "config",
+      "--images",
+      "redis",
+      "edge-runtime"
+    ]);
+  });
+});
+
 describe("compose files per mode", () => {
   const tmp = mkdtempSync(join(tmpdir(), "crbn-compose-"));
   mkdirSync(join(tmp, "packages/dev/docker"), { recursive: true });
@@ -171,18 +195,73 @@ describe("shared redis", () => {
     ).toEqual(["edge-runtime"]);
   });
 
-  it("writes the keys, database count and edge runtime directories into the shared .env", () => {
-    const env = renderSharedEnv(
+  const sharedEnv = (cpus: number | null) =>
+    renderSharedEnv(
       { secret: "s", anonKey: "a", serviceKey: "k" },
       41,
       {
         EDGE_MAIN_DIR: "edge-main-111111111111",
         FUNCTIONS_DIR: "functions-222222222222"
-      }
+      },
+      cpuLimitOverrides([shared], cpus)
     );
-    expect(env).toBe(
-      "SUPABASE_JWT_SECRET=s\nSUPABASE_ANON_KEY=a\nSUPABASE_SERVICE_ROLE_KEY=k\nREDIS_DATABASES=41\nEDGE_MAIN_DIR=edge-main-111111111111\nFUNCTIONS_DIR=functions-222222222222\n"
-    );
+  const today =
+    "SUPABASE_JWT_SECRET=s\nSUPABASE_ANON_KEY=a\nSUPABASE_SERVICE_ROLE_KEY=k\nREDIS_DATABASES=41\nEDGE_MAIN_DIR=edge-main-111111111111\nFUNCTIONS_DIR=functions-222222222222\n";
+
+  it("writes the keys, database count and edge runtime directories into the shared .env", () => {
+    // 8 CPUs: every limit fits, so the file (and the containers) stay as they are.
+    expect(sharedEnv(8)).toBe(today);
+  });
+
+  it("caps the shared limits above a 2-CPU Docker at 2", () => {
+    // Postgres (4) and the edge runtime (3); storage (2), imgproxy (1) fit.
+    expect(sharedEnv(2)).toBe(`${today}CPU_POSTGRES=2\nCPU_EDGE=2\n`);
+  });
+
+  it("writes no CPU limits when Docker's CPU count is unknown", () => {
+    expect(sharedEnv(null)).toBe(today);
+  });
+});
+
+describe("cpuLimitOverrides", () => {
+  const yaml = `services:
+  a:
+    deploy: { resources: { limits: { cpus: \${CPU_A:-4} } } }
+  b:
+    deploy: { resources: { limits: { cpus: \${CPU_B:-2} } } }
+  c:
+    deploy: { resources: { limits: { cpus: \${CPU_C:-0.25} } } }
+  d:
+    deploy: { resources: { limits: { memory: \${MEM_D:-8g} } } }
+`;
+
+  it("caps each default above the CPU count at it", () => {
+    expect(cpuLimitOverrides([yaml], 2)).toEqual({ CPU_A: "2" });
+    expect(cpuLimitOverrides([yaml], 1)).toEqual({ CPU_A: "1", CPU_B: "1" });
+  });
+
+  it("writes nothing when every limit fits or the count is unknown", () => {
+    expect(cpuLimitOverrides([yaml], 4)).toEqual({});
+    expect(cpuLimitOverrides([yaml], null)).toEqual({});
+  });
+
+  it("caps only the private edge runtime of a worktree's files at 2 CPUs", () => {
+    // `crbn up --full` starts it with a limit of 3.
+    const read = (f: string) =>
+      readFileSync(join(__dirname, "../../docker", f), "utf8");
+    expect(
+      cpuLimitOverrides(
+        [read("docker-compose.dev.yml"), read("docker-compose.isolated.yml")],
+        2
+      )
+    ).toEqual({ CPU_EDGE: "2" });
+  });
+
+  it("reads every file it is given", () => {
+    expect(cpuLimitOverrides([yaml, `cpus: \${CPU_EDGE:-3}`], 2)).toEqual({
+      CPU_A: "2",
+      CPU_EDGE: "2"
+    });
   });
 });
 

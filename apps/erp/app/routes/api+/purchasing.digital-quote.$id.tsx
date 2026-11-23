@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toResult } from "@carbon/api/service-fn.server";
+import { toPublicResult } from "@carbon/api/service-fn.server";
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
@@ -61,7 +61,7 @@ export async function action(args: ActionFunctionArgs) {
   const supplierQuoteId = quote.data.id;
   switch (form.intent) {
     case "submit":
-      return toResult(
+      return toPublicResult(
         await submitDigitalSupplierQuote(ctx, {
           supplierQuoteId,
           submittedBy: form.digitalSupplierQuoteSubmittedBy,
@@ -70,7 +70,7 @@ export async function action(args: ActionFunctionArgs) {
         })
       );
     case "decline":
-      return toResult(
+      return toPublicResult(
         await declineDigitalSupplierQuote(ctx, {
           supplierQuoteId,
           submittedBy: form.digitalSupplierQuoteSubmittedBy,
@@ -79,7 +79,7 @@ export async function action(args: ActionFunctionArgs) {
         })
       );
     case "updateNotes":
-      return toResult(
+      return toPublicResult(
         await updateDigitalSupplierQuoteLineNotes(ctx, {
           supplierQuoteId,
           lineId: form.lineId,

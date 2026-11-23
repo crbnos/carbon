@@ -288,7 +288,8 @@ const ReceiptLines = () => {
           </CardHeader>
 
           <CardContent>
-            <div className="border rounded-lg">
+            {/* Phone: the card is frame enough, so the lines get its full width. */}
+            <div className="border rounded-lg max-md:border-0">
               {receiptLines.length === 0 ? (
                 <Empty className="py-6" />
               ) : (
@@ -774,11 +775,11 @@ function ReceiptLineItem({
   return (
     <div
       className={cn(
-        "@container flex flex-col border-b p-6 gap-6 relative max-md:p-4 max-md:gap-4",
+        "@container flex flex-col border-b p-6 gap-6 relative max-md:px-0 max-md:py-4 max-md:gap-4",
         className
       )}
     >
-      <div className="absolute top-3 right-6 max-md:right-4">
+      <div className="absolute top-3 right-6 max-md:right-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
@@ -815,9 +816,12 @@ function ReceiptLineItem({
       {/* Sized by the line's own width, not the viewport: the content pane
           it sits in is resizable. The item takes what the quantities leave,
           and they stay on one line once the row is wide enough. pr-10 clears
-          the line menu. */}
-      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full pr-10">
-        <HStack spacing={4} className="w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+          the line menu: only the item's row needs it while they are stacked. */}
+      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full @3xl:pr-10">
+        <HStack
+          spacing={4}
+          className="w-full @3xl:w-auto @3xl:flex-1 min-w-0 pr-10 @3xl:pr-0"
+        >
           <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
@@ -852,8 +856,12 @@ function ReceiptLineItem({
           </HStack>
         </HStack>
         <div className="flex flex-wrap @3xl:flex-nowrap items-start gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
-          <HStack spacing={4} className="items-start">
-            <VStack spacing={1} className="w-28 shrink-0 max-md:w-auto">
+          {/* Phone: what was ordered sits above a full-width Received field. */}
+          <div className="flex items-start gap-4 max-md:grid max-md:w-full max-md:grid-cols-2">
+            <VStack
+              spacing={1}
+              className="w-28 shrink-0 max-md:order-last max-md:col-span-2 max-md:w-full"
+            >
               <label className="text-xs text-muted-foreground">
                 <Trans>Received</Trans>
               </label>
@@ -895,19 +903,19 @@ function ReceiptLineItem({
             </VStack>
             <VStack
               spacing={1}
-              className="text-center items-center w-16 shrink-0"
+              className="text-center items-center w-16 shrink-0 max-md:w-auto max-md:items-start"
             >
               <label className="text-xs text-muted-foreground">
                 <Trans>Ordered</Trans>
               </label>
-              <span className="text-sm leading-10">
+              <span className="text-sm leading-10 tabular-nums max-md:text-xl max-md:font-semibold max-md:leading-8">
                 {line.orderQuantity ?? 0}
               </span>
             </VStack>
 
             <VStack
               spacing={1}
-              className="text-center items-center w-24 shrink-0"
+              className="text-center items-center w-24 shrink-0 max-md:w-auto max-md:items-start"
             >
               <label className="text-xs text-muted-foreground">
                 {isSurplus ? (
@@ -919,7 +927,7 @@ function ReceiptLineItem({
               <HStack className="justify-center">
                 <span
                   className={cn(
-                    "text-sm leading-10",
+                    "text-sm leading-10 tabular-nums max-md:text-xl max-md:font-semibold max-md:leading-8",
                     isSurplus && "text-red-500"
                   )}
                 >
@@ -938,7 +946,7 @@ function ReceiptLineItem({
                 )}
               </HStack>
             </VStack>
-          </HStack>
+          </div>
 
           <div className="flex flex-col items-start gap-1 w-48 @5xl:w-60 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
@@ -950,6 +958,7 @@ function ReceiptLineItem({
                 value={line.storageUnitId}
                 isReadOnly={isReadOnly}
                 label={t`Storage unit for ${itemName}`}
+                className="w-full"
                 aria-describedby={
                   showHeldUnitWarning ? heldUnitWarningId : undefined
                 }

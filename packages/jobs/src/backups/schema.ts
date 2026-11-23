@@ -628,5 +628,6 @@ export function compatibilityStatus(report: {
 // Scope predicates, the export closure guard and the opt-in exclusion/purge —
 // re-exported so `@carbon/jobs/backups` stays the one import surface.
 export { rebuildDerivedGroups } from "./derived-groups";
+export { refreshReceiptInspectionStatuses } from "./derived-receipts";
 export * from "./scope";
 export { listBucketFilesRecursive, removeBucketPrefix } from "./storage";
