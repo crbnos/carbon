@@ -5,12 +5,10 @@
 import { type Actor, BLOCKED, halt, type Model, type Step } from "./explore";
 
 /**
- * Voiding a posted invoice against a line account change, as
- * `postSalesInvoice` / `postPurchaseInvoice` (`type: "void"`) and
- * `changeInvoiceLineAccount` run them
+ * The void in `postSalesInvoice` / `postPurchaseInvoice` (`type: "void"`)
+ * racing `changeInvoiceLineAccount`
  * (`apps/erp/app/modules/invoicing/invoicing.service.ts`). The journal is the
- * invoice's net amount per account; the line is on `line`, the control
- * account is `control`.
+ * invoice's net amount per account; the line moves between `sales` and `other`.
  */
 
 export type Journal = Record<string, number>;
@@ -26,11 +24,10 @@ export type State = {
 };
 
 export type Protocol = {
-  /** The purchase void refuses a Voided invoice before its transaction; the sales void never did. */
+  /** Only the purchase void refuses a Voided invoice before its transaction. */
   refuseVoidedBeforeTransaction: boolean;
   /** 6797ddd57f: the void locks the invoice before it reads the journal. */
   lockBeforeJournalRead: boolean;
-  /** The void re-reads the status under the invoice lock and refuses Voided. */
   refuseVoidedUnderLock: boolean;
 };
 

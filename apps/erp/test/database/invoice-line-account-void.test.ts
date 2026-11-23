@@ -247,7 +247,6 @@ for (const { side, from, control, amount } of SIDES) {
   );
 }
 
-/** Journals holding a line of the invoice: its posting, and one per void. */
 async function journalCount(f: Fixture, invoiceId: string) {
   const { count } = await f.db
     .selectFrom("journalLine")
@@ -259,8 +258,6 @@ async function journalCount(f: Fixture, invoiceId: string) {
   return Number(count);
 }
 
-// packages/models/src/invoice-void.ts finds the double void: a retry, a
-// second tab or an API call reverses the posting a second time.
 for (const { side, from, control } of SIDES) {
   databaseTest(`a second void of a ${side} invoice is refused`, async () => {
     const f = await alwaysPostFixture();

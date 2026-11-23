@@ -94,7 +94,6 @@ describe("invoice void", () => {
   }
 });
 
-/** Every sequence of one to four operations, in every order. */
 function everyRun(protocol: Protocol) {
   const sequences: Operation[][] = [];
   const grow = (prefix: Operation[]) => {
