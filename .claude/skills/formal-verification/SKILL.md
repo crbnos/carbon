@@ -18,6 +18,7 @@ for how a model is written.
 | Model | Promise | Code (`coverage.json`) | Database test of the counterexample | Bounds |
 |---|---|---|---|---|
 | `accounting-period` | No period is Closed after an open one; only a Closed period has a balance snapshot and `closedAt`; status moves only Open ↔ Locked → Closed → Open | `accounting.service.ts`: `lockAccountingPeriod`, `unlockAccountingPeriod`, `setPeriodCloseStatus`, `lockPeriodLifecycle`, `closeAccountingPeriod`, `reopenAccountingPeriod` | `apps/erp/test/database/period-close-concurrency.test.ts` | every valid start × every 3 operations on 3 periods |
+| `invoice-void` | A voided invoice nets to zero on every account; an invoice is reversed at most once | `invoicing.service.ts`: `changeInvoiceLineAccount`, `readInvoiceLinePosition`, and the lines holding "invoice is already voided" (the void branches sit inside `postSalesInvoice` / `postPurchaseInvoice`, too large to cover whole); `shared.service.ts`: `documentJournalLines` | `apps/erp/test/database/invoice-line-account-void.test.ts` | every sequence of up to 4 voids and line account changes, sales and purchase |
 
 `coverage.json` is the record: each model's file, the functions it covers, the
 database tests, a hash of each covered function as it read when the model was
@@ -29,7 +30,9 @@ disturb it. The Models confirmed job in `.github/workflows/check.yml` runs
 **Not covered:** postings into a period (`check_accounting_period_open`), the
 close checklist's contents, anything a single request gets wrong without
 another one running. Liveness (that a waiting request eventually runs) is not
-checked; deadlock is.
+checked; deadlock is. An edit elsewhere inside `postSalesInvoice` or
+`postPurchaseInvoice` (a moved `FOR UPDATE`) does not trip `touched`; the
+invoice-void database tests catch it when `verify` runs.
 
 **Why not TLA+:** CI has no Java or TLC, and the checks must run on every pull
 request. The explorer (`packages/models/src/explore.ts`) runs in the existing
@@ -64,6 +67,8 @@ Expected when healthy:
 ```
 accounting-period model: ok (Tests  5 passed (5))
 accounting-period database: ok (Tests  6 passed (6))
+invoice-void model: ok (Tests  7 passed (7))
+invoice-void database: ok (Tests  6 passed (6))
 ```
 
 `SUPABASE_DB_URL must name the local database` → no local database: run

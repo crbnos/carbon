@@ -21,5 +21,24 @@
       "apps/erp/app/modules/accounting/accounting.service.ts#reopenAccountingPeriod": "10ec7cb67614c853"
     },
     "confirmedAt": "ca0691d725"
+  },
+  "invoice-void": {
+    "model": "src/invoice-void.ts",
+    "code": {
+      "apps/erp/app/modules/invoicing/invoicing.service.ts": [
+        "changeInvoiceLineAccount",
+        "readInvoiceLinePosition",
+        "invoice is already voided"
+      ],
+      "apps/erp/app/modules/shared/shared.service.ts": ["documentJournalLines"]
+    },
+    "databaseTests": ["test/database/invoice-line-account-void.test.ts"],
+    "fingerprints": {
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#changeInvoiceLineAccount": "c4bc484503725160",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#readInvoiceLinePosition": "0ca44c3a2045cff4",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#invoice is already voided": "13726e4fb1646053",
+      "apps/erp/app/modules/shared/shared.service.ts#documentJournalLines": "18da8593e73775e4"
+    },
+    "confirmedAt": "a21bdfa4fe"
   }
 }
