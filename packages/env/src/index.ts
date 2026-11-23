@@ -37,7 +37,7 @@ const source: Record<string, string | undefined> =
 if (!isBrowser && !source.VITEST && !source.SKIP_ENV_VALIDATION) {
   const report = validateEnv(source);
   if (report.fatal) throw new Error(formatReport(report));
-  // biome-ignore lint/suspicious/noConsole: @carbon/logger depends on this package
+  // biome-ignore lint/suspicious/noConsole: a multi-line report for whoever starts the server; a log line would quote and escape it
   if (report.problems.length) console.warn(formatReport(report));
 }
 
@@ -328,6 +328,46 @@ export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY");
 // the browser by construction.
 export const SUPABASE_INTERNAL_URL =
   getEnv("SUPABASE_INTERNAL_URL") || SUPABASE_URL;
+
+/**
+ * `url` with its `from` base swapped for `to`. A url not under `from`, one
+ * that does not parse, or either base unset, comes back unchanged.
+ */
+export function rebaseUrl(
+  url: string,
+  from: string | undefined,
+  to: string | undefined
+): string {
+  if (!from || !to || from === to) return url;
+  let base: URL;
+  let target: URL;
+  let next: URL;
+  try {
+    base = new URL(from);
+    target = new URL(url);
+    next = new URL(to);
+  } catch {
+    return url;
+  }
+  const basePath = base.pathname.replace(/\/+$/, "");
+  const underBase =
+    target.origin === base.origin &&
+    (target.pathname === basePath ||
+      target.pathname.startsWith(`${basePath}/`));
+  if (!underBase) return url;
+  return `${next.origin}${next.pathname.replace(/\/+$/, "")}${target.pathname.slice(basePath.length)}${target.search}${target.hash}`;
+}
+
+/**
+ * A `SUPABASE_URL` address moved onto `SUPABASE_INTERNAL_URL`. Server clients
+ * are built on the public `SUPABASE_URL`, so every link supabase-js signs for
+ * them can be handed out as is; only what the server itself requests goes
+ * through here: the clients' own calls, and a signed link the server fetches
+ * (an email attachment, a staged backup) or hands to the assembler.
+ */
+export function internalSupabaseUrl(url: string): string {
+  return rebaseUrl(url, SUPABASE_URL, SUPABASE_INTERNAL_URL);
+}
 
 export const DEFAULT_LANGUAGE = getEnv("DEFAULT_LANGUAGE") ?? "en";
 

@@ -6,6 +6,7 @@ import { formatDate } from "@carbon/utils";
 import type { LineMergeToken, MergeToken } from "../../../template";
 import {
   getLineDescriptionDetails,
+  getLinePartNumber,
   getLineSupplierPartId,
   getLineTotal,
   getPurchaseOrderDisplayId,
@@ -145,25 +146,43 @@ export function buildPurchaseOrderLineVars(
   rowNumber: number,
   data: Pick<
     PurchaseOrderData,
-    "purchaseOrder" | "numberFormatter" | "rateFormatter" | "locale"
+    | "purchaseOrder"
+    | "numberFormatter"
+    | "rateFormatter"
+    | "locale"
+    | "partNumberDisplayDraft"
   >
 ): Record<LineMergeToken<"purchaseOrder">, string> {
   const money = (v: number) => data.numberFormatter.format(v);
   const indirect = INDIRECT_TYPES.has(line.purchaseOrderLineType ?? "");
+  const isService = line.purchaseOrderLineType === "Service";
   const shipping = line.supplierShippingCost ?? 0;
+  // Null: a legacy line, which prints as before the display choice existed.
+  const display = data.partNumberDisplayDraft ?? line.partNumberDisplay;
   const common = {
-    "line.description": str(indirect ? line.description : line.itemReadableId),
+    "line.description": str(
+      indirect
+        ? line.description
+        : display
+          ? getLinePartNumber(line, display)
+          : line.itemReadableId
+    ),
     "line.details": indirect ? "" : str(getLineDescriptionDetails(line)),
-    // A Service line prints its description, so the number repeats only that.
+    // Our part number with its revision, whatever the title prints.
+    "line.itemId": str(line.itemReadableId),
+    // The supplier's number only where the title leaves it out: under a
+    // legacy line's item ID, and under a Service line's description unless
+    // the choice is our number only. A template that prints this row never
+    // prints the number twice.
     "line.supplierPartId":
-      !indirect || line.purchaseOrderLineType === "Service"
-        ? str(
-            getLineSupplierPartId(
-              line,
-              indirect ? line.description : line.itemReadableId
-            )
-          )
-        : "",
+      isService && display !== "Ours Only"
+        ? str(getLineSupplierPartId(line, line.description))
+        : !indirect && !display
+          ? str(getLineSupplierPartId(line, line.itemReadableId))
+          : "",
+    // The supplier's number, whatever the display choice.
+    "line.supplierPartNumber":
+      indirect && !isService ? "" : str(getLineSupplierPartId(line, null)),
     "line.operation":
       data.purchaseOrder.purchaseOrderType === "Outside Processing"
         ? str(line.jobOperationDescription)

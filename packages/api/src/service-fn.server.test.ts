@@ -2,12 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { z } from "zod";
-
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
-}));
 
 import {
   type Actor,
@@ -16,6 +12,7 @@ import {
   defineServiceFn,
   type Result,
   type RouteResult,
+  toPublicResult,
   toResult
 } from "./service-fn.server";
 
@@ -268,6 +265,38 @@ describe("toResult", () => {
     expect(toResult({ data: 1, error: null })).toEqual({
       data: 1,
       error: null
+    });
+  });
+});
+
+describe("toPublicResult", () => {
+  it("sends an internal error as a generic message, without its cause's text", () => {
+    const error = new CarbonError("internal", "Failed to update the task", {
+      code: "P0001",
+      message: 'relation "nonConformanceActionTask" is locked'
+    });
+    expect(toPublicResult({ data: null, error })).toEqual({
+      data: null,
+      error: {
+        category: "internal",
+        message: "Something went wrong",
+        status: 500
+      }
+    });
+  });
+
+  it("keeps a refusal's own message", () => {
+    const error = new CarbonError(
+      "rule",
+      "Issue has been closed already. Unable to make changes"
+    );
+    expect(toPublicResult({ data: null, error })).toEqual({
+      data: null,
+      error: {
+        category: "rule",
+        message: "Issue has been closed already. Unable to make changes",
+        status: 422
+      }
     });
   });
 });

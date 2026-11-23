@@ -17,6 +17,8 @@ Either way the quote lives under a **supplier interaction**, the umbrella record
 A supplier quote is single-supplier by design. When you fan an RFQ out to five vendors you get five quotes back, not one quote with five columns. The side-by-side comparison is a separate view that reads across the sibling quotes, not a field on any one of them.
 </Callout>
 
+To quote a part or its Bill of Material, open the part, select the three-dot menu and select **Request Quote**. Tick the parts and choose a supplier for each. Carbon creates one draft RFQ per supplier, because every supplier on an RFQ gets a quote with every line. Nothing goes to a supplier until you finalize each RFQ.
+
 ## Lines and pricing
 
 A quote line names one item (or a G/L account line for non-stock spend) and the quantities you're pricing. Because you usually ask for a price at several volumes, the line's requested quantities are an **array**, and each quantity carries its own price row. This is the quantity-break table: a lead time, a unit price, and a shipping cost per quantity.

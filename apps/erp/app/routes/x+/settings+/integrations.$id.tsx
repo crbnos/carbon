@@ -21,6 +21,8 @@ import {
 } from "@carbon/ee";
 import {
   buildDimensionValueMappingEntityId,
+  buildTaxCodeMappingEntityId,
+  computeUnmappedTaxCodes,
   getAccountingIntegration,
   getAccountMappings,
   getAccountsBlockingSync,
@@ -28,13 +30,18 @@ import {
   getFullChartMappableAccounts,
   getProviderIntegration,
   getSyncOperations,
+  getTaxCodeMappings,
   getUnmappedPostingAccounts,
   getUnmappedSlottedDimensionValues,
   isAccountingSyncEnabled,
   JOURNAL_ENTRY_SOURCE_TYPES,
   loadAccountDefaultAccountIds,
+  loadTaxCodeUsage,
   matchAccountsByCode,
   matchDimensionValuesByName,
+  matchTaxCodesByRate,
+  NO_TAX_CODE_FALLBACK_PROVIDERS,
+  NO_TAX_CODE_MAPPING_ID,
   POSTING_POLICY,
   ProviderID,
   type QboProvider,
@@ -48,6 +55,7 @@ import {
   SyncOperationStatusSchema,
   selectRequiredMappingAccountIds,
   selectUnmappedRequiredAccounts,
+  unmappedNoTaxCodeDirections,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import {
@@ -63,11 +71,15 @@ import {
   WEBHOOK_SIGNING_SECRET_KEY
 } from "@carbon/ee/integrations/secrets";
 import {
-  getConflictingOnshapeIntegration,
+  getConflictingOnshapeConnection,
+  isOnshapeCustomerAppIntegrationId,
   isOnshapeIntegrationId,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID
 } from "@carbon/ee/onshape";
-import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
+import {
+  beginOnshapeAuthorization,
+  isOnshapeOAuthIntegrationId
+} from "@carbon/ee/onshape.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
@@ -81,7 +93,13 @@ import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
 } from "@carbon/stripe/connect.server";
-import { redirect, redirectExternal } from "@carbon/utils";
+import {
+  chargedTaxPercent,
+  datetime,
+  effectiveComponents,
+  redirect,
+  redirectExternal
+} from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -98,9 +116,13 @@ import { useSettings } from "~/hooks";
 // ~/modules/settings/ui/Integrations/index.ts.
 import {
   getAccountsList,
-  getActiveDimensionsWithValues
+  getActiveDimensionsWithValues,
+  getTaxCodesList
 } from "~/modules/accounting/accounting.service";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  hasAccountingCutover,
+  toTaxCodeInput
+} from "~/modules/accounting/accounting.utils";
 import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
@@ -110,14 +132,18 @@ import {
   postingSyncSettingsValidator,
   syncEnabledValidator,
   syncOperationTransitionValidator,
+  taxCodeMappingBulkUpsertValidator,
+  taxCodeMappingUpsertValidator,
   workCenterDeviceUpsertValidator
 } from "~/modules/settings/settings.models";
 import {
   getIntegration,
   getOeeDevicesTabData,
   getProviderDimensionTargets,
+  getProviderTaxRateOptions,
   invalidateIntegrationHealthCache,
   isIntegrationInstallWithheld,
+  TAX_RATE_MAPPING_PROVIDERS,
   upsertCompanyIntegration,
   withSyncOperationReferences
 } from "~/modules/settings/settings.service";
@@ -134,6 +160,8 @@ import {
   SYNC_ACTIVITY_SORTS,
   type SyncReconciliationReport
 } from "~/modules/settings/ui/Integrations/SyncActivity";
+import { TaxRateMapping } from "~/modules/settings/ui/Integrations/TaxRateMapping";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { toPage } from "~/utils/cursor";
 import { PAGE_SIZE } from "~/utils/pagination";
@@ -311,7 +339,9 @@ async function getAccountMappingTabData(
   // what loaded and log the cause.
   for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
-      console.error("Failed to load account mapping data:", result.error);
+      logger.error("Failed to load account mapping data", {
+        error: result.error
+      });
     }
   }
 
@@ -391,7 +421,9 @@ async function getDimensionSyncTabData(
   // loaded and log the cause.
   for (const result of [dimensionsResult, mappingsResult, unmappedResult]) {
     if (result.error) {
-      console.error("Failed to load dimension sync data:", result.error);
+      logger.error("Failed to load dimension sync data", {
+        error: result.error
+      });
     }
   }
 
@@ -417,7 +449,7 @@ async function getDimensionSyncTabData(
       }))
     });
   } catch (err) {
-    console.error("Failed to resolve dimension value labels:", err);
+    logger.error("Failed to resolve dimension value labels", { error: err });
   }
 
   const mappings = mappingRows.map((mapping) => ({
@@ -479,6 +511,118 @@ async function getDimensionSyncTabData(
     mappings,
     unmapped,
     proposals
+  };
+}
+
+/**
+ * Tax-rate mapping data for the integration drawer's Tax Rates tab: every
+ * active tax code at its charged rate today (0 for Reverse Charge), the
+ * retired codes that documents still use, the "no tax code" fallback row
+ * (Xero), the provider's rates per direction, the stored mappings, the
+ * mappings whose rate the provider no longer offers, the unmapped
+ * (code, direction) pairs that hold the sync switch off, and exact-rate
+ * proposals. Null for a provider that does not map tax codes (Rillet), so no
+ * tab renders. The mapping services are Kysely-based (RLS bypassed) — same
+ * auth stance as getDimensionSyncTabData.
+ */
+async function getTaxRateTabData(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; integrationId: string }
+) {
+  const { companyId, integrationId } = args;
+  if (!TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) return null;
+
+  const db = getDatabaseClient();
+  const [provider, codesResult, timeZone, mappingsResult, usageResult] =
+    await Promise.all([
+      getProviderTaxRateOptions(client, companyId, integrationId),
+      getTaxCodesList(client, companyId),
+      getCompanyTimeZone(client, companyId),
+      getTaxCodeMappings(db, { companyId, integration: integrationId }),
+      loadTaxCodeUsage(db, companyId).then(
+        (data) => ({ data, error: null }),
+        (error: unknown) => ({ data: null, error })
+      )
+    ]);
+
+  // Don't block the settings drawer on a load failure — render what
+  // loaded and log the cause.
+  for (const result of [codesResult, mappingsResult, usageResult]) {
+    if (result.error) {
+      logger.error("Failed to load tax rate mapping data", {
+        companyId,
+        integrationId,
+        error: result.error
+      });
+    }
+  }
+
+  const today = datetime.today(timeZone).toString();
+  const activeCodes = (codesResult.data ?? []).map((code) => {
+    const input = toTaxCodeInput(code);
+    return {
+      id: code.id,
+      name: code.name,
+      rate: chargedTaxPercent(input, today),
+      reverseCharge: code.calculationType === "Reverse Charge",
+      retired: false,
+      // A code that starts later charges 0% today: match by rate skips it.
+      inForce: effectiveComponents(input, today).length > 0
+    };
+  });
+  const usage = usageResult.data ?? [];
+  const activeIds = new Set(activeCodes.map((code) => code.id));
+  // A retired code still on open documents parks them until it is mapped.
+  const retiredCodes = usage
+    .filter(
+      (code) =>
+        !activeIds.has(code.id) && (code.usedForSales || code.usedForPurchase)
+    )
+    .map((code) => ({
+      id: code.id,
+      name: code.name,
+      rate: null,
+      reverseCharge: code.reverseCharge,
+      retired: true
+    }));
+  const mappings = mappingsResult.data ?? [];
+  const noTaxCodeFallback = NO_TAX_CODE_FALLBACK_PROVIDERS.has(integrationId);
+
+  return {
+    codes: [...activeCodes, ...retiredCodes],
+    noTaxCodeId: noTaxCodeFallback ? NO_TAX_CODE_MAPPING_ID : null,
+    options: provider.options,
+    optionsError: provider.optionsError,
+    mappings,
+    // Mapped to a rate the provider no longer offers (archived): sync parks.
+    staleMappingKeys: provider.optionsError
+      ? []
+      : mappings
+          .filter(
+            (mapping) =>
+              !provider.options.some(
+                (option) =>
+                  option.id === mapping.externalId &&
+                  option.direction === mapping.direction
+              )
+          )
+          .map((mapping) =>
+            buildTaxCodeMappingEntityId(mapping.taxCodeId, mapping.direction)
+          ),
+    unmapped: computeUnmappedTaxCodes({ usage, mappings }),
+    // Exempt and zero-rated lines go out at "no tax" until the fallback is mapped.
+    unmappedFallbackDirections: noTaxCodeFallback
+      ? unmappedNoTaxCodeDirections(usage, mappings)
+      : [],
+    proposals: matchTaxCodesByRate({
+      codes: activeCodes,
+      options: provider.options,
+      mapped: new Set(
+        mappings.map((mapping) =>
+          buildTaxCodeMappingEntityId(mapping.taxCodeId, mapping.direction)
+        )
+      )
+    })
   };
 }
 
@@ -572,6 +716,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountingSync: null,
       postingSync: null,
       dimensionSync: null,
+      taxRates: null,
       connections: null,
       devices: null
     };
@@ -671,7 +816,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (operations.error) {
       // Don't block the settings drawer on an inbox failure — render the
       // tab empty and log the cause.
-      console.error("Failed to load sync operations:", operations.error);
+      logger.error("Failed to load sync operations", {
+        error: operations.error
+      });
     }
 
     let tieOut: {
@@ -809,7 +956,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             Object.assign(flattenedMetadata, freshStatus);
           }
         } else {
-          logger.warn(
+          logger.warning(
             "Stripe Connect account is no longer linked; hiding stale connection state",
             { companyId, stripeAccountId }
           );
@@ -901,10 +1048,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // stays empty.)
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error(
-        "Failed to fetch QuickBooks Online accounts for settings:",
+      logger.error("Failed to fetch QuickBooks Online accounts for settings", {
         error
-      );
+      });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -930,7 +1076,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // returned by listChartOfAccounts.
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error("Failed to fetch Rillet accounts for settings:", error);
+      logger.error("Failed to fetch Rillet accounts for settings", { error });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -1026,6 +1172,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     : null;
 
+  // Tax-rate mapping tab data — Xero and QuickBooks Online only (guarded
+  // inside the helper).
+  const taxRates = isAccountingInstalled
+    ? await getTaxRateTabData(client, { companyId, integrationId })
+    : null;
+
   // An allowlisted workflow piece has no settings — what it has is the accounts a
   // workflow step can act as, so its card gets that list as a tab.
   const piece = allowlistEntry(integrationId);
@@ -1067,11 +1219,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : null;
 
   // The header's sync switch: off on a new connection, and only switchable on
-  // once every required account is mapped.
+  // once every required account and every used tax code is mapped.
   const accountingSync = accountMapping
     ? {
         enabled: isAccountingSyncEnabled(metadata),
-        unmappedRequiredCount: accountMapping.unmappedRequiredCount
+        unmappedRequiredCount: accountMapping.unmappedRequiredCount,
+        unmappedTaxCodeCount: taxRates
+          ? new Set(taxRates.unmapped.map((code) => code.taxCodeId)).size
+          : 0
       }
     : null;
 
@@ -1086,6 +1241,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountingSync,
     postingSync,
     dimensionSync,
+    taxRates,
     connections,
     devices
   };
@@ -1159,6 +1315,46 @@ export async function action(args: ActionFunctionArgs) {
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
       return api.settings.saveDimensionValueMappings({
+        integrationId: input.params.id,
+        mappings: input.data.mappings
+      });
+    }
+    case "upsert-tax-code-mapping": {
+      const input = await validator(taxCodeMappingUpsertValidator).request(
+        args,
+        params
+      );
+      if ("invalid" in input) return input.invalid;
+      const { taxCodeId } = input.data;
+      const mappings = [];
+      if (input.data.salesExternalId) {
+        mappings.push({
+          taxCodeId,
+          direction: "sales" as const,
+          externalId: input.data.salesExternalId
+        });
+      }
+      if (input.data.purchaseExternalId) {
+        mappings.push({
+          taxCodeId,
+          direction: "purchase" as const,
+          externalId: input.data.purchaseExternalId
+        });
+      }
+      const api = await carbon(args.request);
+      return api.settings.saveTaxCodeMappings({
+        integrationId: input.params.id,
+        mappings
+      });
+    }
+    case "bulk-upsert-tax-code-mappings": {
+      const input = await validator(taxCodeMappingBulkUpsertValidator).request(
+        args,
+        params
+      );
+      if ("invalid" in input) return input.invalid;
+      const api = await carbon(args.request);
+      return api.settings.saveTaxCodeMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
       });
@@ -1293,27 +1489,31 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     metadata = foldRampCredentials(metadata);
   }
 
-  // Onshape Government is configured BEFORE it is authorized: the admin enters
-  // their private OAuth app here, and the save then sends them through that
-  // app's consent screen (below). Re-authorize whenever there is no token yet or
-  // the app it was issued by changed — a token is only good for the client and
-  // tenant that issued it.
+  // Onshape Government (the sync and the panel) is configured BEFORE it is
+  // authorized: the admin enters their private OAuth app here, and the save
+  // then sends them through that app's consent screen (below). Re-authorize
+  // whenever there is no token yet or the app it was issued by changed — a
+  // token is only good for the client and tenant that issued it.
+  const onshapeCustomerApp = isOnshapeCustomerAppIntegrationId(integrationId)
+    ? integrationId
+    : null;
   const onshapeAppChanged =
-    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    onshapeCustomerApp !== null &&
     (["baseUrl", "clientId"] as const).some(
       (key) => metadata[key] !== existingMetadata[key]
     );
   const onshapeNeedsAuthorization =
-    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    onshapeCustomerApp !== null &&
     (!existingMetadata.credentials ||
       onshapeAppChanged ||
       (typeof metadata.clientSecret === "string" &&
         metadata.clientSecret.trim().length > 0));
 
-  // A company holds one Onshape connection at a time; two would leave every
-  // background job guessing which tenant to talk to.
-  if (isOnshapeIntegrationId(integrationId) && !existing.data?.active) {
-    const conflict = await getConflictingOnshapeIntegration(
+  // A company holds one Onshape sync connection and one panel connection at a
+  // time; two would leave every background job (or the panel) guessing which
+  // tenant to talk to.
+  if (isOnshapeOAuthIntegrationId(integrationId) && !existing.data?.active) {
+    const conflict = await getConflictingOnshapeConnection(
       client,
       companyId,
       integrationId
@@ -1395,7 +1595,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     // Email's Server mail and Gmail have no credential to enter.
     (FORM_SECRET_INTEGRATIONS.has(integrationId) &&
       !picksCredentialFreeEmail(integrationId, metadata)) ||
-    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
+    onshapeCustomerApp !== null
   ) {
     const alreadyVaulted = existing.data?.secretRef != null;
     // The optional webhook signing secret is not a credential: it must not
@@ -1420,7 +1620,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // A connected Government app whose tenant or client changed: its tokens were
+  // A connected private app whose tenant or client changed: its tokens were
   // issued by the OLD app for the OLD host. Clear them now rather than when
   // consent completes — an abandoned or failed consent would otherwise leave
   // them live, sent to the new host by every job. The upsert below only drops
@@ -1447,10 +1647,6 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         }
       );
     } catch (clearError) {
-      logger.error("Could not clear the previous Onshape credentials", {
-        companyId,
-        error: clearError
-      });
       return data(
         {},
         await flash(
@@ -1497,17 +1693,14 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
       try {
         await onInstall(companyId);
       } catch (hookError) {
-        logger.error("onInstall hook failed for integration", {
-          integrationId,
-          error: hookError
-        });
         throw redirect(
           path.to.integrations,
           await flash(
             request,
             error(
               hookError,
-              `Installed ${integration.name}, but setup hook failed`
+              `Installed ${integration.name}, but setup hook failed`,
+              { integrationId }
             )
           )
         );
@@ -1550,16 +1743,17 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // and need a reconnect, so surface a registration failure instead of flashing
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
-  if (onshapeNeedsAuthorization) {
+  if (onshapeCustomerApp && onshapeNeedsAuthorization) {
     const started = await beginOnshapeAuthorization(request, {
-      integrationId: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+      integrationId: onshapeCustomerApp,
       userId,
       companyId
     });
     await invalidateIntegrationHealthCache(integrationId, companyId);
     if (!started.ok) {
-      logger.error("Could not start Onshape Government authorization", {
+      logger.error("Could not start the Onshape private app authorization", {
         companyId,
+        integrationId,
         reason: started.reason
       });
       throw redirect(
@@ -1568,7 +1762,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
           request,
           error(
             started.reason,
-            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, client ID and client secret."
+            `Saved ${integration.name} settings, but couldn't start the connection. Check the Onshape URL, client ID and client secret.`
           )
         )
       );
@@ -1647,6 +1841,7 @@ export default function IntegrationRoute() {
     accountingSync,
     postingSync,
     dimensionSync,
+    taxRates,
     connections,
     devices
   } = useLoaderData<typeof loader>();
@@ -1658,8 +1853,9 @@ export default function IntegrationRoute() {
   const collapseSettings = integrationId === "mount" && installed;
   const mountActions = useMountActionStates(metadata);
 
-  // Accounting-category integrations get Account Mapping, Posting, Dimensions
-  // and Sync Activity tabs next to the Settings form (deep-linkable via
+  // Accounting-category integrations get Account Mapping, Posting, Dimensions,
+  // Tax Rates (Xero and QuickBooks Online) and Sync Activity tabs next to the
+  // Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
   if (connections) {
@@ -1739,6 +1935,26 @@ export default function IntegrationRoute() {
       )
     });
   }
+  if (taxRates) {
+    tabs.push({
+      value: "tax-rates",
+      label: <Trans>Tax Rates</Trans>,
+      content: (tabBar) => (
+        <TaxRateMapping
+          tabs={tabBar}
+          codes={taxRates.codes}
+          noTaxCodeId={taxRates.noTaxCodeId}
+          options={taxRates.options}
+          optionsError={taxRates.optionsError}
+          mappings={taxRates.mappings}
+          staleMappingKeys={taxRates.staleMappingKeys}
+          unmapped={taxRates.unmapped}
+          unmappedFallbackDirections={taxRates.unmappedFallbackDirections}
+          proposals={taxRates.proposals}
+        />
+      )
+    });
+  }
   if (syncActivity && integrationId) {
     tabs.push({
       value: "sync-activity",
@@ -1798,6 +2014,7 @@ export default function IntegrationRoute() {
             <AccountingSyncControl
               enabled={accountingSync.enabled}
               unmappedRequiredCount={accountingSync.unmappedRequiredCount}
+              unmappedTaxCodeCount={accountingSync.unmappedTaxCodeCount}
             />
           </div>
         ) : undefined

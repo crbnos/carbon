@@ -2,11 +2,14 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { getLogger } from "@carbon/logger";
 import type { ExternalIntegrationMappingService } from "../../accounting/core/external-mapping";
 import type { SpendVendorParty } from "../../spend/parties";
 import { buildRampIdempotencyKey, type RampClient } from "./client";
 import { RAMP } from "./connection";
 import type { RampVendor } from "./models";
+
+const logger = getLogger("ee", "ramp");
 
 // /********************************************************\
 // *        Ramp spend-vendor resolution (outbound)        *
@@ -343,10 +346,11 @@ async function linkAccountingVendor(
     });
     return accountingVendorId;
   } catch (error) {
-    console.error(
-      `[RAMP] failed to link vendor ${rampVendorId} to accounting vendor ${accountingVendorId}`,
+    logger.error("Failed to link Ramp vendor to accounting vendor", {
+      rampVendorId,
+      accountingVendorId,
       error
-    );
+    });
     return undefined;
   }
 }
@@ -407,8 +411,13 @@ export async function resolveOrCreateRampSpendVendor(
   if (decision.action === "fail") throw decision.error;
   if (decision.action === "match") {
     if (decision.conflict) {
-      console.warn(
-        `[RAMP] vendor ${decision.vendorId} is linked to accounting vendor ${decision.conflict}, not the one mapped for supplier ${supplier.id}; leaving it`
+      logger.warning(
+        "Ramp vendor is linked to a different accounting vendor than the one mapped for the supplier; leaving it",
+        {
+          rampVendorId: decision.vendorId,
+          linkedAccountingVendorId: decision.conflict,
+          supplierId: supplier.id
+        }
       );
     }
     const linkedTo = decision.linkTo
@@ -479,10 +488,11 @@ export async function resolveOrCreateRampSpendVendor(
       })
     )) as { id?: string } | null;
   } catch (createError) {
-    console.error(
-      `[RAMP] failed to create Ramp spend vendor for supplier "${name}" (${supplier.id})`,
-      createError
-    );
+    logger.error("Failed to create Ramp spend vendor for supplier", {
+      supplierName: name,
+      supplierId: supplier.id,
+      error: createError
+    });
     if (opts?.surfaceCreateError) throw createError;
     return null;
   }

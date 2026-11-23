@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { LabelSize } from "@carbon/utils";
+import { DEFAULT_LABEL_DPI, type LabelSize } from "@carbon/utils";
 import type { DocumentTemplate } from "../template";
 import { resolveTemplate } from "../template";
 
@@ -41,7 +41,7 @@ export async function resolveLabelLogo(
   if (!color) return null;
 
   // Logo width ≈ 30% of the label, in printer dots.
-  const dpi = labelSize.zpl?.dpi ?? 203;
+  const dpi = labelSize.zpl?.dpi ?? DEFAULT_LABEL_DPI;
   const labelInches = labelSize.zpl?.width ?? labelSize.width;
   const widthDots = Math.round(labelInches * dpi * 0.3);
 

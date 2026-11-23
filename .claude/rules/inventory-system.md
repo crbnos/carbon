@@ -138,6 +138,42 @@ Key service functions (verified):
   (`inventory.utils.ts`) — these are the picking/job defaults.
 - Tracking: `getTrackedEntities`, `getAvailableTrackedEntities` (RPC `get_available_tracked_entities`),
   `getSerialNumbersForItem`, `getBatchNumbersForItem`, `getShelfLifeForItems`, `getPickOrder` (FEFO/FIFO).
+- Live bins (migration `20261115001836_picking_list_live_bins.sql`). A picking list line's
+  `storageUnitId` is the bin suggested when the list was made, then the bin the first pick
+  drew from. The ERP and MES picking pages do not read it for an unpicked line: they show
+  `getPickingListLiveBins` (RPC `get_picking_list_live_bins(p_company_id, p_picking_list_id)`):
+  the nettable warehouse bins that hold the line's item on the line's stripe now, fullest
+  first. A line with no row is out of stock; a picked line names the bin it was picked from.
+  `get_picking_list_availability` is no longer read by either page (`getPickingListAvailability`
+  stays as an operation). The MES reads two more: `get_job_issue_bins(p_company_id, p_job_id,
+  p_item_ids)` (the bins a job's untracked materials can issue from: positive stock per
+  eligible stripe, and lineside stock only up to the job's outstanding picked claim) and
+  `get_issue_tracked_entity_stock(p_company_id, p_location_id, p_item_ids, p_project_ids)`
+  (available lots of every revision of an item in one read, with the bin holding most).
+- Stock transfer lines, a kanban refill included, show the same
+  (`20261115053325_stock_transfer_live_bins.sql`): the transfer page loads
+  `getStockTransferLiveBins` (RPC `get_stock_transfer_live_bins(p_company_id,
+  p_stock_transfer_id)`: common stock in nettable warehouse bins and the line's From bin,
+  never its To bin) and follows `itemLedger` changes for its items. When the From bin no
+  longer holds what is left to pick, the line shows "Stock at: bin (qty), …", or "Location
+  not known" when no bin holds it. The pick still posts from the line's From bin
+  (`postStockTransfer`); the lines are ordered by item id with numbers as numbers.
+- Pick, unpick and unissue post from the ledger, not from the saved bin (`postPicking`,
+  `issueMaterial`). An untracked pick locks the draw (`lockUntrackedDraws`), reads the bins
+  again, chooses the source with `chooseSourceBin` and splits it with
+  `planStripedUntrackedDraw`; its `Direct Transfer` rows carry `documentLineId` = the picking
+  list line. An unpick returns what the line still holds to the bins those rows drew from,
+  newest first, never more than `quantityPicked`; rows picked before the tag go back to the
+  line's saved bin. An unissue (`Positive Adjmt.` on a job material) is refused above
+  `quantityIssued` and returns stock to the bins and stripes the job's `Job Consumption` rows
+  of that item drew from, the operation's own draws first. It reads by job and item, because
+  the job-completion SQL backflush writes no `documentLineId`.
+- A picking list line's lineside (`toStorageUnitId`) can be empty: a release picking list is
+  made before the scheduler gives an operation with only a process its work center. Each pick
+  (`inventory`, `serial`, `batch` in `postPicking`) fills it under the line lock
+  (`resolvePickDestination`) from the operation's current work center
+  (`get_or_create_work_center_lineside`) and saves it, or refuses when the operation still has
+  none. The posting is the one check; the ERP and MES callers do not refuse first.
 - Picking: `generatePickingList`, `getPickingListAvailability` (RPC `get_picking_list_availability`),
   `getPickingSchedule` (RPC `get_picking_schedule`). These honor `itemSupersession`
   (`20260730143512_picking-supersession.sql` + `inventory/supersession-pick.ts`
@@ -324,7 +360,7 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   a stock transfer does not, since moving stock out is how it is released. `postPicking`
   also refuses a pick (untracked, serial or batch) whose source unit is non-nettable at post
   time (`assertPickSourceNettable`), since a bin can become one after the list was
-  generated; it still does not re-check lineside. Shipments are not restricted: a shipment line can
+  generated; an untracked pick draws from the nettable warehouse bins that hold stock at post time (see Live bins above). Shipments are not restricted: a shipment line can
   name a non-nettable bin. A new sales order shipment line for an untracked item keeps the bin
   the order line names, even when short; a line with no bin takes a bin that holds its stock
   (`shipmentSourceBinChooser` → `chooseSourceBin`, `shared.service.ts`), and so does a quote
@@ -383,9 +419,14 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   (`getDefaultStorageUnitForJob(…, { source: true })`, quote-to-order conversion), and
   returned picked material does not go back into one.
 - **Consumption lot pickers leave quarantined lots out.** The MES issue modal's serial and
-  batch lists (`getSerialNumbersForItem` / `getBatchNumbersForItem`) and both maintenance
-  add-part modals drop lots whose stock is in a non-nettable unit
-  (`getNonNettableTrackedEntityIds`, `@carbon/database`); a failed read offers none.
+  batch lists (`getIssueLotsForItem`, over `get_issue_tracked_entity_stock`) and both maintenance
+  add-part modals (`getNonNettableTrackedEntityIds`, `@carbon/database`) drop lots whose stock
+  is in a non-nettable unit; a failed read offers none.
+- **A lot is drawn only where it is in stock.** A job issue (`consumeTrackedEntitiesIntoOperation`)
+  and a serial or batch pick (`postPicking`) refuse a lot whose stock is at another location
+  (`assertEntitiesAtLocation`, `@carbon/api/stock-stripes`); a unit with no stock anywhere (still
+  in production) passes. The MES issue lists and suggested allocation offer only the job's
+  location.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
   (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
   true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.
@@ -452,6 +493,10 @@ in its unit (on-hand less what open lots hold).
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
+- **Outside-processing PO lines are not supply for planning.** `openPurchaseOrderLines`
+  (`20261117123417`) leaves out lines of an `Outside Processing` PO: the line carries the job's
+  item, but receiving it stocks nothing (the job is the supply), so MRP counted the job twice.
+  `get_inventory_quantities`' `quantityOnPurchaseOrder` still counts them.
 - **`get_inventory_quantities` has many revisions.** Always read the newest (`20261021004300`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.

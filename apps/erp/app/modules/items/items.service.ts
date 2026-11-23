@@ -25,6 +25,7 @@ import {
   type KyselyTx,
   withTransaction
 } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
 import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
 import { insertRows, many, maybeSingle, newIds } from "@carbon/database/rows";
@@ -40,7 +41,7 @@ import {
 import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { oncePerRead } from "@carbon/logger/middleware.server";
+import { oncePerRead } from "@carbon/logger/context.server";
 import { NotificationEvent } from "@carbon/notifications";
 import {
   datetime,
@@ -956,6 +957,36 @@ export async function getConsumables(
 
 export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
+}
+
+/** Whether sales and purchase lines for the item take tax (`item.taxable`). */
+export async function getItemTaxable(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("item")
+    .select("taxable")
+    .eq("id", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+/** Switch whether sales and purchase lines for the items take tax. */
+export async function updateItemTaxable(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; taxable: boolean; companyId: string; userId: string }
+) {
+  return client
+    .from("item")
+    .update({
+      taxable: args.taxable,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
 }
 
 export async function getItemCost(
@@ -1980,9 +2011,8 @@ export async function getMethodCorrectionMaterials(
     .order("order", { ascending: true });
 }
 
-type Method = NonNullable<
-  Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
->[number];
+type Method =
+  Database["public"]["Functions"]["get_method_tree"]["Returns"][number];
 type MethodTreeItem = {
   id: string;
   data: Method;
@@ -2004,13 +2034,23 @@ export async function getMethodTree(
   };
 }
 
+// Paged: one RPC call stops at PostgREST's max_rows (1000). The tie-breakers
+// make the pages a total order, so they neither overlap nor skip.
 export async function getMethodTreeArray(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
-  return client.rpc("get_method_tree", {
-    uid: makeMethodId
-  });
+  const result = await fetchAll<Method>(() =>
+    client
+      .rpc("get_method_tree", { uid: makeMethodId })
+      .order("order")
+      .order("methodMaterialId")
+      .order("parentMaterialId")
+      .order("isPickDescendant")
+  );
+  return result.error
+    ? { data: null, error: result.error }
+    : { data: result.data ?? [], error: null };
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
@@ -2026,8 +2066,13 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    lookup[itemId]["data"] = item;
+    // A line under a made and a pulled branch comes once per branch, as one
+    // node: it keeps the made copy, whatever order the rows came in.
+    const existing = lookup[itemId].data as Method | undefined;
+    if (!existing || existing.isPickDescendant) {
+      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
+      lookup[itemId]["data"] = item;
+    }
 
     const treeItem = lookup[itemId];
 
@@ -3496,7 +3541,8 @@ async function resolveTypedItemRevision(
  * The update half of upsertPart / upsertTool / upsertConsumable /
  * upsertService: resolves the item, then writes the item row and the typed
  * row. Each write selects its row back so a miss fails instead of reporting
- * success.
+ * success. It never writes `active`: `setItemActive` is the only writer, so a
+ * details save cannot activate an item an unreleased change notice holds.
  */
 async function updateTypedItem(
   client: SupabaseClient<Database>,
@@ -3505,7 +3551,7 @@ async function updateTypedItem(
     companyId: string;
     updatedBy: string;
     type: "Part" | "Tool" | "Consumable" | "Service";
-    item: Database["public"]["Tables"]["item"]["Update"];
+    item: Omit<Database["public"]["Tables"]["item"]["Update"], "active">;
     typed: { customFields?: Json };
   }
 ): Promise<
@@ -3549,7 +3595,8 @@ const typedItemTables = {
 /**
  * Creates a consumable (item row and consumable row) or updates one; on update
  * `id` is the item id (uuid) or the consumable's readable id and the write is
- * a full replace, so omitted optional fields are cleared.
+ * a full replace, so omitted optional fields are cleared, but `active` is left
+ * as stored.
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
@@ -3649,8 +3696,7 @@ export async function upsertConsumable(
       replenishmentSystem: consumable.replenishmentSystem,
       defaultMethodType: consumable.defaultMethodType,
       itemTrackingType: consumable.itemTrackingType,
-      unitOfMeasureCode: consumable.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: consumable.unitOfMeasureCode
     },
     typed: { customFields: consumable.customFields }
   });
@@ -3825,8 +3871,9 @@ export async function resolveItemIdFromExtractedText(
 /**
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
- * omitted optional fields are cleared. `createPart` / `updatePart` are the
- * operations; create also queues the part's model optimisation.
+ * omitted optional fields are cleared, but `active` is left as stored.
+ * `createPart` / `updatePart` are the operations; create also queues the
+ * part's model optimisation.
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -3942,8 +3989,7 @@ export async function upsertPart(
       replenishmentSystem: part.replenishmentSystem,
       defaultMethodType: part.defaultMethodType,
       itemTrackingType: part.itemTrackingType,
-      unitOfMeasureCode: part.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: part.unitOfMeasureCode
     },
     typed: { customFields: part.customFields }
   });
@@ -6464,7 +6510,7 @@ export async function upsertMaterialSubstance(
  * a changed name renames the readable id with it (a name another service uses
  * is refused). On update `id` is the item id (uuid) or the
  * service's readable id and the write is a full replace, so omitted optional
- * fields are cleared.
+ * fields are cleared, but `active` is left as stored.
  */
 export async function upsertService(
   client: SupabaseClient<Database>,
@@ -6571,8 +6617,7 @@ export async function upsertService(
       defaultMethodType: service.defaultMethodType,
       itemTrackingType: "Non-Inventory",
       // A service is always counted in Each, whatever unit a caller sends.
-      unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE,
-      active: true
+      unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE
     },
     typed: { customFields: service.customFields }
   });
@@ -6718,7 +6763,7 @@ export async function upsertUnitOfMeasure(
 /**
  * Creates a tool (item row and tool row) or updates one; on update `id` is the
  * item id (uuid) or the tool's readable id and the write is a full replace, so
- * omitted optional fields are cleared.
+ * omitted optional fields are cleared, but `active` is left as stored.
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
@@ -6820,8 +6865,7 @@ export async function upsertTool(
       replenishmentSystem: tool.replenishmentSystem,
       defaultMethodType: tool.defaultMethodType,
       itemTrackingType: tool.itemTrackingType,
-      unitOfMeasureCode: tool.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: tool.unitOfMeasureCode
     },
     typed: { customFields: tool.customFields }
   });
@@ -10941,7 +10985,7 @@ export async function syncMakeMethod(
     case "onshape": {
       const { type, makeMethodId, data } = payload;
 
-      logger.info({
+      logger.info("Syncing a make method from Onshape", {
         type,
         makeMethodId,
         data,
@@ -11009,8 +11053,7 @@ export async function syncMakeMethod(
         throw new Error("Failed to fetch make methods");
       }
 
-      logger.info({
-        action: "fetched_active_make_methods",
+      logger.info("Fetched the active make methods", {
         count: existingMakeMethods.data?.length ?? 0,
         data: existingMakeMethods.data
       });
@@ -11113,8 +11156,7 @@ export async function syncMakeMethod(
           const maxVersion = Number(allVersions.data?.version ?? 0);
           const newVersion = maxVersion + 1;
 
-          logger.info({
-            action: "creating_top_level_draft",
+          logger.info("Creating the top-level draft make method", {
             itemId: topLevelItemId,
             maxVersion,
             newVersion
@@ -11415,8 +11457,7 @@ export async function syncMakeMethod(
                 existingMakeMethodsByItemId.get(itemId) ||
                 newlyCreatedMakeMethodsByItemId.get(itemId);
 
-              logger.info({
-                action: "processing_item",
+              logger.info("Processing an item", {
                 itemId,
                 partId,
                 isMade,
@@ -11450,8 +11491,7 @@ export async function syncMakeMethod(
                         .execute()
                     );
 
-                    logger.info({
-                      action: "check_existing_draft",
+                    logger.info("Checked for an existing draft make method", {
                       itemId,
                       companyId,
                       existingDraft: existingDraft ?? null
@@ -11484,8 +11524,7 @@ export async function syncMakeMethod(
                       const maxVersion = Number(maxVersionRow?.version ?? 0);
                       const newVersion = maxVersion + 1;
 
-                      logger.info({
-                        action: "creating_child_draft",
+                      logger.info("Creating a child draft make method", {
                         itemId,
                         companyId,
                         maxVersionRow: maxVersionRow ?? null,

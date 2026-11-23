@@ -14,6 +14,7 @@ import { erpPosting } from "~/services/erp";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
+  getBatchRequiredScanShortfall,
   getJobOperationBatch,
   type JobOperationBatch
 } from "~/services/operations.service";
@@ -106,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ownedEntities.error ||
     (ownedEntities.data ?? []).length !== submittedEntityIds.length
   ) {
-    logger.warn("Batch completion references records outside the batch", {
+    logger.warning("Batch completion references records outside the batch", {
       companyId,
       batchId,
       jobOperationId: foreignMember?.jobOperationId,
@@ -131,6 +132,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     : null;
   if (abilityRefusal) {
     return data({}, await flash(request, error(null, abilityRefusal)));
+  }
+
+  // Required scans: refuse the whole batch, naming each member that is short,
+  // before phase 1 records anything. A batch issues a member's material
+  // against the member's jobMaterial.quantityIssued (one pick split across
+  // members), never into one serial unit, so every member — serial-tracked
+  // ones included — counts the operation's issued quantity. A resume of a
+  // 'Completing' batch already recorded its quantities, so it adds none; a
+  // 'Completed' batch is a duplicate submit and is not checked again.
+  if (planned.data.status !== "Completed") {
+    const labelById = new Map(
+      (planned.data.operations ?? []).map((operation) => [
+        operation.id,
+        operation.job?.jobId ?? operation.description ?? operation.id
+      ])
+    );
+    const recorded = planned.data.status === "Completing";
+    const scanCheck = await getBatchRequiredScanShortfall(serviceRole, {
+      companyId,
+      members: validation.data.members
+        .filter((m) => m.excluded !== "true")
+        .map((m) => ({
+          jobOperationId: m.jobOperationId,
+          quantity: recorded ? 0 : (m.quantity ?? 0),
+          label: labelById.get(m.jobOperationId) ?? m.jobOperationId
+        }))
+    });
+    if (scanCheck.message) {
+      return data(
+        {},
+        await flash(request, error(scanCheck.error, scanCheck.message))
+      );
+    }
   }
 
   const plannedLotNumber = planned.data.mergeOutput
@@ -194,7 +228,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           completed.error,
-          `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
+          'Batch completed, but combining its output lots failed — use "Merge output lots" on the batch',
+          { lotNumber: plannedLotNumber }
         )
       )
     );
@@ -216,7 +251,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             mergeResult.error,
-            `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
+            'Batch completed, but combining its output lots failed — use "Merge output lots" on the batch',
+            { lotNumber: plannedLotNumber }
           )
         )
       );

@@ -7,9 +7,11 @@ import { lingui } from "@lingui/vite-plugin";
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
-function moduleMacrosOnly(plugins: Plugin[]): Plugin[] {
+function moduleMacrosOnly<P extends object>(plugins: P[]): P[] {
   return plugins.map((plugin) => {
-    const transform = plugin.transform;
+    // Lingui and Vitest can resolve Vite through different peer instances.
+    // Preserve the caller's plugin type across this runtime-only hook wrapper.
+    const transform = (plugin as unknown as Plugin).transform;
     if (!transform) return plugin;
     const handler = typeof transform === "function" ? transform : transform.handler;
     const skippingComponents: typeof handler = function (code, id, options) {
@@ -24,7 +26,7 @@ function moduleMacrosOnly(plugins: Plugin[]): Plugin[] {
         typeof transform === "function"
           ? skippingComponents
           : { ...transform, handler: skippingComponents }
-    };
+    } as P;
   });
 }
 

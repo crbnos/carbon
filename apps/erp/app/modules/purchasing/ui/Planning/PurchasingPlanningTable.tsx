@@ -25,7 +25,7 @@ import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -58,7 +58,8 @@ import {
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
-  PLANNING_DRAWER_PARAM
+  PLANNING_DRAWER_PARAM,
+  type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
@@ -71,9 +72,11 @@ import {
   usePlanningActionTypeOptions
 } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
+  draftsOfRefusedOrders,
   openNewSupplyActions,
   plannedOrdersFromActions,
-  supplierConversionFactor
+  supplierConversionFactor,
+  withoutRowDraft
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
   PLANNING_SEGMENT_COLUMN,
@@ -84,6 +87,7 @@ import {
   type PlanningSegmentProject,
   planningColumns
 } from "~/modules/production/ui/Planning/planningColumns";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
@@ -171,6 +175,10 @@ const PlanningTable = memo(
     });
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+    const pastStartToast = usePastStartToast();
+    const submittedRows = useRef<
+      { id: string; planningSegmentId: string; orders: PlannedOrder[] }[]
+    >([]);
 
     // Every loaded row, each with its own actions. The open drawer's param
     // does not change the list.
@@ -256,14 +264,29 @@ const PlanningTable = memo(
       }
 
       if (bulkUpdateFetcher.data?.success === true) {
-        // The drafts became PO lines; the next open re-seeds from the new split.
-        setOrdersMap({});
-        const purchaseOrders =
-          (
-            bulkUpdateFetcher.data as {
-              purchaseOrders?: { id: string; readableId: string }[];
-            }
-          )?.purchaseOrders ?? [];
+        const {
+          purchaseOrders = [],
+          refusedOrders = [],
+          processedItems = 0,
+          warnings = [],
+          errors = []
+        } = bulkUpdateFetcher.data as {
+          purchaseOrders?: { id: string; readableId: string }[];
+          refusedOrders?: RefusedPlanningOrder[];
+          processedItems?: number;
+          warnings?: string[];
+          errors?: string[];
+        };
+        // A refused late order stays a draft as it was sent; every other row
+        // re-seeds from the suggestions, which keep what was not ordered.
+        setOrdersMap(
+          draftsOfRefusedOrders(submittedRows.current, refusedOrders)
+        );
+        const problems = [...warnings, ...errors];
+        if (problems.length > 0) toast.error(problems.join(" · "));
+        if (refusedOrders.length > 0) {
+          toast.error(pastStartToast(processedItems, refusedOrders.length));
+        }
 
         if (purchaseOrders.length === 0) {
           toast.success(t`Orders submitted`);
@@ -474,6 +497,7 @@ const PlanningTable = memo(
             }),
           action: action
         };
+        submittedRows.current = payload.items;
         bulkUpdateFetcher.submit(payload, {
           method: "post",
           action: path.to.bulkUpdatePurchasingPlanning,
@@ -536,6 +560,11 @@ const PlanningTable = memo(
       },
       []
     );
+
+    // After an order the row's draft is stale: drop it so the drawer re-seeds.
+    const dropOrders = useCallback((item: PurchasingPlanningItem) => {
+      if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
+    }, []);
 
     // The drawer's own Planning Horizon control: the same on-screen override
     // as the grid cell, for the row the drawer is open on.
@@ -1014,6 +1043,7 @@ const PlanningTable = memo(
             actionHandlers={actionHandlers}
             ordersVersion={ordersVersion}
             setOrders={setOrders}
+            onSuggestionsStale={dropOrders}
             periods={periods}
             isOpen={isDrawerOpen}
             onClose={closeDrawer}

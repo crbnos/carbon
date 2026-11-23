@@ -25,7 +25,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (quoteDelete.error) {
     return data(
       path.to.supplierQuotes,
-      await flash(request, error(quoteDelete.error, quoteDelete.error.message))
+      await flash(
+        request,
+        error(quoteDelete.error, "Failed to delete the supplier quote")
+      )
     );
   }
 

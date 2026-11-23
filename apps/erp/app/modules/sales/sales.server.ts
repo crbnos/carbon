@@ -3,9 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
+import {
+  paged,
+  payload,
+  run,
+  serverFnRefusal,
+  unwrap
+} from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
@@ -21,6 +28,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
+  colorNames,
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
@@ -30,8 +38,20 @@ import {
   unchecked
 } from "@carbon/utils";
 import { z } from "zod";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  getExchangeRate,
+  getTaxCodeInputs,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
+import {
+  decideWrittenLineTax,
+  lineTaxForUpsert,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
 import { linkStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 import {
@@ -85,6 +105,7 @@ import {
   customerContractFundingValidator,
   customerContractTypes,
   customerContractValidator,
+  deliveryDateCheckValidator,
   invoiceAutomations,
   isQuoteLocked,
   isSalesOrderLocked,
@@ -856,10 +877,18 @@ export const updateQuoteField = defineServiceFn({
  * method and rolling up its cost. When pricing fails the line is kept and
  * `warning` says what failed.
  *
+ * The line's tax: a non-taxable item takes none. Without `taxCodeId` the
+ * line takes the quote's default (the ship-to's or the customer's code); an
+ * empty `taxCodeId` keeps `taxPercent` with no code.
+ *
+ * @param taxCodeId - The line's tax code. Omit for the quote's default; empty
+ * for none.
+ *
  * @mcp
  */
 export const createQuoteLine = defineServiceFn({
   input: quoteLineValidator.extend({
+    taxCodeId: z.string().optional(),
     customFields: customFieldValues.optional(),
     acknowledged: z.boolean().default(false)
   }),
@@ -891,8 +920,23 @@ export const createQuoteLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const tax = await service.resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      companyId,
+      {
+        document: "quote",
+        documentId: quoteId,
+        lineId: null,
+        itemId: line.itemId,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
     const created = await service.upsertQuoteLine(serviceRole, {
       ...line,
+      ...lineTaxForUpsert(tax.data),
       companyId,
       configuration,
       createdBy: userId,
@@ -935,7 +979,8 @@ export const createQuoteLine = defineServiceFn({
  * quantity breaks are reconciled: a break no longer offered loses its price,
  * and a new break of a Make to Order, Pull from Inventory or Purchase to
  * Order line is priced. The prices are computed before anything is written,
- * and the line and its prices are saved in one transaction.
+ * and the line and its prices are saved in one transaction. A non-taxable
+ * item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -977,6 +1022,21 @@ export const updateQuoteLine = defineServiceFn({
       acknowledged
     });
     if (gate.blocked) return gate.blocked;
+
+    const tax = await service.resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      companyId,
+      {
+        document: "quote",
+        documentId: quoteId,
+        lineId,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+    Object.assign(line, lineTaxForUpsert(tax.data));
 
     const existing = await serviceRole
       .from("quoteLinePrice")
@@ -1089,6 +1149,7 @@ export const finalizeAndSendQuote = defineServiceFn({
   input: z.object({
     quoteId: z.string(),
     acknowledged: z.boolean().default(false),
+    emailOrderOnAcceptance: z.boolean().optional(),
     ...documentNotification,
     locale: z.string().default("en-US")
   }),
@@ -1186,7 +1247,8 @@ export const finalizeAndSendQuote = defineServiceFn({
       serviceRole,
       quoteId,
       userId,
-      companyId
+      companyId,
+      { emailOrderOnAcceptance: input.emailOrderOnAcceptance }
     );
     if (finalized.error) {
       return ctx.error("internal", "Failed to finalize quote", finalized.error);
@@ -1307,6 +1369,9 @@ export const convertQuote = defineServiceFn({
     }
     const salesOrderId = convert.data.convertedId;
 
+    // Flags each new line whose promised date fails the check; never stops.
+    await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
+
     await service.recordSalesRuleOutcome(serviceRole, {
       companyId,
       userId,
@@ -1330,7 +1395,7 @@ export const convertQuote = defineServiceFn({
           companyId,
           companyGroupId: ctx.company.groupId,
           userId,
-          customerContactId: customerContact,
+          recipient: { customerContactId: customerContact },
           cc: input.cc,
           documentFilePath: pdf.documentFilePath,
           fileName: pdf.fileName,
@@ -1560,9 +1625,11 @@ export const attachQuoteFile = defineServiceFn({
  * rule error on a selected line refuses with a neutral message (the customer
  * must never read internal compliance text) and is recorded for the seller;
  * warnings are logged and the order proceeds. The quote converts to a sales
- * order with the customer's name and email, its PDF is filed, the company's
- * digital-quote group is notified, and an attached purchase order file is
- * stored on the opportunity (its name, without `.pdf`, is the PO number).
+ * order with the customer's name and email, its PDF is filed and (when the
+ * quote's `emailOrderOnAcceptance` is on) emailed to the customer and the
+ * order's sales person, the company's digital-quote group is notified, and an
+ * attached purchase order file is stored on the opportunity (its name, without
+ * `.pdf`, is the PO number).
  */
 export const acceptDigitalQuote = defineServiceFn({
   input: z.object({
@@ -1622,7 +1689,7 @@ export const acceptDigitalQuote = defineServiceFn({
       );
     }
     if (gate.check.violations.length > 0) {
-      logger.warn("Digital quote accepted with sales rule warnings", {
+      logger.warning("Digital quote accepted with sales rule warnings", {
         quoteId,
         companyId,
         violations: gate.check.violations
@@ -1652,18 +1719,29 @@ export const acceptDigitalQuote = defineServiceFn({
 
     const salesOrderId = convert.data?.convertedId;
     if (salesOrderId) {
-      // The order stands without its PDF.
+      await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
+      // The order stands without its PDF or its email.
       const pdf = await service
         .attachSalesOrderPdf(ctx, {
           salesOrderId,
           locale: "en-US"
         })
-        .catch((err: unknown) => err);
+        .catch((err: unknown) =>
+          err instanceof Error ? err : new Error(String(err))
+        );
       if (pdf instanceof Error) {
         logger.error("Failed to generate PDF after digital quote acceptance", {
           companyId,
           salesOrderId,
           error: pdf
+        });
+      } else if (quote.emailOrderOnAcceptance) {
+        await service.emailDigitalQuoteOrder(ctx, {
+          salesOrderId,
+          acceptedBy: input.acceptedBy,
+          acceptedByEmail: input.acceptedByEmail,
+          documentFilePath: pdf.documentFilePath,
+          fileName: pdf.fileName
         });
       }
     }
@@ -2098,7 +2176,7 @@ export const confirmSalesOrder = defineServiceFn({
         companyId,
         companyGroupId: ctx.company.groupId,
         userId,
-        customerContactId: customerContact,
+        recipient: { customerContactId: customerContact },
         cc: input.cc,
         documentFilePath: pdf.documentFilePath,
         fileName: pdf.fileName,
@@ -2219,6 +2297,99 @@ export const updateSalesOrderDetails = defineServiceFn({
     return { salesOrderId: id };
   }
 });
+/**
+ * Check whether a sales order line can ship by its promised date.
+ *
+ * @remarks
+ * Reads the line as the form holds it, before a save, and writes nothing. The
+ * check level comes from the item at the line's location, else the company
+ * (Settings → Sales). Inside the item's cumulative lead time it checks free
+ * stock by week and, at the Capacity level, the shop's schedule. The result
+ * is null when the line is not checked: no item, a Service or Comment line, a
+ * level of None, or a Make to Order line whose job already holds its date.
+ *
+ * @param salesOrderLineId - The line being edited; empty for a new line.
+ * @param promisedDate - The date to check, as YYYY-MM-DD.
+ * @returns The check level and, when the line is checked, its status, the
+ * earliest date and the reason.
+ * @mcp read
+ */
+export const checkSalesOrderLineDeliveryDate = defineServiceFn({
+  input: deliveryDateCheckValidator.extend({ salesOrderId: z.string() }),
+  permission: { view: "sales" },
+
+  async run(ctx, input) {
+    const refused = await refuseUnlessOwned(ctx, "salesOrder", {
+      id: input.salesOrderId
+    });
+    if (refused) return refused;
+
+    const order = await service.getSalesOrder(
+      ctx.asSystem.supabase,
+      input.salesOrderId
+    );
+    if (order.error || !order.data) {
+      return ctx.error("notFound", "Failed to load sales order", order.error);
+    }
+
+    let quantitySent = 0;
+    let hasOpenJob = false;
+    if (input.salesOrderLineId) {
+      const existing = await service.getSalesOrderLine(
+        ctx.asSystem.supabase,
+        input.salesOrderLineId
+      );
+      if (
+        existing.error ||
+        existing.data.companyId !== ctx.company.id ||
+        existing.data.salesOrderId !== input.salesOrderId
+      ) {
+        return ctx.error(
+          "notFound",
+          "Failed to load sales order line",
+          existing.error
+        );
+      }
+      quantitySent = existing.data.quantitySent ?? 0;
+      hasOpenJob = (
+        await service.salesOrderLinesWithOpenJobs(ctx, [input.salesOrderLineId])
+      ).has(input.salesOrderLineId);
+    }
+
+    const key = input.salesOrderLineId ?? "new";
+    const locationId = input.locationId || order.data.locationId || null;
+    const extraDemand = await service.salesOrderSiblingDemand(ctx, {
+      salesOrderId: input.salesOrderId,
+      orderStatus: order.data.status,
+      orderLocationId: order.data.locationId,
+      excludeLineIds: input.salesOrderLineId ? [input.salesOrderLineId] : []
+    });
+    const { results, controls } = await service.runDeliveryDateCheck(
+      ctx,
+      [
+        {
+          key,
+          salesOrderLineId: input.salesOrderLineId ?? null,
+          salesOrderLineType: input.salesOrderLineType,
+          itemId: input.itemId,
+          locationId,
+          methodType: input.methodType,
+          quantity: input.saleQuantity - quantitySent,
+          promisedDate: input.promisedDate,
+          hasOpenJob
+        }
+      ],
+      { capacity: "run", extraDemand }
+    );
+    return {
+      control: locationId
+        ? (controls.get(`${input.itemId}:${locationId}`) ?? "None")
+        : "None",
+      result: results.get(key) ?? null
+    };
+  }
+});
+
 const salesOrderLineInput = salesOrderLineValidator.safeExtend({
   customFields: customFieldValues.optional(),
   acknowledged: z.boolean().default(false)
@@ -2233,10 +2404,19 @@ const salesOrderLineInput = salesOrderLineValidator.safeExtend({
  * first checked against the sales rules at the order's ship-to: an error,
  * or a warning not `acknowledged`, returns `violations` and adds nothing.
  *
+ * The line's tax: a non-taxable item takes none. Without `taxCodeId` the
+ * line takes the order's default (the ship-to's or the customer's code); an
+ * empty `taxCodeId` keeps `taxPercent` with no code.
+ *
+ * @param taxCodeId - The line's tax code. Omit for the order's default; empty
+ * for none.
+ *
  * @mcp
  */
 export const createSalesOrderLine = defineServiceFn({
-  input: salesOrderLineInput,
+  input: salesOrderLineInput.safeExtend({
+    taxCodeId: z.string().optional()
+  }),
   permission: { create: "sales" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
@@ -2269,8 +2449,29 @@ export const createSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const tax = await service.resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      companyId,
+      {
+        document: "salesOrder",
+        documentId: line.salesOrderId,
+        lineId: null,
+        itemId: line.itemId,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
+    const deliveryDate = await service.deliveryDateForSave(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: null,
+      line
+    });
     const created = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       ...line,
+      ...lineTaxForUpsert(tax.data),
+      ...deliveryDate?.columns,
       companyId,
       createdBy: ctx.auditUserId,
       customFields
@@ -2294,6 +2495,13 @@ export const createSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    if (deliveryDate) {
+      await service.afterDeliveryDateSave(ctx, {
+        salesOrderId: line.salesOrderId,
+        lineId: created.data.id,
+        save: deliveryDate
+      });
+    }
     return { salesOrderLineId: created.data.id };
   }
 });
@@ -2303,7 +2511,8 @@ export const createSalesOrderLine = defineServiceFn({
  *
  * @remarks
  * Refused while the order is locked. A line with an item is first checked
- * against the sales rules (see `createSalesOrderLine`).
+ * against the sales rules (see `createSalesOrderLine`). A non-taxable item
+ * carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -2335,9 +2544,30 @@ export const updateSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const tax = await service.resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesOrder",
+        documentId: line.salesOrderId,
+        lineId: id,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
+    const deliveryDate = await service.deliveryDateForSave(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: id,
+      line
+    });
     const updated = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       id,
       ...line,
+      ...lineTaxForUpsert(tax.data),
+      ...deliveryDate?.columns,
       updatedBy: ctx.auditUserId,
       customFields
     });
@@ -2360,7 +2590,57 @@ export const updateSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    if (deliveryDate) {
+      await service.afterDeliveryDateSave(ctx, {
+        salesOrderId: line.salesOrderId,
+        lineId: id,
+        save: deliveryDate
+      });
+    }
     return { salesOrderLineId: id };
+  }
+});
+
+/**
+ * Recalculate the tax of every line on a sales order.
+ *
+ * @remarks
+ * Refused while the order is locked. For use after the order's ship-to or the
+ * customer's tax code changed: each line takes the tax its item gets at the
+ * order's ship-to on the order date. A line is written only when that names a
+ * code or zeroes it (an exempt customer, a non-taxable item); with no code, a
+ * percent typed on the line stands. Comment lines are left alone. The lines
+ * are written in one transaction; `updated` counts them.
+ *
+ * @mcp
+ */
+export const recalculateSalesOrderTaxes = defineServiceFn({
+  input: z.object({ salesOrderId: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { salesOrderId }) {
+    const locked = await service.unlockedSalesOrder(
+      ctx,
+      salesOrderId,
+      "Cannot modify a locked sales order. Reopen it first."
+    );
+    if (locked) return locked;
+
+    const result = await service.recalculateSalesDocumentTaxes(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        document: "salesOrder",
+        documentId: salesOrderId
+      }
+    );
+    if (result.refused) return ctx.error("rule", result.error);
+    if (result.error !== null) {
+      return ctx.error("internal", "Failed to recalculate taxes", result.error);
+    }
+    return { salesOrderId, updated: result.data.updated };
   }
 });
 
@@ -2369,7 +2649,8 @@ export const updateSalesOrderLine = defineServiceFn({
  *
  * @remarks
  * The line needs a location; the shipment is created there through the
- * `create` server function.
+ * `create` server function. A serial job line whose finished units are not
+ * yet in stock there is refused with why.
  *
  * @mcp
  */
@@ -2405,10 +2686,17 @@ export const shipSalesOrderLine = defineServiceFn({
         salesOrderLineId
       }
     );
+    if (shipment.error && shipment.error.status < 500) {
+      // A refusal (no finished units in stock) is written for the person.
+      return serverFnRefusal(ctx, shipment.error);
+    }
     if (!shipment.data || shipment.error) {
       return ctx.error("internal", "Failed to create shipment", shipment.error);
     }
-    return { shipmentId: shipment.data.id };
+    return {
+      shipmentId: shipment.data.id,
+      warnings: shipment.data.warnings
+    };
   }
 });
 
@@ -4580,8 +4868,9 @@ export const previewContractCancellation = defineServiceFn({
  *
  * @remarks
  * Ends it at `endDate`. With `creditUnusedTime` a Draft credit memo is
- * drafted for the unused time, which needs the invoicing create permission
- * as well; `memoReadableId` names it.
+ * drafted for the unused time, one per tax rate, which needs the invoicing
+ * create permission as well; `memoReadableIds` names them (`memoReadableId`
+ * the first).
  *
  * @mcp
  */
@@ -4616,7 +4905,8 @@ export const cancelContract = defineServiceFn({
     const cancelled = result.data as Partial<ContractCancellationResult> | null;
     return {
       id: input.customerContractId,
-      memoReadableId: cancelled?.memoReadableId ?? null
+      memoReadableId: cancelled?.memoReadableId ?? null,
+      memoReadableIds: cancelled?.memoReadableIds ?? []
     };
   }
 });
@@ -4684,11 +4974,19 @@ const rentalAgreementInput = rentalAgreementValidator.safeExtend({
  * primary contact and `contacts` the others. The agreement
  * is then set up from its units step.
  *
+ * Without `taxCodeId` the rent lines take the customer's or the rental
+ * site's code on the start date; with no code `taxPercent` stands. An empty
+ * `taxCodeId` keeps `taxPercent` with no code.
+ *
+ * @param taxCodeId - The rent lines' tax code. Omit for the customer's or
+ * the rental site's; empty for none.
+ *
  * @mcp
  */
 export const createRentalAgreement = defineServiceFn({
   input: rentalAgreementInput.safeExtend({
-    fixedAssetId: z.string().optional()
+    fixedAssetId: z.string().optional(),
+    taxCodeId: z.string().optional()
   }),
   permission: { create: "sales" },
 
@@ -4700,11 +4998,45 @@ export const createRentalAgreement = defineServiceFn({
       rentalAgreementId: _rentalAgreementId,
       fixedAssetId,
       customFields,
+      taxCodeId,
       // The contacts are saved through their one writer, which checks them.
       customerContactId: primaryId,
       contacts,
-      ...data
+      ...terms
     } = input;
+    const data = { ...terms, taxCodeId: taxCodeId || undefined };
+
+    // The rent lines' tax (`decideWrittenLineTax`): a sent code at its rate
+    // on the start date; for a caller that sent no code (an empty one is a
+    // cleared code), the customer's or the rental site's code. With no code
+    // the terms' own percent stands, as before tax codes.
+    const [sentCode, party] = await Promise.all([
+      getTaxCodeInputs(client, companyId, [taxCodeId]),
+      taxCodeId === undefined
+        ? resolveLineTaxes(client, companyId, {
+            source: "sales",
+            customerId: data.customerId,
+            customerLocationId: data.customerLocationId,
+            date: data.startDate
+          })
+        : null
+    ]);
+    const tax = decideWrittenLineTax({
+      source: "sales",
+      itemTaxable: true,
+      sentTaxCodeId: taxCodeId,
+      sentTaxPercent: data.taxPercent,
+      sentCode: taxCodeId ? (sentCode.data.get(taxCodeId) ?? null) : null,
+      partyDecision: party?.data ?? null,
+      date: data.startDate
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+    if (tax.data.taxCodeId !== undefined) {
+      data.taxCodeId = tax.data.taxCodeId ?? undefined;
+    }
+    if (tax.data.taxPercent !== undefined) {
+      data.taxPercent = tax.data.taxPercent;
+    }
 
     // Checked before the insert, so a contact refused (another customer's, or
     // a primary contact with no email while invoices are emailed) leaves no
@@ -4825,6 +5157,7 @@ const rentalTermFields = [
   "currencyCode",
   "depositAmount",
   "taxPercent",
+  "taxCodeId",
   "discountRate",
   "ownershipTransfers",
   "specializedAsset",
@@ -4847,8 +5180,10 @@ const rentalBooleanTerms = new Set<string>([
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and the contacts; a new currency
- * brings today's rate. The yes/no terms take `true` or `on`. Contacts are set
- * with `setRentalAgreementContacts`.
+ * brings today's rate. While a tax code is set, the rent lines' percent is
+ * the code's rate on the start date (picking the code, editing the percent
+ * or moving the start date); clearing it keeps the percent. The yes/no terms take `true` or
+ * `on`. Contacts are set with `setRentalAgreementContacts`.
  *
  * @mcp
  */
@@ -4889,6 +5224,7 @@ export const setRentalAgreementTerm = defineServiceFn({
       currencyCode: agreement.currencyCode,
       depositAmount: agreement.depositAmount,
       taxPercent: agreement.taxPercent,
+      taxCodeId: agreement.taxCodeId,
       discountRate: agreement.discountRate,
       ownershipTransfers: agreement.ownershipTransfers,
       specializedAsset: agreement.specializedAsset,
@@ -4900,6 +5236,43 @@ export const setRentalAgreementTerm = defineServiceFn({
     terms[field] = rentalBooleanTerms.has(field)
       ? value === "on" || value === "true"
       : value || null;
+    // A coded agreement's rate is its code's on the start date, as on create
+    // (`decideWrittenLineTax`). Clearing the code keeps the rate, which
+    // stays editable on its own.
+    if (
+      terms.taxCodeId &&
+      (field === "taxCodeId" || field === "taxPercent" || field === "startDate")
+    ) {
+      const taxCodeId = String(terms.taxCodeId);
+      const codes = await getTaxCodeInputs(client, companyId, [taxCodeId]);
+      if (codes.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the tax code",
+          codes.error
+        );
+      }
+      const tax = decideWrittenLineTax({
+        source: "sales",
+        itemTaxable: true,
+        sentTaxCodeId: taxCodeId,
+        sentTaxPercent:
+          terms.taxPercent === null ? undefined : Number(terms.taxPercent),
+        sentCode: codes.data.get(taxCodeId) ?? null,
+        partyDecision: null,
+        date:
+          (terms.startDate as string | null) ??
+          (await service.companyToday(ctx)),
+        stored: {
+          taxCodeId: agreement.taxCodeId,
+          taxPercent: agreement.taxPercent
+        }
+      });
+      if (tax.error !== null) return ctx.error("validation", tax.error);
+      if (tax.data.taxPercent !== undefined) {
+        terms.taxPercent = tax.data.taxPercent;
+      }
+    }
     // A site and the contacts belong to one customer.
     if (field === "customerId" && value !== agreement.customerId) {
       terms.customerLocationId = null;
@@ -4946,6 +5319,8 @@ export const setRentalAgreementTerm = defineServiceFn({
 
     const update = await service.updateRentalAgreement(client, {
       ...data,
+      // Stated, so clearing the code (an empty value) writes null.
+      taxCodeId: (terms.taxCodeId as string | null) ?? null,
       id,
       companyId,
       updatedBy: ctx.auditUserId,
@@ -5396,7 +5771,7 @@ export const classifyRentalUnit = defineServiceFn({
         }
       ]);
     } catch (err) {
-      logger.warn("audit write skipped for a classification override", {
+      logger.warning("audit write skipped for a classification override", {
         error: err
       });
     }
@@ -5489,6 +5864,7 @@ export const sellRentalUnit = defineServiceFn({
       chargeDate: today,
       description: "Purchase option exercised",
       taxPercent: agreement.data.taxPercent ?? 0,
+      taxCodeId: agreement.data.taxCodeId,
       companyId,
       createdBy: ctx.auditUserId
     });
@@ -6229,6 +6605,81 @@ export const getCustomerShipping = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Assign a tax code to customers
+ *
+ * @remarks
+ * Sets the tax code (`customerTax.taxCodeId`) of each customer to one active
+ * tax code of the company (Customers → Assign Tax Code). New sales lines for
+ * these customers default to it, unless a ship-to location has its own.
+ *
+ * @param ids - The customers to update.
+ * @param taxCodeId - An active tax code of the company.
+ *
+ * @mcp
+ */
+export const assignCustomerTaxCode = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()),
+    taxCodeId: z.string().min(1, { message: "Select a tax code" })
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, taxCodeId: value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const [taxCode, customers] = await Promise.all([
+      client
+        .from("taxCode")
+        .select("id")
+        .eq("id", value)
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .maybeSingle(),
+      client
+        .from("customer")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId)
+    ]);
+    if (taxCode.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the tax code",
+        taxCode.error
+      );
+    }
+    if (!taxCode.data) return ctx.error("notFound", "Tax code not found");
+    if (customers.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the customers",
+        customers.error
+      );
+    }
+    const customerIds = customers.data.map((customer) => customer.id);
+    if (customerIds.length === 0) {
+      return ctx.error("notFound", "No customers found");
+    }
+
+    const update = await service.upsertCustomersTaxCode(ctx.asSystem.supabase, {
+      companyId,
+      userId: ctx.auditUserId,
+      customerIds,
+      taxCodeId: taxCode.data.id
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the customers",
+        update.error
+      );
+    }
+    return { ids: customerIds };
   }
 });
 
@@ -7528,6 +7979,13 @@ export const createCustomer = defineServiceFn({
     taxPercent: z.number().min(0).max(1),
     salesContactId: z.string().optional(),
     website: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers this customer's new quote, sales order, invoice and packing slip lines print. Null uses the company default."
+      )
+      .nullable()
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -7566,6 +8024,13 @@ export const updateCustomer = defineServiceFn({
       taxPercent: z.number().min(0).max(1),
       salesContactId: z.string().optional(),
       website: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe(
+          "Which part numbers this customer's new quote, sales order, invoice and packing slip lines print. Null clears the customer's choice, so the company default applies."
+        )
+        .nullable()
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -7918,6 +8383,7 @@ export const updatePricingRule = defineServiceFn({
 export const createCustomerStatus = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
+    color: z.enum(colorNames).nullish(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -7948,6 +8414,7 @@ export const updateCustomerStatus = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
+      color: z.enum(colorNames).nullish(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -9973,6 +10440,34 @@ export const createOpportunityDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for an opportunity (quote/sales order/RFQ/sales invoice) document
+ *
+ * @remarks
+ * A signed link to a file on the opportunity's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `sales_getOpportunityDocuments` lists it, or the
+ * name given to `sales_createOpportunityDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getOpportunityDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    opportunityId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  permission: { view: "sales" },
+  async run(ctx, { opportunityId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "opportunity",
+      entityId: opportunityId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for an opportunity LINE document
  *
  * @mcp
@@ -9988,6 +10483,31 @@ export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for an opportunity LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `sales_getOpportunityLineDocuments` lists it, or
+ * the name given to `sales_createOpportunityLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that
+ * is not there is not found.
+ *
+ * @mcp read
+ */
+export const getOpportunityLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "sales" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "opportunity-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 
@@ -10215,7 +10735,12 @@ export const getRentalAgreementCharges = defineServiceFn({
  * Create a rental agreement charge
  *
  * @remarks
- * A variable charge (damage, delivery, overage) on one unit of an open agreement
+ * A variable charge (damage, delivery, overage) on one unit of an open agreement.
+ * Without `taxCodeId` the charge takes the agreement's code; a code sets
+ * `taxPercent` to its rate on the charge date. An empty `taxCodeId` keeps
+ * `taxPercent` with no code.
+ *
+ * @param taxCodeId - Omit for the agreement's code; empty for none.
  *
  * @mcp
  */
@@ -10226,6 +10751,7 @@ export const createRentalAgreementCharge = defineServiceFn({
     description: z.string().min(1),
     amount: z.number(),
     taxPercent: z.number().min(0).max(1),
+    taxCodeId: z.string().optional(),
     invoiceSeparately: z.boolean().optional(),
     id: z
       .string()
@@ -10234,11 +10760,44 @@ export const createRentalAgreementCharge = defineServiceFn({
   }),
   permission: { create: "sales" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    let taxCodeId = input.taxCodeId;
+    if (taxCodeId === undefined) {
+      const line = await client
+        .from("rentalAgreementLine")
+        .select("rentalAgreement!inner(taxCodeId)")
+        .eq("id", input.rentalAgreementLineId)
+        .eq("companyId", companyId)
+        .single();
+      if (line.error) {
+        return ctx.error(
+          "notFound",
+          "Rental agreement line not found",
+          line.error
+        );
+      }
+      taxCodeId = line.data.rentalAgreement.taxCodeId ?? "";
+    }
+    const codes = await getTaxCodeInputs(client, companyId, [taxCodeId]);
+    if (codes.error) {
+      return ctx.error("internal", "Failed to read the tax code", codes.error);
+    }
+    const tax = decideWrittenLineTax({
+      source: "sales",
+      itemTaxable: true,
+      sentTaxCodeId: taxCodeId,
+      sentTaxPercent: input.taxPercent,
+      sentCode: taxCodeId ? (codes.data.get(taxCodeId) ?? null) : null,
+      partyDecision: null,
+      date: input.chargeDate
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return unwrap(
       ctx,
       await service.upsertRentalAgreementCharge(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, { ...input, ...tax.data }).forCreate() as never
       )
     );
   }

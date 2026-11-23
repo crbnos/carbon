@@ -9,7 +9,12 @@ import { getLogger } from "@carbon/logger";
 import { describeCause, type FailureReason } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { databaseRefusal } from "./database-refusal";
+import {
+  databaseRefusal,
+  reasonColumns,
+  withCallerValues,
+  withConstraintColumns
+} from "./database-refusal";
 import {
   hasPermissions,
   type ModulePermissions,
@@ -395,7 +400,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         ? required !== "system" || ctx.actor.type === "system"
         : allows(ctx.actor, ctx.company.id, required);
     if (!admitted) {
-      logger.warn("Service function refused: {actor}", {
+      logger.warning("Service function refused: {actor}", {
         actor: ctx.actor.type,
         companyId: ctx.company.id,
         required
@@ -414,8 +419,14 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         return { data: out, error: null } as Outcome<R>;
       }
       if (out.category === "internal") {
-        const refused = refusalFromDatabase(out.message, out.cause);
-        logger[refused ? "warn" : "error"](
+        const authored = withoutCause(out.message, out.cause);
+        const refused = await refusalFromDatabase(
+          ctx,
+          authored === null ? out.message : authored || undefined,
+          out.cause,
+          parsed.data
+        );
+        logger[refused ? "warning" : "error"](
           "Service function failed: {message}: {error}",
           {
             message: out.message,
@@ -425,17 +436,27 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
           }
         );
         if (refused) return failed(refused);
+        if (authored !== null) {
+          return failed(
+            new CarbonError("internal", authored || INTERNAL_MESSAGE, out.cause)
+          );
+        }
       }
       return failed(out);
     } catch (err) {
-      const refused = refusalFromDatabase(undefined, err);
-      logger[refused ? "warn" : "error"]("Service function threw: {error}", {
+      const refused = await refusalFromDatabase(
+        ctx,
+        undefined,
+        err,
+        parsed.data
+      );
+      logger[refused ? "warning" : "error"]("Service function threw: {error}", {
         companyId: ctx.company.id,
         inputKeys: keysOf(input),
         error: err
       });
       return failed(
-        refused ?? new CarbonError("internal", "Something went wrong", err)
+        refused ?? new CarbonError("internal", INTERNAL_MESSAGE, err)
       );
     }
   };
@@ -446,23 +467,89 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
   });
 }
 
+const INTERNAL_MESSAGE = "Something went wrong";
+
+/**
+ * A message ending in its cause's own text (Postgres' words, which never leave
+ * the server) without that text: `""` when it was nothing else, null when it
+ * does not echo its cause.
+ */
+function withoutCause(message: string, cause: unknown): string | null {
+  const own =
+    cause !== null &&
+    typeof cause === "object" &&
+    "message" in cause &&
+    typeof cause.message === "string"
+      ? cause.message.trim()
+      : "";
+  if (own === "" || !message.trimEnd().endsWith(own)) return null;
+  return message
+    .trimEnd()
+    .slice(0, -own.length)
+    .replace(/[\s:–—-]+$/, "");
+}
+
 /**
  * An `internal` failure whose cause is a database refusal the caller can fix
  * (a duplicate id, a reference to nothing, a missing value) is that refusal:
- * its category, and a message that names the field after the operation's own.
+ * its category, and a message that names the record, the field and the value
+ * sent after the operation's own (`reason.values` carries them as data).
  */
-function refusalFromDatabase(
+async function refusalFromDatabase(
+  ctx: ServiceContext,
   message: string | undefined,
-  cause: unknown
-): CarbonError | null {
-  const known = databaseRefusal(cause);
-  if (!known) return null;
-  if (!message) return new CarbonError(known.category, known.message, cause);
+  cause: unknown,
+  input: unknown
+): Promise<CarbonError | null> {
+  const found = databaseRefusal(cause);
+  if (!found) return null;
+  const known = withCallerValues(
+    await withConstraintColumns(found, () => ctx.asSystem.pg),
+    input
+  );
+  if (!message) {
+    return new CarbonError(known.category, known.message, cause, {
+      reason: known.reason
+    });
+  }
+  const { record, value } = known.reason.values;
+  const why = value
+    ? `${known.message.replace(/\.$/, "")} (value "${value}").`
+    : known.message;
   const title = message.replace(/[.:]\s*$/, "");
-  return new CarbonError(known.category, `${title}: ${known.message}`, cause, {
+  const subject = record ? `${title} "${record}"` : title;
+  return new CarbonError(known.category, `${subject}: ${why}`, cause, {
     title,
     reason: known.reason
   });
+}
+
+/**
+ * What an API body adds to a refusal's `category`: the operation's message,
+ * the reason, and the fields, value and record the reason names. Nothing for
+ * an `internal` error: its reason is the cause's own text, for the log only.
+ */
+export function refusalDetail(error: CarbonError): {
+  title?: string;
+  reason?: FailureReason;
+  field?: string;
+  fields?: string[];
+  value?: string;
+  record?: string;
+} {
+  if (error.category === "internal") return {};
+  const { title, reason } = error;
+  if (!reason) return title ? { title } : {};
+  const fields = reasonColumns(reason);
+  const { value, record } = reason.values;
+  return {
+    ...(title ? { title } : {}),
+    reason,
+    ...(fields.length ? { fields } : {}),
+    ...(fields.length === 1 ? { field: fields[0] } : {}),
+    ...(value ? { value } : {}),
+    ...(record ? { record } : {})
+  };
 }
 
 /** A `CarbonError` as it crosses to the client: its fields, never its cause. */
@@ -502,5 +589,23 @@ export function toResult<T, E extends CarbonError>(
       ...(title && { title }),
       ...(reason && { reason })
     }
+  } as RouteResult<Result<T, E>>;
+}
+
+/**
+ * `toResult` for a page anyone with the link can open (a share link). An
+ * `internal` error goes out as a generic message: its title and reason carry
+ * the cause's own text (Postgres', a server's), which is logged, not shown.
+ */
+export function toPublicResult<T, E extends CarbonError>(
+  result: Result<T, E>
+): RouteResult<Result<T, E>> {
+  if (result.error === null || result.error.category !== "internal") {
+    return toResult(result);
+  }
+  const { category, status } = result.error;
+  return {
+    data: null,
+    error: { category, message: INTERNAL_MESSAGE, status }
   } as RouteResult<Result<T, E>>;
 }

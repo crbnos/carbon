@@ -255,21 +255,25 @@ export const CUSTOMERS = [
     type: "DoD Program Office",
     status: "Active",
     phone: "+1-256-555-0100",
-    website: "https://army-suas-po.example.gov"
+    website: "https://army-suas-po.example.gov",
+    taxCode: "Out of State – Exempt",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Northgate Defense Systems",
     type: "Prime Contractor",
     status: "Active",
     phone: "+1-703-555-0200",
-    website: "https://northgate-defense.example.com"
+    website: "https://northgate-defense.example.com",
+    taxCode: "AL – Huntsville"
   },
   {
     name: "Special Operations Aviation Command",
     type: "Special Operations",
     status: "Active",
     phone: "+1-813-555-0300",
-    website: "https://soac-aviation.example.gov"
+    website: "https://soac-aviation.example.gov",
+    taxCode: "Out of State – Exempt"
   },
   {
     name: "State Emergency Response Agency",
@@ -293,6 +297,7 @@ export const CUSTOMERS = [
     status: "Active",
     phone: "+47-23-55-0600",
     website: "https://ndma.example.no",
+    taxCode: "Out of State – Exempt",
     address: {
       addressLine1: "Kongsgata 14",
       city: "Oslo",
@@ -361,18 +366,22 @@ export const SUPPLIERS = [
   // through an authorized channel is the counterfeit-prevention control.
   {
     name: "Vanguard Electronics Supply",
+    stage: "Production" as const,
     type: "Electronics",
     phone: "+1-408-555-0500",
     website: "https://vanguard-elec.example.com"
   },
   {
     name: "MilSpec Fastener Supply",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-206-555-0600",
-    website: "https://milspec-fasteners.example.com"
+    website: "https://milspec-fasteners.example.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Ridgeline Composites",
+    stage: "Qualified" as const,
     type: "Materials",
     phone: "+1-714-555-0700",
     website: "https://ridgeline-composites.example.com"
@@ -380,6 +389,7 @@ export const SUPPLIERS = [
   // NDAA-compliant motors, propellers and folding arms.
   {
     name: "Sentry Propulsion Systems",
+    stage: "Production" as const,
     type: "UAS Components",
     phone: "+1-801-555-0800",
     website: "https://sentry-propulsion.example.com"
@@ -387,12 +397,14 @@ export const SUPPLIERS = [
   // Motor controllers and EO/IR gimbals.
   {
     name: "Meshline Tactical Systems",
+    stage: "Production" as const,
     type: "Electronics",
     phone: "+1-303-555-0900",
     website: "https://meshline-tactical.example.com"
   },
   {
     name: "Redstone Precision Machining",
+    stage: "Qualified" as const,
     type: "Contract Manufacturer",
     phone: "+1-256-555-1000",
     website: "https://redstone-precision.example.com"
@@ -409,6 +421,7 @@ export const SUPPLIERS = [
   // A second motor source, under qualification (first article + NDAA audit).
   {
     name: "Ironclad Motor Co",
+    stage: "Sampling" as const,
     type: "UAS Components",
     phone: "+1-425-555-1300",
     website: "https://ironclad-motor.example.com",
@@ -417,6 +430,7 @@ export const SUPPLIERS = [
   // Rejected: its supplier audit traced motor magnets to a covered country.
   {
     name: "LowBid UAV Components",
+    stage: "Prospect" as const,
     type: "Electronics",
     phone: "+1-702-555-1400",
     website: "https://lowbid-uav.example.com",
@@ -424,6 +438,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Rheinland Precision Bearings GmbH",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+49-711-555-1500",
     website: "https://rheinland-bearings.example.de",
@@ -952,6 +967,74 @@ export const defenseFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  // Huntsville's 9% is Alabama's 4%, Madison County's 0.5% and the city's 4.5%.
+  // Sales to the federal government and exports are exempt.
+  taxAuthorities: [
+    { name: "Alabama Department of Revenue" },
+    { name: "Madison County" },
+    { name: "City of Huntsville" }
+  ],
+  taxCodes: [
+    {
+      name: "AL – Huntsville",
+      countryCode: "US",
+      state: "AL",
+      components: [
+        {
+          name: "Alabama State",
+          authority: "Alabama Department of Revenue",
+          taxPercent: 4
+        },
+        {
+          name: "Madison County",
+          authority: "Madison County",
+          taxPercent: 0.5
+        },
+        {
+          name: "City of Huntsville",
+          authority: "City of Huntsville",
+          taxPercent: 4.5
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Alabama sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Alabama Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 9%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "AL",
+      components: [
+        {
+          name: "Alabama Use Tax",
+          authority: "Alabama Department of Revenue",
+          taxPercent: 4
+        },
+        {
+          name: "Madison County Use Tax",
+          authority: "Madison County",
+          taxPercent: 0.5
+        },
+        {
+          name: "City of Huntsville Use Tax",
+          authority: "City of Huntsville",
+          taxPercent: 4.5
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

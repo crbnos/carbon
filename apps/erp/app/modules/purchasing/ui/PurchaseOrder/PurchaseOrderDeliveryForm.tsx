@@ -160,6 +160,16 @@ const PurchaseOrderDeliveryForm = forwardRef<
               termId="purchase-order-delivery-promised-date"
             />
             <DatePicker
+              name="expectedReceiptDate"
+              label={t`Expected Receipt Date`}
+              termId="purchase-order-delivery-expected-receipt-date"
+            />
+            <DatePicker
+              name="shippedDate"
+              label={t`Shipped Date`}
+              termId="purchase-order-delivery-shipped-date"
+            />
+            <DatePicker
               name="deliveryDate"
               label={t`Delivery Date`}
               termId="purchase-order-delivery-actual-date"

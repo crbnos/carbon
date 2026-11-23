@@ -135,14 +135,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (project.error || project.data?.companyId !== companyId) {
-    logger.error("Failed to load project", {
-      companyId,
-      projectId,
-      error: project.error
-    });
     throw redirect(
       path.to.projects,
-      await flash(request, error(project.error, "Failed to load project"))
+      await flash(
+        request,
+        error(project.error, "Failed to load project", { projectId })
+      )
     );
   }
 

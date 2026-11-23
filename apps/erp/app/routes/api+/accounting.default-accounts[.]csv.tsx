@@ -16,7 +16,7 @@ import {
 } from "~/modules/accounting/account-import-csv";
 import { getDatabaseClient } from "~/services/database.server";
 
-const logger = getLogger("erp", "api/accounting/default-accounts.csv");
+const logger = getLogger("erp", "accounting", "default-accounts-csv");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, companyGroupId } = await requirePermissions(request, {

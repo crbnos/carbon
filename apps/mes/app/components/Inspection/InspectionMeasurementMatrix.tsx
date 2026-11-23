@@ -9,6 +9,7 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
+import { getLogger } from "@carbon/logger";
 import type {
   InspectionParameter,
   InspectionPlanTab,
@@ -67,6 +68,8 @@ import type {
 } from "~/services/types";
 import { path } from "~/utils/path";
 import InspectionGaugePicker from "./InspectionGaugePicker";
+
+const logger = getLogger("mes", "inspection");
 
 // A cell save's response payload (the measurement action returns it so the
 // matrix can update without a revalidation roundtrip). Same contract as the
@@ -276,6 +279,14 @@ const InspectionMeasurementMatrix = ({
     () => new Map(samples.map((sample) => [sample.id, sample])),
     [samples]
   );
+  // The position each anonymous sample was first saved at, so every page agrees.
+  const storedPositions = useMemo(() => {
+    const stored = new Map<string, number>();
+    for (const sample of samples) {
+      if (sample.position != null) stored.set(sample.id, sample.position);
+    }
+    return stored;
+  }, [samples]);
 
   // Matrix position (column by characteristic, row by part) -> sample id. A
   // sample keeps its position across reloads (`placeSamples`); a position no
@@ -289,7 +300,7 @@ const InspectionMeasurementMatrix = ({
     const placed = placeSamples(
       sampleIdRef.current,
       samples.map((sample) => sample.id),
-      { dropMissing: isSerial }
+      { dropMissing: isSerial, stored: storedPositions }
     );
     sampleIdRef.current = placed;
     return placed;
@@ -299,12 +310,15 @@ const InspectionMeasurementMatrix = ({
       const next = placeSamples(
         prev,
         samples.map((sample) => sample.id),
-        { dropMissing: isSerial }
+        {
+          dropMissing: isSerial,
+          stored: storedPositions
+        }
       );
       sampleIdRef.current = next;
       return next;
     });
-  }, [samples, sampleIdRef, isSerial]);
+  }, [samples, storedPositions, sampleIdRef, isSerial]);
   const sampleAt = useCallback(
     (sampleIndex: number) => {
       const id = sampleIdByColumn[sampleIndex];
@@ -454,6 +468,7 @@ const InspectionMeasurementMatrix = ({
       formData.set("inspectionId", inspectionId);
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
+      else formData.set("position", String(sampleIndex));
       formData.set("inspectionFeatureId", characteristic.featureId);
       if (payload.value !== undefined) formData.set("value", payload.value);
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
@@ -461,7 +476,13 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to send the measurement", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         data?: {
           sampleId: string;
@@ -509,6 +530,7 @@ const InspectionMeasurementMatrix = ({
       formData.set("quiet", "true");
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
+      else formData.set("position", String(sampleIndex));
       const trackedEntityId = sampleId
         ? sampleById.get(sampleId)?.trackedEntityId
         : undefined;
@@ -517,7 +539,10 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(path.to.inspectionSample(inspectionId), {
         method: "post",
         body: formData
-      }).catch(() => null);
+      }).catch((error) => {
+        logger.warning("Failed to send the sample", { inspectionId, error });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         sampleId?: string;
         error?: { message: string } | null;
@@ -999,7 +1024,14 @@ const InspectionMeasurementMatrix = ({
           const response = await fetch(path.to.inspectionGauge(inspectionId), {
             method: "post",
             body: formData
-          }).catch(() => null);
+          }).catch((error) => {
+            logger.warning("Failed to send the gauge", {
+              inspectionId,
+              featureId,
+              error
+            });
+            return null;
+          });
           const body = (await response?.json().catch(() => null)) as {
             error?: { message: string } | null;
           } | null;

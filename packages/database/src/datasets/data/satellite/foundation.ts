@@ -249,28 +249,33 @@ export const CUSTOMERS = [
     type: "Government",
     status: "Active",
     phone: "+1-703-555-0100",
-    website: "https://orbsec.gov"
+    website: "https://orbsec.gov",
+    taxCode: "Out of State – Exempt",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "NovaSat Networks",
     type: "Commercial",
     status: "Active",
     phone: "+1-415-555-0200",
-    website: "https://novasat.com"
+    website: "https://novasat.com",
+    taxCode: "TX – Houston"
   },
   {
     name: "Apex Space Research",
     type: "Research",
     status: "Active",
     phone: "+1-617-555-0300",
-    website: "https://apexresearch.edu"
+    website: "https://apexresearch.edu",
+    taxCode: "TX – Houston"
   },
   {
     name: "PolarView Earth",
     type: "Commercial",
     status: "Lead",
     phone: "+1-512-555-0400",
-    website: "https://polarview.io"
+    website: "https://polarview.io",
+    taxCode: "TX – Houston"
   }
 ];
 
@@ -316,36 +321,43 @@ export const CUSTOMER_CONTACTS = [
 export const SUPPLIERS = [
   {
     name: "CelestialElex",
+    stage: "Production" as const,
     type: "Electronics",
     phone: "+1-408-555-0500",
     website: "https://celestialex.com"
   },
   {
     name: "SpaceGrade Fasteners",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-206-555-0600",
-    website: "https://sgfasteners.com"
+    website: "https://sgfasteners.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Orbital Composites",
+    stage: "Qualified" as const,
     type: "Materials",
     phone: "+1-714-555-0700",
     website: "https://orbcomp.com"
   },
   {
     name: "PropTech Solutions",
+    stage: "Production" as const,
     type: "Propulsion",
     phone: "+1-310-555-0800",
     website: "https://proptech.space"
   },
   {
     name: "Deep Space RF",
+    stage: "Production" as const,
     type: "Electronics",
     phone: "+1-303-555-0900",
     website: "https://dsrf.com"
   },
   {
     name: "AstroMill Machining",
+    stage: "Qualified" as const,
     type: "Contract Manufacturer",
     phone: "+1-972-555-1000",
     website: "https://astromill.com"
@@ -361,6 +373,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Ionix Thrusters",
+    stage: "Sampling" as const,
     type: "Propulsion",
     phone: "+1-425-555-1300",
     website: "https://ionixthrusters.com",
@@ -368,6 +381,7 @@ export const SUPPLIERS = [
   },
   {
     name: "BargainSat Components",
+    stage: "Prospect" as const,
     type: "Electronics",
     phone: "+1-702-555-1400",
     website: "https://bargainsat.com",
@@ -375,6 +389,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Rheinland Precision Bearings GmbH",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+49-711-555-1500",
     website: "https://rheinland-bearings.de",
@@ -801,6 +816,45 @@ export const satelliteFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  taxAuthorities: [{ name: "Texas Comptroller" }, { name: "City of Houston" }],
+  taxCodes: [
+    {
+      name: "TX – Houston",
+      countryCode: "US",
+      state: "TX",
+      components: [
+        {
+          name: "Texas State",
+          authority: "Texas Comptroller",
+          taxPercent: 6.25
+        },
+        { name: "City of Houston", authority: "City of Houston", taxPercent: 2 }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Texas sales tax",
+      countryCode: "US",
+      components: [
+        { name: "Exempt", authority: "Texas Comptroller", taxPercent: 0 }
+      ]
+    },
+    {
+      name: "Use Tax 8.25%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "TX",
+      components: [
+        {
+          name: "Texas Use Tax",
+          authority: "Texas Comptroller",
+          taxPercent: 8.25
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

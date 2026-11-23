@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import {
   columnsDiffer,
   columnsForTable,
+  isPresetNavigation,
   parseRememberedTableState,
+  queryToRemember,
   type RememberedTableState,
   rememberedQuery,
   tableStateKey
@@ -66,6 +68,31 @@ describe("remembered table state", () => {
       )?.toString()
     ).toBe("filter=status%3Aeq%3APaid&sort=invoiceId%3Adesc");
     expect(rememberedQuery(new URLSearchParams(), remembered, true)).toBeNull();
+  });
+
+  it("keeps the remembered query when a nav link brings its own filter", () => {
+    const preset = new URLSearchParams(
+      "filter=inspectionStatus%3Ain%3AInspection+Failed"
+    );
+    expect(isPresetNavigation(preset, true)).toBe(true);
+    expect(queryToRemember(preset, remembered, true)).toEqual({
+      filters: ["status:eq:Draft"],
+      sorts: ["invoiceId:desc"]
+    });
+    expect(queryToRemember(preset, null, true)).toEqual({
+      filters: [],
+      sorts: []
+    });
+  });
+
+  it("remembers the URL query for a bare link or the user's own change", () => {
+    const changed = new URLSearchParams("filter=status%3Aeq%3APaid");
+    expect(isPresetNavigation(new URLSearchParams(), true)).toBe(false);
+    expect(isPresetNavigation(changed, false)).toBe(false);
+    expect(queryToRemember(changed, remembered, false)).toEqual({
+      filters: ["status:eq:Paid"],
+      sorts: []
+    });
   });
 
   it("rejects malformed storage and treats explicit true as the visible default", () => {

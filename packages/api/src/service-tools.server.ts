@@ -7,7 +7,7 @@
 // `{ data, error }` as the result (`unwrap`, `paged`), and turn a posting
 // engine's throw into a refusal (`run`).
 
-import { failSpan, inSpan } from "@carbon/logger/span";
+import { failSpan, withSpan } from "@carbon/logger/span";
 import { databaseRefusal } from "./database-refusal";
 import { raisedMessage, ServerFnError, toServerFnError } from "./errors";
 import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
@@ -295,7 +295,7 @@ export function attempt<R>(
   }) => Promise<R>,
   defaultStatus = 500
 ): Promise<{ data: R; error: null } | { data: null; error: ServerFnError }> {
-  return inSpan(
+  return withSpan(
     `function ${name}`,
     { "carbon.function": name, "carbon.function.actor": ctx.actor.type },
     async (span) => {
@@ -306,10 +306,7 @@ export function attempt<R>(
         span.setAttribute("carbon.function.status", error.status);
         // The span keeps the detail a 5xx withholds from the caller.
         if (error.status >= 500) {
-          failSpan(
-            span,
-            error.message || (err instanceof Error ? err.message : String(err))
-          );
+          failSpan(span, err);
         }
         return { data: null, error };
       }

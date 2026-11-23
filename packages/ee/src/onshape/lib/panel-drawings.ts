@@ -115,7 +115,7 @@ export async function readAssemblyDrawings({
     try {
       return { document, ...(await readDocumentDrawings(client, document)) };
     } catch (error) {
-      logger.warn("Onshape drawing list failed", {
+      logger.warning("Onshape drawing list failed", {
         companyId,
         documentId: document.documentId,
         error
@@ -181,7 +181,7 @@ export async function readAssemblyDrawings({
         await cacheReferences(cacheKey(drawing), { references });
         return { ...drawing, references };
       } catch (error) {
-        logger.warn("Onshape drawing references failed", {
+        logger.warning("Onshape drawing references failed", {
           companyId,
           documentId: drawing.documentId,
           elementId: drawing.elementId,

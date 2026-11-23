@@ -83,7 +83,7 @@ function QualityIssueBody({
       defaultValues={{
         jobOperationId: operationId,
         description: "",
-        nonConformanceTypeId: issueTypes[0]?.id ?? "",
+        nonConformanceTypeId: "",
         priority: "Medium" as const,
         trackedEntityId: trackedEntityId ?? ""
       }}
@@ -104,6 +104,7 @@ function QualityIssueBody({
             name="nonConformanceTypeId"
             label={t`Issue Type`}
             size="lg"
+            autoSelectSingleOption
             options={issueTypes.map((type) => ({
               value: type.id,
               label: type.name

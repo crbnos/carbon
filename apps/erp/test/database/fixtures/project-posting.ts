@@ -46,8 +46,8 @@ const ACCOUNT_DEFAULT_COLUMNS = [
   "bankForeignCurrencyAccount",
   "prepaymentAccount",
   "payablesAccount",
-  "salesTaxPayableAccount",
-  "purchaseTaxPayableAccount",
+  "taxReceivedAccount",
+  "taxPaidAccount",
   "reverseChargeSalesTaxPayableAccount",
   "retainedEarningsAccount",
   "goodsReceivedNotInvoicedAccount",
@@ -120,6 +120,10 @@ export async function projectPostingFixture(
         baseCurrencyCode: "USD",
         timezone: "America/New_York"
       })
+      .execute();
+    await trx
+      .insertInto("unitOfMeasure")
+      .values({ code: "EA", name: "Each", companyId, createdBy: USER })
       .execute();
     await trx
       .insertInto("currency")
@@ -553,11 +557,6 @@ export async function projectPostingFixture(
       const finishedItemId = `${prefix}-fg-${key}`;
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-        await trx
-          .insertInto("unitOfMeasure")
-          .values({ code: "EA", name: "Each", companyId, createdBy: USER })
-          .onConflict((oc) => oc.doNothing())
-          .execute();
         await trx
           .insertInto("item")
           .values({

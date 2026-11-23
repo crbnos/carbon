@@ -3,10 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { getPickingListTravelerEntities } from "@carbon/database/travelers";
 import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
 import { ERP_URL } from "@carbon/env";
+import {
+  loadPackingSlipDocument,
+  type PackingSlipPDFProps
+} from "@carbon/lib/packing-slip-document.server";
+import {
+  loadSalesInvoiceDocument,
+  type SalesInvoicePDFProps
+} from "@carbon/lib/sales-invoice-document.server";
+import { getLogger } from "@carbon/logger";
 import type { ProductLabelItem } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const log = getLogger("jobs", "print-job");
 
 export type KanbanCardItem = {
   id: string;
@@ -270,6 +282,27 @@ async function queryTrackedEntities(
         readableId: stockTransfer?.stockTransferId ?? null
       };
     }
+    case "PickingList": {
+      const result = await getPickingListTravelerEntities(client, {
+        pickingListId: sourceDocumentId,
+        companyId
+      });
+      // A failed read fails the print job. Returning no units would read as
+      // "nothing to print", and the traveler claim is already taken.
+      if (result.error) {
+        log.error("Failed to read the travelers of a picking list", {
+          companyId,
+          pickingListId: sourceDocumentId,
+          error: result.error
+        });
+        throw new Error("Could not read the travelers of the picking list");
+      }
+
+      return {
+        trackedEntities: result.data,
+        readableId: result.readableId
+      };
+    }
     default:
       return { trackedEntities: null, readableId: null };
   }
@@ -307,4 +340,58 @@ async function enrichTrackedEntities(
       trackingType: item.itemTrackingType
     };
   });
+}
+
+/**
+ * A sales invoice's PDF props, read once with the same loader as the ERP's
+ * PDF route, so the printed page matches the preview. The PDF is rendered in
+ * this worker, so logos come from the internal storage URL.
+ */
+export async function resolveSalesInvoiceData(
+  client: SupabaseClient<Database>,
+  invoiceId: string,
+  companyId: string
+): Promise<{ pdfProps: SalesInvoicePDFProps; readableId: string }> {
+  const company = await client
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error || !company.data.companyGroupId) {
+    throw new Error(`Failed to load company ${companyId}`);
+  }
+
+  const document = await loadSalesInvoiceDocument({
+    client,
+    taxClient: client,
+    companyId,
+    companyGroupId: company.data.companyGroupId,
+    invoiceId,
+    locale: "en-US"
+  });
+
+  return {
+    pdfProps: document.pdfProps,
+    readableId: document.invoiceReadableId
+  };
+}
+
+/** A shipment's packing slip props, read as the ERP's PDF route reads them. */
+export async function resolvePackingSlipData(
+  client: SupabaseClient<Database>,
+  shipmentId: string,
+  companyId: string
+): Promise<{ pdfProps: PackingSlipPDFProps; readableId: string }> {
+  const document = await loadPackingSlipDocument({
+    client,
+    serviceRole: client,
+    companyId,
+    shipmentId,
+    locale: "en-US"
+  });
+
+  return {
+    pdfProps: document.pdfProps,
+    readableId: document.shipmentReadableId
+  };
 }

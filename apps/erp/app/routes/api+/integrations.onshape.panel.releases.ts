@@ -84,7 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         (await onshape.client.getCompanies()).length > 0;
     } catch (error) {
       // The generic empty state is still correct; don't fail the read.
-      logger.warn("Onshape companies read failed", { companyId, error });
+      logger.warning("Onshape companies read failed", { companyId, error });
     }
   }
 

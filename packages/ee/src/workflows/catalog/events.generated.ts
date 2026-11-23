@@ -644,6 +644,14 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
     permission: "inventory",
     match: { table: "receipt", operation: "UPDATE", field: "supplierId" }
   },
+  "sales.deliveryDateOverridden": {
+    outputs: {
+      salesOrder: { kind: "entity", of: "salesOrder" },
+      overriddenBy: { kind: "entity", of: "user" }
+    },
+    permission: "sales",
+    match: { moment: "sales.deliveryDateOverridden" }
+  },
   "sales.quoteAccepted": {
     outputs: {
       quote: { kind: "entity", of: "quote" },
@@ -914,7 +922,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     salesContactId: { kind: "primitive", of: "string" },
     defaultCc: { kind: "list", of: { kind: "primitive", of: "string" } },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
-    readableId: { kind: "primitive", of: "string" }
+    readableId: { kind: "primitive", of: "string" },
+    partNumberDisplay: { kind: "primitive", of: "string" }
   },
   group: {
     id: { kind: "primitive", of: "string" },
@@ -950,7 +959,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     sourcingType: { kind: "primitive", of: "string" },
     mpn: { kind: "primitive", of: "string" },
     revisionStatus: { kind: "primitive", of: "string" },
-    changeOrderId: { kind: "primitive", of: "string" }
+    changeOrderId: { kind: "primitive", of: "string" },
+    taxable: { kind: "primitive", of: "boolean" }
   },
   job: {
     id: { kind: "primitive", of: "string" },
@@ -1186,7 +1196,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     digitalQuoteRejectedByEmail: { kind: "primitive", of: "string" },
     opportunityId: { kind: "primitive", of: "string" },
     completedDate: { kind: "primitive", of: "date" },
-    customerEngineeringContactId: { kind: "primitive", of: "string" }
+    customerEngineeringContactId: { kind: "primitive", of: "string" },
+    emailOrderOnAcceptance: { kind: "primitive", of: "boolean" }
   },
   receipt: {
     id: { kind: "primitive", of: "string" },
@@ -1207,7 +1218,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     internalNotes: { kind: "primitive", of: "string" },
     supplierInteractionId: { kind: "primitive", of: "string" },
     postedBy: { kind: "entity", of: "user" },
-    inspectionStatus: { kind: "primitive", of: "string" }
+    inspectionStatus: { kind: "primitive", of: "string" },
+    rejectedAtInspection: { kind: "primitive", of: "boolean" }
   },
   salesInvoice: {
     id: { kind: "primitive", of: "string" },
@@ -1316,7 +1328,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     defaultCc: { kind: "list", of: { kind: "primitive", of: "string" } },
     supplierStatus: { kind: "primitive", of: "string" },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
-    readableId: { kind: "primitive", of: "string" }
+    readableId: { kind: "primitive", of: "string" },
+    supplierStageId: { kind: "primitive", of: "string" },
+    partNumberDisplay: { kind: "primitive", of: "string" }
   },
   user: {
     id: { kind: "primitive", of: "string" },
@@ -1342,6 +1356,14 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
   string,
   Record<string, readonly string[]>
 > = {
+  customer: {
+    partNumberDisplay: [
+      "Ours First",
+      "Theirs First",
+      "Theirs Only",
+      "Ours Only"
+    ]
+  },
   item: {
     type: ["Part", "Material", "Tool", "Service", "Consumable", "Fixture"],
     replenishmentSystem: ["Buy", "Make", "Buy and Make"],
@@ -1533,5 +1555,13 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },
-  supplier: { supplierStatus: ["Active", "Inactive", "Pending", "Rejected"] }
+  supplier: {
+    supplierStatus: ["Active", "Inactive", "Pending", "Rejected"],
+    partNumberDisplay: [
+      "Ours First",
+      "Theirs First",
+      "Theirs Only",
+      "Ours Only"
+    ]
+  }
 };

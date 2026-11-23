@@ -3,11 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   addDays,
   addMonths,
   bicMatchesCountry,
+  colorNames,
   EPSILON,
+  equals,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
   getRemainingQuantityToInvoice,
@@ -149,6 +152,8 @@ export const plannedOrderValidator = z.object({
   existingReadableId: zfd.text(z.string().optional()),
   existingStatus: zfd.text(z.enum(purchaseOrderStatusType).optional()),
   supplierId: zfd.text(z.string().optional()),
+  // The Order action this suggestion came from, which Order settles
+  planningActionId: zfd.text(z.string().optional()),
   itemReadableId: zfd.text(z.string().optional()),
   unitPrice: zfd.numeric(z.number().optional()),
   unitOfMeasureCode: zfd.text(z.string().optional()),
@@ -212,6 +217,8 @@ export const purchaseOrderDeliveryValidator = z
     // shippingTermId: zfd.text(z.string().optional()),
     trackingNumber: z.string(),
     deliveryDate: zfd.text(z.string().optional()),
+    shippedDate: zfd.text(z.string().optional()),
+    expectedReceiptDate: zfd.text(z.string().optional()),
     receiptRequestedDate: zfd.text(z.string().optional()),
     receiptPromisedDate: zfd.text(z.string().optional()),
     dropShipment: zfd.checkbox(),
@@ -276,9 +283,11 @@ export const purchaseOrderLineValidator = z
     requiredDate: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     supplierPartId: zfd.text(z.string().optional()),
+    partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0))
   })
   .refine(
@@ -380,6 +389,13 @@ export const selectedLineSchema = z.object({
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
 
+export const supplierStageValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  /** Empty keeps the color derived from the name. */
+  color: zfd.text(z.enum(colorNames).optional())
+});
+
 export const supplierValidator = z.object({
   id: zfd.text(z.string().optional()),
   readableId: zfd.text(z.string().optional()),
@@ -388,11 +404,14 @@ export const supplierValidator = z.object({
     (val) => (val === "" ? undefined : val),
     z.enum(supplierStatusType).optional().nullable()
   ),
+  supplierStageId: zfd.text(z.string().optional()),
   supplierTypeId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -403,11 +422,14 @@ export const supplierApprovalValidator = z.object({
   supplierStatus: z.enum(supplierStatusType, {
     error: "Supplier status is required"
   }),
+  supplierStageId: zfd.text(z.string().optional()),
   supplierTypeId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -422,7 +444,8 @@ export const supplierTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -721,6 +744,148 @@ export const purchasingRfqLineValidator = z.object({
   order: zfd.numeric(z.number().min(0))
 });
 
+/** The parts of one Request Quote: each line goes to its own suppliers. */
+export const requestQuoteValidator = z.object({
+  locationId: z.string().optional(),
+  lines: z
+    .array(
+      z.object({
+        itemId: z.string().min(1),
+        /** In the item's inventory unit. */
+        quantity: z
+          .number()
+          .positive({ message: "Each part needs a quantity above 0" }),
+        supplierIds: z
+          .array(z.string().min(1))
+          .min(1, { message: "Choose a supplier for each part" })
+      })
+    )
+    .min(1, { message: "Choose at least one part" })
+    // One insert writes every line; this keeps it under Postgres's bind limit.
+    .max(1000, { message: "Request a quote for at most 1000 parts at a time" })
+});
+
+export type RequestQuoteLine = z.infer<
+  typeof requestQuoteValidator
+>["lines"][number];
+
+/** Whole purchase units when the unit differs, as planning orders them; the
+ * inner round strips float noise (1.1 / 0.1 = 11.000000000000002). */
+export function toPurchaseQuantity(inventoryQuantity: number, factor: number) {
+  return factor === 1
+    ? round(inventoryQuantity)
+    : round(round(inventoryQuantity / factor), 0, RoundingMode.Up);
+}
+
+/** One RFQ per set of suppliers, because every supplier on an RFQ gets every line. */
+export function groupRequestQuoteLines(lines: RequestQuoteLine[]) {
+  const groups = new Map<
+    string,
+    { supplierIds: string[]; lines: RequestQuoteLine[] }
+  >();
+  for (const line of lines) {
+    const supplierIds = [...new Set(line.supplierIds)].sort();
+    const key = supplierIds.join("|");
+    const group = groups.get(key) ?? { supplierIds, lines: [] };
+    group.lines.push(line);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+type MethodTreeRow = {
+  methodMaterialId: string;
+  parentMaterialId: string | null;
+  itemId: string;
+  itemReadableId: string;
+  description: string;
+  unitOfMeasureCode: string | null;
+  quantity: number;
+  methodType: string;
+  replenishmentSystem: string | null;
+  isPickDescendant: boolean | null;
+};
+
+export type RfqLineFromMethod = {
+  itemId: string;
+  itemReadableId: string;
+  description: string;
+  unitOfMeasureCode: string | null;
+  /** For one of the root item, in the item's inventory unit. */
+  quantity: number;
+  usedIn: string[];
+};
+
+/**
+ * The parts to buy for one of the root item, from its `get_method_tree` rows.
+ * It walks into each Make to Order line and does not list it. It lists each
+ * other line unless the item is only ever made, and a Make to Order line that
+ * has no method to walk and can be bought. The contents of a part pulled from
+ * stock are not needed, so it skips them, and so is a line with no quantity.
+ * Repeats of an item add up.
+ */
+export function getRfqLinesFromMethod(
+  tree: MethodTreeRow[],
+  rootId: string,
+  rootReadableId: string
+): RfqLineFromMethod[] {
+  const childrenOf = new Map<string, MethodTreeRow[]>();
+  for (const row of tree) {
+    if (!row.parentMaterialId) continue;
+    const siblings = childrenOf.get(row.parentMaterialId) ?? [];
+    siblings.push(row);
+    childrenOf.set(row.parentMaterialId, siblings);
+  }
+
+  const lines = new Map<string, RfqLineFromMethod>();
+  const walk = (
+    parentId: string,
+    parentReadableId: string,
+    multiplier: number,
+    path: Set<string>
+  ) => {
+    for (const row of childrenOf.get(parentId) ?? []) {
+      if (row.isPickDescendant || path.has(row.methodMaterialId)) continue;
+      const quantity = round(multiplier * row.quantity);
+      // Nothing to buy, and a quantity of 0 fails the RFQ line's positive check.
+      if (!(quantity > 0)) continue;
+      if (
+        row.methodType === "Make to Order" &&
+        (childrenOf.has(row.methodMaterialId) ||
+          row.replenishmentSystem === "Make")
+      ) {
+        walk(
+          row.methodMaterialId,
+          row.itemReadableId,
+          quantity,
+          new Set(path).add(row.methodMaterialId)
+        );
+        continue;
+      }
+      if (row.replenishmentSystem === "Make") continue;
+
+      const line = lines.get(row.itemId);
+      if (!line) {
+        lines.set(row.itemId, {
+          itemId: row.itemId,
+          itemReadableId: row.itemReadableId,
+          description: row.description,
+          unitOfMeasureCode: row.unitOfMeasureCode,
+          quantity,
+          usedIn: [parentReadableId]
+        });
+        continue;
+      }
+      line.quantity = round(line.quantity + quantity);
+      if (!line.usedIn.includes(parentReadableId)) {
+        line.usedIn.push(parentReadableId);
+      }
+    }
+  };
+  walk(rootId, rootReadableId, 1, new Set());
+  return [...lines.values()];
+}
+
 export const purchasingRfqSuppliersValidator = z.object({
   purchasingRfqId: z.string().min(1, { message: "RFQ is required" }),
   supplierIds: z
@@ -859,6 +1024,24 @@ export function isPurchaseOrderEditLocked(
 }
 
 /**
+ * Why a purchase order's lines cannot change which part numbers they print,
+ * else null. A sent order keeps printing the numbers it was sent with, and an
+ * order waiting for approval is not edited. The line form and Edit document
+ * both follow it.
+ */
+export function purchaseOrderPartNumberRefusal(
+  status: string | null | undefined
+): string | null {
+  if (status === "Needs Approval") {
+    return "The part numbers of a purchase order cannot change while it waits for approval.";
+  }
+  if (isPurchaseOrderLocked(status)) {
+    return "The part numbers of a purchase order cannot change once it is sent.";
+  }
+  return null;
+}
+
+/**
  * Why an edit of a purchase order is refused, or null when it is allowed.
  * `changesSupplierOrCurrency`: the edit names another supplier or currency,
  * which a released order never takes (that is a new order).
@@ -888,6 +1071,8 @@ export type PurchaseOrderLineIdentity = {
   assetId: string | null;
   purchaseUnitOfMeasureCode: string | null;
   conversionFactor: number | null;
+  jobId: string | null;
+  jobOperationId: string | null;
 };
 
 /**
@@ -945,6 +1130,14 @@ export function purchaseOrderLineAmendRefusal(
       Number(edit.conversionFactor) !== Number(line.conversionFactor ?? 1)
     ) {
       return "Cannot change the conversion factor of a line that has been received or invoiced.";
+    }
+    // An outside processing receipt's cost is the job's through these.
+    if (
+      (edit.jobId !== undefined && edit.jobId !== (line.jobId ?? null)) ||
+      (edit.jobOperationId !== undefined &&
+        edit.jobOperationId !== (line.jobOperationId ?? null))
+    ) {
+      return "Cannot change the job or operation of a line that has been received or invoiced.";
     }
   }
   return null;
@@ -1048,6 +1241,7 @@ export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
   "supplierShippingCost",
   "supplierTaxAmount",
   "taxPercent",
+  "taxCodeId",
   "setupPrice",
   "exchangeRate",
   "locationId",
@@ -1200,6 +1394,37 @@ export function purchaseOrderPromisedDateRefusal(
   return isPurchaseOrderPromisedDateEditable(status)
     ? null
     : "Cannot change the promised date of a fully received purchase order.";
+}
+
+/**
+ * The date the supplier promised for a PO line: the line's own, else its
+ * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
+ * gives MRP. MRP dates the line by this ahead of the required date, so a
+ * planning date change (which writes the required date) cannot move it.
+ */
+export function promisedDateOf(line: {
+  promisedDate: string | null;
+  receiptPromisedDate: string | null | undefined;
+}): string | null {
+  return line.promisedDate ?? line.receiptPromisedDate ?? null;
+}
+
+/** A line that receives goods has no promised date. Comment lines receive nothing. */
+export function isPurchaseOrderMissingPromisedDate(
+  lines: {
+    purchaseOrderLineType: string | null;
+    promisedDate: string | null;
+  }[],
+  receiptPromisedDate: string | null | undefined
+): boolean {
+  return lines.some(
+    (line) =>
+      line.purchaseOrderLineType !== "Comment" &&
+      !promisedDateOf({
+        promisedDate: line.promisedDate,
+        receiptPromisedDate
+      })
+  );
 }
 
 /** A line's own dates. `receivedDate` is its delivery date. */
@@ -1493,6 +1718,39 @@ export function findPlanningPurchaseOrder<
         (line) =>
           planningPurchaseOrderWeek(line.requiredDate, asOf) === target.week
       )
+  );
+}
+
+/**
+ * The line of a planning PO that a new order adds its quantity to: same item,
+ * required date, owner (project or planning group) and conversion factor. A
+ * line with another factor is never merged: the order's quantity is in the
+ * supplier part's purchase units, so added there it would be the wrong amount.
+ */
+export function findMergeablePlanningLine<
+  L extends {
+    itemId: string | null;
+    requiredDate: string | null;
+    projectId: string | null;
+    planningGroupId: string | null;
+    conversionFactor: number | null;
+  }
+>(
+  lines: L[],
+  target: {
+    itemId: string;
+    requiredDate: string | null;
+    planningSegmentId: string;
+    conversionFactor: number;
+  }
+): L | undefined {
+  return lines.find(
+    (line) =>
+      line.itemId === target.itemId &&
+      line.requiredDate === target.requiredDate &&
+      (line.planningGroupId ?? line.projectId ?? "") ===
+        target.planningSegmentId &&
+      equals(line.conversionFactor ?? 1, target.conversionFactor)
   );
 }
 

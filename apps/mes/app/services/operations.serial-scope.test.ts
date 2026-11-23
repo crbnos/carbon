@@ -3,10 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import {
-  getNextIncompleteSerialEntity,
-  isSerialEntityIncompleteForOperation
-} from "./operations.service";
+import { isSerialEntityIncompleteForOperation } from "./operations.service";
 
 const op = "op_rework";
 
@@ -62,25 +59,5 @@ describe("isSerialEntityIncompleteForOperation with operation scope", () => {
         op
       )
     ).toBe(false);
-  });
-});
-
-describe("getNextIncompleteSerialEntity with operation scope", () => {
-  it("skips units outside the scope to reach the reworked one", () => {
-    const units = [
-      unit("u1", { inOperationScope: false }),
-      unit("u2", { inOperationScope: false }),
-      unit("u3", { inOperationScope: true })
-    ];
-    expect(getNextIncompleteSerialEntity(units, op)?.id).toBe("u3");
-  });
-
-  it("falls back to the last scoped unit once every scoped unit is done", () => {
-    const units = [
-      unit("u1", { inOperationScope: true, done: true }),
-      unit("u2", { inOperationScope: true, done: true }),
-      unit("u3", { inOperationScope: false })
-    ];
-    expect(getNextIncompleteSerialEntity(units, op)?.id).toBe("u2");
   });
 });

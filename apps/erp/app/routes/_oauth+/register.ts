@@ -147,10 +147,9 @@ export async function action({ request }: ActionFunctionArgs) {
   ]);
 
   if (insertResult.error) {
-    logger.error(
-      "[OAuth Register] Failed to create client:",
-      insertResult.error
-    );
+    logger.error("Failed to create the OAuth client", {
+      error: insertResult.error
+    });
     return jsonResponse(
       { error: "server_error", error_description: "Failed to register client" },
       500

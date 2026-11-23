@@ -6,6 +6,95 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Aging report previews need seeded open documents
+
+**Context:** Sharing a local AR/AP aging UI preview.
+
+**Problem:** The dev server rendered the reports, but the default test company had no sales or purchase invoices, so both reports appeared empty. The dataset seed then failed on `inspectionDocument.drawingNumber`: the local database carried a newer schema from `main` than the branch's own code.
+
+**Rule:** Check the report RPCs for open rows before handing off a preview. Seed an isolated company when the current test company contains unrelated records, and verify both report counts after seeding. When a seed fails on a column, compare the branch's generated types with the local database before editing the dataset: merge `main` (or migrate a clean database) rather than changing the tier.
+
+**Applies to:** Local aging report previews and `packages/database/src/datasets/`.
+
+## Aging summary tables keep document headers inside the expansion
+
+**Context:** Showing AR/AP aging totals by customer or supplier with document details beneath each party.
+
+**Problem:** Putting transaction date, type, and original amount in the shared table header leaves blank cells across every party row and makes the report look unfinished.
+
+**Rule:** On aging report pages, show only party-level fields in the outer table. Render open documents and unapplied payments in an expanded table with its own column headers. Keep the receivables/payables workbench layout unchanged unless that page is explicitly in scope.
+
+**Applies to:** `ARAPWorkbench` on the AR/AP aging report routes.
+
+## Aging CSV exports must follow open documents
+
+**Context:** Exporting AR/AP aging from a summary RPC and a separate open-document RPC.
+
+**Problem:** A counterparty with offsetting open documents can have a zero net balance and disappear from the summary RPC while its documents remain open. Looking up names and building CSV rows only from summary parties silently drops those documents.
+
+**Rule:** Union counterparty IDs from the summary, open-document, and unapplied-payment RPCs. Export one row per open document or payment with the counterparty repeated, including parties whose net summary is zero. Resolve CSV headings from the request locale. Include any RPC migration in the tracked change before relying on regenerated types.
+
+**Applies to:** AR/AP aging CSV routes and report helpers.
+
+## File downloads can link directly to a resource route
+
+**Context:** The AR/AP aging table needs a complete server-generated CSV rather than its currently expanded browser rows.
+
+**Problem:** Adding a separate Export button required turning off the Table's own CSV control with `withCsvExport={false}`, leaving two download mechanisms to coordinate.
+
+**Rule:** For one format, give the Table the download URL and render its Download control as a plain anchor. For multiple formats on a report, use one Export menu whose links each make one browser GET to a server resource route; hide the Table's single-format control there. Keep the client-side Table export for lists without a download URL.
+
+**Applies to:** Table downloads backed by resource routes and AR/AP aging exports.
+
+## Vite plugin wrappers preserve the caller's type
+
+**Context:** Adding an ERP dependency refreshed pnpm peer resolutions, and CI then typechecked the MES Vitest config.
+
+**Problem:** The helper declared its input and output as `Plugin[]` from its own `vite` import. On a clean Linux install, Lingui supplied `Plugin[]` from a different Vite peer instance. Vite's private type members made the two declarations incompatible even though the hooks work the same way.
+
+**Rule:** A wrapper that only changes a plugin hook should infer and return the caller's plugin type. Cast locally only to inspect the hook shape; do not force another Vite instance's `Plugin[]` at the function boundary.
+
+**Applies to:** Vitest and Vite plugin wrappers such as `apps/mes/vitest.config.ts`.
+## Issue-bin displays preserve stock stripes and picked ownership
+
+**Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
+
+**Problem:** Summing project and common ledger rows before testing for positive stock hid a positive project bin behind a negative common balance. Excluding every lineside bin hid stock already picked for the job.
+
+**Rule:** Test positive on-hand per eligible `(item, bin, projectId)` stripe, then combine display quantities. Show lineside stock only when the job has an outstanding picked claim at that bin, net of its consumption.
+
+**Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
+
+## Reverse inventory from the original ledger sources
+
+**Context:** Picking a material in stages and unissuing project-job inventory.
+
+**Problem:** A saved bin can empty between picks, and a project job can consume both project and common stock. Reusing the saved bin or default project stripe for a reversal changes physical or ownership balances.
+
+**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe. Find the rows to reverse by document and item, not by a tag only some writers set: the job-completion backflush writes `Job Consumption` rows with no `documentLineId`. A refusal the person can act on is an `InvalidInputError`; a plain `Error` reads as a 500 and its text is withheld.
+
+**Applies to:** Picking transfers, unpick, job consumption, and unissue.
+
+## Typed quantities do not need Number wrappers
+
+**Context:** Showing issued quantities and current bin stock in MES and ERP.
+
+**Problem:** New code wrapped `number` and nullable `number` values in `Number(...)`, adding noise around ordinary comparisons and arithmetic.
+
+**Rule:** Use a typed quantity directly, with `?? 0` when it is nullable. Convert only at a boundary where the value can actually be a string.
+
+**Applies to:** MES quantity displays, inventory RPC results, and ERP posting code using parsed numeric inputs.
+
+## Review the deployable diff, including new files
+
+**Context:** Adding MES bin loaders backed by new database RPCs.
+
+**Problem:** The service and UI changes were visible in the diff, but the new route and migration were untracked, so deploying the reviewed patch would leave the requests returning 404 and the RPCs missing. A follow-up picker change also called the single-item stock RPC once for every material revision.
+
+**Rule:** Before requesting review, check `git status --short` and `git diff --cached --stat` for every new route and migration that a changed call site needs. For stock shared across item revisions, collect the revision IDs and use one set-based, company-scoped read.
+
+**Applies to:** MES routes and inventory services, ERP inventory RPC callers, and `packages/database/supabase/migrations/`.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
@@ -469,6 +558,20 @@ them for every function and view your migrations define; for any hit, write a NE
 dated after both that carries both changes (here, since folded into
 `20261006221601_complete-job-to-asset.sql`).
 
+**Context:** Adding aging detail columns to `get_ap_open_by_supplier` kept the
+supplier reference behavior, but changed the line breaks around fields added by
+its previous migration.
+
+**Problem:** `function-redefinition-keeps-changes` compares added SQL lines
+literally, so the harmless layout change failed both CI conformance and tests.
+
+**Rule:** When extending an RPC return shape, retain the exact lines introduced
+by its newest definition where possible, and run the conformance test before
+committing. Put new select expressions on separate lines.
+
+**Applies to:** `packages/database/supabase/migrations/` function redefinitions
+that add return columns.
+
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
 **Context:** Service-job fulfillment (advance the linked salesOrderLine on completion) was first implemented in the ERP `$jobId.complete.tsx` action after the RPC call. In e2e it never ran: the operator finished the last operation, and `sync_update_job_operation_quantities` → `sync_finish_job_operation` (DB interceptors) called `complete_job_to_inventory` directly — the ERP route was never involved.
@@ -599,7 +702,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
 
-**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed.
+**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed. A branch that adds migrations commits the regenerated `types.ts` and `swagger-docs-schema.ts`: the Database types CI job (`.github/workflows/database-types.yml`) fails when either lags the migrations, so never revert a swagger diff that traces to a migration.
 
 **Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`; any branch running turbo tasks that build `@carbon/database`.
 
@@ -925,7 +1028,7 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
 
-**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres. `swagger-docs-schema.ts` reads PostgREST: with the stack up, `pnpm generate:swagger`, then `pnpm generate:workflow-catalog`. No build regenerates it, and CI fails when it lags the migrations. `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
 
 **Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
 
@@ -1041,13 +1144,13 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`.
 
-## Kysely returns NUMERIC as a string; supabase-js returns it as a number
+## A client swap can change runtime value types (Kysely once returned NUMERIC as a string)
 
 **Context:** `upsertQuoteLinePrices` was converted from supabase-js to a Kysely transaction so its delete + reinsert would roll back as a unit. The conversion typechecked, and the shipped result silently stopped preserving `shippingCost`, `discountPercent` and `leadTime` on every markup change.
 
 **Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsc` cannot see it — the mismatch exists only at runtime.
 
-**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
+**Rule:** NUMERIC (oid 1700) decodes to a JS number: `packages/database/src/client.ts` registers the `setTypeParser` override once, so runtime matches the generated types. Do not wrap a NUMERIC read in `Number(...)`; the wrappers still at Kysely call sites are from before the parser and do nothing. `BIGINT` and float8 still arrive as strings, as does a NUMERIC from a pool that is not built through the shared factory. Do not convert those for tidiness: `Number()` on a `BIGINT` loses precision past `Number.MAX_SAFE_INTEGER`. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically. Exercise it against a real database.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
 
@@ -3378,6 +3481,16 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
 
+## Lingui: a string literal with braces inside `<Trans>` loses its braces
+
+**Context:** The sequence forms' week year warning named the tokens in its text: `<Trans>On 1 January 2027 {"%{yy}%{ww}"} gives 2753.</Trans>`.
+
+**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, Biome and `lingui:extract` all pass.
+
+**Rule:** Text that contains `{` or `}` goes into `<Trans>` or `t` as a named variable (`const token = "%{yy}"; … {token}`), which Lingui keeps as a placeholder and fills at runtime. Read the rendered text once after adding such a string.
+
+**Applies to:** any `<Trans>` or `` t` ` `` that quotes sequence tokens, template syntax or JSON.
+
 ## A row stayed off a screen only because a column happened to be null
 
 **Context:** The MES Work Centers board, the ERP Priority board and the API read `get_active_job_operations_by_location`. Both boards group operations into work-center columns.
@@ -3852,6 +3965,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## The license-header fixer skips a file that is not staged
+
+**Context:** Multi-jurisdiction tax (2026-10-17). Two new files were committed with no SPDX header, although the fixer had run before each commit.
+
+**Problem:** `pnpm --filter @carbon/checks license-headers` walks `git ls-files --cached`. An untracked file is outside that walk, so the fixer reports "0 fixed" and the file stays bare. The conformance test then fails later, on someone else's run.
+
+**Rule:** Stage a new source file (`git add`) before you run the license-header fixer, then stage it again after the fixer writes the header.
+
+**Applies to:** every new source file, and `packages/checks/src/sources/license-files.ts`.
 
 ## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
 
@@ -4723,6 +4846,38 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
 
+## Localized CSV exports must translate row values as well as headings
+
+**Context:** The AR/AP aging CSV translated its column headings, while the document
+type column still contained raw `Invoice`, `Credit Memo`, and `Debit Memo` values.
+
+**Problem:** In a non-English locale, the downloaded report mixed translated
+headings with English document types even though the on-screen workbench and
+catalogs already translated those values.
+
+**Rule:** Resolve fixed display values through the same per-request catalog used
+for CSV headings, while retaining raw values for data logic and falling back to
+the raw value for an unknown type. Assert the exported row values with labels
+that differ from the source strings.
+
+**Applies to:** Server-generated localized CSV reports, including AR/AP aging.
+
+## Export permission must cover enrichment reads
+
+**Context:** AR/AP aging CSV downloads admit accounting or invoicing viewers, then
+look up customer or supplier names to label the rows.
+
+**Problem:** Customer RLS requires sales view and supplier RLS requires purchasing
+view. An otherwise authorized export received empty name results and silently
+fell back to party IDs.
+
+**Rule:** Trace every enrichment lookup against the route's permission contract.
+After authorizing the export, use a company-scoped privileged read when the
+related table has a narrower RLS gate than the export itself.
+
+**Applies to:** AR/AP aging CSV routes and other server exports that enrich
+authorized rows from tables protected by different module permissions.
+
 ## The desktop rail can be transparent, and a sortable row can be tall
 
 **Context:** Customize added a tree under each module row in `NavRail`. The rail scrolled as a whole, so the footer with Save and Cancel needed to stay in view.
@@ -4845,6 +5000,26 @@ writer is a rule the other writers skip.
 (`packages/database/src/event-system/handlers/`), and any flag copied from a master
 record onto open documents.
 
+## Local database URLs must match Docker's loopback binding
+
+**Context:** The database types workflow runs `crbn migrate` against a fresh shared
+Postgres container on GitHub Actions.
+
+**Problem:** Compose publishes port 54322 on `127.0.0.1`, but `dbUrl()` emitted
+`localhost`. The Supabase CLI resolved that to `::1` and failed to connect after
+the migrations had already succeeded. Changing the URL to `127.0.0.1` exposed
+another CLI behavior: it treats that host and port as its own `supabase start`
+database and refuses to generate types without that container.
+
+**Rule:** Use `127.0.0.1` in generated host database URLs when the corresponding
+Docker port is bound to IPv4 loopback. For `supabase gen types --db-url`, set
+the CLI's `SUPABASE_DB_PORT` to a different port in that process so it honors
+the explicit URL as a direct connection. Keep URL expectations in the dev
+tests aligned with the binding.
+
+**Applies to:** `packages/dev/src/stack.ts`, database and pooler URLs from
+`renderEnv()`, and local CLI consumers such as database type generation.
+
 ## A React handler on a dialog also hears the dialogs opened from inside it
 
 **Context:** On phones every `Modal` and `Drawer` is a bottom sheet, and a sheet drags
@@ -4934,3 +5109,167 @@ redirects (purchase orders, and the other records with a `/details` index).
 - **Problem:** The first version refused whenever the document's own void refused, or when payments, memos or other documents still held it. Force delete exists for emergencies where a user error has broken that normal process, so those refusals left the Admin stuck.
 - **Rule:** In a force delete, a void's rule refusal is the trigger for `reverseDocumentByJournal`: negate its postings, adjust its stock back, restore its sources. Anything applied to the document is unapplied first (`unapplyForceDeleteSettlements`). To change a posted payment's journal, build it again with and without the change (`rebuildPaymentJournal`) and post the difference, rather than hand-building reversal lines.
 - **Applies to:** `invoicing.service.ts` force delete blocks, any future force delete type.
+
+## Parallel subagents each running the heavy checks exhaust the machine
+
+- **Context:** A review fanned out to six subagents. Each ran the `erp` typecheck, `generate:mcp` or a raw `tsc` in `apps/erp` to verify its own part.
+- **Problem:** The `erp` typecheck peaks near 10 GB and `generate:mcp` near 5 GB. Five of them at once took about 28 GB.
+- **Rule:** Only the main agent runs the heavy checks, once, after its subagents finish. Never raise `--max-old-space-size` to make one fit. `packages/dev/bin/heavy-lock` queues them machine-wide, so an extra run waits instead of running in parallel. A waiting run prints `heavy-lock: waiting for …`: that is the queue working, not a hang. Do not kill it.
+- **Applies to:** Any skill or workflow that dispatches subagents (review, execute, fix, conductor).
+
+## `db:seed:dev` under portless needs the local CA, and a hibernated stack
+
+**Context:** Seeding `motor-line` for the serial traveler (2026-11-12) on a portless stack (`https://api.<prefix>.dev`).
+
+**Problem:** `pnpm db:seed:dev` failed with "Failed to create user: fetch failed". Two causes stacked: the stack had hibernated (gotrue and the API gateway were exited, `crbn status` shows "hibernated"), and Node's `fetch` refused the portless certificate (`SELF_SIGNED_CERT_IN_CHAIN`). `curl` worked, because it trusts the system store; Node does not. The dev servers get `NODE_EXTRA_CA_CERTS` from `packages/dev/src/services/apps.ts`, but a script run from a shell does not.
+
+**Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL), then run it with `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem`.
+
+**Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
+
+## Measure completed typechecks before claiming a speedup
+
+**Context:** The ERP typecheck speed investigation first produced an incremental
+configuration and several bounded checks, but no completed before/after run.
+
+**Problem:** A cache configuration looked promising, yet a cold check and edits
+to large query-heavy services could still take minutes. Reporting the config
+change as a speedup before measuring those cases obscured the remaining cost.
+
+**Rule:** Complete and time a cold check, an unchanged rerun, and a representative
+changed-file check before claiming a typecheck improvement. Report those cases
+separately and keep Turbo cache hits distinct from TypeScript incremental runs.
+
+**Applies to:** ERP typecheck performance work and other cached validation tasks.
+
+## A copy of an engine's rule reads the engine first
+
+**Context:** The sales order delivery date check walks the bill of materials with its own SQL to add up the cumulative lead time.
+
+**Problem:** MRP's explosion (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`, and the `methodCorrectionId IS NULL` filter in `mrp.ts`) leaves out quantity-0 lines and correction materials. The copy did not. A configured item's other configurations, which sit at quantity 0, added their lead time: one test item went from 67 days to 407.
+
+**Rule:** Before you write a calculation that another engine already does (BOM explosion, stock netting, supply and due dates), read that engine and apply the same filters. Name the engine in a comment beside the copy, so the two stay in step.
+
+**Applies to:** Order promising, quote lead time, and any read outside MRP that walks a BOM or nets stock.
+
+## A condition added to one branch is tested on its mirror
+
+**Context:** The delivery date check decides two things from the same free stock: whether a date passes, and the earliest date it suggests.
+
+**Problem:** The rule "goods are usable from the day they arrive" went into the earliest date only. A date in the week of a delivery, but before it, still passed. In the same change, the whole-order check left every line it checked out of the order's demand. An undated line is never checked, so its demand disappeared and a dated line could be promised its stock.
+
+**Rule:** For each condition you add, list every other place that decides the same thing (the verdict and the suggestion; the rows you exclude because "they are handled elsewhere" and the rows that really are handled there). Test the case that falls between them.
+
+**Applies to:** Decision engines that return both a verdict and a suggested value, and any exclusion justified by another step.
+
+## A background job that reads, works, then writes compares before it writes
+
+**Context:** A sales order line saved at the Capacity level is checked by an Inngest job that reads the line, runs the shop schedule simulation, then writes the result.
+
+**Problem:** Reading the line at the start protects against an old event, not against a save that lands during the simulation. The job wrote a result for the old quantity over the newer one, and credited a newer kept date to the user whose save started the job.
+
+**Rule:** Walk the timeline read → slow work → write with a second save in the middle. Make the write conditional on the inputs that were read (`WHERE col IS NOT DISTINCT FROM v.col … RETURNING id`), and raise side effects only for the rows written. Put in the event what the triggering save wrote, so the job can tell when a later save has replaced it.
+
+**Applies to:** Every deferred check or recalculation that writes a result computed from a row a user can still edit.
+
+## Regenerated DB types carry whatever the local database holds
+
+**Context:** A worktree's local database is shared by every branch checked out in it. `pnpm db:migrate` regenerates `packages/database/src/types.ts` from that database, not from the branch's migrations.
+
+**Problem:** The regenerated types picked up another branch's table and columns on two SQL functions that no migration defines. CI's "Database types" job regenerates from migrations alone, so the committed types failed it. Applying the wanted hunks with `git apply --unidiff-zero` then put new function types inside an unrelated type, because zero-context hunks do not anchor in a 100k-line file.
+
+**Rule:** After regenerating, diff `types.ts` against the base branch and keep only the lines your migration explains; restore the rest. Move them by matching text (the table's `Row` / `Insert` / `Update` blocks, the function's alphabetical neighbour), never by zero-context patches. The typecheck and CI's "Database types" job are the proof.
+
+**Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.
+
+## Two `crbn up` in one worktree take each other down
+
+**Context:** `crbn up` records its pid in `~/.carbon/stacks/<slug>/up`, and its teardown first stops whichever `crbn up` that file names.
+
+**Problem:** An agent started `crbn up` in the background, then the user started another in the same worktree. The second overwrote the marker and reused the first's dev servers. Stopping the agent's run then SIGINT'd the user's run through the marker, and every app went down.
+
+**Rule:** Run one `crbn up` per worktree. Check `ps` for a running one (or ask) before starting it, and never stop it while someone else may be using it.
+
+**Applies to:** Agents and humans booting a stack in a shared worktree.
+
+## A server export mapping cannot add a column the browser omitted
+
+**Context:** Verifying sales-invoice customer names in the CSV (TCK-60).
+**Problem:** The registry resolved both names, but the table's Customer columns had only `id` and `cell`. `buildColumnMaps` excluded them, so the export request never asked for either name.
+**Rule:** A display column needs `meta.exportValue` to participate in CSV export. Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports.
+**Applies to:** ERP Table display columns, `buildColumnMaps`, and list-registry `exportValues`.
+
+## `openProductionOrders` is MRP supply, not "the open jobs for an item"
+
+**Context:** The Buildable Quantity card lists an item's open jobs and whether stock covers what each still has to issue.
+
+**Problem:** The jobs were read from `openProductionOrders`. That view leaves out every job made for a sales order (`salesOrderId IS NULL`) and every `consumeToProject` job, and its `quantityToReceive` is `productionQuantity` (quantity + scrap) less received. An item made to order showed no jobs in production, and a job with a scrap allowance showed more units than it will make.
+
+**Rule:** To list an item's open jobs, read `job` with the four open statuses. The good units left are `quantity − quantityReceivedToInventory − quantityShipped`, as `openSalesOrderLines` nets a job. Use `openProductionOrders` only where the question is "what supply does MRP count".
+
+**Applies to:** Any report, card or check that shows jobs in production or work in process for an item.
+
+## A posted document's void and anything that adds lines to its journal take one lock
+
+- **Context:** Change GL Account adds two journal lines to a posted sales or purchase invoice; the invoice void reverses every journal line of the document.
+- **Problem:** The change locked the invoice `FOR UPDATE`, but both voids read the lines they reverse before their transaction and never locked the invoice. A change that committed between the void's read and its write survived on a Voided invoice: its amount stayed on the new account with nothing left to reverse it.
+- **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
+- **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
+
+## A gate on the buttons is not a gate: a rule needs one owner and a list of its writers
+
+- **Context:** On a later operation of a serial part, every write names a unit the operator picked or scanned.
+- **Problem:** The rule was copied into each entry point: buttons, scan hooks, the scan queue, a few routes. Nobody listed the writers, so three review rounds each found another one: a scan hook, the off-page traveler scan, then the kanban end route (and the start route still picked its own unit). The held unit lived only in the URL, which redirects, links, refresh and Back also write, so every fix filtered the URL after the fact and opened a new window. The two screens ran two different copies of the selection logic, and the tests checked helpers, not the routes.
+- **Rule:** Give a rule one owner per side and make a missed writer fail a check. On the server one function decides from the database and every writer calls it before it writes; a conformance check lists the writers and fails one that does not call it (or is not on an allow-list with its reason). On the client one pure decision is computed during render; the operator's pick is state set in the click or scan handler, and the URL only mirrors it. Test the write paths themselves over an in-memory client, and revert each call to see the test go red (not every route has such a test yet). An allow-list reason must be checked by code, not just written down (`unconsume` now checks the parts were consumed into the parent; "a manager override" did not cover writing a unit nobody picked, so complete-all now resolves its unit too). Gate a write by what the server accepts for it: a finished unit blocks `require` writes only, not `member` ones (unconsume, quality issue). The owner's reads, and the screens' reads of the same list, must not depend on PostgREST's 1000-row cap (one paged reader). A new gate must keep an older page's safe requests working: tablets keep the old bundle for hours, so a first-operation step with no unit still uses its index, and a timer naming a finished unit is not refused. When the server changes what a request named, it says so in the toast.
+- **Applies to:** MES `resolveWorkUnit` (`services/work-unit.server.ts`) and its `mes-unit-write-resolves-unit` check, `useWorkUnit` / `serialUnitSelection` (`~/utils/workUnit`) in `JobOperation` and `AssemblyView`, and any future rule on per-unit work.
+
+## A tag that points at a line is cleared by every write that removes the line
+
+- **Context:** A serial unit on a shipment carries `Shipment` and `Shipment Line` in `trackedEntity.attributes`; posting ships the units tagged to the shipment.
+- **Problem:** Deleting a line, deleting the shipment or re-sourcing a Draft removed the lines but left the tags. The post then shipped units no line asked for. A post-time filter hid the stale tag, so a test that checked only after posting still passed when the clear was removed.
+- **Rule:** A tag must name a live record. Every write that deletes or rebuilds the record clears its tags in the same place, and the reader still ignores tags to dead records. Test the clear right after the write, before any reader that would also hide it, and remove the clear once to see the test go red.
+- **Applies to:** `clearShipmentTags` callers (`deleteShipment`, `deleteShipmentLine`, the `create` re-source), `liveShipmentTags`, and any attribute that names another row (`Receipt Line`, `Job Make Method`).
+
+## A job's WIP is not only the lines documented against the job
+
+- **Context:** Finished goods from a job with an outside processing operation came out without the supplier's cost.
+- **Problem:** The receipt of an outside processing purchase order debits WIP with `documentId` = the receipt and the purchase order line in `documentLineReference`. The job completion, `closeJob` and `attachJob` each summed WIP `WHERE documentId = <job>`, so the supplier's cost was never moved to finished goods and never written off. And when the receipt finished the job's last operation, `postReceipt` set the operation Done before it wrote its journal, so the completion that update triggers ran before the debit existed.
+- **Rule:** Read a job's WIP with SQL `job_wip_balance`, never with a `documentId` filter of your own. A reader that cannot call it per job (a set-based read of every job, such as the accounting cutover's per-job WIP items) attributes lines through SQL `job_receipt_line_references`, the rule `job_wip_balance` uses. A posting that can trigger a job completion (any write that sets a `jobOperation` Done) writes its own journal first.
+- **Applies to:** `complete_job_to_inventory`, `closeJob`, `attachJob`, `postReceipt`, `getWorkInProgressItems` (`accounting-cutover/open-items.ts`), and any new reader of a job's cost or writer of a job operation's status.
+
+## A link minted for an API key names its creator, not the key
+
+- **Context:** `generateDownloadToken` signs a `/download/<token>` link for a user; the route re-checks access as that user on every download. For an API key caller, `ctx.auditUserId` is the key's creator.
+- **Problem:** A link without an expiry kept downloading after the key that asked for it was revoked: the creator still had access, and nothing in the token named the key. A link copied into an agent's log or transcript outlived the key.
+- **Rule:** Any link or token minted for an API or MCP caller carries an expiry (`expiresInSeconds`, as `FILE_LINK_SECONDS` sets). Re-checking the named user's access is not enough when that user is not the caller.
+- **Applies to:** `documents_getDocumentDownloadUrl` and any future operation that returns a shareable link, share token or signed URL to an API caller.
+
+## A `NonRetriableError` subclass must keep its name
+
+**Context:** `AssemblerJobError extends NonRetriableError` (`packages/jobs/.../tasks/assembler-client.ts`) set `this.name = "AssemblerJobError"`.
+
+**Problem:** `@carbon/lib` (which creates the Inngest client, so runs the functions) and `@carbon/jobs` resolve different installed copies of `inngest`, so `error instanceof NonRetriableError` is false inside the SDK. Its fallback is `error.name === "NonRetriableError"`, which the rename defeated. Every "give up" error was retried twice, as 500s from `/api/inngest`, before `onFailure` ran.
+
+**Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
+
+**Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
+
+## A trigger that fills a default skips only a backup load
+
+**Context:** The part number display triggers (`20261121061455_supplier-part-number-display.sql` and the customer migration after it) first skipped when `app.sync_in_progress` was set, so the dataset apply could stamp the seeded lines itself. Then they skipped `app.dataset_apply`, and a TypeScript helper stamped the seeded lines after the tiers.
+
+**Problem:** `app.sync_in_progress` is also the accounting sync's flag (`withTriggersDisabled`, `@carbon/ee/accounting`). The Xero purchase order pull deletes and re-inserts every line under it, so every synced line came back with no display choice and no copy of the supplier part number. The `app.dataset_apply` skip needed a second copy of the trigger's rule in TypeScript, and that helper's company-wide UPDATE stamped a real company's legacy lines on a dev seed without a wipe.
+
+**Rule:** A trigger that fills a default for a new row skips only `app.backup_load`: a restore brings its own values. Let it run during a dataset apply: the tiers insert parents before children, so it gives seeded rows the values it gives any row. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
+
+**Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.
+
+## `pg_temp.allows` cannot see a policy's role list
+
+**Context:** `authz-pieces.test.sql` evaluates a policy with `pg_temp.allows(table, command, clause, row)`, which reads the policy's `USING` or `WITH CHECK` text from `pg_policies` and runs it as the current role.
+
+**Problem:** It ignores `pg_policies.roles`. `exchangeRate` kept API keys out with `TO authenticated USING (true)`, so an `allows('exchangeRate', …)` assertion made as `anon` passed against the old policy: the test could not fail.
+
+**Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
+
+**Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.

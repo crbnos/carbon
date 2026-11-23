@@ -10,6 +10,7 @@ import {
   groupConflictClause,
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
+import { refreshReceiptInspectionStatuses } from "../../../backups/derived-receipts";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -289,8 +290,8 @@ export const companyImportFunction = inngest.createFunction(
       const replicaMode = await canSetReplicationRole(db);
       if (!replicaMode) {
         logger.warn(
-          "session_replication_role unavailable — importing with triggers " +
-            "and FK enforcement active; relying on topological order"
+          "session_replication_role unavailable — importing with triggers and FK enforcement active; relying on topological order",
+          { companyId, importRunId }
         );
       }
 
@@ -303,6 +304,9 @@ export const companyImportFunction = inngest.createFunction(
           );
         }
         await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
+        // The triggers that fill a document line's part number display choice
+        // leave a backup's values as they are, also when replica mode is off.
+        await sql`SET LOCAL app.backup_load = 'on'`.execute(trx);
 
         const ledger: LedgerRow[] = [];
 
@@ -435,14 +439,12 @@ export const companyImportFunction = inngest.createFunction(
         // Triggers were off: the imported customers, suppliers and types have
         // no groups yet.
         await rebuildDerivedGroups(trx, companyId);
+        await refreshReceiptInspectionStatuses(trx, companyId);
       });
 
       if (unresolvedRefs.size > 0) {
         logger.warn(
-          "Reseed kept non-nullable references to tables it did not import " +
-            "(the target already had them, so source ids could not be " +
-            "remapped). These may dangle — the template likely needs those " +
-            "columns made nullable or those tables left out of the seed",
+          "Reseed kept non-nullable references to tables it did not import (the target already had them, so source ids could not be remapped). These may dangle — the template likely needs those columns made nullable or those tables left out of the seed",
           { unresolvedRefs: [...unresolvedRefs] }
         );
       }
@@ -482,22 +484,18 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       const totalRows = Object.values(counts).reduce((sum, n) => sum + n, 0);
-      logger.info(
-        autoFinalize
-          ? "Company import complete — auto-finalized"
-          : "Company import complete — pending finalize/revert",
-        {
-          companyId,
-          importRunId,
-          mode,
-          tables: Object.keys(counts).length,
-          rows: totalRows,
-          storageUploaded,
-          ...(referencedTemplate
-            ? { referencedTemplate: templateIndustryId }
-            : {})
-        }
-      );
+      logger.info("Company import complete", {
+        finalize: autoFinalize ? "auto-finalized" : "pending finalize/revert",
+        companyId,
+        importRunId,
+        mode,
+        tables: Object.keys(counts).length,
+        rows: totalRows,
+        storageUploaded,
+        ...(referencedTemplate
+          ? { referencedTemplate: templateIndustryId }
+          : {})
+      });
 
       return {
         importRunId,

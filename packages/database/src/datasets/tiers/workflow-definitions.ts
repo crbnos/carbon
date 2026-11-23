@@ -21,6 +21,7 @@ export const SEED_WORKFLOW_BUILDERS = {
   robotics: buildRoboticsWorkflows,
   precision: buildPrecisionWorkflows,
   motor: buildMotorWorkflows,
+  "motor-line": buildMotorWorkflows,
   defense: buildDefenseWorkflows
 };
 

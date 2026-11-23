@@ -3,10 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { HandlerType, QueueMessage } from "@carbon/database/event";
+import { getLogger } from "@carbon/logger";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { packBySize } from "./pack";
+
+const logger = getLogger("jobs", "event-queue");
 
 const QUEUE_NAME = "event_system"; // Name of the PGMQ queue
 const BATCH_SIZE = 100; // Number of messages to process per pass
@@ -88,8 +91,9 @@ export const eventQueueFunction = inngest.createFunction(
               bucket.push(job);
               allIds.push(job.msg_id);
             } else {
-              console.error(
-                `event-queue: unknown handlerType "${job.message?.handlerType}" on msg_id ${job.msg_id}; archiving to dead-letter`
+              logger.error(
+                "Unknown event handler type; archiving to dead-letter",
+                { handlerType: job.message?.handlerType, msgId: job.msg_id }
               );
               poisoned.push(job.msg_id);
             }

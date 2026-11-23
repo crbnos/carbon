@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useRouteDialog } from "@carbon/react";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { fixedAssetCapitalizeValidator } from "~/modules/accounting/accounting.models";
@@ -171,13 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return data(
       {},
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to capitalize the unit")
-        )
-      )
+      await flash(request, error(result.error, "Failed to capitalize the unit"))
     );
   }
 

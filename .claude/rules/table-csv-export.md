@@ -54,6 +54,8 @@ renders `<Download data columnAccessors exportValues columnOrder columnVisibilit
 and passes `sortKeyToLabel` to `<Sort>`. `infinite` (`InfiniteExport`) is set
 only on a table with the `infinite` prop. It carries the header `count`,
 `hasMore`, the list's `listKey` and `loadAll(limit)` from `useInfiniteRows`.
+Sales and Purchase Invoices use their own direct CSV and Excel download routes;
+the generic Download button is disabled for those tables.
 The phone list's ⋯ menu runs the same `useCsvDownload` hook.
 
 ## meta hooks (`types.ts`)
@@ -216,6 +218,20 @@ The background file holds plain database values (`formatExportValue`,
 status. The on-screen formatters run in the browser only. An array cell joins
 with `; `, an object cell becomes JSON, and a `customFields->>{id}` column reads
 the custom field. The header row holds the translated labels in display order.
+
+## Invoice downloads
+
+Sales and Purchase Invoices pass `serverExport` with their `.csv` and `.xlsx`
+routes to `Table`, and set `withCsvExport={false}`. The table adds the current
+search, filters, sorts, and ordered visible/export-only columns to each link;
+it drops the current page cursor and count request. Both desktop and phone
+offer CSV and Excel. The routes in `x+/invoicing+/` check invoicing view
+permission and read the registered list page by page as the signed-in user.
+They use the same row enrichment as the list and write a direct file response,
+without an export job or notification. The Excel workbook uses ExcelJS with a
+frozen header, filter row, and date/amount formats. The Purchase Invoice export
+resolves the two Supplier columns in one company-scoped lookup per page, so
+the file contains supplier names rather than ids.
 
 The daily cleanup (`prune-staged-raw-models`, `scheduled/cleanup.ts`) deletes
 `temp-staging` objects after 7 days (`STAGED_RAW_TTL_DAYS`), so an export link

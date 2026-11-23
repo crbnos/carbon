@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { asColor, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerStatusValidator } from "~/modules/sales/sales.models";
@@ -93,6 +93,7 @@ export default function EditCustomerStatusesRoute() {
   const initialValues = {
     id: customerStatus.id ?? undefined,
     name: customerStatus.name ?? "",
+    color: asColor(customerStatus.color),
     ...getCustomFields(customerStatus.customFields)
   };
 

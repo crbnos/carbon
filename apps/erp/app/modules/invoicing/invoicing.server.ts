@@ -4,7 +4,7 @@
 
 import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { assertPostingStatusUnchanged } from "@carbon/database/journal-posting-status";
 import { isCompanyAdmin } from "@carbon/ee/approvals.server";
 import {
@@ -35,6 +35,10 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
+import {
+  lineTaxForUpsert,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   resolveItemIdFromExtractedText,
@@ -47,14 +51,17 @@ import {
 import {
   deletePurchaseInvoiceLineReleasingLeases,
   deletePurchaseInvoiceReleasingLeases,
-  purchaseOrderFundsGate
+  purchaseOrderFundsGate,
+  resolvePurchaseLineTax
 } from "~/modules/purchasing/purchasing.service";
 import {
   customerContactHasEmail,
   deleteRentalCreditMemoReleasingPeriods,
   deleteSalesInvoiceLineReleasingRentals,
   deleteSalesInvoiceReleasingRentals,
-  recordSalesRuleOutcome
+  recalculateSalesDocumentTaxes,
+  recordSalesRuleOutcome,
+  resolveSalesLineTax
 } from "~/modules/sales/sales.service";
 import {
   getCompanySettings,
@@ -238,7 +245,11 @@ const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
  * @mcp
  */
 export const createSalesInvoiceLine = defineServiceFn({
-  input: salesInvoiceLineInput,
+  // A plain string, not the form validator's text field: the route sends
+  // "" for a code the user cleared, which must not read as "not sent".
+  input: salesInvoiceLineInput.safeExtend({
+    taxCodeId: z.string().optional()
+  }),
   permission: { create: "invoicing" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
@@ -274,10 +285,27 @@ export const createSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
+    // A caller that sends no tax code (the API, MCP) takes the resolved tax;
+    // a non-taxable item carries none.
+    const tax = await resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesInvoice",
+        documentId: line.invoiceId,
+        lineId: null,
+        itemId: line.itemId,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
     const created = await service.upsertSalesInvoiceLine(
       ctx.asCaller.supabase,
       {
         ...line,
+        ...lineTaxForUpsert(tax.data),
         companyId: ctx.company.id,
         createdBy: ctx.auditUserId,
         customFields
@@ -398,11 +426,27 @@ export const updateSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
+    // A non-taxable item carries no tax, and a code sets the rate.
+    const tax = await resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesInvoice",
+        documentId: line.invoiceId,
+        lineId: id,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
     const updated = await service.upsertSalesInvoiceLine(
       ctx.asCaller.supabase,
       {
         id,
         ...line,
+        ...lineTaxForUpsert(tax.data),
         updatedBy: ctx.auditUserId,
         customFields
       }
@@ -459,6 +503,46 @@ export const deleteDraftSalesInvoiceLine = defineServiceFn({
       return ctx.error("internal", "Failed to delete sales invoice line", err);
     }
     return { invoiceId, lineId };
+  }
+});
+
+/**
+ * Recalculate the tax of every line on a sales invoice.
+ *
+ * @remarks
+ * Refused while the invoice is posted. Each line takes the tax decision for
+ * its item at the invoice's ship-to (`recalculateSalesDocumentTaxes`): run
+ * it after the ship-to or the customer's tax code changed. Rental and
+ * contract lines keep the tax of their agreement or contract.
+ *
+ * @mcp
+ */
+export const recalculateSalesInvoiceTaxes = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      invoiceId,
+      "Cannot modify a locked sales invoice. Reopen it first."
+    );
+    if (locked) return locked;
+    const result = await recalculateSalesDocumentTaxes(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        document: "salesInvoice",
+        documentId: invoiceId
+      }
+    );
+    if (result.refused) return ctx.error("rule", result.error);
+    if (result.error !== null) {
+      return ctx.error("internal", "Failed to recalculate taxes", result.error);
+    }
+    return { invoiceId, updated: result.data.updated };
   }
 });
 
@@ -1142,6 +1226,14 @@ export const postPurchaseInvoice = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
+        logger.error("Failed to post purchase invoice", {
+          companyId,
+          invoiceId,
+          error: posted.error
+        });
+        // A refusal the user can act on (a 4xx, such as a Reverse Charge
+        // line that still carries a tax amount) says what to fix; anything
+        // else stays generic.
         return fromServerFn(
           ctx,
           posted.error,
@@ -2629,7 +2721,11 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
  * Create a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the invoice date; an empty `taxCodeId` keeps the
+ * sent percent with no code. A sent code sets the rate (its rate on the
+ * invoice date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -2672,9 +2768,9 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       ),
     supplierTaxAmount: z
       .number()
-      .default(0)
+      .optional()
       .describe(
-        "Applied when creating; on update a field left out keeps its value."
+        "Omit to restate it from the tax code's rate (0 with no code). Refused on a Reverse Charge code."
       ),
     taxPercent: z
       .number()
@@ -2683,6 +2779,12 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       .default(0)
       .describe(
         "Applied when creating; on update a field left out keeps its value."
+      ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
       ),
     requiredDate: z.string().optional(),
     locationId: z.string().optional(),
@@ -2696,12 +2798,10 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
     // The charge number: the company's project, and an element of it.
-    const chargeError = await chargeNumberError(
-      ctx.asCaller.supabase,
-      ctx.company.id,
-      input
-    );
+    const chargeError = await chargeNumberError(client, companyId, input);
     if (chargeError) return ctx.error("validation", chargeError.message);
 
     const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
@@ -2709,11 +2809,34 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       purchaseOrderLineIds: [input.purchaseOrderLineId]
     });
     if (refused) return refused;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseInvoice",
+      documentId: input.invoiceId,
+      lineId: input.id ?? null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.quantity ?? 0,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, {
+          ...input,
+          supplierTaxAmount: input.supplierTaxAmount ?? 0,
+          ...tax.data
+        }).forCreate() as never
       )
     );
   }
@@ -2725,6 +2848,10 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * @remarks
  * Upsert purchase invoice line. A charge number (`projectId`,
  * `projectElementId`) must name this company's project and an element of it.
+ * A non-taxable item carries no tax, whatever was sent. A sent code (or the
+ * stored one, when only a percent is sent) sets the rate; an empty
+ * `taxCodeId` clears the code. A Reverse Charge code refuses a supplier tax
+ * amount.
  *
  * @mcp
  */
@@ -2780,6 +2907,7 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       requiredDate: z.string().optional(),
       locationId: z.string().optional(),
       storageUnitId: z.string().optional(),
@@ -2793,12 +2921,9 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
     // The charge number: the company's project, and an element of it.
-    const chargeError = await chargeNumberError(
-      ctx.asCaller.supabase,
-      ctx.company.id,
-      input
-    );
+    const chargeError = await chargeNumberError(client, ctx.company.id, input);
     if (chargeError) return ctx.error("validation", chargeError.message);
 
     // An update that leaves an order reference out keeps the stored one, so
@@ -2830,11 +2955,30 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
       purchaseOrderLineIds: [purchaseOrderLineId]
     });
     if (refused) return refused;
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseInvoice",
+      documentId: input.invoiceId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.quantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        client,
+        payload(ctx, { ...input, ...tax.data }).forUpdate() as never
       )
     );
   }
@@ -3157,6 +3301,11 @@ export const getInvoiceSettlements = defineServiceFn({
 /**
  * Get invoice settlements for invoice
  *
+ * @remarks
+ * Lists posted payments and memos applied to the invoice, and the
+ * applications of Draft payments with `pending: true`. A pending row pays
+ * nothing until its payment posts, so leave it out of what is paid.
+ *
  * @mcp read
  */
 export const getInvoiceSettlementsForInvoice = defineServiceFn({
@@ -3389,7 +3538,7 @@ export const deletePayment = defineServiceFn({
     return unwrap(
       ctx,
       await service.deletePayment(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         input.id as never,
         ctx.company.id
       )
@@ -3505,7 +3654,21 @@ export const createMemo = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
-    amount: z.number().gt(0),
+    netAmount: z
+      .number()
+      .gt(0)
+      .describe(
+        "The amount before tax. The tax is computed from `taxCodeId` on the memo date; the memo's amount is net plus tax."
+      )
+      .optional(),
+    taxCodeId: z.string().optional(),
+    amount: z
+      .number()
+      .gt(0)
+      .describe(
+        "A gross with no tax, when `netAmount` is not sent. Refused on a memo that carries tax."
+      )
+      .optional(),
     reference: z.string().optional(),
     notes: z.string().optional(),
     memoId: z.string().optional(),
@@ -3519,10 +3682,10 @@ export const createMemo = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertMemo(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      await service.upsertMemo(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forCreate(),
+        companyGroupId: ctx.company.groupId
+      } as never)
     );
   }
 });
@@ -3550,7 +3713,21 @@ export const updateMemo = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
-      amount: z.number().gt(0),
+      netAmount: z
+        .number()
+        .gt(0)
+        .describe(
+          "The amount before tax. The tax is computed from `taxCodeId` on the memo date; the memo's amount is net plus tax."
+        )
+        .optional(),
+      taxCodeId: z.string().optional(),
+      amount: z
+        .number()
+        .gt(0)
+        .describe(
+          "A gross with no tax, when `netAmount` is not sent. Refused on a memo that carries tax."
+        )
+        .optional(),
       reference: z.string().optional(),
       notes: z.string().optional(),
       memoId: z.string().optional(),
@@ -3565,10 +3742,10 @@ export const updateMemo = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertMemo(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.upsertMemo(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyGroupId: ctx.company.groupId
+      } as never)
     );
   }
 });
@@ -4102,7 +4279,7 @@ export const decideDocumentForceDelete = defineServiceFn({
               // The postings report refusals as server errors too, so any
               // void failure falls back to the reversal by journal; a real
               // fault fails that step as well, and the claim is released.
-              logger.warn(
+              logger.warning(
                 "Force delete: the void refused, reversing by journal",
                 {
                   documentId: document.id,
@@ -4372,5 +4549,143 @@ export const cancelDocumentForceDelete = defineServiceFn({
       diff: { status: { old: "Pending", new: "Cancelled" } }
     });
     return { requestId, status: "Cancelled" as const };
+  }
+});
+
+/**
+ * Change the GL account of a posted sales invoice line.
+ *
+ * @remarks
+ * Posts one journal, dated on the invoice's posting date in its accounting
+ * period, that moves the line's posted revenue from the account it is on to
+ * `accountId` (an active Revenue account that is not a group), with the
+ * line's dimensions, and records the new account on the line. Only a line
+ * whose revenue posted to the Sales account can change: deferred, contract,
+ * rental, service job and fixed asset lines cannot. Refused while the period
+ * is Locked or Closed (the refusal names it), for an invoice dated before the
+ * accounting cutover, and for a voided invoice. A void of the invoice
+ * reverses the change with the posting. Needs invoicing and accounting
+ * update.
+ *
+ * @param accountId - The Revenue account the line's revenue moves to.
+ *
+ * @mcp
+ */
+export const changeSalesInvoiceLineAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1),
+    accountId: z.string().min(1)
+  }),
+  permission: { update: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "change-invoice-line-account", () =>
+      service.changeInvoiceLineAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/**
+ * Change the GL account of a posted purchase invoice line.
+ *
+ * @remarks
+ * Posts one journal, dated on the invoice's posting date in its accounting
+ * period, that moves the line's posted cost from the account it is on to
+ * `accountId` (an active Asset, Liability, Equity or Expense account that
+ * is not a group), with the
+ * line's dimensions, and records the new account on the line. Only a G/L
+ * Account line can change, and not one charged to a project. Refused while
+ * the period is Locked or Closed (the refusal names it), for an invoice dated
+ * before the accounting cutover, and for a voided invoice. A void of the
+ * invoice reverses the change with the posting. Needs invoicing and
+ * accounting update.
+ *
+ * @param accountId - The Asset, Liability, Equity or Expense account the
+ *   line's cost moves to.
+ *
+ * @mcp
+ */
+export const changePurchaseInvoiceLineAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1),
+    accountId: z.string().min(1)
+  }),
+  permission: { update: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "change-invoice-line-account", () =>
+      service.changeInvoiceLineAccount(ctx, { side: "purchase", ...input })
+    );
+  }
+});
+
+/**
+ * Adjust a purchase invoice's total for rounding.
+ *
+ * @remarks
+ * Brings the invoice total to `targetTotal`, the amount the supplier actually
+ * charged (for example a card charge a cent off the computed total), with a
+ * single G/L Account line described "Rounding" on the company's default
+ * Rounding Account; other lines on that account are left alone. The other
+ * lines, inventory lines included, keep their prices, so receipts and
+ * purchase orders are untouched. Calling again with another total replaces
+ * the adjustment; a total the other lines already match removes it.
+ *
+ * On a posted invoice it also posts the change: one journal dated on the
+ * invoice's posting date, debiting the Rounding Account and crediting the
+ * invoice's Accounts Payable (the reverse for a lower total), so balances
+ * and payments read the new total and a void reverses it. That needs
+ * accounting update permission too, and is refused when the period is Locked
+ * or Closed, for an invoice dated before the accounting cutover, and for a
+ * lower total than is already paid.
+ *
+ * Refused for a Pending or Voided invoice, when no Rounding Account is set,
+ * and when the difference is more than 100 minor units of the invoice's
+ * currency (1.00 USD). Returns the rounding line's amount in the invoice's
+ * currency, and on a posted invoice the journal it posted.
+ *
+ * @param targetTotal - The invoice total to reach, in the invoice's currency.
+ *
+ * @mcp
+ */
+export const adjustPurchaseInvoiceRounding = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    targetTotal: z.number().finite()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return run(ctx, "adjust-purchase-invoice-rounding", () =>
+      service.adjustPurchaseInvoiceRounding(ctx, input)
+    );
+  }
+});
+
+/** Get the account a posted sales invoice line's revenue is on now (not the
+ *  line's own account, which sales posting does not read). */
+export const getSalesInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/** Get the account a posted purchase invoice line's cost is on now. */
+export const getPurchaseInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "purchase", ...input })
+    );
   }
 });

@@ -26,10 +26,13 @@ import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useParams } from "react-router";
 import {
+  Boolean,
   CustomerContact,
   EmailRecipients,
+  Hidden,
   SelectControlled
 } from "~/components/Form";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { quoteFinalizeValidator } from "../../sales.models";
@@ -91,6 +94,7 @@ const QuotationFinalizeBody = ({
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
+  const digitalQuoteEnabled = useCompanySettings()?.digitalQuoteEnabled;
   const { carbon } = useCarbon();
 
   const [loading, setLoading] = useState(true);
@@ -187,7 +191,8 @@ const QuotationFinalizeBody = ({
         defaultValues={{
           notification: notificationType as "Email" | "None",
           customerContact: quote?.customerContactId ?? undefined,
-          cc: defaultCc
+          cc: defaultCc,
+          emailOrderOnAcceptance: true
         }}
         fetcher={fetcher}
       >
@@ -257,6 +262,16 @@ const QuotationFinalizeBody = ({
                 />
                 <EmailRecipients name="cc" label={t`CC`} type="employee" />
               </>
+            )}
+            {digitalQuoteEnabled ? (
+              <Boolean
+                name="emailOrderOnAcceptance"
+                label={t`Send order confirmation`}
+                description={t`Emails the sales order to the customer when they accept this quote online.`}
+                bordered
+              />
+            ) : (
+              <Hidden name="emailOrderOnAcceptance" value="on" />
             )}
           </VStack>
         </ModalBody>

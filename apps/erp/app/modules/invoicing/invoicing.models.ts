@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
+import { round } from "@carbon/database/precision";
+import { moneyFormatOptions } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -10,6 +13,16 @@ import { zfd } from "zod-form-data";
 // which also re-exports shared.service/shared.server — those transitively pull in
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
 import { incoterms, itemType, methodType } from "../shared/shared.models";
+
+/** The classes a purchase or purchase order G/L Account line may be coded to.
+ *  Revenue is left out: a supplier's credit belongs on a credit memo, not a
+ *  debit to sales. */
+export const purchaseLineAccountClasses = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Expense"
+] as const;
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -181,6 +194,7 @@ export const purchaseInvoiceLineValidator = z
     supplierUnitPrice: zfd.numeric(z.number().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
     supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0)),
     requiredDate: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
@@ -431,6 +445,7 @@ export const salesInvoiceLineValidator = z
     discountPercent: zfd.numeric(z.number().min(0).max(100).optional()),
     shippingCost: zfd.numeric(z.number().optional().default(0)),
     taxPercent: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -534,13 +549,34 @@ export const memoValidator = z
     memoDate: z.string().min(1, { message: "Date is required" }),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().positive().default(1)),
-    amount: zfd.numeric(z.number().positive({ message: "Amount must be > 0" })),
+    // The memo form enters the NET and a tax code; `upsertMemo` computes the
+    // tax forward from the code's rate on the memo date and stores
+    // amount = net + tax (spec "Memo tax"). A caller that sends `amount` and
+    // no `netAmount` keeps the old meaning: a gross with no tax — refused on
+    // an update of a memo that carries tax (`resolveMemoTaxAmounts` in invoicing.utils).
+    netAmount: zfd.numeric(
+      z.number().positive({ message: "Net amount must be > 0" }).optional()
+    ),
+    taxCodeId: zfd.text(z.string().optional()),
+    amount: zfd.numeric(
+      z.number().positive({ message: "Amount must be > 0" }).optional()
+    ),
     reference: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional())
   })
   .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
     message: "A memo is for exactly one party (customer or supplier)",
     path: ["customerId"]
+  })
+  .refine((d) => d.netAmount !== undefined || d.amount !== undefined, {
+    message: "Net amount is required",
+    path: ["netAmount"]
+  })
+  // A tax code is applied to a net. Taken with only a gross, the tax would
+  // have to be worked out backwards from it, which posting never does.
+  .refine((d) => !d.taxCodeId || d.netAmount !== undefined, {
+    message: "A tax code needs a net amount",
+    path: ["taxCodeId"]
   });
 
 // ----------------------------------------------------------------------
@@ -556,6 +592,10 @@ export type PaymentStatusType = (typeof paymentStatus)[number];
 export function isPaymentLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+/** The account type a supplier payment may be paid from besides an Asset. */
+export const CARD_ACCOUNT_TYPE =
+  "Credit Card" satisfies Database["public"]["Enums"]["accountType"];
 
 export const paymentValidator = z
   .object({
@@ -856,4 +896,40 @@ export function paymentJournalDifference<
   return [...net.values()]
     .filter((entry) => entry.amount !== 0)
     .map((entry) => ({ ...entry.line, amount: entry.amount }));
+}
+
+export const invoiceLineAccountValidator = z.object({
+  accountId: z.string().min(1, { message: "Account is required" })
+});
+
+export const purchaseInvoiceRoundingValidator = z.object({
+  targetTotal: zfd.numeric(z.number({ error: "Amount to match is required" }))
+});
+
+/** A rounding adjustment never exceeds 100 minor units (1.00 USD, 100 JPY). */
+export const MAX_ROUNDING_MINOR_UNITS = 100;
+
+/** The rounding line amount that brings an invoice whose other lines total
+ *  `totalWithoutRounding` to `targetTotal`, or a refusal when the gap is too
+ *  large to be rounding. Amounts are in the invoice's currency. */
+export function purchaseInvoiceRoundingAmount(
+  totalWithoutRounding: number,
+  targetTotal: number,
+  decimals: number
+): { amount: number } | { refusal: string } {
+  // Against the total as the invoice shows it (rounded half away from zero,
+  // like the view), or a half-unit remainder tips the new total one unit over.
+  const amount = round(
+    targetTotal - round(totalWithoutRounding, decimals),
+    decimals
+  );
+  const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
+  if (Math.abs(amount) > max) {
+    const format = new Intl.NumberFormat("en-US", moneyFormatOptions(decimals))
+      .format;
+    return {
+      refusal: `The difference of ${format(amount)} is more than ${format(max)}, too large for a rounding adjustment. Correct the invoice lines instead.`
+    };
+  }
+  return { amount };
 }

@@ -53,7 +53,7 @@ export async function readPartProperties(
       // Only a 404 means "no values"; any other failure fails the plan rather
       // than push stale mapped fields as current.
       if (error instanceof OnshapeApiError && error.status === 404) {
-        logger.warn("Onshape part has no metadata; no mapped values", {
+        logger.warning("Onshape part has no metadata; no mapped values", {
           documentId: document.documentId,
           elementId,
           partId
@@ -110,7 +110,7 @@ export async function readAssemblyProperties(
       ...partProperties.filter((property) => !seen.has(property.propertyId))
     ];
   } catch (error) {
-    logger.warn("Failed to read an assembly part's properties", {
+    logger.warning("Failed to read an assembly part's properties", {
       documentId: document.documentId,
       elementId,
       error

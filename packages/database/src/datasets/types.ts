@@ -87,8 +87,12 @@ export type CustomerSpec = {
   currencyCode?: string;
   /** Defaults to Net 30. */
   paymentTerm?: string;
+  /** A `FoundationData.taxCodes` name, written to `customerTax.taxCodeId`. */
+  taxCode?: string;
   /** Omitted = the dataset-wide `foundation.partyAddress*`. */
   address?: PartyAddressSpec;
+  /** Omitted = the company default. */
+  partNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"];
 };
 
 export type SupplierSpec = {
@@ -98,12 +102,16 @@ export type SupplierSpec = {
   website: string;
   /** Omitted = Active, written explicitly (the column has no default). */
   status?: "Active" | "Inactive" | "Pending" | "Rejected";
+  /** A stage bootstrap seeds. Omitted = no stage. */
+  stage?: "Prospect" | "Sampling" | "Qualified" | "Production";
   /** Must be a currency bootstrap seeds. Defaults to "USD". */
   currencyCode?: string;
   /** Defaults to Net 30. */
   paymentTerm?: string;
   /** Omitted = the dataset-wide `foundation.partyAddress*`. */
   address?: PartyAddressSpec;
+  /** Omitted = the company default. */
+  partNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"];
 };
 
 export type ContactSpec = {
@@ -196,6 +204,14 @@ export type PrinterRouteSpec = {
   name: string;
   format: string;
   printerUrl: string;
+  /**
+   * Make the route the plant's default printer (Settings → Printing). Every
+   * context at the plant inherits it, so travelers and finished-good labels
+   * reach it; the kanban context does not auto-print, since a kanban card
+   * cannot print on this route's label media. Other locations' assignments
+   * are kept. Off for the onboarding demos: their printer URLs are fake.
+   */
+  plantDefault?: boolean;
 };
 
 export type ContractorAgencySpec = {
@@ -226,6 +242,35 @@ export type MaterialTaxonomySpec = {
   dimensions: { name: string; form: string; isMetric?: boolean }[];
 };
 
+export type TaxAuthoritySpec = { name: string };
+
+export type TaxCodeSpec = {
+  name: string;
+  description?: string;
+  calculationType?: "Normal" | "Reverse Charge";
+  reportingCategory?:
+    | "Standard"
+    | "Reduced"
+    | "Zero-Rated"
+    | "Exempt"
+    | "Reverse Charge"
+    | "Export"
+    | "Out of Scope";
+  invoiceMessage?: string;
+  /** Alpha-2, e.g. "US". */
+  countryCode: string;
+  state?: string;
+  components: Array<{
+    name: string;
+    /** A `taxAuthorities` name. */
+    authority: string;
+    /** As people write it: 6.25 means 6.25%. */
+    taxPercent: number;
+    /** As people write it: 100 means fully recoverable. Defaults to 0. */
+    recoverablePercent?: number;
+  }>;
+};
+
 export type FoundationData = {
   departments: string[];
   abilities: string[];
@@ -245,6 +290,8 @@ export type FoundationData = {
   workCenterProcessLinks: Array<[string, string]>;
   customerTypes: string[];
   supplierTypes: string[];
+  taxAuthorities: TaxAuthoritySpec[];
+  taxCodes: TaxCodeSpec[];
   costCenters: string[];
   noQuoteReasons: string[];
   contractors: ContractorSpec[];
@@ -280,6 +327,14 @@ export type FoundationData = {
   partyAddressStateProvince: string;
   partyAddressPostalCode: string;
   partyAddressCountryCode: string;
+  /** Line-flow company settings. */
+  lineFlow?: LineFlowSpec;
+};
+
+export type LineFlowSpec = {
+  travelerLabels: boolean;
+  requireTrackedMaterialsIssued: boolean;
+  autoPickingListOnRelease: boolean;
 };
 
 export type ItemType =
@@ -357,6 +412,8 @@ export type BomLineSpec = {
   order: number;
   methodType?: MethodType;
   kit?: boolean;
+  /** The `order` of a bop operation in the same method; written as `methodOperationId`. */
+  operation?: number;
 };
 
 export type BopOperationSpec = {
@@ -564,7 +621,8 @@ export type ItemsData = {
   customerParts: CustomerPartSpec[];
   priceOverrides: PriceOverrideSpec[];
   pricingRules: PricingRuleSpec[];
-  configuration: ConfigurationSpec;
+  /** Null only on a walkthrough dataset (`Dataset.walkthrough`). */
+  configuration: ConfigurationSpec | null;
   revisionLadder: RevisionLadderSpec[];
   inspectionPlans: InspectionPlanSpec[];
   enforcementRules: EnforcementRuleSpec[];
@@ -594,6 +652,8 @@ export type OpeningStockSpec = {
 
 export type TrackedStockSpec = {
   item: string;
+  /** When set, tier 03 writes the opening ledger of this item at this shelf per lot. */
+  shelf?: string;
   entities: Array<{
     readableId: string;
     quantity: number;
@@ -631,6 +691,8 @@ export type KanbanItemSpec = {
   /** Transfer kanbans only, with toShelf. */
   fromShelf?: string;
   toShelf?: string;
+  /** Transfer kanbans only. */
+  replenishmentLevel?: number;
 };
 
 export type InventoryCountLineSpec = {
@@ -1330,7 +1392,11 @@ export type PurchasingData = {
   rfqQuotes: RfqQuoteSpec[];
   rfqWinningQuote: string;
   rfqOrderQuantity: number;
-  rfqHeader: RfqHeaderSpec;
+  /**
+   * Null only on a walkthrough dataset: tier 05 then seeds no RFQ, and
+   * rfqLines, rfqQuotes and the winning-quote orders must be empty.
+   */
+  rfqHeader: RfqHeaderSpec | null;
   lifecycleRfqs: LifecycleRfqSpec[];
   purchaseOrders: PurchaseOrderSpec[];
   standaloneSupplierQuotes: StandaloneSupplierQuoteSpec[];
@@ -1412,6 +1478,8 @@ export type JobSpec = {
    * from `startOffset` 07:00 — the estimates-vs-actuals KPI compares the two.
    */
   loggedTime?: { startOffset: DayOffset; efficiency: number };
+  /** Serial items only: one readableId per unit, as `assignSerialNumbers` numbers them. */
+  serials?: string[];
 };
 
 export type ShiftEventSpec = {
@@ -1561,18 +1629,32 @@ export type PickingListSpec = {
   lines: PickingListLineSpec[];
 };
 
+/**
+ * A "need material" call from the floor (MES). Written on the job operation at
+ * `operationOrder` (1-based root position), at that operation's work center and
+ * the job's location. A Resolved row is resolved by the applying user.
+ */
+export type MaterialRequestSpec = {
+  job: string;
+  operationOrder: number;
+  item?: string;
+  note?: string;
+  status: "Open" | "Resolved";
+};
+
 export type ProductionData = {
   jobs: JobSpec[];
   /** Production-event blocks, indexed by operation position — not shift rows. */
   shifts: ShiftEventSpec[][];
   genealogyInputs: GenealogyInputSpec[];
-  genealogyAssembly: GenealogyAssemblySpec;
+  /** Null only on a walkthrough dataset, as are the other job stories below. */
+  genealogyAssembly: GenealogyAssemblySpec | null;
   /** JobSpec.key whose operations get production events. */
-  eventsJobKey: string;
+  eventsJobKey: string | null;
   /** JobSpec.key the as-built genealogy hangs off. */
-  genealogyJobKey: string;
+  genealogyJobKey: string | null;
   /** Open Setup event (null endTime) on the events job; use the op overridden to "In Progress". */
-  openEvent: { operationOrder: number };
+  openEvent: { operationOrder: number } | null;
   /**
    * An Active batch; members are unstarted root operations of different
    * released jobs on one process. `running` is its batch timer today, on the
@@ -1582,9 +1664,10 @@ export type ProductionData = {
   batch: {
     members: { job: string; order: number }[];
     running: { type: "Setup" | "Labor" | "Machine"; startTimeOfDay: string };
-  };
-  rework: ReworkSpec;
+  } | null;
+  rework: ReworkSpec | null;
   pickingLists: PickingListSpec[];
+  materialRequests: MaterialRequestSpec[];
 };
 
 export type NonConformanceTaskStatus =
@@ -2588,6 +2671,8 @@ export type SerialSequenceSpec = {
    * seeded serial of the item that fits prefix + counter + suffix.
    */
   next: number;
+  serialNumberTiming?: "jobCreation" | "jobRelease" | "production";
+  printLabelOnCompletion?: boolean;
 };
 
 /** As the print-job task leaves it. */
@@ -2718,7 +2803,8 @@ export type PlanningData = {
   buyItemIds: string[];
   makeItemIds: string[];
   demandProjections: DemandProjectionSpec[];
-  demandOrder: DemandOrderSpec;
+  /** Null only on a walkthrough dataset: no sales order, so no demand. */
+  demandOrder: DemandOrderSpec | null;
   hq: HqPlanningSpec;
 };
 
@@ -2728,6 +2814,7 @@ export type DatasetKey =
   | "robotics"
   | "precision"
   | "motor"
+  | "motor-line"
   | "defense";
 
 // One industry story's worth of data. The tiers hold the insertion logic; a
@@ -2737,6 +2824,16 @@ export type Dataset = {
   label: string;
   /** industry.id this dataset backs, or null for dev-only datasets. */
   industryId: string | null;
+  /**
+   * Industry folder for bundled assets (CAD model, thumbnails); defaults to
+   * `industryId`. Lets a dev-only dataset reuse an industry's assets.
+   */
+  assetIndustryId?: string;
+  /**
+   * A dev-only single-product dataset: only the structural rules run and
+   * coverage floors skip it. Never set with an `industryId`.
+   */
+  walkthrough?: boolean;
   foundation: FoundationData;
   items: ItemsData;
   inventory: InventoryData;

@@ -132,7 +132,7 @@ For a partial receipt of 40 units, the receipt entry is $400. The other 60 units
 
 ### Prepay the purchase order
 
-For the same $1,000 order, send a **$300 advance**. On **Payment to Supplier**, choose the PO under **Prepayment for**, then post. Receive and invoice the order, apply the advance, and pay the $700 balance.
+For the same $1,000 order, send a **$300 advance**. On **Payment to Supplier**, choose the PO under **Prepayment for**, then post. Receive and invoice the order, apply the advance, and pay the $700 balance. Paying from the invoice starts the payment at $700 and applies the advance.
 
 <JournalStep number={1} title="Post PO advance" document="Payment (post)">
 
@@ -254,7 +254,7 @@ You received 100 units at $10, but the invoice is **$1,100**. If 40 units remain
 
 The on-hand adjustment uses the invoiced item's [selected stock account](#how-the-stock-account-is-selected): Raw Materials for Buy, Finished Goods for Make or Buy and Make. If all units remain, the full $100 increases inventory. A price decrease reverses the difference. Consumed project purchases can charge the project account instead of general purchase variance.
 
-For the stock purchases in this example, freight and nonrecoverable purchase tax join invoice acquisition cost. For $1,000 of goods plus $100 freight and $50 nonrecoverable tax, the invoice total is $1,150. Amounts beyond the receipt estimate follow the same stock-versus-consumed split. Do not assume a separate freight expense or recoverable-tax entry.
+For the stock purchases in this example, freight and nonrecoverable purchase tax join invoice acquisition cost. For $1,000 of goods plus $100 freight and $50 nonrecoverable tax, the invoice total is $1,150. Amounts beyond the receipt estimate follow the same stock-versus-consumed split. Do not assume a separate freight expense. Recoverable tax is the exception: it posts to its component's Tax Paid account, not to cost.
 
 ### Other purchase destinations
 
@@ -606,8 +606,8 @@ A return linked to an original shipment uses its outbound cost when usable consu
 
 Choosing **Scrap** or **Rework** as an RMA disposition does not itself prove a stock write-off. Post the relevant inventory or quality movement to remove value. Sending valued returned goods back to the customer posts **debit COGS, credit the item's selected stock account** at the cost relieved: Raw Materials for Buy, Finished Goods for Make or Buy and Make.
 
-<Callout type="warn" title="Return memos do not rebuild invoice tax and freight">
-An RMA memo posts its principal to Sales Returns and AR. It does not automatically reverse the original invoice’s separate tax or shipping accounts. Check those amounts before treating a taxed or freight-inclusive return as fully reconciled. Ordinary customer credit memos use Sales Discount rather than the RMA Sales Returns account.
+<Callout type="warn" title="Return memos reverse tax, not freight">
+An RMA memo posts its net to Sales Returns and its gross to AR. Each returned line takes the tax code and rate of the invoice line it returns, so the memo's tax posts to Tax Received (one memo per code and rate). It does not reverse the original invoice’s shipping. Check that amount before treating a freight-inclusive return as fully reconciled. Ordinary customer credit memos use Sales Discount rather than the RMA Sales Returns account.
 </Callout>
 
 ## Discounts, tax and foreign currency
@@ -621,10 +621,10 @@ Merchandise is $1,000 with a 10% line discount, plus $50 line shipping. With 10%
 | AR | $1,045 | – |
 | Sales | – | $900 |
 | Shipping Revenue | – | $50 |
-| Sales Tax Payable | – | $95 |
+| Tax Received | – | $95 |
 | **Total** | **$1,045** | **$1,045** |
 
-The line discount reduces Sales; it is not a separate $100 discount expense. Shipping and add-ons do not receive that merchandise percentage discount. This example uses taxable line shipping; do not assume every header shipping amount has the same tax treatment.
+The line discount reduces Sales; it is not a separate $100 discount expense. Shipping and add-ons do not receive that merchandise percentage discount. Line shipping is always part of the taxable amount. Header shipping is taxed only on lines whose tax code has **"Taxes Shipping"** on.
 
 ### Settlement discounts and write-offs
 

@@ -97,6 +97,37 @@ export function rememberedQuery(
   return next.toString() === params.toString() ? null : next;
 }
 
+/**
+ * A nav link that carries its own filter or sort (Receipts → Inspection
+ * failed) is a preset, like a saved view: it borrows none of the remembered
+ * query, and the remembered query survives it, so the plain link still opens
+ * the user's own filters.
+ */
+export function isPresetNavigation(
+  params: URLSearchParams,
+  restoreRequested: boolean
+) {
+  return restoreRequested && (params.has("filter") || params.has("sort"));
+}
+
+/** The filters and sorts to remember: a preset keeps the ones remembered before it. */
+export function queryToRemember(
+  params: URLSearchParams,
+  remembered: RememberedTableState | null,
+  preset: boolean
+): Pick<RememberedTableState, "filters" | "sorts"> {
+  if (preset) {
+    return {
+      filters: remembered?.filters ?? [],
+      sorts: remembered?.sorts ?? []
+    };
+  }
+  return {
+    filters: params.getAll("filter").filter(Boolean),
+    sorts: params.getAll("sort").filter(Boolean)
+  };
+}
+
 export function columnsDiffer(
   current: TableColumnsState,
   defaults: TableColumnsState

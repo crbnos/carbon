@@ -55,6 +55,7 @@ import { DateTime, EmployeeAvatar } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
+import { useSupplierStages } from "~/components/Form/SupplierStage";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import {
   RecordAction,
@@ -97,6 +98,7 @@ const SupplierHeader = () => {
     approval: DocumentApprovalState;
     supplierTax: { taxExempt: boolean } | null;
   }>(path.to.supplier(supplierId));
+  const supplierStages = useSupplierStages();
 
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "supplier",
@@ -281,6 +283,25 @@ const SupplierHeader = () => {
                   {routeData?.supplier?.status ? (
                     <SupplierStatusIndicator
                       status={routeData.supplier.status as "Active"}
+                    />
+                  ) : (
+                    "-"
+                  )}
+                </CardAttributeValue>
+              </CardAttribute>
+              <CardAttribute>
+                <CardAttributeLabel>
+                  <Trans>Stage</Trans>
+                </CardAttributeLabel>
+                <CardAttributeValue>
+                  {routeData?.supplier?.stage ? (
+                    <Enumerable
+                      value={routeData.supplier.stage}
+                      color={
+                        supplierStages.find(
+                          (s) => s.value === routeData.supplier?.supplierStageId
+                        )?.color
+                      }
                     />
                   ) : (
                     "-"

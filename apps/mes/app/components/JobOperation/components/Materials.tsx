@@ -22,17 +22,18 @@ import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import {
-  LuArrowLeft,
   LuGitBranchPlus,
-  LuGitPullRequest,
+  LuMapPin,
   LuPackageCheck,
+  LuPackageX,
   LuQrCode,
   LuTriangleAlert
 } from "react-icons/lu";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
+import ItemThumbnail from "~/components/ItemThumbnail";
 import type { JobMaterialPickedItem } from "~/services/inventory.service";
 import type { BatchMaterialTotal } from "~/services/operations.service";
-import type { JobMaterial } from "~/services/types";
+import type { JobMaterial, LiveStorageUnit } from "~/services/types";
 import { useItems } from "~/stores";
 
 type MaterialRow = {
@@ -50,6 +51,53 @@ type MaterialRow = {
 
 type MaterialGroup = { parent: MaterialRow; kitChildren: MaterialRow[] };
 
+// Numbers as numbers: "B-6" before "B-12".
+const naturalOrder = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base"
+});
+
+/**
+ * In the order a picker walks the shelves: by the bin that holds the part
+ * (A-4, B-1, B-6, B-12), then by part. A part with no known bin, or made
+ * here, comes last.
+ */
+export function compareMaterialsByLocation(a: JobMaterial, b: JobMaterial) {
+  const aBin = pickLocation(a);
+  const bBin = pickLocation(b);
+  return (
+    Number(aBin === null) - Number(bBin === null) ||
+    naturalOrder.compare(aBin ?? "", bBin ?? "") ||
+    naturalOrder.compare(a.itemReadableId ?? "", b.itemReadableId ?? "") ||
+    (a.id ?? "").localeCompare(b.id ?? "")
+  );
+}
+
+/** The bin a part is picked from: the first one its Source shows. */
+function pickLocation(material: JobMaterial): string | null {
+  if (material.methodType === "Make to Order") return null;
+  const live = (
+    material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
+  ).liveStorageUnits;
+  if (!live) return material.storageUnitName ?? null;
+  return live.find((unit) => unit.quantity > 0)?.name ?? null;
+}
+
+/** The part's photo, from the items list the app already holds. */
+function MaterialThumbnail({ material }: { material: JobMaterial }) {
+  const [items] = useItems();
+  const item = items.find((i) => i.id === material.itemId);
+  return (
+    <div className="shrink-0">
+      <ItemThumbnail
+        size="md"
+        thumbnailPath={item?.thumbnailPath}
+        type={(item?.type as "Part") ?? "Part"}
+      />
+    </div>
+  );
+}
+
 function toMaterialGroups({
   materials,
   operationId,
@@ -59,9 +107,12 @@ function toMaterialGroups({
   operationId: string;
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
 }): MaterialGroup[] {
-  const baseMaterials = materials.filter((m) => !m.isKitComponent);
+  const byLocation = compareMaterialsByLocation;
+  const baseMaterials = materials
+    .filter((m) => !m.isKitComponent)
+    .sort(byLocation);
   const kitChildrenByParentId = new Map<string, JobMaterial[]>();
-  for (const m of materials) {
+  for (const m of materials.filter((m) => m.isKitComponent).sort(byLocation)) {
     if (!m.isKitComponent || !m.kitParentId) continue;
     kitChildrenByParentId.set(m.kitParentId, [
       ...(kitChildrenByParentId.get(m.kitParentId) ?? []),
@@ -119,6 +170,43 @@ function toMaterialGroups({
 
 function isTracked(material: JobMaterial) {
   return material.requiresBatchTracking || material.requiresSerialTracking;
+}
+
+// A hint only: the server lists what can actually be scrapped (the part
+// itself when untracked, or the parts inside a kit).
+function canScrapParts(material: JobMaterial) {
+  return material.methodType === "Pull from Inventory";
+}
+
+function ScrapPartsButton({
+  material,
+  onScrap,
+  disabled,
+  size
+}: {
+  material: JobMaterial;
+  onScrap?: (material: JobMaterial) => void;
+  disabled?: boolean;
+  size?: "lg";
+}) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  if (!onScrap || !canScrapParts(material)) return null;
+  const label =
+    getItemReadableId(items, material.itemId ?? "") ||
+    material.description ||
+    "";
+  return (
+    <IconButton
+      aria-label={t`Scrap parts of ${label}`}
+      variant="ghost"
+      size={size}
+      icon={<LuPackageX />}
+      className={size ? undefined : "h-8 w-8"}
+      isDisabled={disabled}
+      onClick={() => onScrap(material)}
+    />
+  );
 }
 
 function estimatedQuantity(material: JobMaterial, parentIsSerial: boolean) {
@@ -213,6 +301,39 @@ function PickedBreakdown({
   );
 }
 
+/**
+ * The stock the job can draw does not cover what it still needs of the part.
+ * `available of needed`, so the operator sees how much to expect.
+ */
+export function ShortStockBadge({
+  material,
+  className
+}: {
+  material: JobMaterial;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const shortage = material.stockShortage;
+  if (!shortage) return null;
+  const { available, needed } = shortage;
+  return (
+    <Badge
+      variant="red"
+      className={cn("w-fit gap-1 shrink-0 tabular-nums", className)}
+      title={t`In stock: ${available}. Still needed: ${needed}.`}
+    >
+      <LuTriangleAlert className="size-3" />
+      {available > 0 ? (
+        <Trans>
+          Short: {available} of {needed}
+        </Trans>
+      ) : (
+        <Trans>Out of stock</Trans>
+      )}
+    </Badge>
+  );
+}
+
 function TrackingBadge({ material }: { material: JobMaterial }) {
   const type = material.requiresBatchTracking
     ? "Batch"
@@ -241,6 +362,70 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
   );
 }
 
+/** Where a part comes from: the bins that hold it now, or that it is made here. */
+export function MaterialSource({
+  material,
+  size
+}: {
+  material: JobMaterial;
+  /**
+   * Compact: smaller badges, for a dense card where they sit under the part's
+   * name. Large: for a phone, where the bin is what the picker reads first.
+   */
+  size?: "compact" | "large";
+}) {
+  const { t } = useLingui();
+  const compact = size === "compact";
+  const badgeClass = compact
+    ? "min-h-5 px-2 text-xs"
+    : size === "large"
+      ? "min-h-8 px-3 text-base font-semibold text-foreground whitespace-normal"
+      : undefined;
+  const madeHere = material.methodType === "Make to Order";
+  const liveStorageUnits = (
+    material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
+  ).liveStorageUnits?.filter((unit) => unit.quantity > 0);
+  const locations = madeHere
+    ? [t`WIP`]
+    : liveStorageUnits
+      ? liveStorageUnits.length
+        ? liveStorageUnits.map((unit) => unit.name ?? t`Location not known`)
+        : [t`Location not known`]
+      : [material.storageUnitName ?? t`Location not known`];
+
+  return (
+    // Compact: the badges join the caller's own wrapping row.
+    <div className={compact ? "contents" : "flex flex-wrap items-center gap-1"}>
+      {material.methodType !== "Pull from Inventory" && (
+        <Badge variant="secondary" className={badgeClass}>
+          <MethodIcon
+            type={material.methodType ?? ""}
+            isKit={material.kit ?? false}
+            className="mr-1"
+          />
+          {madeHere
+            ? material.kit
+              ? t`Kit`
+              : t`Subassembly`
+            : (material.methodType ?? t`Inventory`)}
+        </Badge>
+      )}
+      {locations.map((location, index) => (
+        <Badge
+          key={`${location}-${index}`}
+          variant="secondary"
+          className={badgeClass}
+        >
+          {location}
+        </Badge>
+      ))}
+      {material.storageUnit?.effectiveNettable === false && (
+        <NonNettableBadge />
+      )}
+    </div>
+  );
+}
+
 type OperationMaterialsProps = {
   materials: JobMaterial[];
   operationId: string;
@@ -248,6 +433,8 @@ type OperationMaterialsProps = {
   /** Only for batched operations. */
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
   onIssue: (material: JobMaterial) => void;
+  /** Scrap parts of a pulled material, or parts inside a kit. */
+  onScrap?: (material: JobMaterial) => void;
   // The operator may not issue on this operation (ability policy 'block')
   disabled?: boolean;
 };
@@ -269,6 +456,7 @@ function MaterialsTable({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -315,19 +503,6 @@ function MaterialsTable({
       </Button>
     ) : null;
 
-  const methodBadge = (material: JobMaterial) => (
-    <Badge variant="secondary">
-      <MethodIcon
-        type={material.methodType ?? ""}
-        isKit={material.kit ?? false}
-        className="mr-2"
-      />
-      {material.methodType === "Make to Order" && material.kit
-        ? t`Kit`
-        : material.methodType}
-    </Badge>
-  );
-
   const fadedIfUnrelated = (row: MaterialRow) =>
     !row.isRelatedToOperation && "opacity-50 hover:opacity-100";
 
@@ -343,10 +518,10 @@ function MaterialsTable({
               <Trans>Source</Trans>
             </Th>
             <Th className="text-sm">
-              <Trans>Estimated</Trans>
+              <Trans>Required</Trans>
             </Th>
             <Th className="text-sm">
-              <Trans>Actual</Trans>
+              <Trans>Issued</Trans>
             </Th>
             <Th className="text-right" />
           </Tr>
@@ -369,13 +544,15 @@ function MaterialsTable({
                   <Tr className={cn("[&>td]:py-3", fadedIfUnrelated(parent))}>
                     <Td className="max-w-[20vw]">
                       <HStack spacing={2} className="justify-between min-w-0">
-                        <VStack spacing={0} className="min-w-0">
+                        <MaterialThumbnail material={material} />
+                        <VStack spacing={0} className="min-w-0 flex-1">
                           <span className="font-semibold text-base truncate max-w-full">
                             {getItemReadableId(items, material.itemId ?? "")}
                           </span>
                           <span className="text-muted-foreground text-sm truncate max-w-full">
                             {material.description}
                           </span>
+                          <ShortStockBadge material={material} />
                           <PickedBreakdown
                             materialItemId={material.itemId}
                             pickedByItem={material.pickedByItem}
@@ -390,26 +567,7 @@ function MaterialsTable({
                       </HStack>
                     </Td>
                     <Td className="hidden lg:table-cell">
-                      <div className="flex flex-row items-center gap-1">
-                        {methodBadge(material)}
-                        <LuArrowLeft
-                          className={cn(
-                            material.methodType === "Make to Order"
-                              ? "rotate-180"
-                              : ""
-                          )}
-                        />
-                        <Badge variant="secondary">
-                          <LuGitPullRequest className="size-3 mr-1" />
-                          {material.storageUnitName ??
-                            (material.methodType === "Make to Order"
-                              ? t`WIP`
-                              : t`Default Storage Unit`)}
-                        </Badge>
-                        {material.storageUnit?.effectiveNettable === false && (
-                          <NonNettableBadge />
-                        )}
-                      </div>
+                      <MaterialSource material={material} />
                     </Td>
                     <Td>
                       {estimatedQuantity(material, parentIsSerial)}
@@ -427,7 +585,16 @@ function MaterialsTable({
                         </div>
                       )}
                     </Td>
-                    <Td className="text-right">{issueButton(parent)}</Td>
+                    <Td className="text-right">
+                      <HStack spacing={1} className="justify-end">
+                        <ScrapPartsButton
+                          material={material}
+                          onScrap={onScrap}
+                          disabled={disabled}
+                        />
+                        {issueButton(parent)}
+                      </HStack>
+                    </Td>
                   </Tr>
 
                   {kitChildren.map((child, index) => (
@@ -444,7 +611,8 @@ function MaterialsTable({
                     >
                       <Td className="pl-10 max-w-[20vw]">
                         <HStack spacing={2} className="justify-between min-w-0">
-                          <VStack spacing={0} className="min-w-0">
+                          <MaterialThumbnail material={child.material} />
+                          <VStack spacing={0} className="min-w-0 flex-1">
                             <span className="font-semibold truncate max-w-full">
                               {getItemReadableId(
                                 items,
@@ -454,6 +622,7 @@ function MaterialsTable({
                             <span className="text-muted-foreground text-xs truncate max-w-full">
                               {child.material.description}
                             </span>
+                            <ShortStockBadge material={child.material} />
                             <PickedBreakdown
                               materialItemId={child.material.itemId}
                               pickedByItem={child.material.pickedByItem}
@@ -467,13 +636,22 @@ function MaterialsTable({
                         </HStack>
                       </Td>
                       <Td className="lg:table-cell hidden">
-                        {methodBadge(child.material)}
+                        <MaterialSource material={child.material} />
                       </Td>
                       <Td>
                         {estimatedQuantity(child.material, parentIsSerial)}
                       </Td>
                       <Td>{actualQuantity(child.material, parentIsSerial)}</Td>
-                      <Td className="text-right">{issueButton(child)}</Td>
+                      <Td className="text-right">
+                        <HStack spacing={1} className="justify-end">
+                          <ScrapPartsButton
+                            material={child.material}
+                            onScrap={onScrap}
+                            disabled={disabled}
+                          />
+                          {issueButton(child)}
+                        </HStack>
+                      </Td>
                     </Tr>
                   ))}
                 </Fragment>
@@ -490,6 +668,7 @@ function MaterialsList({
   groups,
   parentIsSerial,
   onIssue,
+  onScrap,
   disabled
 }: LayoutProps) {
   const { t } = useLingui();
@@ -503,78 +682,94 @@ function MaterialsList({
     return t`Issue ${item}`;
   };
 
+  // Stacked, so the part, its bins and the Issue button each get the full width.
   const renderRow = (row: MaterialRow) => {
     const { material, batchTotal } = row;
     return (
       <li
         key={`material-row-${material.id}`}
         className={cn(
-          "flex items-center gap-3 px-4 py-3",
-          row.isKitChild && "pl-8",
+          "flex flex-col gap-3 px-4 py-4",
+          row.isKitChild && "ml-4 border-l-2 border-l-border pl-4",
           !row.isRelatedToOperation && "opacity-50"
         )}
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="truncate font-semibold">
+        <div className="flex items-start gap-3">
+          <MaterialThumbnail material={material} />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="break-words text-base font-semibold leading-tight">
               {getItemReadableId(items, material.itemId ?? "")}
             </span>
-            <span className="flex shrink-0 items-center gap-1 text-sm tabular-nums text-foreground font-medium">
+            {material.description ? (
+              <span className="line-clamp-2 text-sm text-muted-foreground">
+                {material.description}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-end">
+            <span className="flex items-center gap-1 text-xl font-semibold leading-tight tabular-nums">
               {actualQuantity(material, parentIsSerial)}
-              <span aria-hidden>/</span>
+              <span aria-hidden className="text-muted-foreground">
+                /
+              </span>
               {estimatedQuantity(material, parentIsSerial)}
             </span>
-          </div>
-          {material.description ? (
-            <span className="truncate text-sm text-muted-foreground">
-              {material.description}
-            </span>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-1">
-            <TrackingBadge material={material} />
-            <ExpiredConsumedBadge material={material} />
-            <PickedBadge
-              quantityPicked={material.quantityPicked}
-              quantityToPick={material.quantityToPick}
-            />
-          </div>
-          <PickedBreakdown
-            materialItemId={material.itemId}
-            pickedByItem={material.pickedByItem}
-          />
-          {batchTotal ? (
             <span className="text-xs text-muted-foreground">
-              <Trans>Batch</Trans>: {batchTotal.issued} / {batchTotal.required}
+              <Trans>Issued</Trans>
             </span>
-          ) : null}
+            {batchTotal ? (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                <Trans>Batch</Trans>: {batchTotal.issued} /{" "}
+                {batchTotal.required}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {/* A fixed slot, so the quantities line up. */}
-        <div className="flex min-w-28 shrink-0 justify-end">
-          {row.issue === "scan" && row.isKitChild ? (
-            <IconButton
-              aria-label={issueLabel(material)}
-              variant="secondary"
+        <div className="flex items-start gap-2">
+          <LuMapPin
+            aria-hidden
+            className="mt-2 size-4 shrink-0 text-muted-foreground"
+          />
+          <MaterialSource material={material} size="large" />
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+          <ShortStockBadge material={material} />
+          <TrackingBadge material={material} />
+          <ExpiredConsumedBadge material={material} />
+          <PickedBadge
+            quantityPicked={material.quantityPicked}
+            quantityToPick={material.quantityToPick}
+          />
+        </div>
+        <PickedBreakdown
+          materialItemId={material.itemId}
+          pickedByItem={material.pickedByItem}
+        />
+        {row.issue || (onScrap && canScrapParts(material)) ? (
+          <div className="flex items-center gap-2">
+            {row.issue ? (
+              <Button
+                size="lg"
+                className="flex-1"
+                variant={row.isPrimaryIssue ? "primary" : "secondary"}
+                leftIcon={
+                  row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
+                }
+                isDisabled={disabled}
+                onClick={() => onIssue(material)}
+                aria-label={issueLabel(material)}
+              >
+                <Trans>Issue</Trans>
+              </Button>
+            ) : null}
+            <ScrapPartsButton
+              material={material}
+              onScrap={onScrap}
+              disabled={disabled}
               size="lg"
-              icon={<LuQrCode />}
-              isDisabled={disabled}
-              onClick={() => onIssue(material)}
             />
-          ) : row.issue ? (
-            <Button
-              size="lg"
-              className="shrink-0"
-              variant={row.isPrimaryIssue ? "primary" : "secondary"}
-              leftIcon={
-                row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
-              }
-              isDisabled={disabled}
-              onClick={() => onIssue(material)}
-              aria-label={issueLabel(material)}
-            >
-              <Trans>Issue</Trans>
-            </Button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </li>
     );
   };

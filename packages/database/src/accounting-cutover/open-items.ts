@@ -1087,11 +1087,21 @@ async function getInvoicedNotReceivedItems(
   return items;
 }
 
+/** The receipt lines that are a job's cost: SQL `job_receipt_line_references`,
+ *  the rule `job_wip_balance` reads. */
+function receiptLineJobs(companyId: string) {
+  return sql<{
+    jobId: string;
+    documentLineReference: string;
+  }>`job_receipt_line_references(${companyId})`.as("receiptJob");
+}
+
 /**
  * Work in progress: per job, its lines on the WIP account dated before the
- * cutover, as `close-job` sums them. Every job with a balance, whatever its
- * status, plus one item for the project and service cost on the account, so
- * the account's opening balance is all of its cost.
+ * cutover, as `job_wip_balance` sums them: the lines documented against the
+ * job and the lines of its outside processing receipts. Every job with a
+ * balance, whatever its status, plus one item for the project and service
+ * cost on the account, so the account's opening balance is all of its cost.
  */
 async function getWorkInProgressItems(
   db: CutoverDb,
@@ -1099,6 +1109,7 @@ async function getWorkInProgressItems(
   cutoverDate: string,
   defaults: AccountDefaults
 ): Promise<DraftItem[]> {
+  const lineJobId = sql<string>`coalesce("job"."id", "receiptJob"."jobId")`;
   const rows = await db
     .selectFrom("journalLine as line")
     .innerJoin("journal", (join) =>
@@ -1106,20 +1117,28 @@ async function getWorkInProgressItems(
         .onRef("journal.id", "=", "line.journalId")
         .onRef("journal.companyId", "=", "line.companyId")
     )
-    .innerJoin("job", (join) =>
+    .leftJoin("job", (join) =>
       join
         .onRef("job.id", "=", "line.documentId")
         .onRef("job.companyId", "=", "line.companyId")
     )
+    .leftJoin(receiptLineJobs(companyId), (join) =>
+      join.onRef(
+        "receiptJob.documentLineReference",
+        "=",
+        "line.documentLineReference"
+      )
+    )
     .select([
-      "job.id as jobId",
+      lineJobId.as("jobId"),
       sql<number>`sum("line"."amount")`.as("balance")
     ])
     .where("line.companyId", "=", companyId)
     .where("line.accountId", "=", defaults.workInProgressAccount)
     .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
     .where("journal.postingDate", "<", cutoverDate)
-    .groupBy("job.id")
+    .where(lineJobId, "is not", null)
+    .groupBy(lineJobId)
     .execute();
   const items: DraftItem[] = rows.map((row) => ({
     openItemType: "Work in Progress",
@@ -1152,12 +1171,20 @@ async function getWorkInProgressItems(
           .onRef("job.id", "=", "line.documentId")
           .onRef("job.companyId", "=", "line.companyId")
       )
+      .leftJoin(receiptLineJobs(companyId), (join) =>
+        join.onRef(
+          "receiptJob.documentLineReference",
+          "=",
+          "line.documentLineReference"
+        )
+      )
       .select(sql<number>`coalesce(sum("line"."amount"), 0)`.as("balance"))
       .where("line.companyId", "=", companyId)
       .where("line.accountId", "=", defaults.workInProgressAccount)
       .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
       .where("journal.postingDate", "<", cutoverDate)
       .where("job.id", "is", null)
+      .where("receiptJob.jobId", "is", null)
       .executeTakeFirst(),
     db
       .selectFrom("revenueRecognitionSchedule")

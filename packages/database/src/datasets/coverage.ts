@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Dataset } from "./types.ts";
+
 /**
  * Row-count floors, so a tier that silently writes nothing fails. Counts are absolute
  * (bootstrap rows included). Floor = the smallest count any dataset produced
@@ -129,6 +131,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   materialFinish: 2,
   materialForm: 1,
   materialGrade: 3,
+  materialRequest: 2,
   materialSubstance: 2,
   materialType: 1,
   memo: 4,
@@ -264,8 +267,13 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierQuoteLinePrice: 17, // min 22
   supplierShipping: 11,
   supplierTax: 11,
+  supplierStage: 4,
   supplierType: 6,
   tag: 5,
+  // Indiana (motor) has one statewide authority and no local rate.
+  taxAuthority: 1,
+  taxCode: 3,
+  taxCodeComponent: 3,
   timeCardEntry: 6,
   timesheetEntry: 6, // min 8
   tool: 2,
@@ -316,6 +324,16 @@ export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
     projectPeg: 8
   }
 };
+
+/**
+ * The floors one dataset must meet. A walkthrough dataset (`Dataset.walkthrough`)
+ * is a single product by design, so it has none: the drift check still applies
+ * it and rolls it back, but counts nothing.
+ */
+export function coverageFloorsFor(dataset: Dataset): Record<string, number> {
+  if (dataset.walkthrough) return {};
+  return { ...COVERAGE_FLOORS, ...DATASET_COVERAGE_FLOORS[dataset.key] };
+}
 
 /**
  * `$1` = scratch company id. Group-scoped dimension rows are exact: the scratch

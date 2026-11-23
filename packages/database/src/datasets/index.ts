@@ -15,6 +15,7 @@ import { today } from "@internationalized/date";
 import type { PoolClient } from "pg";
 import { defense } from "./data/defense/index.ts";
 import { motor } from "./data/motor/index.ts";
+import { motorLine } from "./data/motor-line/index.ts";
 import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
 import { satellite } from "./data/satellite/index.ts";
@@ -38,6 +39,7 @@ export const DATASETS: Record<DatasetKey, Dataset> = {
   robotics,
   precision,
   motor,
+  "motor-line": motorLine,
   defense
 };
 

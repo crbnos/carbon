@@ -795,9 +795,14 @@ export async function acceptInvite(
     email &&
     invite.data.email.trim().toLowerCase() !== email.trim().toLowerCase()
   ) {
-    throw new Error(
-      "Invite code does not match email. Please logout and try again."
-    );
+    return {
+      data: null,
+      error: {
+        code: "email_mismatch" as const,
+        message:
+          "Invite code does not match email. Please logout and try again."
+      }
+    };
   }
 
   const user = await getUserByEmail(invite.data.email);
@@ -1000,7 +1005,9 @@ export async function acceptInvite(
         }
       ]);
     } catch (err) {
-      logger.warn("[invite] audit write skipped for accept", { error: err });
+      logger.warning("Audit write skipped for an accepted invite", {
+        error: err
+      });
     }
 
     // The invite is accepted by now: a billing failure must not report it as
@@ -2490,7 +2497,7 @@ export async function recordItarCertification(
       }
     ]);
   } catch (err) {
-    logger.warn("[acknowledge] audit write skipped for {type} cert", {
+    logger.warning("Audit write skipped for a {type} cert acknowledgement", {
       type: certification.type,
       error: err
     });

@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ORPCError } from "@orpc/server";
 import { describe, expect, it } from "vitest";
-import { formatValidationIssues } from "./validation-issues";
+import { formatValidationIssues, withNamedFields } from "./validation-issues";
 
 describe("formatValidationIssues", () => {
   it("names each field and its problem", () => {
@@ -40,5 +41,35 @@ describe("formatValidationIssues", () => {
     expect(formatValidationIssues([{ message: "bad payload" }])).toBe(
       "Input validation failed — bad payload"
     );
+  });
+});
+
+describe("withNamedFields", () => {
+  it("names the failing fields in the message and keeps the issues", () => {
+    const issues = [
+      { path: ["defaultMethodType"], message: "Invalid option" },
+      { path: ["unitOfMeasureCode"], message: "Expected string" }
+    ];
+    const named = withNamedFields(
+      new ORPCError("BAD_REQUEST", {
+        message: "Input validation failed",
+        data: { issues }
+      })
+    ) as ORPCError<string, unknown>;
+    expect(named.message).toBe(
+      "Input validation failed — defaultMethodType: Invalid option; unitOfMeasureCode: Expected string"
+    );
+    expect(named.data).toEqual({
+      issues,
+      category: "validation",
+      fields: ["defaultMethodType", "unitOfMeasureCode"]
+    });
+  });
+
+  it("leaves any other error alone", () => {
+    const refusal = new ORPCError("CONFLICT", {
+      data: { category: "conflict" }
+    });
+    expect(withNamedFields(refusal)).toBe(refusal);
   });
 });

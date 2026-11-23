@@ -4,7 +4,7 @@
 
 import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import {
   type Database,
   fetchAllByIds,
@@ -16,6 +16,7 @@ import {
   convertUnitPrice,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   decideApprovalRequest,
@@ -40,12 +41,13 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
+  colorNames,
   datetime,
-  deriveRate,
   groupBy,
   isUniqueViolation,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
+  round,
   SCALE,
   sanitize,
   taxableBase,
@@ -54,12 +56,30 @@ import {
 } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  getExchangeRate,
+  getTaxCodeInputs
+} from "~/modules/accounting/accounting.service";
+import {
+  decideLineTax,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import {
   postReceipt,
   RECEIPT_VOID_STOCK_MOVED_ERROR
 } from "~/modules/inventory/inventory.service";
+import { getMethodTreeArray } from "~/modules/items/items.service";
+import {
+  classifyPlanningOrders,
+  invalidOrderDateMessage,
+  nothingOrderedMessage,
+  pastStartRefusalMessages,
+  type RefusedPlanningOrder
+} from "~/modules/production/production.models";
 import {
   assignPlanningActions,
   dismissPlanningActions,
@@ -68,6 +88,7 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
+import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
   checkProjectBudget,
@@ -78,7 +99,14 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
-import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
+import {
+  incoterms,
+  optionalTiptapDoc,
+  purchaseOrderExternalNotesNote,
+  purchaseOrderLineDescriptionNote,
+  rfqLineDescriptionNote,
+  supplierQuoteLineDescriptionNote
+} from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
@@ -91,7 +119,10 @@ import { ERP_URL, path } from "~/utils/path";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
+  findMergeablePlanningLine,
   findPlanningPurchaseOrder,
+  getRfqLinesFromMethod,
+  groupRequestQuoteLines,
   isIsoDate,
   isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
@@ -110,6 +141,7 @@ import {
   PURCHASE_ORDER_REOPEN_STATUSES,
   plannedOrderValidator,
   planningPurchaseOrderWeek,
+  promisedDateOf,
   purchaseOrderDeleteRefusal,
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteApprovalRefusal,
@@ -123,6 +155,8 @@ import {
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
+  type RfqLineFromMethod,
+  requestQuoteValidator,
   selectedLineSchema,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
@@ -897,7 +931,9 @@ export const recordSupplierQuoteLinkVisit = defineServiceFn({
  *
  * @remarks
  * Every line must be the quote's. Writes the price of each selected quantity
- * (the tax rate derived from the amounts), sets the quote Active with who
+ * with its tax (`supplierQuotePriceTaxes`: a code's rate, else the rate
+ * derived from the amounts; a Reverse Charge code refuses a tax amount),
+ * sets the quote Active with who
  * submitted it, stamps the link, and notifies the company's supplier-quote
  * group. A failed notification is logged; the submission stands.
  */
@@ -933,10 +969,11 @@ export const submitDigitalSupplierQuote = defineServiceFn({
     // The line ids come from the link's visitor and every write below runs as
     // the service role: each line must be this quote's.
     const lineIds = [...new Set(prices.map(({ lineId }) => lineId))];
+    const itemByLine = new Map<string, string | null>();
     if (lineIds.length > 0) {
       const owned = await client
         .from("supplierQuoteLine")
-        .select("id")
+        .select("id, itemId")
         .eq("supplierQuoteId", supplierQuoteId)
         .eq("companyId", companyId)
         .in("id", lineIds);
@@ -950,13 +987,14 @@ export const submitDigitalSupplierQuote = defineServiceFn({
       if (owned.data.length !== lineIds.length) {
         return ctx.error("validation", "Invalid selected lines data");
       }
+      for (const line of owned.data) itemByLine.set(line.id, line.itemId);
     }
 
     const existing =
       lineIds.length > 0
         ? await client
             .from("supplierQuoteLinePrice")
-            .select("supplierQuoteLineId, quantity")
+            .select("supplierQuoteLineId, quantity, taxCodeId")
             .eq("supplierQuoteId", supplierQuoteId)
             .in("supplierQuoteLineId", lineIds)
         : { data: [], error: null };
@@ -967,28 +1005,43 @@ export const submitDigitalSupplierQuote = defineServiceFn({
         existing.error
       );
     }
-    const stored = new Set(
-      existing.data.map((row) => `${row.supplierQuoteLineId}:${row.quantity}`)
+    const stored = new Map(
+      existing.data.map((row) => [
+        `${row.supplierQuoteLineId}:${row.quantity}`,
+        row.taxCodeId
+      ])
     );
+
+    // The share page collects amounts only. A price takes a code (its own,
+    // else the supplier's) at the code's rate; with none, the rate the
+    // amounts give over unit price × quantity + shipping.
+    const taxes = await service.supplierQuotePriceTaxes(client, {
+      companyId,
+      supplierId: quote.supplierId,
+      date:
+        quote.quotedDate ??
+        datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
+      prices: prices.map(({ lineId, quantity, line }) => ({
+        itemId: itemByLine.get(lineId) ?? null,
+        storedTaxCodeId: stored.get(`${lineId}:${quantity}`),
+        supplierTaxAmount: line.supplierTaxAmount ?? 0,
+        base: taxableBase(
+          line.supplierUnitPrice ?? 0,
+          quantity,
+          line.supplierShippingCost ?? 0
+        )
+      }))
+    });
+    if (taxes.error !== null) return ctx.error("validation", taxes.error);
 
     const now = datetime.timestamp();
     const userId = quote.createdBy;
-    const writes = prices.map(({ lineId, quantity, line }) => {
+    const writes = prices.map(({ lineId, quantity, line }, index) => {
       const fields = {
         supplierUnitPrice: line.supplierUnitPrice ?? 0,
         leadTime: line.leadTime ?? 0,
         supplierShippingCost: line.supplierShippingCost ?? 0,
-        supplierTaxAmount: line.supplierTaxAmount ?? 0,
-        // The share page collects amounts only: the rate is derived from the
-        // canonical denominator (unit price × quantity + shipping).
-        taxPercent: deriveRate(
-          line.supplierTaxAmount ?? 0,
-          taxableBase(
-            line.supplierUnitPrice ?? 0,
-            quantity,
-            line.supplierShippingCost ?? 0
-          )
-        )
+        ...taxes.data[index]
       };
       return stored.has(`${lineId}:${quantity}`)
         ? client
@@ -2171,6 +2224,8 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
     shippingMethodId: z.string().optional(),
     trackingNumber: z.string(),
     deliveryDate: z.string().optional(),
+    shippedDate: z.string().optional(),
+    expectedReceiptDate: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     receiptPromisedDate: z.string().optional(),
     dropShipment: z.boolean(),
@@ -3259,6 +3314,20 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       return ctx.error("notFound", "Purchase order not found");
     }
 
+    const line = await ctx.asSystem.pg
+      .selectFrom("purchaseOrderLine")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .limit(1)
+      .executeTakeFirst();
+    if (!line) {
+      return ctx.error(
+        "rule",
+        "Add at least one line before you finalize this purchase order."
+      );
+    }
+
     if (notification === "Email" && !supplierContact) {
       return ctx.error("validation", "Supplier contact is required for email");
     }
@@ -3284,6 +3353,12 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       { kind: "supplier", id: purchaseOrder.data.supplierId }
     );
     if (contactRule) return ctx.error("rule", contactRule);
+
+    const promisedDateRule = await service.requiredPromisedDateRefusal(
+      ctx,
+      purchaseOrderId
+    );
+    if (promisedDateRule) return ctx.error("rule", promisedDateRule);
 
     if (
       purchaseOrder.data.supplierId &&
@@ -3588,6 +3663,15 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       );
     }
 
+    // The date can be cleared while the order waits for approval.
+    if (decision === "Approved") {
+      const promisedDateRule = await service.requiredPromisedDateRefusal(
+        ctx,
+        purchaseOrderId
+      );
+      if (promisedDateRule) return ctx.error("rule", promisedDateRule);
+    }
+
     if (
       decision === "Approved" &&
       input.notification === "Email" &&
@@ -3804,7 +3888,13 @@ export const confirmReturnOrder = defineServiceFn({
  * order already has on the same date adds to that line. The quantity is
  * raised to the supplier part's minimum; the price is the supplier part's,
  * converted at today's rate (refused for a currency with no rate); the tax is
- * the supplier's. An item whose purchasing is blocked is skipped. The orders
+ * the supplier's. An item whose purchasing is blocked is skipped. An order
+ * with a date that is not a real `YYYY-MM-DD` day is named in `errors`. An
+ * order that starts (its order date, else its due date less the item's lead
+ * time) before the location's today is refused and listed in `refusedOrders`
+ * (item, segment and its index in the item's `orders`); the item's other
+ * orders are still placed. An order joins an existing line only
+ * when the line has the same conversion factor. The orders
  * raised keep their planning approval bypass, the supply forecast is
  * recorded, and the Order suggestions they answer are settled.
  *
@@ -3851,7 +3941,7 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     const supplierIds = new Set<string>();
-    const itemIds = new Set<string>();
+    const itemIds = new Set(itemsToOrder.map((item) => item.id));
     const periodIds = new Set<string>();
     const allSupplyForecasts: Array<{
       itemId: string;
@@ -3882,12 +3972,99 @@ export const orderPlannedPurchases = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       purchaseOrderLineId: string;
+      quantity: number;
+      dueDate: string | null;
+      planningActionId?: string;
     }[] = [];
 
+    // Weeks are counted from the location's today, as the planning grid's are.
+    const asOf = datetime.today(
+      await getLocationTimeZone(client, locationId, companyId)
+    );
+    const today = asOf.toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
+    const invalidCountByItem = new Map<string, number>();
+
+    // Whether purchasing is blocked, and the lead time an order with no order
+    // date is dated by, for every item ordered, in one read.
+    const purchasingRows = await client
+      .from("itemReplenishment")
+      .select("itemId, purchasingBlocked, leadTime")
+      .in(
+        "itemId",
+        itemsToOrder.map((item) => item.id)
+      )
+      .eq("companyId", companyId);
+    const purchasingByItem = new Map(
+      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+    );
+
+    // Every id comes from the caller and the writes bypass RLS: the location
+    // and items must be this company's (supplyForecast upserts on
+    // (itemId, locationId, periodId, planningSegmentId) alone).
+    const location = await refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
+    if (location) return location;
+    const ownedItems = await client
+      .from("item")
+      .select("id, readableId, readableIdWithRevision, taxable")
+      .in("id", Array.from(itemIds))
+      .eq("companyId", companyId);
+    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
+      logger.error("Planning order references records outside company", {
+        companyId,
+        userId,
+        locationId,
+        itemIds: Array.from(itemIds),
+        error: ownedItems.error
+      });
+      return ctx.error("notFound", "Item not found");
+    }
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const readableIdOf = (itemId: string) =>
+      readableIdByItem.get(itemId) ?? itemId;
     for (const item of itemsToOrder) {
-      itemIds.add(item.id);
+      // Nothing of such an item can be placed, so no PO is raised for it.
+      const replenishment = purchasingByItem.get(item.id);
+      if (purchasingRows.error || !replenishment) {
+        errors.push(
+          `Failed to retrieve purchasing data for ${readableIdOf(item.id)}: ${
+            purchasingRows.error?.message ?? "No replenishment record"
+          }`
+        );
+        continue;
+      }
+      if (replenishment.purchasingBlocked) {
+        errors.push(`Purchasing is blocked for ${readableIdOf(item.id)}`);
+        continue;
+      }
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        replenishment.leadTime
+      );
+      if (invalid.length > 0) {
+        invalidCountByItem.set(
+          item.id,
+          (invalidCountByItem.get(item.id) ?? 0) + invalid.length
+        );
+      }
+      refusedOrders.push(
+        ...past.map((index) => ({
+          itemId: item.id,
+          planningSegmentId: item.planningSegmentId,
+          index
+        }))
+      );
       let itemHasUsableOrder = false;
-      for (const order of item.orders) {
+      for (const index of placeable) {
+        const order = item.orders[index]!;
         if (order.supplierId) supplierIds.add(order.supplierId);
         if (order.periodId) periodIds.add(order.periodId);
         if (order.supplierId && order.periodId) {
@@ -3902,34 +4079,20 @@ export const orderPlannedPurchases = defineServiceFn({
           itemHasUsableOrder = true;
         }
       }
-      if (!itemHasUsableOrder) {
+      if (placeable.length > 0 && !itemHasUsableOrder) {
         errors.push(
-          `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
+          `${readableIdOf(item.id)} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
         );
       }
     }
 
-    // Every id comes from the caller and the writes bypass RLS: the location
-    // and items must be this company's (supplyForecast upserts on
-    // (itemId, locationId, periodId, planningSegmentId) alone).
-    const location = await refuseUnlessOwned(ctx, "location", {
-      id: locationId
-    });
-    if (location) return location;
-    const ownedItems = await client
-      .from("item")
-      .select("id")
-      .in("id", Array.from(itemIds))
-      .eq("companyId", companyId);
-    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
-      logger.error("Planning order references records outside company", {
-        companyId,
-        userId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        error: ownedItems.error
-      });
-      return ctx.error("notFound", "Item not found");
+    const pastStartErrors = pastStartRefusalMessages(
+      refusedOrders,
+      readableIdOf,
+      today
+    );
+    for (const [itemId, count] of invalidCountByItem) {
+      errors.push(invalidOrderDateMessage(readableIdOf(itemId), count));
     }
 
     // An order in a project segment is charged to that project: the PO
@@ -4017,19 +4180,40 @@ export const orderPlannedPurchases = defineServiceFn({
     // Readable ids too, so the client can present a clickable toast.
     const poCache = new Map<string, { id: string; readableId: string }>();
 
-    // Whether purchasing is blocked, for every item ordered, in one read.
-    const purchasingRows = await client
-      .from("itemReplenishment")
-      .select("itemId, purchasingBlocked")
-      .in("itemId", Array.from(itemIds))
-      .eq("companyId", companyId);
-    const purchasingByItem = new Map(
-      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+    // The tax a new line takes, by the resolver's own rule
+    // (`decideLineTax`): the supplier's tax code, else its bare percent,
+    // and none for a non-taxable item. Read once for the whole batch.
+    const taxDate = asOf.toString();
+    const itemTaxable = new Map(
+      ownedItems.data.map((item) => [item.id, item.taxable])
     );
-
-    // Weeks are counted from the location's today, as the planning grid's are.
-    const asOf = datetime.today(
-      await getLocationTimeZone(client, locationId, companyId)
+    const supplierTaxes = await client
+      .from("supplierTax")
+      .select("supplierId, taxCodeId")
+      .in("supplierId", Array.from(supplierIds))
+      .eq("companyId", companyId);
+    const taxCodeIds = Array.from(
+      new Set(
+        (supplierTaxes.data ?? [])
+          .map((row) => row.taxCodeId)
+          .filter((id): id is string => !!id)
+      )
+    );
+    // A retired code a supplier still names keeps resolving, as everywhere.
+    const taxCodes = await getTaxCodeInputs(client, companyId, taxCodeIds);
+    if (supplierTaxes.error || taxCodes.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve supplier tax codes from database",
+        supplierTaxes.error ?? taxCodes.error
+      );
+    }
+    const taxCodeById = taxCodes.data;
+    const supplierTaxCode = new Map(
+      (supplierTaxes.data ?? []).map((row) => [
+        row.supplierId,
+        row.taxCodeId ? (taxCodeById.get(row.taxCodeId) ?? null) : null
+      ])
     );
 
     // Every open PO an order may join, with its lines, in one read: the
@@ -4039,7 +4223,7 @@ export const orderPlannedPurchases = defineServiceFn({
     const openPurchaseOrders = await client
       .from("purchaseOrder")
       .select(
-        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, conversionFactor, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
       )
       .eq("companyId", companyId)
       .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -4149,22 +4333,6 @@ export const orderPlannedPurchases = defineServiceFn({
             (sp) => sp.itemId === itemId && sp.supplierId === supplierId
           );
 
-          const purchasingError =
-            purchasingRows.error ??
-            (purchasingByItem.has(itemId)
-              ? null
-              : { message: "No replenishment record" });
-          if (purchasingError) {
-            errors.push(
-              `Failed to retrieve purchasing data for item ${itemId}: ${purchasingError.message}`
-            );
-            continue;
-          }
-          if (purchasingByItem.get(itemId)?.purchasingBlocked) {
-            errors.push(`Purchasing is blocked for item ${itemId}`);
-            continue;
-          }
-
           const minimumOrderQuantity = supplierPart?.minimumOrderQuantity ?? 0;
           const adjustedQuantity =
             minimumOrderQuantity > 0 && order.quantity < minimumOrderQuantity
@@ -4178,12 +4346,10 @@ export const orderPlannedPurchases = defineServiceFn({
           const requiredDate = order.dueDate ?? null;
           const isGroupSegment =
             segments.planningGroupIds.has(planningSegmentId);
-          const existing = purchaseOrder.purchaseOrderLine.find(
-            (line) =>
-              line.itemId === itemId &&
-              line.requiredDate === requiredDate &&
-              (line.planningGroupId ?? line.projectId ?? "") ===
-                planningSegmentId
+          const conversionFactor = supplierPart?.conversionFactor ?? 1;
+          const existing = findMergeablePlanningLine(
+            purchaseOrder.purchaseOrderLine,
+            { itemId, requiredDate, planningSegmentId, conversionFactor }
           );
           let purchaseOrderLineId = existing?.id;
 
@@ -4209,7 +4375,7 @@ export const orderPlannedPurchases = defineServiceFn({
               .eq("companyId", companyId);
             if (updateLine.error) {
               errors.push(
-                `Failed to update PO line for item ${itemId}: ${updateLine.error.message}`
+                `Failed to update PO line for ${readableIdOf(itemId)}: ${updateLine.error.message}`
               );
               continue;
             }
@@ -4246,8 +4412,18 @@ export const orderPlannedPurchases = defineServiceFn({
                     { currencyCode, exchangeRate: purchaseOrder.exchangeRate }
                   )
                 : 0;
-            const taxPercent = supplier.taxPercent ?? 0;
-            // supplier.taxPercent is a 0..1 fraction; the amount follows the
+            const tax = decideLineTax({
+              source: "purchase",
+              taxExempt: false,
+              taxExemptionReason: null,
+              itemTaxable: itemTaxable.get(itemId) ?? true,
+              locationTaxCode: null,
+              partyTaxCode: supplierTaxCode.get(supplierId) ?? null,
+              fallbackTaxPercent: Number(supplier.taxPercent ?? 0),
+              date: taxDate
+            });
+            const taxPercent = round(tax.taxPercent);
+            // taxPercent is a 0..1 fraction; the amount follows the
             // canonical denominator. Shipping is 0 on this path.
             const supplierTaxAmount = applyRate(
               taxableBase(supplierUnitPrice, adjustedQuantity, 0),
@@ -4264,9 +4440,10 @@ export const orderPlannedPurchases = defineServiceFn({
                 supplierPart?.supplierUnitOfMeasureCode ??
                 order.unitOfMeasureCode,
               inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
-              conversionFactor: supplierPart?.conversionFactor ?? 1,
+              conversionFactor,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
+              taxCodeId: tax.taxCodeId ?? undefined,
               taxPercent,
               supplierTaxAmount,
               supplierShippingCost: 0,
@@ -4283,7 +4460,7 @@ export const orderPlannedPurchases = defineServiceFn({
             });
             if (createLine.error) {
               errors.push(
-                `Failed to create PO line for item ${itemId}: ${createLine.error.message}`
+                `Failed to create PO line for ${readableIdOf(itemId)}: ${createLine.error.message}`
               );
               continue;
             }
@@ -4295,6 +4472,7 @@ export const orderPlannedPurchases = defineServiceFn({
               planningGroupId: isGroupSegment ? planningSegmentId : null,
               requiredDate,
               purchaseQuantity: adjustedQuantity,
+              conversionFactor,
               supplierUnitPrice,
               supplierShippingCost: 0,
               taxPercent,
@@ -4307,14 +4485,16 @@ export const orderPlannedPurchases = defineServiceFn({
             itemId,
             periodId: order.periodId,
             planningSegmentId,
-            purchaseOrderLineId: purchaseOrderLineId!
+            purchaseOrderLineId: purchaseOrderLineId!,
+            quantity: adjustedQuantity * conversionFactor,
+            dueDate: order.dueDate ?? null,
+            planningActionId: order.planningActionId
           });
           allSupplyForecasts.push({
             itemId,
             locationId,
             sourceType: "Purchase Order",
-            forecastQuantity:
-              order.quantity * (supplierPart?.conversionFactor ?? 1),
+            forecastQuantity: adjustedQuantity * conversionFactor,
             periodId: order.periodId,
             planningSegmentId,
             companyId,
@@ -4323,6 +4503,45 @@ export const orderPlannedPurchases = defineServiceFn({
           });
         }
       }
+    }
+
+    // Settled as soon as the lines exist, to keep short the window in which an
+    // MRP run could net a line and the settle then take it off again.
+    const warnings: string[] = [];
+    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
+      companyId,
+      locationId,
+      userId,
+      type: "Order",
+      ordered
+    });
+    if (settled.error) {
+      // The PO lines stand; the suggestions clear on the next MRP run.
+      logger.error("Failed to settle ordered planning actions", {
+        companyId,
+        locationId,
+        error: settled.error
+      });
+      warnings.push(
+        "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
+      );
+    } else if (segments.planningGroupIds.size > 0) {
+      // A grouped Order's pegs move to the PO lines that answered it. A
+      // failure leaves them on the action; the next MRP run re-pegs.
+      await moveActionPegsToSupply(ctx.asSystem.pg, {
+        companyId,
+        userId,
+        moves: pegMovesForSettledActions(
+          settled.data ?? [],
+          ordered.map((entry) => ({
+            supplyId: entry.purchaseOrderLineId,
+            quantity: entry.quantity,
+            dueDate: entry.dueDate
+          })),
+          "Purchase Order Line",
+          segments.planningGroupIds
+        )
+      });
     }
 
     if (allSupplyForecasts.length > 0) {
@@ -4334,8 +4553,12 @@ export const orderPlannedPurchases = defineServiceFn({
         });
       if (forecasts.error) {
         const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
-        logger.error(message, { companyId, locationId });
-        errors.push(message);
+        logger.error("Failed to insert supply forecasts", {
+          companyId,
+          locationId,
+          error: forecasts.error
+        });
+        warnings.push(message);
       }
     }
 
@@ -4355,85 +4578,33 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
-      companyId,
-      locationId,
-      userId,
-      type: "Order",
-      ordered
-    });
-    if (settled.error) {
-      // The PO lines stand; the suggestions clear on the next MRP run.
-      logger.error("Failed to settle ordered planning actions", {
-        companyId,
-        locationId,
-        error: settled.error
-      });
-    } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Order's pegs move to the PO line it created. A
-      // failure leaves them on the action; the next MRP run re-pegs.
-      const lineByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!lineByOrder.has(key)) {
-          lineByOrder.set(key, entry.purchaseOrderLineId);
-        }
-      }
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
-          return [];
-        }
-        const supplyId = lineByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
-          ? [
-              {
-                planningActionId: action.id,
-                supplyType: "Purchase Order Line" as const,
-                supplyId
-              }
-            ]
-          : [];
-      });
-      await moveActionPegsToSupply(ctx.asSystem.pg, {
-        companyId,
-        userId,
-        moves
-      });
-    }
-
-    if (errors.length > 0 && processedItems === 0) {
-      logger.error("Failed to process any planning orders", {
-        companyId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        supplierIds: Array.from(supplierIds),
-        periodIds: Array.from(periodIds),
-        errors
-      });
+    const problems = [...errors, ...pastStartErrors];
+    if (processedItems === 0) {
+      if (problems.length > 0)
+        logger.error("Failed to process any planning orders", {
+          companyId,
+          locationId,
+          itemIds: Array.from(itemIds),
+          supplierIds: Array.from(supplierIds),
+          periodIds: Array.from(periodIds),
+          errors
+        });
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        problems.length === 0
+          ? "There were no orders to place"
+          : nothingOrderedMessage("orders", problems, errors.length === 0)
       );
     }
 
     return {
       message:
-        processedItems === itemsToOrder.length
-          ? `Successfully processed all ${processedItems} items`
-          : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
-              errors.length
-            } errors occurred: ${errors.slice(0, 2).join("; ")}${
-              errors.length > 2 ? "..." : ""
+        problems.length === 0
+          ? `Successfully processed ${processedItems} orders`
+          : `Processed ${processedItems} orders. ${
+              problems.length
+            } errors occurred: ${problems.slice(0, 2).join("; ")}${
+              problems.length > 2 ? "..." : ""
             }`,
       processedItems,
       totalItems: itemsToOrder.length,
@@ -4441,6 +4612,8 @@ export const orderPlannedPurchases = defineServiceFn({
       purchaseOrders: Array.from(
         new Map(Array.from(poCache.values()).map((po) => [po.id, po])).values()
       ),
+      refusedOrders,
+      warnings,
       errors: errors.length > 0 ? errors : undefined
     };
   }
@@ -4513,7 +4686,7 @@ export const updatePlanningPurchaseOrderLine = defineServiceFn({
     }
     if (
       line.field === "dueDate" &&
-      service.promisedDateOf({
+      promisedDateOf({
         promisedDate: target.data.promisedDate,
         receiptPromisedDate:
           target.data.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate
@@ -4744,7 +4917,7 @@ export const applyPlanningActions = defineServiceFn({
       }
       const datePromised =
         (row.type === "Expedite" || row.type === "Defer") &&
-        service.promisedDateOf(line) !== null;
+        promisedDateOf(line) !== null;
       if (
         !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
         datePromised
@@ -6373,7 +6546,8 @@ export const updateSupplierTax = defineServiceFn({
       .nullable()
       .optional(),
     taxExemptionCertificateNumber: z.string().optional(),
-    taxExemptionCertificatePath: z.string().nullable().optional()
+    taxExemptionCertificatePath: z.string().nullable().optional(),
+    taxCodeId: z.string().optional()
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -6384,6 +6558,67 @@ export const updateSupplierTax = defineServiceFn({
         payload(ctx, input).forUpdate() as never
       )
     );
+  }
+});
+
+/**
+ * Assign a tax code to suppliers
+ *
+ * @remarks
+ * Sets the tax code (`supplierTax.taxCodeId`) of each supplier to one active
+ * tax code of the company. New purchase lines for these suppliers default to
+ * it.
+ *
+ * @param ids - The suppliers to update.
+ * @param taxCodeId - An active tax code of the company.
+ *
+ * @mcp
+ */
+export const assignSupplierTaxCode = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()),
+    taxCodeId: z.string().min(1, { message: "Select a tax code" })
+  }),
+  permission: { update: "purchasing" },
+  async run(ctx, { ids, taxCodeId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const [taxCode, suppliers] = await Promise.all([
+      client
+        .from("taxCode")
+        .select("id")
+        .eq("id", taxCodeId)
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .maybeSingle(),
+      client
+        .from("supplier")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId)
+    ]);
+    if (taxCode.error) {
+      return ctx.error("internal", taxCode.error.message, taxCode.error);
+    }
+    if (!taxCode.data) return ctx.error("notFound", "Tax code not found");
+    if (suppliers.error) {
+      return ctx.error("internal", suppliers.error.message, suppliers.error);
+    }
+    const supplierIds = suppliers.data.map((supplier) => supplier.id);
+    if (supplierIds.length === 0) {
+      return ctx.error("notFound", "No suppliers found");
+    }
+
+    const upsert = await service.upsertSupplierTaxCodes(ctx.asSystem.supabase, {
+      supplierIds,
+      taxCodeId: taxCode.data.id,
+      companyId,
+      userId: ctx.auditUserId
+    });
+    if (upsert.error) {
+      return ctx.error("internal", upsert.error.message, upsert.error);
+    }
+    return { ids: supplierIds };
   }
 });
 
@@ -6414,7 +6649,7 @@ export const insertPurchaseOrder = defineServiceFn({
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
     notes: optionalTiptapDoc,
-    externalNotes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc.describe(purchaseOrderExternalNotesNote),
     customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },
@@ -6541,7 +6776,11 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
  * Create a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the order date; an empty `taxCodeId` keeps the sent
+ * percent with no code. A sent code sets the rate (its rate on the order
+ * date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -6563,7 +6802,10 @@ export const createPurchaseOrderLine = defineServiceFn({
     costCenterId: z.string().optional(),
     assetId: z.string().optional(),
     conversionFactor: z.number().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(purchaseOrderLineDescriptionNote),
     exchangeRate: z.number().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     jobId: z.string().optional(),
@@ -6575,6 +6817,12 @@ export const createPurchaseOrderLine = defineServiceFn({
     requiredDate: z.string().optional(),
     storageUnitId: z.string().optional(),
     supplierPartId: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers the line prints. Omitted on a new line: the supplier's choice, else the company default."
+      )
+      .optional(),
     supplierShippingCost: z.number().optional(),
     supplierTaxAmount: z.number().optional(),
     supplierUnitPrice: z.number().optional(),
@@ -6586,6 +6834,12 @@ export const createPurchaseOrderLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6593,11 +6847,34 @@ export const createPurchaseOrderLine = defineServiceFn({
       .optional()
   }),
   permission: { create: "purchasing" },
-  async run(ctx, { id: _id, ...input }) {
+  async run(ctx, { id: _id, ...fields }) {
     // Always a new line: an `id` would turn the write into an update of a
     // line on another order, past that order's own gate.
-    const held = await service.unreleasedChangeOrderRefusal(ctx, input.itemId);
+    const held = await service.unreleasedChangeOrderRefusal(ctx, fields.itemId);
     if (held) return held;
+    const jobId = await service.lineOperationJob(ctx, fields);
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
+    const client = ctx.asCaller.supabase;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    const tax = await service.resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: input.purchaseOrderId,
+      lineId: null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.purchaseQuantity ?? 0,
+        shippingCost: input.supplierShippingCost ?? 0,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -6605,11 +6882,18 @@ export const createPurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(
-            ctx.asCaller.supabase,
-            payload(ctx, input).forCreate() as never
+            client,
+            payload(ctx, {
+              ...input,
+              supplierTaxAmount: input.supplierTaxAmount ?? 0,
+              ...tax.data
+            }).forCreate() as never
           )
         ),
-      { restatesStatus: true }
+      {
+        restatesStatus: true,
+        setsPartNumberDisplay: input.partNumberDisplay !== undefined
+      }
     );
   }
 });
@@ -6618,7 +6902,10 @@ export const createPurchaseOrderLine = defineServiceFn({
  * Update a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A non-taxable item carries no tax, whatever was
+ * sent. A sent code (or the stored one, when only a percent is sent) sets
+ * the rate; an empty `taxCodeId` clears the code. A Reverse Charge code
+ * refuses a supplier tax amount.
  *
  * @mcp
  */
@@ -6641,7 +6928,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
       costCenterId: z.string().optional(),
       assetId: z.string().optional(),
       conversionFactor: z.number().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(purchaseOrderLineDescriptionNote),
       exchangeRate: z.number().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       jobId: z.string().optional(),
@@ -6653,6 +6943,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
       requiredDate: z.string().optional(),
       storageUnitId: z.string().optional(),
       supplierPartId: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe("Which part numbers the line prints. Omitted: unchanged.")
+        .optional(),
       supplierShippingCost: z.number().optional(),
       supplierTaxAmount: z.number().optional(),
       supplierUnitPrice: z.number().optional(),
@@ -6664,6 +6958,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -6672,7 +6967,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
     })
     .required({ id: true }),
   permission: { update: "purchasing" },
-  async run(ctx, input) {
+  async run(ctx, fields) {
+    const jobId = fields.jobOperationId
+      ? await service.lineOperationJob(ctx, fields)
+      : null;
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
     const line = await service.getPurchaseOrderLineForAmendment(ctx, input.id);
     if (line.error) {
       return ctx.error(
@@ -6684,6 +6984,25 @@ export const updatePurchaseOrderLine = defineServiceFn({
     if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
       return ctx.error("notFound", "Purchase order line not found");
     }
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await service.resolvePurchaseLineTax(ctx.asCaller.supabase, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: line.data.purchaseOrderId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.purchaseQuantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
       const held = await service.unreleasedChangeOrderRefusal(
         ctx,
@@ -6698,7 +7017,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
-            ...payload(ctx, input).forUpdate(),
+            ...payload(ctx, { ...input, ...tax.data }).forUpdate(),
             companyId: ctx.company.id
           } as never)
         ),
@@ -6711,14 +7030,22 @@ export const updatePurchaseOrderLine = defineServiceFn({
             itemId: input.itemId,
             assetId: input.assetId,
             purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
-            conversionFactor: input.conversionFactor
+            conversionFactor: input.conversionFactor,
+            // A field the edit sends empty is written as null.
+            ...("jobId" in input ? { jobId: input.jobId ?? null } : {}),
+            ...("jobOperationId" in input
+              ? { jobOperationId: input.jobOperationId ?? null }
+              : {})
           },
           dates: {
             requiredDate: input.requiredDate,
             promisedDate: input.promisedDate
           }
         },
-        restatesStatus: true
+        restatesStatus: true,
+        setsPartNumberDisplay:
+          input.partNumberDisplay !== undefined &&
+          input.partNumberDisplay !== line.data.partNumberDisplay
       }
     );
   }
@@ -6825,11 +7152,19 @@ export const createSupplier = defineServiceFn({
       .enum(["Active", "Inactive", "Pending", "Rejected"])
       .nullable()
       .optional(),
+    supplierStageId: z.string().optional(),
     supplierTypeId: z.string().optional(),
     accountManagerId: z.string().optional(),
     currencyCode: z.string().optional(),
     purchasingContactId: z.string().optional(),
     website: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers this supplier's new purchase order lines print. Null uses the company default."
+      )
+      .nullable()
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6865,11 +7200,19 @@ export const updateSupplier = defineServiceFn({
         .enum(["Active", "Inactive", "Pending", "Rejected"])
         .nullable()
         .optional(),
+      supplierStageId: z.string().optional(),
       supplierTypeId: z.string().optional(),
       accountManagerId: z.string().optional(),
       currencyCode: z.string().optional(),
       purchasingContactId: z.string().optional(),
       website: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe(
+          "Which part numbers this supplier's new purchase order lines print. Null clears the supplier's choice, so the company default applies."
+        )
+        .nullable()
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -7045,7 +7388,10 @@ export const createSupplierQuoteLine = defineServiceFn({
     itemId: z.string().optional(),
     accountId: z.string().optional(),
     costCenterId: z.string().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(supplierQuoteLineDescriptionNote),
     supplierPartId: z.string().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7093,7 +7439,10 @@ export const updateSupplierQuoteLine = defineServiceFn({
       itemId: z.string().optional(),
       accountId: z.string().optional(),
       costCenterId: z.string().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(supplierQuoteLineDescriptionNote),
       supplierPartId: z.string().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7361,7 +7710,7 @@ export const createPurchasingRFQLine = defineServiceFn({
   input: z.looseObject({
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -7394,7 +7743,7 @@ export const updatePurchasingRFQLine = defineServiceFn({
     id: z.string(),
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -7973,6 +8322,35 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for a supplier interaction (purchase order/supplier quote/RFQ) document
+ *
+ * @remarks
+ * A signed link to a file on the supplier interaction's Files tab, valid for an
+ * hour (`expiresIn`, in seconds). The response carries the link, never the
+ * file. `name` is the file's name as
+ * `purchasing_getSupplierInteractionDocuments` lists it, or the name given to
+ * `purchasing_createSupplierInteractionDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    interactionId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  permission: { view: "purchasing" },
+  async run(ctx, { interactionId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction",
+      entityId: interactionId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for a supplier interaction LINE document
  *
  * @mcp
@@ -7988,6 +8366,32 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a supplier interaction LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `purchasing_getSupplierInteractionLineDocuments`
+ * lists it, or the name given to
+ * `purchasing_createSupplierInteractionLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is
+ * not there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 
@@ -8298,5 +8702,286 @@ export const getLeaseRelatedDocuments = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Get a supplier stage
+ *
+ * @mcp read
+ */
+export const getSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { view: "purchasing" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages
+ *
+ * @mcp read
+ */
+export const getSupplierStages = defineServiceFn({
+  input: z.object({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "purchasing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSupplierStages(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages list
+ *
+ * @mcp read
+ */
+export const getSupplierStagesList = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "purchasing" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStagesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create a supplier stage
+ *
+ * @mcp
+ */
+export const createSupplierStage = defineServiceFn({
+  input: z.object({
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
+  permission: { create: "purchasing" },
+  async run(ctx, { name, color }) {
+    return unwrap(
+      ctx,
+      await service.insertSupplierStage(ctx.asCaller.supabase, {
+        name,
+        color: color ?? null,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Update a supplier stage
+ *
+ * @param color - A badge color. Leave out to keep the stage's color; null clears it.
+ *
+ * @mcp
+ */
+export const updateSupplierStage = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
+  permission: { update: "purchasing" },
+  async run(ctx, { id, name, color }) {
+    return unwrap(
+      ctx,
+      await service.updateSupplierStage(ctx.asCaller.supabase, {
+        id,
+        name,
+        color,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete a supplier stage. Its suppliers keep their Supplier Status and lose the stage.
+ *
+ * @mcp destructive
+ */
+export const deleteSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { delete: "purchasing" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.deleteSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * The parts an item's Request Quote offers: the item, and the parts to buy for
+ * one of it from its Active make method, or its latest version without one.
+ * Each has a supplier to start from: the preferred supplier, else the only
+ * supplier with a supplier part. Not published: it needs two modules, which
+ * the tool manifest cannot express.
+ */
+export const getRequestQuoteRows = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1) }),
+  // The Bill of Material is read as the caller, and parts_view guards it.
+  permission: { view: ["purchasing", "parts"] },
+
+  async run(ctx, { itemId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const item = await client
+      .from("item")
+      .select("id, readableIdWithRevision, name, replenishmentSystem")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .single();
+    if (item.error) return ctx.error("notFound", "Item not found");
+
+    const methods = await client
+      .from("makeMethod")
+      .select("id, status, version")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .order("version", { ascending: false });
+    if (methods.error) {
+      return ctx.error("internal", "Failed to read the methods", methods.error);
+    }
+    const method =
+      methods.data.find((m) => m.status === "Active") ?? methods.data[0];
+
+    let lines: RfqLineFromMethod[] = [];
+    if (method) {
+      const tree = await getMethodTreeArray(client, method.id);
+      if (tree.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the Bill of Material",
+          tree.error
+        );
+      }
+      lines = getRfqLinesFromMethod(
+        tree.data ?? [],
+        method.id,
+        item.data.readableIdWithRevision ?? ""
+      );
+    }
+
+    const itemIds = [itemId, ...lines.map((line) => line.itemId)];
+    const [replenishment, supplierParts] = await Promise.all([
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("itemReplenishment")
+          .select("itemId, preferredSupplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("itemId")
+      ),
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("supplierPart")
+          .select("itemId, supplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("id")
+      )
+    ]);
+    if (replenishment.error || supplierParts.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the suppliers",
+        replenishment.error ?? supplierParts.error
+      );
+    }
+
+    const preferred = new Map(
+      replenishment.data.map((r) => [r.itemId, r.preferredSupplierId])
+    );
+    const suppliersOf = new Map<string, string[]>();
+    for (const { itemId, supplierId } of supplierParts.data) {
+      suppliersOf.set(itemId, [...(suppliersOf.get(itemId) ?? []), supplierId]);
+    }
+    const defaultSupplierId = (id: string) => {
+      const supplierIds = suppliersOf.get(id);
+      return (
+        preferred.get(id) ??
+        (supplierIds?.length === 1 ? supplierIds[0] : null) ??
+        null
+      );
+    };
+
+    return {
+      item: {
+        id: item.data.id,
+        readableId: item.data.readableIdWithRevision ?? "",
+        name: item.data.name,
+        replenishmentSystem: item.data.replenishmentSystem,
+        defaultSupplierId: defaultSupplierId(itemId)
+      },
+      rows: lines.map((line) => ({
+        ...line,
+        defaultSupplierId: defaultSupplierId(line.itemId)
+      }))
+    };
+  }
+});
+
+/**
+ * Creates the Draft RFQs for an item or its Bill of Material, one per set of
+ * suppliers, in one transaction. Nothing goes to a supplier until each RFQ is
+ * finalized.
+ *
+ * @returns `rfqs`, the id and number of each new RFQ.
+ *
+ * @mcp
+ */
+export const requestQuoteFromItem = defineServiceFn({
+  input: requestQuoteValidator,
+  permission: { create: "purchasing" },
+
+  async run(ctx, { locationId, lines }) {
+    const companyId = ctx.company.id;
+    const rfqDate = datetime
+      .today(await getCompanyTimeZone(ctx.asSystem.supabase, companyId))
+      .toString();
+    // `run` turns the building block's not-found refusal into a 400 with its message.
+    const rfqs = await run(ctx, "requestQuoteFromItem", () =>
+      service.insertRequestQuoteRfqs(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        rfqDate,
+        locationId,
+        groups: groupRequestQuoteLines(lines)
+      })
+    );
+    if (rfqs instanceof CarbonError) return rfqs;
+    return { rfqs };
   }
 });

@@ -103,6 +103,12 @@ const productionSettingsForm = z.discriminatedUnion("intent", [
     "autoSelectMaterialWithoutPickingListToggle",
     "autoSelectMaterialWithoutPickingList"
   ),
+  settingsToggle("travelerLabelsToggle", "travelerLabels"),
+  settingsToggle(
+    "requireTrackedMaterialsIssuedToggle",
+    "requireTrackedMaterialsIssued"
+  ),
+  settingsToggle("autoPickingListOnReleaseToggle", "autoPickingListOnRelease"),
   serialNumberTimingValidator.extend({
     intent: z.literal("serialNumberTiming")
   }),
@@ -164,6 +170,21 @@ export default function ProductionSettingsRoute() {
         ? t`Material pre-selection enabled`
         : t`Material pre-selection disabled`;
     }
+    if (data.autoPickingListOnRelease !== undefined) {
+      return data.autoPickingListOnRelease
+        ? t`Picking lists on release enabled`
+        : t`Picking lists on release disabled`;
+    }
+    if (data.travelerLabels !== undefined) {
+      return data.travelerLabels
+        ? t`Traveler labels enabled`
+        : t`Traveler labels disabled`;
+    }
+    if (data.requireTrackedMaterialsIssued !== undefined) {
+      return data.requireTrackedMaterialsIssued
+        ? t`Required tracked parts enabled`
+        : t`Required tracked parts disabled`;
+    }
     if (data.serialNumberTiming !== undefined) {
       if (data.serialNumberTiming === "production") {
         return t`Serial numbers are drawn when a unit is produced`;
@@ -192,6 +213,11 @@ export default function ProductionSettingsRoute() {
     companySettings.autoStartOperationTimer ?? false;
   const autoSelectMaterialWithoutPickingList =
     companySettings.autoSelectMaterialWithoutPickingList ?? false;
+  const travelerLabels = companySettings.travelerLabels ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.requireTrackedMaterialsIssued ?? false;
+  const autoPickingListOnRelease =
+    companySettings.autoPickingListOnRelease ?? false;
 
   const handleTravelerMaterialsToggle = useCallback(
     (checked: boolean) => {
@@ -230,6 +256,39 @@ export default function ProductionSettingsRoute() {
           intent: "autoSelectMaterialWithoutPickingListToggle",
           enabled: String(checked)
         },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleTravelerLabelsToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "travelerLabelsToggle", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleRequireTrackedMaterialsIssuedToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        {
+          intent: "requireTrackedMaterialsIssuedToggle",
+          enabled: String(checked)
+        },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleAutoPickingListOnReleaseToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "autoPickingListOnReleaseToggle", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -409,6 +468,121 @@ export default function ProductionSettingsRoute() {
                   checked={autoSelectMaterialWithoutPickingList}
                   aria-label={t`Pre-select material`}
                   onCheckedChange={handleAutoSelectMaterialToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+            </VStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Line Flow</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Control how parts and labels move from the pick to the finished
+                unit.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VStack spacing={4}>
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {autoPickingListOnRelease ? (
+                      <Trans>Releasing a job creates its picking list</Trans>
+                    ) : (
+                      <Trans>Picking lists are created by hand</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {autoPickingListOnRelease ? (
+                      <Trans>
+                        Each released job gets one picking list. Its parts go to
+                        the lineside storage unit of each work center that uses
+                        them.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Turn on to create one picking list for each job when it
+                        is released.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={autoPickingListOnRelease}
+                  aria-label={t`Create picking lists on release`}
+                  onCheckedChange={handleAutoPickingListOnReleaseToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+
+              <Separator />
+
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {travelerLabels ? (
+                      <Trans>Travelers print at the pick</Trans>
+                    ) : (
+                      <Trans>Labels print at the first operation</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {travelerLabels ? (
+                      <Trans>
+                        Starting a picking list prints one traveler per unit.
+                        The first operation prints no label.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Completing a job's first operation prints its unit
+                        labels.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={travelerLabels}
+                  aria-label={t`Print travelers at the pick`}
+                  onCheckedChange={handleTravelerLabelsToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+
+              <Separator />
+
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {requireTrackedMaterialsIssued ? (
+                      <Trans>Tracked parts must be scanned in</Trans>
+                    ) : (
+                      <Trans>Tracked parts are not required</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {requireTrackedMaterialsIssued ? (
+                      <Trans>
+                        An operation cannot complete until every serial and
+                        batch part on it is issued.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Operators see a warning about unissued serial and batch
+                        parts and can still complete.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={requireTrackedMaterialsIssued}
+                  aria-label={t`Require tracked parts before completion`}
+                  onCheckedChange={handleRequireTrackedMaterialsIssuedToggle}
                   disabled={isToggling}
                 />
               </HStack>

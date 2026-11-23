@@ -2,11 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { useCallback, useMemo, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useOperatingSystem } from "../OperatingSystem";
 import { hasOpenDialog } from "../utils/dialog";
 import { isEditableTarget } from "../utils/keyboard";
+
+const logger = getLogger("react", "shortcut-keys");
 
 export type Modifier = "alt" | "ctrl" | "meta" | "shift" | "mod";
 
@@ -313,9 +316,9 @@ export function useShortcutKeyMap(
       for (const combo of resolveShortcutKeys(entry.shortcut, isMac)) {
         const canonical = canonicalCombo(combo);
         if (byCombo.has(canonical)) {
-          // biome-ignore lint/suspicious/noConsole: loud duplicate-combo warning is the point
-          console.warn(
-            `useShortcutKeyMap: duplicate combo "${combo}" (entry ${index}) — only fix is at the caller; duplicates are a bug, not a tiebreak.`
+          logger.warning(
+            "Duplicate shortcut combo; only the first runs, fix it at the caller",
+            { combo, entry: index }
           );
           continue;
         }

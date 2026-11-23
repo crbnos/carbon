@@ -2,7 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { LabelSize, ProductLabelItem } from "@carbon/utils";
+import {
+  DEFAULT_LABEL_DPI,
+  type LabelSize,
+  type ProductLabelItem
+} from "@carbon/utils";
 import {
   buildLabelVars,
   type LabelCompany
@@ -12,29 +16,64 @@ import { interpolateString, resolveTemplate } from "../template";
 import { getZplLabelGeometry, zplFieldData, zplLabelHeader } from "./utils";
 
 /**
- * Map a barcode symbology to its ZPL command for a given dot height. `scale`
- * sizes the QR module so it stays scannable across label stock sizes.
+ * Map a barcode symbology to its ZPL command for a given dot height.
+ * `qrModule` is the QR module size in dots (the ^BQ magnification); the caller
+ * fits it to the space the QR has (`fitQrModule`).
  */
 function zplBarcode(
   symbology: string,
   value: string,
   heightDots: number,
-  scale: number
+  qrModule: number,
+  barWidth: number
 ): string {
   switch (symbology) {
     case "code128":
-      return `^BCN,${heightDots},N,N,N${zplFieldData(value)}`;
+      return `^BY${barWidth}^BCN,${heightDots},N,N,N${zplFieldData(value)}`;
     case "datamatrix":
       return `^BXN,${Math.max(3, Math.floor(heightDots / 20))},200${zplFieldData(value)}`;
-    case "qrcode": {
+    case "qrcode":
       // `MA,` field-data prefix = error-correction level M + Automatic input
-      // mode. Module scales with the label rather than a fixed step.
-      const module = Math.max(2, Math.min(8, Math.round(4 * scale)));
-      return `^BQN,2,${module}${zplFieldData(value, "MA,")}`;
-    }
+      // mode.
+      return `^BQN,2,${qrModule}${zplFieldData(value, "MA,")}`;
     default: // pdf417
-      return `^BY2^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N${zplFieldData(value)}`;
+      return `^BY${barWidth}^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N${zplFieldData(value)}`;
   }
+}
+
+/** Level-M byte-mode capacities of QR versions 1-40. */
+const QR_BYTE_CAPACITY_M = [
+  14, 26, 42, 62, 84, 106, 122, 152, 180, 213, 251, 287, 331, 362, 412, 450,
+  504, 560, 624, 666, 711, 779, 857, 911, 997, 1059, 1125, 1190, 1264, 1370,
+  1452, 1538, 1628, 1722, 1809, 1911, 1989, 2099, 2213, 2331
+];
+
+/**
+ * Module count per side of the smallest level-M QR code that holds
+ * `byteLength` bytes. Values past version 40 (no QR holds them) are sized as
+ * version 40.
+ */
+export function qrModuleCount(byteLength: number): number {
+  const index = QR_BYTE_CAPACITY_M.findIndex((cap) => byteLength <= cap);
+  const version = index === -1 ? QR_BYTE_CAPACITY_M.length : index + 1;
+  return 17 + 4 * version;
+}
+
+/**
+ * The QR module size (the ^BQ magnification, 1-10) for `value` in a box of
+ * `maxWidth` x `maxHeight` dots: `preferred`, made smaller until the whole
+ * code fits, so the printer never crops it. A box too small even for module 1
+ * gets module 1, the smallest the printer prints.
+ */
+export function fitQrModule(
+  value: string,
+  preferred: number,
+  maxWidth: number,
+  maxHeight: number
+): number {
+  const modules = qrModuleCount(new TextEncoder().encode(value).length);
+  const fits = Math.floor(Math.min(maxWidth, maxHeight) / modules);
+  return Math.max(1, Math.min(preferred, fits, 10));
 }
 
 /**
@@ -44,7 +83,7 @@ function zplBarcode(
  * the PDF). Extension/custom blocks are skipped (no ZPL equivalent).
  *
  * Sizing is driven by `getZplLabelGeometry` so margins, fonts and the QR scale
- * continuously with the stock (203dpi, 2"x1" baseline), and the header carries
+ * continuously with the stock and the printer's dpi (2"x1" at 203dpi baseline), and the header carries
  * `^MNW` (continuous media) + `^CI28` (UTF-8).
  */
 export function generateProductLabelZPL(
@@ -56,7 +95,7 @@ export function generateProductLabelZPL(
   company?: LabelCompany | null
 ): string {
   const geometry = getZplLabelGeometry(labelSize);
-  const { widthDots, heightDots, hScale, scale, margin } = geometry;
+  const { dpi, widthDots, heightDots, hScale, scale, margin } = geometry;
 
   const titleFont = Math.round(25 * scale);
   const descFont = Math.round(18 * scale);
@@ -66,8 +105,13 @@ export function generateProductLabelZPL(
 
   // Top-right code slot, scaled to the stock. All dot values are rounded —
   // ZPL coordinates and sizes must be integers.
-  const qrModuleSize = Math.max(2, Math.min(8, Math.round(4 * scale)));
-  const qrPixelSize = qrModuleSize * 29;
+  // Caps and bar widths are in 203dpi dots, scaled to the printer's dpi.
+  const dpiScale = dpi / DEFAULT_LABEL_DPI;
+  const qrModuleSize = Math.max(
+    2,
+    Math.min(10, Math.round(8 * dpiScale), Math.round(4 * scale))
+  );
+  const barWidth = Math.max(2, Math.round(2 * dpiScale));
   const qrSlotSize = Math.round(Math.min(heightDots * 0.7, widthDots * 0.3));
   const qrStartX = widthDots - qrSlotSize - margin;
   // Reserve for the bottom entity-id line so flowed barcodes clear it.
@@ -143,7 +187,13 @@ export function generateProductLabelZPL(
               Math.min(Math.round(110 * scale), avail)
             );
             zpl += `^FO${margin},${bcY}`;
-            zpl += zplBarcode(block.symbology, value, bcHeight, scale);
+            zpl += zplBarcode(
+              block.symbology,
+              value,
+              bcHeight,
+              fitQrModule(value, qrModuleSize, widthDots - 2 * margin, avail),
+              barWidth
+            );
             yPosition = bcY + bcHeight;
           } else if (block.placement === "center") {
             // Centered square that flows below the text (e.g. QR-only label).
@@ -153,18 +203,37 @@ export function generateProductLabelZPL(
             const bcSize = Math.max(20, Math.min(qrSlotSize, avail));
             const bcX = Math.max(margin, Math.round((widthDots - bcSize) / 2));
             zpl += `^FO${bcX},${bcY}`;
-            zpl += zplBarcode(block.symbology, value, bcSize, scale);
+            zpl += zplBarcode(
+              block.symbology,
+              value,
+              bcSize,
+              fitQrModule(value, qrModuleSize, widthDots - 2 * margin, avail),
+              barWidth
+            );
             yPosition = bcY + bcSize;
           } else {
-            // Top-right slot. QR positions by its real pixel width.
+            // Top-right slot. A QR is fitted to the label below its top
+            // (a long traveler URL needs a bigger version, which at the
+            // stock's module size runs off the bottom), then positioned by
+            // its real pixel width.
             const isQr = block.symbology === "qrcode";
+            const bcY = Math.round(30 * hScale);
+            const module = fitQrModule(
+              value,
+              qrModuleSize,
+              widthDots - 2 * margin,
+              heightDots - bcY - margin
+            );
+            const qrPixelSize =
+              module * qrModuleCount(new TextEncoder().encode(value).length);
             const bcX = isQr ? widthDots - qrPixelSize - margin : qrStartX;
-            zpl += `^FO${bcX > 0 ? bcX : margin},${Math.round(30 * hScale)}`;
+            zpl += `^FO${bcX > 0 ? bcX : margin},${bcY}`;
             zpl += zplBarcode(
               block.symbology,
               value,
               Math.round(110 * scale),
-              scale
+              module,
+              barWidth
             );
           }
         }

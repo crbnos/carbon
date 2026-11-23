@@ -244,6 +244,46 @@ export const recost = defineServiceFn({
     expect(recost?.permission).toEqual({ module: "accounting", actions: ["update"] });
   });
 
+  it("reads a field's .describe() from a literal or a const string, imported or not", () => {
+    const [rename] = toolsFor({
+      "/m/notes.ts": `export const nameNote = "Suppliers see it.";`,
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+import { nameNote } from "./notes";
+const codeNote = "Printed on labels.";
+let loose = "Not a const.";
+/**
+ * Rename a job.
+ *
+ * @mcp
+ */
+export const renameJob = defineServiceFn({
+  input: z.object({
+    name: z.string().describe(nameNote),
+    code: z.string().describe(codeNote),
+    title: z.string().describe("Shown in lists."),
+    other: z.string().describe(loose)
+  }),
+  permission: { update: "production" },
+  async run(_ctx, input: { name: string; code: string; title: string; other: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(rename?.schema).toMatchObject({
+      properties: {
+        name: { type: "string", description: "Suppliers see it." },
+        code: { type: "string", description: "Printed on labels." },
+        title: { type: "string", description: "Shown in lists." },
+        other: { type: "string" }
+      }
+    });
+    expect(
+      (rename?.schema as { properties: Record<string, object> }).properties.other
+    ).not.toHaveProperty("description");
+  });
+
   it("refuses to publish a system-only function", () => {
     const published = PRODUCTION.replace(
       "/** Re-plan an item. Not published. */",

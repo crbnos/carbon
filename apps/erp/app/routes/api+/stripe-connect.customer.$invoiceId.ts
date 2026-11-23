@@ -10,7 +10,7 @@ import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.ser
 import { resolveStripeCustomer } from "~/modules/invoicing/invoicing.service";
 import { getDatabaseClient } from "~/services/database.server";
 
-const logger = getLogger("stripe-connect");
+const logger = getLogger("erp", "stripe-connect");
 
 export type { StripeCustomerResolution };
 

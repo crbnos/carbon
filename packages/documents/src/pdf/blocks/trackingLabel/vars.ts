@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getMESUrl } from "@carbon/env";
 import type { MergeToken } from "../../../template";
 import type { Company } from "../../../types";
 import type { LabelData } from "./types";
@@ -22,6 +23,9 @@ export function buildLabelVars(
     "label.trackingType": str(item?.trackingType),
     "label.number": str(item?.number),
     "label.trackedEntityId": str(item?.trackedEntityId),
+    "label.travelerUrl": item?.trackedEntityId
+      ? `${getMESUrl()}/x/traveler/${item.trackedEntityId}`
+      : "",
     "company.name": str(company?.name),
     "company.city": str(company?.city),
     "company.country": str(company?.countryCode)

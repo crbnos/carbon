@@ -23,6 +23,7 @@ import type {
   getSupplierQuoteLines,
   getSupplierQuotes,
   getSupplierReportContacts,
+  getSupplierStages,
   getSuppliers,
   getSupplierTypes
 } from "./purchasing.service";
@@ -151,6 +152,10 @@ export type SupplierQuoteLine = NonNullable<
 
 export type SupplierQuoteLinePrice = NonNullable<
   Awaited<ReturnType<typeof getSupplierQuoteLinePricesByQuoteId>>["data"]
+>[number];
+
+export type SupplierStage = NonNullable<
+  Awaited<ReturnType<typeof getSupplierStages>>["data"]
 >[number];
 
 export type SupplierType = NonNullable<

@@ -10,7 +10,6 @@ import {
   canApproveRequest,
   getLatestApprovalRequestForDocument
 } from "@carbon/ee/approvals.server";
-import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import {
   type LoaderFunctionArgs,
@@ -22,8 +21,6 @@ import { getChangeRequestReview } from "~/modules/projects/projects.service";
 import ChangeRequestReview from "~/modules/projects/ui/ChangeRequests/ChangeRequestReview";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "project-change-request");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -48,17 +45,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ]);
   if (review.error || !review.data) {
-    logger.error("Failed to load the change request", {
-      companyId,
-      projectId,
-      changeRequestId: crId,
-      error: review.error
-    });
     throw redirect(
       path.to.projectChangeRequests(projectId),
       await flash(
         request,
-        error(review.error, "Failed to load the change request")
+        error(review.error, "Failed to load the change request", {
+          projectId,
+          changeRequestId: crId
+        })
       )
     );
   }

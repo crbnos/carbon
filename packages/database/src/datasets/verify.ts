@@ -18,11 +18,7 @@
 
 import type { PoolClient } from "pg";
 import { seedCompanyReferenceData } from "./bootstrap.ts";
-import {
-  COVERAGE_FLOORS,
-  COVERAGE_SCOPES,
-  DATASET_COVERAGE_FLOORS
-} from "./coverage.ts";
+import { COVERAGE_SCOPES, coverageFloorsFor } from "./coverage.ts";
 import { applyDatasetTiers } from "./index.ts";
 import { quote } from "./sql.ts";
 import { type Dataset, resolveCompanyTimeZone } from "./types.ts";
@@ -68,19 +64,17 @@ export async function resolveCheckUserId(
 }
 
 /**
- * A tier that inserts nothing raises no error on its own. `datasetKey` adds
- * that dataset's own floors (`DATASET_COVERAGE_FLOORS`).
+ * A tier that inserts nothing raises no error on its own. The floors come from
+ * `coverageFloorsFor`, so a walkthrough dataset has none.
  */
 export async function findCoverageShortfalls(
   client: PoolClient,
   companyId: string,
-  datasetKey?: string
+  dataset: Dataset
 ): Promise<string[]> {
-  const floors: Record<string, number> = {
-    ...COVERAGE_FLOORS,
-    ...(datasetKey ? DATASET_COVERAGE_FLOORS[datasetKey] : undefined)
-  };
+  const floors = coverageFloorsFor(dataset);
   const tables = Object.keys(floors);
+  if (tables.length === 0) return [];
   const union = tables
     .map(
       (t) =>
@@ -102,6 +96,37 @@ export async function findCoverageShortfalls(
     }
   }
   return shortfalls;
+}
+
+/**
+ * Documents whose app inserts always write a rate (1 in the base currency).
+ * The column is nullable, so a seeded row without one inserts fine, and then
+ * every new line on it is refused ("… has no exchange rate").
+ */
+const RATED_DOCUMENT_TABLES = [
+  "quote",
+  "quoteLinePrice",
+  "salesOrder",
+  "salesOrderLine",
+  "purchaseOrder",
+  "supplierQuote",
+  "supplierQuoteLinePrice"
+] as const;
+
+export async function findMissingExchangeRates(
+  client: PoolClient,
+  companyId: string
+): Promise<string[]> {
+  const union = RATED_DOCUMENT_TABLES.map(
+    (t) =>
+      `SELECT '${t}' AS table_name, count(*)::int AS count FROM ${quote(t)} WHERE "companyId" = $1 AND "exchangeRate" IS NULL`
+  ).join(" UNION ALL ");
+  const res = await client.query<{ table_name: string; count: number }>(union, [
+    companyId
+  ]);
+  return res.rows
+    .filter((r) => r.count > 0)
+    .map((r) => `${r.table_name}: ${r.count} row(s) with no exchangeRate`);
 }
 
 /**
@@ -142,12 +167,22 @@ export async function verifyDataset(
       log
     });
 
-    const shortfalls = await findCoverageShortfalls(client, companyId, key);
+    const shortfalls = await findCoverageShortfalls(client, companyId, dataset);
     if (shortfalls.length > 0) {
       return {
         key,
         ok: false,
         error: `${shortfalls.length} table(s) below their row-count floor (datasets/coverage.ts):\n      ${shortfalls.join("\n      ")}`,
+        durationMs: performance.now() - startedAt
+      };
+    }
+
+    const missingRates = await findMissingExchangeRates(client, companyId);
+    if (missingRates.length > 0) {
+      return {
+        key,
+        ok: false,
+        error: `seeded documents the app cannot add lines to:\n      ${missingRates.join("\n      ")}`,
         durationMs: performance.now() - startedAt
       };
     }

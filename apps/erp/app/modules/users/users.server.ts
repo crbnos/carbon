@@ -400,7 +400,9 @@ export const revokeInvites = defineServiceFn({
           }))
         );
       } catch (err) {
-        logger.warn("[revoke-invite] audit write skipped", { error: err });
+        logger.warning("Audit write skipped for a revoked invite", {
+          error: err
+        });
       }
     }
     return { revoked: revoked.data.length };

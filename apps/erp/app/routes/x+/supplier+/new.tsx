@@ -58,14 +58,14 @@ export async function action({ request }: ActionFunctionArgs) {
           createSupplier,
           await flash(
             request,
-            error(createSupplier.error, createSupplier.error.message)
+            error(createSupplier.error, "Failed to create the supplier")
           )
         )
       : redirect(
           path.to.suppliers,
           await flash(
             request,
-            error(createSupplier.error, createSupplier.error.message)
+            error(createSupplier.error, "Failed to create the supplier")
           )
         );
   }

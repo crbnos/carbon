@@ -188,6 +188,75 @@ export function untrackedUnscrapRefusal(item: {
   return `${item.readableIdWithRevision ?? "This item"} is ${wording.tracked.toLowerCase()}: unscrap the scrapped ${wording.unit}, or add the stock to a ${wording.unit} with a positive adjustment`;
 }
 
+type ShipmentTag = {
+  status: string | null;
+  attributes: unknown;
+};
+
+function tagLineId(tag: { attributes: unknown }): unknown {
+  return (tag.attributes as Record<string, unknown> | null)?.["Shipment Line"];
+}
+
+/**
+ * The tags that name a line the shipment still has. A unit can keep a tag for
+ * a line that was deleted (a re-source, a removed line); that unit is not on
+ * the shipment.
+ */
+export function liveShipmentTags<T extends { attributes: unknown }>(
+  tags: T[],
+  lineIds: Iterable<string>
+): T[] {
+  const live = new Set(lineIds);
+  return tags.filter((tag) => {
+    const lineId = tagLineId(tag);
+    return typeof lineId === "string" && live.has(lineId);
+  });
+}
+
+export type SerialLineShortfall = {
+  lineId: string;
+  itemId: string | null;
+  shipped: number;
+  assigned: number;
+};
+
+/**
+ * The serial lines whose shippable assigned units differ from the quantity
+ * they ship. A serial line books one ledger row per unit but cost and the
+ * order for its shipped quantity, so the two must agree before posting.
+ */
+export function serialLineShortfalls(
+  sourceDocument: string | null | undefined,
+  lines: {
+    id: string;
+    itemId: string | null;
+    requiresSerialTracking: boolean | null;
+    shippedQuantity: number | null;
+  }[],
+  tags: ShipmentTag[]
+): SerialLineShortfall[] {
+  return lines.flatMap((line) => {
+    if (!line.requiresSerialTracking) return [];
+    const shipped = Number(line.shippedQuantity ?? 0);
+    const assigned = tags.filter(
+      (tag) =>
+        tagLineId(tag) === line.id &&
+        isShippableEntityStatus(sourceDocument, tag.status)
+    ).length;
+    return assigned === shipped
+      ? []
+      : [{ lineId: line.id, itemId: line.itemId, shipped, assigned }];
+  });
+}
+
+export function serialShortfallMessage(
+  shortfall: SerialLineShortfall,
+  itemReadableId: string | null | undefined
+): string {
+  const item = itemReadableId ?? shortfall.itemId ?? shortfall.lineId;
+  return `Serial numbers are missing or unavailable: ${item} ships ${shortfall.shipped}, serial numbers assigned: ${shortfall.assigned}`;
+}
+
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,
@@ -659,4 +728,14 @@ export function batchPropertyFilter(
     return matches.join(",");
   });
   return clauses.join(",");
+}
+
+/** The flash after a shipment is made or rebuilt: lines left off are named on its second line. */
+export function shipmentLinesFlash(warnings: string[], message?: string) {
+  return warnings.length > 0
+    ? {
+        message: "Some lines were left off the shipment",
+        description: warnings.join(" ")
+      }
+    : { message };
 }

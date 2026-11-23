@@ -55,10 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (insert.error) {
     throw redirect(
       back,
-      await flash(
-        request,
-        error(insert.error, insert.error.message || "Failed to add units")
-      )
+      await flash(request, error(insert.error, "Failed to add units"))
     );
   }
 

@@ -35,10 +35,12 @@ import {
   getToolsByOperationId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
-  isFirstOperationOfMakeMethod
+  isFirstOpenOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
@@ -46,6 +48,26 @@ import { path } from "~/utils/path";
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 const logger = getLogger("mes", "assembly");
+
+export const handle: Handle = {
+  realtime: [
+    {
+      // Stock of this operation's parts placed in, or taken from, a bin while
+      // it is open: each part shows where it is now.
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.materials?.materials ?? [])
+              .map((material: { itemId?: string | null }) => material.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
+    }
+  ]
+};
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(
@@ -77,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (c) => c === "0" || c === companyId
     ) ?? false;
   if (!ownedOperation.data) {
-    logger.warn("Operation not found in company", {
+    logger.warning("Operation not found in company", {
       companyId,
       operationId,
       error: ownedOperation.error
@@ -123,7 +145,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companySettings,
     abilityWarning,
     openEvent,
-    isFirstOperation
+    isFirstOperation,
+    isFirstOpenOperation
   ] = await Promise.all([
     getJob(serviceRole, jobId),
     operationPromise,
@@ -206,7 +229,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // label when completed at its first operation, so the first op flows unit-by-unit
     // (auto-select), and later ops scan/select (labels exist).
     jobMakeMethodId
-      ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
+      : false,
+    jobMakeMethodId
+      ? isFirstOpenOperationOfMakeMethod(
+          serviceRole,
+          companyId,
+          operationId,
+          jobMakeMethodId
+        )
       : false
   ]);
 
@@ -260,6 +291,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // timer on open (see AutoTimer in AssemblyView). It never auto-ends a timer.
   const autoStartOperationTimer =
     companySettings.data?.autoStartOperationTimer ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.data?.requireTrackedMaterialsIssued ?? false;
 
   // Resolve the unit the materials/consume target key off. Only serial/batch parents
   // bind per-unit tracked entities; inventory/non-inventory parents page purely by index,
@@ -341,6 +374,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     openEvent: openEvent.data ?? null,
     events: events.data ?? [],
     nonConformanceActions,
@@ -381,6 +416,12 @@ export default function AssemblyRoute() {
     typeof AssemblyView
   >["procedure"];
   return (
-    <AssemblyView {...data} procedure={procedure} operationId={operationId} />
+    // Keyed by operation: the unit the operator holds belongs to one operation.
+    <AssemblyView
+      key={operationId}
+      {...data}
+      procedure={procedure}
+      operationId={operationId}
+    />
   );
 }

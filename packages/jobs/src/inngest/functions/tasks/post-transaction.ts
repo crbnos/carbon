@@ -132,7 +132,7 @@ export const postTransactionFunction = inngest.createFunction(
         logger.error("Admin action failed", {
           type: payload.type,
           documentId: payload.documentId,
-          message: result.message
+          reason: result.message
         });
       }
 

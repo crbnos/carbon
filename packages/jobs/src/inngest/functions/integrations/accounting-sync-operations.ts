@@ -68,9 +68,12 @@ import {
   type EffectivePostingSyncSettings,
   type IntegrationTopology
 } from "@carbon/ee/sync";
+import { getLogger } from "@carbon/logger";
 import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const logger = getLogger("jobs", "accounting-sync-operations");
 
 /**
  * Upper bound on claim iterations per drain so a single Inngest step cannot
@@ -891,7 +894,13 @@ export function getSyncOperationCloseDecision(
   }
 
   if (syncResult.status === "skipped") {
-    if (syncResult.remoteId) {
+    // A skipped push that names its remote copy is already represented; a
+    // skipped pull is only when it is linked to a Carbon record (a pull always
+    // carries the remote id, even when nothing was imported).
+    if (
+      syncResult.remoteId &&
+      (operation.direction === "push-to-accounting" || syncResult.localId)
+    ) {
       return { outcome: "completed", externalId: syncResult.remoteId };
     }
     return {
@@ -1110,9 +1119,9 @@ export async function drainSyncOperations(args: {
         }
         if (error instanceof RatelimitError) {
           const { retryAfterSeconds } = error.rateLimitInfo;
-          console.warn(
-            `[RATE LIMIT] Drain hit rate limit, will retry after ${retryAfterSeconds}s`
-          );
+          logger.warning("Drain hit the rate limit; will retry", {
+            retryAfterSeconds
+          });
           throw error;
         }
 

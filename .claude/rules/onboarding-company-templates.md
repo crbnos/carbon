@@ -317,6 +317,33 @@ The validator's `items` rule checks that each `customFieldValues` key names an
 field's `listOptions`. Its `foundation` rule checks that an address `countryCode` is two
 upper-case letters.
 
+## Serial traveler line fields
+
+The serial traveler line (`.ai/specs/2026-11-12-serial-traveler-line-flow.md`) added
+these fields. Each one is optional except `materialRequests`; omitted, the row is as before.
+
+| Field | Written by | Effect |
+|---|---|---|
+| `FoundationData.lineFlow` (`LineFlowSpec`) | tier 01 | sets `companySettings.travelerLabels`, `requireTrackedMaterialsIssued` and `autoPickingListOnRelease`. Tier 01 writes all 3 on every apply, so a dataset without `lineFlow` turns them off again |
+| `BomLineSpec.operation` | tier 02 | the `order` of a `bop` operation in the same method, written as `methodOperationId` |
+| `TrackedStockSpec.shelf` | tier 03 | writes one opening `itemLedger` row per lot at that shelf, and skips the untracked opening row of that (item, shelf) |
+| `KanbanItemSpec.replenishmentLevel` | tier 03 | Transfer kanbans only |
+| `JobSpec.serials` | tier 06 | serial items only: one `readableId` per unit. `splitSerialUnits` splits the job's one reserved unit into quantity-1 units, each 1 ms after the last, as `assignSerialNumbers` does |
+| `ProductionData.materialRequests` (`MaterialRequestSpec`) | tier 06 | "Need material" rows on the job operation at `operationOrder`, at its work center and the plant. The applying user resolves a Resolved row, dated yesterday. Required: every dataset except a walkthrough seeds rows, and the `coverage.ts` floor is 2 |
+| `SerialSequenceSpec.serialNumberTiming` / `printLabelOnCompletion` | tier 10 | the `itemSerialSequence` columns; omitted, the column defaults apply |
+
+The validator checks them:
+
+- `operation` names a `bop` order of the same method.
+- A tracked shelf's lots (On Hold, Rejected and Scrapped included) sum to the `openingStock` at that
+  shelf, and a Scrapped lot on it is scrapped from that same shelf.
+- `replenishmentLevel` is on a Transfer kanban, and it is an integer of 0 or more.
+- `serials` is on a Serial item, has one entry per unit, and repeats no serial and no other seeded
+  tracked-entity id (`onHandTracked`, a receipt `lotNumber`, `genealogyInputs`, the
+  `genealogyAssembly` serial).
+- A material request is on an open, released job, at one of its root operations.
+- The `materialRequestStatus` coverage set has both Open and Resolved.
+
 ## Dates are offsets, never literals
 
 Every date in a dataset is a `DayOffset` — a signed number of days from the moment the
@@ -366,6 +393,37 @@ employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (1
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
 
+## Tax codes follow the plant's state
+
+Tier 01 inserts `FoundationData.taxAuthorities`, then `taxCodes` with their
+components, BEFORE the customers. Then it writes `customerTax.taxCodeId` for each
+customer that names a `taxCode`. Each dataset seeds the codes of its own plant's state:
+
+| Dataset | Local code (components) |
+|---|---|
+| satellite | TX – Houston (6.25 + 2) |
+| robotics | PA – Allegheny (6 + 1) |
+| precision | IL – Rockford (6.25 + 2.5) |
+| motor | IN – State (7). Indiana has no local rate, so motor has one authority. |
+| defense | AL – Huntsville (4 + 0.5 + 4.5): Alabama, Madison County, City of Huntsville. Its Use Tax code has the same three components. |
+
+Every dataset also seeds "Out of State – Exempt" and a Use Tax code
+(`calculationType` Reverse Charge, 0% recoverable). Four customers per dataset
+get a code: the local code, except satellite's government customer (ORBSEC
+Defense), which gets the exempt code. Defense gives the exempt code to its two
+federal customers and its foreign buyer, and the local code to its prime
+contractor (Northgate Defense Systems). Suppliers get no code, so purchase postings
+fold tax into cost as before.
+
+- State percents the way people write them (6.25; an optional
+  `recoverablePercent` of 100 means fully recoverable). The tier divides by 100.
+- `validate.ts` resolves the `taxCode` and `taxAuthority` ref kinds.
+- The floors in `coverage.ts` are the measured minimum: `taxAuthority: 1`,
+  `taxCode: 3`, `taxCodeComponent: 3`.
+- Seeded document lines still carry only `taxPercent`, and the hand-authored posted
+  invoices write no `taxLedger` rows. The Tax Liability report of a demo company
+  therefore shows only what the user posts after the apply.
+
 ## The company has an accounting cutover
 
 Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
@@ -386,14 +444,23 @@ Data may already have its own. Kept, a later date would put up to eleven months 
 seeded Posted journals before the cutover, where a void is refused and the readers above
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
-runs `check_accounting_config_locked()` (redefined in
-`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+runs `check_accounting_config_locked()` (newest definition in
+`20261123192913_base-currency-change-before-first-transaction.sql`), which refuses a change of
 `accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
 `accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
 role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
 `SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
-transaction and covers the cutover columns only — the base currency and fiscal year locks
-still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+transaction and covers the cutover columns only. The fiscal year lock (`fiscalYearSettings`
+branch, still keyed on `accountingActivatedAt`) holds. The base currency lock holds too, and
+it depends on the company's data, not on accounting activation: the `company` branch never
+reads `app.dataset_apply` or `accountingActivatedAt`, and refuses a `baseCurrencyCode`
+change for every role while `base_currency_change_blockers(companyId)` returns a row
+(`The base currency is locked: <reasons>`). When nothing blocks, it still refuses the change
+unless the transaction set `app.base_currency_change`, which only
+`updateCompanyWithBaseCurrencyChange` sets (never honoured for an API role). So a dataset that
+seeds journals, documents or ledger rows locks the company's base currency, and no tier changes
+it. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql` and
+`base-currency-change.test.sql`.
 
 Demo-template companies that predate the cutover got theirs from section 7 of
 `20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the
@@ -533,7 +600,8 @@ journals like any other document source (`DOCUMENT_JOURNAL_SOURCES`). Floors:
 
 ## Part thumbnails ship with the app
 
-Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`,
+Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`
+(`<industryId>` is `Dataset.assetIndustryId` when set, see below),
 written by `createItem`. **That is not a storage object.** The artwork is 132 committed
 vector files under `packages/database/src/datasets/assets/<industryId>/`, exposed by
 `@carbon/database/dataset-assets` and resolved by both apps' `getPrivateUrl`, which tries
@@ -565,8 +633,8 @@ row whose `modelPath`/`glbPath`/`graphPath` are those bundled paths, `processing
 (tier 04) and jobs (tier 06) both copy the link.
 
 The data is `ItemsData.assembly` (`AssemblySpec`), authored in `data/<key>/assembly.ts`. It
-is **optional** — a dataset with a null `industryId` has nowhere to resolve a model from and is
-skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
+is **optional** — a dataset with no `assetIndustryId` and a null `industryId` has nowhere to resolve
+a model from and is skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
 are the frozen join key between the graph, the GLB node extras and the step rows, so a step
 naming an absent node would render but animate nothing — the pure validator now fails it
 (and a `componentCount` that disagrees with the graph) before commit. Regenerate them from the graph rather than
@@ -606,6 +674,37 @@ Two things needed no change and should stay that way: `wipe.ts` discovers tables
 already cleaned on re-apply (verified — applying a second dataset leaves exactly one model row);
 and because the artifacts are bundled rather than stored, a backup/restore or template revert
 carries the paths across intact with nothing to re-upload.
+
+## Dev-only datasets
+
+A dataset with `industryId: null` is dev-only: `datasetForIndustry` never returns it, so
+onboarding never offers it. `pnpm db:seed:dev -- --dataset <key>` still applies it.
+`Dataset.assetIndustryId` names the industry folder whose bundled assets (thumbnails, CAD model)
+it reuses; it defaults to `industryId`. Tier 02 (`seedAssembly`), `createItem` and the validator's
+assembly graph check read it.
+
+`motor-line` (`data/motor-line/index.ts`, label "Motor line (dev)") is the one dev-only dataset.
+It is a walkthrough of one product, the anonymized AJ-3 serial motor line (`aj3.ts`), with
+`lineFlow` and all 3 settings on. It keeps only the motor company setup the line needs (plant,
+shift, storage types, printer route, the two AJ-3 suppliers) and seeds no documents: no jobs,
+orders, quality, maintenance or workflows. The chambers (AJ3-CC) and injectors (AJ3-FIA) are on
+shelf WH1-C1 as 3 serials each, so the engine line runs without sub-assembly jobs. The only
+demand is a forecast of 1 AJ3-ENG next week, so MRP suggests one engine to make. A safety stock
+alone does not work here: MRP's planning grid lists only an item with demand, open supply or a
+reorder point.
+
+### Walkthrough datasets
+
+`Dataset.walkthrough: true` marks a dev-only single-product dataset. The validator runs only its
+structural rules on it (`WALKTHROUGH_RULES` in `validate.ts`): names resolve, stock adds up,
+serials do not collide. The coverage checks in those rules go through `ValidationCtx.cover`, which
+skips them. `datasetScope` refuses a walkthrough with an `industryId`, and it requires each slice
+whose rules do not run (sales, purchasing documents, production, quality, accounting documents,
+most of ops, workflow runs) to be empty. `coverageFloorsFor` (`coverage.ts`) gives a walkthrough
+no row-count floors, so `db:check:datasets` still applies it and rolls it back, but counts nothing.
+The job, RFQ and demand stories (`production.eventsJobKey`, `purchasing.rfqHeader`,
+`planning.demandOrder` and the others in `datasetScope`) are null on a walkthrough, and the tiers
+skip them. Every other dataset must set them.
 
 ## Adding an industry
 

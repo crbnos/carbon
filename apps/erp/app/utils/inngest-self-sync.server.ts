@@ -35,21 +35,18 @@ async function syncInngest() {
         );
         return;
       }
-      log.warn(
+      log.warning(
         "Inngest self-sync got {status} on attempt {attempt}/{maxAttempts}",
         { status: response.status, attempt, maxAttempts: MAX_ATTEMPTS }
       );
     } catch (error) {
       // Expected for the first attempt or two — the HTTP server isn't
       // listening yet when this fires at module load.
-      log.debug(
-        "Inngest self-sync attempt {attempt}/{maxAttempts} failed: {message}",
-        {
-          attempt,
-          maxAttempts: MAX_ATTEMPTS,
-          message: error instanceof Error ? error.message : String(error)
-        }
-      );
+      log.debug("Inngest self-sync attempt {attempt}/{maxAttempts} failed", {
+        attempt,
+        maxAttempts: MAX_ATTEMPTS,
+        error
+      });
     }
     await sleep(RETRY_DELAY_MS);
   }

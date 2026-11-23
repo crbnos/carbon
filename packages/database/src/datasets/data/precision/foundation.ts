@@ -269,28 +269,33 @@ export const CUSTOMERS = [
     type: "Hydraulics",
     status: "Active",
     phone: "+1-319-555-0100",
-    website: "https://cedarvalleyhydraulics.com"
+    website: "https://cedarvalleyhydraulics.com",
+    taxCode: "IL – Rockford",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Granite State Instruments",
     type: "Instrumentation",
     status: "Active",
     phone: "+1-603-555-0200",
-    website: "https://granitestateinstruments.com"
+    website: "https://granitestateinstruments.com",
+    taxCode: "IL – Rockford"
   },
   {
     name: "Dominion Ag Equipment",
     type: "Agriculture",
     status: "Active",
     phone: "+1-804-555-0300",
-    website: "https://dominionag.com"
+    website: "https://dominionag.com",
+    taxCode: "IL – Rockford"
   },
   {
     name: "Solstice Medical Devices",
     type: "Medical",
     status: "Lead",
     phone: "+1-612-555-0400",
-    website: "https://solsticemedical.com"
+    website: "https://solsticemedical.com",
+    taxCode: "IL – Rockford"
   }
 ];
 
@@ -336,42 +341,50 @@ export const CUSTOMER_CONTACTS = [
 export const SUPPLIERS = [
   {
     name: "Rock River Metals",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+1-815-555-0110",
     website: "https://rockrivermetals.com"
   },
   {
     name: "Bluestem Alloys",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+1-262-555-0220",
     website: "https://bluestemalloys.com"
   },
   {
     name: "Fastline Industrial Supply",
+    stage: "Qualified" as const,
     type: "Hardware",
     phone: "+1-847-555-0330",
-    website: "https://fastlinesupply.com"
+    website: "https://fastlinesupply.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Midway Bearing & Seal",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-773-555-0440",
     website: "https://midwaybearing.com"
   },
   {
     name: "Anvil Finishing Group",
+    stage: "Production" as const,
     type: "Finishing",
     phone: "+1-815-555-0550",
     website: "https://anvilfinishing.com"
   },
   {
     name: "Forge Heat Treating",
+    stage: "Qualified" as const,
     type: "Heat Treating",
     phone: "+1-309-555-0660",
     website: "https://forgeheattreat.com"
   },
   {
     name: "Precision Gauge Services",
+    stage: "Production" as const,
     type: "Services",
     phone: "+1-608-555-0770",
     website: "https://precisiongauge.com"
@@ -387,6 +400,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Prairie Anodizing",
+    stage: "Sampling" as const,
     type: "Finishing",
     phone: "+1-217-555-0990",
     website: "https://prairieanodizing.com",
@@ -394,6 +408,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Cutrate Carbide",
+    stage: "Prospect" as const,
     type: "Tooling",
     phone: "+1-773-555-1010",
     website: "https://cutratecarbide.com",
@@ -401,6 +416,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Bavaria Werkzeugstahl GmbH",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+49-89-555-1120",
     website: "https://bavaria-werkzeugstahl.de",
@@ -851,6 +867,56 @@ export const precisionFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  taxAuthorities: [
+    { name: "Illinois Department of Revenue" },
+    { name: "City of Rockford" }
+  ],
+  taxCodes: [
+    {
+      name: "IL – Rockford",
+      countryCode: "US",
+      state: "IL",
+      components: [
+        {
+          name: "Illinois State",
+          authority: "Illinois Department of Revenue",
+          taxPercent: 6.25
+        },
+        {
+          name: "Rockford Local",
+          authority: "City of Rockford",
+          taxPercent: 2.5
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Illinois sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Illinois Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 6.25%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "IL",
+      components: [
+        {
+          name: "Illinois Use Tax",
+          authority: "Illinois Department of Revenue",
+          taxPercent: 6.25
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

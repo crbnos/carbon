@@ -22,6 +22,7 @@ import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
+import BadgeColor from "~/components/Form/BadgeColor";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { customerStatusValidator } from "../../sales.models";
@@ -93,6 +94,7 @@ const CustomerStatusForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Customer Status`} />
+                <BadgeColor />
                 <CustomFormFields table="customerStatus" />
               </VStack>
             </ModalDrawerBody>

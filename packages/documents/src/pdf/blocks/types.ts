@@ -16,6 +16,8 @@ import type {
   Company,
   CompanySettings
 } from "../../types";
+import type { PartNumberDisplay } from "../../utils/part-number";
+import type { TaxSummaryEntry } from "../../utils/tax-summary";
 
 export type SalesInvoiceLocations =
   Database["public"]["Views"]["salesInvoiceLocations"]["Row"] & {
@@ -60,10 +62,25 @@ export interface SalesInvoiceData {
   values: DocumentValues;
   /** Resolved header layout (from the global header section's config). */
   headerOptions: HeaderOptions;
+  /**
+   * One entry per tax component and rate, adding up to the printed tax. The
+   * summary prints them in place of the single tax row when there are two
+   * or more.
+   */
+  taxSummary: TaxSummaryEntry[];
+  /** The VAT clauses of the lines' tax codes, printed under the totals. */
+  invoiceMessages: string[];
+  /** The seller's tax number for its own country, else `company.taxId`. */
+  sellerRegistration: string | null;
   /** The printed document title, from the template's document texts. */
   documentTitle: string;
   /** The printed document number; absent when the user hid it. */
   documentNumber?: string;
+  /**
+   * The Edit document modal's unsaved display choice for every line, on a
+   * preview or download. Absent: each line prints its own choice.
+   */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 /**

@@ -169,7 +169,9 @@ export const assignRecord = defineServiceFn({
  * @param field - `internalNotes` or `externalNotes`, or `notes` on a job,
  *   item, fixed asset, picking list or stock transfer.
  * @param text - The notes as Markdown: headings, **bold**, _italic_, lists,
- *   links, quotes and code. Empty text clears them.
+ *   links, quotes and code. Empty text clears them. `externalNotes` go on what
+ *   the customer or supplier receives (purchase order, RFQ, supplier quote
+ *   page, quote, sales order, invoice, packing slip): keep internal notes out.
  *
  * @mcp
  */
@@ -592,7 +594,7 @@ export const startStripeConnectOnboarding = defineServiceFn({
         );
       } catch (linkError) {
         if (!isStaleConnectAccountError(linkError)) throw linkError;
-        logger.warn(
+        logger.warning(
           "Stripe Connect account link failed against the stored account; creating a new account",
           { companyId, stripeAccountId, error: linkError }
         );

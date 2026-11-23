@@ -258,6 +258,63 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
   );
 
   databaseTest(
+    "each serial shipped on a multi-unit line keeps a quantity of one",
+    async () => {
+      const first = await stockIn("ship-two-a", aftersales);
+      const second = await stockIn("ship-two-b", aftersales);
+      const shipmentId = await shipmentFor("ship-two", first, {
+        itemId: serialItemId,
+        quantity: 2
+      });
+      const line = await f.db
+        .selectFrom("shipmentLine")
+        .where("shipmentId", "=", shipmentId)
+        .select(["id", "shippedQuantity"])
+        .executeTakeFirstOrThrow();
+      expect(Number(line.shippedQuantity)).toBe(2);
+      await seed(f, (trx) =>
+        trx
+          .updateTable("trackedEntity")
+          .set({
+            attributes: JSON.stringify({
+              Shipment: shipmentId,
+              "Shipment Line": line.id,
+              "Shipment Line Index": 1
+            })
+          })
+          .where("id", "=", second)
+          .execute()
+      );
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-shipment",
+          { type: "post", shipmentId },
+          postShipment
+        )
+      );
+
+      const units = await f.db
+        .selectFrom("trackedEntity")
+        .where("id", "in", [first, second])
+        .select(["id", "quantity", "status"])
+        .orderBy("id")
+        .execute();
+      expect(units.map((u) => [Number(u.quantity), u.status])).toEqual([
+        [1, "Consumed"],
+        [1, "Consumed"]
+      ]);
+      const inputs = await f.db
+        .selectFrom("trackedActivityInput")
+        .where("trackedEntityId", "in", [first, second])
+        .select("quantity")
+        .execute();
+      expect(inputs.map((i) => Number(i.quantity))).toEqual([1, 1]);
+    }
+  );
+
+  databaseTest(
     "a shipment takes a serial with no storage unit from no storage unit",
     async () => {
       const serial = await stockIn("ship-unassigned", null);

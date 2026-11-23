@@ -656,7 +656,10 @@ upload, the same `generateHTML` read-only render.
   only lot on its NCR: `closeIssue` refuses an NCR with a Partial lot beside
   another lot, and a Partial untracked lot's NCR with no disposition row for
   the lot's item.
-  The close takes the issue lock (`lockIssueDispositions`) first and refuses
+  The close takes the issue lock (`lockIssueDispositions`) first, then the
+  receipts of its receipt lots (`FOR NO KEY UPDATE`, id order: the close
+  refreshes their roll-up, and a lot decision takes the receipt before the
+  lot), and refuses
   when a row, a tracked link or a linked lot changed since its plan was read.
   The NCR closes first (the release), then the write-off posts and the units
   change with the guard on, in one transaction. A Partial lot's Scrap is
@@ -670,14 +673,58 @@ upload, the same `generateHTML` read-only render.
   "The receipt of this inspection was voided" before "closed".
 - **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by
   `sync_receipt_inspection_status` → `refresh_receipt_inspection_status`
-  (after-interceptors on `inspection` and `stockTransfer`). Cancelled lots are
+  (after-interceptors on `inspection`, `stockTransfer`, `nonConformance` (an NCR
+  that closes or reopens) and `nonConformanceInspection` (a lot linked to or
+  unlinked from a closed NCR)). Cancelled lots are
   ignored, and so is every lot of a voided receipt: the void calls the refresh
   after it sets the receipt `Voided`, so the receipt reads **Not Required** and
   leaves the queues. Put Away is judged per receipt line: the picked quantity of its
   completed linked transfer lines must cover its passed quantity. A Passed
   lot's passed quantity is `COALESCE(acceptedQuantity, lotSize)`: an Accept of
-  a serial or batch lot with failed units records the passed units. The
-  roll-up ignores Non-Inventory lots.
+  a serial or batch lot with failed units records the passed units. Every
+  lot's passed quantity also adds its **Use As Is** part
+  (`inspection_use_as_is`, `20261116122219`), so a receipt whose NCR keeps
+  rejected parts reads Put Away only once those are put away too. The
+  roll-up ignores Non-Inventory lots. The same refresh sets
+  `receipt.rejectedAtInspection` (`20261117143127`): true while a counted lot
+  is `Failed` or `Partial`. The Inventory sidebar's "Inspection failed" link
+  filters on it, not on the status, because a receipt with a Partial lot reads
+  Put Away once its passed stock is put away.
+- **Use As Is → Put Away.** Once a receipt lot's NCR is Closed, the parts it
+  dispositioned Use As Is are put away like passed stock; Rework, Scrap and
+  Return to Supplier parts are not (they are moved by hand). One SQL
+  definition, `inspection_use_as_is(company, lotIds)`, read by the roll-up and
+  by `getReceiptPutAwayLines`: a serial or batch unit the lot rejected (every
+  unit of a Failed lot, else a unit with a Failed sample) that a Use As Is row
+  links; for an untracked Failed lot, what the close put back for its Use As
+  Is rows (`closeIssue` tags each Use As Is / Rework restore row with its
+  disposition row in `itemLedger.documentLineId`, through
+  `post-nonconformance`'s optional `documentLineId` and `bookAdjustment`), so
+  Use As Is stock is told apart from Rework stock restored beside it; lots
+  written off in one unit take that unit's restore in lot id order, each up to
+  its write-off there; an untracked Partial lot's remainder up to the NCR's
+  linkless Use As Is quantity (it is the only lot on its NCR). An NCR closed
+  before the tag existed offers its untracked restore to no Put Away. A lot
+  from before the hold (no `storageUnitId`) adds nothing to the roll-up, since
+  Put Away never offers it. Put Away offers a kept serial or batch unit from where
+  the lot's rejected move took it (`Direct Transfer`, `documentId` = lot id),
+  else its received unit, and kept untracked stock from the lot's
+  `storageUnitId`. So one receipt line can give two Put Away lines (received
+  unit and rejected unit); what a linked transfer speaks for is counted per
+  (receipt line, From unit). A unit the lot rejected and the NCR did not keep
+  is never offered, even when it is Available in the received unit (an Accept
+  that rejected a unit, then Rework). `getReceiptPutAwayStock`
+  (`inventory.service.ts`) is the one read of what may be put away, unit by
+  unit; `getReceiptPutAwayLines` subtracts what linked transfers speak for.
+  A serial or batch pick of a Put Away line (`postStockTransfer` `serial` /
+  `batch`) is refused unless the unit is one it offers from that line's From
+  unit (`putAwayPickRefusal`): a Rework unit beside a kept one in the
+  rejected unit, or another receipt's unit, moves by an ordinary transfer.
+  The line's scan dialog (`x+/stock-transfer+/$id.scan.$lineId.tsx`) lists
+  only those units. `closeIssue` refreshes its receipts again after the
+  restore posts: the status flip ran the roll-up before the tagged restore
+  rows existed. Pinned by
+  `apps/erp/test/database/inspection-hold-use-as-is.test.ts`.
 - **Put Away.** `createReceiptPutAway` runs the `stockTransfer` storage rules,
   then `insertReceiptPutAway` locks the receipt, reads `getReceiptPutAwayLines`
   and inserts one stock transfer (`stockTransfer.receiptId`, line
@@ -978,8 +1025,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   **Positions are bound to sample ids.** `getInspection` (ERP and MES) orders the embedded
   samples by `createdAt`, then `id` (an embed has no order, and an UPDATE moves a row). The grids
   map each column/row to a sample with `placeSamples` (`@carbon/utils`): a sample keeps its
-  position for the page, a new one takes the lowest free position, and cell state is keyed by
-  sample id. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
+  position for the page, then a sample takes the position stored on it
+  (`inspectionSample.position`, `20261117131942`: the save that creates an anonymous sample
+  sends its grid position, and the engine keeps it only inside the lot's `lotSize` columns),
+  then the rest take the lowest free position; cell state is keyed by sample id. So a part
+  reloads in the column it was typed in, on any device. Serial samples and samples made
+  before the column store none. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
   `inspectionSample`, the page reloads, and the index then names another sample.
   Serial lots pass `dropMissing`: their samples come only from a scan, so a sample the loader
   no longer returns was deleted (its tracked entity removed) and its position is freed. The

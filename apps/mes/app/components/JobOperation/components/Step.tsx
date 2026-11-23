@@ -129,6 +129,7 @@ export function useMeasurementLimits(step: {
 
 export function StepsListItem({
   activeStep,
+  unitId,
   step,
   compact = false,
   operationId,
@@ -139,6 +140,8 @@ export function StepsListItem({
   disabled = false
 }: {
   activeStep: number;
+  /** The serial unit the record is for; the server keys the record by it. */
+  unitId?: string;
   step: JobOperationStep;
   compact?: boolean;
   // The step's 1-based position in the list, so its action buttons name it.
@@ -240,6 +243,9 @@ export function StepsListItem({
           ) : type === "Task" ? (
             <fetcher.Form method="post" action={path.to.record}>
               <input type="hidden" name="index" value={activeStep} />
+              {unitId && (
+                <input type="hidden" name="trackedEntityId" value={unitId} />
+              )}
               <input type="hidden" name="jobOperationStepId" value={step.id} />
 
               <input type="hidden" name="booleanValue" value="true" />
@@ -554,6 +560,7 @@ export function PreviewStepRecord({
 export function RecordModal({
   attribute,
   activeStep,
+  unitId,
   open = true,
   onClose,
   onScrap,
@@ -561,6 +568,8 @@ export function RecordModal({
 }: {
   attribute: JobOperationStep;
   activeStep: number;
+  /** The serial unit the record is for; the server keys the record by it. */
+  unitId?: string;
   open?: boolean;
   onClose: () => void;
   // Offered by the correction prompt once a unit has used a correction its
@@ -601,6 +610,7 @@ export function RecordModal({
           <RecordBody
             attribute={attribute}
             activeStep={activeStep}
+            unitId={unitId}
             onClose={close}
             onSuggestCorrection={setSuggestion}
           />
@@ -613,11 +623,13 @@ export function RecordModal({
 function RecordBody({
   attribute,
   activeStep,
+  unitId,
   onClose,
   onSuggestCorrection
 }: {
   attribute: JobOperationStep;
   activeStep: number;
+  unitId?: string;
   onClose: () => void;
   onSuggestCorrection?: (suggestion: CorrectionSuggestion) => void;
 }) {
@@ -738,6 +750,7 @@ function RecordBody({
         <Hidden name="id" />
         <Hidden name="jobOperationStepId" />
         <Hidden name="index" />
+        {unitId && <Hidden name="trackedEntityId" value={unitId} />}
         {attribute.type === "Checkbox" && (
           <Hidden
             name="booleanValue"

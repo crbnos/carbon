@@ -15,7 +15,6 @@ import {
   insertRow,
   maybeOne,
   need,
-  one,
   RICH
 } from "../sql.ts";
 import type { Ctx, FoundationData, PartyAddressSpec } from "../types.ts";
@@ -245,6 +244,20 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     ]
   );
 
+  // Written on every apply, so applying a dataset without lineFlow turns the
+  // line-flow settings off again.
+  const flow = data.lineFlow;
+  ctx.log("line flow settings");
+  await ctx.client.query(
+    `UPDATE "companySettings" SET "travelerLabels" = $1, "requireTrackedMaterialsIssued" = $2, "autoPickingListOnRelease" = $3 WHERE id = $4`,
+    [
+      flow?.travelerLabels ?? false,
+      flow?.requireTrackedMaterialsIssued ?? false,
+      flow?.autoPickingListOnRelease ?? false,
+      ctx.companyId
+    ]
+  );
+
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
   for (const wc of data.workCenters) {
@@ -334,11 +347,11 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  const netThirty = await one<{ id: string }>(
+  const netThirty = (await maybeOne<{ id: string }>(
     client,
     `SELECT id FROM "paymentTerm" WHERE "companyId" = $1 AND name ILIKE '%net%30%' LIMIT 1`,
     [companyId]
-  );
+  )) ?? { id: await bootstrapIdByName(ctx, "paymentTerm", "Net 30") };
   ctx.refs.misc.paymentTermId = netThirty.id;
 
   const paymentTermFor = (spec: { paymentTerm?: string }): Promise<string> =>
@@ -352,6 +365,42 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   }
   for (const code of currencyCodes) await assertCurrencyExists(ctx, code);
 
+  // ── Tax ───────────────────────────────────────────────────────────────────
+  ctx.log("tax codes");
+  const taxAuthorityIds: Record<string, string> = {};
+  for (const authority of data.taxAuthorities) {
+    taxAuthorityIds[authority.name] = await insertId(ctx, "taxAuthority", {
+      name: authority.name
+    });
+  }
+  const taxCodeIds: Record<string, string> = {};
+  for (const code of data.taxCodes) {
+    const taxCodeId = await insertId(ctx, "taxCode", {
+      name: code.name,
+      description: code.description ?? null,
+      calculationType: code.calculationType ?? "Normal",
+      reportingCategory: code.reportingCategory ?? "Standard",
+      invoiceMessage: code.invoiceMessage ?? null,
+      countryCode: code.countryCode,
+      state: code.state ?? null
+    });
+    taxCodeIds[code.name] = taxCodeId;
+    for (const [index, component] of code.components.entries()) {
+      await insertId(ctx, "taxCodeComponent", {
+        taxCodeId,
+        name: component.name,
+        taxAuthorityId: need(
+          taxAuthorityIds,
+          component.authority,
+          "tax authority"
+        ),
+        taxPercent: component.taxPercent / 100,
+        recoverablePercent: (component.recoverablePercent ?? 0) / 100,
+        sequence: index + 1
+      });
+    }
+  }
+
   // ── Customers ─────────────────────────────────────────────────────────────
   ctx.log("customers");
   for (const c of data.customers) {
@@ -363,7 +412,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       customerStatusId: statusId,
       phone: c.phone,
       website: c.website,
-      currencyCode: c.currencyCode ?? "USD"
+      currencyCode: c.currencyCode ?? "USD",
+      partNumberDisplay: c.partNumberDisplay ?? null
     });
     ctx.refs.customers[c.name] = custId;
 
@@ -376,6 +426,12 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       `UPDATE "customerShipping" SET "shippingMethodId" = $1 WHERE "customerId" = $2`,
       [need(ctx.refs.shippingMethods, data.defaultShippingMethod), custId]
     );
+    if (c.taxCode) {
+      await client.query(
+        `UPDATE "customerTax" SET "taxCodeId" = $1 WHERE "customerId" = $2`,
+        [need(taxCodeIds, c.taxCode, "tax code"), custId]
+      );
+    }
   }
 
   // Customer contacts
@@ -422,13 +478,18 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.log("suppliers");
   for (const s of data.suppliers) {
     const typeId = need(ctx.refs.misc, `stype:${s.type}`, "supplier type");
+    const stageId = s.stage
+      ? await bootstrapIdByName(ctx, "supplierStage", s.stage)
+      : null;
     const supId = await insertId(ctx, "supplier", {
       name: s.name,
       supplierTypeId: typeId,
+      supplierStageId: stageId,
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
-      supplierStatus: s.status ?? "Active"
+      supplierStatus: s.status ?? "Active",
+      partNumberDisplay: s.partNumberDisplay ?? null
     });
     ctx.refs.suppliers[s.name] = supId;
 
@@ -542,13 +603,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Printer routes ─────────────────────────────────────────────────────────
   if (data.printerRoute) {
     ctx.log("printer routes");
-    await insertRow(ctx, "printerRoute", {
+    const printerRouteId = await insertId(ctx, "printerRoute", {
       name: data.printerRoute.name,
       locationId: plantId,
       format: data.printerRoute.format,
       printerUrl: data.printerRoute.printerUrl,
       companyId
     });
+    if (data.printerRoute.plantDefault) {
+      // The shape of emptyLocationAssignment (@carbon/printing) with the
+      // default set; the contexts and work centers inherit it.
+      const inherit = { printerRouteId: null, autoPrint: true };
+      const plantAssignment = {
+        defaultPrinterRouteId: printerRouteId,
+        defaultAutoPrint: true,
+        shipping: inherit,
+        receiving: inherit,
+        inventory: inherit,
+        // A kanban card needs media of at least 3" x 2", and this route has
+        // no media size, so the print worker would render the card on
+        // label2x1 and the kanban renderer refuses that. A context with no
+        // route of its own always falls back to the location default
+        // (resolveContextAssignment), so kanban cannot opt out of the route;
+        // it opts out of auto-print instead, and creating a kanban queues no
+        // job that is sure to fail.
+        kanban: { printerRouteId: null, autoPrint: false },
+        workCenters: {}
+      };
+      // Set only this plant's entry: the assignments of other locations stay.
+      await ctx.client.query(
+        `UPDATE "companySettings"
+         SET printing = COALESCE(printing, '{}'::jsonb) || jsonb_build_object(
+           'assignments',
+           COALESCE(printing -> 'assignments', '{}'::jsonb)
+             || jsonb_build_object($2::text, $1::jsonb)
+         )
+         WHERE id = $3`,
+        [JSON.stringify(plantAssignment), plantId, companyId]
+      );
+    }
   }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────

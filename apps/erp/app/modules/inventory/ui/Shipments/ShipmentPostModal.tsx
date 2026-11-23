@@ -35,7 +35,10 @@ import { DateTime } from "~/components";
 import { useCompanyToday, useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { getShipmentTracking } from "../../inventory.utils";
+import {
+  getShipmentTracking,
+  serialLineShortfalls
+} from "../../inventory.utils";
 import type { Shipment, ShipmentLine } from "../../types";
 import { isShippable } from "./ShipmentLines";
 
@@ -192,6 +195,16 @@ const ShipmentPostBody = ({
       expirationDate: string;
     }[] = [];
 
+    const serialShortLineIds = new Set(
+      serialLineShortfalls(
+        routeData?.shipment?.sourceDocument,
+        (routeData?.shipmentLines ?? []).flatMap((line) =>
+          line.id ? [{ ...line, id: line.id }] : []
+        ),
+        shipmentLineTracking.data ?? []
+      ).map((shortfall) => shortfall.lineId)
+    );
+
     routeData?.shipmentLines.forEach((line: ShipmentLine) => {
       if (line.requiresBatchTracking) {
         const trackedEntity = shipmentLineTracking.data?.find((tracking) => {
@@ -234,15 +247,7 @@ const ShipmentPostBody = ({
           }
         );
 
-        const quantityAvailable = trackedEntities?.reduce((acc, tracking) => {
-          const trackingQuantity = Number(tracking.quantity);
-
-          return (
-            acc + (isEntityShippable(tracking.status) ? trackingQuantity : 0)
-          );
-        }, 0);
-
-        if (quantityAvailable !== line.shippedQuantity) {
+        if (line.id && serialShortLineIds.has(line.id)) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,

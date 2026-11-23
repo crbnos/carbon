@@ -188,7 +188,11 @@ export const auditConfig = {
         supplier: {
           role: "root",
           snapshotFields: {
-            supplierTypeId: { table: "supplierType", displayColumns: ["name"] }
+            supplierTypeId: { table: "supplierType", displayColumns: ["name"] },
+            supplierStageId: {
+              table: "supplierStage",
+              displayColumns: ["name"]
+            }
           }
         },
         supplierPayment: { role: "extension" }, // PK = supplierId
@@ -749,6 +753,28 @@ export const auditConfig = {
         revenueRecognitionRun: { role: "root" },
         revenueRecognitionRunLine: { entityIdColumn: "runId" }
       }
+    },
+
+    taxCode: {
+      label: "Tax Code",
+      tables: {
+        taxCode: { role: "root" },
+        taxCodeComponent: { entityIdColumn: "taxCodeId" }
+      }
+    },
+
+    taxAuthority: {
+      label: "Tax Authority",
+      tables: {
+        taxAuthority: { role: "root" }
+      }
+    },
+
+    taxRegistration: {
+      label: "Tax Registration",
+      tables: {
+        taxRegistration: { role: "root" }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -936,7 +962,10 @@ export const fkDisplayRegistry: {
   supplier: ["name"],
   supplierLocation: ["name"],
   supplierQuote: ["supplierQuoteId"],
+  supplierStage: ["name"],
   supplierType: ["name"],
+  taxAuthority: ["name"],
+  taxCode: ["name"],
   trackedEntity: ["readableId"],
   unitOfMeasure: ["name"],
   user: ["fullName"],

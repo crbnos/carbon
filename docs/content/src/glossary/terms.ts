@@ -438,6 +438,81 @@ export const terms = {
     definition: msg`The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts.`,
     href: "/docs/reference/invoices#settling-an-invoice"
   },
+  "tax-code": {
+    term: msg`Tax code`,
+    definition: msg`A named tax treatment, such as "TX – Houston", made of one or more tax components; a document line takes the combined rate of the components in force on its date.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component": {
+    term: msg`Tax component`,
+    definition: msg`One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "recoverable-percent": {
+    term: msg`Recoverable percent`,
+    definition: msg`The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought.`,
+    href: "/docs/reference/accounting#recoverable-purchase-tax"
+  },
+  "tax-calculation-type": {
+    term: msg`Calculation type`,
+    definition: msg`How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account.`,
+    href: "/docs/reference/accounting#recoverable-purchase-tax"
+  },
+  "tax-reporting-category": {
+    term: msg`Reporting category`,
+    definition: msg`How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-code-region": {
+    term: msg`Country and state (tax code)`,
+    definition: msg`Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-invoice-message": {
+    term: msg`Invoice message`,
+    definition: msg`Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "taxes-shipping": {
+    term: msg`Taxes shipping`,
+    definition: msg`When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-authority": {
+    term: msg`Tax authority`,
+    definition: msg`The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "compound-tax": {
+    term: msg`Compound tax`,
+    definition: msg`A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-effective-date": {
+    term: msg`Effective (tax component)`,
+    definition: msg`The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-expiration-date": {
+    term: msg`Expires (tax component)`,
+    definition: msg`The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-received-account": {
+    term: msg`Tax Received Account (component)`,
+    definition: msg`The account this component's sales tax is credited to; empty uses the Tax Received default account.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component-paid-account": {
+    term: msg`Tax Paid Account (component)`,
+    definition: msg`The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account.`,
+    href: "/docs/reference/accounting#recoverable-purchase-tax"
+  },
+  "tax-ledger": {
+    term: msg`Tax ledger`,
+    definition: msg`The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax.`,
+    href: "/docs/reference/accounting#the-tax-ledger"
+  },
   "finished-goods": {
     term: msg`Finished goods`,
     definition: msg`A completed job's output, received into inventory at the job's actual accumulated WIP cost.`,
@@ -725,13 +800,13 @@ export const terms = {
     term: msg`GR/IR Clearing (default)`,
     definition: msg`Clearing account between goods receipt and supplier invoice; balances when both have posted.`
   },
-  "account-default-sales-tax-payable": {
-    term: msg`Sales Tax Payable (default)`,
-    definition: msg`GL liability account credited for sales tax collected from customers.`
+  "account-default-tax-received": {
+    term: msg`Tax Received (default)`,
+    definition: msg`GL liability account credited with tax collected from customers.`
   },
-  "account-default-purchase-tax-payable": {
-    term: msg`Purchase Tax Payable (default)`,
-    definition: msg`GL account for purchase tax paid to suppliers (or reclaimable).`
+  "account-default-tax-paid": {
+    term: msg`Tax Paid (default)`,
+    definition: msg`GL asset account debited with the recoverable share of tax paid to suppliers.`
   },
   "account-default-reverse-charge-sales-tax": {
     term: msg`Reverse Charge Sales Tax (default)`,
@@ -1331,6 +1406,11 @@ export const terms = {
     term: msg`Planning Horizon (Days)`,
     definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
   },
+  "delivery-date-check": {
+    term: msg`Delivery Date Check`,
+    definition: msg`Warns when a sales order line's promised date can't be met, and suggests the earliest date that can.`,
+    href: "/docs/reference/sales-orders#delivery-date-check"
+  },
   "planning-action": {
     term: msg`Planning action`,
     definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
@@ -1622,6 +1702,10 @@ export const terms = {
     term: msg`Supplier Status`,
     definition: msg`The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors.`
   },
+  "supplier-stage": {
+    term: msg`Supplier Stage`,
+    definition: msg`Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use.`
+  },
   "supplier-type-field": {
     term: msg`Supplier Type`,
     definition: msg`The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings.`
@@ -1762,6 +1846,14 @@ export const terms = {
     term: msg`Receipt Promised Date`,
     definition: msg`When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection.`
   },
+  "purchase-order-delivery-shipped-date": {
+    term: msg`Shipped Date`,
+    definition: msg`When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized.`
+  },
+  "purchase-order-delivery-expected-receipt-date": {
+    term: msg`Expected Receipt Date`,
+    definition: msg`When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date.`
+  },
   "purchase-order-delivery-actual-date": {
     term: msg`Delivery Date`,
     definition: msg`When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring.`
@@ -1786,7 +1878,7 @@ export const terms = {
   },
   "customer-default-tax-percent": {
     term: msg`Tax Percent`,
-    definition: msg`The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top.`
+    definition: msg`The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead.`
   },
   "invoice-customer": {
     term: msg`Invoice Customer`,

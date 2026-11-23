@@ -29,10 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.journalEntryDetails(journalEntryId),
       await flash(
         request,
-        error(
-          result.error,
-          result.error.message || "Failed to reverse journal entry"
-        )
+        error(result.error, "Failed to reverse journal entry")
       )
     );
   }

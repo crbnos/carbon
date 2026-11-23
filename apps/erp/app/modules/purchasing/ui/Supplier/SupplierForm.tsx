@@ -27,9 +27,11 @@ import {
   Employee,
   Hidden,
   Input,
+  PartNumberDisplay,
   SequenceOrCustomId,
   Submit,
   SupplierContact,
+  SupplierStage,
   SupplierStatus,
   SupplierType
 } from "~/components/Form";
@@ -189,6 +191,12 @@ const SupplierForm = ({
                     isReadOnly={supplierApprovalRequired}
                     termId="supplier-status"
                   />
+                  <SupplierStage
+                    name="supplierStageId"
+                    label={t`Supplier Stage`}
+                    placeholder={t`Select Supplier Stage`}
+                    termId="supplier-stage"
+                  />
                   <SupplierType
                     name="supplierTypeId"
                     label={t`Supplier Type`}
@@ -210,6 +218,13 @@ const SupplierForm = ({
                     </>
                   )}
                   <Currency name="currencyCode" label={t`Currency`} />
+                  <PartNumberDisplay
+                    party="supplier"
+                    name="partNumberDisplay"
+                    label={t`Part Numbers on Documents`}
+                    isOptional
+                    placeholder={t`Company default`}
+                  />
                   <Input name="website" label={t`Website`} />
 
                   {/* <EmailRecipients name="defaultCc" label={t`Default CC`} /> */}

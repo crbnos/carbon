@@ -47,7 +47,7 @@ import {
   selectRows,
   updateRowsById
 } from "@carbon/database/rows";
-import { getNextSequence } from "@carbon/database/sequence";
+import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
 import {
   findStorageObjectBuckets,
   listStorageObjects
@@ -84,11 +84,13 @@ import { NotificationEvent } from "@carbon/notifications";
 import {
   addDays,
   addMonths,
+  applyRate,
   async,
   BILLABLE_LEASE_STATUSES,
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
   datetime,
+  deriveRate,
   EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escalatedLeasePayment,
@@ -97,6 +99,7 @@ import {
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
   groupBy,
+  groupByTaxRate,
   isBillableLeaseStatus,
   isPaidBeforeOpening,
   isTermWithinTwelveMonths,
@@ -114,6 +117,7 @@ import {
   lesseeScheduleSpan,
   lesseeTerminationLegs,
   measureLesseeAsset,
+  memoAmounts,
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
@@ -122,7 +126,9 @@ import {
   requireAffected,
   round,
   SIGNATURES_BUCKET,
-  searchFilter
+  searchFilter,
+  type TaxCodeInput,
+  taxableBase
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import {
@@ -145,6 +151,7 @@ import {
   removeUnpickedPutAways
 } from "~/modules/inventory/inventory.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import { isEmailableContact } from "~/modules/settings/party-contact";
@@ -164,14 +171,24 @@ import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
-  getExchangeRate
+  getExchangeRate,
+  getTaxCodeInputs,
+  resolveLineTaxes
 } from "../accounting/accounting.service";
+import {
+  chargedRateOr,
+  decidePurchaseTaxAmount,
+  decideWrittenLineTax,
+  type LineTaxDecision,
+  newPurchaseLineTax
+} from "../accounting/accounting.utils";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
 import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
+import { isItemTaxable } from "../sales/sales.service";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -204,6 +221,7 @@ import type {
   purchaseReturnOrderLineValidator,
   purchaseReturnOrderStatusType,
   purchasingRfqStatusType,
+  RequestQuoteLine,
   selectedLinesValidator,
   supplierBankAccountValidator,
   supplierContactValidator,
@@ -219,6 +237,7 @@ import type {
 import {
   exceedsApprovedAmount,
   isPurchaseOrderAmendable,
+  isPurchaseOrderMissingPromisedDate,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
@@ -254,6 +273,7 @@ import {
   purchaseOrderLineDateOfOrderDate,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
+  purchaseOrderPartNumberRefusal,
   purchaseOrderPromisedDateRefusal,
   purchaseOrderStatusAfterReversal,
   type ReceiptReceivedStock,
@@ -262,7 +282,8 @@ import {
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
-  taxPairForQuantity
+  taxPairForQuantity,
+  toPurchaseQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type {
@@ -277,12 +298,12 @@ import type {
 // out orderCount and partCount (grouped counts), externalId (a subquery) and
 // embedding lets Postgres skip them.
 const SUPPLIERS_LIST_COLUMNS =
-  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
+  "id,readableId,name,supplierTypeId,status,type,supplierStageId,stage,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
-  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
+  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,shippedDate,expectedReceiptDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
-const logger = getLogger("erp", "purchasing-service");
+const logger = getLogger("erp", "purchasing");
 
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
@@ -401,7 +422,7 @@ export async function duplicatePurchaseOrder(
     client
       .from("purchaseOrderLine")
       .select(
-        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxCodeId, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId, partNumberDisplay"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
       .eq("companyId", companyId)
@@ -796,7 +817,7 @@ async function getSignatureDataUrl(
     .from(SIGNATURES_BUCKET)
     .download(path);
   if (!data) {
-    logger.warn("Failed to read an approval signature", { path, error });
+    logger.warning("Failed to read an approval signature", { path, error });
     return null;
   }
   // The owner can write any bytes under a PNG or JPEG name, and an image
@@ -804,7 +825,7 @@ async function getSignatureDataUrl(
   const bytes = Buffer.from(await data.arrayBuffer());
   const type = imageTypeOf(bytes);
   if (!type) {
-    logger.warn("An approval signature is not a PNG or JPEG", { path });
+    logger.warning("An approval signature is not a PNG or JPEG", { path });
     return null;
   }
   return `data:${type};base64,${bytes.toString("base64")}`;
@@ -1481,6 +1502,111 @@ export async function getSupplierType(
     .select("*")
     .eq("id", supplierTypeId)
     .single();
+}
+
+export async function getSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStageId: string,
+  companyId: string
+) {
+  return client
+    .from("supplierStage")
+    .select("*")
+    .eq("id", supplierStageId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const SUPPLIER_STAGES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
+export async function getSupplierStages(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("supplierStage")
+    .select("id, name, color", {
+      count: listCount(args)
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, SUPPLIER_STAGES_PAGING);
+  }
+
+  return query;
+}
+
+export async function getSupplierStagesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("supplierStage")
+    .select("id, name, color")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function deleteSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStageId: string,
+  companyId: string
+) {
+  return requireAffected(
+    client
+      .from("supplierStage")
+      .delete()
+      .eq("id", supplierStageId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
+
+export async function insertSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStage: {
+    name: string;
+    color: string | null;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("supplierStage").insert([supplierStage]).select("id");
+}
+
+export async function updateSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStage: {
+    id: string;
+    name: string;
+    /** Left out, the stage keeps its color; null clears it. */
+    color?: string | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, name, color, updatedBy } = supplierStage;
+  return requireAffected(
+    client
+      .from("supplierStage")
+      .update({
+        name,
+        ...(color !== undefined && { color }),
+        updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export const SUPPLIER_TYPES_PAGING: Paging = {
@@ -2222,7 +2348,7 @@ export async function rejectPurchaseOrderApproval(
         approvalRequestId
       );
       if (!version) {
-        logger.warn("A rejected approval kept no version rows", {
+        logger.warning("A rejected approval kept no version rows", {
           companyId,
           purchaseOrderId,
           approvalRequestId
@@ -2255,16 +2381,19 @@ export async function rejectPurchaseOrderApproval(
         await sql`ROLLBACK TO SAVEPOINT restore_purchase_order_version`.execute(
           trx
         );
-        logger.warn("A rejected edit's version was refused by the live row", {
-          companyId,
-          purchaseOrderId,
-          approvalRequestId,
-          error
-        });
+        logger.warning(
+          "A rejected edit's version was refused by the live row",
+          {
+            companyId,
+            purchaseOrderId,
+            approvalRequestId,
+            error
+          }
+        );
         restored = false;
       }
       if (!restored) {
-        logger.warn(
+        logger.warning(
           "A rejected edit could not be undone; the order stays Rejected",
           {
             companyId,
@@ -2595,6 +2724,8 @@ type AmendPurchaseOrderOptions = {
   /** False for an edit that cannot change the total. */
   settle?: boolean;
   restatesStatus?: boolean;
+  /** The edit sets a line's part number choice. */
+  setsPartNumberDisplay?: boolean;
 };
 
 /**
@@ -2634,7 +2765,8 @@ async function amendLockedPurchaseOrder<T>(
     currencyCode,
     line,
     settle = true,
-    restatesStatus = false
+    restatesStatus = false,
+    setsPartNumberDisplay = false
   }: AmendPurchaseOrderOptions = {}
 ): Promise<T | CarbonError> {
   const gate = await getPurchaseOrderEditRefusal(
@@ -2652,6 +2784,10 @@ async function amendLockedPurchaseOrder<T>(
   }
   if (!gate.data) return ctx.error("notFound", "Purchase order not found");
   if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
+  if (setsPartNumberDisplay) {
+    const refusal = purchaseOrderPartNumberRefusal(gate.data.status);
+    if (refusal) return ctx.error("rule", refusal);
+  }
   if (line) {
     const lineRefusal =
       (line.purchaseQuantity === null
@@ -2756,6 +2892,41 @@ export async function unreleasedChangeOrderRefusal(
   return issue ? ctx.error("rule", `${issue} It cannot be purchased.`) : null;
 }
 
+/**
+ * The job of a line that names a job operation: the operation's. A receipt's
+ * cost stays the job's through the line's own `jobId` once the operation is
+ * deleted (SQL `job_receipt_line_references`), so a line sent with only the
+ * operation gets its job, and a job that is not the operation's is refused.
+ * Read with the service role, since a buyer may not hold production view.
+ */
+export async function lineOperationJob(
+  ctx: ServiceContext,
+  line: { jobId?: string | null; jobOperationId?: string | null }
+): Promise<string | null | CarbonError> {
+  if (!line.jobOperationId) return line.jobId ?? null;
+  const operation = await ctx.asSystem.supabase
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", line.jobOperationId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (operation.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the job operation",
+      operation.error
+    );
+  }
+  if (!operation.data) return ctx.error("notFound", "Job operation not found");
+  if (line.jobId && line.jobId !== operation.data.jobId) {
+    return ctx.error(
+      "validation",
+      "The operation is not an operation of the line's job"
+    );
+  }
+  return operation.data.jobId;
+}
+
 /** The line an edit names, with what was received and invoiced on it. */
 export async function getPurchaseOrderLineForAmendment(
   ctx: ServiceContext,
@@ -2764,7 +2935,7 @@ export async function getPurchaseOrderLineForAmendment(
   return ctx.asCaller.supabase
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, jobId, jobOperationId, requiredDate, promisedDate, receivedDate, partNumberDisplay"
     )
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)
@@ -3184,6 +3355,34 @@ export async function updateSupplierTax(
     .eq("companyId", supplierTax.companyId);
 }
 
+/**
+ * Give suppliers one tax code (`supplierTax.taxCodeId`). The supplier insert
+ * interceptor creates the supplierTax row, so this normally updates; it
+ * upserts to cover a missing row, which needs the service role: supplierTax
+ * has no INSERT policy. The caller checks every id against the company first,
+ * so the conflict update only reaches that company's rows.
+ */
+export async function upsertSupplierTaxCodes(
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    supplierIds: string[];
+    taxCodeId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return serviceRole.from("supplierTax").upsert(
+    args.supplierIds.map((supplierId) => ({
+      supplierId,
+      companyId: args.companyId,
+      taxCodeId: args.taxCodeId,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })),
+    { onConflict: "supplierId" }
+  );
+}
+
 export async function insertPurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -3597,8 +3796,15 @@ export async function upsertPurchaseOrderLine(
   if (cleared.error) return { data: null, error: cleared.error };
 
   if ("id" in normalized) {
-    const { companyId, ...line } = normalized;
-    return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
+    // An edit never makes a line legacy again: one that leaves the part
+    // number choice out or empty keeps it, where `sanitize` would write null.
+    const { companyId, partNumberDisplay, ...line } = normalized;
+    const update = partNumberDisplay ? { ...line, partNumberDisplay } : line;
+    return updatePurchaseOrderLineRestatingCompletion(
+      client,
+      companyId,
+      update
+    );
   }
 
   const [existing, delivery] = await Promise.all([
@@ -3638,6 +3844,506 @@ export async function upsertPurchaseOrderLine(
     ])
     .select("id")
     .single();
+}
+
+export type PurchaseLineTax = {
+  taxCodeId?: string | null;
+  taxPercent?: number;
+  supplierTaxAmount?: number;
+};
+
+/**
+ * The tax a purchase order or purchase invoice line write stores. Every PO
+ * and PI line create and update goes through it; a key left out of the
+ * result keeps the stored value.
+ *
+ * - The rate: `decideWrittenLineTax` — a non-taxable item takes none, a sent
+ *   code its charged rate on the document's tax point (the order date; the
+ *   invoice's issue date, else its posting date), an empty code is a cleared
+ *   one, and a create that sends no code takes the supplier's. An update
+ *   that leaves the code, percent and amount as stored keeps them, even
+ *   when the code has no rate in force on the tax point.
+ * - The amount: `decidePurchaseTaxAmount` — a Reverse Charge code (sent or
+ *   stored) refuses a supplier tax amount, as posting does.
+ *
+ * `sent` holds the request's values: undefined is "not sent". A read failure
+ * of the supplier's code keeps what was sent.
+ */
+export async function resolvePurchaseLineTax(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    document: "purchaseOrder" | "purchaseInvoice";
+    documentId: string;
+    /** The line an update writes; null for a create. */
+    lineId: string | null;
+    sent: {
+      itemId?: string | null;
+      unitPrice?: number;
+      quantity?: number;
+      shippingCost?: number;
+      taxCodeId?: string;
+      taxPercent?: number;
+      supplierTaxAmount?: number;
+    };
+  }
+): Promise<
+  { data: PurchaseLineTax; error: null } | { data: null; error: string }
+> {
+  const { companyId, sent } = args;
+  const [header, stored] = await Promise.all([
+    readPurchaseTaxDocument(client, companyId, args.document, args.documentId),
+    args.lineId
+      ? readPurchaseTaxLine(client, companyId, args.document, args.lineId)
+      : null
+  ]);
+  if (header.error !== null) return { data: null, error: header.error };
+  if (stored && stored.error !== null)
+    return { data: null, error: stored.error };
+  const line = stored?.data ?? null;
+
+  const itemId = sent.itemId !== undefined ? sent.itemId : line?.itemId;
+  // An update that sends a percent but no code is checked against the
+  // stored code: a coded line's rate is always its code's.
+  const taxCodeId =
+    sent.taxCodeId ??
+    (sent.taxPercent !== undefined
+      ? (line?.taxCodeId ?? undefined)
+      : undefined);
+  const sentCodeId = taxCodeId || null;
+  const storedCodeId =
+    taxCodeId === undefined ? (line?.taxCodeId ?? null) : null;
+  const [itemTaxable, date, codes] = await Promise.all([
+    isItemTaxable(client, companyId, itemId),
+    header.data.date ??
+      getCompanyTimeZone(client, companyId).then((tz) =>
+        datetime.today(tz).toString()
+      ),
+    getTaxCodeInputs(client, companyId, [sentCodeId, storedCodeId])
+  ]);
+  if (codes.error) return { data: null, error: codes.error };
+
+  let partyDecision: LineTaxDecision | null = null;
+  if (
+    !args.lineId &&
+    taxCodeId === undefined &&
+    itemTaxable &&
+    header.data.supplierId
+  ) {
+    // The item is taxable (or there is none): no second read of it.
+    const resolved = await resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: header.data.supplierId,
+      date
+    });
+    if (resolved.error) {
+      logger.error("Failed to resolve purchase line tax", {
+        companyId,
+        supplierId: header.data.supplierId,
+        error: resolved.error
+      });
+    }
+    partyDecision = resolved.data;
+  }
+
+  const tax = decideWrittenLineTax({
+    source: "purchase",
+    itemTaxable,
+    sentTaxCodeId: taxCodeId,
+    sentTaxPercent: sent.taxPercent,
+    sentCode: sentCodeId ? (codes.data.get(sentCodeId) ?? null) : null,
+    partyDecision,
+    date,
+    // A changed supplier amount touches tax as much as the code does.
+    stored:
+      line &&
+      (sent.supplierTaxAmount === undefined ||
+        equals(sent.supplierTaxAmount, Number(line.supplierTaxAmount ?? 0)))
+        ? line
+        : null
+  });
+  if (tax.error !== null) return { data: null, error: tax.error };
+
+  // The line's code after the write. A supplier's code is applied at its
+  // charged rate, 0 for Reverse Charge, so restating its amount zeroes it.
+  const knownCodeId = sentCodeId ?? storedCodeId;
+  let code = knownCodeId ? (codes.data.get(knownCodeId) ?? null) : null;
+  // A supplier's code was not among the codes read: read it, so a Reverse
+  // Charge code still refuses a typed supplier tax amount.
+  if (!code && tax.data.taxCodeId) {
+    const partyCodes = await getTaxCodeInputs(client, companyId, [
+      tax.data.taxCodeId
+    ]);
+    if (partyCodes.error) return { data: null, error: partyCodes.error };
+    code = partyCodes.data.get(tax.data.taxCodeId) ?? null;
+  }
+  const base = taxableBase(
+    sent.unitPrice ?? Number(line?.unitPrice ?? 0),
+    sent.quantity ?? Number(line?.quantity ?? 0),
+    sent.shippingCost ?? Number(line?.shippingCost ?? 0)
+  );
+  const restates =
+    !!tax.data.taxCodeId &&
+    (!sentCodeId || sent.supplierTaxAmount === undefined);
+  const currencyDecimals = restates
+    ? await settlementDecimals(client, {
+        companyId,
+        companyGroupId: args.companyGroupId,
+        currencyCode: header.data.currencyCode
+      })
+    : null;
+  const amount = decidePurchaseTaxAmount({
+    itemTaxable,
+    tax: tax.data,
+    code,
+    codeWasSent: !!sentCodeId,
+    sentTaxAmount: sent.supplierTaxAmount,
+    base,
+    currencyDecimals
+  });
+  if (amount.error !== null) return { data: null, error: amount.error };
+  return {
+    data: {
+      ...tax.data,
+      ...(amount.data !== undefined ? { supplierTaxAmount: amount.data } : {})
+    },
+    error: null
+  };
+}
+
+/**
+ * The tax of purchase order lines a server path creates with no code sent
+ * (a replacement order, an outside-operation order), the way a create of
+ * `resolvePurchaseLineTax` decides it: the supplier's code at its rate on
+ * the order date (today while the order has none), none for a non-taxable
+ * item, and the supplier tax amount restated from the rate. A supplier code
+ * with no rate in force on that date is refused. One entry per line.
+ */
+export async function newPurchaseOrderLineTaxes(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    purchaseOrderId: string;
+    lines: ReadonlyArray<{ itemId: string | null; base: number }>;
+  }
+): Promise<
+  { data: PurchaseLineTax[]; error: null } | { data: null; error: string }
+> {
+  const { companyId } = args;
+  const header = await readPurchaseTaxDocument(
+    client,
+    companyId,
+    "purchaseOrder",
+    args.purchaseOrderId
+  );
+  if (header.error !== null) return { data: null, error: header.error };
+  const supplierId = header.data.supplierId;
+  if (!supplierId) return { data: args.lines.map(() => ({})), error: null };
+
+  const itemIds = [
+    ...new Set(args.lines.map((line) => line.itemId).filter(Boolean))
+  ] as string[];
+  const [date, items, currencyDecimals] = await Promise.all([
+    header.data.date ??
+      getCompanyTimeZone(client, companyId).then((tz) =>
+        datetime.today(tz).toString()
+      ),
+    itemIds.length > 0
+      ? client
+          .from("item")
+          .select("id, taxable")
+          .in("id", itemIds)
+          .eq("companyId", companyId)
+      : null,
+    settlementDecimals(client, {
+      companyId,
+      companyGroupId: args.companyGroupId,
+      currencyCode: header.data.currencyCode
+    })
+  ]);
+  if (items?.error) return { data: null, error: items.error.message };
+  const resolved = await resolveLineTaxes(client, companyId, {
+    source: "purchase",
+    supplierId,
+    date
+  });
+  if (resolved.error || !resolved.data) {
+    return { data: null, error: resolved.error ?? "Tax was not resolved" };
+  }
+  const taxable = new Map(
+    (items?.data ?? []).map((item) => [item.id, item.taxable !== false])
+  );
+
+  const taxes: PurchaseLineTax[] = [];
+  for (const line of args.lines) {
+    const tax = newPurchaseLineTax(resolved.data, {
+      itemTaxable: line.itemId ? (taxable.get(line.itemId) ?? true) : true,
+      date,
+      base: line.base,
+      currencyDecimals
+    });
+    if (tax.error !== null) return tax;
+    taxes.push(tax.data);
+  }
+  return { data: taxes, error: null };
+}
+
+/**
+ * The tax of the prices a supplier submits from a quote's share page, one per
+ * price. A stored price keeps its code and a new one takes the supplier's,
+ * at the code's rate on `date` (`decideWrittenLineTax`); with no code the
+ * rate is the one the amounts give. The supplier's amount stands, but a
+ * Reverse Charge code refuses one (`decidePurchaseTaxAmount`). A
+ * non-taxable item carries no tax.
+ */
+export async function supplierQuotePriceTaxes(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    supplierId: string | null;
+    date: string;
+    prices: ReadonlyArray<{
+      itemId: string | null;
+      /** undefined: a new price. */
+      storedTaxCodeId: string | null | undefined;
+      supplierTaxAmount: number;
+      base: number;
+    }>;
+  }
+): Promise<
+  | {
+      data: {
+        taxCodeId: string | null;
+        taxPercent: number;
+        supplierTaxAmount: number;
+      }[];
+      error: null;
+    }
+  | { data: null; error: string }
+> {
+  const { companyId } = args;
+  const itemIds = [
+    ...new Set(args.prices.map((price) => price.itemId).filter(Boolean))
+  ] as string[];
+  const [items, supplier] = await Promise.all([
+    itemIds.length > 0
+      ? client
+          .from("item")
+          .select("id, taxable")
+          .in("id", itemIds)
+          .eq("companyId", companyId)
+      : null,
+    args.prices.some((price) => price.storedTaxCodeId === undefined) &&
+    args.supplierId
+      ? resolveLineTaxes(client, companyId, {
+          source: "purchase",
+          supplierId: args.supplierId,
+          date: args.date
+        })
+      : null
+  ]);
+  if (items?.error) return { data: null, error: items.error.message };
+  if (supplier?.error) return { data: null, error: supplier.error };
+  const supplierCodeId = supplier?.data?.taxCodeId ?? null;
+  const codeIdOf = (price: (typeof args.prices)[number]) =>
+    price.storedTaxCodeId === undefined
+      ? supplierCodeId
+      : price.storedTaxCodeId;
+  const codes = await getTaxCodeInputs(
+    client,
+    companyId,
+    args.prices.map(codeIdOf)
+  );
+  if (codes.error) return { data: null, error: codes.error };
+  const taxable = new Map(
+    (items?.data ?? []).map((item) => [item.id, item.taxable !== false])
+  );
+
+  const taxes: {
+    taxCodeId: string | null;
+    taxPercent: number;
+    supplierTaxAmount: number;
+  }[] = [];
+  for (const price of args.prices) {
+    const itemTaxable = price.itemId
+      ? (taxable.get(price.itemId) ?? true)
+      : true;
+    const codeId = codeIdOf(price);
+    const code = codeId ? (codes.data.get(codeId) ?? null) : null;
+    const tax = decideWrittenLineTax({
+      source: "purchase",
+      itemTaxable,
+      sentTaxCodeId: codeId ?? "",
+      sentTaxPercent: deriveRate(price.supplierTaxAmount, price.base),
+      sentCode: code,
+      partyDecision: null,
+      date: args.date
+    });
+    if (tax.error !== null) return tax;
+    const amount = decidePurchaseTaxAmount({
+      itemTaxable,
+      tax: tax.data,
+      code,
+      codeWasSent: true,
+      sentTaxAmount: price.supplierTaxAmount,
+      base: price.base,
+      currencyDecimals: null
+    });
+    if (amount.error !== null) return amount;
+    taxes.push({
+      taxCodeId: tax.data.taxCodeId ?? null,
+      taxPercent: tax.data.taxPercent ?? 0,
+      supplierTaxAmount: amount.data ?? 0
+    });
+  }
+  return { data: taxes, error: null };
+}
+
+async function readPurchaseTaxDocument(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  document: "purchaseOrder" | "purchaseInvoice",
+  documentId: string
+): Promise<
+  | {
+      data: {
+        supplierId: string | null;
+        date: string | null;
+        currencyCode: string | null;
+      };
+      error: null;
+    }
+  | { data: null; error: string }
+> {
+  if (document === "purchaseOrder") {
+    const order = await client
+      .from("purchaseOrder")
+      .select("supplierId, orderDate, currencyCode")
+      .eq("id", documentId)
+      .eq("companyId", companyId)
+      .single();
+    if (order.error) return { data: null, error: order.error.message };
+    return {
+      data: {
+        supplierId: order.data.supplierId,
+        date: order.data.orderDate,
+        currencyCode: order.data.currencyCode
+      },
+      error: null
+    };
+  }
+  const invoice = await client
+    .from("purchaseInvoice")
+    .select("supplierId, dateIssued, postingDate, currencyCode")
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .single();
+  if (invoice.error) return { data: null, error: invoice.error.message };
+  return {
+    data: {
+      supplierId: invoice.data.supplierId,
+      // The invoice's tax point (plan decision 1).
+      date: invoice.data.dateIssued ?? invoice.data.postingDate ?? null,
+      currencyCode: invoice.data.currencyCode
+    },
+    error: null
+  };
+}
+
+async function readPurchaseTaxLine(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  document: "purchaseOrder" | "purchaseInvoice",
+  lineId: string
+): Promise<
+  | {
+      data: {
+        itemId: string | null;
+        taxCodeId: string | null;
+        taxPercent: number | null;
+        supplierTaxAmount: number | null;
+        unitPrice: number | null;
+        quantity: number | null;
+        shippingCost: number | null;
+      };
+      error: null;
+    }
+  | { data: null; error: string }
+> {
+  if (document === "purchaseOrder") {
+    const line = await client
+      .from("purchaseOrderLine")
+      .select(
+        "itemId, taxCodeId, taxPercent, supplierTaxAmount, supplierUnitPrice, purchaseQuantity, supplierShippingCost"
+      )
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .single();
+    if (line.error) return { data: null, error: line.error.message };
+    return {
+      data: {
+        itemId: line.data.itemId,
+        taxCodeId: line.data.taxCodeId,
+        taxPercent: line.data.taxPercent,
+        supplierTaxAmount: line.data.supplierTaxAmount,
+        unitPrice: line.data.supplierUnitPrice,
+        quantity: line.data.purchaseQuantity,
+        shippingCost: line.data.supplierShippingCost
+      },
+      error: null
+    };
+  }
+  const line = await client
+    .from("purchaseInvoiceLine")
+    .select(
+      "itemId, taxCodeId, taxPercent, supplierTaxAmount, supplierUnitPrice, quantity, supplierShippingCost"
+    )
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error) return { data: null, error: line.error.message };
+  return {
+    data: {
+      itemId: line.data.itemId,
+      taxCodeId: line.data.taxCodeId,
+      taxPercent: line.data.taxPercent,
+      supplierTaxAmount: line.data.supplierTaxAmount,
+      unitPrice: line.data.supplierUnitPrice,
+      quantity: line.data.quantity,
+      shippingCost: line.data.supplierShippingCost
+    },
+    error: null
+  };
+}
+
+/** The decimals a purchase tax amount settles at: the document currency's,
+ *  else the company base currency's. Null when neither is set up. */
+async function settlementDecimals(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    currencyCode: string | null;
+  }
+): Promise<number | null> {
+  const currencyCode =
+    args.currencyCode ??
+    (
+      await client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", args.companyId)
+        .single()
+    ).data?.baseCurrencyCode;
+  if (!currencyCode) return null;
+  const currency = await getCurrencyByCode(
+    client,
+    args.companyGroupId,
+    currencyCode
+  );
+  return currency.data?.decimalPlaces ?? null;
 }
 
 export async function updatePurchaseOrderLineOrder(
@@ -4785,6 +5491,202 @@ export async function upsertPurchasingRFQSuppliers(
     .from("purchasingRfqSupplier")
     .insert(suppliersToInsert)
     .select("id");
+}
+
+/**
+ * Why the company's promised date rule refuses this order, or null when the
+ * rule is off or the order passes.
+ */
+export async function requiredPromisedDateRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string
+): Promise<string | null> {
+  const companyId = ctx.company.id;
+  const settings = await getCompanySettings(ctx.asSystem.supabase, companyId);
+  // Fails closed, as the planning approval bypass does: an unread setting may be on.
+  if (settings.error) {
+    logger.error("Failed to read the promised date rule", {
+      companyId,
+      purchaseOrderId,
+      error: settings.error
+    });
+    return "The promised date rule could not be checked. Try again.";
+  }
+  if (!settings.data?.requirePromisedDateToFinalizePurchaseOrder) return null;
+
+  const [lines, delivery] = await Promise.all([
+    ctx.asSystem.pg
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "promisedDate"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .execute(),
+    ctx.asSystem.pg
+      .selectFrom("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .where("companyId", "=", companyId)
+      .where("id", "=", purchaseOrderId)
+      .executeTakeFirst()
+  ]);
+  return isPurchaseOrderMissingPromisedDate(
+    lines,
+    delivery?.receiptPromisedDate
+  )
+    ? "Add a promised date before you finalize this purchase order."
+    : null;
+}
+
+/**
+ * Creates Draft RFQs for `groups`, each with its suppliers and lines. A line's
+ * quantity comes in the inventory unit and goes out in the purchase unit: a
+ * single supplier's supplier part sets that unit, else the item's own unit. A
+ * service is always EA, 1:1. This runs without RLS, and the RFQ's item and
+ * location foreign keys do not include the company, so it checks them here.
+ */
+export async function insertRequestQuoteRfqs(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    rfqDate: string;
+    locationId?: string;
+    groups: { supplierIds: string[]; lines: RequestQuoteLine[] }[];
+  }
+) {
+  const { companyId, userId, rfqDate, locationId, groups } = input;
+  return withTransaction(db, async (trx) => {
+    const itemIds = [
+      ...new Set(groups.flatMap((g) => g.lines.map((l) => l.itemId)))
+    ];
+    const supplierIds = [...new Set(groups.flatMap((g) => g.supplierIds))];
+
+    const items = await trx
+      .selectFrom("item")
+      .select(["id", "name", "type", "unitOfMeasureCode"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", itemIds)
+      .execute();
+    const suppliers = await trx
+      .selectFrom("supplier")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "in", supplierIds)
+      .execute();
+    const location = locationId
+      ? await trx
+          .selectFrom("location")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("id", "=", locationId)
+          .executeTakeFirst()
+      : null;
+    if (
+      items.length !== itemIds.length ||
+      suppliers.length !== supplierIds.length ||
+      (locationId && !location)
+    ) {
+      throw new InvalidInputError("Item, supplier or location not found");
+    }
+
+    const supplierParts = await trx
+      .selectFrom("supplierPart")
+      .select([
+        "itemId",
+        "supplierId",
+        "supplierUnitOfMeasureCode",
+        "conversionFactor"
+      ])
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", itemIds)
+      .where("supplierId", "in", supplierIds)
+      .execute();
+
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const partByItemAndSupplier = new Map(
+      supplierParts.map((part) => [`${part.itemId}|${part.supplierId}`, part])
+    );
+
+    const rfqIds = await getNextSequences(
+      trx,
+      "purchasingRfq",
+      companyId,
+      groups.length
+    );
+    const created = await trx
+      .insertInto("purchasingRfq")
+      .values(
+        rfqIds.map((rfqId) => ({
+          rfqId,
+          rfqDate,
+          locationId,
+          employeeId: userId,
+          status: "Draft" as const,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        }))
+      )
+      .returning(["id", "rfqId"])
+      .execute();
+    const idByRfqId = new Map(created.map((rfq) => [rfq.rfqId, rfq.id]));
+    const rfqOf = groups.map((_, index) => {
+      const id = idByRfqId.get(rfqIds[index]!);
+      if (!id) throw new Error("RFQ not created");
+      return id;
+    });
+
+    await trx
+      .insertInto("purchasingRfqSupplier")
+      .values(
+        groups.flatMap((group, index) =>
+          group.supplierIds.map((supplierId) => ({
+            purchasingRfqId: rfqOf[index]!,
+            supplierId,
+            companyId,
+            createdBy: userId
+          }))
+        )
+      )
+      .execute();
+
+    await trx
+      .insertInto("purchasingRfqLine")
+      .values(
+        groups.flatMap((group, groupIndex) =>
+          group.lines.map((line, index) => {
+            const item = itemById.get(line.itemId);
+            const isService = item?.type === "Service";
+            const inventoryUnit = isService
+              ? EACH_UNIT_OF_MEASURE_CODE
+              : (item?.unitOfMeasureCode ?? EACH_UNIT_OF_MEASURE_CODE);
+            const part =
+              !isService && group.supplierIds.length === 1
+                ? partByItemAndSupplier.get(
+                    `${line.itemId}|${group.supplierIds[0]}`
+                  )
+                : undefined;
+            const factor = Number(part?.conversionFactor) || 1;
+            return {
+              purchasingRfqId: rfqOf[groupIndex]!,
+              itemId: line.itemId,
+              description: item?.name,
+              quantity: [toPurchaseQuantity(line.quantity, factor)],
+              purchaseUnitOfMeasureCode:
+                part?.supplierUnitOfMeasureCode ?? inventoryUnit,
+              inventoryUnitOfMeasureCode: inventoryUnit,
+              conversionFactor: factor,
+              order: index + 1,
+              companyId,
+              createdBy: userId,
+              updatedBy: userId
+            };
+          })
+        )
+      )
+      .execute();
+
+    return rfqOf.map((id, index) => ({ id, rfqId: rfqIds[index]! }));
+  });
 }
 
 export async function updatePurchasingRFQStatus(
@@ -6157,10 +7059,14 @@ export async function getCreditableQuantitiesForPurchaseReturn(
 }
 
 /**
- * Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine
- * breakdown. Cap = shipped − already credited over NON-VOIDED memos,
- * validated under a row lock. Amount rounded once at the currency's
- * decimals. Returns the memo id.
+ * Issue supplier credit: AP memos + per-line purchaseReturnOrderCreditLine
+ * breakdown. One memo per tax rate (spec "Memo tax": a memo has one code and
+ * one rate): each return line takes the code and rate of the purchase invoice
+ * line it returns, else of its purchase order line. A memo's net is rounded
+ * once at the currency's decimals, its tax computed forward from the net, and
+ * its `amount` is the gross the supplier credits. Cap = shipped − already
+ * credited over NON-VOIDED memos, validated under a row lock. Returns the
+ * first memo's id; the others share its purchaseReturnOrderId.
  *
  * The memo is a **Debit** memo (the `debitMemo` DR- sequence), NOT a Credit
  * memo. `direction` alone decides the control side for both AR and AP
@@ -6219,15 +7125,6 @@ export async function createPurchaseReturnOrderCredit(
   );
   const decimalPlaces = currency.data?.decimalPlaces ?? 2;
 
-  const seq = await client.rpc("get_next_sequence", {
-    sequence_name: "debitMemo",
-    company_id: companyId
-  });
-  if (seq.error || !seq.data) {
-    throw new Error("Failed to allocate debit memo number");
-  }
-  const memoId = seq.data;
-
   const requested = new Map(
     lines
       .filter((l) => l.quantity > 0)
@@ -6245,7 +7142,9 @@ export async function createPurchaseReturnOrderCredit(
         "lineNumber",
         "quantityShipped",
         "unitPrice",
-        "restockFeePercent"
+        "restockFeePercent",
+        "purchaseInvoiceLineId",
+        "purchaseOrderLineId"
       ])
       .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
       .where("companyId", "=", companyId)
@@ -6285,15 +7184,55 @@ export async function createPurchaseReturnOrderCredit(
       ])
     );
 
-    let total = 0;
-    const creditLineValues: {
-      memoId: string;
-      purchaseReturnOrderLineId: string;
-      quantity: number;
-      unitPrice: number;
-      restockFee: number;
-      companyId: string;
-      createdBy: string;
+    // The tax the supplier charged on each line: the invoice line it returns,
+    // else its purchase order line. A line with neither is untaxed.
+    const invoiceLineIds = orderLines
+      .map((line) => line.purchaseInvoiceLineId)
+      .filter((id): id is string => !!id);
+    const orderLineIds = orderLines
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => !!id);
+    const [invoiceLineTax, orderLineTax] = await Promise.all([
+      invoiceLineIds.length > 0
+        ? trx
+            .selectFrom("purchaseInvoiceLine")
+            .select(["id", "taxCodeId", "taxPercent"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", invoiceLineIds)
+            .execute()
+        : [],
+      orderLineIds.length > 0
+        ? trx
+            .selectFrom("purchaseOrderLine")
+            .select(["id", "taxCodeId", "taxPercent"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", orderLineIds)
+            .execute()
+        : []
+    ]);
+    const sourceTax = new Map(
+      [...orderLineTax, ...invoiceLineTax].map((row) => [
+        row.id,
+        { taxCodeId: row.taxCodeId, taxPercent: Number(row.taxPercent ?? 0) }
+      ])
+    );
+    const lineTax = (line: (typeof orderLines)[number]) =>
+      (line.purchaseInvoiceLineId &&
+        sourceTax.get(line.purchaseInvoiceLineId)) ||
+      (line.purchaseOrderLineId && sourceTax.get(line.purchaseOrderLineId)) || {
+        taxCodeId: null,
+        taxPercent: 0
+      };
+
+    const credits: {
+      net: number;
+      tax: { taxCodeId: string | null; taxPercent: number };
+      values: {
+        purchaseReturnOrderLineId: string;
+        quantity: number;
+        unitPrice: number;
+        restockFee: number;
+      };
     }[] = [];
 
     for (const line of orderLines) {
@@ -6313,47 +7252,85 @@ export async function createPurchaseReturnOrderCredit(
       const feePercent = Number(line.restockFeePercent ?? 0);
       const gross = quantity * unitPrice;
       const restockFee = gross * feePercent;
-      total += gross - restockFee;
-      creditLineValues.push({
-        memoId: "",
-        purchaseReturnOrderLineId: line.id,
-        quantity,
-        unitPrice,
-        restockFee,
-        companyId,
-        createdBy: userId
+      credits.push({
+        net: gross - restockFee,
+        tax: lineTax(line),
+        values: {
+          purchaseReturnOrderLineId: line.id,
+          quantity,
+          unitPrice,
+          restockFee
+        }
       });
     }
 
-    if (total <= 0) {
+    // One memo per tax rate. A rate whose lines credit nothing (zero-priced
+    // returns) gets no memo of its own; its credit lines join the first memo
+    // so the quantity still counts against the creditable cap.
+    const groups = groupByTaxRate(credits, (credit) => credit.tax).map(
+      (group) => ({
+        ...group,
+        ...memoAmounts(
+          group.rows.reduce((sum, credit) => sum + credit.net, 0),
+          group.taxPercent,
+          decimalPlaces
+        )
+      })
+    );
+    const memoGroups = groups.filter((group) => group.netAmount > 0);
+    if (memoGroups.length === 0) {
       throw new Error("Credit amount must be positive");
     }
 
-    const memo = await trx
+    // Allocated in this transaction, so a rollback leaves no gap.
+    const memoIds = await getNextSequences(
+      trx,
+      "debitMemo",
+      companyId,
+      memoGroups.length
+    );
+    const memos = await trx
       .insertInto("memo")
-      .values({
-        memoId,
-        direction: "Debit",
-        status: "Draft",
-        supplierId: order.data.supplierId,
-        memoDate,
-        currencyCode: order.data.currencyCode,
-        exchangeRate: order.data.exchangeRate ?? 1,
-        amount: round(total, decimalPlaces),
-        reference: order.data.purchaseReturnOrderId,
-        purchaseReturnOrderId,
-        companyId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+      .values(
+        memoGroups.map((group, index) => ({
+          memoId: memoIds[index]!,
+          direction: "Debit" as const,
+          status: "Draft" as const,
+          supplierId: order.data.supplierId,
+          memoDate,
+          currencyCode: order.data.currencyCode,
+          exchangeRate: order.data.exchangeRate ?? 1,
+          amount: group.amount,
+          taxAmount: group.taxAmount,
+          taxCodeId: group.taxCodeId,
+          reference: order.data.purchaseReturnOrderId,
+          purchaseReturnOrderId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .returning(["id", "memoId"])
+      .execute();
+    const idByMemoId = new Map(memos.map((memo) => [memo.memoId, memo.id]));
+    const memoIdOf = (index: number) => idByMemoId.get(memoIds[index]!)!;
 
     await trx
       .insertInto("purchaseReturnOrderCreditLine")
-      .values(creditLineValues.map((v) => ({ ...v, memoId: memo.id })))
+      .values(
+        groups.flatMap((group) => {
+          const index = memoGroups.indexOf(group);
+          const memoId = memoIdOf(index === -1 ? 0 : index);
+          return group.rows.map((credit) => ({
+            ...credit.values,
+            memoId,
+            companyId,
+            createdBy: userId
+          }));
+        })
+      )
       .execute();
 
-    return memo.id;
+    return memoIdOf(0);
   });
 }
 
@@ -6566,9 +7543,26 @@ export async function createReplacementPurchaseOrder(
     };
   });
 
+  // Each line takes the supplier's tax, as a line added on the order does.
+  const taxes = await newPurchaseOrderLineTaxes(client, {
+    companyId,
+    companyGroupId,
+    purchaseOrderId,
+    lines: replacementLines.map((line) => ({
+      itemId: line.itemId,
+      base: taxableBase(line.supplierUnitPrice, line.purchaseQuantity, 0)
+    }))
+  });
+  if (taxes.error !== null) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: { message: taxes.error } as PostgrestError };
+  }
+
   const insertLines = await client
     .from("purchaseOrderLine")
-    .insert(replacementLines);
+    .insert(
+      replacementLines.map((line, index) => ({ ...line, ...taxes.data[index] }))
+    );
   if (insertLines.error) {
     await deletePurchaseOrder(client, purchaseOrderId);
     return { data: null, error: insertLines.error };
@@ -8062,7 +9056,9 @@ export async function sharedSupplierQuote(
 ) {
   const quote = await ctx.asSystem.supabase
     .from("supplierQuote")
-    .select("id, createdBy, exchangeRate, externalLinkId, externalNotes")
+    .select(
+      "id, createdBy, exchangeRate, externalLinkId, externalNotes, supplierId, quotedDate"
+    )
     .eq("id", supplierQuoteId)
     .eq("companyId", ctx.company.id)
     .maybeSingle();
@@ -8228,7 +9224,7 @@ export async function writeClassificationOverride(
       }
     ]);
   } catch (err) {
-    logger.warn("audit write skipped for a lease classification override", {
+    logger.warning("audit write skipped for a lease classification override", {
       error: err
     });
   }
@@ -9242,7 +10238,7 @@ export async function auditForceDelete(
       }
     ]);
   } catch (err) {
-    logger.warn("audit write skipped for a purchase order force delete", {
+    logger.warning("audit write skipped for a purchase order force delete", {
       error: err
     });
   }
@@ -9483,7 +10479,7 @@ export async function releaseApprovedPurchaseOrder(
           companyId: ctx.company.id
         });
       } else {
-        logger.warn(
+        logger.warning(
           "Purchase order not emailed after approval: the supplier contact has no email",
           { purchaseOrderId, supplierContactId: supplierContact }
         );
@@ -9497,19 +10493,6 @@ export async function releaseApprovedPurchaseOrder(
 }
 
 // ── Purchasing planning ─────────────────────────────────────────────────────
-
-/**
- * The date the supplier promised for a PO line: the line's own, else its
- * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
- * gives MRP. MRP dates the line by this ahead of the required date, so a
- * planning date change (which writes the required date) cannot move it.
- */
-export function promisedDateOf(line: {
-  promisedDate: string | null;
-  receiptPromisedDate: string | null | undefined;
-}): string | null {
-  return line.promisedDate ?? line.receiptPromisedDate ?? null;
-}
 
 /** Sums forecasts that land on the same (item, location, period). */
 export function deduplicateForecasts<
@@ -9989,7 +10972,8 @@ export async function finalizePurchasingRfq(
   return { quotes };
 }
 const updatePurchasedPricesLogger = getLogger(
-  "server-functions",
+  "erp",
+  "purchasing",
   "update-purchased-prices"
 );
 
@@ -13245,6 +14229,15 @@ async function draftLeaseInvoices(
     .where("companyId", "=", companyId)
     .executeTakeFirst();
 
+  // The supplier's tax code taxes each line at the rate in force on its due
+  // date. A supplier with no code bills no tax, as before tax codes, and nor
+  // does a Reverse Charge code: the supplier charges none, and posting
+  // self-assesses it from the code's components.
+  const taxCode = await readSupplierTaxCode(trx, companyId, lease.supplierId);
+  const decimals = taxCode
+    ? await currencyDecimals(trx, companyId, lease.currencyCode)
+    : null;
+
   const byDueDate = new Map<string, typeof rows>();
   for (const row of rows) {
     const group = byDueDate.get(row.dueDate) ?? [];
@@ -13256,6 +14249,13 @@ async function draftLeaseInvoices(
   for (const [dueDate, group] of byDueDate) {
     const subtotal = round(
       group.reduce((sum, row) => sum + Number(row.amount), 0)
+    );
+    // The invoice is dated its due date: the tax point.
+    const taxPercent = chargedRateOr(taxCode, 0, dueDate);
+    const lineTax = (amount: number) =>
+      decimals === null ? 0 : applyRate(amount, taxPercent, decimals);
+    const totalTax = round(
+      group.reduce((sum, row) => sum + lineTax(Number(row.amount)), 0)
     );
     const invoiceId = await getNextSequence(trx, "purchaseInvoice", companyId);
     // Every purchase invoice hangs off a supplier interaction, as the ERP's
@@ -13285,8 +14285,8 @@ async function draftLeaseInvoices(
         dateIssued: dueDate,
         subtotal,
         totalDiscount: 0,
-        totalAmount: subtotal,
-        totalTax: 0,
+        totalAmount: round(subtotal + totalTax),
+        totalTax,
         companyId,
         createdBy: userId
       })
@@ -13317,8 +14317,9 @@ async function draftLeaseInvoices(
           quantity: 1,
           supplierUnitPrice: Number(row.amount),
           supplierShippingCost: 0,
-          supplierTaxAmount: 0,
-          taxPercent: 0,
+          supplierTaxAmount: lineTax(Number(row.amount)),
+          taxPercent,
+          taxCodeId: taxCode?.id ?? null,
           exchangeRate: 1,
           sortOrder: index + 1,
           companyId,
@@ -13355,6 +14356,32 @@ async function draftLeaseInvoices(
     drafted.push({ invoiceId: invoice.id, leaseId });
   }
   return drafted;
+}
+
+/**
+ * The lease supplier's tax code (`supplierTax.taxCodeId`) with every
+ * component (`loadTaxCodes`); null when the supplier has none. A retired
+ * code the supplier still names keeps billing, as on every other document.
+ */
+async function readSupplierTaxCode(
+  trx: KyselyTx,
+  companyId: string,
+  supplierId: string
+): Promise<TaxCodeInput | null> {
+  const supplierTax = await trx
+    .selectFrom("supplierTax")
+    .select("taxCodeId")
+    .where("supplierId", "=", supplierId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!supplierTax?.taxCodeId) return null;
+  const codes = await sharedPostings.loadTaxCodes(
+    trx,
+    companyId,
+    [supplierTax.taxCodeId],
+    null
+  );
+  return codes.get(supplierTax.taxCodeId) ?? null;
 }
 
 /**

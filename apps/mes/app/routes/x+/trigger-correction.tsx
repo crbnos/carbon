@@ -4,12 +4,14 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { triggerCorrectionValidator } from "~/services/models";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 /** Sends a unit through the correction the operator confirmed. */
 export async function action({ request }: ActionFunctionArgs) {
@@ -41,25 +43,36 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { trackedEntityId, ...correction } = validation.data;
 
+  const work = trackedEntityId
+    ? await resolveWorkUnit({
+        client: getCarbonServiceRole(),
+        companyId,
+        operationId: correction.triggeredAtJobOperationId,
+        requestedUnitId: trackedEntityId,
+        mode: "member"
+      })
+    : null;
+  if (work?.kind === "refuse") {
+    return data(
+      { success: false },
+      await flash(request, error(null, work.message))
+    );
+  }
+  const unitId = work?.kind === "unit" ? work.unitId : trackedEntityId;
+
   const result = await erpPosting(
     "trigger-correction",
     { companyId, userId },
     {
       ...correction,
-      trackedEntityIds: trackedEntityId ? [trackedEntityId] : undefined
+      trackedEntityIds: unitId ? [unitId] : undefined
     }
   );
 
   if (result.error) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(
-          result.error,
-          result.error.message ?? "Failed to start correction"
-        )
-      )
+      await flash(request, error(result.error, "Failed to start correction"))
     );
   }
 

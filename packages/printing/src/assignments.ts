@@ -8,12 +8,18 @@ import type {
   PrintingSettings
 } from "./types";
 
-export const printerContexts = [
-  "default",
+/** The contexts a location assigns a printer to, besides its default. */
+export const locationPrinterContexts = [
   "shipping",
   "receiving",
   "inventory",
   "kanban",
+  "documents"
+] as const;
+
+export const printerContexts = [
+  "default",
+  ...locationPrinterContexts,
   "workCenter"
 ] as const;
 
@@ -23,9 +29,21 @@ const sourceDocumentContexts: Record<string, PrinterContext> = {
   Shipment: "shipping",
   Receipt: "receiving",
   StockTransfer: "inventory",
+  PickingList: "inventory",
   StorageUnit: "inventory",
-  Kanban: "kanban"
+  Kanban: "kanban",
+  PackingSlip: "documents",
+  SalesInvoice: "documents"
 };
+
+/**
+ * Whether a context auto-prints before a company sets it. Full-page documents
+ * auto-print only once turned on, so adding the documents printer does not
+ * start printing slips on its own.
+ */
+export function defaultAutoPrint(context: PrinterContext): boolean {
+  return context !== "documents";
+}
 
 /**
  * Maps a print job's source document to the printer context whose
@@ -72,7 +90,7 @@ export function resolveContextAssignment(
 
   return {
     printerRouteId: explicit?.printerRouteId ?? fallback.printerRouteId,
-    autoPrint: explicit?.autoPrint ?? true
+    autoPrint: explicit?.autoPrint ?? defaultAutoPrint(context)
   };
 }
 
@@ -84,6 +102,10 @@ export function emptyLocationAssignment(): LocationAssignment {
     receiving: { printerRouteId: null, autoPrint: true },
     inventory: { printerRouteId: null, autoPrint: true },
     kanban: { printerRouteId: null, autoPrint: true },
+    documents: {
+      printerRouteId: null,
+      autoPrint: defaultAutoPrint("documents")
+    },
     workCenters: {}
   };
 }

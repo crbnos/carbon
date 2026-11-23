@@ -373,6 +373,7 @@ export async function receiveFiveParts(
         supplierInteractionId: interaction.id,
         currencyCode: "USD",
         exchangeRate: 1,
+        status: "To Receive and Invoice",
         companyId: f.companyId,
         createdBy: USER
       })
@@ -970,6 +971,11 @@ export async function deleteJournals(f: Fixture, sourceTypes: SourceType[]) {
       .select("id")
       .where("companyId", "=", f.companyId)
       .where("journalId", "in", journalIds);
+    await trx
+      .deleteFrom("taxLedger")
+      .where("companyId", "=", f.companyId)
+      .where("journalId", "in", journalIds)
+      .execute();
     await trx
       .deleteFrom("journalLineDimension")
       .where("companyId", "=", f.companyId)

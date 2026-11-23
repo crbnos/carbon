@@ -37,8 +37,11 @@ export function databaseTest(
   it.skipIf(!hasLocalDatabase)(name, fn, 60_000);
 }
 
-/** One connection with trigger suppression on, as the fixtures' inserts need. */
-export async function connectLocalTestDatabase() {
+/** Fixture connections have trigger suppression on. An edit-lock test needs a
+ * second connection because its advisory lock intentionally holds the first. */
+export async function connectLocalTestDatabase({
+  maxConnections = 1
+}: { maxConnections?: number } = {}) {
   const databaseUrl = process.env.SUPABASE_DB_URL;
   if (!databaseUrl || !LOCAL_HOSTS.includes(new URL(databaseUrl).hostname)) {
     throw new Error("These regressions require a local SUPABASE_DB_URL");
@@ -46,7 +49,14 @@ export async function connectLocalTestDatabase() {
   // One connection: requests in the real seam share it, so they inherit the
   // trigger suppression even when they open a new transaction.
   const db = getPostgresClient<KyselyDatabase>(
-    new Pool({ connectionString: databaseUrl, max: 1 }),
+    new Pool({
+      connectionString: databaseUrl,
+      max: maxConnections,
+      // The startup option applies to every connection in a larger pool.
+      ...(maxConnections > 1
+        ? { options: "-c app.sync_in_progress=true" }
+        : {})
+    }),
     PostgresDriver
   );
   await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(

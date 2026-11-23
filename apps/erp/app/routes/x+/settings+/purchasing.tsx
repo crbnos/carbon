@@ -50,12 +50,14 @@ import {
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   settingsToggle,
+  supplierPartNumberDisplaySettingsValidator,
   supplierQuoteNotificationValidator
 } from "~/modules/settings/settings.models";
 import {
   getAccountsPayableBillingAddress,
   getCompanySettings
 } from "~/modules/settings/settings.service";
+import { PartNumbersCard } from "~/modules/settings/ui/PartNumbers/PartNumbersCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -109,6 +111,10 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
   ),
   settingsToggle("includeSupplierPartFilesToggle", "includeSupplierPartFiles"),
   settingsToggle(
+    "requirePromisedDateToFinalizePurchaseOrderToggle",
+    "requirePromisedDateToFinalizePurchaseOrder"
+  ),
+  settingsToggle(
     "requirePurchaseOrderApprovalSignatureToggle",
     "requirePurchaseOrderApprovalSignature"
   ),
@@ -131,6 +137,11 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     .extend({ intent: z.literal("emails") })
     .transform(({ defaultSupplierCc }) => ({
       defaultSupplierCc: defaultSupplierCc ?? []
+    })),
+  supplierPartNumberDisplaySettingsValidator
+    .extend({ intent: z.literal("supplierPartNumberDisplay") })
+    .transform(({ supplierPartNumberDisplay }) => ({
+      supplierPartNumberDisplay
     }))
 ]);
 
@@ -184,6 +195,14 @@ export default function PurchasingSettingsRoute() {
           data.requireSupplierContactEmail
             ? t`Supplier contact email required`
             : t`Supplier contact email optional`
+        );
+      } else if (
+        data.requirePromisedDateToFinalizePurchaseOrder !== undefined
+      ) {
+        toast.success(
+          data.requirePromisedDateToFinalizePurchaseOrder
+            ? t`Promised date required to finalize purchase orders`
+            : t`Promised date optional to finalize purchase orders`
         );
       } else if (data.requirePurchaseOrderApprovalSignature !== undefined) {
         toast.success(
@@ -292,6 +311,25 @@ export default function PurchasingSettingsRoute() {
       toggleFetcher.submit(
         {
           intent: "includeSupplierPartFilesToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const requirePromisedDate = useSavedToggle(
+    toggleFetcher,
+    "requirePromisedDateToFinalizePurchaseOrderToggle",
+    companySettings.requirePromisedDateToFinalizePurchaseOrder ?? false
+  );
+
+  const handleRequirePromisedDateToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requirePromisedDateToFinalizePurchaseOrderToggle",
           enabled: checked.toString()
         },
         { method: "POST" }
@@ -527,6 +565,39 @@ export default function PurchasingSettingsRoute() {
         <Card>
           <CardHeader>
             <CardTitle>
+              <Trans>Require a Promised Date to Finalize Purchase Orders</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                A purchase order cannot be finalized until it has a supplier
+                promised date. A date on the order covers every line. Keep this
+                off if suppliers give you a date after they receive the order.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requirePromisedDate ? (
+                    <Trans>A promised date is required to finalize</Trans>
+                  ) : (
+                    <Trans>A promised date is optional to finalize</Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requirePromisedDate}
+                onCheckedChange={handleRequirePromisedDateToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
               <Trans>Require a Signature to Approve Purchase Orders</Trans>
             </CardTitle>
             <CardDescription>
@@ -673,6 +744,11 @@ export default function PurchasingSettingsRoute() {
             </ValidatedForm>
           </Card>
         )}
+
+        <PartNumbersCard
+          party="supplier"
+          value={companySettings.supplierPartNumberDisplay}
+        />
 
         <SettingsSectionHeader>
           <Trans>Automatic Updates</Trans>

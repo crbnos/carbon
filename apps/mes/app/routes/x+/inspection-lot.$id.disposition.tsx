@@ -13,7 +13,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import {
-  CORRECTION_TARGET_PREFIX,
+  correctionIdOfTarget,
   inspectionDispositionValidator
 } from "~/services/models";
 import {
@@ -22,6 +22,7 @@ import {
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkRequiredScans,
   checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
@@ -220,6 +221,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Required scans: the units this decision completes must hold their
+  // tracked parts. Refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const scanCheck = await checkRequiredScans(serviceRole, {
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity,
+    requiresSerialTracking: state.requiresSerialTracking,
+    trackedEntityIds: completionCandidates.map((c) => c.trackedEntityId),
+    companyId
+  });
+  if (scanCheck.message) {
+    return fail(scanCheck.error, scanCheck.message);
+  }
+
   // Strict backflush: refuse before the lot closes; a closed lot cannot be
   // dispositioned again.
   const backflushCheck = await checkStrictBackflush({
@@ -338,11 +353,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
     // The target is an earlier operation, or one of the part's corrections.
-    const jobCorrectionId = targetOperationId.startsWith(
-      CORRECTION_TARGET_PREFIX
-    )
-      ? targetOperationId.slice(CORRECTION_TARGET_PREFIX.length)
-      : null;
+    const jobCorrectionId = correctionIdOfTarget(targetOperationId);
     const shared = {
       jobId: state.jobId,
       triggeredAtJobOperationId: state.jobOperationId,

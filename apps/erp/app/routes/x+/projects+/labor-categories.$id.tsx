@@ -40,16 +40,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (category.error) {
-    logger.error("Failed to load a labor category", {
-      companyId,
-      id,
-      error: category.error
-    });
     throw redirect(
       path.to.laborCategories,
       await flash(
         request,
-        error(category.error, "Failed to load the labor category")
+        error(category.error, "Failed to load the labor category", { id })
       )
     );
   }

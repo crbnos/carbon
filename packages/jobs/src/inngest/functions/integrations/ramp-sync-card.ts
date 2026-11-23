@@ -16,8 +16,13 @@ import {
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
+import {
+  CARD_BILL_PAYMENT_ENTITY,
+  claimedPaymentId
+} from "./ramp-sync-payment";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled,
@@ -40,6 +45,8 @@ import {
   verifyCostCenters,
   verifyProjects
 } from "./ramp-sync-shared";
+
+const logger = getLogger("jobs", "ramp-sync");
 
 /**
  * Download and attach a charge's Ramp receipts to the private bucket
@@ -69,9 +76,11 @@ async function attachReceipts(
 
       const response = await fetch(url);
       if (!response.ok) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} download failed (${response.status})`
-        );
+        logger.error("Ramp receipt download failed", {
+          companyId: ctx.companyId,
+          receiptId,
+          status: response.status
+        });
         continue;
       }
       const bytes = new Uint8Array(await response.arrayBuffer());
@@ -84,10 +93,11 @@ async function attachReceipts(
         .company(ctx.companyId)
         .upload(path, bytes, { upsert: true });
       if (uploaded.error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} upload failed`,
-          uploaded.error
-        );
+        logger.error("Ramp receipt upload failed", {
+          companyId: ctx.companyId,
+          receiptId,
+          error: uploaded.error
+        });
         continue;
       }
 
@@ -103,16 +113,18 @@ async function attachReceipts(
         writeGroups: companyGroups
       });
       if (inserted.error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} document insert failed`,
-          inserted.error
-        );
+        logger.error("Ramp receipt document insert failed", {
+          companyId: ctx.companyId,
+          receiptId,
+          error: inserted.error
+        });
       }
     } catch (receiptError) {
-      console.error(
-        `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} attach threw`,
-        receiptError
-      );
+      logger.error("Ramp receipt attach threw", {
+        companyId: ctx.companyId,
+        receiptId,
+        error: receiptError
+      });
     }
   }
 }
@@ -361,6 +373,52 @@ async function loadCardMappings(ctx: RampSyncContext, rampIds: string[]) {
   return new Map(rows.map((row) => [row.externalId, row]));
 }
 
+type CardBillPaymentClaim = {
+  entityId: string;
+  status: Database["public"]["Enums"]["paymentStatus"] | null;
+};
+
+/** Card transactions a card-paid bill's payment claimed, with its status. */
+async function loadCardBillPaymentClaims(
+  ctx: RampSyncContext,
+  rampIds: string[]
+): Promise<Map<string, CardBillPaymentClaim>> {
+  if (rampIds.length === 0) return new Map();
+  const claims = await ctx.db
+    .selectFrom("externalIntegrationMapping")
+    .select(["externalId", "entityId"])
+    .where("companyId", "=", ctx.companyId)
+    .where("integration", "=", "ramp")
+    .where("entityType", "=", CARD_BILL_PAYMENT_ENTITY)
+    .where("externalId", "in", rampIds)
+    .execute();
+  const paymentIds = [
+    ...new Set(claims.map((claim) => claimedPaymentId(claim.entityId)))
+  ];
+  const payments =
+    paymentIds.length > 0
+      ? await ctx.db
+          .selectFrom("payment")
+          .select(["id", "status"])
+          .where("companyId", "=", ctx.companyId)
+          .where("id", "in", paymentIds)
+          .execute()
+      : [];
+  const statusById = new Map(payments.map((row) => [row.id, row.status]));
+  return new Map(
+    claims.flatMap((claim) => {
+      if (!claim.externalId) return [];
+      const entityId = claimedPaymentId(claim.entityId);
+      return [
+        [
+          claim.externalId,
+          { entityId, status: statusById.get(entityId) ?? null }
+        ] as const
+      ];
+    })
+  );
+}
+
 /** Reconfirm only observably Posted documents; Drafts must be restaged first. */
 async function reconfirmMapped(
   ctx: RampSyncContext,
@@ -442,6 +500,11 @@ type CardFamilyConfig<TItem extends RampCardListItem> = {
     ramp: RampClient,
     entityId: string | undefined
   ) => AsyncIterable<unknown[]>;
+  /** Whether a card-paid bill's payment can claim this family's rows. */
+  claimable?: boolean;
+  /** Rows a card-paid bill lists, left to its bill payment until it claims
+   *  them: neither booked nor confirmed. */
+  reserved?: ReadonlySet<string>;
   /** Build (and post) one row into a `charge`. */
   buildOutcome: (
     ctx: RampSyncContext,
@@ -486,12 +549,26 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
   try {
     for await (const page of config.list(ramp, entityId)) {
       const items = page as TItem[];
-      const mappings = await loadCardMappings(
-        ctx,
-        items.map((item) => item.id)
-      );
+      const ids = items.map((item) => item.id);
+      const [mappings, claims] = await Promise.all([
+        loadCardMappings(ctx, ids),
+        config.claimable
+          ? loadCardBillPaymentClaims(ctx, ids)
+          : Promise.resolve(new Map<string, CardBillPaymentClaim>())
+      ]);
       for (const item of items) {
         if (!isRampEntityInScope(entityId, item.entity_id)) continue;
+        // A card transaction that paid a bill is booked by the bill payment,
+        // never as a charge. Ramp hears it is synced once that payment posts.
+        const claim = claims.get(item.id);
+        if (claim) {
+          if (claim.status === "Posted") {
+            successful.push({ id: item.id, referenceId: claim.entityId });
+            result.reconfirmed++;
+          }
+          continue;
+        }
+        if (config.reserved?.has(item.id)) continue;
         const existing = mappings.get(item.id);
         if (existing && existing.status !== "Draft") {
           mapped.push({ rampId: item.id, entityId: existing.entityId });
@@ -506,10 +583,11 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
       }
     }
   } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: ${config.label} drain failed`,
-      familyError
-    );
+    logger.error("Ramp drain failed", {
+      companyId,
+      family: config.label,
+      error: familyError
+    });
     recordRampFamilyError(result, familyError);
   }
 
@@ -524,10 +602,11 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
       failed
     });
   } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: ${config.syncType} confirm failed`,
-      confirmError
-    );
+    logger.error("Ramp sync confirm failed", {
+      companyId,
+      syncType: config.syncType,
+      error: confirmError
+    });
     result.confirmError =
       confirmError instanceof Error
         ? confirmError.message
@@ -725,12 +804,26 @@ function buildSimpleCardOutcome(family: {
   };
 }
 
+/**
+ * `billCardTransactionIds` are the card-paid bills' transactions this run's
+ * bill payments listed (`RampBillPaymentsResult`); null, when that listing
+ * failed, defers the whole family to the next run rather than risk booking a
+ * bill's card transaction as a charge.
+ */
 export async function syncRampCharges(
   ctx: RampSyncContext,
   ramp: RampClient,
   entityId: string | undefined,
-  cardLiabilityAccountId: string | undefined
+  cardLiabilityAccountId: string | undefined,
+  billCardTransactionIds: readonly string[] | null = []
 ): Promise<FamilyResult> {
+  if (billCardTransactionIds === null) {
+    logger.warning(
+      "Ramp bill payments could not be listed; deferring Ramp charges",
+      { companyId: ctx.companyId }
+    );
+    return { created: 0, reconfirmed: 0, failed: 0 };
+  }
   return syncRampCardFamily<RampTransaction>(
     ctx,
     ramp,
@@ -741,10 +834,13 @@ export async function syncRampCharges(
       entityType: "charge",
       label: "charges",
       syncType: "TRANSACTION_SYNC",
+      claimable: true,
+      reserved: new Set(billCardTransactionIds),
       gate: (ctx, cardLiabilityAccountId) => {
         if (!cardLiabilityAccountId) {
-          console.warn(
-            `[RAMP SYNC] ${ctx.companyId}: no cardLiabilityAccountId configured — skipping charges`
+          logger.warning(
+            "No card liability account configured; skipping Ramp charges",
+            { companyId: ctx.companyId }
           );
           return { proceed: false };
         }

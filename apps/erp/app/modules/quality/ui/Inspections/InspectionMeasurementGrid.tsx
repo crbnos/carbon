@@ -9,6 +9,7 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
+import { getLogger } from "@carbon/logger";
 import type {
   InspectionParameter,
   InspectionPlanTab,
@@ -151,6 +152,8 @@ type InspectionMeasurementGridProps = {
   // True while any save or bulk run is in flight.
   onBusyChange?: (busy: boolean) => void;
 };
+
+const logger = getLogger("erp", "quality", "inspection-measurement-grid");
 
 const sampleKey = (sampleIndex: number) => `sample-${sampleIndex}`;
 const featureKey = (characteristicIndex: number) =>
@@ -310,6 +313,14 @@ const InspectionMeasurementGrid = ({
     () => new Map(samples.map((sample) => [sample.id, sample])),
     [samples]
   );
+  // The position each anonymous sample was first saved at, so every page agrees.
+  const storedPositions = useMemo(() => {
+    const stored = new Map<string, number>();
+    for (const sample of samples) {
+      if (sample.position != null) stored.set(sample.id, sample.position);
+    }
+    return stored;
+  }, [samples]);
 
   // Grid position (column by characteristic, row by part) -> sample id. A
   // sample keeps its position across reloads (`placeSamples`); a position no
@@ -323,7 +334,7 @@ const InspectionMeasurementGrid = ({
     const placed = placeSamples(
       sampleIdRef.current,
       samples.map((sample) => sample.id),
-      { dropMissing: isSerial }
+      { dropMissing: isSerial, stored: storedPositions }
     );
     sampleIdRef.current = placed;
     return placed;
@@ -333,12 +344,15 @@ const InspectionMeasurementGrid = ({
       const next = placeSamples(
         prev,
         samples.map((sample) => sample.id),
-        { dropMissing: isSerial }
+        {
+          dropMissing: isSerial,
+          stored: storedPositions
+        }
       );
       sampleIdRef.current = next;
       return next;
     });
-  }, [samples, sampleIdRef, isSerial]);
+  }, [samples, storedPositions, sampleIdRef, isSerial]);
   const sampleAt = useCallback(
     (sampleIndex: number) => {
       const id = sampleIdByColumn[sampleIndex];
@@ -506,6 +520,7 @@ const InspectionMeasurementGrid = ({
       formData.set("inspectionId", inspectionId);
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
+      else formData.set("position", String(sampleIndex));
       formData.set("inspectionFeatureId", characteristic.featureId);
       if (payload.value !== undefined) formData.set("value", payload.value);
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
@@ -513,7 +528,13 @@ const InspectionMeasurementGrid = ({
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to save an inspection measurement", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         data?: {
           sampleId: string;
@@ -561,6 +582,7 @@ const InspectionMeasurementGrid = ({
       formData.set("quiet", "true");
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
+      else formData.set("position", String(sampleIndex));
       const trackedEntityId = sampleId
         ? sampleById.get(sampleId)?.trackedEntityId
         : undefined;
@@ -569,7 +591,13 @@ const InspectionMeasurementGrid = ({
       const response = await fetch(
         `${path.to.inspection(inspectionId)}/sample`,
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to save an inspection sample result", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         sampleId?: string;
         error?: { message: string } | null;
@@ -1094,7 +1122,14 @@ const InspectionMeasurementGrid = ({
           const response = await fetch(path.to.inspectionGauge(inspectionId), {
             method: "post",
             body: formData
-          }).catch(() => null);
+          }).catch((error) => {
+            logger.warning("Failed to save an inspection gauge", {
+              inspectionId,
+              featureId,
+              error
+            });
+            return null;
+          });
           const body = (await response?.json().catch(() => null)) as {
             error?: { message: string } | null;
           } | null;

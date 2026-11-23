@@ -16,6 +16,7 @@ import {
   groupConflictClause,
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
+import { refreshReceiptInspectionStatuses } from "../../../backups/derived-receipts";
 import { applyTableRenames } from "../../../backups/renames";
 import { removeBucketPrefix } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
@@ -153,6 +154,9 @@ export async function wipeAndLoad(
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
     await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
+    // The triggers that fill a document line's part number display choice
+    // leave a backup's values as they are, also when replica mode is off.
+    await sql`SET LOCAL app.backup_load = 'on'`.execute(trx);
 
     // The company's groups before the wipe: memberships survive an own
     // restore, and any left pointing at a group that doesn't come back go.
@@ -257,10 +261,13 @@ export async function wipeAndLoad(
         targetGroupId
       );
       if (dangling.length > 0) {
-        log.warn("Restore: removed identity rows left dangling by the wipe", {
-          companyId,
-          deleted: dangling
-        });
+        log.warning(
+          "Restore: removed identity rows left dangling by the wipe",
+          {
+            companyId,
+            deleted: dangling
+          }
+        );
       }
     }
 
@@ -269,6 +276,7 @@ export async function wipeAndLoad(
       companyId,
       wipedGroups.map((g) => g.id)
     );
+    await refreshReceiptInspectionStatuses(trx, companyId);
 
     // Every list an open client keeps a copy of has just been replaced. With
     // triggers off nothing logged that, so say it here: a null row id tells
@@ -465,7 +473,7 @@ async function markRestoreFailed(
   } catch (markerErr) {
     log.error("Failed to mark the restore failed", {
       restoreRunId: args.restoreRunId,
-      error: markerErr instanceof Error ? markerErr.message : String(markerErr)
+      error: markerErr
     });
   }
 }
@@ -484,9 +492,9 @@ function makeProgressReporter(
       restoreRunId,
       patch: { progress }
     }).catch((err) =>
-      log.warn("Failed to record restore progress", {
+      log.warning("Failed to record restore progress", {
         restoreRunId,
-        error: err instanceof Error ? err.message : String(err)
+        error: err
       })
     )
   );
@@ -684,10 +692,7 @@ export const companyRestoreFunction = inngest.createFunction(
           } catch (storageErr) {
             logger.warn("Restore: file restore failed (data is intact)", {
               restoreRunId,
-              error:
-                storageErr instanceof Error
-                  ? storageErr.message
-                  : String(storageErr)
+              error: storageErr
             });
           }
         }

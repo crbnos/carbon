@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { resolveDate } from "../dates.ts";
+import { anyNonConformanceTypeId } from "../helpers/bootstrap-lookup.ts";
 import { insertId, insertRow, need, one } from "../sql.ts";
 import type { Ctx, Node, WorkflowRunSpec } from "../types.ts";
 import { EVENT_SOURCES, FORMAT_VERSION } from "./workflow-definitions.ts";
@@ -72,11 +73,7 @@ export async function runTier11(ctx: Ctx): Promise<void> {
   const publishedByName = new Map<string, PublishedWorkflow>();
 
   // The issue-creating workflow names a type, which is NOT NULL on the table.
-  const issueType = await one<{ id: string }>(
-    ctx.client,
-    `SELECT id FROM "nonConformanceType" WHERE "companyId" = $1 LIMIT 1`,
-    [ctx.companyId]
-  );
+  const issueType = { id: await anyNonConformanceTypeId(ctx) };
 
   for (const workflow of data.build({
     ownerId: userId,

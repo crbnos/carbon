@@ -52,8 +52,8 @@ never cancelled). Outside a request (scripts, module-level clients) nothing is b
   fail at once with an `AbortError` in `{ error }`, never retried. Not tied to the signal:
   actions, table writes even on a GET (an OAuth callback saving its tokens), auth and
   edge-function calls. Error and warning logs from such an abandoned read are dropped
-  (`liveRequest` filter in `@carbon/logger`'s `config.server.ts`), the stance `handleError`
-  already takes. **On Vercel the signal never aborts**: Vercel only aborts it with
+  (`liveRequest` filter in `@carbon/logger`'s `config.server.ts`), the stance
+  `handleServerError` (each app's `handleError`) takes. **On Vercel the signal never aborts**: Vercel only aborts it with
   `supportsCancellation` in `vercel.json`, which also terminates the function when the client
   disconnects — the app is one function, so actions would die mid-write. Do not enable it.
   Cancellation therefore applies on ECS and self-hosted only.
@@ -132,13 +132,15 @@ const suppliers = await Promise.all(
   lines.map((line) => client.from("supplier").select("*").eq("id", line.supplierId).single())
 );
 
-// Yes: one query, indexed by id.
-const { data } = await client
+// Yes: one query, indexed by id. Read `error` BEFORE `data ?? []` — an empty
+// map on a failed read looks exactly like "no suppliers" to every caller.
+const { data, error } = await client
   .from("supplier")
   .select("id, name")
   .in("id", [...new Set(lines.map((line) => line.supplierId))])
   .eq("companyId", companyId);
-const byId = new Map((data ?? []).map((row) => [row.id, row]));
+if (error) return { data: null, error };
+const byId = new Map(data.map((row) => [row.id, row]));
 ```
 
 Real precedents: `getWorkflowVersionNumbers` (flat `.in()` lookup instead of a nested embed),

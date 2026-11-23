@@ -7,7 +7,6 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, ValidatedForm, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { serviceErrorMessage, useAction } from "@carbon/query";
 import {
   Badge,
@@ -39,8 +38,6 @@ import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "settings-time");
-
 export const handle: Handle = {
   breadcrumb: msg`Time`,
   to: path.to.timeSettings
@@ -53,10 +50,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const companySettings = await getCompanySettings(client, companyId);
   if (!companySettings.data) {
-    logger.error("Failed to load company settings", {
-      companyId,
-      error: companySettings.error
-    });
     throw redirect(
       path.to.settings,
       await flash(

@@ -14,6 +14,7 @@ import {
   Checkbox,
   Combobox as ComboboxBase,
   cn,
+  HStack,
   IconButton,
   Input,
   InputGroup,
@@ -66,15 +67,17 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import ItemThumbnail from "~/components/ItemThumbnail";
 import type {
-  getBatchNumbersForItem,
-  getSerialNumbersForItem,
+  getIssueLotsForItem,
   SuggestedAllocationLot
 } from "~/services/inventory.service";
 import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { parseTravelerCode } from "~/utils/traveler";
+import { ShortStockBadge } from "./Materials";
 import { ScrapEntityModal } from "./ScrapEntityModal";
 import type { ScrappableEntity } from "./ScrapTab";
 import { ScrapTab } from "./ScrapTab";
@@ -89,6 +92,11 @@ interface ItemDetails {
 }
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+type InventoryBin = {
+  storageUnitId: string | null;
+  storageUnitName: string | null;
+  quantity: number;
+};
 
 type IssueMaterialModalProps = {
   operationId: string;
@@ -124,6 +132,9 @@ type IssueMaterialModalProps = {
   batchRemainingQuantity?: number;
   parentId?: string;
   parentIdIsSerialized?: boolean;
+  // The parent unit is complete at this operation (a finished unit looked
+  // back at): nothing is issued to it, but its parts can still be unconsumed.
+  issueBlocked?: boolean;
   // Assembly view only: the step + 1-based unit the operator is on, stamped onto the
   // consume so issued quantities can be attributed per-unit/per-step even for a batch
   // parent (where all units share one lot entity). Omitted by the operation view.
@@ -142,7 +153,12 @@ export function IssueMaterialModal({
   return (
     <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
-        <IssueMaterialBody onClose={onClose} {...props} />
+        {/* A scan can open another part while the dialog is open: start over. */}
+        <IssueMaterialBody
+          key={props.material?.id}
+          onClose={onClose}
+          {...props}
+        />
       </ModalContent>
     </Modal>
   );
@@ -162,6 +178,7 @@ function IssueMaterialBody({
   batchRemainingQuantity,
   parentId,
   parentIdIsSerialized,
+  issueBlocked = false,
   jobOperationStepId,
   unitNumber,
   trackedInputs = [],
@@ -178,6 +195,9 @@ function IssueMaterialBody({
   );
   const [itemDetails, setItemDetails] = useState<ItemDetails | null>(null);
   const [isLoadingItem, setIsLoadingItem] = useState(false);
+  const [inventoryMode, setInventoryMode] = useState<"issue" | "unissue">(
+    "issue"
+  );
 
   // Determine tracking type from material or item details
   const trackingType: TrackingType = useMemo(() => {
@@ -188,6 +208,17 @@ function IssueMaterialBody({
     }
     return itemDetails?.itemTrackingType ?? null;
   }, [material, itemDetails]);
+  const issuedQuantity = material?.quantityIssued ?? 0;
+  const canUnissue =
+    trackingType === "Inventory" && !!material?.id && issuedQuantity > 0;
+  const inventoryBins = useLoaderQuery<{
+    data: InventoryBin[];
+    error: unknown;
+  }>(
+    trackingType === "Inventory" && inventoryMode === "issue" && selectedItemId
+      ? path.to.api.issueInventoryBins(selectedItemId, operationId)
+      : null
+  );
 
   // Item options for the combobox
   const itemOptions = useMemo(() => {
@@ -261,13 +292,16 @@ function IssueMaterialBody({
           return {
             label,
             value: sn.id,
-            helper,
+            // One line under the lot: its bin, then its expiry.
+            helper: [sn.storageUnitName ?? t`Location not known`, helper]
+              .filter(Boolean)
+              .join(" · "),
             expirationDate: sn.expirationDate ?? null,
             isExpired: expired
           };
         }) ?? []
     );
-  }, [serialNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy]);
+  }, [serialNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy, t]);
 
   // Batch number state and options
   const { data: batchNumbers } = useBatchNumbers(
@@ -305,14 +339,17 @@ function IssueMaterialBody({
           return {
             label,
             value: bn.id,
-            helper,
+            // One line under the lot: its bin, then its expiry.
+            helper: [bn.storageUnitName ?? t`Location not known`, helper]
+              .filter(Boolean)
+              .join(" · "),
             availableQuantity: bn.quantity,
             expirationDate: bn.expirationDate ?? null,
             isExpired: expired
           };
         }) ?? []
     );
-  }, [batchNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy]);
+  }, [batchNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy, t]);
 
   // Unconsume options for batch
   const unconsumeOptions = useMemo(() => {
@@ -394,6 +431,13 @@ function IssueMaterialBody({
     batchRemainingQuantity
   ]);
 
+  // The Scan tab starts empty: only the Select tab is filled in for the
+  // operator, so a scan always records the lot in their hands.
+  const [activeTab, setActiveTab] = useState(
+    issueBlocked && trackedInputs.length > 0 ? "unconsume" : "scan"
+  );
+  const isScanning = activeTab === "scan";
+
   // Serial numbers selection state
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
     Array<{ index: number; id: string }>
@@ -403,6 +447,34 @@ function IssueMaterialBody({
     Array(Math.max(1, Math.ceil(initialQuantity)))
       .fill("")
       .map((_, index) => ({ index, id: "" }))
+  );
+  // A sole usable serial is unambiguous: with one unit to issue and one unit
+  // on the shelf there is nothing to choose, so it is selected (derived, as
+  // for a sole batch below).
+  // Not once the requirement is met: the modal is then opened to take a unit
+  // back, and a pre-filled lot would be one tap from issuing a second one.
+  const stillNeeded =
+    !material ||
+    (material.quantityIssued ?? 0) <
+      (material.quantity ?? material.estimatedQuantity ?? Infinity);
+  const issueSerialNumbers = useMemo(
+    () =>
+      !isScanning &&
+      stillNeeded &&
+      (batchId || parentId) &&
+      serialOptions.length === 1 &&
+      selectedSerialNumbers.length === 1 &&
+      !selectedSerialNumbers[0].id
+        ? [{ index: 0, id: serialOptions[0].value }]
+        : selectedSerialNumbers,
+    [
+      isScanning,
+      stillNeeded,
+      batchId,
+      parentId,
+      serialOptions,
+      selectedSerialNumbers
+    ]
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
   const [scrapEntityTarget, setScrapEntityTarget] = useState<{
@@ -419,13 +491,41 @@ function IssueMaterialBody({
   const [selectedBatchNumbers, setSelectedBatchNumbers] = useState<
     Array<{ index: number; id: string; quantity: number }>
   >([{ index: 0, id: "", quantity: initialQuantity }]);
+  // A sole usable lot is unambiguous even when automatic multi-lot allocation
+  // is disabled. Derive the default so an async stock read needs no state effect.
+  const issueBatchNumbers = useMemo(
+    () =>
+      !isScanning &&
+      stillNeeded &&
+      (batchId || parentId) &&
+      batchOptions.length === 1 &&
+      selectedBatchNumbers.length === 1 &&
+      !selectedBatchNumbers[0].id
+        ? [
+            {
+              index: 0,
+              id: batchOptions[0].value,
+              quantity: Math.min(
+                initialQuantity,
+                batchOptions[0].availableQuantity
+              )
+            }
+          ]
+        : selectedBatchNumbers,
+    [
+      isScanning,
+      stillNeeded,
+      batchId,
+      parentId,
+      batchOptions,
+      selectedBatchNumbers,
+      initialQuantity
+    ]
+  );
   const [batchErrors, setBatchErrors] = useState<Record<number, string>>({});
   const [unconsumedBatches, setUnconsumedBatches] = useState<
     Array<{ index: number; id: string }>
   >([{ index: 0, id: "" }]);
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState("scan");
 
   // Pre-fill the selection with the picking list's recommendation (a default
   // only — fully editable below). Pre-selecting tracked entities is a
@@ -458,8 +558,8 @@ function IssueMaterialBody({
     | { quantityToPick?: number | null; quantityPicked?: number | null }
     | undefined;
   const hasPickingAllocation =
-    Number(pickedOverlay?.quantityToPick ?? 0) > 0 ||
-    Number(pickedOverlay?.quantityPicked ?? 0) > 0;
+    (pickedOverlay?.quantityToPick ?? 0) > 0 ||
+    (pickedOverlay?.quantityPicked ?? 0) > 0;
   // The genealogy safety gate: a seed is only trustworthy when the whole pick
   // provably belongs to ONE parent — the call site opted in (`allowPrefill`) and
   // the parent is a single entity (not a serialized multi-unit operation).
@@ -539,9 +639,8 @@ function IssueMaterialBody({
           ? suggestedAllocation
           : [];
   const hasSeededSuggestionRef = useRef(false);
-  useEffect(() => {
-    if (hasSeededSuggestionRef.current) return;
-    if (!seedAllocation.length) return;
+  const seedSelection = () => {
+    if (issueBlocked || !seedAllocation.length) return;
     // Intersect the seed with what is actually still available before
     // applying it. The picked allocation is NOT netted by consumption
     // (pickingListLineTrackedEntity keeps the original picked qty, and a
@@ -552,9 +651,14 @@ function IssueMaterialBody({
     // them nets the seed correctly.
     if (trackingType === "Batch") {
       if (batchNumbers?.data === undefined) return;
-      // Don't clobber a selection the operator already started if the (async)
-      // suggestion arrives after they picked.
-      if (selectedBatchNumbers.some((b) => b.id)) return;
+      // The operator already started a selection (the async suggestion
+      // arrived after they scanned or picked): theirs stands, and the seed is
+      // spent. Leaving it armed re-filled the field the moment they cleared
+      // it to type or scan another lot.
+      if (selectedBatchNumbers.some((b) => b.id)) {
+        hasSeededSuggestionRef.current = true;
+        return;
+      }
       const availableById = new Map(
         batchOptions.map((o) => [o.value, o.availableQuantity])
       );
@@ -579,7 +683,10 @@ function IssueMaterialBody({
       setActiveTab("select");
     } else if (trackingType === "Serial") {
       if (serialNumbers?.data === undefined) return;
-      if (selectedSerialNumbers.some((s) => s.id)) return;
+      if (selectedSerialNumbers.some((s) => s.id)) {
+        hasSeededSuggestionRef.current = true;
+        return;
+      }
       const availableIds = new Set(serialOptions.map((o) => o.value));
       const lots = seedAllocation.filter((lot) =>
         availableIds.has(lot.trackedEntityId)
@@ -593,6 +700,10 @@ function IssueMaterialBody({
       );
       setActiveTab("select");
     }
+  };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seeds once, when the async reads land
+  useEffect(() => {
+    if (!hasSeededSuggestionRef.current) seedSelection();
   }, [
     seedAllocation,
     trackingType,
@@ -604,6 +715,25 @@ function IssueMaterialBody({
     serialOptions
   ]);
 
+  // Scan starts from empty rows; Select gets its suggestion back.
+  const changeTab = (tab: string) => {
+    // The operator chose a tab: nothing fills in on its own after this.
+    hasSeededSuggestionRef.current = true;
+    setActiveTab(tab);
+    if (tab === "scan") {
+      setSelectedBatchNumbers([
+        { index: 0, id: "", quantity: initialQuantity }
+      ]);
+      setSelectedSerialNumbers((rows) =>
+        rows.map((row) => ({ ...row, id: "" }))
+      );
+      setBatchErrors({});
+      setSerialErrors({});
+    } else if (tab === "select") {
+      seedSelection();
+    }
+  };
+
   // Expiry override state. Surfaced when a selected serial/batch is expired.
   // Server enforces the actual company policy (Warn / Block / BlockWithOverride);
   // this UI lets the operator type a reason that the server records when the
@@ -613,18 +743,18 @@ function IssueMaterialBody({
     const byId = new Map(
       (serialNumbers?.data ?? []).map((s) => [s.id, s.expirationDate])
     );
-    return selectedSerialNumbers
+    return issueSerialNumbers
       .filter((s) => s.id && isExpiryPast(byId.get(s.id)))
       .map((s) => s.id);
-  }, [selectedSerialNumbers, serialNumbers, isExpiryPast]);
+  }, [issueSerialNumbers, serialNumbers, isExpiryPast]);
   const expiredBatchIds = useMemo(() => {
     const byId = new Map(
       (batchNumbers?.data ?? []).map((b) => [b.id, b.expirationDate])
     );
-    return selectedBatchNumbers
+    return issueBatchNumbers
       .filter((b) => b.id && isExpiryPast(byId.get(b.id)))
       .map((b) => b.id);
-  }, [selectedBatchNumbers, batchNumbers, isExpiryPast]);
+  }, [issueBatchNumbers, batchNumbers, isExpiryPast]);
   const hasExpiredSelection =
     expiredSerialIds.length > 0 || expiredBatchIds.length > 0;
 
@@ -639,7 +769,13 @@ function IssueMaterialBody({
       readableId?: string;
       remainingQuantity?: number;
     }>;
+    overIssue?: boolean;
   }>();
+  // The server refused the last issue because the requirement is filled. The
+  // Issue button then confirms; the scanner's Enter key does nothing.
+  const overIssueRefusal = fetcher.data?.overIssue
+    ? fetcher.data.message
+    : null;
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
   const inventoryFetcher = useFetcher<{
     success?: boolean;
@@ -933,6 +1069,7 @@ function IssueMaterialBody({
 
   // Submit handlers
   const handleSubmitSerial = useCallback(() => {
+    if (issueBlocked) return;
     if (!parentId) {
       toast.error("Parent tracking ID is required for serial tracked items.");
       return;
@@ -947,7 +1084,7 @@ function IssueMaterialBody({
     let hasErrors = false;
     const newErrors: Record<number, string> = {};
 
-    selectedSerialNumbers.forEach((sn) => {
+    issueSerialNumbers.forEach((sn) => {
       const error = validateSerialNumber(sn.id, sn.index);
       if (error) {
         newErrors[sn.index] = error;
@@ -974,18 +1111,19 @@ function IssueMaterialBody({
         ? {
             materialId: material.id,
             parentTrackedEntityId: parentId,
-            children: selectedSerialNumbers.map((sn) => ({
+            children: issueSerialNumbers.map((sn) => ({
               trackedEntityId: sn.id,
               quantity: 1
             })),
             ...contextFields,
-            ...overrideFields
+            ...overrideFields,
+            ...(overIssueRefusal ? { allowOverIssue: true } : {})
           }
         : {
             jobOperationId: operationId,
             itemId: selectedItemId,
             parentTrackedEntityId: parentId,
-            children: selectedSerialNumbers.map((sn) => ({
+            children: issueSerialNumbers.map((sn) => ({
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1000,7 +1138,8 @@ function IssueMaterialBody({
       });
     }
   }, [
-    selectedSerialNumbers,
+    issueBlocked,
+    issueSerialNumbers,
     validateSerialNumber,
     parentId,
     material?.id,
@@ -1010,10 +1149,12 @@ function IssueMaterialBody({
     hasExpiredSelection,
     expiryOverrideReason,
     jobOperationStepId,
-    unitNumber
+    unitNumber,
+    overIssueRefusal
   ]);
 
   const handleSubmitBatch = useCallback(() => {
+    if (issueBlocked) return;
     if (!batchId && !parentId) {
       toast.error("Parent tracking ID is required for batch tracked items.");
       return;
@@ -1028,7 +1169,7 @@ function IssueMaterialBody({
     let hasErrors = false;
     const newErrors: Record<number, string> = {};
 
-    selectedBatchNumbers.forEach((bn) => {
+    issueBatchNumbers.forEach((bn) => {
       const error = validateBatchNumber(bn.id, bn.quantity, bn.index);
       if (error) {
         newErrors[bn.index] = error;
@@ -1055,7 +1196,7 @@ function IssueMaterialBody({
         ? {
             batchId,
             itemId: material?.itemId ?? selectedItemId,
-            children: selectedBatchNumbers.map((bn) => ({
+            children: issueBatchNumbers.map((bn) => ({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
@@ -1065,18 +1206,19 @@ function IssueMaterialBody({
           ? {
               materialId: material.id,
               parentTrackedEntityId: parentId,
-              children: selectedBatchNumbers.map((bn) => ({
+              children: issueBatchNumbers.map((bn) => ({
                 trackedEntityId: bn.id,
                 quantity: bn.quantity
               })),
               ...contextFields,
-              ...overrideFields
+              ...overrideFields,
+              ...(overIssueRefusal ? { allowOverIssue: true } : {})
             }
           : {
               jobOperationId: operationId,
               itemId: selectedItemId,
               parentTrackedEntityId: parentId,
-              children: selectedBatchNumbers.map((bn) => ({
+              children: issueBatchNumbers.map((bn) => ({
                 trackedEntityId: bn.id,
                 quantity: bn.quantity
               })),
@@ -1091,7 +1233,8 @@ function IssueMaterialBody({
       });
     }
   }, [
-    selectedBatchNumbers,
+    issueBlocked,
+    issueBatchNumbers,
     validateBatchNumber,
     batchId,
     parentId,
@@ -1103,7 +1246,8 @@ function IssueMaterialBody({
     hasExpiredSelection,
     expiryOverrideReason,
     jobOperationStepId,
-    unitNumber
+    unitNumber,
+    overIssueRefusal
   ]);
 
   const handleUnconsumeSerial = useCallback(() => {
@@ -1213,7 +1357,7 @@ function IssueMaterialBody({
             toast.success(fetcher.data.message);
           }
         }
-      } else if (fetcher.data.message) {
+      } else if (fetcher.data.message && !fetcher.data.overIssue) {
         toast.error(fetcher.data.message);
       }
     }
@@ -1294,19 +1438,41 @@ function IssueMaterialBody({
     trackedTabCount === 4 && "grid-cols-4"
   );
 
+  const headerItem = items.find(
+    (item) => item.id === (material?.itemId ?? selectedItemId)
+  );
+
   return (
     <>
       <ModalHeader>
-        <ModalTitle>
-          {material?.description ??
-            getItemReadableId(items, selectedItemId) ??
-            "Issue Material"}
-        </ModalTitle>
-        {!material && (
-          <ModalDescription>
-            Select an item and specify the quantity to issue
-          </ModalDescription>
-        )}
+        <HStack spacing={3}>
+          {headerItem && (
+            <div className="shrink-0">
+              <ItemThumbnail
+                size="xl"
+                thumbnailPath={headerItem.thumbnailPath}
+                type={(headerItem.type as "Part") ?? "Part"}
+              />
+            </div>
+          )}
+          <div className="min-w-0">
+            <ModalTitle>
+              {material?.description ??
+                headerItem?.name ??
+                getItemReadableId(items, selectedItemId) ??
+                "Issue Material"}
+            </ModalTitle>
+            <ModalDescription>
+              {headerItem?.readableIdWithRevision ??
+                "Select an item and specify the quantity to issue"}
+            </ModalDescription>
+            {material && (
+              <div className="mt-1">
+                <ShortStockBadge material={material} />
+              </div>
+            )}
+          </div>
+        </HStack>
       </ModalHeader>
 
       {trackingType === "Inventory" ||
@@ -1316,6 +1482,7 @@ function IssueMaterialBody({
         // services) - use ValidatedForm; the issue posting skips the
         // itemLedger for Non-Inventory items but still posts the WIP cost
         <ValidatedForm
+          key={inventoryMode}
           method="post"
           action={path.to.issue}
           validator={issueValidator}
@@ -1328,14 +1495,19 @@ function IssueMaterialBody({
             // zero/negative — that's how this modal ends up posting an
             // invalid form and the server bouncing it silently when a
             // material has been fully issued already.
-            quantity: Math.max(
-              1,
-              issuePerUnit
-                ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
-                : (material?.estimatedQuantity ?? 0) -
-                    (material?.quantityIssued ?? 0)
-            ),
-            adjustmentType: "Negative Adjmt."
+            quantity:
+              inventoryMode === "unissue"
+                ? issuedQuantity
+                : Math.max(
+                    1,
+                    issuePerUnit
+                      ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
+                      : (material?.estimatedQuantity ?? 0) - issuedQuantity
+                  ),
+            adjustmentType:
+              inventoryMode === "unissue"
+                ? "Positive Adjmt."
+                : "Negative Adjmt."
           }}
           fetcher={inventoryFetcher}
         >
@@ -1347,10 +1519,34 @@ function IssueMaterialBody({
             {!material?.id && jobOperationStepId && (
               <Hidden name="jobOperationStepId" value={jobOperationStepId} />
             )}
-            {material?.id && (
-              <Hidden name="adjustmentType" value="Negative Adjmt." />
-            )}
+            {material?.id && <Hidden name="adjustmentType" />}
             <div className="flex flex-col gap-4">
+              {canUnissue && (
+                <div
+                  role="group"
+                  aria-label={t`Inventory action`}
+                  className="flex gap-2"
+                >
+                  <Button
+                    type="button"
+                    variant={
+                      inventoryMode === "issue" ? "primary" : "secondary"
+                    }
+                    onClick={() => setInventoryMode("issue")}
+                  >
+                    {t`Issue`}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      inventoryMode === "unissue" ? "primary" : "secondary"
+                    }
+                    onClick={() => setInventoryMode("unissue")}
+                  >
+                    {t`Unissue`}
+                  </Button>
+                </div>
+              )}
               {showItemSelector && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Item</label>
@@ -1415,9 +1611,34 @@ function IssueMaterialBody({
                       name="quantity"
                       label="Quantity"
                       minValue={INPUT_STEP.quantity}
+                      maxValue={
+                        inventoryMode === "unissue" ? issuedQuantity : undefined
+                      }
                     />
+                    {trackingType === "Inventory" &&
+                      inventoryMode === "issue" && (
+                        <div className="text-sm text-muted-foreground">
+                          <span className="font-medium">{t`Stock at:`} </span>
+                          {inventoryBins.data?.data.length
+                            ? inventoryBins.data.data
+                                .map(
+                                  (bin) =>
+                                    `${bin.storageUnitName ?? t`Location not known`} (${bin.quantity})`
+                                )
+                                .join(", ")
+                            : t`Location not known`}
+                        </div>
+                      )}
                   </>
                 )}
+              {issueBlocked && inventoryMode === "issue" && (
+                <Alert variant="warning">
+                  <AlertTitle>{t`This unit is complete here`}</AlertTitle>
+                  <AlertDescription>
+                    {t`Pick an open unit to issue parts.`}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </ModalBody>
           <ModalFooter>
@@ -1430,12 +1651,13 @@ function IssueMaterialBody({
               size="lg"
               isLoading={inventoryFetcher.state !== "idle"}
               isDisabled={
+                (issueBlocked && inventoryMode === "issue") ||
                 inventoryFetcher.state !== "idle" ||
                 !selectedItemId ||
                 isLoadingItem
               }
             >
-              Issue
+              {inventoryMode === "unissue" ? t`Unissue` : t`Issue`}
             </Button>
           </ModalFooter>
         </ValidatedForm>
@@ -1464,7 +1686,7 @@ function IssueMaterialBody({
               )}
 
               {showContent && trackingType === "Serial" && (
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={activeTab} onValueChange={changeTab}>
                   <TabsList className={trackedTabsListClass}>
                     <TabsTrigger value="scan">
                       <LuQrCode className="mr-2" />
@@ -1506,7 +1728,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="scan">
                     <div className="flex flex-col gap-4">
-                      {selectedSerialNumbers.map((sn, index) => (
+                      {issueSerialNumbers.map((sn, index) => (
                         <div
                           key={`${index}-serial-scan`}
                           className="flex flex-col gap-1"
@@ -1520,7 +1742,9 @@ function IssueMaterialBody({
                                   aria-label={t`Serial number ${index + 1}`}
                                   value={sn.id}
                                   onChange={(e) => {
-                                    const newValue = e.target.value;
+                                    const newValue =
+                                      parseTravelerCode(e.target.value) ??
+                                      e.target.value;
                                     const newSerialNumbers = [
                                       ...selectedSerialNumbers
                                     ];
@@ -1536,7 +1760,8 @@ function IssueMaterialBody({
                                     // Enter, same as clicking Issue.
                                     if (e.key === "Enter") {
                                       e.preventDefault();
-                                      handleSubmitSerial();
+                                      if (!overIssueRefusal)
+                                        handleSubmitSerial();
                                     }
                                   }}
                                   onBlur={(e) => {
@@ -1620,7 +1845,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="select">
                     <div className="flex flex-col gap-4">
-                      {selectedSerialNumbers.map((sn, index) => (
+                      {issueSerialNumbers.map((sn, index) => (
                         <div
                           key={`${index}-serial-select`}
                           className="flex flex-col gap-1"
@@ -1735,7 +1960,7 @@ function IssueMaterialBody({
               )}
 
               {showContent && trackingType === "Batch" && (
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={activeTab} onValueChange={changeTab}>
                   <TabsList className={trackedTabsListClass}>
                     <TabsTrigger value="scan">
                       <LuQrCode className="mr-2" />
@@ -1777,7 +2002,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="scan">
                     <div className="flex flex-col gap-4">
-                      {selectedBatchNumbers.map((batch, index) => (
+                      {issueBatchNumbers.map((batch, index) => (
                         <div key={index} className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <div className="flex-1">
@@ -1790,11 +2015,19 @@ function IssueMaterialBody({
                                     // allocated lineside child (see
                                     // resolveScannedBatchId).
                                     const newValue = resolveScannedBatchId(
-                                      e.target.value
+                                      parseTravelerCode(e.target.value) ??
+                                        e.target.value
                                     );
+                                    const held = batchOptions.find(
+                                      (o) => o.value === newValue
+                                    )?.availableQuantity;
                                     updateBatchNumber({
                                       ...batch,
-                                      id: newValue
+                                      id: newValue,
+                                      quantity:
+                                        held === undefined
+                                          ? batch.quantity
+                                          : Math.min(batch.quantity, held)
                                     });
                                   }}
                                   onKeyDown={(e) => {
@@ -1803,7 +2036,8 @@ function IssueMaterialBody({
                                     // Enter, same as clicking Issue.
                                     if (e.key === "Enter") {
                                       e.preventDefault();
-                                      handleSubmitBatch();
+                                      if (!overIssueRefusal)
+                                        handleSubmitBatch();
                                     }
                                   }}
                                   onBlur={(e) => {
@@ -1883,6 +2117,9 @@ function IssueMaterialBody({
                           variant="secondary"
                           leftIcon={<LuCirclePlus />}
                           onClick={addBatchNumber}
+                          isDisabled={
+                            batchOptions.length <= issueBatchNumbers.length
+                          }
                         >
                           Add
                         </Button>
@@ -1892,7 +2129,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="select">
                     <div className="flex flex-col gap-4">
-                      {selectedBatchNumbers.map((batch, index) => (
+                      {issueBatchNumbers.map((batch, index) => (
                         <div key={index} className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <div className="flex-1">
@@ -1968,6 +2205,9 @@ function IssueMaterialBody({
                           variant="secondary"
                           leftIcon={<LuCirclePlus />}
                           onClick={addBatchNumber}
+                          isDisabled={
+                            batchOptions.length <= issueBatchNumbers.length
+                          }
                         >
                           Add Batch
                         </Button>
@@ -2081,6 +2321,22 @@ function IssueMaterialBody({
                   </AlertDescription>
                 </Alert>
               )}
+              {issueBlocked && activeTab !== "unconsume" && (
+                <Alert variant="warning">
+                  <AlertTitle>{t`This unit is complete here`}</AlertTitle>
+                  <AlertDescription>
+                    {t`Pick an open unit to issue parts. Parts already in this unit can still be unconsumed.`}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {overIssueRefusal && activeTab !== "unconsume" && (
+                <Alert variant="warning">
+                  <AlertTitle>{overIssueRefusal}</AlertTitle>
+                  <AlertDescription>
+                    Nothing was issued. Issue more only to replace a part.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </ModalBody>
           <ModalFooter>
@@ -2117,10 +2373,13 @@ function IssueMaterialBody({
                 }
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
-                  fetcher.state !== "idle" || !selectedItemId || isLoadingItem
+                  issueBlocked ||
+                  fetcher.state !== "idle" ||
+                  !selectedItemId ||
+                  isLoadingItem
                 }
               >
-                Issue
+                {overIssueRefusal ? "Issue anyway" : "Issue"}
               </Button>
             )}
           </ModalFooter>
@@ -2134,6 +2393,7 @@ function IssueMaterialBody({
           trackedEntityId={scrapEntityTarget.id}
           readableId={scrapEntityTarget.readableId}
           parentId={parentId}
+          operationId={operationId}
           isMakeToOrder={material?.methodType === "Make to Order"}
           onClose={() => setIsScrapEntityOpen(false)}
         />
@@ -2142,18 +2402,18 @@ function IssueMaterialBody({
   );
 }
 
-function useSerialNumbers(itemId?: string, operationId?: string) {
+function useSerialNumbers(itemId: string | undefined, operationId: string) {
   const serialNumbersFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getSerialNumbersForItem>>
+    Awaited<ReturnType<typeof getIssueLotsForItem>>
   >(itemId ? path.to.api.serialNumbers(itemId, operationId) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 // Hook for fetching batch numbers
-function useBatchNumbers(itemId?: string, operationId?: string) {
+function useBatchNumbers(itemId: string | undefined, operationId: string) {
   const batchNumbersFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getBatchNumbersForItem>>
+    Awaited<ReturnType<typeof getIssueLotsForItem>>
   >(itemId ? path.to.api.batchNumbers(itemId, operationId) : null);
 
   return { data: batchNumbersFetcher.data };

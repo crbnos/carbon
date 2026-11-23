@@ -155,6 +155,7 @@ export default function EditSalesOrderLineRoute() {
     methodType: line?.methodType ?? "Make to Order",
     nonTaxableAddOnCost: line?.nonTaxableAddOnCost ?? 0,
     promisedDate: line?.promisedDate ?? undefined,
+    requestedDate: line?.requestedDate ?? undefined,
     serviceStartDate: line?.serviceStartDate ?? "",
     serviceEndDate: line?.serviceEndDate ?? "",
     saleQuantity: line?.saleQuantity ?? 1,
@@ -163,6 +164,7 @@ export default function EditSalesOrderLineRoute() {
     unitOfMeasureCode: line?.unitOfMeasureCode ?? "",
     unitPrice: line?.unitPrice ?? 0,
     taxPercent: line?.taxPercent ?? 0,
+    taxCodeId: line?.taxCodeId ?? undefined,
     shippingCost: line?.shippingCost ?? 0,
     configuration:
       (line?.configuration as Record<string, unknown> | null) ?? null,

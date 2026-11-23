@@ -14,6 +14,7 @@ import {
   routeHost,
   TLD
 } from "./constants.js";
+import { paths } from "./paths.js";
 import { dbUrl } from "./stack.js";
 import {
   ISOLATED_STORAGE_TENANT,
@@ -62,6 +63,8 @@ export function renderEnv(opts: {
   mode: StackMode;
   /** The database the apps use: the worktree's own in shared mode. */
   database: string;
+  /** Compose CPU limits capped at Docker's CPU count (`worktreeCpuLimits`). */
+  cpuLimits?: Record<string, string>;
 }): string {
   const {
     slug,
@@ -96,6 +99,13 @@ export function renderEnv(opts: {
   lines.push("");
   lines.push(`CARBON_WORKTREE=${slug}`);
   if (portless) lines.push(`PORTLESS_TLD=${TLD}`);
+  // The CA gotrue and inngest trust. Always written: `crbn up` loads the old
+  // file into its env first, so a value left out would stay. Without one,
+  // Docker would create a directory at the missing ca.pem.
+  const ca = join(paths.portless(), "ca.pem");
+  lines.push(
+    `PORTLESS_CA_FILE=${portless && existsSync(ca) ? ca : "/dev/null"}`
+  );
   lines.push("");
   lines.push("# Internal compose ports (apps do not read these directly)");
   for (const [k, v] of Object.entries(ports)) lines.push(`${k}=${v}`);
@@ -128,6 +138,12 @@ export function renderEnv(opts: {
   for (const { key, fallback } of FROM_DOT_ENV) {
     const value = process.env[key] || fallback;
     if (value) lines.push(`${key}=${value}`);
+  }
+  const cpuLimits = Object.entries(opts.cpuLimits ?? {});
+  if (cpuLimits.length > 0) {
+    lines.push("");
+    lines.push("# Compose CPU limits above Docker's CPU count, capped at it");
+    for (const [key, cpus] of cpuLimits) lines.push(`${key}=${cpus}`);
   }
   lines.push("");
   lines.push(

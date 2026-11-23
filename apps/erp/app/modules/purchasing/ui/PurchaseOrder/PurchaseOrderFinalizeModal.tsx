@@ -5,6 +5,8 @@
 import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertTitle,
   Button,
   Modal,
   ModalBody,
@@ -41,6 +43,8 @@ type PurchaseOrderFinalizeModalProps = {
   onClose: () => void;
   defaultCc?: string[];
   resolvedAttachments?: ResolvedAttachmentItem[];
+  /** Why this order cannot be finalized yet. It disables the Finalize button. */
+  refusal?: string | null;
 };
 
 const PurchaseOrderFinalizeModal = ({
@@ -68,7 +72,8 @@ const PurchaseOrderFinalizeBody = ({
   onClose,
   fetcher,
   defaultCc = [],
-  resolvedAttachments = []
+  resolvedAttachments = [],
+  refusal = null
 }: Omit<PurchaseOrderFinalizeModalProps, "open">) => {
   const params = useParams();
   const orderId = purchaseOrderId ?? params.orderId;
@@ -103,6 +108,11 @@ const PurchaseOrderFinalizeBody = ({
       </ModalHeader>
       <ModalBody>
         <VStack spacing={4}>
+          {refusal && (
+            <Alert variant="destructive">
+              <AlertTitle>{refusal}</AlertTitle>
+            </Alert>
+          )}
           <p className="text-sm text-muted-foreground">
             Are you sure you want to finalize the purchase order? Finalizing the
             order will affect on order quantities used to calculate supply and
@@ -159,7 +169,9 @@ const PurchaseOrderFinalizeBody = ({
         </Button>
         <Button
           type="submit"
-          isDisabled={notificationType === "Email" && contactMissingEmail}
+          isDisabled={
+            !!refusal || (notificationType === "Email" && contactMissingEmail)
+          }
         >
           <Trans>Finalize</Trans>
         </Button>

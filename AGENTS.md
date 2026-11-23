@@ -8,12 +8,14 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.claude/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
 - Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.
+- Answer `.claude/rules/write-time-checklist.md` before writing each file and again over the diff before committing. `/execute`, `/fix` and `/self-review` run it.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
 - A new record type copies its closest sibling — the record users would call the same kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase order, RMA ↔ supplier return) — routes and UI file for file. Name the sibling in the spec and the plan. Ask before you deviate from it (see `.ai/lessons.md` → "A new record type copies its sibling's UI").
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
+- Only the main agent runs the heavy checks — the `erp` typecheck, `pnpm generate:mcp` and `pnpm check:manifest` — once, after its subagents finish. A subagent never runs them, nor raw `tsc` in `apps/erp`. Each can take up to ~10 GB, and a machine-wide lock (`packages/dev/bin/heavy-lock`) queues them one at a time across every worktree.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
 - Resolve every merge or rebase conflict with the `resolving-merge-conflicts` skill (`.claude/skills/resolving-merge-conflicts/SKILL.md`): load it before touching a conflicted file. Its checks here are the scoped typecheck and tests, Biome, and `pnpm --filter @carbon/checks clobbers` when migrations are involved.
@@ -55,6 +57,12 @@ pnpm run generate:types      # Regenerate DB types (after migrations)
 pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
 pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+The pre-commit hook (`scripts/git-hooks/pre-commit`) also runs the `@carbon/checks`
+conformance suite (`pnpm --filter @carbon/checks exec vitest run src/run.test.ts`, ~5 s)
+whenever a staged file is a `.ts`/`.tsx`/`.sql` under `apps/` or `packages/`. It is
+the same gate CI runs; a violation beyond the committed baseline blocks the commit.
+Fix the code, never the baseline. `CARBON_SKIP_CONFORMANCE_CHECK=1` skips it.
 
 `typecheck`, `test`, `lint` and `build` are cached by Turborepo: a package re-runs
 only when its own files, a workspace dependency's files, or the lockfile changed
@@ -178,6 +186,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Bug fix: runtime instrumentation | `.claude/skills/debugging-difficult-bugs/SKILL.md` |
 | Bug fix: end-to-end pipeline (diagnose → fix → verify → commit) | `.claude/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.claude/skills/check-and-commit/SKILL.md` |
+| Write-time checklist (before writing a file, and again over the diff) | `.claude/rules/write-time-checklist.md` |
 | Feature build (doer→gate→judge loop) | `.claude/skills/conductor/SKILL.md` |
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |

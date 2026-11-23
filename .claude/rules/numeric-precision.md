@@ -121,19 +121,20 @@ corruption, which came from deriving the amount UNROUNDED so the money input
 re-committed a changed value on blur. Derive the amount through `applyRate`
 and blur commits an identical value, triggering nothing.
 
-`useDerivedTaxAmount` (exported from `TaxFields`) owns the base-change
+`useTaxPair` (exported from `TaxFields`) owns the base-change
 re-derivation and deliberately skips its first run — a saved line's stored
 pair is displayed as stored rather than silently recomputed on mount.
 
 Build the denominator with `taxableBase(unitPrice, quantity, shippingCost)`
-(also from `TaxFields`), never inline arithmetic. An EMPTIED number input
+(`packages/utils/src/tax.ts`, exported from `@carbon/utils`; `TaxFields` imports
+it from there), never inline arithmetic. An EMPTIED number input
 commits **NaN**, not 0 — that is react-aria's empty state
 (`if (!newInputValue.length) setNumberValue(NaN)`) — and one NaN term makes
 the whole sum NaN, so `applyRate` returns NaN, the amount field renders blank,
 and saving writes 0 against a live 6.25% percent. The pair is broken and the
 tax silently vanishes. `taxableBase` reads each term as 0 BEFORE the sum, which
 is the only place it can be done: once the terms are added, no downstream guard
-can recover them. `useDerivedTaxAmount` additionally refuses a non-finite
+can recover them. `useTaxPair` additionally refuses a non-finite
 subtotal, so "never overwrite a stored amount with NaN" holds by construction.
 
 ## Display digits = input digits (named kinds)
@@ -190,8 +191,10 @@ node-postgres is configured so runtime matches the generated types:
 `packages/database/src/client.ts` registers `setTypeParser` overrides once at
 module load (node-postgres keeps them in a process-global registry).
 
-- **NUMERIC (1700) → `Number`.** Existing `Number(...)` coercions are harmless
-  no-ops; float8 columns still arrive as strings.
+- **NUMERIC (1700) → `Number`.** Do not wrap a NUMERIC read in `Number(...)`.
+  The wrappers still in the code are from before the parser and do nothing;
+  remove them when you change the lines around them. float8 columns still
+  arrive as strings.
 - **DATE (1082) → the raw `YYYY-MM-DD` string.** node-postgres otherwise parses it
   into a JS `Date` at LOCAL midnight (`postgres-date`: "Force YYYY-MM-DD dates to
   be parsed as local time") while `KyselyDatabase` declares `string`. Typecheck

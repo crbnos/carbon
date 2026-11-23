@@ -5,9 +5,9 @@
 // The authorization rules for every public table. `authz sync` makes a database match this
 // file; `authz migration` ships a change to databases that do not sync yet (see migration.ts).
 import {
-  always,
   and,
   anyOf,
+  apiKey,
   authenticated,
   company,
   custom,
@@ -32,6 +32,13 @@ import {
   viaParent,
   where
 } from "./rules";
+
+/**
+ * Reference data with no company that the API's own reads and writes need: any signed-in
+ * user, or a request with an API key. `get_exchange_rate` runs as the caller, so without the
+ * key branch on `exchangeRate` every foreign-currency document created over the API fails.
+ */
+const referenceData = or(authenticated, apiKey);
 
 /** The payment and memo a settlement applies are both still Draft (or absent). */
 const draftSettlement = and(
@@ -146,6 +153,22 @@ const managedAttribute = through(
 );
 
 /**
+ * The operation and the item a material request names are the request's own
+ * company: their FKs are single-column (jobOperation and item have no unique
+ * (id, companyId) to point a composite FK at).
+ */
+const materialRequestReferences = and(
+  or(
+    isNull("jobOperationId"),
+    exists("jobOperation", "jobOperationId", "employee", { sameCompany: true })
+  ),
+  or(
+    isNull("itemId"),
+    exists("item", "itemId", "employee", { sameCompany: true })
+  )
+);
+
+/**
  * A project table, governed by projects_* (any employee reads) in its project's company.
  * `column` names the row's project, or its element with `via: "projectElement"`;
  * `project` itself passes "id".
@@ -229,7 +252,15 @@ export const manifest = {
   agentThread: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
-  apiKey: company("settings", { read: "settings_view" }),
+  // Keys are written only by the server (createApiKey / updateApiKey / revokeApiKey,
+  // gated on users_update). A key acts as its createdBy with its scopes, so a write
+  // through the API would let a caller pick both, and the key hash, themselves.
+  apiKey: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   apiKeyRateLimit: policies({
     select: exists("apiKey", "apiKeyId", "settings_view")
   }),
@@ -247,7 +278,7 @@ export const manifest = {
   }),
   assemblyPlanJob: company("production"),
   assemblyUnit: company("production"),
-  attributeDataType: policies({ select: authenticated }),
+  attributeDataType: policies({ select: referenceData }),
   auditLogArchive: serviceOnly(),
   balloon: company("quality"),
   batchProperty: policies({
@@ -359,9 +390,9 @@ export const manifest = {
   costLedger: policies({
     select: inCompany("companyId", anyOf("accounting_view", "parts_view"))
   }),
-  country: policies({ select: authenticated }),
+  country: policies({ select: referenceData }),
   currency: group("accounting"),
-  currencyCode: policies({ select: authenticated }),
+  currencyCode: policies({ select: referenceData }),
   customer: policies({
     select: or(
       inCompany("companyId", "sales_view"),
@@ -495,7 +526,7 @@ export const manifest = {
   }),
   customerType: company("sales", { read: "member" }),
   customField: company("settings", { read: "member" }),
-  customFieldTable: policies({ select: authenticated }),
+  customFieldTable: policies({ select: referenceData }),
   demandActual: policies({
     select: or(
       inCompany("companyId", "parts_view"),
@@ -682,7 +713,7 @@ export const manifest = {
     delete: inCompany("companyId", "resources_delete")
   }),
   eventSystemSubscription: company("settings"),
-  exchangeRate: policies({ select: always, to: "authenticated" }),
+  exchangeRate: policies({ select: referenceData }),
   exchangeRateOverride: company("accounting", {
     create: "accounting_update",
     delete: "accounting_update"
@@ -757,7 +788,7 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  industry: policies({ select: authenticated }),
+  industry: policies({ select: referenceData }),
   inspection: company("quality", { read: "quality_view" }),
   inspectionDocument: company("quality"),
   inspectionDocumentParameter: company("quality"),
@@ -771,7 +802,7 @@ export const manifest = {
   inspectionSample: company("quality", { read: "quality_view" }),
   inspectionSamplingPlan: company("quality", { read: "quality_view" }),
   inspectionTrackedEntity: company("quality", { read: "quality_view" }),
-  integration: policies({ select: authenticated }),
+  integration: policies({ select: referenceData }),
   // Read-only to API roles: a user-written row could claim another company's Slack
   // team_id or point secretRef at someone else's vault secret. The server writes it
   // with the service role after its own permission check.
@@ -927,6 +958,12 @@ export const manifest = {
   }),
   jobMakeMethod: company("production"),
   jobMaterial: company("production"),
+  // Written only by the scrapJobPart posting (system connection).
+  jobMaterialScrap: company("production", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   jobMaterialStep: policies({
     select: exists("jobMaterial", "jobMaterialId", "employee"),
     insert: exists("jobMaterial", "jobMaterialId", "production_create"),
@@ -1034,6 +1071,7 @@ export const manifest = {
   kanban: company("inventory"),
   laborCategory: company("projects"),
   laborCategoryRate: company("projects"),
+  labelTemplate: company("printing", { read: "printing_view" }),
   lease: company("purchasing", { read: "purchasing_view" }),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
   leaseEvent: company("purchasing", {
@@ -1111,6 +1149,26 @@ export const manifest = {
     insert: inCompany("companyId", "parts_create"),
     update: inCompany("companyId", "parts_update"),
     delete: inCompany("companyId", "parts_delete")
+  }),
+  // Any employee raises a "Need material" request, as its author: the insert
+  // requires createdBy to be the caller, so a request cannot be filed in
+  // another user's name (and give that user the author's resolve right). A
+  // line feeder (inventory_update) or its author resolves it. USING is also
+  // the CHECK, so an update never moves a row to another company, nor points
+  // it at another company's operation or item.
+  materialRequest: company("inventory", {
+    create: and(
+      owner("createdBy"),
+      inCompany("companyId", "employee"),
+      materialRequestReferences
+    ),
+    update: and(
+      or(
+        inCompany("companyId", "inventory_update"),
+        and(owner("createdBy"), inCompany("companyId", "employee"))
+      ),
+      materialRequestReferences
+    )
   }),
   materialSubstance: policies({
     select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
@@ -1244,7 +1302,7 @@ export const manifest = {
   peopleAbsence: company("production"),
   performanceBasedPaymentEvent: company("sales", { read: "sales_view" }),
   peopleAssignment: company("production"),
-  period: policies({ select: authenticated }),
+  period: policies({ select: referenceData }),
   periodCloseTask: company("accounting"),
   periodCloseTaskDefinition: company("accounting"),
   pickingList: company("inventory", { read: "inventory_view" }),
@@ -1806,6 +1864,7 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  supplierStage: company("purchasing"),
   supplierType: company("purchasing", { read: "member" }),
   supplyActual: policies({
     select: or(
@@ -1841,6 +1900,28 @@ export const manifest = {
     create: "employee",
     update: false,
     delete: "settings_update"
+  }),
+  taxAuthority: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+  }),
+  // Retired, never deleted (deleteTaxCode): document lines keep their code.
+  taxCode: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view"),
+    delete: false
+  }),
+  taxCodeComponent: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+  }),
+  // Written by the posting server functions in the journal's transaction.
+  // No API writes.
+  taxLedger: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view"),
+    create: false,
+    update: false,
+    delete: false
+  }),
+  taxRegistration: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
   }),
   terms: company("settings", {
     read: anyOf("purchasing_view", "sales_view", "settings_view"),
@@ -2029,7 +2110,7 @@ export const manifest = {
   warehouseTransfer: company("inventory", { read: "inventory_view" }),
   warehouseTransferLine: company("inventory", { read: "inventory_view" }),
   webhook: company("settings", { read: "settings_view" }),
-  webhookTable: policies({ select: authenticated }),
+  webhookTable: policies({ select: referenceData }),
   workCenter: company("resources"),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.

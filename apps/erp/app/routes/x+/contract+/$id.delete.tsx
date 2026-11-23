@@ -5,7 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -54,10 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (err) {
     return data(
       {},
-      await flash(
-        request,
-        error(err, getErrorMessage(err, "Failed to delete contract"))
-      )
+      await flash(request, error(err, "Failed to delete contract"))
     );
   }
 
