@@ -3,10 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { noSilentTestPass } from "./no-silent-test-pass";
+import { repoRoot } from "../sources/migrations";
+import { loadSharedTestFixtures } from "../sources/test-files";
+import { noSilentTestPass, sharedTestWrappers } from "./no-silent-test-pass";
 
 const scan = (contents: string) =>
-  noSilentTestPass.scan("apps/erp/test/database/x.test.ts", contents);
+  noSilentTestPass(["databaseTest", "postgrestTest"]).scan(
+    "apps/erp/test/database/x.test.ts",
+    contents
+  );
 const snippets = (contents: string) => scan(contents).map((v) => v.snippet);
 
 describe("noSilentTestPass", () => {
@@ -202,5 +207,39 @@ test("b", async () => {
       [4, "if (!b) return;"],
       [8, "if (!c) return;"]
     ]);
+  });
+});
+
+describe("sharedTestWrappers", () => {
+  const fixture = (file: string, contents: string) => ({ file, contents });
+
+  it("finds exported wrappers, a wrapper of another file's wrapper among them", () => {
+    expect(
+      sharedTestWrappers([
+        fixture(
+          "b.ts",
+          `export const fooTest = (name: string, fn: () => Promise<void>) =>
+  barTest(name, fn);`
+        ),
+        fixture(
+          "a.ts",
+          `export function barTest(name: string, fn: () => void) {
+  it.skipIf(!db)(name, fn, 60_000);
+}
+function localTest(name: string, fn: () => void) {
+  it(name, fn);
+}
+export function helper(f: Fixture) {
+  return f.db;
+}`
+        )
+      ]).sort()
+    ).toEqual(["barTest", "fooTest"]);
+  });
+
+  it("reads databaseTest and postgrestTest from the real fixtures", () => {
+    expect(sharedTestWrappers(loadSharedTestFixtures(repoRoot()))).toEqual(
+      expect.arrayContaining(["databaseTest", "postgrestTest"])
+    );
   });
 });

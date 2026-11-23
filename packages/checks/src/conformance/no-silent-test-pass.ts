@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import type { ConformanceCheck, SourceFile, Violation } from "../check";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
 // vitest reports a case whose callback returns before asserting as PASSED:
@@ -10,10 +10,7 @@ import { maskCommentsAndStrings } from "./no-default-on-effects";
 const MESSAGE =
   "A test that returns early passes without running: use `it.skipIf(!x)(…)` / `databaseTest` so it reports skipped, or assert the value exists (.claude/rules/testing.md → Database tests)";
 
-// The shared fixtures' `(name, fn)` wrappers around `it`
-// (`apps/erp/test/database/fixtures/`). A wrapper declared in the test file
-// itself is found from its body.
-const SHARED_WRAPPERS = ["databaseTest", "postgrestTest"];
+export const SHARED_TEST_FIXTURES_DIR = "apps/erp/test/database/fixtures";
 
 // Modifiers chained onto `it`/`test` that still declare a case. The ones in
 // ARG_MODIFIERS take their own argument list before the case's.
@@ -235,7 +232,7 @@ function narrowsJustAsserted(
 }
 
 /** Names declared here as `(name, fn)` wrappers: their body declares a case. */
-function localWrappers(masked: string, known: string[]): string[] {
+function localWrappers(masked: string, known: readonly string[]): string[] {
   const found = new Set<string>();
   const declaration =
     /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?=(?:async\s+)?(?:function\b|\(|[A-Za-z_$][\w$]*\s*=>))|\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
@@ -289,59 +286,89 @@ function calleePattern(names: string[]): RegExp {
   return new RegExp(`(?<![\\w$.])(${alternatives.join("|")})\\b`, "g");
 }
 
-export const noSilentTestPass: ConformanceCheck = {
-  id: "no-silent-test-pass",
-  description:
-    "A test case does not return early when what it needs is missing; it skips",
-  provenance: {
-    deprecates:
-      "`if (!client) return;` at the top of a test callback, which reports the case passed without running it",
-    replacedBy:
-      "`it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest` (.claude/rules/testing.md → Database tests)",
-    since: "2026-11-23"
-  },
-  scan(file: string, contents: string): Violation[] {
-    const masked = maskCommentsAndStrings(contents);
-    const wrappers = [
-      ...SHARED_WRAPPERS,
-      ...localWrappers(masked, SHARED_WRAPPERS)
-    ];
-    const violations: Violation[] = [];
-    const seen = new Set<number>();
-    for (const call of masked.matchAll(calleePattern(wrappers))) {
-      const start = call.index ?? 0;
-      // The wrapper's own declaration is not a call of it.
-      if (/\bfunction\s+$/.test(masked.slice(Math.max(0, start - 12), start)))
-        continue;
-      const open = caseCallOpen(masked, start, call[1] as string);
-      if (open === -1) continue;
-      for (const [from, to] of argumentsOf(masked, open)) {
-        const body = functionBodyOpen(masked, from, to);
-        if (body === -1) continue;
-        for (const at of topLevelIfs(masked, body, closeOf(masked, body))) {
-          const conditionOpen = masked.indexOf("(", at);
-          const conditionClose = closeOf(masked, conditionOpen);
-          const condition = contents.slice(conditionOpen + 1, conditionClose);
-          if (
-            !isMissingCondition(condition) ||
-            narrowsJustAsserted(masked, at, condition)
-          )
-            continue;
-          const end = bareReturnEnd(
-            masked,
-            skipSpace(masked, conditionClose + 1)
-          );
-          if (end === -1 || seen.has(at)) continue;
-          seen.add(at);
-          violations.push({
-            file,
-            line: lineOf(contents, at),
-            snippet: contents.slice(at, end).replace(/\s+/g, " "),
-            message: MESSAGE
-          });
+/**
+ * The `(name, fn)` wrappers the shared fixtures export, found to a fixpoint
+ * across files so a wrapper of another file's wrapper counts.
+ */
+export function sharedTestWrappers(fixtures: SourceFile[]): string[] {
+  const masked = fixtures.map(({ contents }) =>
+    maskCommentsAndStrings(contents)
+  );
+  const found: string[] = [];
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const text of masked) {
+      for (const name of localWrappers(text, found)) {
+        const exported = new RegExp(
+          `\\bexport\\s+(?:async\\s+)?(?:function|const|let|var)\\s+${name.replace(/\$/g, "\\$")}\\b`
+        );
+        if (exported.test(text)) {
+          found.push(name);
+          grew = true;
         }
       }
     }
-    return violations.sort((a, b) => a.line - b.line);
   }
-};
+  return found;
+}
+
+export function noSilentTestPass(
+  sharedWrappers: readonly string[]
+): ConformanceCheck {
+  return {
+    id: "no-silent-test-pass",
+    description:
+      "A test case does not return early when what it needs is missing; it skips",
+    provenance: {
+      deprecates:
+        "`if (!client) return;` at the top of a test callback, which reports the case passed without running it",
+      replacedBy:
+        "`it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest` (.claude/rules/testing.md → Database tests)",
+      since: "2026-11-23"
+    },
+    scan(file: string, contents: string): Violation[] {
+      const masked = maskCommentsAndStrings(contents);
+      const wrappers = [
+        ...sharedWrappers,
+        ...localWrappers(masked, sharedWrappers)
+      ];
+      const violations: Violation[] = [];
+      const seen = new Set<number>();
+      for (const call of masked.matchAll(calleePattern(wrappers))) {
+        const start = call.index ?? 0;
+        // The wrapper's own declaration is not a call of it.
+        if (/\bfunction\s+$/.test(masked.slice(Math.max(0, start - 12), start)))
+          continue;
+        const open = caseCallOpen(masked, start, call[1] as string);
+        if (open === -1) continue;
+        for (const [from, to] of argumentsOf(masked, open)) {
+          const body = functionBodyOpen(masked, from, to);
+          if (body === -1) continue;
+          for (const at of topLevelIfs(masked, body, closeOf(masked, body))) {
+            const conditionOpen = masked.indexOf("(", at);
+            const conditionClose = closeOf(masked, conditionOpen);
+            const condition = contents.slice(conditionOpen + 1, conditionClose);
+            if (
+              !isMissingCondition(condition) ||
+              narrowsJustAsserted(masked, at, condition)
+            )
+              continue;
+            const end = bareReturnEnd(
+              masked,
+              skipSpace(masked, conditionClose + 1)
+            );
+            if (end === -1 || seen.has(at)) continue;
+            seen.add(at);
+            violations.push({
+              file,
+              line: lineOf(contents, at),
+              snippet: contents.slice(at, end).replace(/\s+/g, " "),
+              message: MESSAGE
+            });
+          }
+        }
+      }
+      return violations.sort((a, b) => a.line - b.line);
+    }
+  };
+}
