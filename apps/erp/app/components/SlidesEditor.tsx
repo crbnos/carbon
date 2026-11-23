@@ -6,10 +6,12 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { serviceErrorMessage } from "@carbon/query";
 import {
   Button,
   cn,
   IconButton,
+  ImageZoomViewer,
   Label,
   Tooltip,
   TooltipContent,
@@ -19,9 +21,12 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LuBox, LuCirclePlus, LuMapPin, LuX } from "react-icons/lu";
-import type { SlideAnnotation, SlideSize } from "~/modules/shared";
+import type {
+  SlideAnnotation,
+  SlideSize
+} from "~/modules/shared/shared.models";
 import { getPrivateUrl, path } from "~/utils/path";
 import { SlideAnnotator } from "./SlideAnnotator";
 
@@ -65,7 +70,7 @@ export async function uploadStepSlideModel(
     method: "POST",
     body: formData
   });
-  if (!response.ok) return null;
+  if (!response.ok || serviceErrorMessage(await response.json())) return null;
   return modelUploadId;
 }
 
@@ -146,7 +151,7 @@ export function SlidePinOverlay({ pins }: { pins: SlideAnnotation[] }) {
   return pins.map((pin, i) => (
     <span
       key={pin.id}
-      className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[8px] font-semibold text-white shadow"
+      className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[0.5rem] font-semibold text-white shadow"
       style={{
         left: `${pin.x * 100}%`,
         top: `${pin.y * 100}%`,
@@ -164,7 +169,7 @@ export function SlidePinOverlay({ pins }: { pins: SlideAnnotation[] }) {
 // create form (draft buffer, attached after the step is saved) and the edit form
 // (persisted immediately via the slide routes). Used by both the item method editor
 // (BillOfProcess) and the job editor (JobBillOfProcess). See
-// .ai/specs/2026-07-14-mes-execution-views.md §4.
+// .ai/specs/implemented/2026-07-14-mes-execution-views.md §4.
 export function SlidesEditor({
   slides,
   isDisabled,
@@ -192,14 +197,45 @@ export function SlidesEditor({
   const { t } = useLingui();
   const [annotatingIndex, setAnnotatingIndex] = useState<number | null>(null);
   const annotating = annotatingIndex == null ? null : slides[annotatingIndex];
+  // The image slide open full size. A model slide has no image to enlarge.
+  const [viewingIndex, setViewingIndex] = useState<number | null>(null);
+  const viewing = viewingIndex == null ? null : slides[viewingIndex];
   const models = useSlideModels(slides);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isHidden = isDisabled && slides.length === 0;
 
-  if (isDisabled && slides.length === 0) return null;
+  // A caption saves on blur. Submitting the surrounding form from inside a
+  // caption (⌘/Ctrl+Enter, or Enter) never blurs it, and the step form closes
+  // with the edit unsaved. So a submit first blurs a focused caption of this
+  // editor, which runs its own save.
+  useEffect(() => {
+    if (isHidden) return;
+    const form = containerRef.current?.closest("form");
+    if (!form) return;
+    const saveFocusedCaption = () => {
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement &&
+        active.dataset.slideCaption !== undefined &&
+        containerRef.current?.contains(active)
+      ) {
+        active.blur();
+      }
+    };
+    form.addEventListener("submit", saveFocusedCaption);
+    return () => form.removeEventListener("submit", saveFocusedCaption);
+  }, [isHidden]);
+
+  if (isHidden) return null;
 
   const withModels = !!modelInputRef && !!onModelFileChange;
 
   return (
-    <VStack spacing={2} className="w-full col-span-2 border-t pt-4">
+    <VStack
+      ref={containerRef}
+      spacing={2}
+      className="w-full col-span-2 max-md:col-span-full border-t pt-4"
+    >
       <div className="flex w-full items-center justify-between">
         <Label className="text-xs text-muted-foreground">Slides</Label>
         {!isDisabled && (
@@ -298,27 +334,37 @@ export function SlidesEditor({
                       ) : (
                         <LuBox className="size-8 text-muted-foreground" />
                       )}
-                      <span className="pointer-events-none absolute left-1 top-1 rounded bg-muted px-1 text-[9px] font-semibold text-muted-foreground">
+                      <span className="pointer-events-none absolute left-1 top-1 rounded bg-muted px-1 text-[0.5625rem] font-semibold text-muted-foreground">
                         3D
                       </span>
                       {converting && (
-                        <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-muted px-1 text-[9px] text-muted-foreground">
+                        <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-muted px-1 text-[0.5625rem] text-muted-foreground">
                           {t`Converting…`}
                         </span>
                       )}
                     </div>
                   ) : (
                     <>
-                      <img
-                        src={
-                          slide.imagePath ? getPrivateUrl(slide.imagePath) : ""
-                        }
-                        alt={slide.caption ?? "Slide"}
-                        className={cn(
-                          "w-full rounded-md bg-muted/40 object-contain",
-                          SLIDE_IMAGE_HEIGHT
-                        )}
-                      />
+                      <button
+                        type="button"
+                        aria-label={t`View full size`}
+                        title={t`View full size`}
+                        className="block w-full cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => setViewingIndex(index)}
+                      >
+                        <img
+                          src={
+                            slide.imagePath
+                              ? getPrivateUrl(slide.imagePath)
+                              : ""
+                          }
+                          alt={slide.caption ?? "Slide"}
+                          className={cn(
+                            "w-full rounded-md bg-muted/40 object-contain",
+                            SLIDE_IMAGE_HEIGHT
+                          )}
+                        />
+                      </button>
                       {/* Read-only pin preview so an annotated slide reads at a glance. */}
                       <SlidePinOverlay pins={pins} />
                     </>
@@ -336,7 +382,7 @@ export function SlidesEditor({
                 </div>
                 {slide.modelUploadId && model?.name && (
                   <p
-                    className="w-full truncate text-[10px] text-muted-foreground"
+                    className="w-full truncate text-[0.625rem] text-muted-foreground"
                     title={model.name}
                   >
                     {model.name}
@@ -347,7 +393,7 @@ export function SlidesEditor({
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-6 px-2 text-[10px]"
+                      className="h-6 px-2 text-[0.625rem]"
                       leftIcon={<LuMapPin className="size-3" />}
                       onClick={() => setAnnotatingIndex(index)}
                     >
@@ -357,6 +403,7 @@ export function SlidesEditor({
                 )}
                 <input
                   type="text"
+                  data-slide-caption=""
                   aria-label={t`Caption`}
                   placeholder={t`Caption`}
                   defaultValue={slide.caption ?? ""}
@@ -369,6 +416,14 @@ export function SlidesEditor({
           })}
         </div>
       )}
+
+      <ImageZoomViewer
+        open={!!viewing?.imagePath && !viewing.modelUploadId}
+        src={viewing?.imagePath ? getPrivateUrl(viewing.imagePath) : null}
+        caption={viewing?.caption}
+        annotations={viewing?.annotations ?? []}
+        onClose={() => setViewingIndex(null)}
+      />
 
       {annotating?.imagePath && annotatingIndex != null && (
         <SlideAnnotator

@@ -80,15 +80,6 @@ vi.mock("./owner", () => ({
   hasPermission: vi.fn(() => true)
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
-// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
-vi.mock("../../inngest/functions/notifications/content", () => ({
-  buildNotificationLink: (
-    event: string,
-    documentId: string,
-    companyId: string
-  ) =>
-    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
-}));
 
 const { executeManualWorkflowRun } = await import("./manual");
 const { createWorkflowServices } = await import("../actions");
@@ -173,6 +164,7 @@ beforeEach(() => {
   stepIds = 0;
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search: async () => ({ ok: false, error: "not stubbed" })
   });

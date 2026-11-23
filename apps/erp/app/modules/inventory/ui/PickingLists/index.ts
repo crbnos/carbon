@@ -11,6 +11,7 @@ export {
   PickingItemCard
 } from "./PickingItemCard";
 export { default as PickingKanban } from "./PickingKanban";
+export { default as PickingListDocuments } from "./PickingListDocuments";
 export { default as PickingListHeader } from "./PickingListHeader";
 export { default as PickingListLines } from "./PickingListLines";
 export { default as PickingListNotes } from "./PickingListNotes";

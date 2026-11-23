@@ -1,0 +1,19 @@
+# The root .dockerignore is written for the slim production images and leaves out
+# sources the scanner should see. BuildKit reads this file instead for
+# .oss-scanner/Dockerfile.
+node_modules
+**/node_modules
+.turbo
+**/.turbo
+**/target
+**/build
+**/.react-router
+**/.next
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+**/.envrc
+**/secrets/
+**/*.secret

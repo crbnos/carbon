@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -14,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DateTimePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -21,7 +21,6 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Input,
   MENU_ITEM_SHORTCUTS,
   Select,
   SelectContent,
@@ -33,13 +32,25 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
-import { datetime, redirect } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import {
+  datetime,
+  fromLocalDateTime,
+  redirect,
+  toLocalDateTime
+} from "@carbon/utils";
+import type { CalendarDateTime } from "@internationalized/date";
+import {
+  getDayOfWeek,
+  parseDate,
+  Time,
+  toCalendarDateTime
+} from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -50,24 +61,24 @@ import {
   LuTrash
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useLoaderData, useParams } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { DateTime } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import {
-  clockIn,
   clockInValidator,
-  clockOut,
   clockOutValidator,
-  deleteTimeCardEntry,
   deleteTimeCardEntryValidator,
-  getOpenClockEntry,
-  getTimeCardEntries,
-  updateTimeCardEntry,
   updateTimeCardEntryValidator
-} from "~/modules/people";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/people/people.models";
+import {
+  getOpenClockEntry,
+  getTimeCardEntries
+} from "~/modules/people/people.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 function formatDuration(clockIn: string, clockOut: string | null) {
@@ -99,17 +110,6 @@ function formatDay(dateStr: string, locale: string) {
     month: "short",
     day: "numeric"
   });
-}
-
-/** Format a UTC date string to a local datetime-local input value */
-function toLocalDatetimeInput(dateStr: string) {
-  const d = new Date(dateStr);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -178,121 +178,53 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "people"
+const timecardForm = z.discriminatedUnion("intent", [
+  clockInValidator,
+  clockOutValidator,
+  updateTimeCardEntryValidator,
+  deleteTimeCardEntryValidator,
+  z.object({
+    intent: z.literal("addEntry"),
+    clockIn: z.string().min(1),
+    clockOut: zfd.text(z.string().optional())
+  })
+]);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(timecardForm).request(args, {
+    params: ["personId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { personId } = input.params;
+  const form = input.data;
+  const api = await carbon(args.request);
 
-  const { personId } = params;
-  if (!personId) throw new Error("No person ID provided");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "clockIn") {
-    const validation = await validator(clockInValidator).validate(formData);
-    if (validation.error) return data({}, { status: 400 });
-
-    const employeeId = validation.data.employeeId || personId;
-    const result = await clockIn(client, {
-      employeeId,
-      companyId,
-      createdBy: userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, result.error.message))
-      );
-    }
-    return data({}, await flash(request, success("Clocked in")));
+  switch (form.intent) {
+    case "clockIn":
+      return api.people.clockInPerson({
+        employeeId: form.employeeId || personId
+      });
+    case "clockOut":
+      return api.people.clockOutPerson({
+        employeeId: form.employeeId || personId,
+        note: form.note
+      });
+    case "updateEntry":
+      return api.people.updatePersonTimeCardEntry({
+        entryId: form.entryId,
+        clockIn: form.clockIn,
+        clockOut: form.clockOut,
+        note: form.note
+      });
+    case "deleteEntry":
+      return api.people.deletePersonTimeCardEntry({ entryId: form.entryId });
+    case "addEntry":
+      return api.people.addPersonTimeCardEntry({
+        employeeId: personId,
+        clockIn: form.clockIn,
+        clockOut: form.clockOut
+      });
   }
-
-  if (intent === "clockOut") {
-    const validation = await validator(clockOutValidator).validate(formData);
-    if (validation.error) return data({}, { status: 400 });
-
-    const employeeId = validation.data.employeeId || personId;
-    const result = await clockOut(client, {
-      employeeId,
-      companyId,
-      updatedBy: userId,
-      note: validation.data.note
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, result.error.message))
-      );
-    }
-    return data({}, await flash(request, success("Clocked out")));
-  }
-
-  if (intent === "updateEntry") {
-    const validation = await validator(updateTimeCardEntryValidator).validate(
-      formData
-    );
-    if (validation.error) return data({}, { status: 400 });
-
-    const result = await updateTimeCardEntry(client, {
-      entryId: validation.data.entryId,
-      clockIn: validation.data.clockIn,
-      clockOut: validation.data.clockOut || null,
-      note: validation.data.note || null,
-      updatedBy: userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to update entry"))
-      );
-    }
-    return data({}, await flash(request, success("Entry updated")));
-  }
-
-  if (intent === "deleteEntry") {
-    const validation = await validator(deleteTimeCardEntryValidator).validate(
-      formData
-    );
-    if (validation.error) return data({}, { status: 400 });
-
-    const result = await deleteTimeCardEntry(client, validation.data.entryId);
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to delete entry"))
-      );
-    }
-    return data({}, await flash(request, success("Entry deleted")));
-  }
-
-  if (intent === "addEntry") {
-    const clockInVal = formData.get("clockIn") as string;
-    const clockOutVal = formData.get("clockOut") as string | null;
-    if (!clockInVal) return data({}, { status: 400 });
-
-    const result = await client.from("timeCardEntry").insert({
-      employeeId: personId,
-      companyId,
-      clockIn: clockInVal,
-      clockOut: clockOutVal || null,
-      createdBy: userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to add entry"))
-      );
-    }
-    return data({}, await flash(request, success("Entry added")));
-  }
-
-  return data({}, { status: 400 });
 }
 
 function getShiftTimesForDate(
@@ -308,11 +240,9 @@ function getShiftTimesForDate(
     friday: boolean;
     saturday: boolean;
   } | null
-): { clockIn: string; clockOut: string } | null {
+): { clockIn: CalendarDateTime; clockOut: CalendarDateTime } | null {
   if (!shift) return null;
-  // Parse YYYY-MM-DD as local date (not UTC)
-  const [year, month, day2] = dateStr.split("-").map(Number);
-  const date = new Date(year, month - 1, day2);
+  const date = parseDate(dateStr);
   const dayNames = [
     "sunday",
     "monday",
@@ -322,23 +252,17 @@ function getShiftTimesForDate(
     "friday",
     "saturday"
   ] as const;
-  const day = dayNames[date.getDay()];
+  const day = dayNames[getDayOfWeek(date, "en-US")];
   if (!shift[day]) return null;
 
   const [startH, startM] = shift.startTime.split(":").map(Number);
   const [endH, endM] = shift.endTime.split(":").map(Number);
 
-  const clockIn = new Date(date);
-  clockIn.setHours(startH, startM, 0, 0);
+  const clockIn = toCalendarDateTime(date, new Time(startH, startM));
+  let clockOut = toCalendarDateTime(date, new Time(endH, endM));
+  if (clockOut.compare(clockIn) <= 0) clockOut = clockOut.add({ days: 1 });
 
-  const clockOut = new Date(date);
-  clockOut.setHours(endH, endM, 0, 0);
-  if (clockOut <= clockIn) clockOut.setDate(clockOut.getDate() + 1);
-
-  return {
-    clockIn: toLocalDatetimeInput(clockIn.toISOString()),
-    clockOut: toLocalDatetimeInput(clockOut.toISOString())
-  };
+  return { clockIn, clockOut };
 }
 
 export default function PersonTimecardRoute() {
@@ -348,27 +272,47 @@ export default function PersonTimecardRoute() {
   const { entries, openEntry, weekOffset, weekStart, weekEnd, shift } =
     useLoaderData<typeof loader>();
   const { personId } = useParams();
+  // The intent of the submission in flight, for the toast once it settles.
+  const intent = useRef<string | null>(null);
   const fetcher = useAction<typeof action>({
     onSettled: (data) => {
       if (data) {
         setEditingId(null);
         setShowAddForm(false);
       }
+    },
+    onSuccess: () => {
+      const messages: Record<string, string> = {
+        clockIn: t`Clocked in`,
+        clockOut: t`Clocked out`,
+        updateEntry: t`Entry updated`,
+        deleteEntry: t`Entry deleted`,
+        addEntry: t`Entry added`
+      };
+      const message = intent.current && messages[intent.current];
+      if (message) toast.success(message);
     }
   });
+  const submitting = fetcher.formData?.get("intent");
+  useEffect(() => {
+    if (typeof submitting === "string") intent.current = submitting;
+  }, [submitting]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editClockIn, setEditClockIn] = useState("");
-  const [editClockOut, setEditClockOut] = useState("");
+  const [editClockIn, setEditClockIn] = useState<CalendarDateTime | null>(null);
+  const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(
+    null
+  );
   const [editNote, setEditNote] = useState("");
   const [, setTick] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addDate, setAddDate] = useState("");
-  const [addClockIn, setAddClockIn] = useState("");
-  const [addClockOut, setAddClockOut] = useState("");
+  const [addClockIn, setAddClockIn] = useState<CalendarDateTime | null>(null);
+  const [addClockOut, setAddClockOut] = useState<CalendarDateTime | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<{
     id: string;
     clockIn: string;
   } | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Update live durations every minute
   useEffect(() => {
@@ -387,12 +331,9 @@ export default function PersonTimecardRoute() {
       setAddClockOut(shiftTimes.clockOut);
     } else {
       // No shift for this day, default 9am-5pm
-      const [y, m, dy] = addDate.split("-").map(Number);
-      const d = new Date(y, m - 1, dy);
-      d.setHours(9, 0, 0, 0);
-      setAddClockIn(toLocalDatetimeInput(d.toISOString()));
-      d.setHours(17, 0, 0, 0);
-      setAddClockOut(toLocalDatetimeInput(d.toISOString()));
+      const date = parseDate(addDate);
+      setAddClockIn(toCalendarDateTime(date, new Time(9)));
+      setAddClockOut(toCalendarDateTime(date, new Time(17)));
     }
   }, [addDate, shift]);
 
@@ -403,8 +344,8 @@ export default function PersonTimecardRoute() {
     note: string | null;
   }) {
     setEditingId(entry.id);
-    setEditClockIn(toLocalDatetimeInput(entry.clockIn));
-    setEditClockOut(entry.clockOut ? toLocalDatetimeInput(entry.clockOut) : "");
+    setEditClockIn(toLocalDateTime(entry.clockIn));
+    setEditClockOut(entry.clockOut ? toLocalDateTime(entry.clockOut) : null);
     setEditNote(entry.note ?? "");
   }
 
@@ -422,8 +363,8 @@ export default function PersonTimecardRoute() {
               onClick={() => {
                 setShowAddForm(!showAddForm);
                 setAddDate("");
-                setAddClockIn("");
-                setAddClockOut("");
+                setAddClockIn(null);
+                setAddClockOut(null);
               }}
             >
               <Trans>Add Entry</Trans>
@@ -504,7 +445,7 @@ export default function PersonTimecardRoute() {
           </Button>
         </HStack>
 
-        <TableBase className="table-fixed w-full">
+        <TableBase className="table-fixed w-full max-md:table-auto max-md:min-w-[36rem]">
           <colgroup>
             <col className="w-[16%]" />
             <col className="w-[28%]" />
@@ -517,13 +458,13 @@ export default function PersonTimecardRoute() {
               <Th className="whitespace-nowrap">
                 <Trans>Date</Trans>
               </Th>
-              <Th>
+              <Th className="max-md:whitespace-nowrap">
                 <Trans>Clock In</Trans>
               </Th>
-              <Th>
+              <Th className="max-md:whitespace-nowrap">
                 <Trans>Clock Out</Trans>
               </Th>
-              <Th className="text-center">
+              <Th className="text-center max-md:whitespace-nowrap">
                 <Trans>Duration</Trans>
               </Th>
               <Th />
@@ -537,7 +478,7 @@ export default function PersonTimecardRoute() {
                     value={addDate}
                     onValueChange={(value) => setAddDate(value)}
                   >
-                    <SelectTrigger size="sm">
+                    <SelectTrigger size="sm" aria-label={t`Date`}>
                       <SelectValue placeholder={t`Date`} />
                     </SelectTrigger>
                     <SelectContent>
@@ -559,19 +500,23 @@ export default function PersonTimecardRoute() {
                   </Select>
                 </Td>
                 <Td>
-                  <Input
-                    type="datetime-local"
+                  <DateTimePicker
+                    aria-label={t`Clock In`}
+                    size="sm"
                     value={addClockIn}
-                    onChange={(e) => setAddClockIn(e.target.value)}
-                    className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                    onChange={(value) =>
+                      setAddClockIn(value ? toCalendarDateTime(value) : null)
+                    }
                   />
                 </Td>
                 <Td>
-                  <Input
-                    type="datetime-local"
+                  <DateTimePicker
+                    aria-label={t`Clock Out`}
+                    size="sm"
                     value={addClockOut}
-                    onChange={(e) => setAddClockOut(e.target.value)}
-                    className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                    onChange={(value) =>
+                      setAddClockOut(value ? toCalendarDateTime(value) : null)
+                    }
                   />
                 </Td>
                 <Td className="text-muted-foreground text-center">—</Td>
@@ -582,25 +527,20 @@ export default function PersonTimecardRoute() {
                       <input
                         type="hidden"
                         name="clockIn"
-                        value={
-                          isNaN(new Date(addClockIn).getTime())
-                            ? ""
-                            : new Date(addClockIn).toISOString()
-                        }
+                        value={addClockIn ? fromLocalDateTime(addClockIn) : ""}
                       />
-                      {addClockOut &&
-                        !isNaN(new Date(addClockOut).getTime()) && (
-                          <input
-                            type="hidden"
-                            name="clockOut"
-                            value={new Date(addClockOut).toISOString()}
-                          />
-                        )}
+                      {addClockOut && (
+                        <input
+                          type="hidden"
+                          name="clockOut"
+                          value={fromLocalDateTime(addClockOut)}
+                        />
+                      )}
                       <Button
                         isLoading={fetcher.state !== "idle"}
                         variant="secondary"
                         type="submit"
-                        disabled={isNaN(new Date(addClockIn).getTime())}
+                        disabled={!addClockIn}
                       >
                         <Trans>Save</Trans>
                       </Button>
@@ -619,7 +559,7 @@ export default function PersonTimecardRoute() {
               <Tr>
                 <Td
                   colSpan={5}
-                  className="text-center text-muted-foreground py-8"
+                  className="text-center text-muted-foreground py-8 max-md:text-left"
                 >
                   <Trans>No time entries for this week</Trans>
                 </Td>
@@ -632,19 +572,27 @@ export default function PersonTimecardRoute() {
                       {formatDay(entry.clockIn, locale)}
                     </Td>
                     <Td>
-                      <Input
-                        type="datetime-local"
+                      <DateTimePicker
+                        aria-label={t`Clock In`}
+                        size="sm"
                         value={editClockIn}
-                        onChange={(e) => setEditClockIn(e.target.value)}
-                        className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                        onChange={(value) =>
+                          setEditClockIn(
+                            value ? toCalendarDateTime(value) : null
+                          )
+                        }
                       />
                     </Td>
                     <Td>
-                      <Input
-                        type="datetime-local"
+                      <DateTimePicker
+                        aria-label={t`Clock Out`}
+                        size="sm"
                         value={editClockOut}
-                        onChange={(e) => setEditClockOut(e.target.value)}
-                        className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                        onChange={(value) =>
+                          setEditClockOut(
+                            value ? toCalendarDateTime(value) : null
+                          )
+                        }
                       />
                     </Td>
                     <Td className="text-muted-foreground text-center">—</Td>
@@ -665,25 +613,22 @@ export default function PersonTimecardRoute() {
                             type="hidden"
                             name="clockIn"
                             value={
-                              isNaN(new Date(editClockIn).getTime())
-                                ? ""
-                                : new Date(editClockIn).toISOString()
+                              editClockIn ? fromLocalDateTime(editClockIn) : ""
                             }
                           />
-                          {editClockOut &&
-                            !isNaN(new Date(editClockOut).getTime()) && (
-                              <input
-                                type="hidden"
-                                name="clockOut"
-                                value={new Date(editClockOut).toISOString()}
-                              />
-                            )}
+                          {editClockOut && (
+                            <input
+                              type="hidden"
+                              name="clockOut"
+                              value={fromLocalDateTime(editClockOut)}
+                            />
+                          )}
                           <input type="hidden" name="note" value={editNote} />
                           <Button
                             isLoading={fetcher.state !== "idle"}
                             variant="secondary"
                             type="submit"
-                            disabled={isNaN(new Date(editClockIn).getTime())}
+                            disabled={!editClockIn}
                           >
                             <Trans>Save</Trans>
                           </Button>
@@ -736,12 +681,13 @@ export default function PersonTimecardRoute() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.delete}
-                            onClick={() =>
+                            onClick={() => {
                               setDeletingEntry({
                                 id: entry.id,
                                 clockIn: entry.clockIn
-                              })
-                            }
+                              });
+                              setIsDeleteOpen(true);
+                            }}
                             className="text-destructive"
                           >
                             <DropdownMenuIcon icon={<LuTrash />} />
@@ -767,13 +713,14 @@ export default function PersonTimecardRoute() {
         <ConfirmDelete
           name={`Timecard (${new Date(deletingEntry.clockIn).toLocaleString(locale)})`}
           text={t`Are you sure you want to delete this timecard? This cannot be undone.`}
-          onCancel={() => setDeletingEntry(null)}
+          isOpen={isDeleteOpen}
+          onCancel={() => setIsDeleteOpen(false)}
           onSubmit={() => {
             const formData = new FormData();
             formData.append("intent", "deleteEntry");
             formData.append("entryId", deletingEntry.id);
             fetcher.submit(formData, { method: "post" });
-            setDeletingEntry(null);
+            setIsDeleteOpen(false);
           }}
         />
       )}

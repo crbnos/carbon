@@ -63,7 +63,7 @@ A pick is a **transfer**, never a consumption. Posting one writes two balanced <
 An **unpick** reverses the transfer, restores the warehouse source as the consumption point, and returns the line to **"Pending"**. And at job complete, any picked-but-unconsumed remainder is walked back from the lineside bin to the warehouse automatically, so leftover staged stock never gets stranded at the line.
 
 <Callout type="note">
-Because a pick only moves stock and never checks availability first, on-hand at a bin can go negative — the same way shipping and issuing do. Carbon lets the floor proceed and reconciles later rather than blocking the work.
+Because a pick only moves stock and never checks availability first, on-hand at a bin can go negative — the same way shipping and issuing do. Carbon lets the floor proceed and reconciles later rather than blocking the work. With [strict backflush](/docs/reference/strict-backflush) and **Prevent negative stock** on, a backflush is stopped instead when its storage unit is short.
 </Callout>
 
 ## Related

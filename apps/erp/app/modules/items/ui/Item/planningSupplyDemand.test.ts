@@ -5,8 +5,10 @@
 import { describe, expect, it } from "vitest";
 import type { PlannedOrder } from "../../../purchasing/purchasing.models";
 import {
+  bucketSupplyByPeriod,
   existingRowId,
   mergePlannedOrders,
+  projectedChange,
   type SupplyDemandRow
 } from "./planningSupplyDemand";
 
@@ -146,5 +148,68 @@ describe("mergePlannedOrders", () => {
     mergePlannedOrders(rows, [edited], 1, 0);
 
     expect(rows[0].quantity).toBe(100);
+  });
+});
+
+describe("bucketSupplyByPeriod", () => {
+  const periods = [
+    { id: "w1", startDate: "2026-10-11", endDate: "2026-10-17" },
+    { id: "w2", startDate: "2026-10-18", endDate: "2026-10-24" }
+  ];
+  const TODAY = "2026-10-13";
+
+  it("sums the lines of a week per source instead of overwriting", () => {
+    expect(
+      bucketSupplyByPeriod(periods, TODAY, [
+        { sourceType: "Purchase Order", quantity: 100, dueDate: "2026-10-19" },
+        { sourceType: "Purchase Order", quantity: 40, dueDate: "2026-10-20" },
+        { sourceType: "Production Order", quantity: 7, dueDate: "2026-10-20" }
+      ])
+    ).toEqual([
+      { periodId: "w2", sourceType: "Purchase Order", actualQuantity: 140 },
+      { periodId: "w2", sourceType: "Production Order", actualQuantity: 7 }
+    ]);
+  });
+
+  it("lands an overdue line in the first week and drops one past the horizon", () => {
+    expect(
+      bucketSupplyByPeriod(periods, TODAY, [
+        { sourceType: "Purchase Order", quantity: 5, dueDate: "2026-09-01" },
+        { sourceType: "Purchase Order", quantity: 9, dueDate: "2027-01-01" }
+      ])
+    ).toEqual([
+      { periodId: "w1", sourceType: "Purchase Order", actualQuantity: 5 }
+    ]);
+  });
+
+  it("skips a line with nothing left to receive", () => {
+    expect(
+      bucketSupplyByPeriod(periods, TODAY, [
+        { sourceType: "Purchase Order", quantity: 0, dueDate: "2026-10-19" }
+      ])
+    ).toEqual([]);
+  });
+});
+
+describe("projectedChange", () => {
+  const week = {
+    "Purchase Order": 100,
+    "Production Order": 20,
+    Planned: 30,
+    "Sales Order": -60,
+    "Job Material": -10,
+    "Demand Forecast": -25
+  };
+
+  it("nets every series when none is hidden", () => {
+    expect(projectedChange(week, new Set())).toBe(55);
+  });
+
+  it("leaves a hidden series out, so the legend is a what-if", () => {
+    expect(projectedChange(week, new Set(["planned"]))).toBe(25);
+    expect(projectedChange(week, new Set(["supply"]))).toBe(-65);
+    expect(projectedChange(week, new Set(["demand", "demandForecast"]))).toBe(
+      150
+    );
   });
 });

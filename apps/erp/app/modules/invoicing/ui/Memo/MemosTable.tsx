@@ -34,6 +34,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useAccounts } from "~/components/Form/Account";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -59,13 +60,15 @@ type MemoRow = {
 type MemosTableProps = {
   data: MemoRow[];
   count: number;
+  infinite: InfiniteOptions;
   // Which party this list is scoped to. "customer" → Credit Memos (AR),
   // "supplier" → Supplier Credits (AP). Drives the counterparty column, the
   // title, and the New-button label/default party.
   party: "customer" | "supplier";
 };
 
-const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
+const MemosTable = memo((props: MemosTableProps) => {
+  const { data, count, party, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -123,13 +126,14 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
             {row.original.memoId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "direction",
         header: t`Direction`,
         cell: ({ row }) => <Enumerable value={row.original.direction} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -153,6 +157,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
             <CustomerAvatar customerId={row.original.customerId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -183,6 +188,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -215,6 +221,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <MemoStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -238,6 +245,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
   return (
     <>
       <Table<MemoRow>
+        infinite={infinite}
         count={count}
         columns={columns}
         data={data}
@@ -266,11 +274,9 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           text={t`Are you sure you want to delete ${selectedMemo.memoId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelectedMemo(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelectedMemo(null);
           }}
         />
       )}

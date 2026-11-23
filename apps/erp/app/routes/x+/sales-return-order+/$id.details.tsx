@@ -23,7 +23,7 @@ import {
   getSalesReturnOrderCredits,
   getSalesReturnOrderIssues,
   getSalesReturnOrderReceipts
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import SalesReturnOrderSummary from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderSummary";
 import { path } from "~/utils/path";
 

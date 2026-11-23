@@ -93,21 +93,31 @@ const MotionMoney = ({
     }),
     [currency, decimalPlaces, minDecimals, rate]
   );
+  // The animated digit strips hold every digit 0–9, so a screen reader would
+  // read "US$0123456789…". They are hidden; the amount is read once, as text.
+  const formatter = useMemo(
+    () => new Intl.NumberFormat(locale, format),
+    [locale, format]
+  );
 
   return (
-    <MotionNumber
-      // MotionNumber animates a VALUE change; a FORMAT change is not one. Losing
-      // the trailing zeros drops three parts, and AnimatePresence's popLayout
-      // pulls them out absolutely-positioned over a one-second fade — the ".00"
-      // ghosting on top of the amount when the trailing-zeros setting is toggled.
-      // Keying on the format remounts instead, so re-formatting is instant and
-      // only real value changes animate. A font load remounts it too (above).
-      key={`${locale}:${currency}:${decimalPlaces}:${minDecimals}:${rate}:${fontLoads}`}
-      value={value}
-      format={format}
-      locales={locale}
-      className={className}
-    />
+    <>
+      <MotionNumber
+        aria-hidden
+        // MotionNumber animates a VALUE change; a FORMAT change is not one. Losing
+        // the trailing zeros drops three parts, and AnimatePresence's popLayout
+        // pulls them out absolutely-positioned over a one-second fade — the ".00"
+        // ghosting on top of the amount when the trailing-zeros setting is toggled.
+        // Keying on the format remounts instead, so re-formatting is instant and
+        // only real value changes animate. A font load remounts it too (above).
+        key={`${locale}:${currency}:${decimalPlaces}:${minDecimals}:${rate}:${fontLoads}`}
+        value={value}
+        format={format}
+        locales={locale}
+        className={className}
+      />
+      <span className="sr-only">{formatter.format(value)}</span>
+    </>
   );
 };
 

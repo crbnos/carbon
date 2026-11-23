@@ -24,27 +24,11 @@ const from = (table: string, column = "id"): Planned => ({
  */
 export function givenInputs(today: string): Record<string, Record<string, Planned>> {
   return {
-    accounting_getAccountPeriodSeries: {
-      start: value(today),
-      periodEnds: value([today])
-    },
     accounting_getDimensionPivotLines: { filters: value([]) },
-    accounting_getConsolidatedBalances: {
-      targetCurrency: from("company", "baseCurrencyCode")
-    },
-    accounting_getConsolidatedPeriodSeries: {
-      targetCurrency: from("company", "baseCurrencyCode")
-    },
     // The details come from a SQL function, so the body names no table.
     items_getConsumable: { itemId: from("consumables") },
     items_getService: { itemId: from("services") },
     items_getTool: { itemId: from("tools") },
-    items_getNextRevision: { maxRevision: value("A") },
-    items_findOtherOpenChangeNoticesForItem: {
-      excludeChangeNoticeId: from("changeOrder")
-    },
-    production_getCompletionJobs: { timeZone: value("UTC") },
-    sales_getQuoteLinePricesByItemId: { currentQuoteId: from("quote") },
-    sales_getQuoteLinePricesByItemIds: { currentQuoteId: from("quote") }
+    production_getCompletionJobs: { timeZone: value("UTC") }
   };
 }

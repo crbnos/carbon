@@ -89,6 +89,14 @@ export const nonConformanceAssociationType = [
 
 export const qualityDocumentStatus = ["Draft", "Active", "Archived"] as const;
 
+export const inspectionDocumentStatus = [
+  "Draft",
+  "Active",
+  "Archived"
+] as const;
+export type InspectionDocumentStatus =
+  (typeof inspectionDocumentStatus)[number];
+
 export const riskSource = [
   "Customer",
   "General",
@@ -112,7 +120,7 @@ export const riskRegisterType = ["Risk", "Opportunity"] as const;
 export const gaugeValidator = z.object({
   id: zfd.text(z.string().optional()),
   gaugeId: zfd.text(z.string().optional()),
-  supplierId: zfd.text(z.string().optional()),
+  manufacturer: zfd.text(z.string().optional()),
   modelNumber: zfd.text(z.string().optional()),
   serialNumber: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
@@ -219,6 +227,7 @@ export const issueValidator = z.object({
   items: z.array(z.string()).optional(),
   jobOperationId: z.string().optional(),
   customerId: z.string().optional(),
+  supplierId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
   operationSupplierProcessId: z.string().optional()
 });
@@ -391,14 +400,6 @@ export const requiredActionValidator = z.object({
   active: zfd.checkbox()
 });
 
-export const qualityDocumentApprovalValidator = z.object({
-  approvalRequestId: z
-    .string()
-    .min(1, { message: "Approval request is required" }),
-  decision: z.enum(["Approved", "Rejected"]),
-  notes: zfd.text(z.string().optional())
-});
-
 export const QualityKPIs = [
   { key: "weeklyTracking", label: "Issue Trend" },
   { key: "statusDistribution", label: "Status Distribution" },
@@ -439,7 +440,8 @@ export const inspectionStatusType = [
   "In Progress",
   "Passed",
   "Failed",
-  "Partial"
+  "Partial",
+  "Cancelled"
 ] as const;
 
 export const inspectionSampleStatusType = [
@@ -465,6 +467,8 @@ export const inspectionSampleValidator = z.object({
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId: zfd.text(z.string().optional()),
+  // Grid position of a new anonymous sample, so it reloads in the same place.
+  position: zfd.numeric(z.number().int().min(0).optional()),
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: z.enum(["Pending", "Passed", "Failed"], {
@@ -481,7 +485,25 @@ export const inspectionDispositionValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-export const inspectionSourceDocuments = ["Receipt", "Job Operation"] as const;
+export const inspectionSourceDocuments = [
+  "Receipt",
+  "Job Operation",
+  "Manual"
+] as const;
+
+// A manual inspection of specific tracked entities of one item.
+export const manualInspectionValidator = z.object({
+  itemId: z.string().min(1, { message: "Item is required" }),
+  trackedEntityIds: z
+    .array(z.string().min(1))
+    .min(1, { message: "Select at least one tracked entity" }),
+  inspectionDocumentId: z
+    .string()
+    .min(1, { message: "Inspection plan is required" }),
+  workCenterId: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional())
+});
 
 export const inspectionDocumentUsages = ["Receipt"] as const;
 
@@ -498,6 +520,8 @@ export const inspectionMeasurementValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
   // Absent = create an anonymous sample (non-serial grid columns).
   sampleId: zfd.text(z.string().optional()),
+  // Grid position of the anonymous sample this save creates.
+  position: zfd.numeric(z.number().int().min(0).optional()),
   inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
   // Numeric string for Measurement features; empty clears the reading.
   value: zfd.text(z.string().optional()),
@@ -519,7 +543,6 @@ export const inspectionDocumentValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string().optional()),
   partId: z.string().min(1, { message: "Part is required" }),
-  drawingNumber: zfd.text(z.string().optional()),
   pdfUrl: zfd.text(z.string().optional()),
   annotations: zfd.text(z.string().optional()),
   features: zfd.text(z.string().optional())
@@ -639,6 +662,16 @@ export const inspectionDocumentSamplingValidator = z.object({
   samplingInspectionLevel: z.enum(inspectionLevels).nullable(),
   samplingSeverity: z.enum(inspectionSeverities).nullable()
 });
+
+// The plan's parameters, the whole list in display order. Sent by the editor
+// as JSON with the ids it minted (`idp_…`).
+export const inspectionDocumentParametersValidator = z.array(
+  z.object({
+    id: z.string().min(1),
+    key: z.string().trim().min(1, { message: "Parameter is required" }),
+    value: z.string().trim()
+  })
+);
 
 const inspectionFeatureSamplingFieldsValidator = {
   samplingPlanType: z.enum(samplingPlanTypes).nullable().optional(),
@@ -837,7 +870,7 @@ export const inspectionSaveAnchorsPayloadValidator = z
  *
  * Breaking change vs legacy: `type` and `unit` are closed vocabularies, not arbitrary strings.
  *
- * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.server.ts`.
+ * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.service.ts`.
  */
 
 /** POST body for `/api/quality/inspection-document/:id/balloon-analyze` */

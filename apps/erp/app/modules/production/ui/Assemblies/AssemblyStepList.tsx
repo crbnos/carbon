@@ -27,6 +27,7 @@ import type { AssemblyStep, SubAssemblyInfo } from "@carbon/viewer";
 import {
   buildSubAssemblyPlan,
   displayOrder,
+  isPlanFlagged,
   subAssemblyPartIds,
   validateSubAssemblies
 } from "@carbon/viewer";
@@ -78,11 +79,10 @@ import { useFetcher, useParams, useSearchParams } from "react-router";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
-import {
-  assemblyStepStatuses,
-  stepPlanWarningsSchema
-} from "../../production.models";
+import { assemblyStepStatuses } from "../../production.models";
 import type { AssemblyInstructionStepRow } from "../../types";
 import type { AssemblyStepStatusValue } from "./AssemblyStepStatus";
 import {
@@ -90,10 +90,6 @@ import {
   normalizeStepStatus,
   useStepStatusLabel
 } from "./AssemblyStepStatus";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 /** The search param that opens a sub-assembly: the list and player show only its steps. */
 export const SUB_ASSEMBLY_PARAM = "subAssembly";
@@ -428,7 +424,7 @@ export default function AssemblyStepList({
       action: path.to.assemblySubAssemblyUngroup(id, headerId)
     });
   };
-  const [headerToDelete, setHeaderToDelete] = useState<string | null>(null);
+  const headerToDelete = useDrawerItem<string>();
 
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -615,7 +611,7 @@ export default function AssemblyStepList({
           }
           onOpen={() => setOpenHeader(step.id)}
           onUngroup={() => ungroup(step.id)}
-          onDelete={() => setHeaderToDelete(step.id)}
+          onDelete={() => headerToDelete.open(step.id)}
         />
       );
     }
@@ -740,15 +736,16 @@ export default function AssemblyStepList({
           <Trans>No steps match "{search}"</Trans>
         </p>
       )}
-      {headerToDelete && (
+      {headerToDelete.item && (
         <ConfirmDelete
-          action={path.to.assemblySubAssemblyDelete(id, headerToDelete)}
-          name={stepTitles.get(headerToDelete) ?? t`Sub-Assembly`}
+          action={path.to.assemblySubAssemblyDelete(id, headerToDelete.item)}
+          isOpen={headerToDelete.isOpen}
+          name={stepTitles.get(headerToDelete.item) ?? t`Sub-Assembly`}
           text={t`Delete this sub-assembly and all of its steps? This cannot be undone.`}
-          onCancel={() => setHeaderToDelete(null)}
+          onCancel={headerToDelete.close}
           onSubmit={() => {
-            if (openHeaderId === headerToDelete) setOpenHeader(null);
-            setHeaderToDelete(null);
+            if (openHeaderId === headerToDelete.item) setOpenHeader(null);
+            headerToDelete.close();
           }}
         />
       )}
@@ -826,7 +823,7 @@ function DragHandle({
       variant="ghost"
       size="sm"
       disabled={!canDrag}
-      className="size-6 shrink-0 cursor-grab touch-none text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
+      className="size-6 shrink-0 cursor-grab touch-none text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing pointer-coarse:hit-area"
       onClick={(e) => e.stopPropagation()}
       {...sortable.attributes}
       {...sortable.listeners}
@@ -865,6 +862,7 @@ function SubAssemblyRow({
   const name = title || t`Sub-Assembly`;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -873,7 +871,10 @@ function SubAssemblyRow({
         isSelected && "bg-accent/40 hover:bg-accent/40",
         sortable.isDragging && "opacity-40"
       )}
-      onClick={onSelect}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        onSelect();
+      }}
       onDoubleClick={onOpen}
       title={t`Double-click to open this sub-assembly`}
     >
@@ -907,7 +908,12 @@ function SubAssemblyRow({
         {info.number}
       </span>
       <LuBoxes className="size-3.5 shrink-0 text-muted-foreground" />
-      <div className="min-w-0 flex-1">
+      <button
+        type="button"
+        aria-current={isSelected ? "true" : undefined}
+        className="min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onSelect}
+      >
         <TruncatedTooltipText
           tooltip={name}
           className="block w-full truncate text-sm font-medium text-foreground"
@@ -919,7 +925,7 @@ function SubAssemblyRow({
             ? t`Sub-Assembly · used in ${usedInNumber}`
             : t`Sub-Assembly · joins main build`}
         </span>
-      </div>
+      </button>
       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
         ×{partCount}
       </span>
@@ -934,7 +940,7 @@ function SubAssemblyRow({
             aria-label={t`More options`}
             size="sm"
             variant="ghost"
-            className="size-6 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
+            className="size-6 shrink-0 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
             icon={<LuEllipsisVertical />}
             onClick={(e) => e.stopPropagation()}
           />
@@ -1001,12 +1007,12 @@ function StepRow({
   const stepType = step.type ?? "Task";
   const needsSupport = (step.warnings as { needsSupport?: boolean } | null)
     ?.needsSupport;
-  const flagged =
-    stepPlanWarningsSchema.safeParse(step.warnings).data?.flagged === true;
+  const flagged = isPlanFlagged(step.warnings, step.motion);
   const isMember = info.headerId !== null;
   const displayTitle = title || t`Untitled step`;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -1016,7 +1022,10 @@ function StepRow({
         isSelected && "bg-accent/40 hover:bg-accent/40",
         sortable.isDragging && "opacity-40"
       )}
-      onClick={onSelect}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        onSelect();
+      }}
       onDoubleClick={onPreview}
       title={t`Double-click to play this step`}
     >
@@ -1043,12 +1052,19 @@ function StepRow({
           className="size-3.5 shrink-0 text-muted-foreground"
         />
       )}
-      <TruncatedTooltipText
-        tooltip={displayTitle}
-        className="min-w-0 flex-1 truncate text-sm text-foreground"
+      <button
+        type="button"
+        aria-current={isSelected ? "true" : undefined}
+        className="min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onSelect}
       >
-        {displayTitle}
-      </TruncatedTooltipText>
+        <TruncatedTooltipText
+          tooltip={displayTitle}
+          className="block w-full truncate text-sm text-foreground"
+        >
+          {displayTitle}
+        </TruncatedTooltipText>
+      </button>
       {flagged && (
         <RowIcon label={t`No collision-free path`}>
           <LuTriangleAlert className="size-3.5 text-amber-500" />
@@ -1097,7 +1113,7 @@ function StepRow({
               aria-label={t`More options`}
               size="sm"
               variant="ghost"
-              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
+              className="size-6 shrink-0 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
               icon={<LuEllipsisVertical />}
               onClick={(e) => e.stopPropagation()}
             />

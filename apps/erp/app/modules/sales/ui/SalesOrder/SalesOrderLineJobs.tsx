@@ -25,6 +25,7 @@ import {
   ModalHeader,
   ModalTitle,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -46,7 +47,7 @@ import {
   LuCirclePlus,
   LuSettings2
 } from "react-icons/lu";
-import { useFetcher, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Assignee, Empty, Hyperlink, TimeTypeIcon } from "~/components";
 import {
   Hidden,
@@ -68,6 +69,7 @@ import { JobStartModal } from "~/modules/production/ui/Jobs/JobHeader";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { OperationDueDatePicker } from "~/modules/production/ui/Jobs/OperationDueDatePicker";
+import { useJobRelease } from "~/modules/production/ui/Jobs/useJobRelease";
 import { path } from "~/utils/path";
 import type {
   Opportunity,
@@ -158,7 +160,10 @@ export function SalesOrderLineJobs({
                       index === jobs.length - 1 && "border-b-0"
                     )}
                   >
-                    <SalesOrderJobItem job={job as SalesOrderJob} />
+                    <SalesOrderJobItem
+                      job={job as SalesOrderJob}
+                      isService={line.salesOrderLineType === "Service"}
+                    />
                   </div>
                 ))}
             </div>
@@ -174,122 +179,127 @@ export function SalesOrderLineJobs({
           )}
         </CardContent>
       </Card>
-      {newJobDisclosure.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) newJobDisclosure.onClose();
-          }}
-        >
-          <ModalContent size="large">
-            <ValidatedForm
-              validator={salesOrderToJobValidator}
-              method="post"
-              action={path.to.salesOrderLineToJob(orderId, lineId)}
-              defaultValues={{
-                customerId: salesOrder.customerId ?? undefined,
-                deadlineType: "Hard Deadline",
-                dueDate: line.promisedDate ?? "",
-                itemId: line.itemId ?? undefined,
-                locationId: line.locationId ?? "",
-                modelUploadId: line.modelUploadId ?? undefined,
-                quantity: line.saleQuantity ?? undefined,
-                quoteId: opportunity.quotes[0]?.id ?? undefined,
-                quoteLineId: opportunity.quotes[0]?.id ? lineId : undefined,
-                salesOrderId: opportunity.salesOrders[0]?.id ?? undefined,
-                salesOrderLineId: lineId,
-                scrapQuantity: 0,
-                unitOfMeasureCode: line.unitOfMeasureCode ?? undefined
-              }}
-              className="flex flex-col h-full"
-              onSubmit={newJobDisclosure.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Convert Line to Job</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>
-                    Create a new production job to fulfill the sales order
-                  </Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="modelUploadId" />
-                <Hidden name="customerId" />
-                <Hidden name="itemId" />
-                <Hidden name="salesOrderId" />
-                <Hidden name="salesOrderLineId" />
-                <Hidden name="quoteId" />
-                <Hidden name="quoteLineId" />
-                <Hidden name="unitOfMeasureCode" />
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                  <SequenceOrCustomId
-                    name="jobId"
-                    label={t`Job ID`}
-                    table="job"
-                  />
-                  <Location autoFocus name="locationId" label={t`Location`} />
-                  <NumberControlled
-                    name="quantity"
-                    label={t`Quantity`}
-                    value={quantities.quantity}
-                    onChange={(value) => {
-                      setQuantities((prev) => ({
-                        ...prev,
-                        quantity: value,
-                        scrapQuantity: scrapAllowance(value, scrapPercentage)
-                      }));
-                    }}
-                    minValue={0}
-                  />
-                  <NumberControlled
-                    name="scrapQuantity"
-                    label={t`Scrap Quantity`}
-                    value={quantities.scrapQuantity}
-                    onChange={(value) =>
-                      setQuantities((prev) => ({
-                        ...prev,
-                        scrapQuantity: value
-                      }))
-                    }
-                    minValue={0}
-                  />
-                  <DatePicker name="dueDate" label={t`Due Date`} />
-                  <Select
-                    name="deadlineType"
-                    label={t`Deadline Type`}
-                    options={deadlineTypes.map((d) => ({
-                      value: d,
-                      label: (
-                        <div className="flex gap-1 items-center">
-                          {getDeadlineIcon(d)}
-                          <span>{d}</span>
-                        </div>
-                      )
-                    }))}
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={newJobDisclosure.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit>Create</Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={newJobDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) newJobDisclosure.onClose();
+        }}
+      >
+        <ModalContent size="large">
+          <ValidatedForm
+            validator={salesOrderToJobValidator}
+            method="post"
+            action={path.to.salesOrderLineToJob(orderId, lineId)}
+            defaultValues={{
+              customerId: salesOrder.customerId ?? undefined,
+              deadlineType: "Hard Deadline",
+              dueDate: line.promisedDate ?? "",
+              itemId: line.itemId ?? undefined,
+              locationId: line.locationId ?? "",
+              modelUploadId: line.modelUploadId ?? undefined,
+              quantity: line.saleQuantity ?? undefined,
+              quoteId: opportunity.quotes[0]?.id ?? undefined,
+              quoteLineId: opportunity.quotes[0]?.id ? lineId : undefined,
+              salesOrderId: opportunity.salesOrders[0]?.id ?? undefined,
+              salesOrderLineId: lineId,
+              scrapQuantity: 0,
+              unitOfMeasureCode: line.unitOfMeasureCode ?? undefined
+            }}
+            className="flex flex-col h-full"
+            onSubmit={newJobDisclosure.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Convert Line to Job</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Create a new production job to fulfill the sales order
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="modelUploadId" />
+              <Hidden name="customerId" />
+              <Hidden name="itemId" />
+              <Hidden name="salesOrderId" />
+              <Hidden name="salesOrderLineId" />
+              <Hidden name="quoteId" />
+              <Hidden name="quoteLineId" />
+              <Hidden name="unitOfMeasureCode" />
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+                <SequenceOrCustomId
+                  name="jobId"
+                  label={t`Job ID`}
+                  table="job"
+                />
+                <Location autoFocus name="locationId" label={t`Location`} />
+                <NumberControlled
+                  name="quantity"
+                  label={t`Quantity`}
+                  value={quantities.quantity}
+                  onChange={(value) => {
+                    setQuantities((prev) => ({
+                      ...prev,
+                      quantity: value,
+                      scrapQuantity: scrapAllowance(value, scrapPercentage)
+                    }));
+                  }}
+                  minValue={0}
+                />
+                <NumberControlled
+                  name="scrapQuantity"
+                  label={t`Scrap Quantity`}
+                  value={quantities.scrapQuantity}
+                  onChange={(value) =>
+                    setQuantities((prev) => ({
+                      ...prev,
+                      scrapQuantity: value
+                    }))
+                  }
+                  minValue={0}
+                />
+                <DatePicker name="dueDate" label={t`Due Date`} />
+                <Select
+                  name="deadlineType"
+                  label={t`Deadline Type`}
+                  options={deadlineTypes.map((d) => ({
+                    value: d,
+                    label: (
+                      <div className="flex gap-1 items-center">
+                        {getDeadlineIcon(d)}
+                        <span>{d}</span>
+                      </div>
+                    )
+                  }))}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={newJobDisclosure.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit>Create</Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </>
   );
 }
 
-export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
+export function SalesOrderJobItem({
+  job,
+  isService = false
+}: {
+  job: SalesOrderJob;
+  // A Service job's output is never shipped, so it has no shipped count.
+  isService?: boolean;
+}) {
   const disclosure = useDisclosure();
   const permissions = usePermissions();
   const releaseModal = useDisclosure();
-  const statusFetcher = useFetcher<{}>();
+  const release = useJobRelease();
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   return (
@@ -336,23 +346,22 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
               {job.quantityComplete ?? 0}/{job.quantity ?? 0}
             </p>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Shipped</label>
-            <p className="text-sm">
-              {job.quantityShipped ?? 0}/{job.quantity ?? 0}
-            </p>
-          </div>
+          {!isService && (
+            <div>
+              <label className="text-xs text-muted-foreground">Shipped</label>
+              <p className="text-sm">
+                {job.quantityShipped ?? 0}/{job.quantity ?? 0}
+              </p>
+            </div>
+          )}
         </HStack>
         <HStack>
           <Button
             onClick={releaseModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Ready"
-            }
+            isLoading={release.isPending}
             isDisabled={
               job.status !== "Draft" ||
-              statusFetcher.state !== "idle" ||
+              release.isPending ||
               !permissions.can("update", "production") ||
               (job?.quantity === 0 && job?.scrapQuantity === 0)
             }
@@ -363,6 +372,7 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
             Release
           </Button>
           <IconButton
+            aria-expanded={disclosure.isOpen}
             aria-label={disclosure.isOpen ? "Collapse" : "Expand"}
             icon={disclosure.isOpen ? <LuChevronDown /> : <LuChevronRight />}
             variant="ghost"
@@ -375,11 +385,13 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
       </HStack>
 
       {disclosure.isOpen && <JobDetails job={job as Job} />}
-      {releaseModal.isOpen && (
+      {releaseModal.openCount > 0 && (
         <JobStartModal
+          key={releaseModal.openCount}
+          open={releaseModal.isOpen}
           job={job as Job}
           onClose={releaseModal.onClose}
-          fetcher={statusFetcher}
+          release={release}
         />
       )}
     </VStack>
@@ -409,7 +421,7 @@ function JobDetails({ job }: { job: Job }) {
     ]);
 
     if (operations.error) {
-      toast.error("Failed to load job operations");
+      toastError("Failed to load job operations", operations.error);
       return;
     }
 
@@ -526,7 +538,7 @@ function JobDetails({ job }: { job: Job }) {
                   </VStack>
 
                   <IconButton
-                    aria-label={t`Edit`}
+                    aria-label={t`Edit ${operation.description}`}
                     icon={<LuSettings2 />}
                     variant="ghost"
                     onClick={() => {

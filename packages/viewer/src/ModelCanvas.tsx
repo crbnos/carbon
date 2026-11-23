@@ -4,7 +4,7 @@
 
 import { useThree } from "@react-three/fiber";
 import type { MutableRefObject } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuRotateCw } from "react-icons/lu";
 import {
   Box3,
@@ -15,6 +15,15 @@ import {
 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { AssemblyViewer } from "./AssemblyViewer";
+import { PmiLayer } from "./PmiLayer";
+import {
+  type PmiBounds,
+  type PmiDisplayUnit,
+  type PmiDocument,
+  pmiItemBounds,
+  pmiViewBounds,
+  visibleItemIds
+} from "./pmi";
 import { useAssembly } from "./useAssembly";
 import { cn } from "./utils";
 
@@ -29,6 +38,15 @@ export type ModelMetrics = {
   /** Enclosed volume (mm³), or null when skipped / mesh isn't closed. */
   volume: number | null;
 };
+
+/**
+ * Turn the camera to a PMI item (face its annotation plane and fit it) or a
+ * saved view (its direction and up, fitting its items). A new `seq` repeats
+ * the request.
+ */
+export type PmiFocusRequest =
+  | { kind: "item"; id: string; seq: number }
+  | { kind: "view"; id: string; seq: number };
 
 export type ModelCanvasProps = {
   /** URL of a meshopt-compressed GLB (the assembler's optimised / LOD artifact). */
@@ -55,6 +73,20 @@ export type ModelCanvasProps = {
   /** Fired once with the loaded model's measurements (bbox always; area/volume
    *  when the mesh is small enough to measure client-side). */
   onMetrics?: (metrics: ModelMetrics) => void;
+  /** The model's PMI (`pmi.json`), drawn over the model when `pmiVisible`. */
+  pmi?: PmiDocument | null;
+  /** The PMI items to draw (default: all). */
+  pmiVisibleIds?: Set<string>;
+  /** The PMI item drawn blue and on top. */
+  pmiSelectedId?: string | null;
+  /** Show the PMI layer (default true). */
+  pmiVisible?: boolean;
+  /** Display unit of the PMI text labels (default mm). */
+  pmiUnit?: PmiDisplayUnit;
+  /** Fired when a PMI text label is clicked. */
+  onPmiSelect?: (id: string) => void;
+  /** Turn the camera to a PMI item or saved view (see `PmiFocusRequest`). */
+  focusRequest?: PmiFocusRequest | null;
   className?: string;
 };
 
@@ -82,6 +114,13 @@ export function ModelCanvas({
   viewDirectionRef,
   onLoaded,
   onMetrics,
+  pmi = null,
+  pmiVisibleIds,
+  pmiSelectedId = null,
+  pmiVisible = true,
+  pmiUnit = "mm",
+  onPmiSelect,
+  focusRequest = null,
   className
 }: ModelCanvasProps) {
   const [reloadKey, setReloadKey] = useState(0);
@@ -114,6 +153,14 @@ export function ModelCanvas({
             autoFrame={autoFrame}
             resetSignal={resetSignal}
             viewDirectionRef={viewDirectionRef}
+            pmi={pmi}
+            pmiVisibleIds={pmiVisibleIds}
+            pmiSelectedId={pmiSelectedId}
+            pmiVisible={pmiVisible}
+            pmiUnit={pmiUnit}
+            onPmiSelect={onPmiSelect}
+            focusRequest={focusRequest}
+            mode={mode}
           />
         )}
       </AssemblyViewer>
@@ -202,16 +249,45 @@ function useLoadedObject(
   return state;
 }
 
+/** Models are Z-up; a saved PMI view may set another up, which reset undoes. */
+const MODEL_UP = new Vector3(0, 0, 1);
+
+/** A focused PMI item's box is grown to at least this share of the model's
+ *  diagonal, so a tiny datum does not put the camera inside the near plane. */
+const MIN_FOCUS_FRACTION = 0.15;
+
+/** How much wider than its bounding sphere a focused PMI item is framed. */
+const PMI_FOCUS_MARGIN = 1.6;
+
+const toBox3 = (bounds: PmiBounds) =>
+  new Box3(new Vector3(...bounds.min), new Vector3(...bounds.max));
+
 function ModelScene({
   scene,
   autoFrame,
   resetSignal,
-  viewDirectionRef
+  viewDirectionRef,
+  pmi,
+  pmiVisibleIds,
+  pmiSelectedId,
+  pmiVisible,
+  pmiUnit,
+  onPmiSelect,
+  focusRequest,
+  mode
 }: {
   scene: Object3D;
   autoFrame: boolean;
   resetSignal: number;
   viewDirectionRef?: MutableRefObject<(() => ViewDirection) | null>;
+  pmi: PmiDocument | null;
+  pmiVisibleIds?: Set<string>;
+  pmiSelectedId: string | null;
+  pmiVisible: boolean;
+  pmiUnit: PmiDisplayUnit;
+  onPmiSelect?: (id: string) => void;
+  focusRequest: PmiFocusRequest | null;
+  mode: "dark" | "light";
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
@@ -237,8 +313,13 @@ function ModelScene({
   // renderer's logarithmic depth buffer (`logarithmicDepthBuffer` on the Canvas)
   // plus the near/far fit above.
 
+  // `direction` (from the target towards the camera), `up` and `margin` are
+  // for the PMI focus; without them the camera keeps where it looks from.
   const frameBox = useCallback(
-    (box: Box3) => {
+    (
+      box: Box3,
+      aim?: { direction?: Vector3; up?: Vector3; margin?: number }
+    ) => {
       if (box.isEmpty() || !controls) return;
       const center = box.getCenter(new Vector3());
       const radius = box.getSize(new Vector3()).length() / 2;
@@ -246,15 +327,15 @@ function ModelScene({
       // Fit the bounding sphere with a small margin. Lower factors zoom in more —
       // the sphere circumscribes the model, so a tight fit still leaves headroom.
       const distance = Math.max(
-        (radius / Math.tan(((fov / 2) * Math.PI) / 180)) * 1.1,
+        (radius / Math.tan(((fov / 2) * Math.PI) / 180)) * (aim?.margin ?? 1.1),
         radius * 1.5
       );
-      const direction = camera.position
-        .clone()
-        .sub(controls.target)
-        .normalize();
+      const direction =
+        aim?.direction?.clone().normalize() ??
+        camera.position.clone().sub(controls.target).normalize();
       // Front-top-right isometric (models are Z-up, -Y front).
       if (direction.lengthSq() === 0) direction.set(1, -1, 1).normalize();
+      if (aim?.up) camera.up.copy(aim.up).normalize();
       camera.position.copy(center).addScaledVector(direction, distance);
       controls.target.copy(center);
       controls.update();
@@ -276,8 +357,71 @@ function ModelScene({
   useEffect(() => {
     if (resetSignal === resetSeenRef.current) return;
     resetSeenRef.current = resetSignal;
+    // A saved PMI view may have turned the camera's up; reset stands it
+    // upright again (a no-op otherwise).
+    if (!camera.up.equals(MODEL_UP)) camera.up.copy(MODEL_UP);
     frameBox(new Box3().setFromObject(scene));
-  }, [resetSignal, scene, frameBox]);
+  }, [resetSignal, scene, frameBox, camera]);
+
+  // Turn to a PMI item or saved view, once per request.
+  const focusSeenRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!focusRequest || !pmi || !controls) return;
+    if (focusRequest.seq === focusSeenRef.current) return;
+    focusSeenRef.current = focusRequest.seq;
+    const modelBox = new Box3().setFromObject(scene);
+
+    if (focusRequest.kind === "view") {
+      const view = pmi.views.find((v) => v.id === focusRequest.id);
+      if (!view) return;
+      const bounds = pmiViewBounds(pmi, view.id);
+      frameBox(bounds ? toBox3(bounds) : modelBox, {
+        // The view looks from the camera towards the model; the camera sits
+        // on the other side.
+        direction: new Vector3(...view.direction).negate(),
+        up: new Vector3(...view.up)
+      });
+      return;
+    }
+
+    const item = pmi.items.find((i) => i.id === focusRequest.id);
+    if (!item) return;
+    const bounds = pmiItemBounds(pmi, item, true);
+    if (!bounds) return;
+    const box = toBox3(bounds);
+    const minSize =
+      modelBox.getSize(new Vector3()).length() * MIN_FOCUS_FRACTION;
+    const size = box.getSize(new Vector3()).length();
+    if (size < minSize) box.expandByScalar((minSize - size) / 2);
+
+    let direction: Vector3 | undefined;
+    let up = MODEL_UP;
+    if (item.plane) {
+      const normal = new Vector3(...item.plane.normal);
+      if (normal.lengthSq() > 0) {
+        // Face the plane from whichever side the camera is on now.
+        const current = camera.position.clone().sub(controls.target);
+        direction = normal.dot(current) < 0 ? normal.clone().negate() : normal;
+        // Stand the annotation upright: the plane's own Y axis (normal × X)
+        // is up, so its text reads left to right. Z-up would leave a plane
+        // lying flat (normal ±Z) at whatever turn the camera happens to take.
+        const planeUp = new Vector3()
+          .crossVectors(
+            new Vector3(...item.plane.normal),
+            new Vector3(...item.plane.xDirection)
+          )
+          .normalize();
+        if (planeUp.lengthSq() > 0) up = planeUp;
+      }
+    }
+    // Wider than a model fit: the referenced faces sit at the box's edge.
+    frameBox(box, { direction, up, margin: PMI_FOCUS_MARGIN });
+  }, [focusRequest, pmi, controls, scene, camera, frameBox]);
+
+  const allPmiIds = useMemo(
+    () => (pmi ? visibleItemIds(pmi, null) : new Set<string>()),
+    [pmi]
+  );
 
   useEffect(() => {
     if (!viewDirectionRef || !controls) return;
@@ -293,7 +437,21 @@ function ModelScene({
     };
   }, [viewDirectionRef, camera, controls]);
 
-  return <primitive object={scene} />;
+  return (
+    <>
+      <primitive object={scene} />
+      {pmi && pmiVisible && (
+        <PmiLayer
+          doc={pmi}
+          visibleIds={pmiVisibleIds ?? allPmiIds}
+          selectedId={pmiSelectedId}
+          mode={mode}
+          unit={pmiUnit}
+          onSelect={onPmiSelect}
+        />
+      )}
+    </>
+  );
 }
 
 /** Bounding-box dimensions (always) + surface area / volume (small meshes). */

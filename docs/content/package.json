@@ -15,7 +15,7 @@
     "lint": "biome lint --write ",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@lingui/core": "catalog:",

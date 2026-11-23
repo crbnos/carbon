@@ -2,151 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { z } from "zod";
-import {
-  getMaintenanceDispatch,
-  isMaintenanceDispatchLocked
-} from "~/modules/resources";
-import { getDatabaseClient } from "~/services/database.server";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
-import { path } from "~/utils/path";
+import { issueMaintenancePart } from "~/modules/resources/resources.server";
 
-const addAndIssueValidator = z.object({
-  itemId: z.string().min(1),
-  unitOfMeasureCode: z.string().min(1),
-  // For inventory items
-  quantity: z.number().optional(),
-  // For tracked items (serial/batch)
-  children: z
-    .array(
-      z.object({
-        trackedEntityId: z.string(),
-        quantity: z.number()
-      })
-    )
-    .optional()
-});
-
-const logger = getLogger("erp", "maintenance", "dispatch");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  // Issuing parts to a dispatch is an edit of the dispatch, like every other
-  // write under $dispatchId (the Add Part button is gated the same way).
-  const { userId, companyId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(
+    issueMaintenancePart.input.omit({ dispatchId: true })
+  ).request(args, { params: ["dispatchId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.resources.issueMaintenancePart({
+    ...input.data,
+    dispatchId: input.params.dispatchId
   });
-  const { dispatchId } = params;
-
-  if (!dispatchId) {
-    return data(
-      { success: false, message: "Dispatch ID is required" },
-      { status: 400 }
-    );
-  }
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
-  });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
-  if (
-    dispatch.error ||
-    !dispatch.data ||
-    dispatch.data.companyId !== companyId
-  ) {
-    logger.error("Maintenance dispatch not found for add-and-issue", {
-      companyId,
-      dispatchId,
-      error: dispatch.error
-    });
-    return data(
-      { success: false, message: "Dispatch not found" },
-      { status: 404 }
-    );
-  }
-  await requireUnlocked({
-    request,
-    isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
-    redirectTo: path.to.maintenanceDispatch(dispatchId),
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-
-  const json = await request.json();
-  const validation = addAndIssueValidator.safeParse(json);
-
-  if (!validation.success) {
-    return data(
-      { success: false, message: "Failed to validate payload" },
-      { status: 400 }
-    );
-  }
-
-  const { itemId, unitOfMeasureCode, quantity, children } = validation.data;
-
-  // Calculate total quantity from children if provided, otherwise use quantity
-  const totalQuantity = children
-    ? children.reduce((sum, c) => sum + c.quantity, 0)
-    : (quantity ?? 0);
-
-  if (totalQuantity <= 0) {
-    return data(
-      { success: false, message: "Quantity must be greater than 0" },
-      { status: 400 }
-    );
-  }
-
-  if (children && children.length > 0) {
-    // Tracked entities (serial/batch)
-    const issued = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
-        type: "maintenanceDispatchTrackedEntities",
-        maintenanceDispatchId: dispatchId,
-        itemId,
-        unitOfMeasureCode,
-        children
-      });
-
-    if (issued.error) {
-      logger.error("Failed to issue tracked items", { error: issued.error });
-      return data(
-        { success: false, message: "Failed to issue tracked items" },
-        { status: 400 }
-      );
-    }
-
-    // No label print on issue splits: the split child is CONSUMED into the
-    // dispatch and consumed portions get no label; the surviving entity keeps
-    // its existing label.
-  } else {
-    // Inventory item
-    const issued = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
-        type: "maintenanceDispatchInventory",
-        maintenanceDispatchId: dispatchId,
-        itemId,
-        unitOfMeasureCode,
-        quantity: totalQuantity
-      });
-
-    if (issued.error) {
-      logger.error("Failed to issue from inventory", { error: issued.error });
-      return data(
-        { success: false, message: "Failed to issue from inventory" },
-        { status: 400 }
-      );
-    }
-  }
-
-  return {
-    success: true,
-    message: "Part added and issued successfully"
-  };
 }

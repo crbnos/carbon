@@ -179,7 +179,7 @@ export async function runLocationSchedule(
     log.error("Batch pre-pass failed; members place individually", {
       locationId,
       companyId,
-      error: err instanceof Error ? err.message : String(err)
+      error: err
     });
   }
 
@@ -206,8 +206,8 @@ export async function runLocationSchedule(
       batchPlacements
     });
     // One job's failure must not abandon the rest of the batch — it is left
-    // out of the write, so it stays stamped stale for a later wave and the
-    // jobs behind it still see its stored reservations.
+    // out of the write, so it stays stamped stale for a later wave. The jobs
+    // behind it still see its stored reservations; the write then clears them.
     try {
       const result = await engine.run();
       const jobWrites = engine.getWrites();
@@ -227,13 +227,13 @@ export async function runLocationSchedule(
         jobId: id,
         locationId,
         companyId,
-        error: err instanceof Error ? err.message : String(err)
+        error: err
       });
       failedJobIds.push(id);
     }
   }
 
-  await persistLocationWrites(db, writes, { companyId, userId });
+  await persistLocationWrites(db, writes, { companyId, userId }, failedJobIds);
 
   return {
     locationId,
@@ -278,8 +278,13 @@ export async function runExpediteWhatIf(
       horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
       persist: false
     });
-  } catch {
+  } catch (err) {
     // fall through — the sim runs with per-member placement
+    log.warning("Batch pre-pass failed; members place individually", {
+      locationId,
+      companyId,
+      error: err
+    });
   }
 
   const engine = new SchedulingEngine({

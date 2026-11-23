@@ -4,3 +4,9 @@
 
 // Side-effect CSS imports are resolved by the consuming app's bundler, not by tsc.
 declare module "*.css";
+
+// `?inline` imports give the stylesheet's text, for a <style> React renders.
+declare module "*.css?inline" {
+  const css: string;
+  export default css;
+}

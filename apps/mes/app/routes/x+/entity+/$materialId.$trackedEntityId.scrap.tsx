@@ -3,13 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { scrapTrackedEntityValidator } from "~/services/models";
-import { getTrackedEntity } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  getTrackedEntity
+} from "~/services/operations.service";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -30,6 +34,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const serviceRole = await getCarbonServiceRole();
+  const material = await serviceRole
+    .from("jobMaterial")
+    .select("jobOperationId")
+    .eq("id", materialId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  // The parent is a unit of the operation (membership only: a subcomponent of
+  // a unit done here can still be scrapped).
+  const operationId =
+    material.data?.jobOperationId ?? url.searchParams.get("operationId");
+  let parentId = parentTrackedEntityId;
+  if (parentTrackedEntityId) {
+    if (!operationId) {
+      return data(
+        { success: false, message: "Failed to scrap entity" },
+        { status: 400 }
+      );
+    }
+    const work = await resolveWorkUnit({
+      client: serviceRole,
+      companyId,
+      operationId,
+      requestedUnitId: parentTrackedEntityId,
+      mode: "member"
+    });
+    if (work.kind === "refuse") {
+      return data({ success: false, message: work.message }, { status: 409 });
+    }
+    if (work.kind === "unit") parentId = work.unitId;
+  }
+
+  const refusal = material.data?.jobOperationId
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: material.data.jobOperationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({ success: false, message: refusal }, { status: 403 });
+  }
+
   const trackedEntity = await getTrackedEntity(client, trackedEntityId);
   if (trackedEntity.error) {
     return data(
@@ -37,16 +84,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { status: 400 }
     );
   }
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       trackedEntityId,
       materialId,
-      parentTrackedEntityId: parentTrackedEntityId!,
+      parentTrackedEntityId: parentId!,
       type: "scrapTrackedEntity",
       scrapReasonId: validation.data.scrapReasonId,
       makeReplacement: validation.data.makeReplacement
-    });
+    }
+  );
 
   if (issued.error) {
     return data(

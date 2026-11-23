@@ -2,43 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Clause } from "@carbon/ee/workflows";
+import type { DataOperation, OperationCard } from "@carbon/ee/workflows";
 import {
-  Button,
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  cn,
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
-import { LuChevronDown, LuPlus } from "react-icons/lu";
-import { describeValueType } from "../../catalog";
+  cardsOf,
+  DATA_OPERATIONS,
+  foldOperationTypes,
+  operationsFor,
+  truncateStarvedCards
+} from "@carbon/ee/workflows";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
+import { nanoid } from "nanoid";
+import { Fragment, useMemo } from "react";
+import { LuArrowDown, LuPlus } from "react-icons/lu";
+import { useWorkflowCatalog } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { useAvailableVariables } from "../../useDefinition";
-import ClauseRow from "../ClauseRow";
-import { CombinatorToggle } from "../CombinatorToggle";
-import { FormStack, Section } from "../layout";
+import { FormStack } from "../layout";
 import type { NodeFormProps } from "./index";
+import { OperationCardEditor } from "./OperationCardEditor";
+import { SourceListPicker } from "./SourceListPicker";
 
-const newClause = (): Clause => ({
-  left: {
-    kind: "literal",
-    type: { kind: "primitive", of: "string" },
-    value: ""
-  },
-  operator: "eq",
-  right: {
-    kind: "literal",
-    type: { kind: "primitive", of: "string" },
-    value: ""
-  }
+const newCard = (operation: DataOperation): OperationCard => ({
+  id: nanoid(),
+  operation,
+  combinator: "and",
+  clauses: [],
+  flatten: false
 });
 
 export function FilterForm({
@@ -47,13 +37,14 @@ export function FilterForm({
   isReadOnly
 }: NodeFormProps<"filter">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
-  const { t } = useLingui();
+  const catalog = useWorkflowCatalog();
 
-  const { source, combinator, clauses } = node.data;
+  const { source } = node.data;
+  // The chain, through the SAME normalizer the validator and runtime use — a
+  // legacy node reads as one card, and the first edit materializes it.
+  const cards = cardsOf(node);
 
-  const [sourceOpen, setSourceOpen] = useState(false);
-
-  // Only list-type variables are valid sources
+  // Every operation works through a list; what the list HOLDS may be an object.
   const vars = useAvailableVariables(node.id);
   const listVars = useMemo(
     () => vars.filter((v) => v.type.kind === "list"),
@@ -66,168 +57,160 @@ export function FilterForm({
       )
     : undefined;
 
-  // Resolve item entity name for the heading
-  const itemType =
-    sourceVar?.type.kind === "list" ? sourceVar.type.of : undefined;
-  const entityName = itemType?.kind === "entity" ? itemType.of : undefined;
+  const sourceType =
+    sourceVar?.type.kind === "list" ? sourceVar.type : undefined;
 
-  const handleSourceSelect = (nodeId: string, output: string) => {
-    updateNodeData(node.id, {
-      source: { kind: "ref", nodeId, output, path: [] }
-    });
-    setSourceOpen(false);
+  // types[i] flows INTO card i; the last element is the node's output. The same
+  // fold the validator runs, so the dropdowns and the red flags cannot disagree.
+  const types = useMemo(
+    () => foldOperationTypes(sourceType, cards, catalog),
+    [sourceType, cards, catalog]
+  );
+  const output = types[cards.length];
+  // An UNKNOWN output must not read as "anything goes": until the chain above is
+  // configured, there is nothing real for a new card to consume.
+  const canAdd = output !== undefined && operationsFor(output).length > 0;
+
+  // Every write heals structurally: nothing may follow a terminal card, so any
+  // edit that leaves one mid-chain drops the dead tail with it.
+  const writeCards = (next: OperationCard[]) => {
+    updateNodeData(node.id, { operations: truncateStarvedCards(next) });
+  };
+
+  const patchCard = (id: string, patch: Partial<OperationCard>) => {
+    writeCards(
+      cards.map((card) => (card.id === id ? { ...card, ...patch } : card))
+    );
+  };
+
+  // A new source means new items for card 1: its clauses and field were written
+  // against the OLD element type. Later cards keep their config — the ripple
+  // shows as ordinary red validation rather than silently deleted work.
+  const resetHead = (
+    next: FilterNodeSourcePatch
+  ): Parameters<typeof updateNodeData>[1] => {
+    const [head, ...rest] = cards;
+    return {
+      ...next,
+      operations: head
+        ? [{ ...head, clauses: [], field: undefined, flatten: false }, ...rest]
+        : cards
+    };
+  };
+
+  const handleSourceSelect = (nodeId: string, outputName: string) => {
+    updateNodeData(
+      node.id,
+      resetHead({
+        source: { kind: "ref", nodeId, output: outputName, path: [] }
+      })
+    );
   };
 
   const handleClearSource = () => {
-    updateNodeData(node.id, { source: undefined, clauses: [] });
+    updateNodeData(node.id, resetHead({ source: undefined }));
   };
 
-  function handleClauseChange(index: number, patch: Partial<Clause>) {
-    updateNodeData(node.id, {
-      clauses: clauses.map((c, i) => (i === index ? { ...c, ...patch } : c))
-    });
-  }
-
-  function handleClauseRemove(index: number) {
-    updateNodeData(node.id, {
-      clauses: clauses.filter((_, i) => i !== index)
-    });
-  }
-
-  const handleAddClause = () => {
-    updateNodeData(node.id, { clauses: [...clauses, newClause()] });
+  // Switching operation drops what only made sense for the old one: a clause
+  // means nothing to `count`, and a field means nothing outside `pluck`. And a
+  // switch to a terminal operation (count, join, first, last) drops the cards
+  // BELOW it — their input becomes a bare value no operation could ever consume,
+  // so keeping them would only be a tail of unfixable red.
+  const handleOperationChange = (card: OperationCard, next: string) => {
+    const chosen = next as DataOperation;
+    if (chosen === card.operation) return;
+    const patched = cards.map((c) =>
+      c.id === card.id
+        ? {
+            ...c,
+            operation: chosen,
+            ...(DATA_OPERATIONS[chosen].usesClauses ? {} : { clauses: [] }),
+            ...(DATA_OPERATIONS[chosen].usesField
+              ? {}
+              : { field: undefined, flatten: false })
+          }
+        : c
+    );
+    writeCards(patched);
   };
 
-  const context = { nodeId: node.id, inLoop: true };
+  const handleAddCard = () => {
+    const first = operationsFor(output)[0];
+    if (first === undefined) return;
+    writeCards([...cards, newCard(first)]);
+  };
 
   return (
     <FormStack spacing={4}>
-      {/* Source list picker */}
-      <div className="space-y-1">
-        <Section>
-          <Trans>Source list</Trans>
-        </Section>
-
-        <Popover open={sourceOpen} onOpenChange={setSourceOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              disabled={isReadOnly}
-              className="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span
-                className={cn("truncate", !source && "text-muted-foreground")}
-              >
-                {sourceVar
-                  ? `${sourceVar.nodeName} › ${sourceVar.output}`
-                  : t`Pick a list variable…`}
-              </span>
-              <LuChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="start"
-            className="w-[var(--radix-popover-trigger-width)] min-w-[260px] p-0"
-            onWheel={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
+      {cards.map((card, index) => (
+        <Fragment key={card.id}>
+          <OperationCardEditor
+            card={card}
+            input={types[index]}
+            nodeId={node.id}
+            hasSource={!!source}
+            canRemove={cards.length > 1}
+            issues={issues}
+            isReadOnly={isReadOnly}
+            onRemove={() => writeCards(cards.filter((c) => c.id !== card.id))}
+            onOperationChange={(next) => handleOperationChange(card, next)}
+            onPatch={(patch) => patchCard(card.id, patch)}
           >
-            <Command>
-              <CommandInput
-                placeholder={t`Search list variables…`}
-                disabled={isReadOnly}
-              />
-              <CommandList className="max-h-64 overflow-y-auto">
-                <CommandEmpty>
-                  <Trans>No list variables available upstream.</Trans>
-                </CommandEmpty>
-                <CommandGroup>
-                  {listVars.map((v) => (
-                    <CommandItem
-                      key={`${v.nodeId}:${v.output}`}
-                      value={`${v.nodeName} ${v.output} ${describeValueType(v.type)}`}
-                      disabled={isReadOnly}
-                      onSelect={() => handleSourceSelect(v.nodeId, v.output)}
-                      className="flex flex-col items-start gap-0.5 px-3 py-2"
-                    >
-                      <span className="text-sm font-medium">{v.output}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {v.nodeName} · {describeValueType(v.type)}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {source && (
-          <button
-            type="button"
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
-            onClick={handleClearSource}
-            disabled={isReadOnly}
-          >
-            <Trans>Clear</Trans>
-          </button>
-        )}
-      </div>
-
-      {/* Clause section — only shown once a source is chosen */}
-      {source && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Section>
-              {entityName
-                ? t`Keep only the ${entityName} where…`
-                : t`Keep only items where…`}
-            </Section>
-
-            {/* Combinator toggle */}
-            <CombinatorToggle
-              value={combinator}
-              onChange={(v) => updateNodeData(node.id, { combinator: v })}
-              isReadOnly={isReadOnly}
-            />
-          </div>
-
-          {clauses.map((clause, i) => (
-            <div key={i}>
-              <ClauseRow
-                clause={clause}
-                index={i}
-                canRemove={clauses.length > 1}
-                onChange={handleClauseChange}
-                onRemove={handleClauseRemove}
-                context={context}
-                fieldPath={`clauses.${i}`}
-                issues={issues}
+            {/* Source list picker — the chain has ONE source, and card 1 owns it. */}
+            {index === 0 && (
+              <SourceListPicker
+                hasSource={!!source}
+                sourceVar={sourceVar}
+                listVars={listVars}
                 isReadOnly={isReadOnly}
+                onSelect={handleSourceSelect}
+                onClear={handleClearSource}
               />
-              {i < clauses.length - 1 && (
-                <div className="flex justify-center py-1">
-                  <CombinatorToggle
-                    value={combinator}
-                    onChange={(v) => updateNodeData(node.id, { combinator: v })}
-                    isReadOnly={isReadOnly}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
+            )}
+          </OperationCardEditor>
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            leftIcon={<LuPlus />}
-            onClick={handleAddClause}
-            isDisabled={isReadOnly}
-          >
-            <Trans>Add rule</Trans>
-          </Button>
-        </div>
-      )}
+          {/* The flow: this card's result feeds the next card. A sibling of the
+              cards rather than a child of one, so the stack's gap centers it
+              between them instead of gluing it under the card above. */}
+          {index < cards.length - 1 && (
+            <div className="-my-2 flex justify-center">
+              <LuArrowDown className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+        </Fragment>
+      ))}
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {/* span, so the tooltip still opens over a disabled button */}
+          <span className="inline-flex w-fit">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              leftIcon={<LuPlus />}
+              onClick={handleAddCard}
+              isDisabled={isReadOnly || !canAdd}
+            >
+              <Trans context="workflow data step">Add operation</Trans>
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {!canAdd && (
+          <TooltipContent>
+            {output === undefined ? (
+              <Trans>Configure the steps above first.</Trans>
+            ) : (
+              <Trans>Nothing can work on this result.</Trans>
+            )}
+          </TooltipContent>
+        )}
+      </Tooltip>
     </FormStack>
   );
 }
+
+/** The two writes that touch the node source alongside the head card's reset. */
+type FilterNodeSourcePatch = {
+  source: NodeFormProps<"filter">["node"]["data"]["source"];
+};

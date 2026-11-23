@@ -11,7 +11,8 @@ export enum LinearWorkStateType {
   Unstarted = "unstarted",
   Started = "started",
   Completed = "completed",
-  Canceled = "canceled"
+  Canceled = "canceled",
+  Duplicate = "duplicate"
 }
 
 type CarbonTaskStatus = Database["public"]["Enums"]["nonConformanceTaskStatus"];
@@ -23,6 +24,7 @@ export const mapLinearStatusToCarbonStatus = (
     case LinearWorkStateType.Started:
       return "In Progress";
     case LinearWorkStateType.Canceled:
+    case LinearWorkStateType.Duplicate:
       return "Skipped";
     case LinearWorkStateType.Completed:
       return "Completed";

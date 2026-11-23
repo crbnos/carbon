@@ -3,30 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
+import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-// Edit drawer for a supplier part on a CO line's draft item — reached
-// relatively from the embedded Supplier Parts grid. The loader mirrors the part
-// purchasing edit route ($itemId.purchasing.$supplierPartId): the supplier part
-// row + its price breaks (the form re-posts the full price-break set, so they
-// MUST be seeded or saving would wipe them) + purchase history. No action here:
-// the form posts to the part edit action (path.to.partSupplier), which returns
-// { success } so the CO stays put.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, {
-    params: ["affectedId", "id", "supplierPartId"]
-  })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -45,7 +28,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .single(),
     client
       .from("supplierPartPrice")
-      .select("quantity, unitPrice, sourceType, sourceDocumentId, createdAt")
+      .select(
+        "quantity, supplierUnitPrice, leadTime, sourceType, sourceDocumentId, createdAt"
+      )
       .eq("supplierPartId", supplierPartId)
       .order("quantity", { ascending: true })
   ]);
@@ -58,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchasingHistory = await client
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseQuantity, unitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate)"
+      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
     )
     .eq("itemId", supplierPart.itemId)
     .eq("purchaseOrder.supplierId", supplierPart.supplierId)
@@ -96,11 +81,13 @@ export default function ChangeNoticeEditSupplierPartRoute() {
     itemId: supplierPart.itemId,
     supplierId: supplierPart.supplierId,
     supplierPartId: supplierPart.supplierPartId ?? "",
-    unitPrice: supplierPart.unitPrice ?? 0,
+    currencyCode: supplierPart.currencyCode ?? undefined,
+    supplierUnitPrice: supplierPart.supplierUnitPrice ?? 0,
     supplierUnitOfMeasureCode: supplierPart.supplierUnitOfMeasureCode ?? "EA",
     minimumOrderQuantity: supplierPart.minimumOrderQuantity ?? 1,
     orderMultiple: supplierPart.orderMultiple ?? 1,
-    conversionFactor: supplierPart.conversionFactor ?? 1
+    conversionFactor: supplierPart.conversionFactor ?? 1,
+    ...getCustomFields(supplierPart.customFields)
   };
 
   return (

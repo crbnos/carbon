@@ -7,15 +7,17 @@ import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import {
   getJobMakeMethod,
-  getTrackedEntitiesByMakeMethodId,
+  getRequiredScanShortfall,
+  getTrackedEntitiesForOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { autoPrintOperationLabel } from "~/services/printing.server";
 import {
   getInspection,
   getInspectionMeasurements,
@@ -71,7 +73,7 @@ export type CreateQualityIssueArgs = {
 
 // MES-owned NCR creation for a job operation: sequence, nonConformance insert,
 // the nonConformanceJobOperation / item / tracked-entity links, and the
-// follow-up tasks server function — with compensating deletes on failure.
+// follow-up tasks posting — with compensating deletes on failure.
 // Extracted from the quality-issue.new route so the inspection reject route
 // can create the same job-operation-aware issue.
 export async function createQualityIssue(
@@ -118,7 +120,7 @@ export async function createQualityIssue(
       : null
   ]);
   if (issueType && (issueType.error || !issueType.data)) {
-    logger.warn("Quality issue type not found for company", {
+    logger.warning("Quality issue type not found for company", {
       companyId,
       nonConformanceTypeId: args.nonConformanceTypeId,
       error: issueType.error
@@ -130,7 +132,7 @@ export async function createQualityIssue(
     };
   }
   if (inspection && (inspection.error || !inspection.data)) {
-    logger.warn("Inspection not found for company", {
+    logger.warning("Inspection not found for company", {
       companyId,
       inspectionId: args.inspectionId,
       error: inspection.error
@@ -229,12 +231,14 @@ export async function createQualityIssue(
     };
   }
 
-  const tasks = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("create", {
+  const tasks = await erpPosting(
+    "create",
+    { companyId, userId },
+    {
       type: "nonConformanceTasks",
       id: nonConformanceId
-    });
+    }
+  );
 
   if (tasks.error) {
     await serviceRole
@@ -308,7 +312,7 @@ export async function getInspectionOutcomeState(
   const inspection = inspectionResult.data as any;
   // getInspection reads with the service role by id alone.
   if (inspection.companyId !== args.companyId) {
-    logger.warn("Inspection not found for company", {
+    logger.warning("Inspection not found for company", {
       companyId: args.companyId,
       inspectionId: args.inspectionId
     });
@@ -364,11 +368,11 @@ export async function getInspectionOutcomeState(
 
   const trackedEntities =
     requiresSerialTracking && operation.jobMakeMethodId
-      ? await getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          operation.jobMakeMethodId,
-          args.companyId
-        )
+      ? await getTrackedEntitiesForOperation(serviceRole, {
+          operationId: jobOperationId,
+          jobMakeMethodId: operation.jobMakeMethodId,
+          companyId: args.companyId
+        })
       : null;
 
   const samples: InspectionOutcomeSample[] = [
@@ -408,13 +412,16 @@ export async function getInspectionOutcomeState(
   const entities = (trackedEntities?.data ?? []).map((e) => ({
     id: e.id,
     status: e.status,
-    attributes: e.attributes
+    attributes: e.attributes,
+    inOperationScope: e.inOperationScope
   }));
   const opAttrKey = `Operation ${jobOperationId}`;
   const entityById = new Map(entities.map((e) => [e.id, e]));
   const entityEligible = (entityId: string) => {
     const entity = entityById.get(entityId);
     if (!entity) return false;
+    // A rework copy of the inspection completes only the units sent into it.
+    if (!entity.inOperationScope) return false;
     if (entity.status === "Consumed" || entity.status === "Rejected") {
       return false;
     }
@@ -504,21 +511,23 @@ export async function postSerialCompletions(
       inspectionSampleId: string | null;
     }[];
     jobOperationId: string;
+    // The operation's make method and work center, for the first-operation
+    // label auto-print.
+    jobMakeMethodId: string | null;
+    workCenterId: string | null;
     inspectionId: string;
     eventIds: ProductionEventIds;
     companyId: string;
     userId: string;
   }
 ): Promise<{ completed: number; error: unknown | null }> {
-  let completed = 0;
+  const completedEntityIds: string[] = [];
+  let error: unknown | null = null;
   for (const candidate of args.candidates) {
-    const response = await serverFns
-      .system({
-        db: getDatabaseClient(),
-        companyId: args.companyId,
-        userId: args.userId
-      })
-      .invoke("issue", {
+    const response = await erpPosting(
+      "issue",
+      { companyId: args.companyId, userId: args.userId },
+      {
         type: "jobOperationSerialComplete",
         trackedEntityId: candidate.trackedEntityId,
         quantity: 1,
@@ -528,15 +537,35 @@ export async function postSerialCompletions(
           ? { inspectionSampleId: candidate.inspectionSampleId }
           : {}),
         ...args.eventIds
-      });
-    if (response.error) return { completed, error: response.error };
-    completed += 1;
+      }
+    );
+    if (response.error) {
+      error = response.error;
+      break;
+    }
+    completedEntityIds.push(candidate.trackedEntityId);
   }
-  return { completed, error: null };
+
+  // Labels go out after the postings, so a slow print enqueue never delays
+  // a unit's completion. Units completed before a failure still get theirs.
+  for (const trackedEntityId of completedEntityIds) {
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
+    await autoPrintOperationLabel({
+      serviceRole,
+      trackedEntityId,
+      jobOperationId: args.jobOperationId,
+      jobMakeMethodId: args.jobMakeMethodId,
+      workCenterId: args.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+  }
+
+  return { completed: completedEntityIds.length, error };
 }
 
 // Non-serial completion: one bulk Production posting (batch entities
-// accumulate via the issue server fn; untracked inserts + backflushes here).
+// accumulate via the issue posting; untracked inserts + backflushes here).
 // The row links the inspection plus the lowest unlinked passed sample as a
 // serializing representative — concurrent posts collide on the sample link's
 // UNIQUE index instead of double-counting.
@@ -556,13 +585,10 @@ export async function postBulkCompletion(
   );
 
   if (state.requiresBatchTracking && state.batchTrackedEntityId) {
-    const response = await serverFns
-      .system({
-        db: getDatabaseClient(),
-        companyId: args.companyId,
-        userId: args.userId
-      })
-      .invoke("issue", {
+    const response = await erpPosting(
+      "issue",
+      { companyId: args.companyId, userId: args.userId },
+      {
         type: "jobOperationBatchComplete",
         trackedEntityId: state.batchTrackedEntityId,
         quantity: args.quantity,
@@ -570,10 +596,24 @@ export async function postBulkCompletion(
         inspectionId: state.inspection.id,
         ...(watermark ? { inspectionSampleId: watermark.id } : {}),
         ...args.eventIds
-      });
+      }
+    );
     if (response.error) {
-      return { error: response.error, message: "Failed to complete units" };
+      return {
+        error: response.error,
+        message: response.error.message || "Failed to complete units"
+      };
     }
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
+    await autoPrintOperationLabel({
+      serviceRole,
+      trackedEntityId: state.batchTrackedEntityId,
+      jobOperationId: state.jobOperationId,
+      jobMakeMethodId: state.operation.jobMakeMethodId,
+      workCenterId: state.operation.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
     return { error: null, message: null };
   }
 
@@ -593,24 +633,80 @@ export async function postBulkCompletion(
     };
   }
 
-  const issued = await serverFns
-    .system({
-      db: getDatabaseClient(),
-      companyId: args.companyId,
-      userId: args.userId
-    })
-    .invoke("issue", {
+  const issued = await erpPosting(
+    "issue",
+    { companyId: args.companyId, userId: args.userId },
+    {
       id: state.jobOperationId,
       type: "jobOperation",
       quantity: args.quantity
-    });
+    }
+  );
   if (issued.error) {
     return {
       error: issued.error,
-      message: "Units completed, but failed to issue materials"
+      message: `Units completed, but ${issued.error.message || "failed to issue materials"}`
     };
   }
 
+  return { error: null, message: null };
+}
+
+/** Strict backflush dry run of the operation's backflush. Call it before a
+ *  completion's first write; a no-op when the setting is off. */
+export async function checkStrictBackflush(args: {
+  jobOperationId: string;
+  quantity: number;
+  companyId: string;
+  userId: string;
+}): Promise<{ error: unknown | null; message: string | null }> {
+  if (args.quantity <= 0) return { error: null, message: null };
+  const check = await erpPosting(
+    "issue",
+    { companyId: args.companyId, userId: args.userId },
+    {
+      id: args.jobOperationId,
+      type: "jobOperationDryRun",
+      quantity: args.quantity
+    }
+  );
+  if (check.error) {
+    return {
+      error: check.error,
+      message: check.error.message || "Failed to issue materials"
+    };
+  }
+  return { error: null, message: null };
+}
+
+/** Required scans (`companySettings.requireTrackedMaterialsIssued`) for the
+ *  units an inspection lot completes: a serial lot checks each unit in
+ *  `trackedEntityIds`, any other lot the operation's issued quantity for
+ *  `quantity` more units. Call it before a completion's first write, beside
+ *  `checkStrictBackflush`; nothing completes when `quantity` is 0. */
+export async function checkRequiredScans(
+  serviceRole: ServiceRole,
+  args: {
+    jobOperationId: string;
+    quantity: number;
+    requiresSerialTracking: boolean;
+    trackedEntityIds: string[];
+    companyId: string;
+  }
+): Promise<{ error: unknown | null; message: string | null }> {
+  if (args.quantity <= 0) return { error: null, message: null };
+  const shortfall = await getRequiredScanShortfall(serviceRole, {
+    companyId: args.companyId,
+    jobOperationId: args.jobOperationId,
+    parentIsSerial: args.requiresSerialTracking,
+    trackedEntityIds: args.requiresSerialTracking
+      ? args.trackedEntityIds
+      : undefined,
+    quantity: args.quantity
+  });
+  if (shortfall.message) {
+    return { error: shortfall.error, message: shortfall.message };
+  }
   return { error: null, message: null };
 }
 

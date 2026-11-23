@@ -19,7 +19,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -35,6 +35,7 @@ import {
   SequenceOrCustomId,
   Submit
 } from "~/components/Form";
+import { useTaxCodes } from "~/components/Form/TaxCode";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { upsertIntoListStore, useCustomers } from "~/stores";
 import { path } from "~/utils/path";
@@ -44,12 +45,14 @@ import type { Customer } from "../../types";
 type CustomerFormProps = {
   initialValues: z.infer<typeof customerValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const CustomerForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: CustomerFormProps) => {
   const { t } = useLingui();
@@ -66,7 +69,7 @@ const CustomerForm = ({
   const handledSuccessRef = useRef(false);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       if (handledSuccessRef.current) return;
@@ -100,17 +103,24 @@ const CustomerForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create customer: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type, setCustomers]);
+  }, [fetcher.data, fetcher.state, onClose, open, t, type, setCustomers]);
+
+  // Once the company has a tax code, tax comes from the customer's tax code.
+  // The bare percent stays as the fallback for a customer with no code, so
+  // it is kept as a hidden field rather than dropped from the form.
+  const hasTaxCodes = useTaxCodes().length > 0;
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
 
+  const Wrapper = type === "card" ? "div" : Fragment;
+
   return (
-    <div>
+    <Wrapper>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard open={open} onClose={onClose}>
           <ModalCardContent size="medium">
             <ValidatedForm
               method="post"
@@ -120,7 +130,9 @@ const CustomerForm = ({
               fetcher={fetcher}
             >
               <ModalCardHeader>
-                <ModalCardTitle>
+                <ModalCardTitle
+                  aria-level={type === "card" && !isEditing ? 1 : undefined}
+                >
                   {isEditing ? (
                     <Trans>Customer Overview</Trans>
                   ) : (
@@ -139,6 +151,7 @@ const CustomerForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="type" value={type} />
+                {hasTaxCodes && <Hidden name="taxPercent" />}
                 <div
                   className={cn(
                     "grid w-full gap-x-8 gap-y-4",
@@ -194,15 +207,17 @@ const CustomerForm = ({
                   )}
                   <Currency name="currencyCode" label={t`Currency`} />
 
-                  <Number
-                    name="taxPercent"
-                    label={t`Tax Percent`}
-                    termId="customer-default-tax-percent"
-                    minValue={0}
-                    maxValue={1}
-                    step={INPUT_STEP.percent}
-                    formatOptions={INPUT_FORMAT.percent}
-                  />
+                  {!hasTaxCodes && (
+                    <Number
+                      name="taxPercent"
+                      label={t`Tax Percent`}
+                      termId="customer-default-tax-percent"
+                      minValue={0}
+                      maxValue={1}
+                      step={INPUT_STEP.percent}
+                      formatOptions={INPUT_FORMAT.percent}
+                    />
+                  )}
 
                   <Input name="website" label={t`Website`} />
 
@@ -210,7 +225,7 @@ const CustomerForm = ({
                   <CustomFormFields table="customer" />
                 </div>
               </ModalCardBody>
-              <ModalCardFooter>
+              <ModalCardFooter sticky={type === "card" && !isEditing}>
                 <HStack>
                   <Submit isDisabled={isDisabled}>
                     <Trans>Save</Trans>
@@ -221,7 +236,7 @@ const CustomerForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-    </div>
+    </Wrapper>
   );
 };
 

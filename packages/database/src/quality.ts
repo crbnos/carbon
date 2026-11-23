@@ -12,7 +12,7 @@
  * its own `getDatabaseClient()` singleton). Kysely bypasses RLS — the calling
  * route's `requirePermissions` is the auth gate.
  */
-import type { NotNull, Transaction } from "kysely";
+import type { NotNull, Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
@@ -20,19 +20,64 @@ import {
   deriveSampleStatus,
   valuateMeasurement
 } from "./inspection-verdict.ts";
-import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
-import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import {
+  assertReceiptNotVoided,
+  engineErrResult,
+  errResult,
+  INSPECTION_CLOSED_STATUSES,
+  type InspectionSource,
+  isInspectionClosed,
+  type Result
+} from "./quality-core.ts";
+import {
+  insertLotSamplingPlans,
+  resolveLotSamplingPlans
+} from "./quality-sampling.ts";
 import { getNextSequence } from "./sequence.ts";
 
-type Ok<T> = { data: T; error: null };
-type Err = { data: null; error: { message: string; blockers?: unknown } };
-export type Result<T> = Ok<T> | Err;
-
+export {
+  engineErrResult,
+  errResult,
+  type InspectionSource,
+  isDatabaseError,
+  isInspectionClosed,
+  type Result
+} from "./quality-core.ts";
+// The engine is split by concern; this file is its one public entry
+// (`@carbon/database/quality`), so callers import every name from here.
+export {
+  dispositionInspection,
+  type InspectionDispositionInput,
+  isRejectableWithoutReason
+} from "./quality-disposition.ts";
+export {
+  drawHeldStripes,
+  type HeldStripe,
+  heldStockStripes,
+  lockClaimUnit,
+  lockHeldUnits,
+  lockItemStockRows,
+  lotClaimableAtUnit,
+  setInspectionRelease,
+  storageUnitLocationId,
+  withInspectionRelease
+} from "./quality-hold.ts";
+export {
+  cancelManualInspection,
+  createManualInspection,
+  deleteManualInspection,
+  type ManualInspectionInput
+} from "./quality-manual.ts";
+export {
+  createPmiInspectionPlan,
+  deleteUnusedPmiInspectionPlans,
+  type PmiPlanCharacteristic
+} from "./quality-pmi.ts";
+export {
+  prefillInspectionSamples,
+  reconcileInspectionSamplingPlans
+} from "./quality-sampling.ts";
 export { valuateMeasurement };
-
-export function errResult(message: string, blockers?: unknown): Err {
-  return { data: null, error: { message, ...(blockers ? { blockers } : {}) } };
-}
 
 // Plain input shapes (structurally assignable from the apps' zod-inferred
 // validator types — zod stays app-side, the engine takes data).
@@ -45,6 +90,8 @@ export type InspectionSampleInput = {
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId?: string;
+  // Grid position of a new anonymous sample; ignored on update and for serial samples.
+  position?: number;
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: "Pending" | "Passed" | "Failed";
@@ -53,30 +100,19 @@ export type InspectionSampleInput = {
   inspectedBy: string;
 };
 
-export type InspectionDispositionInput = {
-  id: string;
-  decision: "Accept" | "Reject" | "Partial";
-  notes?: string;
-  companyId: string;
-  dispositionedBy: string;
-  // One-shot mode: refuse to disposition a lot that is already terminal
-  // (Passed/Failed/Partial). The MES disposition route passes this because its
-  // dispositions drive physical postings (scrap/rework/complete) that must not
-  // re-run; ERP receipt lots keep re-disposition (write-off retry semantics).
-  requireOpen?: boolean;
-  // Restrict the disposition to lots of this source. The ERP Accept/Reject/Partial
-  // routes pass "Receipt" because their verdicts carry NO physical production
-  // posting — accepting a Job Operation lot here would hard-terminate it with no
-  // complete/scrap/rework and wedge the operation (whose outcome the MES
-  // disposition route owns). The MES route omits this so it can disposition
-  // Job Operation lots.
-  requireSource?: "Receipt" | "Job Operation";
-};
+// Receipt and Manual lots inspect stock that waits On Hold for the verdict, so
+// a sample verdict and the lot disposition move their tracked entities. Job
+// Operation lots inspect WIP whose status belongs to the job.
+function holdsLotEntities(sourceDocument: InspectionSource): boolean {
+  return sourceDocument === "Receipt" || sourceDocument === "Manual";
+}
 
 export type InspectionMeasurementInput = {
   inspectionId: string;
   // Absent = create an anonymous sample (non-serial grid columns).
   sampleId?: string;
+  // Grid position of the anonymous sample this call creates; ignored otherwise.
+  position?: number;
   inspectionFeatureId: string;
   // Numeric string for Measurement features; empty clears the reading.
   value?: string;
@@ -87,41 +123,33 @@ export type InspectionMeasurementInput = {
   userId: string;
 };
 
-// The sampling hierarchy is: feature rule -> document default -> All. This
-// maps an inspectionDocument row's default-rule columns into the engine's
-// plan shape (NUMERIC columns come back from pg as strings — coerce).
-function toSamplingPlanInput(
-  row:
-    | {
-        samplingPlanType: SamplingPlanInput["type"] | null;
-        samplingSampleSize: number | null;
-        samplingPercentage: string | number | null;
-        samplingAql: string | number | null;
-        samplingInspectionLevel: SamplingPlanInput["inspectionLevel"];
-        samplingSeverity: SamplingPlanInput["severity"];
-      }
-    | null
-    | undefined
-): SamplingPlanInput | null {
-  if (!row?.samplingPlanType) return null;
-  return {
-    type: row.samplingPlanType,
-    sampleSize: row.samplingSampleSize,
-    percentage:
-      row.samplingPercentage == null ? null : Number(row.samplingPercentage),
-    aql: row.samplingAql == null ? null : Number(row.samplingAql),
-    inspectionLevel: row.samplingInspectionLevel,
-    severity: row.samplingSeverity
-  };
+// A grid column the lot draws (it draws at most `lotSize`), else none, so a
+// sample never lands in a column that is not shown.
+function gridPosition(
+  position: number | undefined,
+  lotSize: number
+): number | null {
+  return position !== undefined && position < lotSize ? position : null;
 }
 
-// Terminal lot statuses. Passed/Failed/Partial are all hard-terminal: once
-// dispositioned, samples and measurements are immutable (Partial is the mixed
-// close — some units passed, some failed, each already routed to its outcome).
-const INSPECTION_CLOSED_STATUSES = ["Passed", "Failed", "Partial"] as const;
-
-function isInspectionClosed(status: string): boolean {
-  return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
+async function lockOpenLot(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string,
+  mode: "update" | "share"
+): Promise<Selectable<KyselyDatabase["inspection"]>["status"]> {
+  const query = trx
+    .selectFrom("inspection")
+    .select("status")
+    .where("id", "=", inspectionId)
+    .where("companyId", "=", companyId);
+  const lot = await (mode === "update"
+    ? query.forUpdate()
+    : query.forShare()
+  ).executeTakeFirst();
+  if (!lot) throw new Error("Inspection not found");
+  if (isInspectionClosed(lot.status)) throw new Error("Inspection is closed");
+  return lot.status;
 }
 
 // A sample whose verdict already drove a production posting (MES verdict-driven
@@ -144,72 +172,141 @@ async function assertSampleNotLinked(
   }
 }
 
-// Entity-level side effects of a sample verdict (serial parts only): flip the
-// tracked entity's status and record the Inspect activity. Shared by the
-// pass/fail sample path and the derived-status measurement path. Only invoked
-// for Receipt-sourced lots — Job Operation inspections act on WIP entities
-// whose lifecycle belongs to the job, so sampling never flips them.
-async function applySampleEntityStatus(
+// A serial sample of a lot that holds stock must be one of the lot's units: a
+// manual lot's listed entities, a receipt lot's receipt line. Its verdict
+// flips the entity, so a foreign serial would be released or rejected by a lot
+// that never held it.
+async function assertSampleEntityInLot(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspection: {
+    id: string;
+    sourceDocument: string;
+    sourceDocumentLineId: string | null;
+  },
+  trackedEntityId: string
+): Promise<void> {
+  let member: { id: string } | undefined;
+  if (inspection.sourceDocument === "Manual") {
+    member = await trx
+      .selectFrom("inspectionTrackedEntity")
+      .select(["id"])
+      .where("inspectionId", "=", inspection.id)
+      .where("trackedEntityId", "=", trackedEntityId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+  } else if (inspection.sourceDocument === "Receipt") {
+    member = inspection.sourceDocumentLineId
+      ? await trx
+          .selectFrom("trackedEntity")
+          .select(["id"])
+          .where("id", "=", trackedEntityId)
+          .where(
+            sql<string>`attributes ->> 'Receipt Line'`,
+            "=",
+            inspection.sourceDocumentLineId
+          )
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+  } else {
+    return;
+  }
+  if (!member) {
+    throw new Error("This tracked entity is not part of the inspection");
+  }
+}
+
+// Links a sample's unit to the lot's Inspect activity. The verdict moves no
+// stock: the unit stays On Hold until the lot is decided. Only invoked for
+// Receipt and Manual lots — Job Operation inspections act on WIP entities
+// whose lifecycle belongs to the job.
+async function recordSampleInspectActivity(
   trx: Transaction<KyselyDatabase>,
   args: {
     trackedEntityId: string;
-    status: "Passed" | "Failed";
     inspectionId: string;
     // Receipt-sourced lots pass the receipt id for the activity's Receipt
     // attribute; other sources pass null.
     receiptId: string | null;
-    notes: string | null;
     userId: string;
     companyId: string;
   }
 ) {
-  const trackedEntityStatus =
-    args.status === "Passed" ? "Available" : "Rejected";
-  await trx
-    .updateTable("trackedEntity")
-    .set({ status: trackedEntityStatus })
+  const entity = await trx
+    .selectFrom("trackedEntity")
+    .select("quantity")
     .where("id", "=", args.trackedEntityId)
     .where("companyId", "=", args.companyId)
-    .execute();
+    .executeTakeFirstOrThrow();
 
+  // One Inspect activity per lot, so the graph shows every unit the inspection
+  // covered. The lock keeps two verdicts saved at once from each creating one.
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`inspectActivity:${args.inspectionId}`}, 0))`.execute(
+    trx
+  );
+  const activityId =
+    (
+      await trx
+        .selectFrom("trackedActivity")
+        .select("id")
+        .where("sourceDocument", "=", "Inbound Inspection")
+        .where("sourceDocumentId", "=", args.inspectionId)
+        .where("type", "=", "Inspect")
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
+    )?.id ?? (await insertInspectActivity(trx, args));
+
+  // The unit is the activity's input and stays itself: no output row, since
+  // nothing is consumed or made. A changed verdict leaves it linked once; its
+  // status holds the result.
+  await trx
+    .insertInto("trackedActivityInput")
+    .values({
+      trackedActivityId: activityId,
+      trackedEntityId: args.trackedEntityId,
+      quantity: entity.quantity,
+      companyId: args.companyId,
+      createdBy: args.userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["trackedActivityId", "trackedEntityId"]).doNothing()
+    )
+    .execute();
+}
+
+async function insertInspectActivity(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    inspectionId: string;
+    receiptId: string | null;
+    userId: string;
+    companyId: string;
+  }
+): Promise<string> {
+  const lot = await trx
+    .selectFrom("inspection")
+    .select("inspectionId")
+    .where("id", "=", args.inspectionId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirstOrThrow();
   const activity = await trx
     .insertInto("trackedActivity")
     .values({
       type: "Inspect",
       sourceDocument: "Inbound Inspection",
       sourceDocumentId: args.inspectionId,
+      sourceDocumentReadableId: lot.inspectionId,
       attributes: {
-        Result: args.status,
         ...(args.receiptId ? { Receipt: args.receiptId } : {}),
-        Inspector: args.userId,
-        ...(args.notes ? { Notes: args.notes } : {})
+        Inspector: args.userId
       },
       companyId: args.companyId,
       createdBy: args.userId
     })
     .returning(["id"])
     .executeTakeFirstOrThrow();
-
-  await trx
-    .insertInto("trackedActivityInput")
-    .values({
-      trackedActivityId: activity.id,
-      trackedEntityId: args.trackedEntityId,
-      quantity: 0,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
-  await trx
-    .insertInto("trackedActivityOutput")
-    .values({
-      trackedActivityId: activity.id,
-      trackedEntityId: args.trackedEntityId,
-      quantity: 0,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
+  return activity.id;
 }
 
 // -------------------------------------------------------------
@@ -217,7 +314,6 @@ async function applySampleEntityStatus(
 // -------------------------------------------------------------
 // Writes that must stay consistent:
 //   - inspectionSample (insert or update)
-//   - trackedEntity.status (flip to Available or Rejected; Receipt source only)
 //   - trackedActivity + trackedActivityInput + trackedActivityOutput
 //   - inspection.status (recompute if non-terminal)
 
@@ -231,21 +327,44 @@ export async function upsertInspectionSample(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
+        .select([
+          "id",
+          "status",
+          "sourceDocument",
+          "sourceDocumentId",
+          "sourceDocumentLineId",
+          "lotSize"
+        ])
         .where("id", "=", sample.inspectionId)
         .where("companyId", "=", sample.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (isInspectionClosed(inspection.status)) {
-        throw new Error("Inspection is closed");
-      }
-
+      await assertReceiptNotVoided(
+        trx,
+        sample.companyId,
+        inspection,
+        "noKeyUpdate"
+      );
+      inspection.status = await lockOpenLot(
+        trx,
+        sample.companyId,
+        sample.inspectionId,
+        "update"
+      );
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
       // no entity: the caller passes the column's sampleId to update it in place
       // (idempotent re-toggle of the "Overall result" cell), otherwise each call
       // is a fresh anonymous sample.
       const trackedEntityId = sample.trackedEntityId || null;
+      if (trackedEntityId) {
+        await assertSampleEntityInLot(
+          trx,
+          sample.companyId,
+          inspection,
+          trackedEntityId
+        );
+      }
       let existing: { id: string } | undefined;
       if (trackedEntityId) {
         existing = await trx
@@ -293,55 +412,54 @@ export async function upsertInspectionSample(
       } else {
         const inserted = await trx
           .insertInto("inspectionSample")
-          .values({ ...samplePayload, createdBy: sample.inspectedBy })
+          .values({
+            ...samplePayload,
+            position: trackedEntityId
+              ? null
+              : gridPosition(sample.position, inspection.lotSize),
+            createdBy: sample.inspectedBy
+          })
           .returning(["id"])
           .executeTakeFirstOrThrow();
         sampleId = inserted.id;
       }
 
-      // Entity-level side effects only apply when a tracked entity is present
-      // (serial parts) and a verdict was recorded. Identify-only scans
-      // (status "Pending") leave the entity On Hold until measurements derive
-      // a verdict; anonymous samples are handled by the lot's disposition.
-      // Job Operation lots sample WIP entities and never flip their status.
       if (
-        inspection.sourceDocument === "Receipt" &&
+        holdsLotEntities(inspection.sourceDocument) &&
         trackedEntityId &&
         sample.status !== "Pending"
       ) {
-        await applySampleEntityStatus(trx, {
+        await recordSampleInspectActivity(trx, {
           trackedEntityId,
-          status: sample.status,
           inspectionId: sample.inspectionId,
-          receiptId: inspection.sourceDocumentId,
-          notes: sample.notes ?? null,
+          receiptId:
+            inspection.sourceDocument === "Receipt"
+              ? inspection.sourceDocumentId
+              : null,
           userId: sample.inspectedBy,
           companyId: sample.companyId
         });
       }
 
-      const isTerminal =
-        inspection.status === "Passed" ||
-        inspection.status === "Failed" ||
-        inspection.status === "Partial";
-      if (!isTerminal) {
-        const samples = await trx
-          .selectFrom("inspectionSample")
-          .select(["status"])
-          .where("inspectionId", "=", sample.inspectionId)
+      const samples = await trx
+        .selectFrom("inspectionSample")
+        .select(["status"])
+        .where("inspectionId", "=", sample.inspectionId)
+        .where("companyId", "=", sample.companyId)
+        .execute();
+      const nextStatus = computeLotStatus(samples);
+      if (nextStatus !== inspection.status) {
+        await trx
+          .updateTable("inspection")
+          .set({
+            status: nextStatus,
+            updatedBy: sample.inspectedBy,
+            updatedAt: nowIso
+          })
+          .where("id", "=", sample.inspectionId)
+          .where("companyId", "=", sample.companyId)
+          .where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
           .execute();
-        const nextStatus = computeLotStatus(samples);
-        if (nextStatus !== inspection.status) {
-          await trx
-            .updateTable("inspection")
-            .set({
-              status: nextStatus,
-              updatedBy: sample.inspectedBy,
-              updatedAt: nowIso
-            })
-            .where("id", "=", sample.inspectionId)
-            .execute();
-        }
       }
 
       return { id: sampleId };
@@ -349,306 +467,7 @@ export async function upsertInspectionSample(
 
     return { data: result, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to save sample"
-    );
-  }
-}
-
-// -------------------------------------------------------------
-// 2. dispositionInspection
-// -------------------------------------------------------------
-// Writes:
-//   - trackedEntity.status (bulk flip for Accept/Reject; nothing for Partial)
-//   - inspection (status, dispositionedBy/At, notes)
-//   - inspectionHistory (1 row for future plan auto-switching)
-
-export async function dispositionInspection(
-  db: Kysely<KyselyDatabase>,
-  args: InspectionDispositionInput
-): Promise<
-  Result<{
-    id: string;
-    status: string;
-    // Non-tracked Inventory reject: the inventory write-off the route must post
-    // through post-nonconformance (itemLedger + cost relief + GL). Null when the
-    // decision/tracking type needs no compensating ledger movement.
-    writeOff: {
-      itemId: string;
-      quantity: number;
-      locationId: string | null;
-    } | null;
-  }>
-> {
-  const nowIso = new Date().toISOString();
-
-  try {
-    const result = await db.transaction().execute(async (trx) => {
-      const inspection = await trx
-        .selectFrom("inspection")
-        .select([
-          "id",
-          "sourceDocument",
-          "sourceDocumentId",
-          "sourceDocumentLineId",
-          "itemId",
-          "status",
-          "supplierId",
-          "samplingStandard",
-          "severity",
-          "inspectionLevel",
-          "aql",
-          "lotSize",
-          "sampleSize"
-        ])
-        .where("id", "=", args.id)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
-      if (!inspection) throw new Error("Inspection not found");
-      if (
-        args.requireSource &&
-        inspection.sourceDocument !== args.requireSource
-      ) {
-        throw new Error(
-          `This disposition is only available for ${args.requireSource} inspections`
-        );
-      }
-      if (args.requireOpen && isInspectionClosed(inspection.status)) {
-        throw new Error("Inspection is already dispositioned");
-      }
-      const isReceiptSource = inspection.sourceDocument === "Receipt";
-
-      const item = await trx
-        .selectFrom("item")
-        .select(["itemTrackingType"])
-        .where("id", "=", inspection.itemId)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
-
-      // Receipt-sourced lots: the received tracked entities and the receiving
-      // location hang off the receipt line. Other sources have no lot entities
-      // to flip (e.g. Job Operation inspections act on WIP, not received stock).
-      const receiptLine =
-        isReceiptSource && inspection.sourceDocumentLineId
-          ? await trx
-              .selectFrom("receiptLine")
-              .select(["locationId"])
-              .where("id", "=", inspection.sourceDocumentLineId)
-              .where("companyId", "=", args.companyId)
-              .executeTakeFirst()
-          : undefined;
-
-      const lotEntities =
-        isReceiptSource && inspection.sourceDocumentLineId
-          ? await trx
-              .selectFrom("trackedEntity")
-              .select(["id"])
-              .where(
-                sql<string>`attributes ->> 'Receipt Line'`,
-                "=",
-                inspection.sourceDocumentLineId
-              )
-              .where("companyId", "=", args.companyId)
-              .execute()
-          : [];
-
-      const existingSamples = await trx
-        .selectFrom("inspectionSample")
-        .select(["trackedEntityId", "status"])
-        .where("inspectionId", "=", args.id)
-        .execute();
-
-      const failedEntityIds = new Set(
-        existingSamples
-          .filter((s) => s.status === "Failed")
-          .map((s) => s.trackedEntityId)
-          .filter(Boolean)
-      );
-      const allLotIds = lotEntities.map((e) => e.id);
-      const failures = existingSamples.filter(
-        (s) => s.status === "Failed"
-      ).length;
-
-      // Per-feature gating (document-driven lots). Each feature must meet its
-      // own resolved sample size and acceptance number before Accept; Reject
-      // requires a feature past its rejection number or a failed sample. Lots
-      // without features keep the caller-side lot-level gating untouched.
-      const lotFeatures = await trx
-        .selectFrom("inspectionSamplingPlan")
-        .select([
-          "inspectionFeatureId",
-          "sampleSize",
-          "acceptanceNumber",
-          "rejectionNumber"
-        ])
-        .where("inspectionId", "=", args.id)
-        .execute();
-
-      if (lotFeatures.length > 0) {
-        const measurements = await trx
-          .selectFrom("inspectionMeasurement")
-          .select(["inspectionFeatureId", "status"])
-          .where("inspectionId", "=", args.id)
-          .execute();
-        const countsByFeature = new Map<
-          string,
-          { recorded: number; failed: number }
-        >();
-        for (const m of measurements) {
-          const counts = countsByFeature.get(m.inspectionFeatureId) ?? {
-            recorded: 0,
-            failed: 0
-          };
-          if (m.status !== "Pending") counts.recorded += 1;
-          if (m.status === "Failed") counts.failed += 1;
-          countsByFeature.set(m.inspectionFeatureId, counts);
-        }
-
-        if (args.decision === "Accept") {
-          const blocking = lotFeatures.filter((f) => {
-            const counts = countsByFeature.get(f.inspectionFeatureId) ?? {
-              recorded: 0,
-              failed: 0
-            };
-            return (
-              counts.recorded < f.sampleSize ||
-              counts.failed > f.acceptanceNumber
-            );
-          });
-          if (blocking.length > 0) {
-            throw new Error(
-              "Cannot accept: sampling incomplete or acceptance number exceeded for one or more features"
-            );
-          }
-        }
-
-        if (args.decision === "Reject") {
-          const rejectable =
-            lotFeatures.some((f) => {
-              const counts = countsByFeature.get(f.inspectionFeatureId);
-              return counts != null && counts.failed >= f.rejectionNumber;
-            }) || existingSamples.some((s) => s.status === "Failed");
-          if (!rejectable) {
-            throw new Error(
-              "Cannot reject: no feature has reached its rejection number and no sample has failed"
-            );
-          }
-        }
-      }
-
-      // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
-      // releases every lot entity that didn't fail a sample — un-sampled and
-      // partially-inspected (Pending) units included; failed units stay
-      // Rejected. Partial leaves un-sampled entities On Hold.
-      let lotStatus: "Passed" | "Failed" | "Partial";
-      let idsToFlip: string[] = [];
-      let flipStatus: "Available" | "Rejected" | null = null;
-      switch (args.decision) {
-        case "Accept":
-          lotStatus = "Passed";
-          idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
-          flipStatus = "Available";
-          break;
-        case "Reject":
-          lotStatus = "Failed";
-          idsToFlip = allLotIds;
-          flipStatus = "Rejected";
-          break;
-        case "Partial":
-          lotStatus = "Partial";
-          idsToFlip = [];
-          flipStatus = null;
-          break;
-      }
-
-      if (flipStatus && idsToFlip.length > 0) {
-        await trx
-          .updateTable("trackedEntity")
-          .set({ status: flipStatus })
-          .where("id", "in", idsToFlip)
-          .where("companyId", "=", args.companyId)
-          .execute();
-      }
-
-      // Non-tracked (Inventory) items have no tracked entities to flip, so the
-      // received quantity sits in itemLedger with no per-row status to exclude
-      // it from on-hand. Rejecting the lot posts a compensating write-off —
-      // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance operation, which the route runs AFTER this
-      // transaction commits. The `inspection.status
-      // !== "Failed"` guard is intentionally dropped: post-nonconformance is
-      // idempotent per (documentType, documentId), so a re-reject / retry is
-      // safe. Tracked items are handled by the status flip above; Non-Inventory
-      // never posted a receipt ledger entry, so neither needs a write-off.
-      const writeOff =
-        args.decision === "Reject" &&
-        isReceiptSource &&
-        item?.itemTrackingType === "Inventory" &&
-        inspection.lotSize > 0
-          ? {
-              itemId: inspection.itemId,
-              quantity: -inspection.lotSize,
-              locationId: receiptLine?.locationId ?? null
-            }
-          : null;
-
-      const updated = await trx
-        .updateTable("inspection")
-        .set({
-          status: lotStatus,
-          notes: args.notes ?? null,
-          dispositionedBy: args.dispositionedBy,
-          dispositionedAt: nowIso,
-          updatedBy: args.dispositionedBy,
-          updatedAt: nowIso
-        })
-        .where("id", "=", args.id)
-        .where("companyId", "=", args.companyId)
-        // One-shot under concurrency: a second disposition blocks on the row
-        // lock, re-evaluates this predicate against the committed terminal
-        // status, matches zero rows, and throws below — the early read check
-        // alone can't see an uncommitted concurrent disposition.
-        .$if(args.requireOpen === true, (qb) =>
-          qb.where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
-        )
-        .returning(["id", "status"])
-        .executeTakeFirst();
-      if (!updated) {
-        throw new Error("Inspection is already dispositioned");
-      }
-
-      await trx
-        .insertInto("inspectionHistory")
-        .values({
-          inspectionId: args.id,
-          itemId: inspection.itemId,
-          supplierId: inspection.supplierId ?? null,
-          samplingStandard: inspection.samplingStandard,
-          severity: inspection.severity ?? "Normal",
-          inspectionLevel: inspection.inspectionLevel ?? null,
-          aql: inspection.aql ?? null,
-          lotSize: inspection.lotSize,
-          sampleSize: inspection.sampleSize,
-          defectsFound: failures,
-          outcome:
-            args.decision === "Accept"
-              ? "Accepted"
-              : args.decision === "Reject"
-                ? "Rejected"
-                : "Partial",
-          companyId: args.companyId,
-          createdBy: args.dispositionedBy
-        })
-        .execute();
-
-      return { id: updated.id, status: updated.status, writeOff };
-    });
-
-    return { data: result, error: null };
-  } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to disposition inspection"
-    );
+    return engineErrResult(err, "Failed to save sample");
   }
 }
 
@@ -678,15 +497,29 @@ export async function upsertInspectionMeasurement(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
+        .select([
+          "id",
+          "status",
+          "sourceDocument",
+          "sourceDocumentId",
+          "lotSize"
+        ])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (isInspectionClosed(inspection.status)) {
-        throw new Error("Inspection is closed");
-      }
-
+      await assertReceiptNotVoided(
+        trx,
+        args.companyId,
+        inspection,
+        "noKeyUpdate"
+      );
+      inspection.status = await lockOpenLot(
+        trx,
+        args.companyId,
+        args.inspectionId,
+        "update"
+      );
       const feature = await trx
         .selectFrom("inspectionFeature")
         .select([
@@ -727,6 +560,7 @@ export async function upsertInspectionMeasurement(
             inspectionId: args.inspectionId,
             trackedEntityId: null,
             status: "Pending",
+            position: gridPosition(args.position, inspection.lotSize),
             companyId: args.companyId,
             createdBy: args.userId
           })
@@ -821,24 +655,18 @@ export async function upsertInspectionMeasurement(
           .where("id", "=", sample.id)
           .execute();
 
-        // WIP entities on Job Operation lots keep their job-owned status; only
-        // Receipt-sourced entities ride the sample verdict.
-        if (inspection.sourceDocument === "Receipt" && sample.trackedEntityId) {
-          if (derivedStatus === "Pending") {
-            // Revert (e.g. corrected typo): back On Hold, no activity row.
-            await trx
-              .updateTable("trackedEntity")
-              .set({ status: "On Hold" })
-              .where("id", "=", sample.trackedEntityId)
-              .where("companyId", "=", args.companyId)
-              .execute();
-          } else {
-            await applySampleEntityStatus(trx, {
+        if (
+          holdsLotEntities(inspection.sourceDocument) &&
+          sample.trackedEntityId
+        ) {
+          if (derivedStatus !== "Pending") {
+            await recordSampleInspectActivity(trx, {
               trackedEntityId: sample.trackedEntityId,
-              status: derivedStatus,
               inspectionId: args.inspectionId,
-              receiptId: inspection.sourceDocumentId,
-              notes: args.notes ?? null,
+              receiptId:
+                inspection.sourceDocument === "Receipt"
+                  ? inspection.sourceDocumentId
+                  : null,
               userId: args.userId,
               companyId: args.companyId
             });
@@ -846,27 +674,25 @@ export async function upsertInspectionMeasurement(
         }
       }
 
-      // Passed/Failed already threw above, so Partial is the only terminal
-      // status left to guard against.
-      const isTerminal = inspection.status === "Partial";
-      if (!isTerminal) {
-        const samples = await trx
-          .selectFrom("inspectionSample")
-          .select(["status"])
-          .where("inspectionId", "=", args.inspectionId)
+      const samples = await trx
+        .selectFrom("inspectionSample")
+        .select(["status"])
+        .where("inspectionId", "=", args.inspectionId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      const nextStatus = computeLotStatus(samples);
+      if (nextStatus !== inspection.status) {
+        await trx
+          .updateTable("inspection")
+          .set({
+            status: nextStatus,
+            updatedBy: args.userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", args.inspectionId)
+          .where("companyId", "=", args.companyId)
+          .where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
           .execute();
-        const nextStatus = computeLotStatus(samples);
-        if (nextStatus !== inspection.status) {
-          await trx
-            .updateTable("inspection")
-            .set({
-              status: nextStatus,
-              updatedBy: args.userId,
-              updatedAt: nowIso
-            })
-            .where("id", "=", args.inspectionId)
-            .execute();
-        }
       }
 
       return {
@@ -879,114 +705,7 @@ export async function upsertInspectionMeasurement(
 
     return { data: result, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to save measurement"
-    );
-  }
-}
-
-// -------------------------------------------------------------
-// 4. reconcileInspectionSamplingPlans
-// -------------------------------------------------------------
-// The lot references its inspection document live, so features added to the
-// document after lot creation need per-lot plan rows resolved lazily. Rows
-// whose live feature was deleted are left in place (the grid ignores them).
-
-export async function reconcileInspectionSamplingPlans(
-  db: Kysely<KyselyDatabase>,
-  inspectionId: string,
-  companyId: string
-): Promise<Result<{ added: number }>> {
-  try {
-    const result = await db.transaction().execute(async (trx) => {
-      const inspection = await trx
-        .selectFrom("inspection")
-        .select([
-          "id",
-          "inspectionDocumentId",
-          "lotSize",
-          "samplingStandard",
-          "createdBy"
-        ])
-        .where("id", "=", inspectionId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!inspection) throw new Error("Inspection not found");
-      if (!inspection.inspectionDocumentId) return { added: 0 };
-
-      const documentFeatures = await trx
-        .selectFrom("inspectionFeature")
-        .select([
-          "id",
-          "samplingPlanType",
-          "samplingSampleSize",
-          "samplingPercentage",
-          "samplingAql",
-          "samplingInspectionLevel",
-          "samplingSeverity"
-        ])
-        .where("inspectionDocumentId", "=", inspection.inspectionDocumentId)
-        .where("companyId", "=", companyId)
-        .execute();
-
-      const existingRows = await trx
-        .selectFrom("inspectionSamplingPlan")
-        .select(["inspectionFeatureId"])
-        .where("inspectionId", "=", inspectionId)
-        .execute();
-      const existingIds = new Set(
-        existingRows.map((r) => r.inspectionFeatureId)
-      );
-      const missing = documentFeatures.filter((f) => !existingIds.has(f.id));
-      if (missing.length === 0) return { added: 0 };
-
-      // The document's own default rule is the fallback for features without
-      // a rule (feature rule -> document default -> All).
-      const documentDefault = await trx
-        .selectFrom("inspectionDocument")
-        .select([
-          "samplingPlanType",
-          "samplingSampleSize",
-          "samplingPercentage",
-          "samplingAql",
-          "samplingInspectionLevel",
-          "samplingSeverity"
-        ])
-        .where("id", "=", inspection.inspectionDocumentId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      const defaultPlan = toSamplingPlanInput(documentDefault);
-
-      const inserts = missing.map((feature) => {
-        const resolved = resolveFeatureSamplingPlan(
-          feature,
-          defaultPlan,
-          Number(inspection.lotSize),
-          inspection.samplingStandard as SamplingStandard
-        );
-        return {
-          inspectionId,
-          inspectionFeatureId: feature.id,
-          sampleSize: resolved.sampleSize,
-          acceptanceNumber: resolved.acceptance,
-          rejectionNumber: resolved.rejection,
-          codeLetter: resolved.codeLetter,
-          companyId,
-          // Never NULL into a NOT NULL audit column: fall back to the lot's
-          // creator (the creating flow's userId).
-          createdBy: inspection.createdBy
-        };
-      });
-
-      await trx.insertInto("inspectionSamplingPlan").values(inserts).execute();
-      return { added: inserts.length };
-    });
-
-    return { data: result, error: null };
-  } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to reconcile features"
-    );
+    return engineErrResult(err, "Failed to save measurement");
   }
 }
 
@@ -1013,14 +732,13 @@ export async function changeInspectionDocument(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (isInspectionClosed(inspection.status)) {
-        throw new Error("Inspection is closed");
-      }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
+      await lockOpenLot(trx, args.companyId, args.inspectionId, "update");
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1083,14 +801,13 @@ export async function recordInspectionGauge(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (isInspectionClosed(inspection.status)) {
-        throw new Error("Inspection is closed");
-      }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
+      await lockOpenLot(trx, args.companyId, args.inspectionId, "share");
 
       const plan = await trx
         .selectFrom("inspectionSamplingPlan")
@@ -1232,8 +949,6 @@ export async function getRecentInspectionGauges(
 }
 
 // -------------------------------------------------------------
-// 6. getOrCreateJobOperationInspection
-// -------------------------------------------------------------
 // Lazy find-or-create of the inspection lot for a jobOperation with
 // operationType = 'Inspection', called by the MES inspection loader on first
 // open. Mirrors the post-receipt lot creation: snapshots the resolved sampling
@@ -1310,75 +1025,17 @@ export async function getOrCreateJobOperationInspection(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
 
-      const settings = await trx
-        .selectFrom("companySettings")
-        .select(["samplingStandard"])
-        .where("id", "=", args.companyId)
-        .executeTakeFirst();
-      const samplingStandard = (settings?.samplingStandard ??
-        "ANSI_Z1_4") as SamplingStandard;
-
-      // The document's default sampling rule is both the lot-level plan base
-      // and the fallback for features without their own rule. No document (or
-      // no default set) means 100% inspection.
-      const documentDefault = operation.inspectionDocumentId
-        ? await trx
-            .selectFrom("inspectionDocument")
-            .select([
-              "samplingPlanType",
-              "samplingSampleSize",
-              "samplingPercentage",
-              "samplingAql",
-              "samplingInspectionLevel",
-              "samplingSeverity"
-            ])
-            .where("id", "=", operation.inspectionDocumentId)
-            .where("companyId", "=", args.companyId)
-            .executeTakeFirst()
-        : undefined;
-      const defaultPlan = toSamplingPlanInput(documentDefault);
-
-      const plan: SamplingPlanInput = defaultPlan ?? {
-        type: "All",
-        sampleSize: null,
-        percentage: null,
-        aql: null,
-        inspectionLevel: "II",
-        severity: "Normal"
-      };
-
       const lotSize = Math.max(
         1,
         Math.floor(Number(operation.operationQuantity ?? job.quantity ?? 1))
       );
 
-      const snapshot = resolveSamplingPlan(plan, lotSize, samplingStandard);
-
-      const documentFeatures = operation.inspectionDocumentId
-        ? await trx
-            .selectFrom("inspectionFeature")
-            .select([
-              "id",
-              "samplingPlanType",
-              "samplingSampleSize",
-              "samplingPercentage",
-              "samplingAql",
-              "samplingInspectionLevel",
-              "samplingSeverity"
-            ])
-            .where("inspectionDocumentId", "=", operation.inspectionDocumentId)
-            .where("companyId", "=", args.companyId)
-            .execute()
-        : [];
-      const featurePlans = documentFeatures.map((feature) => ({
-        inspectionFeatureId: feature.id,
-        resolved: resolveFeatureSamplingPlan(
-          feature,
-          defaultPlan,
+      const { samplingStandard, plan, snapshot, featurePlans } =
+        await resolveLotSamplingPlans(trx, {
+          inspectionDocumentId: operation.inspectionDocumentId,
           lotSize,
-          samplingStandard
-        )
-      }));
+          companyId: args.companyId
+        });
 
       const readableInspectionId = await getNextSequence(
         trx,
@@ -1425,23 +1082,11 @@ export async function getOrCreateJobOperationInspection(
         .returning(["id"])
         .executeTakeFirstOrThrow();
 
-      if (featurePlans.length > 0) {
-        await trx
-          .insertInto("inspectionSamplingPlan")
-          .values(
-            featurePlans.map((p) => ({
-              inspectionId: inserted.id,
-              inspectionFeatureId: p.inspectionFeatureId,
-              sampleSize: p.resolved.sampleSize,
-              acceptanceNumber: p.resolved.acceptance,
-              rejectionNumber: p.resolved.rejection,
-              codeLetter: p.resolved.codeLetter,
-              companyId: args.companyId,
-              createdBy: args.userId
-            }))
-          )
-          .execute();
-      }
+      await insertLotSamplingPlans(trx, featurePlans, {
+        inspectionId: inserted.id,
+        companyId: args.companyId,
+        userId: args.userId
+      });
 
       return { id: inserted.id, created: true };
     });

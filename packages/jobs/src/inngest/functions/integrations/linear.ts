@@ -3,124 +3,67 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { isActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
-  getCompanyEmployees,
-  getLinearClient,
-  linkActionToLinearIssue
-} from "@carbon/ee/linear.server";
+  applyIssue,
+  ensureIssueSyncSubscriptions,
+  unlinkDeletedIssue
+} from "@carbon/ee/issue-sync.server";
 import { syncIssueFromLinearSchema } from "../../../schemas.js";
 import { inngest } from "../../client";
+import { ISSUE_SYNC_CONCURRENCY } from "../events/issue-sync";
 
 export { syncIssueFromLinearSchema };
 
+/**
+ * Inbound Linear sync. The webhook carries only the issue id; the engine
+ * re-reads the issue, applies the fields that changed since the last sync,
+ * and refuses the ones a lock protects.
+ */
 export const linearSyncFunction = inngest.createFunction(
-  { id: "sync-issue-from-linear", retries: 1 },
+  {
+    id: "sync-issue-from-linear",
+    retries: 1,
+    concurrency: ISSUE_SYNC_CONCURRENCY
+  },
   { event: "carbon/linear-sync" },
-  async ({ event, step, logger }) => {
-    const linear = getLinearClient();
+  async ({ event, logger }) => {
     const payload = syncIssueFromLinearSchema.parse(event.data);
+    const { companyId } = payload;
+    const issueId = payload.event.data.id;
 
     logger.info("Linear webhook received", { payload });
 
     const carbon = getCarbonServiceRole();
 
-    const [company, integration] = await Promise.all([
-      carbon.from("company").select("*").eq("id", payload.companyId).single(),
-      carbon
-        .from("companyIntegration")
-        .select("*")
-        .eq("companyId", payload.companyId)
-        .eq("id", "linear")
-        .single()
-    ]);
-
-    if (company.error || !company.data) {
-      throw new Error("Failed to fetch company from Carbon");
-    }
-
-    if (integration.error || !integration.data) {
-      throw new Error("Failed to fetch integration from Carbon");
-    }
-
-    // Look up the action task via the mapping table
-    const mapping = await carbon
-      .from("externalIntegrationMapping")
-      .select("entityId, entityType")
-      .eq("integration", "linear")
-      .eq("externalId", payload.event.data.id)
-      .eq("companyId", payload.companyId)
+    const integration = await carbon
+      .from("companyIntegration")
+      .select("active")
+      .eq("companyId", companyId)
+      .eq("id", "linear")
       .maybeSingle();
 
-    const action = mapping.data
-      ? { data: { id: mapping.data.entityId } }
-      : { data: null };
-
-    if (!action.data) {
-      return {
-        success: false,
-        message: `No linked action found for Linear issue ID ${payload.event.data.id}`
-      };
+    if (!integration.data?.active) {
+      return { success: false, message: "Linear integration is not active" };
     }
 
-    const mappedEntityType = mapping.data!.entityType;
-
-    if (!isActionTaskEntityType(mappedEntityType)) {
-      logger.info("Ignoring Linear mapping for non-action-task entity", {
-        entityType: mappedEntityType,
-        externalId: payload.event.data.id
+    // A deleted issue breaks the link; the Carbon record stays.
+    if (payload.event.action === "remove") {
+      await unlinkDeletedIssue(carbon, {
+        companyId,
+        tracker: "linear",
+        issueId
       });
-      return {
-        success: false,
-        message: `Mapping for Linear issue ID ${payload.event.data.id} is not an action task (entityType: ${mappedEntityType})`
-      };
+      return { success: true, message: "Unlinked: the issue was deleted" };
     }
 
-    const fullIssue = await linear.getIssueById(
-      payload.companyId,
-      payload.event.data.id
-    );
+    await ensureIssueSyncSubscriptions(carbon, companyId, "linear");
 
-    if (!fullIssue) {
-      return {
-        success: false,
-        message: `Failed to fetch issue ${payload.event.data.id} from Linear`
-      };
-    }
-
-    let assignee: string | null = null;
-
-    if (payload.event.data.assigneeId) {
-      const [linearUser] = await linear.getUsers(payload.companyId, {
-        id: payload.event.data.assigneeId
-      });
-
-      const employees = linearUser?.email
-        ? await getCompanyEmployees(carbon, payload.companyId, [
-            linearUser.email
-          ])
-        : [];
-      assignee = employees.length > 0 ? employees[0]!.userId : null;
-    }
-
-    const updated = await linkActionToLinearIssue(carbon, payload.companyId, {
-      actionId: action.data.id,
-      entityType: mappedEntityType,
-      issue: fullIssue,
-      assignee,
-      syncNotes: true
+    const result = await applyIssue(carbon, {
+      companyId,
+      tracker: "linear",
+      issueId
     });
 
-    if (!updated || updated.error) {
-      return {
-        success: false,
-        message: `Failed to update action for Linear issue ID ${payload.event.data.id}`
-      };
-    }
-
-    return {
-      success: true,
-      message: `Synced Linear issue ${payload.event.data.id}`
-    };
+    return { success: !("failed" in result), issueId, ...result };
   }
 );

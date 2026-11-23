@@ -8,10 +8,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { balloonRegionAnalysisRequestSchema } from "~/modules/quality/quality.models";
 import {
+  getInspectionDocument,
   INSPECTION_BALLOON_ANALYZE_MAX_IMAGE_BYTES,
   runInspectionBalloonRegionVisionAnalysis
-} from "~/modules/quality/quality.server";
-import { getInspectionDocument } from "~/modules/quality/quality.service";
+} from "~/modules/quality/quality.service";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;

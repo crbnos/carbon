@@ -9,21 +9,26 @@ import { flash } from "@carbon/auth/session.server";
 import {
   getOrCreateJobOperationInspection,
   getRecentInspectionGauges,
+  prefillInspectionSamples,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
-  getJobByOperationId,
+  floorRefusal,
+  getAbilityShortfall,
+  getJob,
   getJobMakeMethod,
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
-  getTrackedEntitiesByMakeMethodId
+  getReworkCorrectionName,
+  getTrackedEntitiesForOperation
 } from "~/services/operations.service";
 import {
   getInspection,
@@ -36,6 +41,7 @@ import {
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
@@ -59,6 +65,15 @@ export const handle: Handle = {
 
 const logger = getLogger("mes", "inspection");
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    [
+      data?.inspection?.inspectionId ?? data?.operation?.jobReadableId,
+      data?.operation?.description
+    ],
+    "Inspection"
+  );
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
 
@@ -72,12 +87,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // this company before any of them runs.
   const scopedOperation = await serviceRole
     .from("jobOperation")
-    .select("id")
+    .select("id, jobId, jobOperationBatchId")
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
   if (scopedOperation.error || !scopedOperation.data) {
-    logger.warn("Job operation not found for company", {
+    logger.warning("Job operation not found for company", {
       companyId,
       operationId,
       error: scopedOperation.error
@@ -92,7 +107,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [job, operation] = await Promise.all([
-    getJobByOperationId(serviceRole, operationId),
+    getJob(serviceRole, scopedOperation.data.jobId),
     getJobOperationById(serviceRole, operationId)
   ]);
 
@@ -106,6 +121,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.operations,
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
+
+  const notOnFloor = await floorRefusal(serviceRole, {
+    jobStatus: job.data?.status,
+    jobOperationBatchId: scopedOperation.data.jobOperationBatchId,
+    companyId
+  });
+  if (notOnFloor) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, notOnFloor))
+    );
+  }
 
   const op = operation.data?.[0];
   if (!op) throw redirect(path.to.operations);
@@ -132,6 +159,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // An "inspect all" serial lot gets every unit as a sample up front, so the
+  // operator records results without scanning each one.
+  // A failure only means the units are scanned in instead: log it and go on.
+  const prefill = await prefillInspectionSamples(getDatabaseClient(), {
+    inspectionId: lot.data.id,
+    companyId,
+    userId
+  });
+  if (prefill.error) {
+    logger.error("Failed to prefill inspection samples", {
+      companyId,
+      inspectionId: lot.data.id,
+      error: prefill.error
+    });
+  }
+
   const inspectionResult = await getInspection(serviceRole, lot.data.id);
   if (inspectionResult.error || !inspectionResult.data) {
     throw redirect(
@@ -146,12 +189,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The lot references its document live: features added to the document
   // after lot creation get their per-lot plan rows resolved lazily.
+  // A failure leaves the new features without a column: log it and go on.
   if (inspection.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(
+    const reconciled = await reconcileInspectionSamplingPlans(
       getDatabaseClient(),
       lot.data.id,
       companyId
     );
+    if (reconciled.error) {
+      logger.error("Failed to reconcile inspection sampling plans", {
+        companyId,
+        inspectionId: lot.data.id,
+        error: reconciled.error
+      });
+    }
   }
 
   const [
@@ -165,16 +216,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     linkedQuantities,
     document,
     gauges,
-    recentGauges
+    recentGauges,
+    correctionName
   ] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      op.jobMakeMethodId,
+    getTrackedEntitiesForOperation(serviceRole, {
+      operationId,
+      jobMakeMethodId: op.jobMakeMethodId,
       companyId
-    ),
+    }),
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
@@ -194,7 +246,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getRecentInspectionGauges(getDatabaseClient(), {
       inspectionId: lot.data.id,
       companyId
-    })
+    }),
+    getReworkCorrectionName(serviceRole, op.reworkId, companyId)
   ]);
 
   const linkedProductionRows = (linkedQuantities.data ?? []).filter(
@@ -221,9 +274,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       a.id.localeCompare(b.id)
   );
 
+  const abilityWarning = await getAbilityShortfall(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
+    correctionName,
     inspection,
     samples,
     features: features.data ?? [],
@@ -246,7 +307,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
-    pdfUrl: document?.data?.pdfUrl ?? null
+    parameters: document?.data?.parameters ?? [],
+    workInstruction: (document?.data?.workInstruction ??
+      null) as JSONContent | null,
+    pdfUrl: document?.data?.pdfUrl ?? null,
+    model: document?.data?.model ?? null
   };
 }
 

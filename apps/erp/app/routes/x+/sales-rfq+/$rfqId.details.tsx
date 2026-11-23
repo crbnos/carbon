@@ -15,13 +15,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import {
-  getSalesRFQ,
   isSalesRfqLocked,
-  salesRfqValidator,
-  upsertSalesRFQ
-} from "~/modules/sales";
+  salesRfqValidator
+} from "~/modules/sales/sales.models";
+import { getSalesRFQ, upsertSalesRFQ } from "~/modules/sales/sales.service";
+import type {
+  Opportunity,
+  SalesRFQ,
+  SalesRFQLine
+} from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -121,7 +124,7 @@ export default function SalesRFQDetailsRoute() {
   if (!rfqData) throw new Error("Could not find rfq data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <OpportunityState
         key={`state-${rfqId}`}
         opportunity={rfqData?.opportunity!}

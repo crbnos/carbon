@@ -3,21 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime, isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
-  ARAPWorkbench,
+  getAgingParams,
   getArAging,
   getArOpenByCustomer,
   getArTieOut
-} from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/invoicing/invoicing.service";
+import { ARAPWorkbench } from "~/modules/invoicing/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -28,44 +25,25 @@ export const handle: Handle = {
   module: "invoicing"
 };
 
-function parseBuckets(raw: string | null): [number, number, number] {
-  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
-  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
-    return [parts[0], parts[1], parts[2]];
-  }
-  return [30, 60, 90];
-}
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const url = new URL(request.url);
-  const asOfDate =
-    url.searchParams.get("asOfDate") ??
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-  const agingMethod: "dueDate" | "documentDate" =
-    url.searchParams.get("agingMethod") === "documentDate"
-      ? "documentDate"
-      : "dueDate";
-  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
+  const { asOfDate, agingMethod, bucketDays } = await getAgingParams(
+    client,
+    companyId,
+    request
+  );
 
-  // GL tie-outs only mean something when journals are being posted — skip
-  // them entirely when accounting is disabled (result: null hides the
+  // GL tie-outs only mean something once journals count — skip them
+  // entirely before the accounting cutover (result: null hides the
   // tie-out panel and the adjusting-entry form in ARAPWorkbench).
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [tieOut, aging, open] = await Promise.all([
-    accountingEnabled
+    accountingSetUp
       ? getArTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getArAging(client, companyId, asOfDate, { agingMethod, bucketDays }),

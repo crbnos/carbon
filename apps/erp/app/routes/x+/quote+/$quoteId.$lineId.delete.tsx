@@ -8,7 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteQuoteLine, getQuote, isQuoteLocked } from "~/modules/sales";
+import { isQuoteLocked } from "~/modules/sales/sales.models";
+import { deleteQuoteLine, getQuote } from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

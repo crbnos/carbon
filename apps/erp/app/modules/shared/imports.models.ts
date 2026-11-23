@@ -218,6 +218,58 @@ const locationFetcher = async (
     .order("name");
 };
 
+const employeeFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  return client
+    .from("employees")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+};
+
+const dimensionFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  const company = await client
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error) return { data: null, error: company.error };
+  if (!company.data.companyGroupId) return { data: [], error: null };
+  return client
+    .from("dimension")
+    .select("id, name")
+    .eq("companyGroupId", company.data.companyGroupId)
+    .eq("active", true)
+    .order("name");
+};
+
+export const journalEntryImportStatuses = ["Draft", "Posted"] as const;
+
+// Without values a dimension slot tags nothing, so the wizard asks for the
+// dimension only when its Value column is mapped.
+const journalEntryDimensionField = (slot: number) =>
+  ({
+    label: `Dimension ${slot}`,
+    required: false,
+    type: "enum",
+    enumData: {
+      description: `The dimension that Dimension ${slot} Value tags. Leave the column unmapped and choose the dimension as the Default to tag every line`,
+      fetcher: dimensionFetcher,
+      askWhenMapped: `dimension${slot}Value`
+    }
+  }) as const;
+const journalEntryDimensionValueField = (slot: number) =>
+  ({
+    label: `Dimension ${slot} Value`,
+    required: false,
+    type: "string"
+  }) as const;
+
 // Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
 // Additive only: every row posts one Positive Adjmt. for an existing item.
 const stockImportItemFields = {
@@ -334,9 +386,9 @@ const methodBomFields = {
     required: false,
     type: "enum",
     enumData: {
-      description: "The unit of measure of the component (default EA)",
-      fetcher: unitOfMeasureFetcher,
-      default: "EA"
+      description:
+        "The unit of measure of the component. Blank takes the component's own unit",
+      fetcher: unitOfMeasureFetcher
     }
   },
   kit: {
@@ -357,9 +409,8 @@ const methodBopFields = {
     type: "enum",
     enumData: {
       description:
-        "The operation's classification: Process, Assembly, and Inspection run in-house; Outside Processing is subcontracted",
-      options: operationTypes,
-      default: "Process"
+        "The operation's classification: Process and Assembly run in-house; Outside Processing is subcontracted. Blank takes the process's type. Inspection operations need an Inspection Plan, so add them in the app",
+      options: operationTypes
     }
   },
   operationOrder: {
@@ -859,6 +910,25 @@ export const fieldMappings = {
         }
       }
     },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The customer's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
+            .order("name");
+        }
+      }
+    },
     fax: {
       label: "Fax",
       required: false,
@@ -895,18 +965,18 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1000,6 +1070,25 @@ export const fieldMappings = {
         }
       }
     },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The supplier's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
+            .order("name");
+        }
+      }
+    },
     phone: {
       label: "Phone",
       required: false,
@@ -1042,18 +1131,18 @@ export const fieldMappings = {
     },
     firstName: {
       label: "First Name",
-      required: true,
+      required: false,
       type: "string"
     },
     lastName: {
       label: "Last Name",
-      required: true,
+      required: false,
       type: "string"
     },
     email: {
       label: "Email",
       type: "string",
-      required: true
+      required: false
     },
     title: {
       label: "Title",
@@ -1387,19 +1476,10 @@ export const fieldMappings = {
       required: true,
       type: "string"
     },
-    readableId: {
-      label: "Service ID",
-      required: true,
-      type: "string"
-    },
-    revision: {
-      label: "Revision",
-      required: true,
-      type: "string",
-      default: "0"
-    },
+    // No Service ID or Revision column: a service is identified by its name,
+    // which the edge function uses as its readable id (as `upsertService` does).
     name: {
-      label: "Description",
+      label: "Name",
       required: true,
       type: "string"
     },
@@ -1425,16 +1505,7 @@ export const fieldMappings = {
     // for the same reason; the server function derives it identically. Offering
     // the column would admit both an invalid method and one that contradicts
     // the replenishment system on the same row.
-    unitOfMeasureCode: {
-      label: "Unit of Measure",
-      required: false,
-      type: "enum",
-      enumData: {
-        description: "The unit of measure of the service",
-        fetcher: unitOfMeasureFetcher,
-        default: "EA"
-      }
-    },
+    // No Unit of Measure column: a service is always counted in Each (EA).
     ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
@@ -1777,6 +1848,11 @@ export const fieldMappings = {
       label: "Active",
       required: false,
       type: "boolean"
+    },
+    nonNettable: {
+      label: "Non-nettable",
+      required: false,
+      type: "boolean"
     }
   },
   unitOfMeasure: {
@@ -1808,6 +1884,11 @@ export const fieldMappings = {
       label: "Name",
       required: true,
       type: "string"
+    },
+    nonNettable: {
+      label: "Non-nettable",
+      required: false,
+      type: "boolean"
     }
   },
   scrapReason: {
@@ -1828,6 +1909,91 @@ export const fieldMappings = {
       required: false,
       type: "string"
     }
+  },
+  payrollPeriodTotal: {
+    employeeId: {
+      label: "Employee",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The employee the pay belongs to — match by name",
+        fetcher: employeeFetcher
+      }
+    },
+    periodStart: {
+      label: "Period Start",
+      required: true,
+      type: "string"
+    },
+    periodEnd: {
+      label: "Period End",
+      required: true,
+      type: "string"
+    },
+    grossWages: {
+      label: "Gross Wages",
+      required: true,
+      type: "number"
+    },
+    hoursPaid: {
+      label: "Hours Paid",
+      required: true,
+      type: "number"
+    }
+  },
+  journalEntry: {
+    journalReference: {
+      label: "Journal Reference",
+      required: true,
+      type: "string"
+    },
+    postingDate: {
+      label: "Posting Date",
+      required: true,
+      type: "string"
+    },
+    accountNumber: {
+      label: "Account Number",
+      required: true,
+      type: "string"
+    },
+    debit: {
+      label: "Debit",
+      required: false,
+      type: "number"
+    },
+    credit: {
+      label: "Credit",
+      required: false,
+      type: "number"
+    },
+    description: {
+      label: "Line Description",
+      required: false,
+      type: "string"
+    },
+    journalDescription: {
+      label: "Journal Description",
+      required: false,
+      type: "string"
+    },
+    status: {
+      label: "Status",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "Draft keeps each journal for review, as a new manual journal entry starts; Posted posts it",
+        options: journalEntryImportStatuses,
+        default: "Draft"
+      }
+    },
+    dimension1: journalEntryDimensionField(1),
+    dimension1Value: journalEntryDimensionValueField(1),
+    dimension2: journalEntryDimensionField(2),
+    dimension2Value: journalEntryDimensionValueField(2),
+    dimension3: journalEntryDimensionField(3),
+    dimension3Value: journalEntryDimensionValueField(3)
   },
   fixedAsset: {
     name: {
@@ -2080,6 +2246,8 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   storageType: "parts",
   scrapReason: "production",
   department: "people",
+  payrollPeriodTotal: "people",
+  journalEntry: "accounting",
   fixedAsset: "accounting",
   materialSubstance: "parts",
   materialForm: "parts",
@@ -2098,9 +2266,15 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
 // Imports that post stock also require `create` on their module: the
 // single-record inventory adjustment route requires `create: inventory`, and
 // its Save button requires `update: inventory`, so an import of the same rows
-// requires both.
+// requires both. A journal entry import needs what a manual entry does:
+// `create: accounting` to create it, `update: accounting` to save and post it.
 export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
-  new Set(["inventoryQuantity", "batchQuantity", "serialQuantity"]);
+  new Set([
+    "inventoryQuantity",
+    "batchQuantity",
+    "serialQuantity",
+    "journalEntry"
+  ]);
 
 // Quote import validation is intentionally permissive at the mapping layer (every
 // cell an optional string); the app-side importer (`sales.import.server.ts`) does
@@ -2265,6 +2439,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the customer's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the customer's tax code"),
     phone: z.string().optional().describe("The phone number of the customer"),
     fax: z.string().optional().describe("The fax number of the customer"),
     taxId: z
@@ -2304,12 +2482,15 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Company ID is required" })
       .describe("The id of the company the contact belongs to"),
-    firstName: z.string().describe("The first name of the customer contact"),
-    lastName: z.string().describe("The last name of the customer contact"),
-    email: z
+    firstName: z
       .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the customer contact"),
+      .describe("The first name of the customer contact")
+      .optional(),
+    lastName: z
+      .string()
+      .describe("The last name of the customer contact")
+      .optional(),
+    email: z.string().optional().describe("The email of the customer contact"),
     title: z.string().optional().describe("The title of the customer contact"),
     mobilePhone: z
       .string()
@@ -2351,6 +2532,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the supplier's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the supplier's tax code"),
     phone: z.string().optional().describe("The phone number of the supplier"),
     fax: z.string().optional().describe("The fax number of the supplier"),
     taxId: z
@@ -2401,10 +2586,7 @@ export const importSchemas: Record<
       .string()
       .describe("The last name of the supplier contact")
       .optional(),
-    email: z
-      .string()
-      .min(1, { message: "Email is required" })
-      .describe("The email of the supplier contact"),
+    email: z.string().optional().describe("The email of the supplier contact"),
     title: z.string().optional().describe("The title of the supplier contact"),
     mobilePhone: z
       .string()
@@ -2819,22 +3001,23 @@ export const importSchemas: Record<
     active: z
       .string()
       .optional()
-      .describe("Whether the storage unit is active (true/false)")
+      .describe("Whether the storage unit is active (true/false)"),
+    nonNettable: z
+      .string()
+      .optional()
+      .describe(
+        "Whether MRP and picking ignore the stock in the storage unit (true/false). Blank leaves an existing unit's setting unchanged."
+      )
   }),
   service: z.object({
     id: z
       .string()
       .min(1, { message: "ID is required" })
       .describe("The unique ID of the service"),
-    readableId: z
-      .string()
-      .min(1, { message: "Service ID is required" })
-      .describe("The service ID shown throughout the app"),
-    revision: z.string().optional().describe("The revision of the service"),
     name: z
       .string()
-      .min(1, { message: "Description is required" })
-      .describe("The description of the service"),
+      .min(1, { message: "Name is required" })
+      .describe("The name of the service, also used as its service ID"),
     active: z
       .string()
       .optional()
@@ -2845,10 +3028,6 @@ export const importSchemas: Record<
       .describe(
         "Whether the service is bought from a supplier or performed in-house"
       ),
-    unitOfMeasureCode: z
-      .string()
-      .optional()
-      .describe("The unit of measure code of the service"),
     supplierId: z
       .string()
       .optional()
@@ -2907,7 +3086,13 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)")
+      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)"),
+    nonNettable: z
+      .string()
+      .optional()
+      .describe(
+        "Whether every storage unit of this type is non-nettable (true/false)"
+      )
   }),
   scrapReason: z.object({
     name: z
@@ -2924,6 +3109,88 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The name of the parent department, if any")
+  }),
+  payrollPeriodTotal: z.object({
+    employeeId: z
+      .string()
+      .min(1, { message: "Employee is required" })
+      .describe("The employee the pay belongs to"),
+    periodStart: z
+      .string()
+      .min(1, { message: "Period Start is required" })
+      .describe("The first day of the pay period as YYYY-MM-DD"),
+    periodEnd: z
+      .string()
+      .min(1, { message: "Period End is required" })
+      .describe("The last day of the pay period as YYYY-MM-DD"),
+    grossWages: z
+      .string()
+      .min(1, { message: "Gross Wages is required" })
+      .describe("The gross wages paid for the period — 0 or more"),
+    hoursPaid: z
+      .string()
+      .min(1, { message: "Hours Paid is required" })
+      .describe("The hours paid for the period — 0 or more")
+  }),
+  journalEntry: z.object({
+    journalReference: z
+      .string()
+      .min(1, { message: "Journal Reference is required" })
+      .describe(
+        "The journal's number or reference in the source system; rows that share it are one journal entry"
+      ),
+    postingDate: z
+      .string()
+      .min(1, { message: "Posting Date is required" })
+      .describe("The journal's posting date as YYYY-MM-DD"),
+    accountNumber: z
+      .string()
+      .min(1, { message: "Account Number is required" })
+      .describe("The number of the account in the chart of accounts"),
+    debit: z
+      .string()
+      .optional()
+      .describe("The line's debit amount; a line has a debit or a credit"),
+    credit: z
+      .string()
+      .optional()
+      .describe("The line's credit amount; a line has a debit or a credit"),
+    description: z
+      .string()
+      .optional()
+      .describe("The line's description or memo"),
+    journalDescription: z
+      .string()
+      .optional()
+      .describe("The description of the whole journal entry"),
+    status: z
+      .string()
+      .optional()
+      .describe("Draft or Posted: what the journal entry is imported as"),
+    dimension1: z
+      .string()
+      .optional()
+      .describe("A dimension the line carries, such as a class or region"),
+    dimension1Value: z
+      .string()
+      .optional()
+      .describe("The line's value of Dimension 1, by name"),
+    dimension2: z
+      .string()
+      .optional()
+      .describe("A dimension the line carries, such as a class or region"),
+    dimension2Value: z
+      .string()
+      .optional()
+      .describe("The line's value of Dimension 2, by name"),
+    dimension3: z
+      .string()
+      .optional()
+      .describe("A dimension the line carries, such as a class or region"),
+    dimension3Value: z
+      .string()
+      .optional()
+      .describe("The line's value of Dimension 3, by name")
   }),
   fixedAsset: z.object({
     name: z

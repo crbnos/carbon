@@ -16,23 +16,27 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import {
+  isPurchaseInvoiceLocked,
+  purchaseInvoiceValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
+  getInvoiceSettlementsForInvoice,
+  getPurchaseInvoice,
+  updatePurchaseInvoice
+} from "~/modules/invoicing/invoicing.service";
 import type {
   PurchaseInvoice,
   PurchaseInvoiceDelivery,
   PurchaseInvoiceLine
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/types";
 import {
-  getInvoiceSettlementsForInvoice,
-  getPurchaseInvoice,
   InvoicePaymentsPanel,
-  isPurchaseInvoiceLocked,
-  PurchaseInvoiceSummary,
-  purchaseInvoiceValidator,
-  updatePurchaseInvoice
-} from "~/modules/invoicing";
+  PurchaseInvoiceSummary
+} from "~/modules/invoicing/ui";
 import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
 import type { PurchaseInvoiceDeliveryFormRef } from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm";
-import type { SupplierInteraction } from "~/modules/purchasing";
+import type { SupplierInteraction } from "~/modules/purchasing/types";
 import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes

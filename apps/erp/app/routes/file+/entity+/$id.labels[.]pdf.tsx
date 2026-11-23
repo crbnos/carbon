@@ -8,11 +8,12 @@ import { getLogger } from "@carbon/logger";
 import { labelSizes, redirect } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
 import {
+  getCompany,
   getCompanyLogoForLabel,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getEntityLabelData } from "./labels.server";
 
@@ -26,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const company = await getCompany(client, companyId);
   if (company.error) {
-    logger.error(company.error);
+    logger.error("Failed to load the company", { error: company.error });
     throw new Error("Failed to load company");
   }
 

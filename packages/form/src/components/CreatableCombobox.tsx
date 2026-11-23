@@ -17,7 +17,9 @@ import { forwardRef, useEffect } from "react";
 
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type CreatableComboboxProps = Omit<
   CreatableComboboxBaseProps,
@@ -72,21 +74,25 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       formState.isReadOnly || formState.isDisabled || props.isReadOnly;
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+    const inlineField = useInlineField({
+      inline: !!props.inline,
+      label,
+      isEmpty: !value,
+      isReadOnly
+    });
 
     useEffect(() => {
       if (props.value !== null && props.value !== undefined)
         setValue(props.value);
     }, [props.value, setValue]);
 
-    useEffect(() => {
-      if (
-        autoSelectSingleOption &&
-        props.options.length === 1 &&
-        !value // Only auto-select if no value is already set
-      ) {
-        setValue(props.options[0]!.value);
-      }
-    }, [autoSelectSingleOption, props.options, setValue, value]);
+    // No onChange: the job routing editor reloads rates on change, which would overwrite a saved operation's.
+    useAutoSelectSingleOption({
+      enabled: autoSelectSingleOption,
+      options: props.options,
+      value,
+      setValue
+    });
 
     const onChange = (value: string) => {
       if (value) {
@@ -98,7 +104,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
 
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
-        {label && (
+        {label && inlineField.showLabel && (
           <FormLabel
             htmlFor={name}
             isConfigured={isConfigured}
@@ -125,6 +131,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           isReadOnly={isReadOnly}
           label={label}
           emptyMessage={emptyMessage}
+          inlinePlaceholder={props.inlinePlaceholder ?? inlineField.placeholder}
           className="w-full"
           onChange={(newValue) => {
             flushSync(() => {

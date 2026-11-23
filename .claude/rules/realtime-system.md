@@ -7,6 +7,7 @@ paths:
   - "packages/database/src/event-system/functions/log_*.sql"
   - "apps/*/app/components/RealtimeDataProvider.tsx"
   - "apps/*/app/stores/**"
+  - "apps/erp/app/components/Table/useInfiniteRows.ts"
 ---
 
 # Realtime: broadcast topics, route declarations, live lists
@@ -64,8 +65,8 @@ a database without Supabase Realtime still accepts writes.
 | `broadcast_user_changes` | `user:<userId>:<table>` | notifications |
 
 - An UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` sends
-  nothing (the same list `dispatch_event_batch` ignores; `event-dispatch.test.ts`
-  keeps the copies equal).
+  nothing (the same list `dispatch_event_batch` ignores; the `event-ignored-columns`
+  check keeps the copies equal).
 - `itemSupersession` has no `id`: its message carries the `itemId`.
   `implementationHub` has no `companyId`: its `id` is the company.
 - Which tables broadcast is declared in `event-system/attachments.ts`, never in
@@ -98,15 +99,27 @@ loader entries and revalidates the page. A burst is one reload; a route and a
 component following the same table reload once; a reload waits while a fetcher
 is submitting or a navigation is in flight, and runs when both are done
 (`useRevalidator` from `@carbon/query`, the only one app code may import). During
-an action React Router drops the fetcher's redirect; during the navigation that
-follows a save, a revalidation restarts it WITHOUT the submission, and every
-layout whose `shouldRevalidate` skips a plain navigation then keeps its data
-from before the save. The save's own broadcast arrives in exactly that window.
+an action React Router drops the fetcher's redirect, and a revalidation during
+the navigation that follows a save restarts that navigation.
 
 - Update the list when the loader starts reading a new table. Nothing checks
   that a list is COMPLETE, only that each name can broadcast.
 - A table missing from `attachments.ts`: add `broadcast_table_changes` to its
   entry, `pnpm db:migrate`, then `authz migration <name>`.
+
+**Infinite-scroll lists.** A list loader returns page 1 only (100 rows). The
+pages after it come from `useInfiniteRows`
+(`apps/erp/app/components/Table/useInfiniteRows.ts`). When a revalidation gives
+the same list (the same reset key, see `table-infinite-scroll.md`) a new page 1, the hook fetches the loaded pages again, in
+order and with fresh cursors. Then it swaps them in at once, so edits, new rows
+and deleted rows show in place and the scroll position stays. It keeps at most
+20 pages (`MAX_REFRESH_PAGES`, 2,000 rows), and the cursor continues after the
+last one. Revalidations that arrive during a refresh wait for one more refresh,
+not one each. A `loadMore` during a refresh waits and runs when it ends. So a
+list page needs only its table name in `handle.realtime`.
+Do not add `useRealtime(table, "id=in.(…)")` with the loaded ids to a list
+table. The plain table name already follows every row of the company, and an
+id list names page 1 only.
 
 | For | Use |
 |---|---|
@@ -177,6 +190,12 @@ company) is the only reader, and the backup engine skips the table.
   token every call resets, until the hourly `util.purge_table_changes()` writes
   a new one. A writer that runs with triggers off (company restore) inserts a
   null-`rowId` row per `CHANGE_LOGGED_TABLES` entry itself.
+- **A writer with triggers off must also broadcast.** The log only answers a
+  client that asks, and an open tab asks when a broadcast tells it to (or once an
+  hour). `wipeAndLoad` (backup restore, template revert) therefore sends a
+  null-`ids` message on every `REALTIME_TABLES` topic of the company, in its
+  transaction. Without it a tab kept a reverted template's parts in its pickers,
+  and creating a job with one of them returned 404.
 - **`table_changes_since` must stay `STABLE`**: the read of the log and
   `pg_current_snapshot()` then share one snapshot. As `VOLATILE`, a change
   committed between the two is skipped for good.

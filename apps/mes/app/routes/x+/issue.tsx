@@ -2,21 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { issueMaterialToOperation } from "~/services/issue.server";
 import { issueValidator } from "~/services/models";
-import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("mes", "issue");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -24,101 +15,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(issueValidator).validate(formData);
-
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const {
-    jobOperationId,
-    materialId,
-    jobOperationStepId,
-    itemId,
-    quantity,
-    adjustmentType
-  } = validation.data;
-
-  const serviceRole = await getCarbonServiceRole();
-  const acknowledged = formData.get("acknowledged") === "true";
-
-  // Resolve workCenter context off the operation so workCenter-scoped rules
-  // can evaluate against this materialIssue.
-  // `workInstructionId` is in the runtime row but absent from the generated
-  // DB types (stale until next regen). Select * and let the manual cast
-  // below resolve the field; type only `workCenterId` directly off the row.
-  const { data: jobOpRow } = await serviceRole
-    .from("jobOperation")
-    .select("workCenterId")
-    .eq("id", jobOperationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (!jobOpRow) {
-    logger.warn("Job operation not found for company", {
-      companyId,
-      jobOperationId
-    });
-    throw redirect(
-      requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(null, "Job operation not found"))
-    );
-  }
-
-  if (jobOpRow.workCenterId) {
-    const ruleEval = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "workCenter",
-      surface: "materialIssue",
-      lines: [
-        {
-          lineId: jobOperationId,
-          itemId,
-          workCenterId: jobOpRow.workCenterId,
-          operation: {
-            id: jobOperationId,
-            itemId,
-            quantity,
-            workInstructionId:
-              (jobOpRow as { workInstructionId?: string | null })
-                .workInstructionId ?? null
-          },
-          quantity
-        }
-      ]
-    });
-    if (
-      ruleEval.violations.length > 0 &&
-      isBlocked(ruleEval.violations, acknowledged)
-    ) {
-      return {
-        error: null,
-        data: null,
-        violations: ruleEval.violations,
-        ruleNames: ruleEval.ruleNames
-      };
+  return issueMaterialToOperation(
+    { companyId, userId },
+    {
+      ...validation.data,
+      acknowledged: formData.get("acknowledged") === "true"
     }
-  }
-
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
-      id: jobOperationId,
-      type: "partToOperation",
-      itemId,
-      materialId,
-      jobOperationStepId,
-      quantity,
-      adjustmentType
-    });
-
-  if (issued.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issued.error, "Failed to issue material"))
-    );
-  }
-
-  throw redirect(requestReferrer(request) ?? path.to.operations);
+  );
 }

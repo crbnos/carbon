@@ -5,22 +5,25 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getSalesReturnOrder, getSalesReturnOrderLines } from "~/modules/sales";
+import {
+  getSalesReturnOrder,
+  getSalesReturnOrderLineServiceJobs,
+  getSalesReturnOrderLines,
+  getSalesReturnOrderRelatedItems
+} from "~/modules/sales/sales.service";
 import {
   SalesReturnOrderExplorer,
   SalesReturnOrderHeader,
   SalesReturnOrderProperties
 } from "~/modules/sales/ui/SalesReturnOrders";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -35,10 +38,8 @@ export const handle: Handle = {
   module: "sales"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.salesReturnOrder?.salesReturnOrderId, "Sales Return Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -67,9 +68,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.salesReturnOrders);
   }
 
+  // A Service or Warranty line shows its service job and offers its next
+  // step from the job's status.
+  const lineIds = (lines.data ?? []).map((line) => line.id);
+  const serviceJobs =
+    lineIds.length > 0
+      ? await getSalesReturnOrderLineServiceJobs(client, lineIds, companyId)
+      : { data: [] };
+
   return {
     salesReturnOrder: salesReturnOrder.data,
-    lines: lines.data ?? []
+    lines: (lines.data ?? []).map((line) => ({
+      ...line,
+      serviceJob: (serviceJobs.data ?? []).filter(
+        (job) => job.salesReturnOrderLineId === line.id
+      )
+    })),
+    relatedItems: getSalesReturnOrderRelatedItems(client, id, companyId)
   };
 }
 
@@ -89,7 +104,7 @@ export default function SalesReturnOrderRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

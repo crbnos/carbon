@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { supplierPaymentValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierPayment,
-  supplierPaymentValidator,
   updateSupplierPayment
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import SupplierPaymentForm from "~/modules/purchasing/ui/Supplier/SupplierPaymentForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

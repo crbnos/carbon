@@ -16,7 +16,6 @@ vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
 const log = vi.hoisted(() => ({
   debug: vi.fn(),
   info: vi.fn(),
-  warn: vi.fn(),
   warning: vi.fn(),
   error: vi.fn()
 }));
@@ -73,16 +72,18 @@ beforeEach(() => {
 });
 
 describe("Ramp webhook challenge authentication", () => {
-  it.each([
-    "missing",
-    "invalid"
-  ] as const)("rejects a body challenge with %s signature without callback or echo", async (signature) => {
-    const result = await run(request(JSON.stringify({ challenge }), signature));
-    expect(result).toMatchObject({ init: { status: 401 } });
-    expect(result).not.toHaveProperty("challenge");
-    expect(completeWebhookVerification).not.toHaveBeenCalled();
-    expect(trigger).not.toHaveBeenCalled();
-  });
+  it.each(["missing", "invalid"] as const)(
+    "rejects a body challenge with %s signature without callback or echo",
+    async (signature) => {
+      const result = await run(
+        request(JSON.stringify({ challenge }), signature)
+      );
+      expect(result).toMatchObject({ init: { status: 401 } });
+      expect(result).not.toHaveProperty("challenge");
+      expect(completeWebhookVerification).not.toHaveBeenCalled();
+      expect(trigger).not.toHaveBeenCalled();
+    }
+  );
 
   it("rejects a challenge when no webhook secret is configured", async () => {
     vi.mocked(getRampIntegration).mockResolvedValue({
@@ -142,9 +143,9 @@ describe("Ramp webhook rejection logging", () => {
     );
 
     expect(await run(delivery)).toMatchObject({ init: { status: 401 } });
-    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(log.warning).toHaveBeenCalledTimes(1);
 
-    const [, context] = log.warn.mock.calls[0] ?? [];
+    const [, context] = log.warning.mock.calls[0] ?? [];
     expect(context).toEqual({
       companyId: "company-1",
       reason: "no-signature-header"
@@ -156,7 +157,7 @@ describe("Ramp webhook rejection logging", () => {
     expect(await run(request("{}", "invalid"))).toMatchObject({
       init: { status: 401 }
     });
-    expect(log.warn).toHaveBeenCalledTimes(1);
-    expect(log.warn.mock.calls[0]?.[1]).toEqual({ companyId: "company-1" });
+    expect(log.warning).toHaveBeenCalledTimes(1);
+    expect(log.warning.mock.calls[0]?.[1]).toEqual({ companyId: "company-1" });
   });
 });

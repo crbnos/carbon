@@ -18,6 +18,9 @@ A line carries a **type** that sets what it sells: *Part*, *Service*, *Material*
   <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>
   <Field name="Unit price" type="number">Price per unit, net of discounts.</Field>
   <Field name="Method" type="enum">How the line is fulfilled: *Make to Order*, *Pull from Inventory*, or *Purchase to Order*.</Field>
+  <Field name="Tax Code" type="reference">The line's <Term>tax code</Term>, from the ship-to location or the customer ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)). Picking a code sets **"Tax Percent"** to its rate. An order made from a quote copies the quote line's code, and an invoice made from the order copies it again. Each takes the code's rate on its own date. The **"Recalculate taxes"** button beside the order's ship-to works out every line's code and rate again. It replaces codes you changed or cleared on lines; a typed percent stays only when no code applies.</Field>
+  <Field name="Requested Date" type="date">The date the customer asked for. A new line takes the order's requested date.</Field>
+  <Field name="Promised Date" type="date">The date you commit to deliver the line. The [delivery date check](#delivery-date-check) checks this date.</Field>
 </FieldTable>
 
 ## Status
@@ -39,6 +42,59 @@ The stored status reflects what's outstanding, and the order list shows a comput
 The order list can read **In Progress** even while the stored status is *To Ship and Invoice* — that's the display status reflecting a <Term id="make-to-order">make-to-order</Term> line whose jobs aren't finished yet. The stored status still drives the flow.
 </Callout>
 
+## Lines and search
+
+Each order with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the customer uses, the description and the quantity. Every row starts closed.
+
+The search box on **Sales → Sales Orders** also finds an order by a value on its lines: the part number or name, the customer's part number, or the line description. It also matches the order number, the customer, the customer's reference and the tracking number. Every word must match, and case, spaces and punctuation are ignored. While you search, each order with a matching line opens and shows the lines that matched.
+
+## Delivery date check
+
+The <Term>delivery date check</Term> warns you when a line's **Promised Date** can't be met and suggests the earliest date that can. You can still save the line. It checks Part, Material, Tool, and Consumable lines that have both an item and a promised date.
+
+<Steps>
+<Step>
+Open **Settings → Sales**, pick a level in **Check** on the **Delivery Date Check** card, and save. The default, **None**, checks nothing.
+</Step>
+<Step>
+An item can have its own level at each location. On the item's **Planning** tab, pick the location and set **Delivery Date Check** under **Planning and Sales**. Leave it empty to use the company level.
+</Step>
+</Steps>
+
+### What each level checks
+
+Each item has a total <Term>lead time</Term>: its own lead time plus the longest total lead time among the components of its active method. An item with no lead time counts as 7 days.
+
+A promised date on or after today plus the total lead time always passes, and a date before today always fails. The check never suggests a date later than today plus the total lead time.
+
+| Level | Pull from Inventory | Make to Order | Purchase to Order |
+|---|---|---|---|
+| **Lead Time** | Total lead time | Total lead time | The item's own lead time |
+| **Stock** | Free stock, then total lead time | Total lead time | The item's own lead time |
+| **Capacity** | Free stock, then the shop's schedule for the shortfall if you make the item | The shop's schedule | The item's own lead time |
+
+Free stock is counted week by week, with weeks starting on Sunday. It is the stock on hand plus open purchase orders and jobs, minus what other sales orders and jobs need. Stock that a later order needs never counts as free, so a new promise can't take it. When a week has enough free stock, the earliest date is the day that week's last supply arrives, or the start of the week if nothing arrives in it.
+
+The shop's schedule simulates a job for the line on the item's routing, placed after the jobs already in the queue. An item with no routing uses its total lead time instead.
+
+<Screenshot label="Sales order line form showing the This date cannot be met warning under Promised Date, with the Use date button" ratio="wide" />
+
+### Keeping a date that fails
+
+When a date fails, the line form shows **"This date cannot be met"**, one sentence on what blocks it (for example, "The lead time is 28 days."), and the earliest date. The **"Use"** button, labelled with that date, sets the promised date to it.
+
+If you save while the warning shows, you keep the date, and Carbon records who kept it and when. Saving later with a date that passes clears that record.
+
+Keeping a date also starts the <Term>business moment</Term> **"A user keeps a sales order date that can't be met"**, so a [workflow](/docs/reference/workflows) can notify someone. Saving the line again starts it again only if the promised date or the quantity changed.
+
+On the order, a calendar icon marks each line whose date fails. An amber icon, **"Date not confirmed"**, means nobody has kept the date yet. You see it after converting a quote: Carbon checks every new line and marks the ones that fail, and the conversion still goes through. A grey icon means someone saved the line with that date, and its tooltip names who.
+
+At the **Capacity** level, the shop's schedule runs in the background after you save, and the line shows a spinner until it finishes.
+
+<Callout type="note" title="The check reserves nothing">
+A line that passes holds no stock and no shop time. Later checks count it as demand: right away for the other lines on the same order, and for other orders once this order is confirmed. A Make to Order line that already has a Planned, Ready, In Progress, or Paused job isn't checked, because the job's schedule decides its date.
+</Callout>
+
 ## Related
 
 <Cards>
@@ -47,6 +103,9 @@ The order list can read **In Progress** even while the stored status is *To Ship
   </Card>
   <Card title="Jobs" href="/docs/reference/jobs">
     A make-to-order line becomes a job that builds the item.
+  </Card>
+  <Card title="Workflows" href="/docs/reference/workflows">
+    Notify someone when a user keeps a date that can't be met.
   </Card>
 </Cards>
 
@@ -64,4 +123,18 @@ The convert-lines-to-jobs action found no eligible lines — none of the selecte
 
 ### "Failed to insert job"
 The item has no active make method, or the order has no valid location. Check both values, then retry.
+### "Couldn't check the delivery date. You can still save."
+The line form could not get an answer: the request failed, or the caller lacks sales view permission. The save still runs its own check on the server; if that check fails too, the line saves without a result and the failure is logged.
+
+### No delivery date warning appears
+Check, in order: the level is **None** for the company (`companySettings.deliveryDateControl`) or for the item at the line's location (`itemPlanning.deliveryDateControl`, NULL = company level); the line type is not Part, Material, Tool, or Consumable; the line has no item or no promised date; the promised date is on or after today plus the total lead time (a Purchase to Order line uses the item's own lead time); a Make to Order line has a job at Planned, Ready, In Progress, or Paused.
+
+### A line keeps a spinner in the explorer
+`salesOrderLine.deliveryDateStatus = 'Pending'`: the Capacity check runs in the Inngest function `sales-order-delivery-date-check` (event `carbon/sales-order.delivery-date-check`, one order at a time). After its retries fail, its failure handler answers the line by lead time, so a line stays Pending only while the job has not run (for example, Inngest is down).
+
+### Mechanics
+- Result columns on `salesOrderLine`: `deliveryDateStatus` (`Met`, `Missed`, `Pending`; NULL = not checked), `deliveryDateConstraint` (`Lead Time`, `Stock`, `Capacity`), `earliestDeliveryDate`, `deliveryDateCheckedAt`, `deliveryDateOverriddenBy`, `deliveryDateOverriddenAt`. `Missed` with no `deliveryDateOverriddenBy` is "Date not confirmed".
+- The workflow moment is `sales.deliveryDateOverridden`, with the outputs `salesOrder` and `overriddenBy`. It names the order, not the line.
+- Free stock reads open purchase order lines, open jobs, open sales order lines of orders at To Ship or To Ship and Invoice, and open job materials, as MRP does. The quantity checked is the sale quantity minus the quantity sent.
+- The Capacity level uses the quote lead time engine's end-of-queue answer for the item's active make method.
 </AgentContext>

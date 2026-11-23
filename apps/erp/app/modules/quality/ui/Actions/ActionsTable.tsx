@@ -26,6 +26,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
@@ -40,10 +41,17 @@ type ActionsTableProps = {
   issueTypes: ListItem[];
   requiredActions: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ActionsTable = memo(
-  ({ data, issueTypes, requiredActions, count }: ActionsTableProps) => {
+  ({
+    data,
+    issueTypes,
+    requiredActions,
+    count,
+    infinite
+  }: ActionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -71,6 +79,7 @@ const ActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -79,6 +88,7 @@ const ActionsTable = memo(
           header: t`Action Type`,
           cell: ({ row }) => <Enumerable value={row.original.actionType} />,
           meta: {
+            mobile: "P2",
             icon: <LuFileText />,
             filter: {
               type: "static",
@@ -94,6 +104,7 @@ const ActionsTable = memo(
           header: t`Action Status`,
           cell: ({ row }) => <ActionStatus status={row.original.status} />,
           meta: {
+            mobile: "P2",
             icon: <LuCircleGauge />,
             filter: {
               type: "static",
@@ -111,6 +122,7 @@ const ActionsTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -167,6 +179,7 @@ const ActionsTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "dateRange"
             },
@@ -252,6 +265,7 @@ const ActionsTable = memo(
     return (
       <Table<QualityAction>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         renderContextMenu={renderContextMenu}

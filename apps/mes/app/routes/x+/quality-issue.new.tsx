@@ -9,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { createQualityIssue } from "~/services/quality.server";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -43,11 +44,27 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const work = trackedEntityId
+    ? await resolveWorkUnit({
+        client: serviceRole,
+        companyId,
+        operationId: jobOperationId,
+        requestedUnitId: trackedEntityId,
+        mode: "member"
+      })
+    : null;
+  if (work?.kind === "refuse") {
+    throw redirect(
+      requestReferrer(request) ?? path.to.active,
+      await flash(request, error(null, work.message))
+    );
+  }
+
   const result = await createQualityIssue(serviceRole, {
     companyId,
     userId,
     jobOperationId,
-    trackedEntityId,
+    trackedEntityId: work?.kind === "unit" ? work.unitId : trackedEntityId,
     // The operator's free-text description doubles as the issue name (the
     // original MES behavior — the description body stays empty).
     name: userDescription,
@@ -61,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.active,
       await flash(
         request,
-        error(result.error, result.message ?? "Failed to create quality issue")
+        error(result.error, "Failed to create quality issue")
       )
     );
   }

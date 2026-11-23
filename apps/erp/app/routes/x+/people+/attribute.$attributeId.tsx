@@ -8,7 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { attributeValidator, updateAttribute } from "~/modules/people";
+import { attributeValidator } from "~/modules/people/people.models";
+import { updateAttribute } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

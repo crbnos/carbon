@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { openSearch } from "@/components/search/search-command";
-import { operationLabel, type ToolNavModule } from "@/lib/tools-data";
+import { operationLabel, splitOperationName, type ToolNavModule } from "@/lib/tools-data";
 
 const CLASS_DOT: Record<string, string> = {
   READ: "bg-ed-green-strong",
@@ -47,28 +47,30 @@ function Chevron({ open }: { open: boolean }) {
 function ClassDot({ c }: { c: string }) {
   return (
     <span
-      className={`h-1.5 w-1.5 shrink-0 rounded-full ${CLASS_DOT[c] || "bg-ed-ink/40"}`}
+      className={`h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full ${CLASS_DOT[c] || "bg-ed-ink/40"}`}
       aria-label={c}
     />
   );
 }
 
 /**
- * Middle truncation: end-truncation erased exactly the characters that tell long
- * siblings apart — three adjacent rows all rendered `getCustomerItemPriceOve…`, and
- * singular/plural pairs differ only in their final letter. Keeping the tail intact
- * yields `getCustomerItemPr…Override` vs `…Overrides`. Short labels skip the split.
+ * An operation's identifier, whole: the verb muted, the record it acts on in
+ * full weight, and a line break allowed only between words, so a long name
+ * wraps rather than losing the characters that tell two siblings apart.
  */
-function MidTruncatedLabel({ text }: { text: string }) {
-  if (text.length <= 22) {
-    return <span className="truncate font-mono text-ed-13">{text}</span>;
-  }
-  const tail = text.slice(-9);
-  const head = text.slice(0, -9);
+function OperationLabel({ text }: { text: string }) {
+  const { verb, entity } = splitOperationName(text);
+  const words = entity.split(/(?=[A-Z])/);
   return (
-    <span className="flex min-w-0 font-mono text-ed-13">
-      <span className="truncate">{head}</span>
-      <span className="shrink-0">{tail}</span>
+    <span className="min-w-0 break-normal font-mono text-ed-13">
+      <span className="text-ed-ink/45">{verb}</span>
+      {words.map((word, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: words of one fixed name
+        <span key={i}>
+          {i > 0 && <wbr />}
+          {word}
+        </span>
+      ))}
     </span>
   );
 }
@@ -177,12 +179,12 @@ export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
                           ref={isActive ? activeRef : undefined}
                           href={`/api/operations/${t.slug}`}
                           title={`${t.name} · ${t.classification}`}
-                          className={`flex items-center gap-2 rounded-md px-2 py-[3.5px] leading-[135%] transition-colors ${
+                          className={`flex items-baseline gap-2 rounded-md px-2 py-[3.5px] leading-[135%] transition-colors ${
                             isActive ? GS_ACTIVE : GS_IDLE
                           }`}
                         >
                           <ClassDot c={t.classification} />
-                          <MidTruncatedLabel text={operationLabel(t.name, m.slug)} />
+                          <OperationLabel text={operationLabel(t.name, m.slug)} />
                         </Link>
                       </li>
                     );

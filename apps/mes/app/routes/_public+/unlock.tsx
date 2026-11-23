@@ -274,7 +274,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
 
@@ -354,6 +354,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 function UnlockCodeField({ result }: { result?: UnlockResult }) {
+  const { t } = useLingui();
   const [, setCode] = useControlField<string>("code");
   const lastResult = useRef(result);
 
@@ -363,7 +364,14 @@ function UnlockCodeField({ result }: { result?: UnlockResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" autoFocus />;
+  return (
+    <InputOTP
+      name="code"
+      label=""
+      aria-label={t`Authenticator code`}
+      autoFocus
+    />
+  );
 }
 
 export default function UnlockRoute() {

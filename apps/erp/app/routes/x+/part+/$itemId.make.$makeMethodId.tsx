@@ -15,24 +15,27 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel } from "~/components";
 import { useRouteData } from "~/hooks";
 import { usePermissions } from "~/hooks/usePermissions";
-import type { PartSummary } from "~/modules/items";
 import {
-  getConfigurationParameters,
   getConfigurationRules,
   getItemManufacturing,
   getMakeMethodById,
   getMakeMethods,
+  getMethodCorrectionsData,
   getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId
-} from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+  getMethodOperationsByMakeMethodId,
+  getRevisionLock
+} from "~/modules/items/items.service";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
+import type { PartSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
-  MakeMethodTools
+  MakeMethodTools,
+  MethodCorrections
 } from "~/modules/items/ui/Item";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
+import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
+import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -102,7 +105,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         configurationRules: []
       };
 
+  const methodCorrections = await getMethodCorrectionsData(
+    client,
+    makeMethodId,
+    companyId
+  );
+
   return {
+    corrections: toMethodCorrectionsProps(methodCorrections.data),
     makeMethod: makeMethod.data,
     methodMaterials:
       methodMaterials.data?.map((m) => ({
@@ -201,6 +211,15 @@ export default function PartMakeMethodPage() {
         configurationRules={configurationRules}
         parameters={configurationParametersAndGroups.parameters}
         replenishmentSystem={partData?.partSummary?.replenishmentSystem}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
+      />
+      <MethodCorrections
+        key={`corrections:${makeMethod.id}`}
+        makeMethod={makeMethod}
+        {...loaderData.corrections}
+        routingOperations={methodOperations as never}
+        tags={tags}
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />

@@ -4,12 +4,17 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { nonScrapQuantityValidator } from "~/services/models";
-import { insertReworkQuantity } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  insertReworkQuantity
+} from "~/services/operations.service";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -24,8 +29,31 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const serviceRole = await getCarbonServiceRole();
+  const work = await resolveWorkUnit({
+    client: serviceRole,
+    companyId,
+    operationId: validation.data.jobOperationId,
+    requestedUnitId: validation.data.trackedEntityId,
+    mode: "require"
+  });
+  if (work.kind === "refuse") {
+    return data({}, await flash(request, error(null, work.message)));
+  }
+
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: validation.data.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
+  }
+
   const insertRework = await insertReworkQuantity(client, {
     ...validation.data,
+    trackedEntityId:
+      work.kind === "unit" ? work.unitId : validation.data.trackedEntityId,
     companyId,
     createdBy: userId
   });

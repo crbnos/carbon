@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { create } from "zustand";
+import type { SubmoduleLayout } from "~/utils/submodule-visibility";
 
 export type SuggestionPrefill = {
   suggestion: string;
@@ -18,13 +19,14 @@ interface UIStore {
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
-  /** True while the current route renders a module content sub-nav. Lets the
-   * mobile Topbar show a "Sections" trigger only where one exists. */
-  hasContentSidebar: boolean;
-  setHasContentSidebar: (has: boolean) => void;
+  isRailOpen: boolean;
+  setRailOpen: (open: boolean) => void;
   suggestionPrefill: SuggestionPrefill | null;
   requestSuggestion: (prefill: SuggestionPrefill) => void;
   clearSuggestionRequest: () => void;
+  // The unsaved sub-module layout while Customize is open, otherwise null.
+  draftSubmoduleLayout: SubmoduleLayout | null;
+  setDraftSubmoduleLayout: (layout: SubmoduleLayout | null) => void;
 }
 
 export const useUIStore = create<UIStore>()((set) => ({
@@ -37,9 +39,11 @@ export const useUIStore = create<UIStore>()((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   toggleSidebar: () =>
     set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-  hasContentSidebar: false,
-  setHasContentSidebar: (has) => set({ hasContentSidebar: has }),
+  isRailOpen: false,
+  setRailOpen: (open) => set({ isRailOpen: open }),
   suggestionPrefill: null,
   requestSuggestion: (prefill) => set({ suggestionPrefill: prefill }),
-  clearSuggestionRequest: () => set({ suggestionPrefill: null })
+  clearSuggestionRequest: () => set({ suggestionPrefill: null }),
+  draftSubmoduleLayout: null,
+  setDraftSubmoduleLayout: (layout) => set({ draftSubmoduleLayout: layout })
 }));

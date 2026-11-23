@@ -45,7 +45,7 @@ it("hasPreassignedWorkCenter is true only for non-empty ids", () => {
   assertEquals(hasPreassignedWorkCenter(""), false);
 });
 
-it("applyWorkCenterSelections does not overwrite pre-assigned work centers", () => {
+it("applyWorkCenterSelections keeps a pre-assigned work center when the op was not placed", () => {
   const ops = new Map<string, ScheduledOperation>([
     ["op-pre", makeOp({ id: "op-pre", workCenterId: "user-wc" })],
     ["op-new", makeOp({ id: "op-new", workCenterId: null })]
@@ -583,7 +583,10 @@ function makeMannedElsewhereContext(mannedAt: string | null) {
   });
 }
 
-async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
+async function placeGatedOpOnWc1(
+  ctx: FiniteSchedulingContext,
+  times: { laborTime?: number; machineTime?: number } = {}
+) {
   const provider = {
     getProcessesWithWorkCenters: async () => [
       { id: "proc-1", workCenters: ["wc1"] }
@@ -600,9 +603,10 @@ async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
     startDate: null,
     dueDate: null,
     setupTime: 0,
-    laborTime: 2,
+    laborTime: times.laborTime ?? 2,
     laborUnit: "Total Hours",
-    machineTime: 0,
+    machineTime: times.machineTime ?? 0,
+    machineUnit: "Total Hours",
     operationQuantity: 1,
     quantityComplete: 0
   });
@@ -611,6 +615,46 @@ async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
   });
   return { selection: selections.get("op-1"), selector };
 }
+
+it("a qualification that lapses before the machine is free leaves the gated op unschedulable", async () => {
+  // brad is qualified at the op's earliest start (Jan 5), but his
+  // qualification ends on Jan 6 and wc1 is closed until Jan 7. Booking him on
+  // Jan 7 schedules work he may no longer do (MES refuses the start).
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const bradWindows = [{ start: now, end: utc("2026-01-10T00:00:00.000Z") }];
+  const ctx = makeContext({
+    capacityByWorkCenter: new Map([
+      [
+        "wc1",
+        {
+          workCenter: { id: "wc1" },
+          windows: [
+            {
+              start: utc("2026-01-07T00:00:00.000Z"),
+              end: utc("2026-01-08T00:00:00.000Z")
+            }
+          ],
+          reservations: []
+        }
+      ]
+    ]),
+    requirementByProcess: new Map([
+      ["proc-1", { abilityId: "ab1", abilityName: "Weld" }]
+    ]),
+    employeesByAbility: new Map([
+      [
+        "ab1",
+        [{ employeeId: "brad", expiresAt: "2026-01-06", windows: bradWindows }]
+      ]
+    ]),
+    windowsByEmployee: new Map([["brad", bradWindows]])
+  });
+
+  const { selection } = await placeGatedOpOnWc1(ctx);
+
+  assertEquals(selection?.placedStart, undefined);
+  assert(selection?.conflict, "the unplaced op carries a conflict");
+});
 
 it("a person on the board is not pulled to another station by the fallback", async () => {
   // brad is manned at wc2 (Timesaver). He is the only welder, so wc1 (DMU 350)
@@ -621,9 +665,10 @@ it("a person on the board is not pulled to another station by the fallback", asy
     makeMannedElsewhereContext("wc2")
   );
 
-  assert(
+  // The reason names the cause: the one welder is committed elsewhere.
+  assertEquals(
     selection?.conflict,
-    "the op surfaces a conflict rather than a placement"
+    "No free operator for Weld: the 1 person qualified is assigned to other stations on the manning board"
   );
   assertEquals(selection?.placedStart, undefined);
   const bradBookings = selector
@@ -640,6 +685,17 @@ it("a person on the board is not pulled to another station by the fallback", asy
   assert(placeholder, "an unschedulable placeholder is emitted for the op");
   assertEquals(placeholder.isPlaceholder, true);
   assertEquals(placeholder.resourceId, "wc1");
+});
+
+it("gated work with no hands-on time places machine-only when nobody is free", async () => {
+  // The welder is spoken for at wc2, but this op is all machine time.
+  const { selection } = await placeGatedOpOnWc1(
+    makeMannedElsewhereContext("wc2"),
+    { laborTime: 0, machineTime: 2 }
+  );
+
+  assertEquals(selection?.conflict ?? null, null);
+  assertEquals(selection?.placedStart, "2026-01-05T00:00:00.000Z");
 });
 
 it("a genuinely-unassigned person still floats to another station's fallback", async () => {

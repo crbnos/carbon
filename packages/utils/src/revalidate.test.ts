@@ -4,8 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  deferRootActionPost,
+  isRootActionPost,
   isSearchParamOnlyNavigation,
-  isUnaffectedByNavigation
+  ROOT_ACTION_SAVE,
+  rootShouldRevalidate
 } from "./revalidate";
 
 const url = (href: string) => new URL(href, "https://erp.test");
@@ -40,20 +43,18 @@ describe("isSearchParamOnlyNavigation", () => {
 
   // A mutation may change shell data (saved views, company settings), so a
   // submission must always revalidate even when the URL is unchanged.
-  it.each([
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE"
-  ])("is false for a %s submission", (formMethod) => {
-    expect(
-      isSearchParamOnlyNavigation({
-        currentUrl: url("/x/items/parts"),
-        nextUrl: url("/x/items/parts"),
-        formMethod
-      })
-    ).toBe(false);
-  });
+  it.each(["POST", "PUT", "PATCH", "DELETE"])(
+    "is false for a %s submission",
+    (formMethod) => {
+      expect(
+        isSearchParamOnlyNavigation({
+          currentUrl: url("/x/items/parts"),
+          nextUrl: url("/x/items/parts"),
+          formMethod
+        })
+      ).toBe(false);
+    }
+  );
 
   it("is true for a GET submission, which cannot mutate", () => {
     expect(
@@ -75,61 +76,71 @@ describe("isSearchParamOnlyNavigation", () => {
   });
 });
 
-describe("isUnaffectedByNavigation", () => {
-  const nav = (
-    from: string,
-    to: string,
-    itemIds: [string, string] = ["a", "a"],
-    formMethod?: string
-  ) =>
-    isUnaffectedByNavigation(
-      {
-        currentUrl: url(from),
-        nextUrl: url(to),
-        currentParams: { itemId: itemIds[0] },
-        nextParams: { itemId: itemIds[1] },
-        formMethod
-      },
-      { params: ["itemId"], search: ["methodId"] }
-    );
-
-  it("is true when nothing the loader reads changed", () => {
-    expect(nav("/x/part/a/details", "/x/part/a/planning")).toBe(true);
-    expect(nav("/x/part/a/make/m1", "/x/part/a/make/m2?materialId=x")).toBe(
+describe("isRootActionPost", () => {
+  it("is true for a post to the root action", () => {
+    expect(isRootActionPost({ formAction: "/", formMethod: "POST" })).toBe(
       true
     );
   });
 
-  it("is false when a param or search param the loader reads changed", () => {
-    expect(nav("/x/part/a/details", "/x/part/b/details", ["a", "b"])).toBe(
-      false
-    );
-    expect(nav("/x/part/a/details", "/x/part/a/details?methodId=m")).toBe(
-      false
-    );
+  it.each([
+    { formAction: "/x/items", formMethod: "POST" },
+    { formAction: "/", formMethod: "GET" },
+    { formAction: undefined, formMethod: undefined }
+  ])("is false for $formMethod $formAction", (args) => {
+    expect(isRootActionPost(args)).toBe(false);
+  });
+});
+
+// What React Router passes every route after an appearance save.
+const appearanceSave = {
+  currentUrl: url("/x/production"),
+  nextUrl: url("/x/production"),
+  formAction: ROOT_ACTION_SAVE.action,
+  formMethod: ROOT_ACTION_SAVE.method.toUpperCase(),
+  defaultShouldRevalidate: ROOT_ACTION_SAVE.defaultShouldRevalidate
+};
+
+describe("an appearance save", () => {
+  it("re-runs the root loader", () => {
+    expect(rootShouldRevalidate(appearanceSave)).toBe(true);
   });
 
-  it("is false for a revalidation or a mutation", () => {
-    expect(nav("/x/part/a/details", "/x/part/a/details")).toBe(false);
+  it("re-runs no route whose own rule re-runs after every post", () => {
+    const afterEveryPost = deferRootActionPost(() => true);
+    expect(afterEveryPost(appearanceSave)).toBe(false);
+  });
+
+  it("leaves other posts to the route's own rule", () => {
+    const afterEveryPost = deferRootActionPost(() => true);
     expect(
-      nav("/x/part/a/details", "/x/part/a/planning", ["a", "a"], "POST")
+      afterEveryPost({
+        ...appearanceSave,
+        formAction: "/x/sales/orders/new",
+        defaultShouldRevalidate: true
+      })
+    ).toBe(true);
+  });
+});
+
+describe("rootShouldRevalidate", () => {
+  it("skips a same-page search-param change", () => {
+    expect(
+      rootShouldRevalidate({
+        currentUrl: url("/x/items?page=1"),
+        nextUrl: url("/x/items?page=2"),
+        defaultShouldRevalidate: true
+      })
     ).toBe(false);
   });
 
-  it('compares the whole query string with search "all"', () => {
-    const list = (from: string, to: string) =>
-      isUnaffectedByNavigation(
-        {
-          currentUrl: url(from),
-          nextUrl: url(to),
-          currentParams: {},
-          nextParams: {}
-        },
-        { search: "all" }
-      );
-    expect(list("/x/items/parts?sort=a", "/x/items/parts/new?sort=a")).toBe(
-      true
-    );
-    expect(list("/x/items/parts?sort=a", "/x/items/parts/new")).toBe(false);
+  it("follows the default for any other navigation or post", () => {
+    expect(
+      rootShouldRevalidate({
+        currentUrl: url("/x/items"),
+        nextUrl: url("/x/sales"),
+        defaultShouldRevalidate: true
+      })
+    ).toBe(true);
   });
 });

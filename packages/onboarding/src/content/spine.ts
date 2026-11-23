@@ -126,7 +126,7 @@ export const SPINE: StepDef[] = [
       {
         key: "prod:serialize-sell",
         label: msg`Serialize & sell your parts`,
-        detail: msg`Track serial/lot numbers and fulfil sales orders.`,
+        detail: msg`Track serial/lot numbers and fulfill sales orders.`,
         docsUrl: "https://docs.carbon.ms/docs/reference/sales-orders",
         videoKey: "salesOrders",
         detect: "hasSalesOrder"

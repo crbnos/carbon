@@ -15,7 +15,7 @@ import {
   getQuoteLinePriceTraces,
   QuoteLockedError,
   repriceQuoteLineFromRules
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-price-trace");

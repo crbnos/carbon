@@ -6,11 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useSearchParams } from "react-router";
-import { departmentValidator, upsertDepartment } from "~/modules/people";
+import { departmentValidator } from "~/modules/people/people.models";
+import { upsertDepartment } from "~/modules/people/people.service";
 import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -67,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewDepartmentRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const [searchParams] = useSearchParams();
   const parentDepartmentId =
     searchParams.get("parentDepartmentId") ?? undefined;
@@ -79,7 +80,8 @@ export default function NewDepartmentRoute() {
 
   return (
     <DepartmentForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

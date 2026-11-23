@@ -17,7 +17,7 @@ the area you're touching — it has the full detail, this file does not repeat i
 | What Carbon is, apps & packages | [project-overview.md](project-overview.md) | Finding where things live |
 | Migrations, RLS, multi-tenancy, Kysely transactions | [conventions-database.md](conventions-database.md) | Schema / DB changes |
 | `ValidatedForm` + zod validators + route actions | [conventions-forms.md](conventions-forms.md) | Building forms |
-| Service functions (`{module}.service.ts`) | [conventions-services.md](conventions-services.md) | DB read/write helpers |
+| Service functions (`{module}.server.ts`, `{module}.service.ts`) | [conventions-services.md](conventions-services.md), [module-files.md](module-files.md) | Operations and DB helpers |
 | Components, animation, polish | [conventions-ui.md](conventions-ui.md) | UI work |
 
 Many subsystem rules (e.g. `database-patterns.md`, `event-system.md`,
@@ -37,8 +37,9 @@ siblings in this directory — grep `.claude/rules/` by topic.
 - **Imports**: `~/*` → app code (`./app/*`); `@carbon/*` → workspace packages.
   Server-only auth helpers from `@carbon/auth/auth.server` (`requirePermissions`)
   and `@carbon/auth/session.server` (`flash`).
-- **ERP module layout**: `apps/erp/app/modules/{module}/` with `.models.ts`
-  (zod validators), `.service.ts` (Supabase/Kysely ops), `index.ts` barrel, `ui/`.
+- **ERP module layout**: `apps/erp/app/modules/{module}/` with `.server.ts`
+  (`defineServiceFn` operations), `.service.ts` (building blocks), `.models.ts`
+  (zod validators), `ui/`; no barrel ([module-files.md](module-files.md)).
   MES is lighter: services in `apps/mes/app/services/`, components in
   `apps/mes/app/components/`.
 
@@ -49,10 +50,10 @@ siblings in this directory — grep `.claude/rules/` by topic.
 3. **Audit**: include `createdBy`, `createdAt`, `updatedBy`, `updatedAt`.
 4. **RLS**: standardized policy names `SELECT` / `INSERT` / `UPDATE` / `DELETE`.
 5. **Forms**: `ValidatedForm` + zod validator + route action; validate with
-   `validator(schema).validate(formData)`, not `schema.parse()`.
+   `validator(schema).request(args, …)`, not `schema.parse()`.
 6. **Transactions**: Kysely for multi-row writes, not `Promise.all`.
-7. **Route actions**: services return `{ data, error }`; on failure
-   `return data({}, await flash(request, error(...)))`, on success `throw redirect(...)`.
+7. **Route actions**: validate, then one call through `carbon(request)`; return
+   the result to a fetcher, or `respond(request, result).redirect(to, { message })`.
 8. **Migrations**: create with `pnpm db:migrate:new <name>` (the root `db:migrate`
    runs `crbn migrate` to apply). Full DB checklist in conventions-database.md.
 

@@ -6,7 +6,7 @@ import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
 import { useState } from "react";
 import { LuBlocks } from "react-icons/lu";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { getPrivateUrl } from "~/utils/path";
 import { MethodItemTypeIcon } from "./Icons";
 
@@ -88,13 +88,21 @@ const ItemThumbnail = ({
       loading="lazy"
       decoding="async"
       alt="thumbnail"
+      data-thumbnail={size}
       className={itemVariants({ size, withPadding: false })}
       key={thumbnailPath}
+      // A server-rendered image can fail before React attaches `onError`, so
+      // the event is lost and the broken image stays: check it on mount too.
+      ref={(image) => {
+        if (image?.complete && image.naturalWidth === 0) {
+          setFailedPath(thumbnailPath);
+        }
+      }}
       onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
     />
   ) : (
-    <div className={cn(itemVariants({ size }))}>
+    <div data-thumbnail={size} className={cn(itemVariants({ size }))}>
       {type ? (
         <MethodItemTypeIcon className={iconVariants({ size })} type={type} />
       ) : (

@@ -2,48 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import { activateWorkCenter } from "~/modules/resources";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.reactivateWorkCenter({
+    id: input.params.id
   });
-
-  const { id } = params;
-  if (!id) {
-    throw redirect(
-      path.to.workCenters,
-      await flash(request, error(params, "Failed to get a work center id"))
-    );
-  }
-
-  const activate = await activateWorkCenter(client, id);
-  if (activate.error) {
-    throw redirect(
-      path.to.workCenters,
-      await flash(
-        request,
-        error(activate.error, "Failed to activate work center")
-      )
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "work-center",
-    "Work center reactivated",
-    id
-  );
-
-  throw redirect(
-    path.to.workCenters,
-    await flash(request, success("Successfully activate work center"))
-  );
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Successfully activate work center"
+  });
 }

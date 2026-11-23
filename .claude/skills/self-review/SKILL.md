@@ -31,6 +31,9 @@ Actively hunt for:
 - unnecessary complexity; dead code; accidental churn
 - leftover debug code, logging, TODOs, commented-out code, stray files
 - naming that could be clearer; patterns inconsistent with neighbors
+- a new record type whose routes or UI differ from its closest sibling's
+  (open the sibling's `new.tsx` and `$id.tsx` and compare) — a lease built as a
+  Card form while rental agreements use the setup wizard is a Must fix
 - missing or weak tests (would this test catch a revert of the fix?)
 - risky changes not obvious from the diff (signature changes, shared helpers)
 - PR title/body/scope not matching the actual change

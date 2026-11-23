@@ -70,6 +70,8 @@ export type NavItem = Omit<Route, "icon"> & {
   backgroundColor?: string;
   foregroundColor?: string;
   external?: boolean;
+  /** Opens in a new tab, leaving this one where it was. */
+  newTab?: boolean;
 };
 
 export type Result = {
@@ -95,6 +97,8 @@ export type Route<T = {}> = T & {
   table?: string;
   /** When present, overrides the default pathname-includes active check. */
   isActive?: (pathname: string) => boolean;
+  /** A count shown at the right of the link when it is above 0 (items waiting). */
+  count?: number;
 };
 
 export type RouteGroup<T = {}> = {

@@ -8,6 +8,7 @@ import {
   type RampRepayment,
   scaleRepaymentLines
 } from "@carbon/ee/ramp.server";
+import { getLogger } from "@carbon/logger";
 import { createAndPostTransaction } from "./ramp-sync-card";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
@@ -24,10 +25,18 @@ import {
   resolveRampSyncOperations
 } from "./ramp-sync-shared";
 
+const logger = getLogger("jobs", "ramp-sync");
+
 const REPAYMENT_REPAID_STATUS = "REPAID";
 // Repayment.funding_method is a free string; only "ach" is demonstrated by
 // Ramp's OpenAPI example (2026-09-11). Do not guess an offset for other values.
 const REPAYMENT_BANK_FUNDING = "ach";
+
+export function isVerifiedRepaymentFunding(
+  method: string | null | undefined
+): boolean {
+  return method === REPAYMENT_BANK_FUNDING;
+}
 
 function instantMinusOneSecond(iso: string): string {
   const ms = Date.parse(iso);
@@ -112,7 +121,7 @@ export async function syncRampRepayments(
           if (repaidAt) failedRepaidAt.push(repaidAt);
           repaymentFailures.push({ id: repayment.id, message });
         };
-        if (repayment.funding_method !== REPAYMENT_BANK_FUNDING) {
+        if (!isVerifiedRepaymentFunding(repayment.funding_method)) {
           const message = `Unsupported funding method: ${repayment.funding_method || "missing"}`;
           failRepayment(message);
           result.error ??= `Repayment ${repayment.id} has ${message}`;
@@ -136,9 +145,10 @@ export async function syncRampRepayments(
         const originalRampId = repayment.original_transaction_id;
         if (!originalRampId) {
           failRepayment("No original_transaction_id on the repayment");
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} has no original_transaction_id — skipped`
-          );
+          logger.error("Ramp repayment has no original transaction; skipped", {
+            companyId,
+            repaymentId: repayment.id
+          });
           continue;
         }
         const originalEntityId = await ctx.mapping.getEntityId(
@@ -150,8 +160,9 @@ export async function syncRampRepayments(
           failRepayment(
             `Original transaction ${originalRampId} is not synced yet`
           );
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} original transaction ${originalRampId} is not synced yet — skipped`
+          logger.error(
+            "Original transaction of a Ramp repayment is not synced yet; skipped",
+            { companyId, repaymentId: repayment.id, originalRampId }
           );
           continue;
         }
@@ -164,8 +175,9 @@ export async function syncRampRepayments(
           .maybeSingle();
         if (!original.data) {
           failRepayment(`Original charge ${originalEntityId} no longer exists`);
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} original charge ${originalEntityId} no longer exists — skipped`
+          logger.error(
+            "Original charge of a Ramp repayment no longer exists; skipped",
+            { companyId, repaymentId: repayment.id, originalEntityId }
           );
           continue;
         }
@@ -179,9 +191,9 @@ export async function syncRampRepayments(
           failRepayment(
             `Failed to load original lines: ${originalLines.error.message}`
           );
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} failed to load original lines`,
-            originalLines.error
+          logger.error(
+            "Failed to load the original lines of a Ramp repayment",
+            { companyId, repaymentId: repayment.id, error: originalLines.error }
           );
           continue;
         }
@@ -195,10 +207,11 @@ export async function syncRampRepayments(
           decimals = await getRampCurrencyDecimals(ctx, currencyCode);
         } catch (error) {
           failRepayment("Invalid currency precision");
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} has invalid currency precision`,
+          logger.error("Ramp repayment has invalid currency precision", {
+            companyId,
+            repaymentId: repayment.id,
             error
-          );
+          });
           continue;
         }
         const normalizedAmount = await normalizeVerifiedMinorAmount(
@@ -209,9 +222,11 @@ export async function syncRampRepayments(
         );
         if (!normalizedAmount.ok) {
           failRepayment(`Amount is invalid: ${normalizedAmount.error}`);
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} amount is invalid: ${normalizedAmount.error}`
-          );
+          logger.error("Ramp repayment amount is invalid", {
+            companyId,
+            repaymentId: repayment.id,
+            reason: normalizedAmount.error
+          });
           continue;
         }
         const repaymentAmount = Math.abs(normalizedAmount.value);
@@ -234,9 +249,10 @@ export async function syncRampRepayments(
         const transactionDate = repaidAt?.slice(0, 10);
         if (!transactionDate) {
           failRepayment("No repaid_at date on the repayment");
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} has no repaid_at — skipped`
-          );
+          logger.error("Ramp repayment has no repaid date; skipped", {
+            companyId,
+            repaymentId: repayment.id
+          });
           continue;
         }
 
@@ -269,17 +285,19 @@ export async function syncRampRepayments(
           if (repaidAt) processedRepaidAt.push(repaidAt);
         } else {
           failRepayment(outcome.fail.message);
-          console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} failed — ${outcome.fail.message}`
-          );
+          logger.error("Ramp repayment failed", {
+            companyId,
+            repaymentId: repayment.id,
+            reason: outcome.fail.message
+          });
         }
       }
     }
   } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: repayments drain failed`,
-      familyError
-    );
+    logger.error("Ramp repayments drain failed", {
+      companyId,
+      error: familyError
+    });
     recordRampFamilyError(result, familyError);
   }
 

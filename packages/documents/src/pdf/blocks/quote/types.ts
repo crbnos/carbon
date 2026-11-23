@@ -7,10 +7,12 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions,
   ResolvedSection
 } from "../../../template";
 import type { Company, CompanySettings } from "../../../types";
+import type { TaxSummaryEntry } from "../../../utils/tax-summary";
 
 export type QuoteCustomerDetails =
   Database["public"]["Views"]["quoteCustomerDetails"]["Row"] & {
@@ -36,6 +38,8 @@ export interface QuoteData {
   quote: Database["public"]["Views"]["quotes"]["Row"];
   quoteLines: Database["public"]["Views"]["quoteLines"]["Row"][];
   quoteLinePrices: QuoteLinePrice[];
+  /** The day this prints, `YYYY-MM-DD`, in the company's time zone. */
+  printDate: string;
   quoteCustomerDetails: QuoteCustomerDetails;
   payment?: Database["public"]["Tables"]["quotePayment"]["Row"] | null;
   shipment?: Database["public"]["Tables"]["quoteShipment"]["Row"] | null;
@@ -48,7 +52,6 @@ export interface QuoteData {
   pricesByLine: Record<string, QuoteLinePrice[]>;
   hasSinglePricePerLine: boolean;
   hasAnyLeadTime: boolean;
-  colWidth: string;
   maxLeadTime: number;
   totals: QuoteTotals;
   theme: DocumentTheme;
@@ -56,7 +59,14 @@ export interface QuoteData {
   currencyCode: string | null;
   numberFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
+  /** Tax per component and rate; printed in place of the tax row when two or more. */
+  taxSummary: TaxSummaryEntry[];
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
+  /** The printed document number, from the template's document texts. */
+  documentNumber?: string;
 }
 
 export type BlockRenderer = (args: {

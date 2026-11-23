@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { NormalizedPayment } from "../../../../core/payment-application";
 import { SyncFactory } from "../../../../core/sync";
 import type { Xero } from "../../models";
@@ -19,8 +19,6 @@ import {
 
 // Posting imports the post-payment operation lazily; stub it so these tests
 // never reach the database or server env.
-vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
-
 describe("composite payment sync entity id (Xero)", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {
     const entityId = getXeroPaymentSyncEntityId("inv-remote-1", "pay-1");

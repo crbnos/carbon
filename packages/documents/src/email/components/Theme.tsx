@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// credit: pontus@midday.ai
-import { Font, Head, Html, Tailwind } from "@react-email/components";
 import type React from "react";
+// credit: pontus@midday.ai
+import { Font, Head, Html, pixelBasedPreset, Tailwind } from "react-email";
 
 // Re-export Button component for convenience
 export { Button } from "./Button";
@@ -16,18 +16,54 @@ export const emailTheme = {
     foreground: "#0e0e0e", // Slightly off-black to prevent auto-inversion
     muted: "#6b7280",
     border: "#e5e7eb",
+    // A raised box inside the card: a code, a document's details.
+    panel: "#f8f9fa",
     accent: "#0e0e0e",
     secondary: "#9ca3af"
   },
+  // What Gmail's apps make of the light palette when they recolour an email
+  // for dark mode (measured), so a client that runs this theme's dark CSS
+  // (Apple Mail, Outlook) shows the same email as one that inverts it.
   dark: {
-    background: "#0C0C0C",
+    background: "#131314",
     foreground: "#fefefe", // Slightly off-white to prevent auto-inversion
-    muted: "#a1a1aa",
-    border: "#1D1D1D",
-    accent: "#fefefe",
+    muted: "#9fa7b6",
+    border: "#2e2f33",
+    panel: "#242527",
+    accent: "#f3f3f3",
+    accentForeground: "#202124",
     secondary: "#6b7280"
   }
 } as const;
+
+/**
+ * A `prefers-color-scheme: dark` block that skips Outlook.com and the new
+ * Outlook. Those run the query from the operating system's theme, not their
+ * own: on a dark OS, a message on Outlook's light reading pane took every dark
+ * rule, so a purchase order's panel went dark and its heading turned white on
+ * white (HTeuMeuLeu, "Making Emails React to Outlook.com's Dark Mode"; Can I
+ * email, `@media (prefers-color-scheme)`). Outlook prefixes every class with
+ * `x_`, in the markup and the CSS alike, so `:not([class^="x_"])` on each
+ * selector's first class matches everywhere but there, and Outlook does its
+ * own dark mode. Outlook.com also drops any rule containing `:not()` (Can I
+ * email, `:not()`: not supported, tested 2024-01, on a test where stripping
+ * only the `:not()` would have shown), so the rule never reaches it either
+ * way. A selector with no class would still reach Outlook, so it is refused.
+ */
+export function darkModeMedia(rules: string) {
+  const scoped = rules
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/([^{}]+)\{/g, (_, selectors: string) => {
+      const list = selectors.split(",").map((selector) => {
+        if (!/\.[A-Za-z]/.test(selector)) {
+          throw new Error(`darkModeMedia: "${selector.trim()}" has no class`);
+        }
+        return selector.replace(/\.([A-Za-z][\w-]*)/, '.$1:not([class^="x_"])');
+      });
+      return `${list.join(",")}{`;
+    });
+  return `@media (prefers-color-scheme: dark) {${scoped}}`;
+}
 
 // Industry-standard dark mode CSS for email clients
 export const getEmailDarkModeCSS = () => {
@@ -38,9 +74,10 @@ export const getEmailDarkModeCSS = () => {
       supported-color-schemes: light dark;
     }
 
-    /* Apple Mail, iOS Mail, and some webview clients */
-    @media (prefers-color-scheme: dark) {
-      .email-body {
+    /* Apple Mail, iOS Mail and other clients that run the theme's dark CSS */
+    ${darkModeMedia(`
+      .email-body,
+      .email-body > table > tbody > tr > td {
         background-color: ${emailTheme.dark.background} !important;
         color: ${emailTheme.dark.foreground} !important;
       }
@@ -63,6 +100,18 @@ export const getEmailDarkModeCSS = () => {
       .email-border {
         border-color: ${emailTheme.dark.border} !important;
       }
+      .email-panel {
+        background-color: ${emailTheme.dark.panel} !important;
+        border-color: ${emailTheme.dark.border} !important;
+      }
+      .email-panel-text {
+        color: ${emailTheme.dark.foreground} !important;
+      }
+      .email-button {
+        background-color: ${emailTheme.dark.accent} !important;
+        border-color: ${emailTheme.dark.accent} !important;
+        color: ${emailTheme.dark.accentForeground} !important;
+      }
       
       /* Image swapping for dark mode */
       .dark-mode-hide {
@@ -71,94 +120,19 @@ export const getEmailDarkModeCSS = () => {
       .dark-mode-show {
         display: block !important;
       }
-    }
-
-    /* Gmail Desktop Dark Mode - Multiple targeting approaches */
-    @media (prefers-color-scheme: dark) {
-      /* Gmail specific selectors */
-      .gmail_dark .email-body,
-      .gmail_dark_theme .email-body,
-      [data-darkmode="true"] .email-body {
-        background-color: ${emailTheme.dark.background} !important;
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      .gmail_dark .email-container,
-      .gmail_dark_theme .email-container,
-      [data-darkmode="true"] .email-container {
-        border-color: ${emailTheme.dark.border} !important;
-      }
-      .gmail_dark .email-text,
-      .gmail_dark_theme .email-text,
-      [data-darkmode="true"] .email-text {
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      .gmail_dark .email-muted,
-      .gmail_dark_theme .email-muted,
-      [data-darkmode="true"] .email-muted {
-        color: ${emailTheme.dark.muted} !important;
-      }
-      .gmail_dark .email-accent,
-      .gmail_dark_theme .email-accent,
-      [data-darkmode="true"] .email-accent {
-        color: ${emailTheme.dark.accent} !important;
-        border-color: ${emailTheme.dark.accent} !important;
-      }
-    }
-
-    /* Gmail Desktop conditional dark mode targeting */
-    @media screen and (prefers-color-scheme: dark) {
-      /* More aggressive Gmail desktop targeting */
-      div[style*="background"] .email-body,
-      .ii .email-body {
-        background-color: ${emailTheme.dark.background} !important;
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      div[style*="background"] .email-container,
-      .ii .email-container {
-        border-color: ${emailTheme.dark.border} !important;
-      }
-      div[style*="background"] .email-text,
-      .ii .email-text {
-        color: ${emailTheme.dark.foreground} !important;
-      }
-      div[style*="background"] .email-muted,
-      .ii .email-muted {
-        color: ${emailTheme.dark.muted} !important;
-      }
-      div[style*="background"] .email-accent,
-      .ii .email-accent {
-        color: ${emailTheme.dark.accent} !important;
-        border-color: ${emailTheme.dark.accent} !important;
-      }
-    }
-
-    /* Outlook Web App and Outlook mobile targeting */
-    [data-ogsc] .email-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    [data-ogsc] .email-muted {
-      color: ${emailTheme.dark.muted} !important;
-    }
-    [data-ogsc] .email-accent {
-      color: ${emailTheme.dark.accent} !important;
-      border-color: ${emailTheme.dark.accent} !important;
-    }
-    [data-ogsc] .dark-mode-hide {
-      display: none !important;
-    }
-    [data-ogsc] .dark-mode-show {
-      display: block !important;
-    }
-
-    /* Outlook background targeting */
-    [data-ogsb] .email-body {
-      background-color: ${emailTheme.dark.background} !important;
-    }
-    [data-ogsb] .email-container {
-      border-color: ${emailTheme.dark.border} !important;
-    }
+    `)}
   `;
 };
+
+/**
+ * A stylesheet for an email's <head>, written as it is. As a text child,
+ * React escapes it: `>` becomes `&gt;` and `"` becomes `&quot;`, and a rule
+ * with either in its selector (`.email-body > table`, `div[style*="…"]`) is
+ * invalid and dropped whole. The CSS is always our own constant.
+ */
+export function HeadStyle({ css }: { css: string }) {
+  return <style dangerouslySetInnerHTML={{ __html: css }} />;
+}
 
 // Comprehensive email theme provider that wraps everything
 interface EmailThemeProviderProps {
@@ -176,7 +150,9 @@ export function EmailThemeProvider({
 }: EmailThemeProviderProps) {
   return (
     <Html className={disableDarkMode ? "disable-dark-mode" : ""}>
-      <Tailwind>
+      {/* px, not rem: classic Outlook for Windows drops every rem
+          size, and the email loses its spacing and type scale. */}
+      <Tailwind config={{ presets: [pixelBasedPreset] }}>
         <Head>
           {/* Essential meta tags for email dark mode support */}
           {!disableDarkMode && (
@@ -187,7 +163,7 @@ export function EmailThemeProvider({
               {/* Additional Gmail dark mode hints */}
               <meta
                 name="theme-color"
-                content="#0C0C0C"
+                content={emailTheme.dark.background}
                 media="(prefers-color-scheme: dark)"
               />
               <meta
@@ -195,10 +171,13 @@ export function EmailThemeProvider({
                 content="#ffffff"
                 media="(prefers-color-scheme: light)"
               />
-              <meta name="msapplication-navbutton-color" content="#0C0C0C" />
+              <meta
+                name="msapplication-navbutton-color"
+                content={emailTheme.dark.background}
+              />
 
               {/* Dark mode styles */}
-              <style>{getEmailDarkModeCSS()}</style>
+              <HeadStyle css={getEmailDarkModeCSS()} />
             </>
           )}
 
@@ -208,18 +187,12 @@ export function EmailThemeProvider({
               <meta name="color-scheme" content="light only" />
               <meta name="supported-color-schemes" content="light" />
               <meta name="theme-color" content="#ffffff" />
-              <style>{`
-                /* Force light mode styles */
-                :root {
-                  color-scheme: light only;
-                  supported-color-schemes: light;
-                }
-                
-                /* Override any potential dark mode styles */
-                * {
-                  color-scheme: light !important;
-                }
-              `}</style>
+              <HeadStyle
+                css={`
+                  :root { color-scheme: light only; supported-color-schemes: light; }
+                  * { color-scheme: light !important; }
+                `}
+              />
             </>
           )}
 

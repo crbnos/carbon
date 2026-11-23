@@ -20,31 +20,30 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { ShiftLocation } from "~/modules/resources";
+import type { ShiftLocation } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
 type LocationsTableProps = {
   data: ShiftLocation[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
+const LocationsTable = memo((props: LocationsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
   const [people] = usePeople();
 
-  const rows = data.map((row) => ({
-    ...row
-  }));
-
   const customColumns = useCustomColumns<ShiftLocation>("location");
-  const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
-    const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
+  const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
+    const defaultColumns: ColumnDef<(typeof data)[number]>[] = [
       {
         accessorKey: "name",
         header: t`Location`,
@@ -54,6 +53,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuMapPin />
         }
       },
@@ -62,6 +62,16 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         header: t`Address`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 is the joined address (street, city, state).
+          mobileCell: (item) =>
+            [
+              item.row.original.addressLine1,
+              item.row.original.city,
+              item.row.original.stateProvince
+            ]
+              .filter(Boolean)
+              .join(", "),
           icon: <LuHouse />
         }
       },
@@ -165,8 +175,9 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
   );
 
   return (
-    <Table<(typeof rows)[number]>
-      data={rows}
+    <Table<(typeof data)[number]>
+      data={data}
+      infinite={infinite}
       count={count}
       columns={columns}
       primaryAction={

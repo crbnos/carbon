@@ -60,6 +60,7 @@ const Activity = ({
         <Avatar
           path={person?.avatarUrl ?? undefined}
           name={person?.name ?? ""}
+          decorative
         />
       </div>
       <div className="flex items-center space-x-2">

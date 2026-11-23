@@ -20,7 +20,7 @@ import { Link } from "react-router";
 import { DateTime, Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks";
-import type { MemoApplication } from "~/modules/invoicing";
+import type { MemoApplication } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 type MemoApplicationsPanelProps = {

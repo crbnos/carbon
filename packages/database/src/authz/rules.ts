@@ -121,6 +121,34 @@ export const exists = (
   });
 
 /**
+ * The rule that governs a project row: `projects_<action>` (or `standard`, for a read
+ * open to any employee) in the project's company. `column` names the row's project; on
+ * `project` itself the row's own company decides (`column` is "id"), so the policy never
+ * queries the table it guards. With `via: "projectElement"`, `column` names an element
+ * and its project decides. The project (and element) must be in the row's own company.
+ */
+export const projectModule = (
+  column: string,
+  action: "view" | "create" | "update" | "delete",
+  {
+    standard = `projects_${action}`,
+    via
+  }: { standard?: Who; via?: "projectElement" } = {}
+): Pred =>
+  pred((table) => {
+    const governs = (alias: string | null) => {
+      const ref = (name: string) => sql.ref(alias ? `${alias}.${name}` : name);
+      return belongsTo(ref("companyId"), standard);
+    };
+    if (table === "project") return governs(null);
+    const row = (name: string) => sql.ref(`${table}.${name}`);
+    if (via === "projectElement") {
+      return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "projectElement")} e JOIN ${sql.id("public", "project")} p ON ${sql.ref("p.id")} = ${sql.ref("e.projectId")} AND ${sql.ref("p.companyId")} = ${sql.ref("e.companyId")} WHERE ${sql.ref("e.id")} = ${row(column)} AND ${sql.ref("e.companyId")} = ${row("companyId")} AND ${governs("p")})`;
+    }
+    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "project")} p WHERE ${sql.ref("p.id")} = ${row(column)} AND ${sql.ref("p.companyId")} = ${row("companyId")} AND ${governs("p")})`;
+  });
+
+/**
  * `local` is reachable through a link table: it is one of `linkTable.linkColumn` over the
  * link rows satisfying `condition`, whose bare columns are the link table's.
  */
@@ -133,6 +161,25 @@ export const through = (
   pred(
     () =>
       sql`${sql.ref(local)} IN (SELECT ${sql.ref(`${linkTable}.${linkColumn}`)} FROM ${sql.id("public", linkTable)} WHERE ${condition.sql(linkTable)})`
+  );
+
+/**
+ * `through` in a form an index can serve inside an `or(...)`. `IN (SELECT …)` compiles
+ * to a hashed SubPlan, which is no index path, and a BitmapOr needs one in every branch,
+ * so one such branch turns the whole policy into a filter over a scan. The uncorrelated
+ * `array_agg` runs once per query and `= ANY (array)` can use the local column's index.
+ * Use it only where the link rows `condition` matches are few (portal branches): the
+ * array holds all of them. COALESCE keeps "no link rows" false-y rather than NULL.
+ */
+export const throughIndexed = (
+  local: string,
+  linkTable: Table,
+  linkColumn: string,
+  condition: Pred
+): Pred =>
+  pred(
+    () =>
+      sql`${sql.ref(local)} = ANY (COALESCE((SELECT array_agg(${sql.ref(`${linkTable}.${linkColumn}`)}) FROM ${sql.id("public", linkTable)} WHERE ${condition.sql(linkTable)}), '{}'))`
   );
 
 /**

@@ -72,7 +72,7 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
      `applyRulesOnTop=false` skips discounts and markups but still applies the
      configuration prices (`applyPriceRules(..., { configurationOnly: true })`).
    - Final price clamped to ≥ 0.
-   Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId? }`).
+   Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId?, overrideId? }`; an override step's `overrideId` is the override it applied, linked from `PriceTraceModal`).
    The trace is a **snapshot stored with the price** — pricing rules are edited
    in place, so re-running today's rules cannot explain yesterday's price.
    - `quoteLinePrice.priceTrace` (migration `20261001125824`), one per quantity
@@ -167,7 +167,7 @@ it.
   builders and `recalculateQuoteLinePrices`, and the pricing grid's **Markup %** and
   per-category markup edits (`resolveRollupPrice` → `api/sales/resolve-price`).
   Computing `cost × markup` alone drops the pricing rules and the configuration
-  prices. The `get-method` server function seeds rows at cost-plus only, so every
+  prices. `getMethod` (`production.service.ts`, ported from the `get-method` server function) seeds rows at cost-plus only, so every
   ERP route that invokes it on a quote line (`itemToQuoteLine`,
   `quoteLineToQuoteLine`) follows with `recalculateQuoteLinePrices`. A typed unit
   price or markup percent is a manual price and is never repriced.
@@ -192,4 +192,4 @@ it.
 - Sales orders/invoices: `salesOrderLine` carries `pricingRuleId` + `priceTrace`
   (the trace propagates from the quote through `convert`; nothing writes
   `pricingRuleId`), but invoice lines do not. Quote→order
-  conversion goes through the `convert` server function (`convertQuoteToOrder`).
+  conversion goes through `convertDocument` (`shared.service.ts`, ported from the `convert` server function) (`convertQuoteToOrder`).

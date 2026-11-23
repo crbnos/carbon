@@ -4,6 +4,10 @@
 
 import PurchaseOrderDeliveryForm from "./PurchaseOrderDeliveryForm";
 import PurchaseOrderExplorer from "./PurchaseOrderExplorer";
+import {
+  PurchaseOrderForceDeleteBanner,
+  PurchaseOrderForceDeleteModal
+} from "./PurchaseOrderForceDelete";
 import PurchaseOrderForm from "./PurchaseOrderForm";
 import PurchaseOrderHeader from "./PurchaseOrderHeader";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
@@ -18,13 +22,15 @@ import { usePurchaseOrderTotals } from "./usePurchaseOrderTotals";
 export {
   PurchaseOrderDeliveryForm,
   PurchaseOrderExplorer,
+  PurchaseOrderForceDeleteBanner,
+  PurchaseOrderForceDeleteModal,
   PurchaseOrderForm,
   PurchaseOrderHeader,
   PurchaseOrderLineForm,
   PurchaseOrderPaymentForm,
   PurchaseOrderProperties,
-  PurchaseOrdersTable,
   PurchaseOrderSummary,
+  PurchaseOrdersTable,
   PurchasingStatus,
   usePurchaseOrder,
   usePurchaseOrderTotals

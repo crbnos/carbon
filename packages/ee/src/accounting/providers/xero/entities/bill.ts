@@ -3,26 +3,32 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
+import { assertExchangeRate, datetime, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
-import { loadAccountCodesById } from "../../../core/account-mapping";
 import {
-  type CostingLine,
-  costingLineItemLabel,
-  loadBillCostingLines,
-  toTransactionCurrencyLines
-} from "../../../core/document-costing";
+  getAccountMappings,
+  loadAccountCodesById
+} from "../../../core/account-mapping";
+import {
+  billHasReverseCharge,
+  planBillTaxLines
+} from "../../../core/bill-tax-plan";
+import { loadBillCostingLines } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
-  type ShouldSyncContext
+  type BatchSyncResult,
+  type ShouldSyncContext,
+  type SyncResult
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
-import { parseDotnetDate, type Xero } from "../models";
+import { parseDotnetDate, toXeroDateString, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
-import { assertXeroMoneyPrecision } from "../serialize";
+import { hasXeroMappedTax, XeroTaxContextLoader } from "../tax";
+import { buildXeroBillLineItems, takesBillFallback } from "./bill-lines";
+import { mergeBatchResults, pushXeroVoids } from "./void";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -114,100 +120,48 @@ const SYNCABLE_STATUSES: Accounting.Bill["status"][] = [
 // Xero rejects line edits on a bill that already carries payments.
 const PAID_STATUSES: Accounting.Bill["status"][] = ["Paid", "Partially Paid"];
 
-/**
- * Build Xero ACCPAY line items as an account-costed replay of the bill's
- * posted "Purchase Invoice" journal: `AccountCode` = the journal line's
- * mapped account (GR-IR / PPV / clearing), NOT the item's account and NOT the
- * blunt `defaultPurchaseAccountCode`. Tax-neutral (`TaxType: "NONE"`, no
- * `TaxAmount`) — the purchase posting folds tax into cost, so the replay
- * amounts already embed it. Pure — exported for tests. Amounts are already in
- * the invoice's transaction currency (`toTransactionCurrencyLines`).
- *
- * `ItemCode` is attached ONLY for items known non-tracked (`nonTrackedItemIds`)
- * — a tracked Xero item would make Xero override the AccountCode with the
- * item's inventory account and double-post inventory.
- *
- * Unmapped / account-less / no-journal lines throw the structured
- * UNMAPPED_ACCOUNTS Warning (user-fixable: map the account, then retry).
- */
-export function buildXeroBillLineItems(args: {
-  bill: Accounting.Bill;
-  costingLines: CostingLine[];
-  accountCodesById: ReadonlyMap<string, string>;
-  nonTrackedItemIds?: ReadonlySet<string>;
-}): Xero.InvoiceLineItem[] {
-  const { bill } = args;
-
-  if (args.costingLines.length === 0) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
-      warning: true,
-      metadata: { billId: bill.id }
-    });
-  }
-
-  const unmapped = new Set<string>();
-  const lineIdsWithoutAccount: string[] = [];
-  for (const line of args.costingLines) {
-    if (!line.accountId) {
-      lineIdsWithoutAccount.push(line.id);
-      continue;
-    }
-    if (!args.accountCodesById.get(line.accountId)) {
-      unmapped.add(line.accountId);
-    }
-  }
-
-  if (unmapped.size > 0 || lineIdsWithoutAccount.length > 0) {
-    const parts: string[] = [];
-    if (unmapped.size > 0) {
-      parts.push(`${unmapped.size} account(s) have no Xero account mapping`);
-    }
-    if (lineIdsWithoutAccount.length > 0) {
-      parts.push(
-        `${lineIdsWithoutAccount.length} posting journal line(s) have no account`
-      );
-    }
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: ${parts.join(
-        "; "
-      )}. Map the account(s) on the integration settings page, then retry.`,
-      warning: true,
-      metadata: {
-        billId: bill.id,
-        unmappedAccountIds: [...unmapped],
-        ...(lineIdsWithoutAccount.length > 0 ? { lineIdsWithoutAccount } : {})
-      }
-    });
-  }
-
-  assertXeroMoneyPrecision(...args.costingLines.map((line) => line.amount));
-  const nonTracked = args.nonTrackedItemIds;
-  return args.costingLines.map((line) => {
-    const attachItemCode =
-      line.sourceItem && nonTracked?.has(line.sourceItem.id)
-        ? line.sourceItem.code
-        : null;
-    return {
-      Description: costingLineItemLabel(line) ?? line.description ?? undefined,
-      LineAmount: line.amount,
-      AccountCode: args.accountCodesById.get(line.accountId!)!,
-      TaxType: "NONE",
-      ...(attachItemCode ? { ItemCode: attachItemCode.slice(0, 30) } : {})
-    };
-  });
-}
-
 export class BillSyncer extends BaseEntitySyncer<
   Accounting.Bill,
   Xero.Invoice,
   "UpdatedDateUTC"
 > {
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
+  private readonly taxContext = new XeroTaxContextLoader(
+    this.database,
+    { companyId: this.companyId, integration: this.provider.id },
+    this.provider as XeroProvider
+  );
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  // A synced bill voided in Carbon is voided in Xero, not pushed again.
+  async pushToAccounting(entityId: string): Promise<SyncResult> {
+    if (this.config.enabled) {
+      const voids = await this.pushVoids([entityId]);
+      if (voids.results[0]) return voids.results[0];
+    }
+    return super.pushToAccounting(entityId);
+  }
+
+  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
+    if (!this.config.enabled) return super.pushBatchToAccounting(entityIds);
+    const voids = await this.pushVoids(entityIds);
+    const rest =
+      voids.remaining.length > 0
+        ? await super.pushBatchToAccounting(voids.remaining)
+        : null;
+    return mergeBatchResults(voids.results, rest);
+  }
+
+  private pushVoids(entityIds: string[]) {
+    return pushXeroVoids({
+      database: this.database,
+      companyId: this.companyId,
+      provider: this.xeroProvider,
+      entityType: "bill",
+      entityIds
+    });
   }
 
   // =================================================================
@@ -326,7 +280,7 @@ export class BillSyncer extends BaseEntitySyncer<
       );
       for (const supplierId of supplierIds) {
         const externalId = await mappingService.getExternalId(
-          "supplier",
+          "vendor",
           supplierId,
           this.provider.id
         );
@@ -483,28 +437,40 @@ export class BillSyncer extends BaseEntitySyncer<
 
     // Account-costed replay of the bill's posted Purchase Invoice journal.
     const accountCodesById = await this.getAccountCodesById();
-    const {
-      lines: costingLines,
-      currencyCode,
-      exchangeRate,
-      documentTotal,
-      decimalPlaces,
-      baseCurrencyCode
-    } = await loadBillCostingLines(this.database, {
+    const costing = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
       billId: local.id
     });
-
-    const transactionLines = toTransactionCurrencyLines(costingLines, {
-      exchangeRate,
-      documentTotal,
-      decimalPlaces
+    const { currencyCode, exchangeRate, baseCurrencyCode } = costing;
+    // A bill with no recoverable tax and no zero-rated code replays every leg
+    // at NONE and never reads the tax rates.
+    const plan = planBillTaxLines(costing, {
+      id: local.id,
+      label: `bill ${local.invoiceId}`
     });
 
+    // Untaxed code-less legs and the untaxed freight of a fully recoverable
+    // code take the mapped fallback rate, except on a Reverse Charge bill,
+    // which goes out tax-neutral (Phase 1).
+    const noTaxCodeFallback =
+      !billHasReverseCharge(costing.lines) &&
+      (await this.taxContext.facts()).noTaxCodeFallback.has("purchase");
+    const needsRates =
+      plan.sendsTax ||
+      (noTaxCodeFallback && plan.lines.some(takesBillFallback));
+
+    // Every tax resolves here, before the supplier dependency is written.
     const lineItems = buildXeroBillLineItems({
       bill: local,
-      costingLines: transactionLines,
+      lines: plan.lines,
       accountCodesById,
+      tax: needsRates
+        ? {
+            context: await this.taxContext.load(),
+            decimalPlaces: costing.decimalPlaces
+          }
+        : undefined,
+      noTaxCodeFallback,
       // v1: no item gets ItemCode on a bill line — proving a Xero item is
       // non-tracked needs a live per-item fetch (env-gated); attaching
       // ItemCode for a tracked item would double-post inventory. The
@@ -550,8 +516,12 @@ export class BillSyncer extends BaseEntitySyncer<
       // Pin every foreign snapshot, including negotiated 1:1 rates.
       CurrencyRate:
         currencyCode !== baseCurrencyCode ? exchangeRate : undefined,
-      // Tax-neutral replay: lines embed tax; let Xero compute totals from the
-      // NONE-taxed line amounts (no SubTotal/TotalTax/Total conflict).
+      // Xero computes the totals from the lines (no SubTotal/TotalTax/Total
+      // conflict). Lines with a mapped rate state amounts net of the tax they
+      // carry; a tax-neutral replay sends no line tax and no LineAmountTypes.
+      ...(hasXeroMappedTax(lineItems)
+        ? { LineAmountTypes: "Exclusive" as const }
+        : {}),
       LineItems: lineItems
     };
   }
@@ -598,7 +568,8 @@ export class BillSyncer extends BaseEntitySyncer<
     if (
       remote.Status === "AUTHORISED" &&
       remote.DueDate &&
-      new Date(remote.DueDate) < new Date()
+      (toXeroDateString(remote.DueDate) ?? "") <
+        datetime.today("UTC").toString()
     ) {
       status = "Overdue";
     }
@@ -632,8 +603,8 @@ export class BillSyncer extends BaseEntitySyncer<
       invoiceId: remote.InvoiceNumber ?? remote.InvoiceID,
       supplierExternalId: remote.Contact.ContactID,
       status,
-      dateIssued: remote.Date ?? null,
-      dateDue: remote.DueDate ?? null,
+      dateIssued: toXeroDateString(remote.Date),
+      dateDue: toXeroDateString(remote.DueDate),
       datePaid: remote.Status === "PAID" ? new Date().toISOString() : null,
       currencyCode,
       exchangeRate,
@@ -673,7 +644,7 @@ export class BillSyncer extends BaseEntitySyncer<
       supplierId = await txMappingService.getEntityId(
         this.provider.id,
         data.supplierExternalId,
-        "supplier"
+        "vendor"
       );
     }
 
@@ -837,26 +808,44 @@ export class BillSyncer extends BaseEntitySyncer<
       }
     }
 
-    // Resolve account IDs from Xero AccountCodes
-    const accountNumbers = [
-      ...new Set(
-        lines.map((l) => l.accountNumber).filter((n): n is string => n !== null)
-      )
-    ];
+    // Resolve Carbon accounts through the integration's account mapping (a
+    // Xero code never matches a Carbon account number). A code that maps to no
+    // account, or to several, refuses the bill instead of guessing.
     const accountIdMap = new Map<string, string>();
-    if (accountNumbers.length > 0) {
-      const companyGroupId = await this.getCompanyGroupId(tx);
-      if (companyGroupId) {
-        const accounts = await tx
-          .selectFrom("account")
-          .select(["id", "number"])
-          .where("companyGroupId", "=", companyGroupId)
-          .where("number", "in", accountNumbers)
-          .where("active", "=", true)
-          .execute();
-        for (const a of accounts) {
-          if (a.number) accountIdMap.set(a.number, a.id);
-        }
+    const accountCodes = new Set(
+      lines
+        .filter((l) => !(l.itemCode && itemMap.has(l.itemCode)))
+        .map((l) => l.accountNumber)
+        .filter((n): n is string => n !== null)
+    );
+    if (accountCodes.size > 0) {
+      const mappings = await getAccountMappings(tx, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      });
+      if (mappings.error) {
+        throw new Error(`Failed to load account mappings: ${mappings.error}`);
+      }
+      const idsByCode = new Map<string, Set<string>>();
+      for (const mapping of mappings.data ?? []) {
+        if (!mapping.externalCode) continue;
+        const ids = idsByCode.get(mapping.externalCode) ?? new Set<string>();
+        ids.add(mapping.accountId);
+        idsByCode.set(mapping.externalCode, ids);
+      }
+      const unresolved: string[] = [];
+      for (const code of accountCodes) {
+        const ids = [...(idsByCode.get(code) ?? [])];
+        if (ids.length === 1) accountIdMap.set(code, ids[0]!);
+        else unresolved.push(code);
+      }
+      if (unresolved.length > 0) {
+        throw new JournalEntrySyncError({
+          errorCode: "UNMAPPED_ACCOUNTS",
+          message: `Cannot import Xero bill: Xero account ${unresolved.join(", ")} maps to no single Carbon account. Map it to exactly one Carbon account on the Account Mapping tab, then retry.`,
+          warning: true,
+          metadata: { xeroAccountCodes: unresolved }
+        });
       }
     }
 
@@ -884,6 +873,7 @@ export class BillSyncer extends BaseEntitySyncer<
         accountId: line.accountNumber
           ? (accountIdMap.get(line.accountNumber) ?? null)
           : null,
+        // No tax code (Phase 1): posting folds a pulled bill's tax into cost.
         taxPercent: line.taxPercent,
         supplierTaxAmount: line.taxAmount ?? 0,
         exchangeRate: invoice.exchangeRate,

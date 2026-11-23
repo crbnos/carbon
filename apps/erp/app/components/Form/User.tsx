@@ -50,6 +50,7 @@ const User = ({ name, label, type, helperText, ...props }: UserProps) => {
       )}
       <input type="hidden" name={name} value={selection} />
       <UserSelect
+        id={label ? name : undefined}
         {...props}
         type={type}
         usersOnly

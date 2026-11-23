@@ -29,39 +29,61 @@ export function isSearchParamOnlyNavigation({
   return currentUrl.pathname === nextUrl.pathname;
 }
 
+/** Every app's root action: it only writes appearance cookies. */
+export const ROOT_ACTION = "/";
+
 /**
- * True when a GET navigation left the route params and search params a layout
- * loader reads unchanged (`search: "all"` for one that reads the whole query
- * string). Single fetch otherwise re-runs every matched loader on every
- * navigation. Mutations and `useRevalidator().revalidate()` are never
- * "unaffected".
+ * How an appearance choice is saved. Only the root loader reads the cookies,
+ * so the save asks no other route to re-run; the root opts back in
+ * (`rootShouldRevalidate`) and a route with its own `shouldRevalidate` wraps
+ * it in `deferRootActionPost`.
  */
-export function isUnaffectedByNavigation(
-  {
-    currentUrl,
-    nextUrl,
-    currentParams,
-    nextParams,
-    formMethod
-  }: {
-    currentUrl: URL;
-    nextUrl: URL;
-    currentParams: Record<string, string | undefined>;
-    nextParams: Record<string, string | undefined>;
-    formMethod?: string;
-  },
-  reads: { params?: string[]; search?: string[] | "all" } = {}
+export const ROOT_ACTION_SAVE = {
+  method: "post",
+  action: ROOT_ACTION,
+  defaultShouldRevalidate: false
+} as const;
+
+type RevalidateArgs = {
+  formAction?: string;
+  formMethod?: string;
+  defaultShouldRevalidate: boolean;
+};
+
+export function isRootActionPost({
+  formAction,
+  formMethod
+}: {
+  formAction?: string;
+  formMethod?: string;
+}) {
+  return formAction === ROOT_ACTION && !!formMethod && formMethod !== "GET";
+}
+
+/**
+ * The ERP and MES root: re-run for an appearance save, skip a same-page
+ * search-param change, else follow the default.
+ */
+export function rootShouldRevalidate(
+  args: RevalidateArgs & { currentUrl: URL; nextUrl: URL }
 ) {
-  if (formMethod && formMethod !== "GET") return false;
-  if (currentUrl.href === nextUrl.href) return false;
-  const { params = [], search = [] } = reads;
-  if (!params.every((key) => currentParams[key] === nextParams[key])) {
-    return false;
-  }
-  if (search === "all") return currentUrl.search === nextUrl.search;
-  return search.every(
-    (key) => currentUrl.searchParams.get(key) === nextUrl.searchParams.get(key)
-  );
+  if (isRootActionPost(args)) return true;
+  return isSearchParamOnlyNavigation(args)
+    ? false
+    : args.defaultShouldRevalidate;
+}
+
+/**
+ * A route `shouldRevalidate` that would otherwise re-run after any post,
+ * left to the default for an appearance save.
+ */
+export function deferRootActionPost<Args extends RevalidateArgs>(
+  shouldRevalidate: (args: Args) => boolean
+) {
+  return (args: Args) =>
+    isRootActionPost(args)
+      ? args.defaultShouldRevalidate
+      : shouldRevalidate(args);
 }
 
 export const SHELL_MAX_AGE_MS = 5 * 60 * 1000;

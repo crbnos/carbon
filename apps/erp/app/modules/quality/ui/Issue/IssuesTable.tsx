@@ -33,6 +33,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useItems } from "~/stores/items";
@@ -52,9 +53,11 @@ type IssuesTableProps = {
   data: Issue[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
+const IssuesTable = memo((props: IssuesTableProps) => {
+  const { data, types, count, infinite } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -84,6 +87,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -93,6 +97,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <IssueStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -116,6 +121,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuOctagonX />,
           filter: {
             type: "static",
@@ -219,6 +225,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: people.map((employee) => ({
@@ -354,6 +361,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
     <>
       <Table<Issue>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={
@@ -366,18 +374,12 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         table="nonConformance"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedIssue && (
+      {selectedIssue && (
         <ConfirmDelete
           action={path.to.deleteIssue(selectedIssue.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedIssue(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedIssue(null);
-            deleteDisclosure.onClose();
-          }}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
           name={selectedIssue.name ?? "issue"}
           text={t`Are you sure you want to delete this issue?`}
         />

@@ -538,3 +538,43 @@ export function consumeFifo(
   if (toConsume > 0) total += toConsume * fallbackUnitCost;
   return total;
 }
+
+/** A time entry's journal line: which of the two accounts, and its amount. */
+export type ServiceJobTimeLine = {
+  account: "coverage" | "laborAbsorption";
+  description: string;
+  /** Both accounts are Expense: a debit is positive. */
+  amount: number;
+};
+
+/**
+ * post-service-job `post-time` (`buildServiceTimeCostGroups`) for one closed
+ * time entry: Dr the coverage account / Cr labor absorption at hours × the
+ * entry's cost rate. No lines when the entry costs nothing.
+ */
+export function serviceJobTimeJournal(args: {
+  serviceJobReadableId: string;
+  coverage: "Billable" | "Warranty" | "Contract";
+  unitCost: number;
+  hours: number;
+}): { description: string; lines: ServiceJobTimeLine[] } {
+  const cost = round(args.hours * args.unitCost);
+  const description = `Service Job Time ${args.serviceJobReadableId}`;
+  if (cost <= EPSILON) return { description, lines: [] };
+  return {
+    description,
+    lines: [
+      {
+        account: "coverage",
+        description:
+          args.coverage === "Warranty" ? "Warranty Expense" : "Cost of Service",
+        amount: debit("expense", cost)
+      },
+      {
+        account: "laborAbsorption",
+        description: "Labor Absorption",
+        amount: credit("expense", cost)
+      }
+    ]
+  };
+}

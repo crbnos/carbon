@@ -30,12 +30,12 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
-import type { PurchaseOrder } from "~/modules/purchasing";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderDeliveryValidator
-} from "~/modules/purchasing";
-import { incoterms } from "~/modules/shared";
+} from "~/modules/purchasing/purchasing.models";
+import type { PurchaseOrder } from "~/modules/purchasing/types";
+import { incoterms } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.delivery";
 import { path } from "~/utils/path";
 
@@ -62,7 +62,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
     purchaseOrder: PurchaseOrder;
   }>(path.to.purchaseOrder(orderId));
 
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
 
   const { t } = useLingui();
   // Settlement amount — digits follow the document currency's own decimals.
@@ -151,13 +151,23 @@ const PurchaseOrderDeliveryForm = forwardRef<
 
             <DatePicker
               name="receiptRequestedDate"
-              label={t`Requested Date`}
+              label={t`Receipt Requested Date`}
               termId="purchase-order-delivery-requested-date"
             />
             <DatePicker
               name="receiptPromisedDate"
-              label={t`Promised Date`}
+              label={t`Receipt Promised Date`}
               termId="purchase-order-delivery-promised-date"
+            />
+            <DatePicker
+              name="expectedReceiptDate"
+              label={t`Expected Receipt Date`}
+              termId="purchase-order-delivery-expected-receipt-date"
+            />
+            <DatePicker
+              name="shippedDate"
+              label={t`Shipped Date`}
+              termId="purchase-order-delivery-shipped-date"
             />
             <DatePicker
               name="deliveryDate"
@@ -166,7 +176,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
             />
 
             <Input name="trackingNumber" label={t`Tracking Number`} />
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="dropShipment"
                 label={t`Drop Shipment`}

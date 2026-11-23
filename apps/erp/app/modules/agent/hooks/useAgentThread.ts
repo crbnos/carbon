@@ -3,12 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useChat } from "@ai-sdk/react";
+import { getLogger } from "@carbon/logger";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
 import { useBrowsingContext } from "./useBrowsingContext";
+
+const logger = getLogger("erp", "agent", "thread");
 
 /** The text of the newest user message — the only thing a send puts on the wire. */
 function lastUserText(messages: UIMessage[]): string | undefined {
@@ -101,10 +104,10 @@ export function useAgentThread() {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Thread create failed: ${res.status}`);
-          return res.json() as Promise<{ threadId?: string }>;
+          return res.json() as Promise<{ data: { threadId: string } | null }>;
         })
-        .then((data) => {
-          const id = data.threadId ?? null;
+        .then((result) => {
+          const id = result.data?.threadId ?? null;
           // Don't clobber a thread that loadThread/newThread selected while this
           // create was in flight — only adopt the new id if nothing was set meanwhile.
           if (id && !threadIdRef.current) {
@@ -113,7 +116,10 @@ export function useAgentThread() {
           }
           return threadIdRef.current ?? id;
         })
-        .catch(() => null)
+        .catch((error) => {
+          logger.warning("Failed to create an agent thread", { error });
+          return null;
+        })
         .finally(() => {
           createInFlight.current = null;
         });

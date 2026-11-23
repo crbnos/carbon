@@ -6,27 +6,27 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { fixedAssetValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetValidator,
   getFixedAsset,
   updateFixedAsset
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { FixedAssetForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
 
   if (asset.error) {
     throw redirect(
@@ -67,6 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     residualValuePercent: d.residualValuePercent,
     assetLifetimeUsage: d.assetLifetimeUsage ?? null,
     locationId: d.locationId ?? null,
+    workCenterId: d.workCenterId ?? null,
     taxDepreciationMethod: d.taxDepreciationMethod ?? null,
     taxUsefulLifeMonths: d.taxUsefulLifeMonths ?? null,
     taxResidualValuePercent: d.taxResidualValuePercent ?? null,
@@ -92,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function FixedAssetDetailsRoute() {
   const { asset } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: asset.id,
@@ -107,6 +108,9 @@ export default function FixedAssetDetailsRoute() {
       ? Number(asset.assetLifetimeUsage)
       : undefined,
     locationId: asset.locationId ?? undefined,
+    // The action writes `workCenterId ?? null`: unseeded, saving the form
+    // cleared the asset's work center.
+    workCenterId: asset.workCenterId ?? undefined,
     taxDepreciationMethod: (asset as any).taxDepreciationMethod ?? undefined,
     taxUsefulLifeMonths: (asset as any).taxUsefulLifeMonths ?? undefined,
     taxResidualValuePercent:
@@ -123,7 +127,8 @@ export default function FixedAssetDetailsRoute() {
 
   return (
     <FixedAssetForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       key={initialValues.id}
       initialValues={initialValues}
     />

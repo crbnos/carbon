@@ -6,10 +6,13 @@ AS $function$
 BEGIN
   IF p_operation != 'INSERT' THEN RETURN; END IF;
 
+  -- A user is in a group once ("membership_groupId_memberUserId_key"). A
+  -- membership left behind for this pair must not fail the parent insert.
   INSERT INTO "membership" ("groupId", "memberUserId")
   VALUES (
     p_new->>'customerId',
     p_new->>'id'
-  );
+  )
+  ON CONFLICT ("groupId", "memberUserId") DO NOTHING;
 END;
 $function$;

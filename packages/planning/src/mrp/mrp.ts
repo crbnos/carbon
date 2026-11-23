@@ -2,27 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { randomUUID } from "node:crypto";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
-import {
-  type BomChild,
-  type DemandContributor,
-  explodeBom,
-  type MethodType,
-  makeActualKey,
-  makeKey,
-  makeLocationItemKey,
-  netConsumeFirstContributors,
-  type ReplenishmentSystem,
-  splitActualKey,
-  splitKey
-} from "@carbon/database/mrp-engine";
-import {
-  buildConsumeFirstHops,
-  buildSupersessionRedirectMap,
-  type Redirect
-} from "@carbon/database/supersession-pick";
+import type { MethodType } from "@carbon/database/mrp-engine";
+import type { WriteGroupPegs } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import {
@@ -31,9 +16,11 @@ import {
   startOfWeek
 } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
+import { generatePlanningActions } from "./planning-actions.ts";
 
 const logger = getLogger("planning", "mrp");
 
@@ -93,16 +80,35 @@ export type MrpPayload = z.infer<typeof payloadValidator>;
 export type MrpResult = { success: true };
 
 /**
+ * The commercial functions a run uses for planning groups (PLANNING_GROUPS).
+ * `@carbon/planning` is reachable from the ERP client bundle, so it imports
+ * no `.server` module: a server-side caller injects these
+ * (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`). Without them the
+ * run degrades as it does for a company without PLANNING_GROUPS.
+ */
+export type MrpDeps = {
+  /** Whether the company has PLANNING_GROUPS (`companyHasFeature`). */
+  companyHasPlanningGroups: (
+    client: SupabaseClient<Database>,
+    companyId: string
+  ) => Promise<boolean>;
+  /** The peg writer, run in the planning-action transaction. */
+  writeGroupPegs: WriteGroupPegs;
+};
+
+/**
  * Material Requirements Planning, run in-process in Node. The caller supplies
  * a service-role Supabase client (PostgREST reads) and a Kysely handle (the
  * atomic Phase-7 write), and authenticates before calling — this function does
  * not re-check permissions. Throws on failure so the caller (ERP route /
- * Inngest cron) can report it.
+ * Inngest cron) can report it. `deps` carries the commercial planning group
+ * functions; without it the run plans no group segment and writes no peg.
  */
 export async function runMrp(
   client: SupabaseClient<Database>,
   db: Kysely<DB>,
-  payload: unknown
+  payload: unknown,
+  deps?: MrpDeps
 ): Promise<MrpResult> {
   const parsedPayload = payloadValidator.parse(payload);
   const { type, companyId, userId } = parsedPayload;
@@ -134,7 +140,9 @@ export async function runMrp(
       jobMaterialLines,
       productionLines,
       purchaseOrderLines,
-      demandProjections
+      demandProjections,
+      projectMaterialLines,
+      projectBorrows
     ] = await Promise.all([
       fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
         client
@@ -175,6 +183,21 @@ export async function runMrp(
             periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
           )
           .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openProjectMaterialLines"]["Row"]>(
+        () =>
+          client
+            .from("openProjectMaterialLines")
+            .select("*")
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openProjectBorrows"]["Row"]>(() =>
+        client
+          .from("openProjectBorrows")
+          .select("*")
+          .eq("companyId", companyId)
+          .order("id")
       )
     ]);
 
@@ -188,6 +211,28 @@ export async function runMrp(
       throw new Error("Failed to load purchase order lines");
     if (demandProjections.error)
       throw new Error("Failed to load demand projections");
+    if (projectMaterialLines.error)
+      throw new Error("Failed to load project material lines");
+    if (projectBorrows.error) throw new Error("Failed to load project borrows");
+
+    // Forecast-consumption window (weekly periods): how far an actual reaches
+    // to consume forecast beyond its own week — backward first, then forward.
+    const consumptionSettings = await client
+      .from("companySettings")
+      .select(
+        "forecastConsumptionBackwardPeriods, forecastConsumptionForwardPeriods"
+      )
+      .eq("id", companyId)
+      .maybeSingle();
+    // No fallback to the defaults on a failed read: the window decides how much
+    // forecast is consumed, and that result is persisted for every read path.
+    if (consumptionSettings.error) throw consumptionSettings.error;
+    const consumptionWindow = {
+      backwardPeriods:
+        consumptionSettings.data?.forecastConsumptionBackwardPeriods ?? 4,
+      forwardPeriods:
+        consumptionSettings.data?.forecastConsumptionForwardPeriods ?? 1
+    };
 
     // Bulk-load item metadata
     const [allItems, allReplenishments] = await Promise.all([
@@ -202,19 +247,6 @@ export async function runMrp(
         .where("companyId", "=", companyId)
         .execute()
     ]);
-
-    const replenishmentSystemByItem = new Map<string, ReplenishmentSystem>();
-    for (const item of allItems) {
-      replenishmentSystemByItem.set(
-        item.id,
-        item.replenishmentSystem as ReplenishmentSystem
-      );
-    }
-
-    const leadTimeByItem = new Map<string, number>();
-    for (const rep of allReplenishments) {
-      leadTimeByItem.set(rep.itemId, rep.leadTime ?? 7);
-    }
 
     // Supersession config per discontinued item (drives demand redirection).
     // Loaded via the supabase client (like the other demand inputs) so DATE
@@ -236,60 +268,88 @@ export async function runMrp(
         .order("itemId")
     );
     if (supersessions.error) throw new Error("Failed to load supersessions");
-    const supersessionByItem = new Map<
-      string,
-      {
-        supersessionMode: Database["public"]["Enums"]["supersessionMode"];
-        successorItemId: string | null;
-        successorEffectivityDate: string | null;
-        conversionFactor: number;
-      }
-    >();
-    for (const s of supersessions.data ?? []) {
-      supersessionByItem.set(s.itemId, {
-        supersessionMode: s.supersessionMode,
-        successorItemId: s.successorItemId,
-        successorEffectivityDate: s.successorEffectivityDate,
-        conversionFactor: Number(s.conversionFactor ?? 1) || 1
-      });
-    }
-
-    // Resolve which superseded items currently redirect to a successor (effective
-    // phase-out modes), collapsing multi-hop chains with the cumulative conversion
-    // factor. Shared with job creation (get-method) via @carbon/database/supersession-pick so the
-    // two can never diverge — MRP gates on `today`, get-method gates on the job's
-    // build date. (supersessionByItem above is kept for the Consume-First on-hand
-    // draw-down below.)
-    const redirectByItem = buildSupersessionRedirectMap(
-      supersessions.data ?? [],
-      today.toString()
-    );
-    const consumeFirstHops = buildConsumeFirstHops(
-      supersessions.data ?? [],
-      today.toString()
-    );
 
     // Bulk-load inventory by location+item from the trigger-maintained
     // aggregate: transactionally current and an indexed read of a few hundred
     // rows, where the previous full-ledger GROUP BY grew with total history
     // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
     // aggregate: Rejected tracked stock is NOT available to plan against,
-    // matching get_inventory_quantities — the raw ledger sum counted it.
-    const inventoryRows = await db
-      .selectFrom("itemStockQuantities")
-      .select(["itemId", "locationId", "quantityOnHand"])
-      .where("companyId", "=", companyId)
-      .execute();
+    // matching get_inventory_quantities — the raw ledger sum counted it. The
+    // nettable figure also leaves out stock in non-nettable storage units.
+    //
+    // Every stripe is read: planCompany sums each into its netting segment
+    // (a project with project stock, else common), the rule of the SQL
+    // project_planning_segment. The projects with project stock are read
+    // once for that mapping.
+    const [
+      inventoryRows,
+      stockedProjects,
+      commonSupplyBlocked,
+      planningGroupRows,
+      groupMemberRows
+    ] = await Promise.all([
+      db
+        .selectFrom("itemStockQuantities")
+        .select((eb) => [
+          "itemId",
+          "locationId",
+          "projectId",
+          // the nettable on-hand, under the name planCompany's onHand reads
+          eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+            "quantityOnHand"
+          )
+        ])
+        .where("companyId", "=", companyId)
+        .execute(),
+      db
+        .selectFrom("project")
+        .select(["id"])
+        .where("companyId", "=", companyId)
+        .where("projectStock", "=", true)
+        .execute(),
+      // Items whose project segments may not draw common stock.
+      db
+        .selectFrom("itemPlanning")
+        .select(["itemId", "locationId"])
+        .where("companyId", "=", companyId)
+        .where("allowCommonSupplyForProjects", "=", false)
+        .execute(),
+      // Projects Phase 3: the planning groups and their members. A member
+      // has project stock (project_planningGroup_stock_check).
+      db
+        .selectFrom("planningGroup")
+        .select(["id", "active", "priorityRule"])
+        .where("companyId", "=", companyId)
+        .execute(),
+      db
+        .selectFrom("project")
+        .select(["id", "planningGroupId", "planningPriority"])
+        .where("companyId", "=", companyId)
+        .where("planningGroupId", "is not", null)
+        .where("projectStock", "=", true)
+        .execute()
+    ]);
 
-    const baseInventoryByLocationItem = new Map<string, number>();
-    for (const row of inventoryRows) {
-      if (row.itemId && row.locationId) {
-        baseInventoryByLocationItem.set(
-          makeLocationItemKey(row.locationId, row.itemId),
-          Number(row.quantityOnHand) || 0
-        );
-      }
-    }
+    // Planning groups are commercial (PLANNING_GROUPS). Without the feature
+    // the run degrades: members net in their own segments and no group
+    // segment exists. The plan is read only when the company has a group.
+    const planningGroupsEnabled =
+      planningGroupRows.length > 0 &&
+      (await companyHasPlanningGroups(deps, client, companyId));
+    const activeGroupIds = new Set(
+      planningGroupRows.filter((group) => group.active).map((group) => group.id)
+    );
+    const planningGroups = planningGroupsEnabled
+      ? [...activeGroupIds].map((id) => ({
+          id,
+          memberProjectIds: groupMemberRows
+            .filter((project) => project.planningGroupId === id)
+            .map((project) => project.id)
+        }))
+      : [];
+    const ungroupedPlanningGroupIds = planningGroupsEnabled
+      ? []
+      : planningGroupRows.map((group) => group.id);
 
     // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
     // prioritizing 'Active' status then highest version — same logic as get_method_tree)
@@ -305,14 +365,9 @@ export async function runMrp(
     );
     if (activeMethodsResult.error) throw activeMethodsResult.error;
 
-    const methodIdByItem = new Map<string, string>();
-    for (const m of activeMethodsResult.data ?? []) {
-      if (m.id && m.itemId) {
-        methodIdByItem.set(m.itemId, m.id);
-      }
-    }
-
-    const allMethodIds = Array.from(methodIdByItem.values());
+    const allMethodIds = Array.from(
+      activeMethodIdByItem(activeMethodsResult.data ?? []).values()
+    );
     let allMaterials: {
       id: string;
       makeMethodId: string;
@@ -335,512 +390,10 @@ export async function runMrp(
         ])
         .where("companyId", "=", companyId)
         .where("makeMethodId", "in", allMethodIds)
+        // Correction materials are drawn only when a correction is used.
+        .where("methodCorrectionId", "is", null)
         .execute()) as typeof allMaterials;
     }
-
-    // Build BOM structure: itemId -> direct children
-    // Map makeMethodId -> its direct material children
-    const materialsByMethodId = new Map<string, typeof allMaterials>();
-    for (const mat of allMaterials) {
-      const existing = materialsByMethodId.get(mat.makeMethodId) ?? [];
-      existing.push(mat);
-      materialsByMethodId.set(mat.makeMethodId, existing);
-    }
-
-    // Build itemId -> direct BOM children (one level only)
-    const bomByItem = new Map<string, BomChild[]>();
-    for (const [itemId, methodId] of methodIdByItem) {
-      const materials = materialsByMethodId.get(methodId) ?? [];
-      const children: BomChild[] = [];
-      for (const mat of materials) {
-        children.push({
-          itemId: mat.itemId,
-          quantity: Number(mat.quantity) || 1,
-          methodType: mat.methodType as MethodType
-        });
-      }
-      if (children.length > 0) {
-        bomByItem.set(itemId, children);
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 3: Collect supply from open orders
-    // ──────────────────────────────────────────────────────────────
-
-    // Supply bucketed by location+period+item (for demand projection netting + supplyActual output)
-    const jobSupplyByLocationPeriodItem = new Map<string, number>();
-
-    for (const line of productionLines.data ?? []) {
-      // locationId is part of the supplyActual primary key (hence NOT NULL) and
-      // an FK to location. A line with no location has nowhere to be planned and
-      // would write locationId="" (via the ?? "" key fallback), violating
-      // supplyActual_locationId_fkey and aborting the whole run. Skip it.
-      if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
-
-      const dueDate = line.dueDate
-        ? parseDate(line.dueDate)
-        : line.deadlineType === "No Deadline"
-          ? today.add({ days: 30 })
-          : today;
-
-      const period = findPeriod(dueDate, today, periods);
-      if (!period) continue;
-
-      const periodKey = makeKey(
-        line.locationId ?? "",
-        period.id ?? "",
-        line.itemId
-      );
-      jobSupplyByLocationPeriodItem.set(
-        periodKey,
-        (jobSupplyByLocationPeriodItem.get(periodKey) ?? 0) +
-          line.quantityToReceive
-      );
-    }
-
-    const poSupplyByLocationPeriodItem = new Map<string, number>();
-
-    for (const line of purchaseOrderLines.data ?? []) {
-      // See the productionLines guard above: a null locationId would write
-      // supplyActual with locationId="" and violate its FK.
-      if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
-
-      const dueDate = line.promisedDate
-        ? parseDate(line.promisedDate)
-        : line.orderDate
-          ? parseDate(line.orderDate).add({ days: line.leadTime ?? 7 })
-          : today.add({ days: line.leadTime ?? 7 });
-
-      const period = findPeriod(dueDate, today, periods);
-      if (!period) continue;
-
-      const periodKey = makeKey(
-        line.locationId ?? "",
-        period.id ?? "",
-        line.itemId
-      );
-      poSupplyByLocationPeriodItem.set(
-        periodKey,
-        (poSupplyByLocationPeriodItem.get(periodKey) ?? 0) +
-          line.quantityToReceive
-      );
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 4: Collect independent demands (no BOM explosion yet)
-    // ──────────────────────────────────────────────────────────────
-
-    // grossDemand: Map<"locationId-periodId-itemId", quantity>
-    const grossDemand = new Map<string, number>();
-
-    // Track actual demands separately for demandActual output
-    const salesDemandByKey = new Map<string, number>();
-    const jobMaterialDemandByKey = new Map<string, number>();
-
-    // Top-level contributors (from sales orders and job materials) — keyed by
-    // grossDemand key. Used as the starting contributor set when BOM explosion
-    // first reaches a level-0 Make item.
-    const topLevelContributors = new Map<string, DemandContributor[]>();
-
-    type DemandForecastSourceInsert =
-      Database["public"]["Tables"]["demandForecastSource"]["Insert"];
-
-    // Demand projections. Do NOT net firm job/PO supply here — supply is
-    // credited exactly once by explodeBom's running balance (which receives
-    // jobAndPoSupplyByLocationPeriodItem below). Netting here as well would
-    // double-count supply and under-drive child demand.
-    for (const projection of demandProjections.data ?? []) {
-      // locationId is part of the demandForecast primary key (hence NOT NULL)
-      // and an FK to location; a null one would write locationId="" and violate
-      // demandForecast_locationId_fkey, aborting the run.
-      if (
-        !projection.itemId ||
-        !projection.forecastQuantity ||
-        !projection.locationId
-      )
-        continue;
-
-      const netDemand = projection.forecastQuantity;
-
-      if (netDemand > 0) {
-        const key = makeKey(
-          projection.locationId ?? "",
-          projection.periodId,
-          projection.itemId
-        );
-        grossDemand.set(key, (grossDemand.get(key) ?? 0) + netDemand);
-
-        // Seed top-level contributor for this projection. Use the projection's
-        // surrogate id (added in 20260527115843_demand-projection-source.sql).
-        const projectionId = projection.id;
-        if (projectionId && projection.itemId) {
-          const contributors = topLevelContributors.get(key) ?? [];
-          contributors.push({
-            sourceType: "Demand Projection",
-            demandProjectionId: projectionId,
-            parentItemId: projection.itemId,
-            quantity: netDemand
-          });
-          topLevelContributors.set(key, contributors);
-        }
-      }
-    }
-
-    // Sales order lines
-    for (const line of salesOrderLines.data ?? []) {
-      // A null locationId would write demandForecast/demandActual with
-      // locationId="" and violate their locationId FK — skip (see above).
-      if (!line.itemId || !line.quantityToSend || !line.locationId) continue;
-
-      const promiseDate = line.promisedDate
-        ? parseDate(line.promisedDate)
-        : today;
-      const period = findPeriod(promiseDate, today, periods);
-      if (!period) continue;
-
-      const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
-      grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToSend);
-
-      const actualKey = makeActualKey(
-        line.itemId,
-        line.locationId ?? "",
-        period.id ?? "",
-        "Sales Order"
-      );
-      salesDemandByKey.set(
-        actualKey,
-        (salesDemandByKey.get(actualKey) ?? 0) + line.quantityToSend
-      );
-
-      if (line.id && line.itemId) {
-        const contributors = topLevelContributors.get(key) ?? [];
-        contributors.push({
-          sourceType: "Sales Order",
-          salesOrderLineId: line.id,
-          parentItemId: line.itemId,
-          quantity: line.quantityToSend
-        });
-        topLevelContributors.set(key, contributors);
-      }
-    }
-
-    // Job material lines
-    for (const line of jobMaterialLines.data ?? []) {
-      // A null locationId would write demandForecast/demandActual with
-      // locationId="" and violate their locationId FK — skip (see above).
-      if (!line.itemId || !line.quantityToIssue || !line.locationId) continue;
-
-      const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
-      const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
-      const period = findPeriod(requiredDate, today, periods);
-      if (!period) continue;
-
-      const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
-      grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToIssue);
-
-      const actualKey = makeActualKey(
-        line.itemId,
-        line.locationId ?? "",
-        period.id ?? "",
-        "Job Material"
-      );
-      jobMaterialDemandByKey.set(
-        actualKey,
-        (jobMaterialDemandByKey.get(actualKey) ?? 0) + line.quantityToIssue
-      );
-
-      if (line.jobId && line.itemId) {
-        const contributors = topLevelContributors.get(key) ?? [];
-        contributors.push({
-          sourceType: "Job Material",
-          jobId: line.jobId,
-          parentItemId: line.itemId,
-          quantity: line.quantityToIssue,
-          perAssemblyQuantity: Number(line.quantityPerParent) || undefined
-        });
-        topLevelContributors.set(key, contributors);
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 4.5: Supersession demand redirection
-    // ──────────────────────────────────────────────────────────────
-    // Once a discontinued item's successor is effective, move its demand to the
-    // successor before BOM explosion. Consume First exhausts the old item's
-    // on-hand first (per location, earliest periods first); Prefer New switches
-    // outright (the old part stays available only as a manual fallback). The
-    // effectivity check is item-level: redirection begins on the first MRP run
-    // on/after successorEffectivityDate.
-    const remainingConsumeFirstOnHand = new Map<string, number>();
-    const redirectOrder: string[] = [];
-    const ordered = new Set<string>();
-    const orderAfterHops = (id: string) => {
-      if (ordered.has(id) || !redirectByItem.has(id)) return;
-      ordered.add(id);
-      const next = consumeFirstHops.get(id)?.to;
-      if (next) orderAfterHops(next);
-      redirectOrder.push(id);
-    };
-    for (const id of redirectByItem.keys()) orderAfterHops(id);
-    redirectOrder.reverse();
-    for (const oldItemId of redirectOrder) {
-      const collapsed = redirectByItem.get(oldItemId)!;
-      const consumeOnHand =
-        supersessionByItem.get(oldItemId)?.supersessionMode === "Consume First";
-      const { to: successorId, factor } =
-        (consumeOnHand ? consumeFirstHops.get(oldItemId) : undefined) ??
-        collapsed;
-
-      for (const location of locations.data) {
-        // Consume First draws down the old item's on-hand before redirecting.
-        const locationItemKey = makeLocationItemKey(location.id, oldItemId);
-        let oldOnHand = consumeOnHand
-          ? (baseInventoryByLocationItem.get(locationItemKey) ?? 0)
-          : 0;
-
-        for (const period of periods) {
-          const oldKey = makeKey(location.id, period.id ?? "", oldItemId);
-          const demand = grossDemand.get(oldKey);
-          if (!demand) continue;
-
-          const contributors = topLevelContributors.get(oldKey) ?? [];
-          topLevelContributors.delete(oldKey);
-          const netted = netConsumeFirstContributors({
-            itemId: oldItemId,
-            contributors,
-            grossQty: demand,
-            running: consumeOnHand ? oldOnHand : 0,
-            factor,
-            perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0
-          });
-          const consumed = netted.consumed;
-          if (consumeOnHand) oldOnHand = netted.running;
-          const movedContributors = netted.moved;
-          // Convert the redirected (old-part) shortfall into successor units.
-          const redirect = (demand - consumed) * factor;
-
-          grossDemand.delete(oldKey);
-
-          const keptShare = demand > 0 ? consumed / demand : 1;
-          const sumByType = (list: DemandContributor[], type: string) =>
-            list
-              .filter((c) => c.sourceType === type)
-              .reduce((sum, c) => sum + c.quantity, 0);
-          for (const [actuals, sourceType] of [
-            [jobMaterialDemandByKey, "Job Material"],
-            [salesDemandByKey, "Sales Order"]
-          ] as const) {
-            const actualKey = makeActualKey(
-              oldItemId,
-              location.id,
-              period.id ?? "",
-              sourceType
-            );
-            const actual = actuals.get(actualKey);
-            if (!actual) continue;
-            const attributed = contributors.some(
-              (c) => c.sourceType === sourceType
-            );
-            const kept = attributed
-              ? Math.min(actual, sumByType(netted.kept, sourceType))
-              : actual * keptShare;
-            if (kept > 0) actuals.set(actualKey, kept);
-            else actuals.delete(actualKey);
-            const moved = attributed
-              ? sumByType(movedContributors, sourceType)
-              : (actual - kept) * factor;
-            if (moved > 0) {
-              const newActualKey = makeActualKey(
-                successorId,
-                location.id,
-                period.id ?? "",
-                sourceType
-              );
-              actuals.set(
-                newActualKey,
-                (actuals.get(newActualKey) ?? 0) + moved
-              );
-            }
-          }
-
-          if (redirect > 0) {
-            const newKey = makeKey(location.id, period.id ?? "", successorId);
-            grossDemand.set(newKey, (grossDemand.get(newKey) ?? 0) + redirect);
-            if (movedContributors.length > 0) {
-              topLevelContributors.set(
-                newKey,
-                (topLevelContributors.get(newKey) ?? []).concat(
-                  movedContributors
-                )
-              );
-            }
-          }
-        }
-        if (consumeOnHand) {
-          remainingConsumeFirstOnHand.set(locationItemKey, oldOnHand);
-        }
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 5: Level-by-level BOM explosion with inventory netting
-    // ──────────────────────────────────────────────────────────────
-
-    // Merge open-PO supply into the job-supply map for BOM netting. POs
-    // offset gross demand the same way production does, but they're tracked
-    // separately above because Phase 4's projection netting and the
-    // supplyActual output (later in this function) consume them differently.
-    const jobAndPoSupplyByLocationPeriodItem = new Map(
-      jobSupplyByLocationPeriodItem
-    );
-    for (const [key, qty] of poSupplyByLocationPeriodItem) {
-      jobAndPoSupplyByLocationPeriodItem.set(
-        key,
-        (jobAndPoSupplyByLocationPeriodItem.get(key) ?? 0) + qty
-      );
-    }
-
-    // Substitute superseded components in the BOMs so a parent's explosion
-    // generates the successor's demand instead of the old part's. (Top-level
-    // demand was handled above; component demand is created here, during
-    // explosion, so it must be redirected at the BOM level.)
-    const consumeFirstRedirect = new Map<string, Redirect>(consumeFirstHops);
-    if (redirectByItem.size > 0) {
-      for (const children of bomByItem.values()) {
-        for (const child of children) {
-          const redirect = redirectByItem.get(child.itemId);
-          if (!redirect) continue;
-          if (
-            supersessionByItem.get(child.itemId)?.supersessionMode ===
-            "Consume First"
-          ) {
-            continue;
-          }
-          child.redirectedFromItemId = child.itemId;
-          child.itemId = redirect.to;
-          child.quantity = child.quantity * redirect.factor;
-        }
-      }
-    }
-
-    const onHandForExplosion = new Map(baseInventoryByLocationItem);
-    for (const [locationItemKey, remaining] of remainingConsumeFirstOnHand) {
-      onHandForExplosion.set(locationItemKey, remaining);
-    }
-
-    const { bomDerivedDemand, demandContributors, cycleItemIds } = explodeBom({
-      grossDemand,
-      bomByItem,
-      replenishmentSystemByItem,
-      leadTimeByItem,
-      periods: periods.map((p) => ({ id: p.id ?? "" })),
-      onHandByLocationItem: onHandForExplosion,
-      jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
-      topLevelContributors,
-      consumeFirstRedirect
-    });
-
-    if (cycleItemIds.size > 0) {
-      logger.warn(
-        "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
-        { companyId, itemIds: [...cycleItemIds] }
-      );
-    }
-
-    // demandForecast output: Map<"itemId-locationId-periodId", record>
-    const demandForecastMap = new Map<
-      string,
-      Database["public"]["Tables"]["demandForecast"]["Insert"]
-    >();
-
-    // Write BOM-derived demand to demandForecast.
-    // The demand is already at the correct period (lead-time-offset
-    // was applied during propagation), so no further offset needed.
-    const demandForecastSourceInserts: DemandForecastSourceInsert[] = [];
-    for (const [key, qty] of bomDerivedDemand) {
-      if (qty <= 0) continue;
-      const [locationId, periodId, itemId] = splitKey(key);
-
-      const forecastKey = makeKey(locationId, periodId, itemId);
-      const existing = demandForecastMap.get(forecastKey);
-      if (existing) {
-        existing.forecastQuantity = Number(existing.forecastQuantity) + qty;
-      } else {
-        demandForecastMap.set(forecastKey, {
-          itemId,
-          locationId,
-          periodId,
-          forecastQuantity: qty,
-          forecastMethod: "mrp",
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
-
-      const contributors = demandContributors.get(key) ?? [];
-      for (const c of contributors) {
-        if (c.quantity <= 0) continue;
-        if (c.sourceType === "Job Material") {
-          demandForecastSourceInserts.push({
-            itemId,
-            locationId,
-            periodId,
-            sourceType: "Job Material",
-            jobId: c.jobId,
-            salesOrderLineId: null,
-            demandProjectionId: null,
-            parentItemId: c.parentItemId,
-            quantity: c.quantity,
-            redirectedFromItemId: c.redirectedFromItemId ?? null,
-            companyId
-          });
-        } else if (c.sourceType === "Sales Order") {
-          demandForecastSourceInserts.push({
-            itemId,
-            locationId,
-            periodId,
-            sourceType: "Sales Order",
-            jobId: null,
-            salesOrderLineId: c.salesOrderLineId,
-            demandProjectionId: null,
-            parentItemId: c.parentItemId,
-            quantity: c.quantity,
-            redirectedFromItemId: c.redirectedFromItemId ?? null,
-            companyId
-          });
-        } else {
-          // sourceType === "Demand Projection"
-          demandForecastSourceInserts.push({
-            itemId,
-            locationId,
-            periodId,
-            sourceType: "Demand Projection",
-            jobId: null,
-            salesOrderLineId: null,
-            demandProjectionId: c.demandProjectionId,
-            parentItemId: c.parentItemId,
-            quantity: c.quantity,
-            redirectedFromItemId: c.redirectedFromItemId ?? null,
-            companyId
-          });
-        }
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 6: Build demandActual and supplyActual records
-    // ──────────────────────────────────────────────────────────────
-
-    const demandActualsMap = new Map<
-      string,
-      Database["public"]["Tables"]["demandActual"]["Insert"]
-    >();
-    const supplyActualsMap = new Map<
-      string,
-      Database["public"]["Tables"]["supplyActual"]["Insert"]
-    >();
 
     // Paginated: a single tenant's actuals exceed the production max_rows cap
     // (9,391 rows observed), and a truncated read here leaves stale actuals
@@ -862,6 +415,7 @@ export async function runMrp(
           .order("locationId")
           .order("periodId")
           .order("sourceType")
+          .order("planningSegmentId")
       ),
       fetchAll<Database["public"]["Tables"]["supplyActual"]["Row"]>(() =>
         client
@@ -876,143 +430,72 @@ export async function runMrp(
           .order("locationId")
           .order("periodId")
           .order("sourceType")
+          .order("planningSegmentId")
       )
     ]);
 
     if (demandActualsError) throw demandActualsError;
     if (supplyActualsError) throw supplyActualsError;
 
-    // Zero out existing demand actuals (they'll be overwritten if still relevant)
-    if (existingDemandActuals) {
-      for (const existing of existingDemandActuals) {
-        const key = makeActualKey(
-          existing.itemId,
-          existing.locationId ?? "",
-          existing.periodId,
-          existing.sourceType
-        );
-        demandActualsMap.set(key, {
-          itemId: existing.itemId,
-          locationId: existing.locationId,
-          periodId: existing.periodId,
-          actualQuantity: 0,
-          sourceType: existing.sourceType,
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
-    }
+    // ──────────────────────────────────────────────────────────────
+    // PHASES 3–6: the pure planning core (plan-company.ts)
+    // ──────────────────────────────────────────────────────────────
 
-    // Sales order demand actuals
-    for (const [key, quantity] of salesDemandByKey) {
-      if (quantity > 0) {
-        const [itemId, locationId, periodId] = splitActualKey(key);
-        demandActualsMap.set(key, {
-          itemId,
-          locationId,
-          periodId,
-          actualQuantity: quantity,
-          sourceType: "Sales Order",
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
-    }
+    const {
+      demandForecastUpserts,
+      demandForecastSourceInserts,
+      demandActualUpserts,
+      supplyActualUpserts,
+      consumptionUpdates,
+      cycleItemIds,
+      commonSurplusDraws,
+      groupPegInputs
+    } = planCompany({
+      companyId,
+      userId,
+      today: today.toString(),
+      periods: periods.map((p: DemandPeriod) => ({
+        id: p.id ?? "",
+        startDate: p.startDate.toString(),
+        endDate: p.endDate.toString()
+      })),
+      locationIds: locations.data.map((l) => l.id),
+      consumptionWindow,
+      salesOrderLines: salesOrderLines.data ?? [],
+      jobMaterialLines: jobMaterialLines.data ?? [],
+      productionLines: productionLines.data ?? [],
+      purchaseOrderLines: purchaseOrderLines.data ?? [],
+      demandProjections: demandProjections.data ?? [],
+      projectMaterialLines: projectMaterialLines.data ?? [],
+      projectBorrows: projectBorrows.data ?? [],
+      stockedProjectIds: stockedProjects.map((project) => project.id),
+      planningGroups,
+      ungroupedPlanningGroupIds,
+      projectPriorities: groupMemberRows.map((project) => ({
+        projectId: project.id,
+        priority: project.planningPriority
+      })),
+      commonSupplyBlocked,
+      items: allItems,
+      replenishments: allReplenishments,
+      supersessions: supersessions.data ?? [],
+      onHand: inventoryRows,
+      activeMethods: activeMethodsResult.data ?? [],
+      materials: allMaterials,
+      existingDemandActuals: existingDemandActuals ?? [],
+      existingSupplyActuals: existingSupplyActuals ?? []
+    });
 
-    // Job material demand actuals
-    for (const [key, quantity] of jobMaterialDemandByKey) {
-      if (quantity > 0) {
-        const [itemId, locationId, periodId] = splitActualKey(key);
-        demandActualsMap.set(key, {
-          itemId,
-          locationId,
-          periodId,
-          actualQuantity: quantity,
-          sourceType: "Job Material",
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
-    }
-
-    // Zero out existing supply actuals
-    if (existingSupplyActuals) {
-      for (const existing of existingSupplyActuals) {
-        const key = makeActualKey(
-          existing.itemId,
-          existing.locationId ?? "",
-          existing.periodId,
-          existing.sourceType
-        );
-        supplyActualsMap.set(key, {
-          itemId: existing.itemId,
-          locationId: existing.locationId,
-          periodId: existing.periodId,
-          actualQuantity: 0,
-          sourceType: existing.sourceType,
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
-    }
-
-    // Production order supply actuals
-    for (const [key, quantity] of jobSupplyByLocationPeriodItem) {
-      if (quantity > 0) {
-        const [locationId, periodId, itemId] = splitKey(key);
-        const actualKey = makeActualKey(
-          itemId,
-          locationId,
-          periodId,
-          "Production Order"
-        );
-        supplyActualsMap.set(actualKey, {
-          itemId,
-          locationId,
-          periodId,
-          actualQuantity: quantity,
-          sourceType: "Production Order",
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
-    }
-
-    // Purchase order supply actuals
-    for (const [key, quantity] of poSupplyByLocationPeriodItem) {
-      if (quantity > 0) {
-        const [locationId, periodId, itemId] = splitKey(key);
-        const actualKey = makeActualKey(
-          itemId,
-          locationId,
-          periodId,
-          "Purchase Order"
-        );
-        supplyActualsMap.set(actualKey, {
-          itemId,
-          locationId,
-          periodId,
-          actualQuantity: quantity,
-          sourceType: "Purchase Order",
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        });
-      }
+    if (cycleItemIds.length > 0) {
+      logger.warning(
+        "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
+        { companyId, itemIds: cycleItemIds }
+      );
     }
 
     // ──────────────────────────────────────────────────────────────
     // PHASE 7: Persist results (chunked batch writes)
     // ──────────────────────────────────────────────────────────────
-
-    const demandForecastUpserts = Array.from(demandForecastMap.values());
-    const demandActualUpserts = Array.from(demandActualsMap.values());
-    const supplyActualUpserts = Array.from(supplyActualsMap.values());
 
     const BATCH_SIZE = 500;
 
@@ -1060,12 +543,19 @@ export async function runMrp(
             .insertInto("demandForecast")
             .values(batch)
             .onConflict((oc) =>
-              oc.columns(["itemId", "locationId", "periodId"]).doUpdateSet({
-                forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
-                forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
+              oc
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "planningSegmentId"
+                ])
+                .doUpdateSet({
+                  forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
+                  forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                })
             )
             .execute();
         }
@@ -1089,7 +579,13 @@ export async function runMrp(
             .values(batch)
             .onConflict((oc) =>
               oc
-                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "sourceType",
+                  "planningSegmentId"
+                ])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: datetime.timestamp(),
@@ -1107,7 +603,13 @@ export async function runMrp(
             .values(batch)
             .onConflict((oc) =>
               oc
-                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "sourceType",
+                  "planningSegmentId"
+                ])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: datetime.timestamp(),
@@ -1116,15 +618,77 @@ export async function runMrp(
             )
             .execute();
         }
+
+        // Persist forecast consumption in batches — an UPDATE, not an upsert,
+        // so a projection deleted mid-run can never be resurrected by the
+        // write phase. Every loaded projection has a row here (0 included),
+        // so stale consumption from a prior run is always overwritten.
+        // Consumption is derived data, not an edit: the row's updatedAt /
+        // updatedBy stay with the planner who entered the forecast, and a row
+        // whose consumption did not change is not written at all.
+        for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
+          const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
+          await sql`
+            UPDATE "demandProjection" AS dp
+            SET "consumedQuantity" = v."consumedQuantity"::numeric
+            FROM (VALUES ${sql.join(
+              batch.map(
+                (r) =>
+                  sql`(${r.itemId}, ${r.locationId}, ${r.periodId}, ${r.consumedQuantity})`
+              )
+            )}) AS v("itemId", "locationId", "periodId", "consumedQuantity")
+            WHERE dp."itemId" = v."itemId"
+              AND dp."locationId" = v."locationId"
+              AND dp."periodId" = v."periodId"
+              AND dp."companyId" = ${companyId}
+              AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
+          `.execute(trx);
+        }
+      });
+
+      // Persist the planning action messages (spec §P1) in their own atomic
+      // transaction AFTER the forecast/actual write commits — the planning
+      // RPCs it reads see only committed data. Errors PROPAGATE: the run must
+      // not report success with stale actions (forecasts are committed and
+      // correct; actions self-heal on the next successful run).
+      // The common stock each project segment draws becomes a Transfer.
+      // With PLANNING_GROUPS the planning-action transaction also
+      // diff-writes the pegs. It runs even with no active group, so the Soft
+      // pegs of a group that turned inactive are superseded.
+      await generatePlanningActions(client, db, {
+        companyId,
+        userId,
+        commonSurplusDraws,
+        planningGroups,
+        pegging:
+          planningGroupsEnabled && deps
+            ? {
+                writeGroupPegs: deps.writeGroupPegs,
+                runId: randomUUID(),
+                inputs: groupPegInputs,
+                priorityRuleByGroup: Object.fromEntries(
+                  planningGroupRows.map((group) => [
+                    group.id,
+                    group.priorityRule
+                  ])
+                ),
+                priorityByProject: Object.fromEntries(
+                  groupMemberRows.map((project) => [
+                    project.id,
+                    project.planningPriority
+                  ])
+                )
+              }
+            : undefined
       });
 
       return { success: true };
     } catch (err) {
-      logger.error("write phase failed", { companyId, error: String(err) });
+      logger.error("write phase failed", { companyId, error: err });
       throw err;
     }
   } catch (err) {
-    logger.error("run failed", { companyId, error: String(err) });
+    logger.error("run failed", { companyId, error: err });
     throw err;
   }
 }
@@ -1133,17 +697,27 @@ export async function runMrp(
 // Helper functions
 // ──────────────────────────────────────────────────────────────
 
-function findPeriod(
-  date: CalendarDate,
-  today: CalendarDate,
-  periods: DemandPeriod[]
-): DemandPeriod | undefined {
-  if (date.compare(today) < 0) {
-    return periods[0];
+/**
+ * Whether the company has the commercial PLANNING_GROUPS feature. The check
+ * is the caller's injected `deps` (`MrpDeps`); without it the answer is "no".
+ * It runs only for a company that has a planning group. A failed check
+ * degrades to "no", as `companyHasFeature` callers do.
+ */
+async function companyHasPlanningGroups(
+  deps: MrpDeps | undefined,
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<boolean> {
+  if (!deps) return false;
+  try {
+    return await deps.companyHasPlanningGroups(client, companyId);
+  } catch (err) {
+    logger.warning("could not read the planning groups feature", {
+      companyId,
+      error: err
+    });
+    return false;
   }
-  return periods.find(
-    (p) => p.startDate?.compare(date) <= 0 && p.endDate?.compare(date) >= 0
-  );
 }
 
 function getStartAndEndDates(

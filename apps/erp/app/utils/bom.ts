@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { FlatTreeItem } from "~/components/TreeView";
-import type { Method } from "~/modules/items";
+import type { Method } from "~/modules/items/types";
 import type { JobMethod } from "~/modules/production/types";
 import type { QuoteMethod } from "~/modules/sales/types";
 

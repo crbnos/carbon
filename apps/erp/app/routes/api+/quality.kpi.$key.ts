@@ -7,7 +7,7 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { QualityKPIs } from "~/modules/quality/quality.models";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 // --- ISO Week Helpers ---
 
@@ -397,7 +397,7 @@ async function getIssuesQuery(
   let query = client
     .from("issues")
     .select(
-      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId, containmentStatus, createdAt"
+      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId"
     )
     .eq("companyId", companyId);
 
@@ -425,7 +425,7 @@ async function getFilteredIssuesQuery(
   let query = client
     .from("issues")
     .select(
-      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId, containmentStatus, createdAt"
+      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId"
     )
     .eq("companyId", companyId)
     .gte("openDate", start)

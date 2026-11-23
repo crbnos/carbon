@@ -11,8 +11,7 @@ import type {
   ReactNode,
   RefObject
 } from "react";
-
-import type { User, UserSelectGroup } from "~/modules/users";
+import type { User, UserSelectGroup } from "~/modules/users/types";
 
 export type ComboBoxRefs = {
   containerRef: RefObject<HTMLDivElement>;
@@ -25,11 +24,14 @@ export type ComboBoxRefs = {
 
 export interface UserSelectProps {
   alwaysSelected?: string[];
+  /** Names the search input when no `label` or linked `<label>` does. */
+  "aria-label"?: string;
   accessibilityLabel?: string;
   checkedSelections?: boolean;
   className?: string;
   disabled?: boolean;
   hideSelections?: boolean;
+  /** The search input's id, so a `<label htmlFor>` outside can name it. */
   id?: string;
   /**
    * Rendered inside a pan/zoom canvas (the workflow builder). The canvas keeps

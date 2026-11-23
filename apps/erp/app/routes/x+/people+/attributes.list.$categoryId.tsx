@@ -5,25 +5,17 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { data, Outlet, useLoaderData, useNavigate } from "react-router";
+import { RecordOutlet, useRouteDialog } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import {
   getAttributeCategory,
   updateAttributeSortOrder
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["categoryId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -76,7 +68,10 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateSortOrders, "Failed to update sort order")
+        error(
+          updateSortOrders.find((update) => update.error)?.error,
+          "Failed to update sort order"
+        )
       )
     );
 
@@ -86,16 +81,16 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function AttributeCategoryListRoute() {
   const { attributeCategory } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
-  const navigate = useNavigate();
-  const onClose = () => navigate(`${path.to.attributes}?${params.toString()}`);
+  const dialog = useRouteDialog(`${path.to.attributes}?${params.toString()}`);
 
   return (
     <>
       <AttributeCategoryDetail
         attributeCategory={attributeCategory}
-        onClose={onClose}
+        open={dialog.open}
+        onClose={dialog.close}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

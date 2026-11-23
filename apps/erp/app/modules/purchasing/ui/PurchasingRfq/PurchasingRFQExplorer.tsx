@@ -14,16 +14,12 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -41,8 +37,8 @@ import {
 } from "~/components/LineReorder";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType, MethodItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType, MethodItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isRfqLocked } from "../../purchasing.models";
@@ -51,6 +47,7 @@ import DeletePurchasingRFQLine from "./DeletePurchasingRFQLine";
 import PurchasingRFQLineForm from "./PurchasingRFQLineForm";
 
 export default function PurchasingRFQExplorer() {
+  const { t } = useLingui();
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const purchasingRfqData = useRouteData<{
@@ -69,20 +66,8 @@ export default function PurchasingRFQExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const purchasingRfqLineInitialValues = {
     purchasingRfqId: rfqId,
@@ -165,36 +150,21 @@ export default function PurchasingRFQExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "purchasing")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newPurchasingRFQLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={
+                  isDisabled || !permissions.can("update", "purchasing")
+                }
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newPurchasingRFQLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -205,15 +175,21 @@ export default function PurchasingRFQExplorer() {
           )}
         </div>
       </VStack>
-      {newPurchasingRFQLineDisclosure.isOpen && (
+      {newPurchasingRFQLineDisclosure.openCount > 0 && (
         <PurchasingRFQLineForm
+          key={newPurchasingRFQLineDisclosure.openCount}
+          open={newPurchasingRFQLineDisclosure.isOpen}
           initialValues={purchasingRfqLineInitialValues}
           type="modal"
           onClose={newPurchasingRFQLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeletePurchasingRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeletePurchasingRFQLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </div>
   );
@@ -239,9 +215,14 @@ function PurchasingRFQLineBody({
           <span className="font-semibold line-clamp-1">
             {line.itemReadableId || line.description || "Item"}
           </span>
-          <span className="font-medium text-muted-foreground text-xs line-clamp-1">
-            {line.description}
-          </span>
+          {distinctItemText(
+            line.itemReadableId || line.description || "Item",
+            line.description
+          ) && (
+            <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+              {line.description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -266,17 +247,19 @@ function PurchasingRFQLineItem({
 
   const isSelected = lineId === line.id;
 
+  const lineName = line.itemReadableId || line.description || "Item";
+
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        className="w-full"
-        to={path.to.purchasingRfqLine(rfqId, line.id!)}
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
-          )}
+        <PrefetchLink
+          to={path.to.purchasingRfqLine(rfqId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail
@@ -285,69 +268,69 @@ function PurchasingRFQLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.itemReadableId || line.description || "Item"}
-              </span>
-              <span className="font-medium text-muted-foreground text-xs line-clamp-1">
-                {line.description}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
+              {distinctItemText(
+                line.itemReadableId || line.description || "Item",
+                line.description
+              ) && (
+                <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+                  {line.description}
+                </span>
+              )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More`}
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={
+                  isDisabled || !permissions.can("update", "purchasing")
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+              {line.itemId && itemType.includes(line.itemType as ItemType) && (
                 <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={
-                    isDisabled || !permissions.can("update", "purchasing")
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.itemType as ItemType,
+                      line.itemId
+                    )}
+                  >
+                    <DropdownMenuIcon
+                      icon={
+                        <MethodItemTypeIcon type={line.itemType as ItemType} />
+                      }
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
                 </DropdownMenuItem>
-                {line.itemId &&
-                  itemType.includes(line.itemType as ItemType) && (
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.view}
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link
-                        to={getLinkToItemDetails(
-                          line.itemType as ItemType,
-                          line.itemId
-                        )}
-                      >
-                        <DropdownMenuIcon
-                          icon={
-                            <MethodItemTypeIcon
-                              type={line.itemType as ItemType}
-                            />
-                          }
-                        />
-                        <Trans>View Item Master</Trans>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

@@ -87,6 +87,9 @@ the stack deploys; ERP crashes on boot with an empty RESEND key).
   waits for postgres+storage healthy, runs `migrate` as an ephemeral
   `--mode replicated-job` service on `${STACK_NAME}_internal` (reads the password
   from `/run/secrets/postgres_password`, `PGSSLMODE=disable`), then `--force` rolls erp/mes.
+  The job runs on `CARBON_IMAGE_BOOTSTRAP` (the root `Dockerfile`'s `bootstrap`
+  target, built by `deploy.sh build`), not an app image: the erp/mes runtime images
+  have the Supabase CLI stripped, so `pnpm exec supabase` fails there.
   `migrate` finishes with `set_inngest_event_url`: it reads `inngest_event_key` from
   the running erp task and calls `public.set_inngest_event_url(...)`, which is what
   lets Postgres deliver its events to Inngest. It only warns when erp/postgres is not

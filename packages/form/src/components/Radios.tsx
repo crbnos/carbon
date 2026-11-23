@@ -38,7 +38,11 @@ const Radios = ({
   return (
     <FormControl isInvalid={!!error}>
       {label && (
-        <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
+        <FormLabel
+          id={`${id}-label`}
+          htmlFor={name}
+          isOptional={fieldIsOptional ?? false}
+        >
           <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
@@ -46,6 +50,8 @@ const Radios = ({
         {...getInputProps({
           id: name
         })}
+        // A label's `for` cannot name a radiogroup (a div): name it by id.
+        aria-labelledby={label ? `${id}-label` : undefined}
         name={name}
         orientation={orientation}
         disabled={isDisabled}

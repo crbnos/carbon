@@ -38,6 +38,8 @@ export default function useDebounce<T extends (...args: any[]) => any>(
 
     argsRef.current = args;
     timeout.current = setTimeout(() => {
+      // Fired: nothing is pending, so an unmount must not call it again.
+      timeout.current = undefined;
       fn(...args);
     }, delay);
   };

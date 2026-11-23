@@ -7,7 +7,7 @@ import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { getWebhookTables } from "~/modules/settings/settings.service";
 
-import { keptForADay } from "~/modules/shared/shared.server";
+import { keptForADay } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});

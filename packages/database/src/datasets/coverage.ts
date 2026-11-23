@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Dataset } from "./types.ts";
+
 /**
  * Row-count floors, so a tier that silently writes nothing fails. Counts are absolute
  * (bootstrap rows included). Floor = the smallest count any dataset produced
@@ -35,8 +37,16 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   costLedger: 7,
   customField: 3,
   customer: 4,
+  customerAsset: 3,
   customerBankAccount: 4,
   customerContact: 4,
+  customerContract: 1,
+  // 12–13 depending on the anchor's day of month; floored at 80% per the task.
+  customerContractInvoice: 10, // min 13
+  customerContractInvoiceLine: 21, // min 27
+  customerContractLedgerEntry: 2, // Opening entries
+  customerContractLine: 3,
+  customerContractRevenue: 22, // min 28
   customerItemPriceOverride: 1,
   customerItemPriceOverrideBreak: 2,
   customerLocation: 4,
@@ -60,20 +70,21 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   eventSystemSubscription: 18,
   exchangeRateOverride: 1,
   externalLink: 7,
-  fixedAsset: 6,
+  fixedAsset: 9,
   fixedAssetDisposal: 1,
   fixedAssetUsageLog: 2,
   gauge: 3,
   gaugeCalibrationRecord: 4,
   group: 23, // min 29
   holiday: 3,
-  inspection: 4,
+  inspection: 5,
   inspectionDocument: 3,
   inspectionFeature: 6,
   inspectionHistory: 2,
   inspectionMeasurement: 12,
   inspectionSample: 6,
   inspectionSamplingPlan: 8,
+  inspectionTrackedEntity: 1,
   inventoryCount: 2,
   inventoryCountLine: 11,
   invoiceSettlement: 6,
@@ -104,6 +115,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   journalLine: 64, // min 80
   journalLineDimension: 2,
   kanban: 5,
+  laborCategory: 3,
+  laborCategoryRate: 3,
   location: 2,
   maintenanceDispatch: 11,
   maintenanceDispatchComment: 4,
@@ -118,6 +131,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   materialFinish: 2,
   materialForm: 1,
   materialGrade: 3,
+  materialRequest: 2,
   materialSubstance: 2,
   materialType: 1,
   memo: 4,
@@ -164,6 +178,12 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   productionEvent: 19, // min 24
   productionQuantity: 11,
   project: 2,
+  projectElement: 23, // min 29
+  projectElementLink: 5,
+  projectMilestone: 4,
+  projectState: 6,
+  projectStockTransfer: 1,
+  projectStockTransferLine: 1,
   purchaseInvoice: 7,
   purchaseInvoiceDelivery: 7,
   purchaseInvoiceLine: 8,
@@ -195,6 +215,11 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   quoteShipment: 8,
   receipt: 6,
   receiptLine: 7,
+  rentalAgreement: 2,
+  rentalAgreementCharge: 1,
+  rentalAgreementContact: 1,
+  rentalAgreementLine: 3,
+  rentalBillingPeriod: 2,
   rework: 1,
   riskRegister: 5,
   salesInvoice: 9,
@@ -212,8 +237,14 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   salesRfq: 4,
   salesRfqLine: 4,
   service: 1,
+  serviceJob: 5,
+  serviceJobAssignment: 4,
+  serviceJobEstimateLine: 4,
+  serviceJobItem: 1,
+  serviceJobTime: 8,
   shift: 2,
   shipment: 5,
+  shipmentFixedAssetLine: 1,
   shipmentLine: 5,
   shippingMethod: 5,
   shippingTerm: 4,
@@ -236,9 +267,15 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierQuoteLinePrice: 17, // min 22
   supplierShipping: 11,
   supplierTax: 11,
+  supplierStage: 4,
   supplierType: 6,
   tag: 5,
+  // Indiana (motor) has one statewide authority and no local rate.
+  taxAuthority: 1,
+  taxCode: 3,
+  taxCodeComponent: 3,
   timeCardEntry: 6,
+  timesheetEntry: 6, // min 8
   tool: 2,
   trackedActivity: 7,
   trackedActivityInput: 6,
@@ -264,6 +301,39 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   workflowTriggerEvent: 1,
   workflowVersion: 7
 };
+
+/**
+ * Floors for content only one dataset carries, added to `COVERAGE_FLOORS` for
+ * that dataset. The shared floors take the smallest count of any dataset, so a
+ * table only satellite seeds would floor at 0 there. Satellite's planning
+ * group (Projects Phase 3): 1 group, 4 plan-line materials, and 8 pegs (3
+ * Soft rows the receipt superseded, 3 Hard, 2 Soft on the open line).
+ * Satellite's indirect pools (Government contracting Phase 5b) likewise.
+ */
+export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
+  satellite: {
+    // Government contracting Phase 5b: 3 pools, 7 mappings, and a Provisional
+    // and a Target rate for each of the 12 periods of the current year.
+    indirectPool: 3,
+    indirectPoolAccount: 7,
+    indirectRate: 72,
+    planningGroup: 1,
+    // The ORBSEC Block 2 earned value baseline.
+    projectBaseline: 1,
+    projectElementMaterial: 4,
+    projectPeg: 8
+  }
+};
+
+/**
+ * The floors one dataset must meet. A walkthrough dataset (`Dataset.walkthrough`)
+ * is a single product by design, so it has none: the drift check still applies
+ * it and rolls it back, but counts nothing.
+ */
+export function coverageFloorsFor(dataset: Dataset): Record<string, number> {
+  if (dataset.walkthrough) return {};
+  return { ...COVERAGE_FLOORS, ...DATASET_COVERAGE_FLOORS[dataset.key] };
+}
 
 /**
  * `$1` = scratch company id. Group-scoped dimension rows are exact: the scratch

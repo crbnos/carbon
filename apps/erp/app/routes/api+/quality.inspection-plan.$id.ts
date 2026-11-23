@@ -5,7 +5,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getInspectionDocument, getInspectionPlan } from "~/modules/quality";
+import {
+  getInspectionDocument,
+  getInspectionPlan
+} from "~/modules/quality/quality.service";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -71,7 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     success: true,
     documentId: id,
     itemId: documentResult.data.partId ?? null,
-    drawingNumber: documentResult.data.content?.drawingNumber ?? null,
+    name: documentResult.data.content?.name ?? null,
     /** Each row: `id` / `featureId` = inspectionFeature id; `balloonId` = balloon when placed. */
     measurements: planResult.data ?? []
   });

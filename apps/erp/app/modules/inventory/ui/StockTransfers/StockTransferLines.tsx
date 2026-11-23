@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -10,7 +12,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -20,9 +21,14 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  NonNettableBadge,
+  NumberField,
+  NumberInput,
+  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -34,24 +40,20 @@ import {
   LuTrash,
   LuUndo2
 } from "react-icons/lu";
-import {
-  Link,
-  useFetchers,
-  useNavigate,
-  useParams,
-  useSubmit
-} from "react-router";
+import { Link, useFetchers, useNavigate, useParams } from "react-router";
 import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData } from "~/hooks";
-import {
-  isStockTransferLocked,
-  type StockTransfer,
-  type StockTransferLine
-} from "~/modules/inventory";
+import { usePermissions, useQuantityFormatter, useRouteData } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
+import type { action as quantityAction } from "~/routes/x+/stock-transfer+/$id.line.quantity";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -62,10 +64,10 @@ interface StockTransferLineProps {
   locationId?: string;
   pickedQuantity: number;
   isPickable: boolean;
+  /** A picked line can be taken back on a Completed transfer too. */
+  canUnpick: boolean;
   isEditable: boolean;
   isPending: boolean;
-  onPick: (line: StockTransferLine) => void;
-  onUnpick: (line: StockTransferLine) => void;
   onDelete: (line: StockTransferLine) => void;
   permissions: ReturnType<typeof usePermissions>;
 }
@@ -77,42 +79,114 @@ function StockTransferLineComponent({
   locationId,
   pickedQuantity,
   isPickable,
+  canUnpick,
   isEditable,
   isPending,
-  onPick,
-  onUnpick,
   onDelete,
   permissions
 }: StockTransferLineProps) {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnits();
+  // A line without the key names no unit on that side; one with the key
+  // and no name has no storage unit.
+  const fromLabel =
+    "fromStorageUnitId" in line
+      ? (line.fromStorageUnitName ?? t`No storage unit`)
+      : null;
+  const toLabel =
+    "toStorageUnitId" in line
+      ? (line.toStorageUnitName ?? t`No storage unit`)
+      : null;
+  const fromNonNettable =
+    !!line.fromStorageUnitId && nonNettable.has(line.fromStorageUnitId);
+  const toNonNettable =
+    !!line.toStorageUnitId && nonNettable.has(line.toStorageUnitId);
   const navigate = useNavigate();
   const params = useParams();
   const { id } = params;
   if (!id) throw new Error("stock transfer id not found");
+
+  // One fetcher per line, so lines pick side by side; the pending state is
+  // read back through `usePendingItems`.
+  const pick = useAction<typeof quantityAction>({
+    key: `stockTransferLine:${line.id}`,
+    onSuccess: ({ data }) => {
+      // The next pick starts from what is left, not the last typed quantity.
+      setEnteredQuantity(null);
+      if (!data) return;
+      toast.success(
+        data.quantity === 0
+          ? t`Line unpicked`
+          : data.quantity === 1
+            ? t`1 item marked as picked`
+            : t`${data.quantity} items marked as picked`
+      );
+    }
+  });
+  // Pick moves the line's quantity; 0 unpicks it.
+  const submitPick = (quantity: number) => {
+    const formData = new FormData();
+    formData.append("id", line.id!);
+    formData.append("quantity", quantity.toString());
+    formData.append("locationId", locationId ?? "");
+    if (line.trackedEntityId) {
+      formData.append("trackedEntityId", line.trackedEntityId);
+    }
+    pick.submit(formData, {
+      method: "post",
+      action: path.to.stockTransferLineQuantity(id)
+    });
+  };
   const [items] = useItems();
   const unitsOfMeasure = useUnitOfMeasure();
+  const formatQuantity = useQuantityFormatter();
 
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const isTracked = line.requiresSerialTracking || line.requiresBatchTracking;
-  const isPicked = pickedQuantity > 0;
+  const quantity = line.quantity ?? 0;
+  // Pick moves what is left, so a partly picked line is never over-picked.
+  const outstanding = Math.max(0, round(quantity - pickedQuantity));
+  // At the same precision as `outstanding`, so the two never disagree.
+  const isPicked = quantity > 0 && pickedQuantity > 0 && outstanding === 0;
+  // The From bin is where the stock was when the transfer was made. When it
+  // no longer holds what is left to pick, the line says where the stock is now.
+  const liveBins = line.liveStorageUnits;
+  const fromHolds =
+    liveBins?.find((bin) => bin.id === (line.fromStorageUnitId ?? null))
+      ?.quantity ?? 0;
+  // What the picker typed; until then the Pick takes all that is left.
+  const [enteredQuantity, setEnteredQuantity] = useState<number | null>(null);
+  const pickQuantity = Math.min(
+    outstanding,
+    Math.max(0, round(enteredQuantity ?? outstanding))
+  );
+  const stockElsewhere =
+    liveBins && outstanding > 0 && fromHolds < outstanding ? liveBins : null;
 
   return (
     <div
       className={cn(
-        "flex flex-col border-b p-6 gap-6",
+        "@container flex flex-col border-b p-6 gap-6 max-md:p-4 max-md:gap-4",
         index === totalLines - 1 && "border-none",
         isPicked && "opacity-50 hover:opacity-100"
       )}
     >
-      <div className="flex justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2 justify-between">
-          <HStack spacing={4}>
+      {/* Sized by the line's own width, not the viewport: the content pane
+          it sits in is resizable. The item takes what the move and actions
+          leave, and they share one line once the row is wide enough. */}
+      <div className="flex flex-col @3xl:flex-row @3xl:items-center gap-4 w-full">
+        <HStack
+          spacing={4}
+          className="w-full @3xl:w-auto @3xl:flex-1 min-w-0 justify-between"
+        >
+          <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
-            <VStack spacing={0} className="max-w-[380px] w-full">
+            <VStack spacing={0} className="flex-1 min-w-0">
               <div className="w-full overflow-hidden">
                 <span className="text-sm font-medium truncate block w-full">
                   {item?.name}
@@ -136,29 +210,63 @@ function StockTransferLineComponent({
               </div>
             </VStack>
           </HStack>
-          <Count
-            count={line.quantity ?? 0}
-            className={cn(
-              "text-right text-white text-base",
-              isPicked ? "bg-emerald-600" : "bg-red-600"
-            )}
-          />
+          <VStack spacing={1} className="w-auto shrink-0 items-end">
+            <span className="text-base font-medium tabular-nums">
+              {formatQuantity(quantity)}
+            </span>
+            <Badge variant={isPicked ? "green" : "secondary"}>
+              {isPicked ? (
+                <Trans>Picked</Trans>
+              ) : (
+                <Trans>
+                  {formatQuantity(pickedQuantity)} / {formatQuantity(quantity)}{" "}
+                  picked
+                </Trans>
+              )}
+            </Badge>
+          </VStack>
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-4 pl-4 w-1/2">
-          <HStack spacing={4} className="text-left items-center">
-            {"fromStorageUnitId" in line && (
-              <span className="text-base font-medium  whitespace-nowrap">
-                {line.fromStorageUnitName ?? ""}
+        <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,auto)_auto_minmax(0,auto)] items-center gap-x-3 gap-y-1 text-left">
+            <span
+              className="truncate text-base font-medium"
+              title={fromLabel ?? undefined}
+            >
+              {fromLabel}
+            </span>
+            <LuArrowRight className="size-4 shrink-0" />
+            <span
+              className="truncate text-base font-medium"
+              title={toLabel ?? undefined}
+            >
+              {toLabel}
+            </span>
+            {stockElsewhere && (
+              <span className="col-span-3 text-sm text-muted-foreground">
+                {stockElsewhere.length > 0 ? (
+                  <>
+                    <Trans>Stock at:</Trans>{" "}
+                    {stockElsewhere
+                      .map(
+                        (bin) =>
+                          `${bin.name ?? t`No storage unit`} (${formatQuantity(bin.quantity)})`
+                      )
+                      .join(", ")}
+                  </>
+                ) : (
+                  <Trans>Location not known</Trans>
+                )}
               </span>
             )}
-            <LuArrowRight className="size-4" />
-            {"toStorageUnitId" in line && (
-              <span className="text-base font-medium  whitespace-nowrap">
-                {line.toStorageUnitName ?? ""}
-              </span>
+            {(fromNonNettable || toNonNettable) && (
+              <>
+                <span>{fromNonNettable && <NonNettableBadge />}</span>
+                <span />
+                <span>{toNonNettable && <NonNettableBadge />}</span>
+              </>
             )}
-          </HStack>
-          <HStack spacing={1}>
+          </div>
+          <HStack spacing={1} className="shrink-0">
             {line.trackedEntityId && (
               <PrintButton
                 sourceDocument="Entity"
@@ -171,28 +279,51 @@ function StockTransferLineComponent({
                 }}
               />
             )}
-            {pickedQuantity === line.quantity ? (
+            {pickedQuantity > 0 && (
               <Button
                 variant="secondary"
-                isDisabled={!isPickable || isPending}
-                isLoading={isPending}
+                isDisabled={!canUnpick || isPending}
+                isLoading={isPending && isPicked}
                 leftIcon={<LuUndo2 />}
-                onClick={() => onUnpick(line)}
+                onClick={() => submitPick(0)}
               >
-                Unpick
+                <Trans>Unpick</Trans>
               </Button>
-            ) : (
+            )}
+            {!isPicked && !isTracked && isPickable && outstanding > 0 && (
+              <NumberField
+                aria-label={t`Quantity to pick of ${item?.name ?? ""}`}
+                value={pickQuantity}
+                minValue={0}
+                maxValue={outstanding}
+                onChange={(value) =>
+                  setEnteredQuantity(Number.isNaN(value) ? null : value)
+                }
+              >
+                <NumberInput
+                  size="sm"
+                  className="w-24"
+                  isDisabled={isPending}
+                />
+              </NumberField>
+            )}
+            {!isPicked && (
               <Button
-                isDisabled={!isPickable || isPending}
+                isDisabled={
+                  !isPickable ||
+                  isPending ||
+                  outstanding <= 0 ||
+                  (!isTracked && pickQuantity <= 0)
+                }
                 isLoading={isPending}
                 leftIcon={isTracked ? <LuQrCode /> : <LuCirclePlus />}
                 onClick={
                   isTracked
                     ? () => navigate(path.to.stockTransferScan(id, line.id!))
-                    : () => onPick(line)
+                    : () => submitPick(pickQuantity)
                 }
               >
-                Pick
+                <Trans>Pick</Trans>
               </Button>
             )}
             <DropdownMenu>
@@ -201,7 +332,7 @@ function StockTransferLineComponent({
                   variant="secondary"
                   isDisabled={!isEditable}
                   icon={<LuEllipsisVertical />}
-                  aria-label={t`Line options`}
+                  aria-label={t`Line options for ${itemName}`}
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -274,8 +405,11 @@ export default function StockTransferLines() {
 
   const lines = (routeData?.stockTransferLines ?? []).sort((a, b) => {
     // First sort by itemReadableId
+    // Numbers as numbers ("P-2" before "P-10"), as the picking list does.
     const itemComparison = (a.itemReadableId ?? "").localeCompare(
-      b.itemReadableId ?? ""
+      b.itemReadableId ?? "",
+      undefined,
+      { numeric: true }
     );
     if (itemComparison !== 0) return itemComparison;
 
@@ -305,43 +439,6 @@ export default function StockTransferLines() {
       pickedQuantitiesById.set(pendingQuantity.id, pendingQuantity.quantity);
     }
   });
-
-  const submit = useSubmit();
-
-  const onPick = (line: StockTransferLine) => {
-    const formData = new FormData();
-    formData.append("id", line.id!);
-    formData.append("quantity", line.quantity!.toString());
-    formData.append("locationId", routeData?.stockTransfer?.locationId ?? "");
-
-    if (line.trackedEntityId) {
-      formData.append("trackedEntityId", line.trackedEntityId);
-    }
-
-    submit(formData, {
-      method: "post",
-      action: path.to.stockTransferLineQuantity(id),
-      navigate: false,
-      fetcherKey: `stockTransferLine:${line.id}`
-    });
-  };
-
-  const onUnpick = (line: StockTransferLine) => {
-    const formData = new FormData();
-    formData.append("id", line.id!);
-    formData.append("quantity", "0");
-    formData.append("locationId", routeData?.stockTransfer?.locationId ?? "");
-    if (line.trackedEntityId) {
-      formData.append("trackedEntityId", line.trackedEntityId);
-    }
-
-    submit(formData, {
-      method: "post",
-      action: path.to.stockTransferLineQuantity(id),
-      navigate: false,
-      fetcherKey: `stockTransferLine:${line.id}`
-    });
-  };
 
   return (
     <>
@@ -391,12 +488,14 @@ export default function StockTransferLines() {
                   locationId={routeData?.stockTransfer?.locationId ?? undefined}
                   pickedQuantity={pickedQuantitiesById.get(line.id ?? "") ?? 0}
                   isPickable={isPickable}
+                  canUnpick={
+                    isPickable ||
+                    routeData?.stockTransfer?.status === "Completed"
+                  }
                   isEditable={isEditable}
                   isPending={
                     pendingQuantities?.some((q) => q.id === line.id) ?? false
                   }
-                  onPick={onPick}
-                  onUnpick={onUnpick}
                   onDelete={() => {
                     setSelectedLine(line);
                     deleteDisclosure.onOpen();
@@ -408,8 +507,9 @@ export default function StockTransferLines() {
           </div>
         </CardContent>
       </Card>
-      {deleteDisclosure.isOpen && (
+      {selectedLine && (
         <ConfirmDelete
+          isOpen={deleteDisclosure.isOpen}
           name="Stock Transfer Line"
           text="Are you sure you want to delete this stock transfer line?"
           action={path.to.deleteStockTransferLine(id, selectedLine?.id!)}

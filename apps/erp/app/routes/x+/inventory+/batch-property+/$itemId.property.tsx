@@ -2,55 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  batchPropertyValidator,
-  upsertBatchProperty
-} from "~/modules/inventory";
+import { batchPropertyValidator } from "~/modules/inventory/inventory.models";
 
-const logger = getLogger("erp", "itemid-property");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(batchPropertyValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { listOptions, ...property } = input.data;
+  const api = await carbon(args.request);
+  return api.inventory.upsertBatchProperty({
+    ...property,
+    listOptions: property.dataType === "list" ? listOptions : undefined
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(batchPropertyValidator).validate(formData);
-
-  if (validation.error) {
-    return {
-      success: false,
-      error: "Invalid form data"
-    };
-  }
-
-  const { listOptions, ...d } = validation.data;
-
-  const upsert = await upsertBatchProperty(client, {
-    ...d,
-    listOptions: d.dataType === "list" ? listOptions : undefined,
-    companyId,
-    userId
-  });
-
-  if (upsert.error) {
-    logger.error(upsert.error);
-    return {
-      success: false,
-      error: upsert.error.message
-    };
-  }
-
-  return {
-    success: true
-  };
 }

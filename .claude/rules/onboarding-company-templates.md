@@ -1,3 +1,4 @@
+---
 paths:
   - "packages/database/src/datasets/**"
   - "packages/jobs/src/inngest/functions/tasks/company-template.ts"
@@ -5,6 +6,7 @@ paths:
   - "packages/jobs/src/scripts/plan-company.ts"
   - "apps/erp/app/routes/onboarding+/industry.tsx"
   - "apps/erp/app/services/onboarding.server.ts"
+---
 
 # Onboarding Company Templates
 
@@ -45,7 +47,7 @@ await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log
 ```
 
 It resolves today in the company's timezone, builds the context, opens ONE transaction,
-sets `app.sync_in_progress`, ensures sequences, runs the selected tiers in order, and
+sets `app.sync_in_progress` and `app.dataset_apply`, ensures sequences, runs the selected tiers in order, and
 commits — or rolls the whole thing back. A half-seeded company is not a possible outcome.
 
 `wipeFirst` clears the company's existing business data inside that same transaction,
@@ -70,6 +72,13 @@ sequences before tier 1. So **apply** uses the dataset wipe, and **revert** uses
 restore wipe (the snapshot carries the config back, so nothing needs keeping). The
 asymmetry is deliberate: each wipe is paired with whatever repopulates after it.
 
+Units are the one piece of that config the apply adjusts itself. `ensureUnitsOfMeasure`
+(`helpers/units-of-measure.ts`, run beside `ensureSequences`) makes every catalog unit the
+dataset names (any key ending in `unitOfMeasureCode`) active, and adds back one the company
+deleted: a metric company holds the imperial units the datasets use (LB, INCH, FOOT, GL, YD)
+inactive. The validator's `unitsOfMeasure` rule refuses a code outside the catalog
+(`@carbon/database/units-of-measure`).
+
 `wipeCompanyBusinessData` is NOT exported on its own — `wipeFirst` is the only way to
 reach it, so no caller can wipe without also re-seeding.
 
@@ -91,7 +100,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`) whose
    lines — or `payment`/`memo.journalId` — point at a row it is about to delete gets a
    negated Posted `VOID …` entry dated today, the original left Posted, as the posting
-   functions void.
+   functions void. The select takes `status = 'Posted'` only: a `Provisional` journal of a
+   company with no cutover yet is neither voided nor deleted (`journal` is preserved).
 1. **Non-Draft `salesInvoice` / `purchaseInvoice` rows are set back to `Draft`.** The
    `prevent_posted_{sales,purchase}_invoice_deletion` sync interceptors refuse deleting any
    other status and run even under `app.sync_in_progress`. This is a re-seed clear, not an
@@ -101,7 +111,14 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass.
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
+   seeded table with a CHECK that needs
+   one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
+   `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
+   Relief schedule row OR a project close journal; `projectStockTransfer`:
+   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   re-apply with "new row … violates check constraint", while a first apply onto an
+   empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -187,7 +204,7 @@ error message per step.
   written as `metadata.planningError` (a new apply resets it to `null`); marker status is
   never changed. On the `snapshot: false` path the marker is already cleared, so the
   failure is only logged (re-writing it would resurrect the marker as `running`). The
-  3-hourly MRP cron is the backstop — for MRP only.
+  scheduled MRP run (every 3 hours, or the company's daily time) is the backstop — for MRP only.
 - **Dev CLI** — the spawned `plan:company` script (above). `plan-company.ts` loads
   `demo-planning.ts` through `createRequire` so tsx compiles the graph as CJS; as ESM,
   `@carbon/planning`'s named imports from `@carbon/database` fail to link. It exits 0 even
@@ -283,6 +300,50 @@ user's real data, so a second apply would overwrite it. (This replaced an older
 `item`-rows guard, whose retry-idempotency job `wipeFirst` plus snapshot reuse now does
 structurally.)
 
+## Optional per-record seed fields
+
+Four optional fields let a dataset say more than the shared defaults. Omitted, each one
+leaves the row exactly as before, so a dataset that does not use them is unchanged.
+
+| Field | Written by | Effect |
+|---|---|---|
+| `CustomerSpec.address` / `SupplierSpec.address` (`PartyAddressSpec`) | tier 01, the contact's location address | replaces `foundation.partyAddress*` for that party — a foreign buyer an export rule must see (`customer.location.countryCode` reads the order's ship-to address) |
+| `ItemSpec.customFieldValues` | tier 10, after `seedCustomFields` | writes the values into the item's type-table `customFields` JSON keyed by the `customField` id, the shape the item form saves; one UPDATE per type table |
+| `SalesOrderSpec.customerReference` / `SalesStatusOrderSpec.customerReference` | tier 04 | the customer's PO or contract number on the order |
+| `SalesOrderLineSpec.description` / `SalesStatusOrderSpec.lineDescription` | tier 04 | the line description (a CLIN); omitted = the item's name |
+
+The validator's `items` rule checks that each `customFieldValues` key names an
+`ops.customFields` field on the item's own type table, and that a List value is one of the
+field's `listOptions`. Its `foundation` rule checks that an address `countryCode` is two
+upper-case letters.
+
+## Serial traveler line fields
+
+The serial traveler line (`.ai/specs/2026-11-12-serial-traveler-line-flow.md`) added
+these fields. Each one is optional except `materialRequests`; omitted, the row is as before.
+
+| Field | Written by | Effect |
+|---|---|---|
+| `FoundationData.lineFlow` (`LineFlowSpec`) | tier 01 | sets `companySettings.travelerLabels`, `requireTrackedMaterialsIssued` and `autoPickingListOnRelease`. Tier 01 writes all 3 on every apply, so a dataset without `lineFlow` turns them off again |
+| `BomLineSpec.operation` | tier 02 | the `order` of a `bop` operation in the same method, written as `methodOperationId` |
+| `TrackedStockSpec.shelf` | tier 03 | writes one opening `itemLedger` row per lot at that shelf, and skips the untracked opening row of that (item, shelf) |
+| `KanbanItemSpec.replenishmentLevel` | tier 03 | Transfer kanbans only |
+| `JobSpec.serials` | tier 06 | serial items only: one `readableId` per unit. `splitSerialUnits` splits the job's one reserved unit into quantity-1 units, each 1 ms after the last, as `assignSerialNumbers` does |
+| `ProductionData.materialRequests` (`MaterialRequestSpec`) | tier 06 | "Need material" rows on the job operation at `operationOrder`, at its work center and the plant. The applying user resolves a Resolved row, dated yesterday. Required: every dataset except a walkthrough seeds rows, and the `coverage.ts` floor is 2 |
+| `SerialSequenceSpec.serialNumberTiming` / `printLabelOnCompletion` | tier 10 | the `itemSerialSequence` columns; omitted, the column defaults apply |
+
+The validator checks them:
+
+- `operation` names a `bop` order of the same method.
+- A tracked shelf's lots (On Hold, Rejected and Scrapped included) sum to the `openingStock` at that
+  shelf, and a Scrapped lot on it is scrapped from that same shelf.
+- `replenishmentLevel` is on a Transfer kanban, and it is an integer of 0 or more.
+- `serials` is on a Serial item, has one entry per unit, and repeats no serial and no other seeded
+  tracked-entity id (`onHandTracked`, a receipt `lotNumber`, `genealogyInputs`, the
+  `genealogyAssembly` serial).
+- A material request is on an open, released job, at one of its root operations.
+- The `materialRequestStatus` coverage set has both Open and Resolved.
+
 ## Dates are offsets, never literals
 
 Every date in a dataset is a `DayOffset` — a signed number of days from the moment the
@@ -290,6 +351,12 @@ dataset is applied — resolved by `resolveDate` / `resolveTimestamp` in `datase
 against `ctx.anchor` (today in the company's timezone). A template seeded next year shows
 orders from last month, not from 2025. The satellite offsets were derived against a
 reference date of 2026-08-13, so every interval between two dates is preserved exactly.
+
+Timecards are the other exception: `TimecardSpec.workdaysBack` counts working days
+back from the anchor (`workdayBefore`, Saturday and Sunday skipped), and their clock
+times are wall-clock times in the company's time zone (`resolveLocalTimestamp`, with
+`Ctx.timeZone`). Seeded by calendar offset and as UTC, they landed on the weekend and at
+2 am Chicago time, and My Time showed clocked hours on Saturday and Sunday.
 
 `previousMonthEnd(anchor)` and `monthBack(anchor, n)` are the exception-shaped helpers:
 depreciation period ends, the 12 seeded `accountingPeriod` months and fixed-asset usage
@@ -305,7 +372,7 @@ Never use JavaScript `Date` here, and never `CURRENT_DATE` in a tier's SQL — t
 the company's day, the database session's is UTC, and the two disagree for a slice of every
 day. The pure validator checks offset VALUES (planning horizon, period floors, document
 chronology) but nothing scans for `Date` / `CURRENT_DATE` usage: `@carbon/checks` covers
-`apps/mes/app/services`, `packages/jobs/src`, `packages/server-functions/src` and
+`apps/mes/app/services`, `packages/jobs/src` and
 the ERP module/route files, none of which is `packages/database/src/**`. That part is
 convention only.
 
@@ -325,6 +392,71 @@ No other person is ever created (no new global `user` rows) — the applying use
 employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (18) jobs per
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
+
+## Tax codes follow the plant's state
+
+Tier 01 inserts `FoundationData.taxAuthorities`, then `taxCodes` with their
+components, BEFORE the customers. Then it writes `customerTax.taxCodeId` for each
+customer that names a `taxCode`. Each dataset seeds the codes of its own plant's state:
+
+| Dataset | Local code (components) |
+|---|---|
+| satellite | TX – Houston (6.25 + 2) |
+| robotics | PA – Allegheny (6 + 1) |
+| precision | IL – Rockford (6.25 + 2.5) |
+| motor | IN – State (7). Indiana has no local rate, so motor has one authority. |
+| defense | AL – Huntsville (4 + 0.5 + 4.5): Alabama, Madison County, City of Huntsville. Its Use Tax code has the same three components. |
+
+Every dataset also seeds "Out of State – Exempt" and a Use Tax code
+(`calculationType` Reverse Charge, 0% recoverable). Four customers per dataset
+get a code: the local code, except satellite's government customer (ORBSEC
+Defense), which gets the exempt code. Defense gives the exempt code to its two
+federal customers and its foreign buyer, and the local code to its prime
+contractor (Northgate Defense Systems). Suppliers get no code, so purchase postings
+fold tax into cost as before.
+
+- State percents the way people write them (6.25; an optional
+  `recoverablePercent` of 100 means fully recoverable). The tier divides by 100.
+- `validate.ts` resolves the `taxCode` and `taxAuthority` ref kinds.
+- The floors in `coverage.ts` are the measured minimum: `taxAuthority: 1`,
+  `taxCode: 3`, `taxCodeComponent: 3`.
+- Seeded document lines still carry only `taxPercent`, and the hand-authored posted
+  invoices write no `taxLedger` rows. The Tax Liability report of a demo company
+  therefore shows only what the user posts after the apply.
+
+## The company has an accounting cutover
+
+Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
+period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), `accountingActivatedAt` to the
+timestamp of the anchor day at `00:00:00Z` (`resolveTimestamp(anchor, 0, "00:00:00")`), and
+`accountingActivatedBy` to the applying user. So every seeded journal is on or after the
+cutover and none is `Provisional`: the document journals are `Posted`, and the authored manual
+entries include a `Draft` one (`JE-SEED-001`) and a `Reversed` one (`JE-SEED-004`, with its
+Posted reversal). The validator's `journalStatus` coverage set is the enum minus
+`Provisional` and `Superseded`. Every document the user posts afterwards writes a `Posted`
+journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover).
+
+It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
+no `WHERE`), even when the company already has a cutover.
+`seedCompany` leaves a new company without one (it stays Provisional until activation), so
+tier 01 usually writes the first; an app-created company applied through Settings → Demo
+Data may already have its own. Kept, a later date would put up to eleven months of
+seeded Posted journals before the cutover, where a void is refused and the readers above
+assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
+`companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
+runs `check_accounting_config_locked()` (redefined in
+`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+`accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
+`accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
+role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
+`SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
+transaction and covers the cutover columns only — the base currency and fiscal year locks
+still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+
+Demo-template companies that predate the cutover got theirs from section 7 of
+`20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the
+same test the accounting reset used to spare them), not by `accountingEnabled`. The
+`accountingEnabled` column is not seeded; no code reads it.
 
 ## Make methods stay Draft
 
@@ -347,7 +479,7 @@ make parts. Keep it that way when authoring a new notice or a new dataset.
 
 Posted receipts and shipments, completed returns / transfers / picking lists / counts,
 Paid and Partially Paid invoices, disposed assets and Posted journals are all seeded. The
-posting server functions cannot run inside the one seed transaction (and a post-commit call
+postings cannot run inside the one seed transaction (and a post-commit call
 would break all-or-nothing apply and the drift check's rollback), so each posted state is
 **hand-authored together with the rows its posting path would have written** —
 `itemLedger`, `invoiceSettlement`, tracked entities/activities, receipt/shipment lines —
@@ -363,14 +495,13 @@ in the same tier. Conventions, each mirroring the real code path:
   shipments and scrapped lots carry GL and `costLedger` rows (below); other inventory
   postings (RMA receipts, returns, jobs, adjustments, opening stock) carry none — opening
   stock value sits in the authored Opening Balance entry.
-- **Posted documents carry their journal, as with accounting enabled** — tier 09
+- **Posted documents carry their journal** — tier 09
   (`helpers/post-documents.ts`) journals every non-Draft sales/purchase invoice (plus a
   `VOID` entry for a Voided one), Posted memo, Posted payment (`payment.journalId` /
   `memo.journalId` set), posted PO receipt (plus its FIFO `costLedger` layer) and SO
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
-  shape, CR inventory / DR `scrapAccount`), whether or not `accountingEnabled` is on,
-  through the server functions'
+  shape, CR inventory / DR `scrapAccount`), all `Posted`, through the postings'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,
@@ -390,9 +521,78 @@ The full decision log, with the code each convention was copied from, is
 `.ai/specs/2026-09-22-demo-data-completeness.md` and
 `.ai/specs/2026-09-23-demo-data-screen-coverage.md` → Autonomous Decisions.
 
+## Rental agreements
+
+Every dataset seeds two rental agreements (`sales.rentalAgreements`,
+`RentalAgreementSpec`; spec `.ai/specs/2026-11-10-rental-agreements-demo-data.md`).
+Tier 09 seeds them right after the fixed assets (`tiers/rentals.ts`
+`seedRentalAgreements`), because every line rents a fleet unit.
+
+- **Fleet units** — three `FixedAssetSpec`s per dataset with `fleet: { item, serial }`,
+  class "Rental Fleet", Active. Tier 09 mints a Consumed serial for each, sets
+  `fixedAsset.itemId` / `trackedEntityId`, and tags the serial `{"Fixed Asset": <id>}`.
+- **Active** — open-ended (so every line is a `Rental`), with `lessorClassification` and
+  `classificationInputs` from `classifyRentalLine`, Pending billing periods from
+  `generateRentalBillingPeriods` through `billingHorizon` (both moved into
+  `@carbon/database`), one unit On Rent through a Posted rental shipment
+  (`shipmentFixedAssetLine` + a `Rental Delivery` activity, no ledger, no journal), one
+  unit Pending, a second contact (`rentalAgreementContact`) and one unbilled charge.
+- **Draft** — a 12-month term starting in 14 days, one line, no periods.
+- Every seeded agreement has `invoiceAutomation = 'Draft Only'`: the nightly
+  `recurring-billing` job drafts every due Pending period, and the company default would
+  post and email those invoices.
+- The second contact is a `CustomerContactSpec` with `sharesLocation: true`: tier 01
+  reuses the customer's "Billing" location, so `cloc:<customer>` is unchanged. Tier 01
+  stores every `customerContact` id at `ctx.refs.contacts["cc:<customer>:<lastName>"]`.
+- `shipmentFixedAssetLine` is in `PARENT_CHECK_TABLES` (a sales order line OR a rental
+  line). The validator's `rentals` rule checks activation's own rules. Not seeded:
+  invoices, deposits, credit memos, Sale lines, returns.
+
+## Service jobs
+
+Every dataset seeds service work (`SalesData` in `types.ts`, tier 04
+`seedServiceJobs`; see `.claude/rules/service-jobs.md`):
+
+- `sales.serviceLaborRates` — `{ cost, bill }` per hour. Tier 04 sets them as
+  `companySettings.serviceLaborCostRate` / `serviceLaborBillRate` (an upsert
+  that overwrites both), so the MES clock and My Time can write time. Every
+  seeded job copies the bill rate into `laborBillRate`.
+- `sales.customerAssets` — units registered the way `registerCustomerAsset`
+  does it (a Consumed serial, source Manual).
+- `sales.serviceJobs` (`ServiceJobSpec`) — 5 per dataset: one Open from an RMA
+  receipt, Awaiting Approval, In Progress, a Completed Warranty job and an
+  Invoiced Billable job, with time (`workdaysBack`, optional clock times),
+  estimate lines (an item-less line is a Labor line at the bill rate) and a
+  charge. Every seeded time entry is closed and stores the cost rate in
+  `unitCost`. Tier 09 (`helpers/post-documents.ts` `postServiceJobTime`,
+  `serviceJobTimeJournal`) writes one Posted `'Service Job'` journal per entry
+  on the entry's day, as post-service-job `post-time` does: Dr the coverage
+  account / Cr labor absorption, `documentLineReference` =
+  `journalReference.to.serviceJobTime(id)`. The Invoiced job's Draft invoice
+  has one Labor line, then the charges, every line carrying `serviceJobId`:
+  tier 09's invoice posting takes Part lines only. No service revenue accrual
+  is seeded.
+- Open jobs carry `assignments` (`ServiceJobAssignmentSpec`, a weekday of the
+  anchor's Monday-start week, the applying user), 4 per dataset; one open job is
+  left unassigned so the dispatch grid's backlog has a row.
+- An In Progress RMA with a received Return for Service line (no ledger row) and
+  its job (`salesReturnLine`).
+
+No part is issued to a seeded job: an issue needs the `issue` posting's ledger,
+cost layer and journal rows, which the tiers do not model. The validator checks
+the rest (`serviceJobs` in `validate.ts`): Warranty coverage only on an asset in
+warranty, one job per RMA line, estimates on Billable jobs only, a positive
+cost and bill rate, each Labor estimate line at the bill rate, time before
+completion, a balanced time journal per entry in an Open period, at least one
+assignment and at least one unassigned open job. The wipe voids `'Service Job'`
+journals like any other document source (`DOCUMENT_JOURNAL_SOURCES`). Floors:
+`serviceJob` 5, `serviceJobTime` 8, `serviceJobEstimateLine` 4,
+`serviceJobItem` 1, `serviceJobAssignment` 4.
+
 ## Part thumbnails ship with the app
 
-Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`,
+Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`
+(`<industryId>` is `Dataset.assetIndustryId` when set, see below),
 written by `createItem`. **That is not a storage object.** The artwork is 132 committed
 vector files under `packages/database/src/datasets/assets/<industryId>/`, exposed by
 `@carbon/database/dataset-assets` and resolved by both apps' `getPrivateUrl`, which tries
@@ -424,8 +624,8 @@ row whose `modelPath`/`glbPath`/`graphPath` are those bundled paths, `processing
 (tier 04) and jobs (tier 06) both copy the link.
 
 The data is `ItemsData.assembly` (`AssemblySpec`), authored in `data/<key>/assembly.ts`. It
-is **optional** — a dataset with a null `industryId` has nowhere to resolve a model from and is
-skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
+is **optional** — a dataset with no `assetIndustryId` and a null `industryId` has nowhere to resolve
+a model from and is skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
 are the frozen join key between the graph, the GLB node extras and the step rows, so a step
 naming an absent node would render but animate nothing — the pure validator now fails it
 (and a `componentCount` that disagrees with the graph) before commit. Regenerate them from the graph rather than
@@ -442,7 +642,8 @@ lists the models, and no third-party CAD remains, so no attribution is owed.
 Every dataset assembly seeds **sub-assemblies**, each shaped to its product (satellite: three
 benches → two parents → integration; robotics: wide, the link assembly uses both joint drives and the
 controller joins the main build unused; precision: three levels deep, one step fits two
-sub-assemblies; motor: a chain).
+sub-assemblies; motor: a chain; defense: four benches, the propulsion pods fitted inside the arm
+set, then the main integration).
 `AssemblyStepSpec` takes `key`, `isSubAssembly` (a header row), `parent` (the header a member
 belongs to) and `usedIn` (headers only: the later step that fits the finished unit).
 Steps also carry planner-baked motion — `motion`, `view` (the camera's plan hint) and
@@ -465,10 +666,41 @@ already cleaned on re-apply (verified — applying a second dataset leaves exact
 and because the artifacts are bundled rather than stored, a backup/restore or template revert
 carries the paths across intact with nothing to re-upload.
 
+## Dev-only datasets
+
+A dataset with `industryId: null` is dev-only: `datasetForIndustry` never returns it, so
+onboarding never offers it. `pnpm db:seed:dev -- --dataset <key>` still applies it.
+`Dataset.assetIndustryId` names the industry folder whose bundled assets (thumbnails, CAD model)
+it reuses; it defaults to `industryId`. Tier 02 (`seedAssembly`), `createItem` and the validator's
+assembly graph check read it.
+
+`motor-line` (`data/motor-line/index.ts`, label "Motor line (dev)") is the one dev-only dataset.
+It is a walkthrough of one product, the anonymized AJ-3 serial motor line (`aj3.ts`), with
+`lineFlow` and all 3 settings on. It keeps only the motor company setup the line needs (plant,
+shift, storage types, printer route, the two AJ-3 suppliers) and seeds no documents: no jobs,
+orders, quality, maintenance or workflows. The chambers (AJ3-CC) and injectors (AJ3-FIA) are on
+shelf WH1-C1 as 3 serials each, so the engine line runs without sub-assembly jobs. The only
+demand is a forecast of 1 AJ3-ENG next week, so MRP suggests one engine to make. A safety stock
+alone does not work here: MRP's planning grid lists only an item with demand, open supply or a
+reorder point.
+
+### Walkthrough datasets
+
+`Dataset.walkthrough: true` marks a dev-only single-product dataset. The validator runs only its
+structural rules on it (`WALKTHROUGH_RULES` in `validate.ts`): names resolve, stock adds up,
+serials do not collide. The coverage checks in those rules go through `ValidationCtx.cover`, which
+skips them. `datasetScope` refuses a walkthrough with an `industryId`, and it requires each slice
+whose rules do not run (sales, purchasing documents, production, quality, accounting documents,
+most of ops, workflow runs) to be empty. `coverageFloorsFor` (`coverage.ts`) gives a walkthrough
+no row-count floors, so `db:check:datasets` still applies it and rolls it back, but counts nothing.
+The job, RFQ and demand stories (`production.eventsJobKey`, `purchasing.rfqHeader`,
+`planning.demandOrder` and the others in `datasetScope`) are null on a walkthrough, and the tiers
+skip them. Every other dataset must set them.
+
 ## Adding an industry
 
 1. `data/<key>/` — one file per slice, mirroring `data/satellite/` (the canonical pattern;
-   the other three mirror its shape). All twelve slices, `ops` included, are required, and
+   the other four mirror its shape). All twelve slices, `ops` included, are required, and
    the new-shape fields are non-optional, so the compiler enforces parity. The validator
    additionally requires the listed arrays to be non-empty and every `COVERAGE` set
    in `validate.ts` (quote / sales-order / invoice / PO / receipt / job-op /
@@ -479,17 +711,22 @@ carries the paths across intact with nothing to re-upload.
 3. Add `"<key>"` to `DatasetKey` in `types.ts`.
 4. Set `industryId` on the dataset to the matching `industry` row id, and add that row in
    a migration if it does not exist yet (`aerospace_satellite` was added by
-   `20260813023744_add-aerospace-industry.sql`; the other three shipped in
-   `20260617100002_onboarding-and-backups.sql`).
+   `20260813023744_add-aerospace-industry.sql`, `defense_uas` by
+   `20261026083820_add-defense-industry.sql`; the other three shipped in
+   `20260617100002_onboarding-and-backups.sql`). A new `iconName` also needs an entry in
+   `INDUSTRY_ICONS` (`apps/erp/app/routes/onboarding+/industry.tsx`), or the card falls
+   back to the factory icon.
 5. Add its workflow builder to `SEED_WORKFLOW_BUILDERS` (`tiers/workflow-definitions.ts`)
    so `packages/ee/src/workflows/seed-workflows.test.ts` validates its definitions.
-6. Verify: `pnpm db:check:datasets -- --dataset <key>` (runs the validator, then applies it and checks
+6. Bundle its assets under `assets/<industryId>/`: one SVG per item, and the CAD assembly's
+   `models/<name>.glb` + `.graph.json` (the validator fails without the graph).
+7. Verify: `pnpm db:check:datasets -- --dataset <key>` (runs the validator, then applies it and checks
    the `coverage.ts` row-count floors).
 
 Volume is the coverage contract: match the existing datasets' row counts roughly, so every
 list screen in the ERP has rows and every detail screen opens.
 
-All four industries have a dataset today. An industry without one is **hidden** from the
+All five industries have a dataset today. An industry without one is **hidden** from the
 onboarding picker (`industry.tsx` filters on `datasetForIndustry`) rather than silently
 provisioning a clean company — a card promising sample data that delivers none is worse
 than no card.
@@ -497,7 +734,7 @@ than no card.
 ## The drift check
 
 ```bash
-pnpm db:check:datasets                       # all four
+pnpm db:check:datasets                       # all five
 pnpm db:check:datasets -- --dataset motor    # one
 ```
 
@@ -541,8 +778,16 @@ which is exactly what lets one caller commit and the other roll back.
 
 The scratch company is attributed to the `system` user, never a real developer's.
 
+After the coverage check it applies the dataset AGAIN over the seeded scratch company with
+`wipeFirst: true` — the Settings → Demo Data path on a company that already has data. That
+is the only way to exercise the wipe against real rows: a new CHECK the FK-nulling pass
+cannot survive fails here as "re-applying over the seeded company failed (datasets/wipe.ts)".
+Before that pass it dates the seeded locations one second after the bootstrap one, because
+`buildCtx` keeps the OLDEST location and inside one transaction `NOW()` gives every row the
+same `createdAt`.
+
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
-table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 255 tables, measured across all four
+table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 276 tables, measured across the first four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
 `UNION ALL` query and fails the dataset with every shortfall listed as
 `table: expected ≥ N, got M`. That is what catches a tier that silently writes nothing. Most
@@ -550,6 +795,13 @@ tables are counted by `companyId`; `COVERAGE_SCOPES` counts `dimension` / `dimen
 by the scratch company's `companyGroupId` and the three favorites tables through their parent
 document; the global `period` table is not counted. Removing data on purpose means lowering
 the floor in the same change; adding a table means measuring and adding it.
+
+Content that only one dataset carries has its own floors in `DATASET_COVERAGE_FLOORS` (same
+file), which `findCoverageShortfalls` adds for that dataset's key: a shared floor would be 0.
+Today only satellite has them: the Projects Phase 3 planning group (`planningGroup`,
+`projectElementMaterial`, `projectPeg`), the Phase 5b indirect rates (`indirectPool`,
+`indirectPoolAccount`, `indirectRate`) and ORBSEC Block 2's earned value baseline
+(`projectBaseline`, `ProjectSpec.baseline`, tier 09 `seedProjectBaseline`).
 
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.
@@ -607,6 +859,6 @@ feature and is unaffected.
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally runs the `seed-company` server function
-(`@carbon/server-functions/seed-company`, for the chart of accounts and other reference data)
+browser onboarding flow additionally runs `seedCompany` (`settings.service.ts`, ported
+from the `seed-company` server function, for the chart of accounts and other reference data)
 before the template step ever runs, in-process in the ERP.

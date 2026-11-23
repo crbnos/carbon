@@ -285,16 +285,15 @@ describe.skipIf(!url)("inspection gauges against a migrated database", () => {
       expect((await planRow()).gaugeId).toBeNull();
     });
 
-    it.each([
-      "Passed",
-      "Failed",
-      "Partial"
-    ])("refuses a %s (closed) lot", async (status) => {
-      await seed(status);
-      const result = await record(id("caliper"));
-      expect(result.error?.message).toBe("Inspection is closed");
-      expect((await planRow()).gaugeId).toBeNull();
-    });
+    it.each(["Passed", "Failed", "Partial"])(
+      "refuses a %s (closed) lot",
+      async (status) => {
+        await seed(status);
+        const result = await record(id("caliper"));
+        expect(result.error?.message).toBe("Inspection is closed");
+        expect((await planRow()).gaugeId).toBeNull();
+      }
+    );
 
     it("clears the gauge and its recorded time", async () => {
       await seed();
@@ -340,14 +339,13 @@ describe.skipIf(!url)("inspection gauges against a migrated database", () => {
     const deleteGauge = () =>
       client.query(`DELETE FROM "gauge" WHERE id = $1`, [gauge]);
 
-    it.each([
-      "Passed",
-      "Failed",
-      "Partial"
-    ])("is refused when the lot is %s", async (status) => {
-      await seed(status);
-      await expect(deleteGauge()).rejects.toMatchObject({ code: "23503" });
-    });
+    it.each(["Passed", "Failed", "Partial"])(
+      "is refused when the lot is %s",
+      async (status) => {
+        await seed(status);
+        await expect(deleteGauge()).rejects.toMatchObject({ code: "23503" });
+      }
+    );
 
     it("clears the gauge from an open lot", async () => {
       await seed("In Progress");

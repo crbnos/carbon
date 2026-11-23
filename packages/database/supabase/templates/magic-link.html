@@ -1,7 +1,13 @@
-<h2>Magic Link for Carbon</h2>
+<h2>Sign in to Carbon</h2>
 
-<p>Follow this link to login:</p>
+<p>Enter this code on the sign-in screen:</p>
+
+<p style="font-family: monospace; font-size: 28px; font-weight: 600; letter-spacing: 6px">{{ .Token }}</p>
+
+<p>Or follow this link:</p>
 
 <p>
   <a href="{{ .SiteURL }}/magic-link?token={{ .TokenHash }}">Log In</a>
 </p>
+
+<p>The code and the link are the same sign-in: use either, once.</p>

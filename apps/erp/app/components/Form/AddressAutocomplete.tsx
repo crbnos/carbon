@@ -176,7 +176,7 @@ const AddressAutocomplete = ({
             className="bg-transparent"
           />
           {open && suggestions.length > 0 && (
-            <CommandList className="absolute w-full top-10 z-[9999] rounded-md border bg-popover text-popover-foreground shadow-md p-0">
+            <CommandList className="absolute w-full top-10 max-md:top-11 z-[9999] rounded-md border bg-popover text-popover-foreground shadow-md p-0">
               <CommandEmpty>
                 {loading ? t`Loading...` : t`No addresses found`}
               </CommandEmpty>

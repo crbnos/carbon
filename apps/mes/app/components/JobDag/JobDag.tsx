@@ -8,9 +8,10 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  useViewport,
   VStack
 } from "@carbon/react";
-import Dagre from "@dagrejs/dagre";
+import { useLingui } from "@lingui/react/macro";
 import {
   Background,
   type Edge,
@@ -18,23 +19,35 @@ import {
   MiniMap,
   type Node,
   type NodeTypes,
-  Position,
   ReactFlow,
   ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
-  useReactFlow
+  type Rect,
+  useReactFlow,
+  useStore,
+  useStoreApi
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuArrowDown, LuArrowRight, LuInfo, LuMaximize } from "react-icons/lu";
+import { useEffect, useMemo, useState } from "react";
+import {
+  LuArrowDown,
+  LuArrowRight,
+  LuArrowRightLeft,
+  LuInfo,
+  LuMaximize
+} from "react-icons/lu";
 import { JobOperationEdge } from "./JobOperationEdge";
 import { JobOperationNode } from "./JobOperationNode";
-
-type LayoutDirection = "LR" | "TB";
-
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 90;
+import {
+  dependencyId,
+  effectiveDirection,
+  fitViewport,
+  type LayoutDirection,
+  layoutOperations,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  openingViewport,
+  windingColumns
+} from "./layout";
 
 const nodeTypes: NodeTypes = {
   jobOperation: JobOperationNode as any
@@ -74,45 +87,32 @@ type Props = {
   dependencies: Dependency[];
 };
 
+const EMPTY_BOUNDS: Rect = { x: 0, y: 0, width: 0, height: 0 };
+
 function computeLayout(
   operations: Operation[],
   dependencies: Dependency[],
-  direction: LayoutDirection
-): { nodes: Node[]; edges: Edge[] } {
-  const g = new Dagre.graphlib.Graph();
-  g.setGraph({
-    rankdir: direction,
-    nodesep: 80,
-    ranksep: 120,
-    edgesep: 30,
-    marginx: 40,
-    marginy: 40
-  });
-  g.setDefaultEdgeLabel(() => ({}));
-
+  direction: LayoutDirection,
+  columns: number,
+  compact: boolean
+): { nodes: Node[]; edges: Edge[]; bounds: Rect } {
   const opsById = new Map(operations.map((op) => [op.id, op]));
-
-  for (const op of operations) {
-    g.setNode(op.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
-  }
-
-  for (const dep of dependencies) {
-    g.setEdge(dep.dependsOnId, dep.operationId);
-  }
-
-  Dagre.layout(g);
-
-  const isHorizontal = direction === "LR";
+  const { positions, routes, bounds } = layoutOperations(
+    operations.map((op) => op.id),
+    dependencies,
+    direction,
+    columns,
+    compact
+  );
 
   const nodes: Node[] = operations.map((op) => {
-    const pos = g.node(op.id);
+    const position = positions.get(op.id)!;
     return {
       id: op.id,
       type: "jobOperation",
-      position: {
-        x: pos.x - NODE_WIDTH / 2,
-        y: pos.y - NODE_HEIGHT / 2
-      },
+      position: { x: position.x, y: position.y },
+      sourcePosition: position.sourcePosition,
+      targetPosition: position.targetPosition,
       data: {
         id: op.id,
         description: op.description ?? "Untitled",
@@ -129,87 +129,137 @@ function computeLayout(
           (op.jobOperationBatch.status === "Active" ||
             op.jobOperationBatch.status === "Completing")
             ? op.jobOperationBatch.readableId
-            : null,
-        direction
-      },
-      sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
-      targetPosition: isHorizontal ? Position.Left : Position.Top
-    };
-  });
-
-  const edges: Edge[] = dependencies.map((dep) => {
-    const upstream = opsById.get(dep.dependsOnId);
-    return {
-      id: `${dep.dependsOnId}-${dep.operationId}`,
-      source: dep.dependsOnId,
-      target: dep.operationId,
-      type: "jobOperationEdge",
-      data: {
-        quantity: Number(upstream?.quantityComplete ?? 0)
+            : null
       }
     };
   });
 
-  return { nodes, edges };
+  const edges: Edge[] = dependencies.flatMap((dep) => {
+    const upstream = opsById.get(dep.dependsOnId);
+    const downstream = opsById.get(dep.operationId);
+    // A dependency on an operation that did not load has no node to reach.
+    if (!upstream || !downstream) return [];
+    const id = dependencyId(dep);
+    return {
+      id,
+      source: dep.dependsOnId,
+      target: dep.operationId,
+      // React Flow's default names the edge by raw operation ids.
+      ariaLabel: `${upstream.description ?? dep.dependsOnId} → ${
+        downstream.description ?? dep.operationId
+      }`,
+      type: "jobOperationEdge",
+      data: {
+        quantity: Number(upstream.quantityComplete ?? 0),
+        route: routes.get(id)
+      }
+    };
+  });
+
+  return { nodes, edges, bounds };
 }
 
 function JobDagInner({ operations, dependencies }: Props) {
-  const [direction, setDirection] = useState<LayoutDirection>("LR");
-  const { fitView } = useReactFlow();
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  // Phones read top to bottom until the operator picks a direction.
+  const [chosenDirection, setDirection] = useState<LayoutDirection | null>(
+    null
+  );
+  const store = useStoreApi();
+  const { setViewport } = useReactFlow();
+  // Subscribe to what the layout depends on, not to the pane size itself: a
+  // resize that fits the same number of columns must not lay the graph out again.
+  const ready = useStore((state) => state.width > 0 && state.height > 0);
+  const columns = useStore((state) => windingColumns(state.width, isPhone));
+  const direction = effectiveDirection(
+    chosenDirection ?? (isPhone ? "TB" : "Winding"),
+    ready ? columns : 2
+  );
+  const layoutColumns = direction === "Winding" ? columns : 1;
+  // On a phone, fitting the whole graph shrinks nodes past reading size, so
+  // fit no smaller than 0.6 and let the operator pan the rest.
+  const minZoom = isPhone ? 0.6 : MIN_ZOOM;
 
-  const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
-    () => computeLayout(operations, dependencies, direction),
-    [operations, dependencies, direction]
+  const { nodes, edges, bounds } = useMemo(
+    () =>
+      ready
+        ? computeLayout(
+            operations,
+            dependencies,
+            direction,
+            layoutColumns,
+            isPhone
+          )
+        : { nodes: [], edges: [], bounds: EMPTY_BOUNDS },
+    [ready, operations, dependencies, direction, layoutColumns, isPhone]
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges);
-
+  // Position the viewport when the graph's shape changes. A refresh that only
+  // changes quantities, or a resize, keeps the operator's pan and zoom.
+  const { x, y, width, height } = bounds;
   useEffect(() => {
-    setNodes(layoutNodes);
-    setEdges(layoutEdges);
-    setTimeout(() => fitView({ padding: 0.1 }), 50);
-  }, [layoutNodes, layoutEdges, setNodes, setEdges, fitView]);
+    if (!width || !height) return;
+    void setViewport(
+      openingViewport(
+        { x, y, width, height },
+        store.getState(),
+        direction,
+        minZoom
+      )
+    );
+  }, [x, y, width, height, direction, minZoom, store, setViewport]);
 
-  const toggleDirection = useCallback(() => {
-    setDirection((d) => (d === "LR" ? "TB" : "LR"));
-  }, []);
+  const toggleDirection = () => {
+    const order: LayoutDirection[] =
+      columns > 1 ? ["Winding", "LR", "TB"] : ["LR", "TB"];
+    setDirection(order[(order.indexOf(direction) + 1) % order.length]);
+  };
 
-  const handleFitView = useCallback(() => {
-    fitView({ padding: 0.1 });
-  }, [fitView]);
+  const fit = () => {
+    void setViewport(fitViewport(bounds, store.getState(), minZoom), {
+      duration: 200
+    });
+  };
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="relative flex flex-col h-full w-full">
+      {/* Phones: the toolbar floats over the canvas, bottom-right. */}
       <HStack
-        className="border-b border-border px-3 py-1.5 bg-card"
+        className="border-b border-border px-3 py-1.5 bg-card max-md:absolute max-md:right-4 max-md:bottom-[calc(1rem+env(safe-area-inset-bottom))] max-md:z-20 max-md:border-0 max-md:bg-transparent max-md:p-0"
         spacing={2}
       >
         <button
           type="button"
           onClick={toggleDirection}
           className={cn(
-            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5",
+            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5 max-md:h-11 max-md:px-3",
             "border border-border bg-background hover:bg-accent/60 transition-colors"
           )}
         >
-          {direction === "LR" ? (
+          {direction === "Winding" ? (
+            <LuArrowRightLeft className="w-3.5 h-3.5" />
+          ) : direction === "LR" ? (
             <LuArrowRight className="w-3.5 h-3.5" />
           ) : (
             <LuArrowDown className="w-3.5 h-3.5" />
           )}
-          {direction === "LR" ? "Left to Right" : "Top to Bottom"}
+          {direction === "Winding"
+            ? t`Winding`
+            : direction === "LR"
+              ? t`Left to Right`
+              : t`Top to Bottom`}
         </button>
         <button
           type="button"
-          onClick={handleFitView}
+          onClick={fit}
           className={cn(
-            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5",
+            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5 max-md:h-11 max-md:px-3",
             "border border-border bg-background hover:bg-accent/60 transition-colors"
           )}
         >
           <LuMaximize className="w-3.5 h-3.5" />
-          Fit
+          {t`Fit`}
         </button>
       </HStack>
 
@@ -217,26 +267,27 @@ function JobDagInner({ operations, dependencies }: Props) {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           proOptions={proOptions}
-          fitView
-          fitViewOptions={{ padding: 0.1 }}
           nodesDraggable={false}
           nodesConnectable={false}
+          elementsSelectable={false}
+          // The link inside each node is the one tab stop.
+          nodesFocusable={false}
           edgesFocusable={false}
-          minZoom={0.1}
-          maxZoom={2}
+          minZoom={MIN_ZOOM}
+          maxZoom={MAX_ZOOM}
         >
           <Background gap={20} size={1} />
-          <MiniMap
-            nodeStrokeWidth={3}
-            pannable
-            zoomable
-            className="!bg-card !border-border"
-          />
+          {direction !== "Winding" && (
+            <MiniMap
+              nodeStrokeWidth={3}
+              pannable
+              zoomable
+              className="!bg-card !border-border max-md:!hidden"
+            />
+          )}
         </ReactFlow>
         <DagLegend />
       </div>
@@ -253,6 +304,7 @@ export function JobDag(props: Props) {
 }
 
 function DagLegend() {
+  const { t } = useLingui();
   const entries = [
     { label: "Done", className: "border-green-500 bg-green-500" },
     { label: "In Progress", className: "border-blue-500 bg-blue-500" },
@@ -269,7 +321,7 @@ function DagLegend() {
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label="Show legend"
+            aria-label={t`Show legend`}
             className={cn(
               "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
               "border border-border bg-card/90 backdrop-blur shadow-sm",
@@ -285,7 +337,7 @@ function DagLegend() {
           align="start"
           className="w-auto p-3 border-border"
         >
-          <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+          <span className="block text-[0.625rem] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
             Operation Status
           </span>
           <VStack spacing={2}>
@@ -294,7 +346,7 @@ function DagLegend() {
                 <div
                   className={cn("w-4 h-4 rounded border-2", entry.className)}
                 />
-                <span className="text-[13px] text-foreground">
+                <span className="text-[0.8125rem] text-foreground">
                   {entry.label}
                 </span>
               </HStack>

@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { LuMapPin } from "react-icons/lu";
 import type { Action } from "~/types";
 
@@ -27,6 +28,8 @@ const CustomerPartNumber = ({
   customerPartNumber,
   actions
 }: CustomerPartNumberProps) => {
+  const { t } = useLingui();
+  const partId = customerPartNumber.customerPartId;
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
       <LuMapPin className="w-8 h-8" />
@@ -42,7 +45,7 @@ const CustomerPartNumber = ({
         </p>
       </VStack>
       {actions.length > 0 && (
-        <ActionMenu>
+        <ActionMenu label={t`Actions for ${partId}`}>
           {actions.map((action) => (
             <DropdownMenuItem key={action.label} onClick={action.onClick}>
               {action.icon && <DropdownMenuIcon icon={action.icon} />}

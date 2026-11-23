@@ -68,6 +68,10 @@ export const CarbonProvider = ({
   // shell is told to re-run after a refresh. Without that, every loader on the
   // page re-ran each time the tab regained focus.
   const refreshIfDue = (canRefresh: boolean) => {
+    // Offline, the reload lands on the browser's error page and the refresh
+    // fails into the app's error screen. The "online" listener checks again.
+    if (!navigator.onLine) return;
+
     const expiresAt = session.expiresAt ?? 0;
     const now = Date.now() / 1000;
 
@@ -93,9 +97,11 @@ export const CarbonProvider = ({
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") refreshIfDue(true);
     };
+    const handleOnline = () => refreshIfDue(true);
 
     if (isBrowser) {
       document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("online", handleOnline);
     }
 
     return () => {
@@ -104,6 +110,7 @@ export const CarbonProvider = ({
           "visibilitychange",
           handleVisibilityChange
         );
+        window.removeEventListener("online", handleOnline);
       }
     };
   }, [refresh, session.expiresAt]);

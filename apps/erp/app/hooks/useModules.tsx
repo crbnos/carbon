@@ -4,6 +4,7 @@
 
 import { useRouteData } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import { useMemo } from "react";
 import {
   LuBlocks,
   LuBox,
@@ -12,17 +13,24 @@ import {
   LuFactory,
   LuFiles,
   LuFolderCheck,
+  LuFolderKanban,
+  LuHeadphones,
+  LuHeartHandshake,
   LuLandmark,
   LuSettings,
   LuShield,
   LuShoppingCart,
   LuTvMinimalPlay,
   LuUsers,
-  LuWorkflow,
-  LuWrench
+  LuWorkflow
 } from "react-icons/lu";
+import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
+import {
+  type SubmoduleLayout,
+  submoduleLayout
+} from "~/utils/submodule-visibility";
 import { usePermissions } from "./usePermissions";
 
 type ModuleDefinition = Authenticated<NavItem> & { key: string };
@@ -31,7 +39,31 @@ type ModulePreference = {
   module: string;
   position: number;
   hidden: boolean;
+  hiddenSubmodules: string[];
+  submoduleOrder: string[];
 };
+
+const NO_PREFERENCES: ModulePreference[] = [];
+
+function useModulePreferences() {
+  const routeData = useRouteData<{
+    modulePreferences: ModulePreference[];
+  }>(path.to.authenticatedRoot);
+  return routeData?.modulePreferences ?? NO_PREFERENCES;
+}
+
+/**
+ * The sub-modules this user hides and the order they put them in. While
+ * Customize is open it is the unsaved layout, so the sidebar previews it.
+ */
+export function useSubmoduleLayout(): SubmoduleLayout {
+  const modulePreferences = useModulePreferences();
+  const draft = useUIStore((state) => state.draftSubmoduleLayout);
+  return useMemo(
+    () => draft ?? submoduleLayout(modulePreferences),
+    [draft, modulePreferences]
+  );
+}
 
 function filterByPermissions(
   modules: ModuleDefinition[],
@@ -101,6 +133,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       icon: LuFactory
     },
     {
+      key: "projects",
+      permission: "projects",
+      name: t`Projects`,
+      to: path.to.projects,
+      icon: LuFolderKanban
+    },
+    {
       key: "purchasing",
       permission: "purchasing",
       name: t`Purchasing`,
@@ -119,7 +158,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       permission: "resources",
       name: t`Resources`,
       to: path.to.resources,
-      icon: LuWrench
+      icon: LuHeartHandshake
     },
     {
       key: "sales",
@@ -127,6 +166,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Sales`,
       to: path.to.sales,
       icon: LuCrown
+    },
+    {
+      key: "service",
+      permission: "service",
+      name: t`Service`,
+      to: path.to.serviceJobs,
+      icon: LuHeadphones
     },
     {
       key: "settings",
@@ -141,7 +187,8 @@ function useModuleDefinitions(): ModuleDefinition[] {
       to: path.to.external.mes,
       icon: LuTvMinimalPlay,
       role: "employee",
-      external: true
+      external: true,
+      newTab: true
     },
     {
       key: "users",
@@ -165,12 +212,7 @@ const PINNED_MODULES = new Set(["settings"]);
 export function useModules() {
   const permissions = usePermissions();
   const modules = useModuleDefinitions();
-
-  const routeData = useRouteData<{
-    modulePreferences: ModulePreference[];
-  }>(path.to.authenticatedRoot);
-
-  const modulePreferences = routeData?.modulePreferences ?? [];
+  const modulePreferences = useModulePreferences();
   const permitted = filterByPermissions(modules, permissions).filter(
     (m) => !PINNED_MODULES.has(m.key)
   );
@@ -209,12 +251,8 @@ export function useSettingsModule() {
 export function useAllModules() {
   const permissions = usePermissions();
   const modules = useModuleDefinitions();
+  const modulePreferences = useModulePreferences();
 
-  const routeData = useRouteData<{
-    modulePreferences: ModulePreference[];
-  }>(path.to.authenticatedRoot);
-
-  const modulePreferences = routeData?.modulePreferences ?? [];
   const permitted = filterByPermissions(modules, permissions)
     .filter((m) => !PINNED_MODULES.has(m.key))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -225,7 +263,9 @@ export function useAllModules() {
     .map((m, index) => ({
       ...m,
       position: prefMap.get(m.key)?.position ?? index + 1,
-      hidden: prefMap.get(m.key)?.hidden ?? false
+      hidden: prefMap.get(m.key)?.hidden ?? false,
+      hiddenSubmodules: prefMap.get(m.key)?.hiddenSubmodules ?? [],
+      submoduleOrder: prefMap.get(m.key)?.submoduleOrder ?? []
     }))
     .sort((a, b) => a.position - b.position);
 }

@@ -6,11 +6,23 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import type { Kysely } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
-import { stageRampPaymentDraft } from "./ramp-sync-payment";
+import {
+  CARD_BILL_PAYMENT_ENTITY,
+  stageRampPaymentDraft
+} from "./ramp-sync-payment";
 
-const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const hasLocalDatabase = (() => {
+  try {
+    return LOCAL_HOSTS.includes(
+      new URL(process.env.SUPABASE_DB_URL ?? "").hostname
+    );
+  } catch {
+    return false;
+  }
+})();
 
-describe.skipIf(!runDatabaseTests)(
+describe.skipIf(!hasLocalDatabase)(
   "Ramp transactional staging (Postgres)",
   () => {
     let db: Kysely<KyselyDatabase>;
@@ -337,6 +349,138 @@ describe.skipIf(!runDatabaseTests)(
         .where("reference", "=", `${token}:rollback`)
         .execute();
       expect(payments).toEqual([]);
+    });
+
+    describe("a card-paid bill claims its card transactions", () => {
+      const stage = (token: string, transactionIds: string[], suffix = "") =>
+        stageRampPaymentDraft(db, {
+          companyId: fixture.companyId,
+          actorId: fixture.actorId,
+          bankAccount: fixture.bankAccount,
+          paymentMappingId: `${token}:payment${suffix}`,
+          cardTransactionIds: transactionIds,
+          normalized: {
+            family: "ap",
+            documentRemoteId: token,
+            paymentRemoteId: `${token}:payment${suffix}`,
+            amount: 100,
+            currencyCode: fixture.currencyCode,
+            exchangeRate: 1.2,
+            paidDate: "2026-09-11",
+            reference: `${token}:card${suffix}`,
+            status: "settled"
+          }
+        });
+      const claimsOf = (transactionIds: string[]) =>
+        db
+          .selectFrom("externalIntegrationMapping")
+          .select(["externalId", "entityId"])
+          .where("companyId", "=", fixture.companyId)
+          .where("entityType", "=", CARD_BILL_PAYMENT_ENTITY)
+          .where("externalId", "in", transactionIds)
+          .orderBy("externalId")
+          .execute();
+      const cleanup = async (token: string, transactionIds: string[]) => {
+        await db
+          .deleteFrom("externalIntegrationMapping")
+          .where("companyId", "=", fixture.companyId)
+          .where("externalId", "in", [...transactionIds, `${token}:payment-2`])
+          .execute();
+        await db
+          .deleteFrom("charge")
+          .where("companyId", "=", fixture.companyId)
+          .where("chargeId", "like", `${token}%`)
+          .execute();
+      };
+
+      it("claims each transaction for the payment, once", async () => {
+        const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
+        tokens.push(token);
+        const transactionIds = [`${token}:tx-a`, `${token}:tx-b`];
+        try {
+          await stageInvoice(token);
+          const first = await stage(token, transactionIds);
+          // A retry restages the same Draft and keeps the same claims.
+          const again = await stage(token, transactionIds);
+          expect(again.paymentRowId).toEqual(first.paymentRowId);
+          expect(await claimsOf(transactionIds)).toEqual(
+            transactionIds.map((externalId) => ({
+              externalId,
+              entityId: `${first.paymentRowId}:${externalId}`
+            }))
+          );
+        } finally {
+          await cleanup(token, transactionIds);
+        }
+      });
+
+      it("refuses a transaction already booked as a charge, and stages nothing", async () => {
+        const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
+        tokens.push(token);
+        const transactionIds = [`${token}:tx-a`];
+        try {
+          await stageInvoice(token);
+          const charge = await db
+            .insertInto("charge")
+            .values({
+              chargeId: `${token}-CHG`,
+              cardAccountId: fixture.bankAccount,
+              transactionDate: "2026-09-11",
+              currencyCode: fixture.currencyCode,
+              amount: 100,
+              companyId: fixture.companyId,
+              createdBy: fixture.actorId
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          await db
+            .insertInto("externalIntegrationMapping")
+            .values({
+              entityType: "charge",
+              entityId: charge.id,
+              integration: "ramp",
+              externalId: transactionIds[0]!,
+              companyId: fixture.companyId,
+              createdBy: fixture.actorId
+            })
+            .execute();
+
+          await expect(stage(token, transactionIds)).rejects.toThrow(
+            `is already booked as Draft charge ${token}-CHG. Delete that charge, then sync again`
+          );
+          const payments = await db
+            .selectFrom("payment")
+            .select("id")
+            .where("companyId", "=", fixture.companyId)
+            .where("reference", "=", `${token}:card`)
+            .execute();
+          expect(payments).toEqual([]);
+          expect(await claimsOf(transactionIds)).toEqual([]);
+        } finally {
+          await cleanup(token, transactionIds);
+        }
+      });
+
+      it("refuses a transaction another payment claimed", async () => {
+        const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
+        tokens.push(token);
+        const transactionIds = [`${token}:tx-a`];
+        try {
+          await stageInvoice(token);
+          const first = await stage(token, transactionIds);
+          await expect(stage(token, transactionIds, "-2")).rejects.toThrow(
+            "already paid another bill payment"
+          );
+          expect(await claimsOf(transactionIds)).toEqual([
+            {
+              externalId: transactionIds[0],
+              entityId: `${first.paymentRowId}:${transactionIds[0]}`
+            }
+          ]);
+        } finally {
+          await cleanup(token, transactionIds);
+        }
+      });
     });
   }
 );

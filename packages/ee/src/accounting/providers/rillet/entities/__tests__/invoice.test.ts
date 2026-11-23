@@ -68,6 +68,7 @@ describe("mapSalesInvoiceToRilletInvoice — external references", () => {
       shippingAccountCode: null,
       customerRemoteId: "rillet-cust-1",
       salesProductRemoteId: "rillet-prod-1",
+      serviceProductRemoteId: null,
       subsidiaryId: null,
       companyId: "company-1",
       documentUrl: "https://erp.example.test/x/sales-invoice/si_1"
@@ -128,6 +129,7 @@ function mapArguments(source = charges()) {
     document: buildSalesDocumentComponents(source),
     customerRemoteId: "customer-remote",
     salesProductRemoteId: "rillet-prod-1",
+    serviceProductRemoteId: null as string | null,
     shippingProductRemoteId: "shipping-product",
     shippingAccountCode: "4010",
     subsidiaryId: null,
@@ -136,6 +138,30 @@ function mapArguments(source = charges()) {
   };
 }
 describe("Rillet revenue recognition native sales components", () => {
+  it("sends a discounted line's NET amount", () => {
+    const source = charges();
+    // 1 × 100 base list, 20% off → 80 base merchandise, 64 EUR at 0.8. Add-ons
+    // and shipping are not discounted; tax is on the discounted merchandise.
+    const payload = mapSalesInvoiceToRilletInvoice(
+      mapArguments({
+        ...source,
+        subtotal: 113,
+        totalTax: 11,
+        totalAmount: 129,
+        balance: 129,
+        lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+      })
+    );
+    expect(payload.items.map((line) => line.total_amount.amount)).toEqual([
+      "64.00",
+      "16.00",
+      "2.40",
+      "8.00",
+      "4.00"
+    ]);
+    expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
   it("exports the document currency components with shipping revenue override and native header tax exactly once", () => {
     const payload = mapSalesInvoiceToRilletInvoice(mapArguments());
     expect(
@@ -186,20 +212,21 @@ describe("Rillet revenue recognition native sales components", () => {
       ).size
     ).toBe(5);
   });
-  it.each([
-    0, 3
-  ])("uses %i decimal serialization for document net/native tax", (decimals) => {
-    const source = charges();
-    source.currencyDecimalPlaces = decimals;
-    const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
-    expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
-    // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
-    // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
-    // whose 2.4 is the only component carrying a fractional remainder.
-    expect(payload.items[0]?.total_amount.amount).toBe(
-      decimals === 0 ? "80" : "80.000"
-    );
-  });
+  it.each([0, 3])(
+    "uses %i decimal serialization for document net/native tax",
+    (decimals) => {
+      const source = charges();
+      source.currencyDecimalPlaces = decimals;
+      const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
+      expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
+      // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
+      // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
+      // whose 2.4 is the only component carrying a fractional remainder.
+      expect(payload.items[0]?.total_amount.amount).toBe(
+        decimals === 0 ? "80" : "80.000"
+      );
+    }
+  );
   it("does not need an item on a merchandise line, and never falls back to the shipping product", () => {
     // A merchandise line used to REQUIRE `itemId` because it resolved a
     // per-item Rillet product. It no longer does — the synthetic sales product
@@ -290,7 +317,16 @@ function setupInvoice(missingShipping = false) {
   const itemSyncer = new RilletItemSyncer({ ...context, entityType: "item" });
   const ensureShippingProduct = vi.fn(async () => "shipping-product");
   itemSyncer.ensureShippingProduct = ensureShippingProduct;
-  const ensureSalesProduct = vi.fn(async () => "sales-product");
+  const ensureSalesProduct = vi.fn(
+    async (args: {
+      revenueAccountId: string;
+      baseCurrencyCode: string;
+      baseCurrencyDecimals: number;
+    }) =>
+      args.revenueAccountId === "acct-sales"
+        ? "sales-product"
+        : `product-${args.revenueAccountId}`
+  );
   itemSyncer.ensureSalesProduct = ensureSalesProduct;
   const factory = vi
     .spyOn(SyncFactory, "getSyncer")
@@ -326,30 +362,30 @@ describe("Rillet actual invoice preflight", () => {
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
   });
-  it.each([
-    "assetDisposal",
-    "missingSalesAccount"
-  ] as const)("refuses %s before the CUSTOMER is pushed to Rillet", async (option) => {
-    // Both refusals are PURE — they read the document and the local invoice
-    // only. Running them after `ensureDependencySynced("customer", …)` creates
-    // a Rillet counterparty in the customer's books for an invoice Rillet will
-    // never receive. Xero already ordered it this way; QBO had the same defect
-    // and was fixed in the same change as this.
-    const source = charges();
-    if (option === "assetDisposal") {
-      source.lines[0]!.invoiceLineType = "Fixed Asset";
-    } else {
-      source.salesRevenueAccountId = null;
-    }
-    const test = setupInvoice();
+  it.each(["assetDisposal", "missingSalesAccount"] as const)(
+    "refuses %s before the CUSTOMER is pushed to Rillet",
+    async (option) => {
+      // Both refusals are PURE — they read the document and the local invoice
+      // only. Running them after `ensureDependencySynced("customer", …)` creates
+      // a Rillet counterparty in the customer's books for an invoice Rillet will
+      // never receive. Xero already ordered it this way; QBO had the same defect
+      // and was fixed in the same change as this.
+      const source = charges();
+      if (option === "assetDisposal") {
+        source.lines[0]!.invoiceLineType = "Fixed Asset";
+      } else {
+        source.salesRevenueAccountId = null;
+      }
+      const test = setupInvoice();
 
-    await expect(test.map(source)).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
-    });
-    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
-    expect(test.ensureSalesProduct).not.toHaveBeenCalled();
-    expect(test.provider.createInvoice).not.toHaveBeenCalled();
-  });
+      await expect(test.map(source)).rejects.toMatchObject({
+        failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      });
+      expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+      expect(test.ensureSalesProduct).not.toHaveBeenCalled();
+      expect(test.provider.createInvoice).not.toHaveBeenCalled();
+    }
+  );
   it("provisions ONE sales product for the whole invoice, whatever the items", async () => {
     // The point of the change: three merchandise lines, one product call.
     const test = setupInvoice();
@@ -369,6 +405,70 @@ describe("Rillet actual invoice preflight", () => {
     // The SALES product is still provisioned — the invoice has merchandise, and
     // Rillet requires a product on every line.
     expect(test.ensureSalesProduct).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Rillet service job revenue", () => {
+  it("maps a service job's lines to the Service Revenue product and a part line to the sales product", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct-service";
+    source.subtotal = 385;
+    source.totalAmount = 385;
+    source.balance = 385;
+    source.lines.push({
+      ...source.lines[0]!,
+      id: "sil_labor",
+      invoiceLineType: "Service",
+      itemId: null,
+      itemCode: null,
+      description: "Labor",
+      quantity: 3,
+      unitPrice: 95,
+      lineAmount: 285,
+      serviceJobId: "sj-1"
+    });
+    const test = setupInvoice();
+    const payload = await test.map(source);
+    expect(
+      payload.items.map((item: Rillet.InvoiceItem) => [
+        item.description,
+        item.product_id,
+        item.total_amount.amount
+      ])
+    ).toEqual([
+      ["Widget", "sales-product", "100.00"],
+      ["Labor", "product-acct-service", "285.00"]
+    ]);
+    expect(test.ensureSalesProduct).toHaveBeenCalledTimes(2);
+    expect(test.ensureSalesProduct).toHaveBeenCalledWith({
+      revenueAccountId: "acct-service",
+      baseCurrencyCode: "USD",
+      baseCurrencyDecimals: 2
+    });
+  });
+
+  it("needs no sales account for a service-only invoice", async () => {
+    const source = invoice();
+    source.salesRevenueAccountId = null;
+    source.serviceRevenueAccountId = "acct-service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const test = setupInvoice();
+    const payload = await test.map(source);
+    expect(
+      payload.items.map((item: Rillet.InvoiceItem) => item.product_id)
+    ).toEqual(["product-acct-service"]);
+    expect(test.ensureSalesProduct).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a service line with no resolved service product", () => {
+    const source = charges();
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    expect(() =>
+      mapSalesInvoiceToRilletInvoice({
+        ...mapArguments(source),
+        serviceProductRemoteId: null
+      })
+    ).toThrow();
   });
 });
 

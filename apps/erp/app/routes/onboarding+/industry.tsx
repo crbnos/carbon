@@ -30,6 +30,7 @@ import {
   LuFactory,
   LuFileX,
   LuSatellite,
+  LuShield,
   LuUpload,
   LuWrench
 } from "react-icons/lu";
@@ -47,16 +48,13 @@ import {
 } from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import {
-  getCompany,
-  getIndustries,
-  onboardingCompanyValidator
-} from "~/modules/settings";
+import { onboardingCompanyValidator } from "~/modules/settings/settings.models";
+import { getCompany, getIndustries } from "~/modules/settings/settings.service";
 import {
   clearOnboardingDraft,
   getOnboardingDraft,
   type OnboardingDraft
-} from "~/modules/shared/shared.server";
+} from "~/modules/shared/shared.service";
 import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
@@ -81,6 +79,7 @@ const INDUSTRY_ICONS: Record<string, ReactNode> = {
   bot: <LuBot className="h-5 w-5" />,
   cog: <LuCog className="h-5 w-5" />,
   satellite: <LuSatellite className="h-5 w-5" />,
+  shield: <LuShield className="h-5 w-5" />,
   wrench: <LuWrench className="h-5 w-5" />
 };
 

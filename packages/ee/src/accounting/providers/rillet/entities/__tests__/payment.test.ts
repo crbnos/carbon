@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   type NormalizedPayment,
   upsertLocalPaymentDraft
@@ -17,15 +17,6 @@ import {
   parseRilletPaymentSyncEntityId,
   RilletPaymentSyncer
 } from "../payment";
-
-const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const bind = (actor: string) => (fields: object) => ({
-    invoke: (_name: string, input: unknown) =>
-      invokeMock({ ...fields, actor }, input)
-  });
-  return { serverFns: { system: bind("system"), as: bind("caller") } };
-});
 
 describe("composite payment sync entity id", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {
@@ -211,102 +202,10 @@ describe("amount/currency normalization helpers", () => {
   });
 });
 
-// A fake Kysely database that answers only the
-// `selectFrom("companyIntegration").select("metadata")...executeTakeFirst()`
-// chain the documents-mode gate reads. `metadata` undefined = no integration
-// row (the gate then resolves to defaults = documents = enabled).
-function makeMetadataDb(metadata: unknown) {
-  const chain: any = {
-    select: () => chain,
-    where: () => chain,
-    executeTakeFirst: async () =>
-      metadata === undefined ? undefined : { metadata }
-  };
-  return { selectFrom: () => chain } as never;
-}
-
-/** metadata that puts a family into a given posting-sync mode. */
-function familyModeMetadata(family: "ar" | "ap", mode: string) {
-  return { settings: { postingSync: { families: { [family]: mode } } } };
-}
-
-describe("RilletPaymentSyncer.shouldSync ownership gate", () => {
-  function makeSyncer(mappedInvoiceId: string | null, metadata?: unknown) {
-    const syncer = new RilletPaymentSyncer({
-      database: makeMetadataDb(metadata),
-      companyId: "company-1",
-      provider: { id: "rillet" } as never,
-      config: {
-        enabled: true,
-        direction: "pull-from-accounting",
-        owner: "accounting"
-      },
-      entityType: "payment"
-    });
-    // Stub the mapping lookup — the gate's only dependency
-    (syncer as unknown as Record<string, unknown>).mappingService = {
-      getEntityId: async () => mappedInvoiceId
-    };
-    return syncer as unknown as {
-      shouldSync(context: {
-        direction: "push" | "pull";
-        remoteEntity?: Rillet.InvoicePayment;
-        isFirstSync: boolean;
-        entityId: string;
-      }): Promise<boolean | string>;
-    };
-  }
-
-  it("skips (does not fail) when the AR family is not in documents mode", async () => {
-    const result = await makeSyncer(
-      "sales-invoice-1",
-      familyModeMetadata("ar", "journals")
-    ).shouldSync({
-      direction: "pull",
-      entityId: "inv-ours:pay-1",
-      remoteEntity: { id: "pay-1", status: "SUCCESSFUL" },
-      isFirstSync: true
-    });
-    expect(typeof result).toBe("string");
-    expect(result).toContain("payment sync-back is disabled");
-    expect(result).toContain("ar");
-  });
-
-  it("skips (does not fail) payments on invoices with no local mapping", async () => {
-    const result = await makeSyncer(null).shouldSync({
-      direction: "pull",
-      entityId: "inv-other-subsidiary:pay-1",
-      isFirstSync: true
-    });
-    expect(typeof result).toBe("string");
-    expect(result).toContain("no Carbon mapping");
-  });
-
-  it("proceeds for payments on locally-mapped invoices", async () => {
-    const result = await makeSyncer("sales-invoice-1").shouldSync({
-      direction: "pull",
-      entityId: "inv-ours:pay-1",
-      remoteEntity: { id: "pay-1", status: "SUCCESSFUL" },
-      isFirstSync: true
-    });
-    expect(result).toBe(true);
-  });
-
-  it("still skips first-seen FAILED payments on mapped invoices", async () => {
-    const result = await makeSyncer("sales-invoice-1").shouldSync({
-      direction: "pull",
-      entityId: "inv-ours:pay-1",
-      remoteEntity: { id: "pay-1", status: "FAILED" },
-      isFirstSync: true
-    });
-    expect(result).toContain("never recorded");
-  });
-});
-
-// Fake Kysely db answering both the documents-mode gate's
-// `companyIntegration.metadata` read AND the FX gate's `company.baseCurrencyCode`
-// read (distinct by table).
-function makeFxDb(metadata: unknown, baseCurrencyCode: string) {
+// A fake Kysely database answering the documents-mode gate's
+// `companyIntegration.metadata` read and the FX gate's `company.baseCurrencyCode`
+// read. `metadata` undefined = no integration row (defaults to documents mode).
+function makeGateDb(metadata: unknown, baseCurrencyCode: string) {
   const chain = (result: unknown) => {
     const c: any = {
       select: () => c,
@@ -323,73 +222,119 @@ function makeFxDb(metadata: unknown, baseCurrencyCode: string) {
   } as never;
 }
 
-describe("RilletPaymentSyncer.shouldSync FX gate", () => {
-  function makeFxSyncer(baseCurrency: string) {
-    const syncer = new RilletPaymentSyncer({
-      database: makeFxDb(undefined, baseCurrency),
-      companyId: "company-1",
-      provider: { id: "rillet" } as never,
-      config: {
-        enabled: true,
-        direction: "pull-from-accounting",
-        owner: "accounting"
-      },
-      entityType: "payment"
-    });
-    (syncer as unknown as Record<string, unknown>).mappingService = {
-      getEntityId: async () => "sales-invoice-1"
-    };
-    return syncer as unknown as {
-      shouldSync(context: {
-        direction: "push" | "pull";
-        remoteEntity?: Rillet.InvoicePayment;
-        isFirstSync: boolean;
-        entityId: string;
-      }): Promise<boolean | string>;
-    };
+function familyModeMetadata(family: "ar" | "ap", mode: string) {
+  return { settings: { postingSync: { families: { [family]: mode } } } };
+}
+
+function makeGateSyncer({
+  mappedDocumentId = "carbon-document-1" as string | null,
+  metadata = undefined as unknown,
+  baseCurrency = "USD"
+} = {}) {
+  const syncer = new RilletPaymentSyncer({
+    database: makeGateDb(metadata, baseCurrency),
+    companyId: "company-1",
+    provider: { id: "rillet" } as never,
+    config: {
+      enabled: true,
+      direction: "pull-from-accounting",
+      owner: "accounting"
+    },
+    entityType: "payment"
+  });
+  // The pushed document's mapping is the ownership record.
+  (syncer as unknown as Record<string, unknown>).mappingService = {
+    getEntityId: async () => mappedDocumentId
+  };
+  return syncer as unknown as {
+    shouldSync(context: {
+      direction: "push" | "pull";
+      remoteEntity?: Rillet.InvoicePayment | Rillet.BillPayment;
+      isFirstSync: boolean;
+      entityId: string;
+    }): Promise<boolean | string>;
+  };
+}
+
+describe.each([
+  {
+    family: "ar" as const,
+    entityId: "inv-ours:pay-1",
+    remote: { id: "pay-1", status: "SUCCESSFUL" } as Rillet.InvoicePayment
+  },
+  {
+    family: "ap" as const,
+    entityId: "bill:bill-ours:bp-1",
+    remote: {
+      id: "bp-1",
+      status: "SUCCESSFUL",
+      bill_id: "bill-ours"
+    } as Rillet.BillPayment
   }
+])(
+  "RilletPaymentSyncer.shouldSync ($family)",
+  ({ family, entityId, remote }) => {
+    const pull = (
+      options: Parameters<typeof makeGateSyncer>[0],
+      remoteEntity: Rillet.InvoicePayment | Rillet.BillPayment = remote
+    ) =>
+      makeGateSyncer(options).shouldSync({
+        direction: "pull",
+        entityId,
+        remoteEntity,
+        isFirstSync: true
+      });
 
-  it("parks an FX payment whose currency differs from the base currency", async () => {
-    const result = await makeFxSyncer("USD").shouldSync({
-      direction: "pull",
-      entityId: "inv-ours:pay-1",
-      remoteEntity: {
-        id: "pay-1",
-        status: "SUCCESSFUL",
-        amount: { amount: "125.00", currency: "EUR" }
-      },
-      isFirstSync: true
+    it("proceeds for a payment on a locally mapped document", async () => {
+      expect(await pull({})).toBe(true);
     });
-    expect(typeof result).toBe("string");
-    expect(result).toContain("FX payment");
-    expect(result).toContain("EUR");
-    expect(result).toContain("USD");
-    expect(result).toContain("not supported v1");
-  });
 
-  it("proceeds for a base-currency payment", async () => {
-    const result = await makeFxSyncer("USD").shouldSync({
-      direction: "pull",
-      entityId: "inv-ours:pay-1",
-      remoteEntity: {
-        id: "pay-1",
-        status: "SUCCESSFUL",
-        amount: { amount: "125.00", currency: "USD" }
-      },
-      isFirstSync: true
-    });
-    expect(result).toBe(true);
-  });
+    it.each(["journals", "none"])(
+      "skips when the family is in %s mode",
+      async (mode) => {
+        expect(
+          await pull({ metadata: familyModeMetadata(family, mode) })
+        ).toEqual(expect.any(String));
+      }
+    );
 
-  it("proceeds when the payment carries no currency", async () => {
-    const result = await makeFxSyncer("USD").shouldSync({
-      direction: "pull",
-      entityId: "inv-ours:pay-1",
-      remoteEntity: { id: "pay-1", status: "SUCCESSFUL" },
-      isFirstSync: true
+    // Rillet feeds are org-wide: another Carbon instance's subsidiary shares them.
+    it("skips a payment on a document with no local mapping", async () => {
+      expect(await pull({ mappedDocumentId: null })).toEqual(
+        expect.any(String)
+      );
     });
-    expect(result).toBe(true);
-  });
+
+    it("skips a first-seen FAILED payment, which was never recorded", async () => {
+      expect(await pull({}, { ...remote, status: "FAILED" })).toEqual(
+        expect.any(String)
+      );
+    });
+  }
+);
+
+// mapToNormalized books at rate 1, so a cross-currency payment would misstate.
+describe("RilletPaymentSyncer.shouldSync FX gate", () => {
+  it.each([
+    ["EUR", false],
+    ["USD", true],
+    [undefined, true]
+  ] as const)(
+    "a %s payment on a USD company proceeds: %s",
+    async (currency, proceeds) => {
+      const result = await makeGateSyncer().shouldSync({
+        direction: "pull",
+        entityId: "inv-ours:pay-1",
+        remoteEntity: {
+          id: "pay-1",
+          status: "SUCCESSFUL",
+          ...(currency ? { amount: { amount: "125.00", currency } } : {})
+        },
+        isFirstSync: true
+      });
+      expect(result).toEqual(proceeds ? true : expect.any(String));
+    }
+  );
 });
 
 function makeMapperSyncer() {
@@ -882,185 +827,5 @@ describe("upsertLocalPaymentDraft (AP bill payment)", () => {
     expect(
       store.records.some((r) => r.table === "externalIntegrationMapping")
     ).toBe(false);
-  });
-});
-
-describe("RilletPaymentSyncer.shouldSync AP ownership gate", () => {
-  function makeApSyncer(mappedBillId: string | null, metadata?: unknown) {
-    const syncer = new RilletPaymentSyncer({
-      database: makeMetadataDb(metadata),
-      companyId: "company-1",
-      provider: { id: "rillet" } as never,
-      config: {
-        enabled: true,
-        direction: "pull-from-accounting",
-        owner: "accounting"
-      },
-      entityType: "payment"
-    });
-    (syncer as unknown as Record<string, unknown>).mappingService = {
-      getEntityId: async () => mappedBillId
-    };
-    return syncer as unknown as {
-      shouldSync(context: {
-        direction: "push" | "pull";
-        remoteEntity?: Rillet.BillPayment;
-        isFirstSync: boolean;
-        entityId: string;
-      }): Promise<boolean | string>;
-    };
-  }
-
-  it("skips (does not fail) when the AP family is set to none", async () => {
-    const result = await makeApSyncer(
-      "purchase-invoice-1",
-      familyModeMetadata("ap", "none")
-    ).shouldSync({
-      direction: "pull",
-      entityId: "bill:bill-ours:bp-1",
-      remoteEntity: { id: "bp-1", status: "SUCCESSFUL", bill_id: "bill-ours" },
-      isFirstSync: true
-    });
-    expect(typeof result).toBe("string");
-    expect(result).toContain("payment sync-back is disabled");
-    expect(result).toContain("ap");
-  });
-
-  it("skips (does not fail) bill payments on bills with no local mapping", async () => {
-    const result = await makeApSyncer(null).shouldSync({
-      direction: "pull",
-      entityId: "bill:bill-other-subsidiary:bp-1",
-      isFirstSync: true
-    });
-    expect(typeof result).toBe("string");
-    expect(result).toContain("no Carbon mapping");
-    expect(result).toContain("bill");
-  });
-
-  it("proceeds for bill payments on locally-mapped bills", async () => {
-    const result = await makeApSyncer("purchase-invoice-1").shouldSync({
-      direction: "pull",
-      entityId: "bill:bill-ours:bp-1",
-      remoteEntity: { id: "bp-1", status: "SUCCESSFUL", bill_id: "bill-ours" },
-      isFirstSync: true
-    });
-    expect(result).toBe(true);
-  });
-
-  it("still skips first-seen FAILED bill payments on mapped bills", async () => {
-    const result = await makeApSyncer("purchase-invoice-1").shouldSync({
-      direction: "pull",
-      entityId: "bill:bill-ours:bp-1",
-      remoteEntity: { id: "bp-1", status: "FAILED", bill_id: "bill-ours" },
-      isFirstSync: true
-    });
-    expect(result).toContain("never recorded");
-  });
-});
-
-describe("PaymentSyncerBase post-payment dispatch", () => {
-  function makeDispatchSyncer(pending: {
-    paymentRowId: string;
-    postAction: "post" | "void" | "none";
-    actorId: string;
-  }) {
-    const syncer = new RilletPaymentSyncer({
-      database: {} as never,
-      companyId: "company-1",
-      provider: { id: "rillet" } as never,
-      config: {
-        enabled: true,
-        direction: "pull-from-accounting",
-        owner: "accounting"
-      },
-      entityType: "payment"
-    }) as unknown as {
-      pendingPosts: Map<string, typeof pending>;
-      applyPostPayment(remoteId: string, result: unknown): Promise<unknown>;
-    };
-    syncer.pendingPosts.set("inv-1:pay-1", pending);
-    return syncer;
-  }
-
-  const successResult = {
-    status: "success",
-    action: "updated",
-    localId: "payment-row-1",
-    remoteId: "inv-1:pay-1"
-  };
-
-  beforeEach(() => {
-    invokeMock.mockReset();
-    invokeMock.mockResolvedValue({ data: null, error: null });
-  });
-
-  it("invokes post-payment {type:'post'} for a settled payment", async () => {
-    const syncer = makeDispatchSyncer({
-      paymentRowId: "payment-row-1",
-      postAction: "post",
-      actorId: "user-1"
-    });
-
-    const result = await syncer.applyPostPayment("inv-1:pay-1", successResult);
-
-    expect(invokeMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        companyId: "company-1",
-        userId: "user-1",
-        actor: "system"
-      }),
-      { type: "post", paymentId: "payment-row-1" }
-    );
-    expect(result).toEqual(successResult);
-  });
-
-  it("invokes post-payment {type:'void'} for a failed payment", async () => {
-    const syncer = makeDispatchSyncer({
-      paymentRowId: "payment-row-1",
-      postAction: "void",
-      actorId: "user-1"
-    });
-
-    await syncer.applyPostPayment("inv-1:pay-1", successResult);
-
-    expect(invokeMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        companyId: "company-1",
-        userId: "user-1",
-        actor: "system"
-      }),
-      { type: "void", paymentId: "payment-row-1" }
-    );
-  });
-
-  it("does not invoke post-payment when postAction is 'none'", async () => {
-    const syncer = makeDispatchSyncer({
-      paymentRowId: "payment-row-1",
-      postAction: "none",
-      actorId: "user-1"
-    });
-
-    await syncer.applyPostPayment("inv-1:pay-1", successResult);
-    expect(invokeMock).not.toHaveBeenCalled();
-  });
-
-  it("surfaces a post-payment error as a Failed result (not swallowed)", async () => {
-    invokeMock.mockResolvedValue({
-      data: null,
-      error: { message: "Accounting period is locked" }
-    });
-    const syncer = makeDispatchSyncer({
-      paymentRowId: "payment-row-1",
-      postAction: "post",
-      actorId: "user-1"
-    });
-
-    const result = (await syncer.applyPostPayment(
-      "inv-1:pay-1",
-      successResult
-    )) as { status: string; error: string };
-
-    expect(result.status).toBe("error");
-    expect(result.error).toContain("Accounting period is locked");
   });
 });

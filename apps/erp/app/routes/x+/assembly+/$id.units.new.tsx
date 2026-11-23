@@ -8,10 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyUnitValidator,
-  upsertAssemblyUnit
-} from "~/modules/production";
+import { assemblyUnitValidator } from "~/modules/production/production.models";
+import { upsertAssemblyUnit } from "~/modules/production/production.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -10,12 +10,17 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUser } from "~/hooks";
-import { customerValidator, upsertCustomer } from "~/modules/sales";
+import { customerValidator } from "~/modules/sales/sales.models";
+import { upsertCustomer } from "~/modules/sales/sales.service";
 import { CustomerForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Customer");
 
 export const handle: Handle = {
   breadcrumb: msg`Customers`,
@@ -83,8 +88,8 @@ export default function CustomersNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage className="max-md:p-0">
       <CustomerForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

@@ -3,26 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  MENU_ITEM_SHORTCUTS,
-  useDisclosure,
-  VStack
-} from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useState } from "react";
 import type { z } from "zod";
-import { DocumentHeader } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import {
   Currency,
@@ -32,21 +16,26 @@ import {
   Hidden,
   Input,
   Number,
+  NumberControlled,
   Select,
   SequenceOrCustomId,
   Submit,
   Supplier,
+  TaxCode,
   TextArea
 } from "~/components/Form";
-import { ConfirmDelete } from "~/components/Modals";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
   memoDirection,
   memoValidator
-} from "~/modules/invoicing";
-import { path } from "~/utils/path";
-import MemoStatus from "./MemoStatus";
+} from "~/modules/invoicing/invoicing.models";
+import {
+  memoKeepsStoredTaxRate,
+  resolveMemoTaxAmounts,
+  type StoredMemoTax
+} from "~/modules/invoicing/invoicing.utils";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
 
@@ -60,32 +49,64 @@ type MemoFormValues = z.infer<typeof memoValidator>;
 export type MemoType = "creditMemo" | "supplierCredit";
 
 type MemoFormProps = {
-  initialValues: MemoFormValues & { status?: string };
+  /** `taxAmount` is the stored tax, shown until the tax codes load. */
+  initialValues: MemoFormValues & { status?: string; taxAmount?: number };
+  /** The saved memo's tax. While its code is unchanged the form keeps the
+   *  rate it implies, as `upsertMemo` does. Absent on a new memo. */
+  storedTax?: StoredMemoTax;
   type: MemoType;
 };
 
-const MemoForm = ({ initialValues, type }: MemoFormProps) => {
+/**
+ * The memo's own fields, laid flat. On the detail page they sit under the
+ * memo's header; the new-memo page frames them itself. Posting locks them.
+ */
+const MemoForm = ({ initialValues, storedTax, type }: MemoFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
-  const currencyDecimals = useCurrencyDecimals(
-    company?.baseCurrencyCode ?? "USD"
+  // The memo's amounts are in its own currency, so they are entered and
+  // rounded at that currency's decimals — the decimals `upsertMemo` uses.
+  const [currencyCode, setCurrencyCode] = useState(
+    initialValues.currencyCode || company?.baseCurrencyCode || "USD"
   );
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
+
+  // Net, code and date are the user's input; the tax and the gross are derived
+  // from them during render (spec "Memo tax"), as `useTaxPair` derives its
+  // base. Neither is submitted: `upsertMemo` computes the tax again with the
+  // same `resolveMemoTaxAmounts` and stores amount = net + tax. A saved memo
+  // whose code is unchanged keeps the rate its stored tax implies.
+  const [netAmount, setNetAmount] = useState(initialValues.netAmount ?? 0);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
+  const [memoDate, setMemoDate] = useState(initialValues.memoDate);
+  const taxCodeRateOn = useTaxCodeRateOn(memoDate);
+  const keepsStoredRate =
+    storedTax !== undefined && memoKeepsStoredTaxRate(storedTax, taxCodeId);
+  const codeRate = taxCodeId && !keepsStoredRate ? taxCodeRateOn(taxCodeId) : 0;
+  // An emptied number input commits NaN; it reads as no amount (NaN > 0 is
+  // false), never as a NaN tax.
+  const net = netAmount > 0 ? netAmount : 0;
+  const resolved = resolveMemoTaxAmounts({
+    stored: storedTax ?? null,
+    netAmount: net,
+    amount: undefined,
+    taxCodeId: taxCodeId || null,
+    codeRate: codeRate ?? 0,
+    decimals: currencyDecimals
+  });
+  // Until the codes load the rate is unknown; show the stored tax meanwhile.
+  const taxAmount =
+    codeRate === null || "error" in resolved
+      ? (initialValues.taxAmount ?? 0)
+      : resolved.taxAmount;
+  const grossAmount = round(net + taxAmount, currencyDecimals);
+  const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const permissions = usePermissions();
-  const post = useFetcher();
   const isEditing = Boolean(initialValues.id);
-  const status = initialValues.status as
-    | "Draft"
-    | "Posted"
-    | "Voided"
-    | undefined;
   const isLocked = isMemoLocked(initialValues.status);
   const canMutate = permissions.can("update", "invoicing");
-  const canDelete = permissions.can("delete", "invoicing");
-  const deleteModal = useDisclosure();
-  const voidModal = useDisclosure();
 
   const isVendor = type === "supplierCredit";
-  const typeLabel = isVendor ? t`Supplier Credit` : t`Credit Memo`;
 
   // `type` decides the PARTY (and therefore which list this memo appears in and
   // which selector is shown) — never the direction. All four party×direction
@@ -103,180 +124,105 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
   }));
 
   return (
-    <>
-      <ValidatedForm
-        method="post"
-        validator={memoValidator}
-        defaultValues={initialValues}
-        isDisabled={isEditing && isLocked}
-        className="w-full"
-      >
-        <Card>
-          {isEditing ? (
-            <DocumentHeader
-              title={initialValues.memoId ?? ""}
-              status={
-                <>
-                  <Enumerable value={typeLabel} />
-                  <MemoStatus status={status} />
-                </>
-              }
-              menuItems={
-                status === "Draft" && canDelete ? (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.delete}
-                    destructive
-                    onClick={deleteModal.onOpen}
-                  >
-                    <DropdownMenuIcon icon={<LuTrash />} />
-                    <Trans>Delete</Trans>
-                  </DropdownMenuItem>
-                ) : undefined
-              }
-              actions={
-                status === "Draft" ? (
-                  <Button
-                    leftIcon={<LuCheckCheck />}
-                    variant="primary"
-                    isLoading={post.state !== "idle"}
-                    isDisabled={!canMutate}
-                    onClick={() =>
-                      post.submit(null, {
-                        method: "post",
-                        action: path.to.memoPost(initialValues.id!)
-                      })
-                    }
-                  >
-                    <Trans>Post</Trans>
-                  </Button>
-                ) : status === "Posted" ? (
-                  <Button
-                    leftIcon={<LuTicketX />}
-                    variant="destructive"
-                    type="button"
-                    isDisabled={!canMutate}
-                    onClick={voidModal.onOpen}
-                  >
-                    <Trans>Void</Trans>
-                  </Button>
-                ) : undefined
-              }
-            />
-          ) : (
-            <CardHeader>
-              <CardTitle>
-                {isVendor ? (
-                  <Trans>New Supplier Credit</Trans>
-                ) : (
-                  <Trans>New Credit Memo</Trans>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {isVendor ? (
-                  <Trans>
-                    Record a credit from a supplier — it reduces what you owe
-                    them. Applications to specific invoices are added after it
-                    is created.
-                  </Trans>
-                ) : (
-                  <Trans>
-                    Record a credit memo for a customer — it reduces what they
-                    owe. Applications to specific invoices are added after it is
-                    created.
-                  </Trans>
-                )}
-              </CardDescription>
-            </CardHeader>
-          )}
-          <CardContent>
-            <Hidden name="id" />
-            {isEditing && <Hidden name="memoId" />}
-            <VStack>
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                {!isEditing && (
-                  <SequenceOrCustomId
-                    name="memoId"
-                    label={t`Memo ID`}
-                    table="memo"
-                  />
-                )}
-                {isVendor ? (
-                  <Supplier
-                    autoFocus={!isEditing}
-                    name="supplierId"
-                    label={t`Supplier`}
-                  />
-                ) : (
-                  <Customer
-                    autoFocus={!isEditing}
-                    name="customerId"
-                    label={t`Customer`}
-                  />
-                )}
-                <Select
-                  name="direction"
-                  label={t`Direction`}
-                  options={directionOptions}
-                />
-                <DatePicker name="memoDate" label={t`Memo Date`} />
-                <Currency name="currencyCode" label={t`Currency`} />
-                <Number
-                  name="exchangeRate"
-                  label={t`Exchange Rate`}
-                  step={INPUT_STEP.exchangeRate}
-                  formatOptions={INPUT_FORMAT.exchangeRate}
-                />
-                <Number
-                  name="amount"
-                  label={t`Amount`}
-                  formatOptions={INPUT_FORMAT.money(
-                    company?.baseCurrencyCode ?? "USD",
-                    currencyDecimals
-                  )}
-                />
-                <Input name="reference" label={t`Reference`} />
-                <CustomFormFields table="memo" />
-              </div>
-              <div className="mt-4 w-full">
-                <TextArea name="notes" label={t`Notes`} />
-              </div>
-            </VStack>
-          </CardContent>
-          <CardFooter>
-            <Submit
-              isDisabled={
-                isEditing
-                  ? isLocked || !canMutate
-                  : !permissions.can("create", "invoicing")
-              }
-            >
-              <Trans>Save</Trans>
-            </Submit>
-          </CardFooter>
-        </Card>
-      </ValidatedForm>
-      {voidModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.memoVoid(initialValues.id!)}
-          name={initialValues.memoId ?? ""}
-          title={t`Void ${initialValues.memoId}`}
-          text={t`Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone.`}
-          deleteText={t`Void`}
-          onCancel={voidModal.onClose}
-          onSubmit={voidModal.onClose}
+    <ValidatedForm
+      method="post"
+      validator={memoValidator}
+      defaultValues={initialValues}
+      isDisabled={isEditing && isLocked}
+      className="flex flex-col gap-4 w-full pt-2 pb-4"
+    >
+      {/* Each Hidden renders a wrapper; keep them out of the flex gap. */}
+      <div className="hidden">
+        <Hidden name="id" />
+        {isEditing && <Hidden name="memoId" />}
+      </div>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 @xl:grid-cols-2">
+        {!isEditing && (
+          <SequenceOrCustomId name="memoId" label={t`Memo ID`} table="memo" />
+        )}
+        {isVendor ? (
+          <Supplier
+            autoFocus={!isEditing}
+            name="supplierId"
+            label={t`Supplier`}
+          />
+        ) : (
+          <Customer
+            autoFocus={!isEditing}
+            name="customerId"
+            label={t`Customer`}
+          />
+        )}
+        <Select
+          name="direction"
+          label={t`Direction`}
+          options={directionOptions}
         />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.memoDelete(initialValues.id!)}
-          isOpen={deleteModal.isOpen}
-          name={initialValues.memoId ?? ""}
-          text={t`Are you sure you want to delete ${initialValues.memoId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
+        <DatePicker
+          name="memoDate"
+          label={t`Memo Date`}
+          onChange={(date) => {
+            if (date) setMemoDate(date);
+          }}
         />
-      )}
-    </>
+        <Currency
+          name="currencyCode"
+          label={t`Currency`}
+          onChange={(option) => {
+            if (option) setCurrencyCode(option.value);
+          }}
+        />
+        <Number
+          name="exchangeRate"
+          label={t`Exchange Rate`}
+          step={INPUT_STEP.exchangeRate}
+          formatOptions={INPUT_FORMAT.exchangeRate}
+        />
+        <NumberControlled
+          name="netAmount"
+          label={t`Net Amount`}
+          value={netAmount}
+          onChange={setNetAmount}
+          minValue={0}
+          step={INPUT_STEP.money(currencyDecimals)}
+          formatOptions={moneyFormat}
+        />
+        <TaxCode
+          name="taxCodeId"
+          label={t`Tax Code`}
+          isOptional
+          onChange={(option) => setTaxCodeId(option?.value ?? "")}
+        />
+        <NumberControlled
+          name="taxAmount"
+          label={t`Tax`}
+          value={taxAmount}
+          isReadOnly
+          formatOptions={moneyFormat}
+        />
+        <NumberControlled
+          name="grossAmount"
+          label={t`Gross`}
+          value={grossAmount}
+          isReadOnly
+          formatOptions={moneyFormat}
+        />
+        <Input name="reference" label={t`Reference`} />
+        <CustomFormFields table="memo" />
+      </div>
+      <TextArea name="notes" label={t`Notes`} />
+      <div>
+        <Submit
+          isDisabled={
+            isEditing
+              ? isLocked || !canMutate
+              : !permissions.can("create", "invoicing")
+          }
+        >
+          <Trans>Save</Trans>
+        </Submit>
+      </div>
+    </ValidatedForm>
   );
 };
 

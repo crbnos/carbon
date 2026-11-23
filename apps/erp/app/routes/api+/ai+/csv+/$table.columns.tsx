@@ -10,7 +10,7 @@ import { generateText, Output } from "ai";
 import type { ActionFunctionArgs } from "react-router";
 import type { ZodSchema } from "zod";
 import { z } from "zod";
-import { fieldMappings, importSchemas } from "~/modules/shared";
+import { fieldMappings, importSchemas } from "~/modules/shared/imports.models";
 
 const logger = getLogger("erp", "table-columns");
 

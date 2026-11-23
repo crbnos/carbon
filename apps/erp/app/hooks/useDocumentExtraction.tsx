@@ -8,8 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   DocumentExtractionType,
   ExtractedDocumentData
-} from "~/modules/documents";
-import { parseExtractedData } from "~/modules/documents";
+} from "~/modules/documents/documents.models";
+import { parseExtractedData } from "~/modules/documents/documents.models";
 import { useUser } from "./useUser";
 
 type ExtractionStatus = "pending" | "processing" | "completed" | "failed";

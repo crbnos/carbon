@@ -8,22 +8,29 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
-import { inspectionDispositionValidator } from "~/services/models";
+import { erpPosting } from "~/services/erp";
 import {
+  correctionIdOfTarget,
+  inspectionDispositionValidator
+} from "~/services/models";
+import {
+  abilityBlockRefusal,
   finishJobOperation,
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkRequiredScans,
+  checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 // One decision surface: the quality verdict carries its physical outcome.
@@ -63,7 +70,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   };
-  const returnTo = path.to.inspection(operationId);
+  // The page the inspection was opened from; Back keeps returning there.
+  const origin = readOrigin(formData);
+  const returnTo = withOrigin(path.to.inspection(operationId), origin);
   const fail = async (err: unknown, message: string): Promise<never> => {
     throw redirect(returnTo, await flash(request, error(err, message)));
   };
@@ -96,6 +105,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const state = stateResult.data;
   if (state.jobOperationId !== operationId) {
     return fail(null, "Operation does not match the inspection lot");
+  }
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: state.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return fail(null, refusal);
   }
 
   const inspectedCount = state.samples.filter(
@@ -204,6 +221,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Required scans: the units this decision completes must hold their
+  // tracked parts. Refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const scanCheck = await checkRequiredScans(serviceRole, {
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity,
+    requiresSerialTracking: state.requiresSerialTracking,
+    trackedEntityIds: completionCandidates.map((c) => c.trackedEntityId),
+    companyId
+  });
+  if (scanCheck.message) {
+    return fail(scanCheck.error, scanCheck.message);
+  }
+
+  // Strict backflush: refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity + (scrapReasonId ? scrapTotal : 0),
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
+  }
+
   // ---------------------------------------------------------------
   // 2. Close the lot FIRST — the one-shot requireOpen update is the
   //    serialization point; a concurrent second POST dies here before
@@ -233,6 +276,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const completions = await postSerialCompletions(serviceRole, {
         candidates: completionCandidates,
         jobOperationId: state.jobOperationId,
+        jobMakeMethodId: state.operation.jobMakeMethodId,
+        workCenterId: state.operation.workCenterId,
         inspectionId: id,
         eventIds,
         companyId,
@@ -292,32 +337,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const backflush = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const backflush = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         id: state.jobOperationId,
         type: "jobOperation",
         quantity: scrapTotal
-      });
+      }
+    );
     if (backflush.error) {
       warnings.push("failed to issue materials for scrap");
     }
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("trigger-rework", {
-        jobId: state.jobId,
-        triggeredAtJobOperationId: state.jobOperationId,
-        targetJobOperationId: targetOperationId,
-        reason: reworkReason,
-        quantity: reworkTotal,
-        trackedEntityIds: state.requiresSerialTracking
-          ? reworkEntityIds
-          : undefined,
-        inspectionId: id
-      });
+    // The target is an earlier operation, or one of the part's corrections.
+    const jobCorrectionId = correctionIdOfTarget(targetOperationId);
+    const shared = {
+      jobId: state.jobId,
+      triggeredAtJobOperationId: state.jobOperationId,
+      reason: reworkReason,
+      quantity: reworkTotal,
+      trackedEntityIds: state.requiresSerialTracking
+        ? reworkEntityIds
+        : undefined,
+      inspectionId: id
+    };
+    const rework = jobCorrectionId
+      ? await erpPosting(
+          "trigger-correction",
+          { companyId, userId },
+          { ...shared, jobCorrectionId }
+        )
+      : await erpPosting(
+          "trigger-rework",
+          { companyId, userId },
+          { ...shared, targetJobOperationId: targetOperationId }
+        );
     if (rework.error) {
       return fail(
         rework.error,
@@ -325,12 +382,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const recalculated = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("recalculate", {
+    const recalculated = await erpPosting(
+      "recalculate",
+      { companyId, userId },
+      {
         type: "jobRequirements",
         id: state.jobId
-      });
+      }
+    );
     if (recalculated.error) {
       warnings.push("failed to recalculate job requirements");
     }
@@ -359,15 +418,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         state.operation.operationQuantity ??
         0);
   if (willBeFinished) {
-    const finishResult = await finishJobOperation(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        jobOperationId: state.jobOperationId,
-        userId,
-        companyId
-      }
-    );
+    const finishResult = await finishJobOperation(serviceRole, {
+      jobOperationId: state.jobOperationId,
+      userId,
+      companyId
+    });
     if (finishResult.error) {
       warnings.push("failed to finish the operation");
     }
@@ -391,7 +446,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (warnings.length > 0) {
     throw redirect(
-      willBeFinished ? path.to.operations : returnTo,
+      willBeFinished ? (origin ?? path.to.operations) : returnTo,
       await flash(
         request,
         error(null, `${message}, but ${warnings.join("; ")}`)
@@ -400,7 +455,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    willBeFinished ? path.to.operations : returnTo,
+    willBeFinished ? (origin ?? path.to.operations) : returnTo,
     await flash(request, success(message))
   );
 }

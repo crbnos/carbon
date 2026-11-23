@@ -193,7 +193,7 @@ const ChangeNoticeForm = ({
         className="w-full"
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Change Notice</Trans>
             ) : (

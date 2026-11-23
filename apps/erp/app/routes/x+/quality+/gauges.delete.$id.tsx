@@ -5,10 +5,10 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteGauge } from "~/modules/quality";
+import { deleteGauge } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -31,9 +31,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(
           mutation.error,
           // A gauge recorded on a closed inspection is kept for traceability.
-          mutation.error.code === "23503"
-            ? "Gauge is used elsewhere. Set it to Inactive instead."
-            : "Failed to delete gauge"
+          getDatabaseErrorMessage(mutation.error, "Failed to delete gauge", {
+            referenced: "Gauge is used elsewhere. Set it to Inactive instead."
+          })
         )
       )
     );

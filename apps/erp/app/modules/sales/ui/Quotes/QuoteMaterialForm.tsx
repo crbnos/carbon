@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -12,13 +13,13 @@ import {
   CardHeader,
   CardTitle,
   Copy,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
-import { useFetcher, useLocation, useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import type { z } from "zod";
 import {
   DefaultMethodType,
@@ -32,8 +33,9 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items/items.utils";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type { action as editQuoteMaterialAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.material.$id";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
@@ -52,7 +54,8 @@ const QuoteMaterialForm = ({
   operations
 }: QuoteMaterialFormProps) => {
   const { t, i18n } = useLingui();
-  const fetcher = useFetcher<{ id: string; methodType: MethodType }>();
+  // A failed save is toasted.
+  const fetcher = useAction<typeof editQuoteMaterialAction>();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -124,7 +127,7 @@ const QuoteMaterialForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 

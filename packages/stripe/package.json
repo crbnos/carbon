@@ -4,29 +4,33 @@
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/files": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
-    "@supabase/supabase-js": "catalog:",
-    "stripe": "22.4.0"
+    "@internationalized/date": "catalog:",
+    "dotenv": "16.3.1",
+    "stripe": "22.4.0",
+    "zod": "catalog:"
   },
   "type": "module",
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "@types/node": "20.19.39",
-    "dotenv": "16.3.1",
     "rimraf": "catalog:",
     "sst": "catalog:",
     "tsup": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:",
-    "zod": "catalog:"
+    "typescript": "catalog:"
   },
   "exports": {
     "./stripe.server": "./src/stripe.server.ts",
     "./connect.server": "./src/connect.server.ts",
-    "./connect.constants": "./src/connect.constants.ts"
+    "./connect.constants": "./src/connect.constants.ts",
+    "./connect-invoice": "./src/connect-invoice.ts",
+    "./send-sales-invoice.server": "./src/send-sales-invoice.server.ts"
   },
   "private": true,
   "scripts": {
@@ -35,7 +39,7 @@
     "lint": "biome lint --write ",
     "dev:stripe": "tsx ./stripe.dev.ts",
     "register:stripe": "tsx ./stripe.register.ts",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0"

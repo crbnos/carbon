@@ -2,51 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { shiftValidator, upsertShift } from "~/modules/people";
+import { shiftValidator } from "~/modules/people/people.models";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "people"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(shiftValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...shift } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.people.createShift({
+    ...shift,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const validation = await validator(shiftValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createShift = await upsertShift(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  return respond(args.request, result).redirect(path.to.shifts, {
+    message: "Shift created"
   });
-
-  if (createShift.error) {
-    throw redirect(
-      path.to.shifts,
-      await flash(request, error(createShift.error, "Failed to create shift"))
-    );
-  }
-
-  throw redirect(
-    path.to.shifts,
-    await flash(request, success("Shift created"))
-  );
 }
 
 export default function NewShiftRoute() {

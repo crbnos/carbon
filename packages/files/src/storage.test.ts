@@ -10,7 +10,6 @@ import {
   imageTransformErrorMessage,
   isStorageNotFound,
   isUnsafeStoragePath,
-  LEGACY_PRIVATE_BUCKET,
   normalizeStorageSegment,
   safeStorageFileName,
   storage,
@@ -185,64 +184,18 @@ describe("storage(client).company", () => {
     expect(() => storage(makeClient({})).company("")).toThrow();
   });
 
-  describe("writes go to the company bucket only", () => {
-    it.each([
-      ["upload", (b: Bucket) => b.upload("co1/docs/a.pdf", new Blob())],
-      // A `#` only truncates the key inside the company prefix, as it always has.
-      [
-        "upload",
-        (b: Bucket) => b.upload("co1/docs/Drawing #3.pdf", new Blob())
-      ],
-      ["update", (b: Bucket) => b.update("co1/docs/a.pdf", new Blob())],
-      [
-        "uploadToSignedUrl",
-        (b: Bucket) => b.uploadToSignedUrl("co1/docs/a.pdf", "tok", new Blob())
-      ],
-      [
-        "createSignedUploadUrl",
-        (b: Bucket) => b.createSignedUploadUrl("co1/docs/a.pdf")
-      ]
-    ] as const)("%s", async (method, call) => {
-      const legacy = vi.fn(() => ok({ path: "leak" }));
-      const client = makeClient({
-        [LEGACY_PRIVATE_BUCKET]: { [method]: legacy }
-      });
-      const result = await call(
-        storage(client).company("co1") as unknown as Bucket
-      );
-      expect(result.error).toBeNull();
-      expect(legacy).not.toHaveBeenCalled();
-    });
-
-    it.each(["move", "copy"] as const)("%s", async (method) => {
-      const legacy = vi.fn(() => ok({ path: "leak" }));
-      const client = makeClient({
-        [LEGACY_PRIVATE_BUCKET]: { [method]: legacy }
-      });
-      const result = await storage(client)
-        .company("co1")
-        [method]("co1/a.pdf", "co1/b.pdf");
-      expect(result.error).toBeNull();
-      expect(legacy).not.toHaveBeenCalled();
-    });
-  });
-
   describe("refuses a key outside the company prefix without touching storage", () => {
     const client = makeClient({
       co1: {
         download: vi.fn(() => ok(new Blob())),
         upload: vi.fn(() => ok({ path: "leak" }))
-      },
-      [LEGACY_PRIVATE_BUCKET]: {
-        download: vi.fn(() => ok(new Blob())),
-        remove: vi.fn(() => ok([{ name: "leak" }]))
       }
     });
     const bucket = storage(client).company("co1");
     const touched = () =>
-      [client.storage.from("co1"), client.storage.from(LEGACY_PRIVATE_BUCKET)]
-        .flatMap((b) => Object.values(b))
-        .some((fn) => (fn as ReturnType<typeof vi.fn>).mock?.calls.length);
+      Object.values(client.storage.from("co1")).some(
+        (fn) => (fn as ReturnType<typeof vi.fn>).mock?.calls.length
+      );
 
     it.each([
       ["upload", () => bucket.upload("co2/a.pdf", new Blob())],
@@ -304,62 +257,6 @@ describe("storage(client).company", () => {
     });
   });
 
-  describe("reads fall back to the legacy bucket", () => {
-    it.each([
-      ["exists", (b: Bucket) => b.exists("co1/a.pdf"), true],
-      ["info", (b: Bucket) => b.info("co1/a.pdf"), { name: "a.pdf" }],
-      ["download", (b: Bucket) => b.download("co1/a.pdf"), new Blob(["x"])],
-      [
-        "createSignedUrl",
-        (b: Bucket) => b.createSignedUrl("co1/a.pdf", 60),
-        { signedUrl: "https://x/y" }
-      ]
-    ] as const)("%s", async (method, call, hit) => {
-      const legacyMiss = vi.fn(() => fail("legacy miss"));
-
-      // Company hit: legacy never touched.
-      let client = makeClient({
-        co1: { [method]: vi.fn(() => ok(hit)) },
-        [LEGACY_PRIVATE_BUCKET]: { [method]: legacyMiss }
-      });
-      let result = await call(
-        storage(client).company("co1") as unknown as Bucket
-      );
-      expect(result.data).toBe(hit);
-      expect(legacyMiss).not.toHaveBeenCalled();
-
-      // Company miss, legacy hit.
-      client = makeClient({
-        [LEGACY_PRIVATE_BUCKET]: { [method]: vi.fn(() => ok(hit)) }
-      });
-      result = await call(storage(client).company("co1") as unknown as Bucket);
-      expect(result.data).toBe(hit);
-      expect(result.error).toBeNull();
-
-      // Both miss: the company bucket's error is reported.
-      client = makeClient({
-        co1: { [method]: vi.fn(() => fail("company miss")) },
-        [LEGACY_PRIVATE_BUCKET]: { [method]: legacyMiss }
-      });
-      result = await call(storage(client).company("co1") as unknown as Bucket);
-      expect(result.data).toBeNull();
-      expect(result.error?.message).toBe("company miss");
-    });
-
-    it("download forwards transform options to both buckets", async () => {
-      const companyDownload = vi.fn(() => fail("miss"));
-      const legacyDownload = vi.fn(() => ok(new Blob()));
-      const client = makeClient({
-        co1: { download: companyDownload },
-        [LEGACY_PRIVATE_BUCKET]: { download: legacyDownload }
-      });
-      const options = { transform: { quality: 85 } };
-      await storage(client).company("co1").download("co1/a.heic", options);
-      expect(companyDownload).toHaveBeenCalledWith("co1/a.heic", options);
-      expect(legacyDownload).toHaveBeenCalledWith("co1/a.heic", options);
-    });
-  });
-
   describe("list", () => {
     const file = (key: string, id: string) => ({
       key,
@@ -378,15 +275,7 @@ describe("storage(client).company", () => {
           objects: [file("b.pdf", "2"), file("a.pdf", "1")]
         })
       );
-      const legacy = vi.fn(() =>
-        ok({ hasNext: false, folders: [], objects: [] })
-      );
-      const client = makeClient({
-        co1: { listV2 },
-        [LEGACY_PRIVATE_BUCKET]: { listV2: legacy }
-      });
-
-      const { data, error } = await storage(client)
+      const { data, error } = await storage(makeClient({ co1: { listV2 } }))
         .company("co1")
         .list("co1/docs");
 
@@ -407,48 +296,6 @@ describe("storage(client).company", () => {
         last_accessed_at: null,
         metadata: null
       });
-    });
-
-    it("unions both buckets with the company bucket winning ties", async () => {
-      const own = vi.fn(() =>
-        ok({ hasNext: false, folders: [], objects: [file("b.pdf", "own")] })
-      );
-      const legacy = vi.fn(() =>
-        ok({
-          hasNext: false,
-          folders: [],
-          objects: [file("b.pdf", "legacy"), file("a.pdf", "legacy")]
-        })
-      );
-      const client = makeClient({
-        co1: { listV2: own },
-        [LEGACY_PRIVATE_BUCKET]: { listV2: legacy }
-      });
-
-      const { data } = await storage(client).company("co1").list("co1/docs");
-
-      expect(data?.map((f) => [f.name, f.id])).toEqual([
-        ["a.pdf", "legacy"],
-        ["b.pdf", "own"]
-      ]);
-    });
-
-    it("still returns the healthy bucket's rows when the other errors", async () => {
-      const client = makeClient({
-        co1: { listV2: vi.fn(() => fail("bucket not found")) },
-        [LEGACY_PRIVATE_BUCKET]: {
-          listV2: vi.fn(() =>
-            ok({ hasNext: false, folders: [], objects: [file("a.pdf", "1")] })
-          )
-        }
-      });
-
-      const { data, error } = await storage(client)
-        .company("co1")
-        .list("co1/docs");
-
-      expect(error).toBeNull();
-      expect(data?.map((f) => f.name)).toEqual(["a.pdf"]);
     });
 
     it("lists what is inside the folder, with or without a trailing slash", async () => {
@@ -507,18 +354,16 @@ describe("storage(client).company", () => {
         })
       );
 
-      const { data, error } = await storage(
-        makeClient({ co1: { listV2 }, private: { listV2 } })
-      )
+      const { data, error } = await storage(makeClient({ co1: { listV2 } }))
         .company("co1")
         .list("co1/docs");
 
       expect(data).toBeNull();
       expect(error?.message).toContain("did not advance");
-      expect(listV2.mock.calls.length).toBeLessThanOrEqual(4);
+      expect(listV2.mock.calls.length).toBeLessThanOrEqual(2);
     });
 
-    it("drops a bucket whose later page fails instead of keeping part of it", async () => {
+    it("fails when a later page fails instead of returning part of the folder", async () => {
       const listV2 = vi.fn((options: { cursor?: string }) =>
         options.cursor
           ? fail("storage down")
@@ -534,116 +379,49 @@ describe("storage(client).company", () => {
         .company("co1")
         .list("co1/docs");
 
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
-    });
-
-    it("reports the company error when both buckets fail", async () => {
-      const client = makeClient({
-        co1: { listV2: vi.fn(() => fail("company down")) },
-        [LEGACY_PRIVATE_BUCKET]: { listV2: vi.fn(() => fail("legacy down")) }
-      });
-
-      const { data, error } = await storage(client)
-        .company("co1")
-        .list("co1/docs");
-
       expect(data).toBeNull();
-      expect(error?.message).toBe("company down");
+      expect(error?.message).toBe("storage down");
     });
   });
 
   describe("remove", () => {
-    it("removes from both buckets and tolerates misses", async () => {
-      const companyRemove = vi.fn(() => ok([]));
-      const legacyRemove = vi.fn(() => ok([{ name: "a.pdf" }]));
-      const client = makeClient({
-        co1: { remove: companyRemove },
-        [LEGACY_PRIVATE_BUCKET]: { remove: legacyRemove }
-      });
-      const { data, error } = await storage(client)
+    it("removes from the company bucket", async () => {
+      const remove = vi.fn(() => ok([{ name: "a.pdf" }]));
+      const { data, error } = await storage(makeClient({ co1: { remove } }))
         .company("co1")
         .remove(["co1/docs/a.pdf"]);
       expect(error).toBeNull();
       expect(data).toEqual([{ name: "a.pdf" }]);
-      expect(companyRemove).toHaveBeenCalledWith(["co1/docs/a.pdf"]);
-      expect(legacyRemove).toHaveBeenCalledWith(["co1/docs/a.pdf"]);
+      expect(remove).toHaveBeenCalledWith(["co1/docs/a.pdf"]);
     });
+  });
 
-    it("surfaces a failure on either bucket", async () => {
-      const client = makeClient({
-        [LEGACY_PRIVATE_BUCKET]: {
-          remove: vi.fn(() => fail("permission denied"))
-        }
-      });
-      const { data, error } = await storage(client)
+  it("never falls back to the retired shared bucket on a miss", async () => {
+    const client = makeClient({});
+    const from = vi.spyOn(client.storage, "from");
+    const files = storage(client).company("co1");
+
+    expect((await files.download("co1/docs/a.pdf")).error).toBeTruthy();
+    expect((await files.exists("co1/docs/a.pdf")).data).toBeFalsy();
+    expect(
+      (await files.createSignedUrl("co1/docs/a.pdf", 60)).error
+    ).toBeTruthy();
+
+    expect(new Set(from.mock.calls.map(([bucket]) => bucket))).toEqual(
+      new Set(["co1"])
+    );
+  });
+
+  describe("move", () => {
+    it("refuses a key outside the company prefix without touching storage", async () => {
+      const move = vi.fn(() => ok({ message: "company" }));
+      const result = await storage(makeClient({ co1: { move } }))
         .company("co1")
-        .remove(["co1/docs/a.pdf"]);
-      expect(data).toBeNull();
-      expect(error?.message).toBe("permission denied");
+        .move("co1/a.pdf", "co2/b.pdf");
+
+      expect(result.error).toBeTruthy();
+      expect(move).not.toHaveBeenCalled();
     });
-  });
-});
-
-describe("move falls back to a cross-bucket move out of the legacy bucket", () => {
-  it("moves within the company bucket when the file is already there", async () => {
-    const legacyMove = vi.fn(() => ok({ message: "legacy" }));
-    const client = makeClient({
-      co1: { move: vi.fn(() => ok({ message: "company" })) },
-      [LEGACY_PRIVATE_BUCKET]: { move: legacyMove }
-    });
-
-    const result = await storage(client)
-      .company("co1")
-      .move("co1/a.pdf", "co1/b.pdf");
-
-    expect(result.data).toEqual({ message: "company" });
-    expect(legacyMove).not.toHaveBeenCalled();
-  });
-
-  // A file uploaded before the per-company copy ran is only in the legacy
-  // bucket, so the company-bucket move misses and the retry must carry it
-  // across in one operation rather than leaving the drag broken.
-  it("retries out of the legacy bucket into the company bucket on a miss", async () => {
-    const legacyMove = vi.fn(() => ok({ message: "legacy" }));
-    const client = makeClient({
-      co1: { move: vi.fn(() => fail("not found")) },
-      [LEGACY_PRIVATE_BUCKET]: { move: legacyMove }
-    });
-
-    const result = await storage(client)
-      .company("co1")
-      .move("co1/a.pdf", "co1/b.pdf");
-
-    expect(result.data).toEqual({ message: "legacy" });
-    expect(legacyMove).toHaveBeenCalledWith("co1/a.pdf", "co1/b.pdf", {
-      destinationBucket: "co1"
-    });
-  });
-
-  it("reports the company bucket's error when both buckets miss", async () => {
-    const client = makeClient({
-      co1: { move: vi.fn(() => fail("company miss")) },
-      [LEGACY_PRIVATE_BUCKET]: { move: vi.fn(() => fail("legacy miss")) }
-    });
-
-    const result = await storage(client)
-      .company("co1")
-      .move("co1/a.pdf", "co1/b.pdf");
-
-    expect(result.error).toEqual({ message: "company miss" });
-  });
-
-  it("refuses a key outside the company prefix without touching storage", async () => {
-    const companyMove = vi.fn(() => ok({ message: "company" }));
-    const client = makeClient({ co1: { move: companyMove } });
-
-    const result = await storage(client)
-      .company("co1")
-      .move("co1/a.pdf", "co2/b.pdf");
-
-    expect(result.error).toBeTruthy();
-    expect(companyMove).not.toHaveBeenCalled();
   });
 });
 

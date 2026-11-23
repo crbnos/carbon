@@ -3,41 +3,42 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Badge,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   cn,
-  Heading,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import {
-  convertDateStringToIsoString,
-  formatDurationMilliseconds
-} from "@carbon/utils";
+import { convertDateStringToIsoString } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
-import {
-  LuCalendarDays,
-  LuCirclePlay,
-  LuClipboardCheck,
-  LuTimer
-} from "react-icons/lu";
-import { Link } from "react-router";
+import { LuCalendarDays, LuCirclePlay, LuClipboardCheck } from "react-icons/lu";
+import { Link, useLocation } from "react-router";
 import { DateTime } from "~/components";
-import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { useDateFormatter } from "~/hooks";
 import type { Operation, OperationSettings } from "~/services/types";
+import { withOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { DeadlineIcon, OperationStatusIcon } from "./Icons";
+import {
+  AssigneeTags,
+  OperationDuration,
+  PhoneThumbnail,
+  QuantityStat
+} from "./OperationCardParts";
 
 type OperationsListProps = {
   operations: Operation[];
   emptyMessage?: string;
+  /** Where a card links to; defaults to the operation screen. */
+  getHref?: (operation: Operation) => string;
+  /** When set, a card is a button that selects the operation. */
+  onSelect?: (operation: Operation) => void;
+  selectedId?: string;
 };
 
 const settings = {
@@ -51,11 +52,23 @@ const settings = {
   showThumbnail: true
 }; // TODO: load dynamically
 
-export function OperationsList({ operations }: OperationsListProps) {
+export function OperationsList({
+  operations,
+  getHref,
+  onSelect,
+  selectedId
+}: OperationsListProps) {
   return (
     <>
       {operations.map((operation) => (
-        <OperationCard key={operation.id} operation={operation} {...settings} />
+        <OperationCard
+          key={operation.id}
+          operation={operation}
+          getHref={getHref}
+          onSelect={onSelect}
+          isSelected={selectedId === operation.id}
+          {...settings}
+        />
       ))}
     </>
   );
@@ -63,6 +76,9 @@ export function OperationsList({ operations }: OperationsListProps) {
 
 type OperationCardProps = {
   operation: Operation;
+  getHref?: (operation: Operation) => string;
+  onSelect?: (operation: Operation) => void;
+  isSelected?: boolean;
 } & OperationSettings;
 
 const cardVariants = cva(
@@ -87,6 +103,9 @@ const cardVariants = cva(
 
 function OperationCard({
   operation,
+  getHref,
+  onSelect,
+  isSelected = false,
   showCustomer,
   showDescription,
   showDueDate,
@@ -98,89 +117,87 @@ function OperationCard({
 }: OperationCardProps) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
+  const location = useLocation();
   const isOverdue =
     operation.jobDeadlineType !== "No Deadline" && operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false;
 
-  return (
-    <Card
-      className={cn(
-        "h-full flex flex-col",
-        cardVariants({
-          status: operation.operationStatus
-        })
-      )}
-    >
-      <Link
-        to={path.to.operation(operation.id)}
-        className="flex flex-col flex-1"
-      >
-        <CardHeader className="flex flex-col justify-between relative gap-2">
-          <div className="flex w-full max-w-full justify-between items-start gap-2">
-            <div className="flex flex-col space-y-0 min-w-0">
-              {operation.itemReadableId && (
-                <span className="text-xs text-muted-foreground line-clamp-1">
-                  {operation.itemReadableId}
-                </span>
-              )}
-              <span className="mr-auto font-semibold line-clamp-2 leading-tight">
-                {operation.itemDescription || operation.itemReadableId}
-              </span>
-            </div>
-            <Heading size="h4" className="text-muted-foreground/70">
-              {operation.targetQuantity ?? operation.operationQuantity ?? 0}
-            </Heading>
-          </div>
-        </CardHeader>
-        <CardContent className="gap-2 text-left whitespace-pre-wrap text-sm flex-grow">
+  const body = (
+    <>
+      <CardHeader className="flex flex-col justify-between relative gap-2 max-md:pb-1">
+        <div className="flex w-full max-w-full justify-between items-start gap-2">
           {showThumbnail && operation.thumbnailPath && (
-            <div className="flex justify-center">
-              <img
-                src={getPrivateUrl(operation.thumbnailPath)}
-                alt={operation.jobReadableId}
-                className="w-full h-auto rounded-lg"
-              />
-            </div>
+            <PhoneThumbnail
+              path={operation.thumbnailPath}
+              alt={operation.jobReadableId ?? ""}
+            />
           )}
-          <HStack className="justify-start space-x-2">
-            <LuCirclePlay className="text-muted-foreground" />
+          <div className="flex flex-col space-y-0 min-w-0 max-md:flex-1">
+            {operation.itemReadableId && (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {operation.itemReadableId}
+              </span>
+            )}
+            <span className="mr-auto font-semibold line-clamp-2 leading-tight max-md:text-foreground">
+              {operation.itemDescription || operation.itemReadableId}
+            </span>
+          </div>
+          <QuantityStat className="text-muted-foreground/70 max-md:text-foreground max-md:tabular-nums">
+            {operation.targetQuantity ?? operation.operationQuantity ?? 0}
+          </QuantityStat>
+        </div>
+      </CardHeader>
+      <CardContent className="gap-2 text-left whitespace-pre-wrap text-sm max-md:border-t-0 max-md:pt-1 flex-grow max-md:grid max-md:grid-cols-2 max-md:content-start max-md:gap-x-3 max-md:gap-y-1.5 max-md:[&>*]:min-w-0">
+        {showThumbnail && operation.thumbnailPath && (
+          <div className="flex justify-center max-md:hidden">
+            <img
+              src={getPrivateUrl(operation.thumbnailPath)}
+              loading="lazy"
+              decoding="async"
+              width={300}
+              height={300}
+              alt={operation.jobReadableId}
+              className="w-full h-auto rounded-lg"
+            />
+          </div>
+        )}
+        <HStack className="justify-start space-x-2 max-md:col-span-2">
+          <LuCirclePlay className="text-muted-foreground" />
+          <span className="text-sm line-clamp-1">
+            {operation.jobReadableId}
+          </span>
+        </HStack>
+
+        {showDescription && operation.description && (
+          <HStack className="justify-start space-x-2 max-md:col-span-2">
+            <LuClipboardCheck className="text-muted-foreground" />
             <span className="text-sm line-clamp-1">
-              {operation.jobReadableId}
+              {operation.description}
             </span>
           </HStack>
-
-          {showDescription && operation.description && (
-            <HStack className="justify-start space-x-2">
-              <LuClipboardCheck className="text-muted-foreground" />
-              <span className="text-sm line-clamp-1">
-                {operation.description}
-              </span>
-            </HStack>
-          )}
-          {showStatus && operation.operationStatus && (
-            <HStack className="justify-start space-x-2">
+        )}
+        {showStatus && operation.operationStatus && (
+          <HStack className="justify-start space-x-2">
+            <span className="inline-flex" aria-hidden="true">
               <OperationStatusIcon status={operation.operationStatus} />
-              <span className="text-sm">{operation.operationStatus}</span>
-            </HStack>
-          )}
-          {showDuration && typeof operation.duration === "number" && (
+            </span>
+            <span className="text-sm">{operation.operationStatus}</span>
+          </HStack>
+        )}
+        {showDuration && typeof operation.duration === "number" && (
+          <OperationDuration value={operation.duration} />
+        )}
+        {showDueDate && operation.jobDeadlineType && (
+          <>
             <HStack className="justify-start space-x-2">
-              <LuTimer className="text-muted-foreground" />
-              <span className="text-sm">
-                {formatDurationMilliseconds(operation.duration)}
-              </span>
-            </HStack>
-          )}
-          {showDueDate && operation.jobDeadlineType && (
-            <>
-              <HStack className="justify-start space-x-2">
-                <DeadlineIcon
-                  deadlineType={operation.jobDeadlineType}
-                  overdue={isOverdue}
-                />
-                <Tooltip>
-                  <TooltipTrigger>
+              <DeadlineIcon
+                deadlineType={operation.jobDeadlineType}
+                overdue={isOverdue}
+              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
                     <span
                       className={cn("text-sm", isOverdue ? "text-red-500" : "")}
                     >
@@ -194,41 +211,70 @@ function OperationCard({
                             )}`
                           : "–"}
                     </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {operation.jobDeadlineType}
-                  </TooltipContent>
-                </Tooltip>
-              </HStack>
-              {operation.jobDueDate && (
-                <HStack className="justify-start space-x-2">
-                  <LuCalendarDays />
-                  <span className="text-sm">
-                    <DateTime value={operation.jobDueDate} variant="date" />
                   </span>
-                </HStack>
-              )}
-            </>
-          )}
-        </CardContent>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {operation.jobDeadlineType}
+                </TooltipContent>
+              </Tooltip>
+            </HStack>
+            {operation.jobDueDate && (
+              <HStack className="justify-start space-x-2">
+                <LuCalendarDays aria-hidden />
+                <span className="text-sm">
+                  <span className="sr-only">{t`Job due`} </span>
+                  <DateTime value={operation.jobDueDate} variant="date" />
+                </span>
+              </HStack>
+            )}
+          </>
+        )}
         {(operation.assignee ||
           (operation.tags && operation.tags.length > 0)) && (
-          <CardFooter className="items-center justify-start text-xs flex-wrap mt-auto">
-            {operation.assignee && (
-              <EmployeeAvatar size="xs" employeeId={operation.assignee} />
-            )}
-            {operation.tags?.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="border dark:border-none dark:shadow-button-base"
-              >
-                {tag}
-              </Badge>
-            ))}
-          </CardFooter>
+          <div className="hidden flex-wrap items-center gap-1 text-xs max-md:col-span-2 max-md:flex">
+            <AssigneeTags assignee={operation.assignee} tags={operation.tags} />
+          </div>
         )}
-      </Link>
+      </CardContent>
+      {(operation.assignee ||
+        (operation.tags && operation.tags.length > 0)) && (
+        <CardFooter className="items-center justify-start text-xs flex-wrap mt-auto max-md:hidden">
+          <AssigneeTags assignee={operation.assignee} tags={operation.tags} />
+        </CardFooter>
+      )}
+    </>
+  );
+
+  return (
+    <Card
+      className={cn(
+        "h-full flex flex-col",
+        cardVariants({
+          status: operation.operationStatus
+        }),
+        isSelected && "ring-2 ring-primary"
+      )}
+    >
+      {onSelect ? (
+        <button
+          type="button"
+          aria-pressed={isSelected}
+          onClick={() => onSelect(operation)}
+          className="flex flex-col flex-1 text-left"
+        >
+          {body}
+        </button>
+      ) : (
+        <Link
+          to={withOrigin(
+            getHref ? getHref(operation) : path.to.operation(operation.id),
+            location
+          )}
+          className="flex flex-col flex-1"
+        >
+          {body}
+        </Link>
+      )}
     </Card>
   );
 }

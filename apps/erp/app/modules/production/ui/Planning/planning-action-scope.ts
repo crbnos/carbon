@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
+// Pure helpers for the planning grid's Actions and Assignee filters.
+// No JSX, no lingui — unit-tested by apps/erp/test/planning-action-scope.test.ts.
+
+/** Column id of the planning grid's Actions column — also the `filter=` key
+ *  its static type filter writes (`planningActions:eq:Expedite`, or `:in:` for
+ *  several). It is not a column of the grid RPC: the loader strips it with
+ *  `resolvePlanningActionScope` and hands it to the RPC as an argument, which
+ *  evaluates it in the database against each item's planning horizon. */
+export const PLANNING_ACTIONS_COLUMN = "planningActions";
+/** Column id of the grid's Assignee column, and the `filter=` key of its
+ *  people filter (`planningAssignee:in:<userId>,<userId>`). Like the Actions
+ *  filter it is not an RPC column: the loader turns it into the RPC's
+ *  assignees argument. */
+export const PLANNING_ASSIGNEE_COLUMN = "planningAssignee";
+/** Search param that carries the item whose order drawer is open
+ *  (`?item=<itemId>`), so a link to the grid opens the same drawer. */
+export const PLANNING_DRAWER_PARAM = "item";
+
+type GridFilter = { column: string; operator: string; value?: string };
+
+/**
+ * Splits the grid's URL filters into the ones the planning RPC can apply as
+ * column filters and the Actions / Assignee filters, which become RPC
+ * ARGUMENTS: the grid keeps the items with at least one OPEN action, inside the
+ * item's planning horizon, that matches every requested predicate on the SAME
+ * action (one of the types AND assigned to one of the people). `undefined` means "no restriction of that kind".
+ *
+ * The RPC does the matching (not this function, and not an item-id list) so the
+ * filter is complete at any volume and sees the horizon: an earlier version
+ * resolved item ids from the first 500 loaded actions and silently dropped
+ * items beyond that.
+ */
+export function resolvePlanningActionScope(args: { filters?: GridFilter[] }): {
+  gridFilters: GridFilter[];
+  actionTypes: string[] | undefined;
+  actionAssignees: string[] | undefined;
+} {
+  const all = args.filters ?? [];
+  const valuesOf = (column: string) => [
+    ...new Set(
+      all
+        .filter((f) => f.column === column)
+        .flatMap((f) => (f.value ?? "").split(",").filter(Boolean))
+    )
+  ];
+  const types = valuesOf(PLANNING_ACTIONS_COLUMN);
+  const assignees = valuesOf(PLANNING_ASSIGNEE_COLUMN);
+
+  return {
+    gridFilters: all.filter(
+      (f) =>
+        f.column !== PLANNING_ACTIONS_COLUMN &&
+        f.column !== PLANNING_ASSIGNEE_COLUMN
+    ),
+    actionTypes: types.length > 0 ? types : undefined,
+    actionAssignees: assignees.length > 0 ? assignees : undefined
+  };
+}
+
+/**
+ * The actions a row SHOWS under the Actions-column filter: only the filtered
+ * types. The RPC keeps an item when it has one matching action, but the item
+ * usually carries others too — a grid filtered to Expedite that still listed
+ * each row's Defer and Cancel read as an unfiltered grid. No types (no filter)
+ * shows everything.
+ */
+export function actionsOfTypes<
+  A extends { type: Database["public"]["Enums"]["planningActionType"] }
+>(actions: readonly A[], types: readonly string[] | null | undefined): A[] {
+  if (!types || types.length === 0) return [...actions];
+  return actions.filter((action) => types.includes(action.type));
+}
+
+/** Column id of the grid's Segment column, and the `filter=` key of its
+ *  filter (`planningSegment:in:common,<projectId>`). Not an RPC column: the
+ *  loader turns it into a filter on `planningSegmentId` with
+ *  `resolvePlanningSegmentScope` and `planningSegmentFilter`. */
+export const PLANNING_SEGMENT_COLUMN = "planningSegment";
+/** The Segment filter's value for common stock: the URL cannot carry the
+ *  empty segment id ''. */
+export const COMMON_SEGMENT_OPTION = "common";
+
+/**
+ * Splits the Segment filter off the grid's URL filters. `segments` holds the
+ * netting segments to keep ('' is common); `undefined` keeps every segment.
+ */
+export function resolvePlanningSegmentScope(args: { filters?: GridFilter[] }): {
+  gridFilters: GridFilter[];
+  segments: string[] | undefined;
+} {
+  const all = args.filters ?? [];
+  const segments = [
+    ...new Set(
+      all
+        .filter((f) => f.column === PLANNING_SEGMENT_COLUMN)
+        .flatMap((f) => (f.value ?? "").split(",").filter(Boolean))
+        .map((value) => (value === COMMON_SEGMENT_OPTION ? "" : value))
+    )
+  ];
+  return {
+    gridFilters: all.filter((f) => f.column !== PLANNING_SEGMENT_COLUMN),
+    segments: segments.length > 0 ? segments : undefined
+  };
+}
+
+/**
+ * The PostgREST `or` filter that keeps the rows of `segments`. Common is
+ * `eq.""`: an `in` list cannot hold the empty string. A project id has no
+ * comma or parenthesis, so it needs no quoting.
+ */
+export function planningSegmentFilter(segments: readonly string[]): string {
+  const projects = segments.filter((segment) => segment !== "");
+  return [
+    ...(segments.includes("") ? ['planningSegmentId.eq.""'] : []),
+    ...(projects.length > 0
+      ? [`planningSegmentId.in.(${projects.join(",")})`]
+      : [])
+  ].join(",");
+}
+
+/**
+ * The key of one planning row: an item in one netting segment. The grid has
+ * a row per (item, segment), so a row's actions and its draft orders are
+ * keyed by both.
+ */
+export function planningRowKey(row: {
+  id: string;
+  planningSegmentId?: string | null;
+}): string {
+  return `${row.id}\u001f${row.planningSegmentId ?? ""}`;
+}
+
+/**
+ * Each row with its own planning actions (by `planningRowKey`: the item and
+ * its netting segment). A grid page carries the actions of its rows, so the
+ * grid reads every loaded row's actions from the rows themselves, with no
+ * merge of later pages. Two rows of one item in different segments never
+ * share an action.
+ */
+export function withPlanningActions<
+  R extends { id: string; planningSegmentId?: string | null },
+  A extends { itemId: string; planningSegmentId?: string | null }
+>(rows: readonly R[], actions: readonly A[]): (R & { planningActions: A[] })[] {
+  const byRowKey = new Map<string, A[]>();
+  for (const action of actions) {
+    const key = planningRowKey({
+      id: action.itemId,
+      planningSegmentId: action.planningSegmentId
+    });
+    const list = byRowKey.get(key);
+    if (list) list.push(action);
+    else byRowKey.set(key, [action]);
+  }
+  return rows.map((row) => ({
+    ...row,
+    planningActions: byRowKey.get(planningRowKey(row)) ?? []
+  }));
+}

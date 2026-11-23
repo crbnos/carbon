@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteSupplier } from "~/modules/purchasing";
+import { deleteSupplier } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.suppliers,
       await flash(
         request,
-        error(supplierDelete.error, supplierDelete.error.message)
+        error(supplierDelete.error, "Failed to delete the supplier")
       )
     );
   }

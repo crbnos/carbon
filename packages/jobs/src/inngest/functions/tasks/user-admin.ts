@@ -8,11 +8,11 @@ import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/env";
-import { sendEmail } from "@carbon/lib/email.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
-import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
+import { sendCompanyEmail } from "../../../email/company-email";
 import { inngest } from "../../client";
 
 export const userAdminFunction = inngest.createFunction(
@@ -23,13 +23,13 @@ export const userAdminFunction = inngest.createFunction(
     const payload = event.data;
 
     const result = await step.run("user-admin-action", async () => {
-      logger.info(`User admin update ${payload.type} for ${payload.id}`);
+      logger.info("User admin update", { type: payload.type, id: payload.id });
 
       let result: Result = { success: false, message: "Unknown action" };
 
       switch (payload.type) {
         case "deactivate":
-          logger.info(`Deactivating ${payload.id}`);
+          logger.info("Deactivating a user", { id: payload.id });
           result = await deactivateUser(
             serviceRole,
             payload.id,
@@ -43,7 +43,7 @@ export const userAdminFunction = inngest.createFunction(
           break;
         case "resend":
           const { id: userId, companyId, location, ip } = payload;
-          logger.info(`Resending invite for ${payload.id}`);
+          logger.info("Resending an invite", { id: payload.id });
           const [company, user] = await Promise.all([
             serviceRole
               .from("company")
@@ -104,7 +104,7 @@ export const userAdminFunction = inngest.createFunction(
             companyId
           );
 
-          await sendEmail({
+          await sendCompanyEmail(serviceRole, companyId, {
             to: user.data.email,
             subject: `You have been invited to join ${company.data?.name} on Carbon`,
             headers: {
@@ -133,12 +133,12 @@ export const userAdminFunction = inngest.createFunction(
       }
 
       if (result.success) {
-        logger.info(`Success ${payload.id}`);
+        logger.info("User admin action succeeded", { id: payload.id });
       } else {
         logger.error("Admin action {payloadType} failed for {payloadId}", {
           payloadType: payload.type,
           payloadId: payload.id,
-          message: result.message
+          reason: result.message
         });
       }
 

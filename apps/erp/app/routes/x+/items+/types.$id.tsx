@@ -6,15 +6,15 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { materialTypeValidator } from "~/modules/items/items.models";
 import {
   getMaterialType,
-  materialTypeValidator,
   upsertMaterialType
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { getParams, path } from "~/utils/path";
 
@@ -84,7 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditMaterialTypesRoute() {
   const { materialType } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: materialType?.id ?? undefined,
@@ -98,7 +98,8 @@ export default function EditMaterialTypesRoute() {
     <MaterialTypeForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

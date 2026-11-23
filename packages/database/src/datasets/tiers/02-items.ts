@@ -5,6 +5,7 @@
 import { resolveDate, resolveTimestamp } from "../dates.ts";
 import { inspectionPlan } from "../helpers/inspection.ts";
 import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
+import { allItemSpecs } from "../item-tables.ts";
 import { insertId, insertRow, need, one, rows } from "../sql.ts";
 import type {
   AssemblySpec,
@@ -24,7 +25,9 @@ async function seedInspectionPlan(
   const rule = inspectionPlan(spec);
   const documentId = await insertId(ctx, "inspectionDocument", {
     partId: need(ctx.refs.items, spec.item).id,
-    drawingNumber: spec.drawingNumber,
+    name: spec.name,
+    // Receipts and jobs use it, so it is the plan's published version.
+    status: "Active",
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
     samplingInspectionLevel: rule.inspectionLevel,
@@ -49,7 +52,7 @@ async function seedInspectionPlan(
 // `_templates/` paths resolve via getDatasetAssetUrl, not the storage proxy: the
 // modelUpload row points at a bundled file, so nothing is uploaded and the assembler never runs.
 async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
-  const { industryId } = ctx.dataset;
+  const industryId = ctx.dataset.assetIndustryId ?? ctx.dataset.industryId;
   if (!industryId) return;
 
   const base = `_templates/${industryId}/models/${spec.model}`;
@@ -248,25 +251,13 @@ export async function runTier2(ctx: Ctx): Promise<void> {
 
   const inspectionPlanIds: Record<string, string> = {};
   for (const plan of data.inspectionPlans) {
-    ctx.log(`inspection plan ${plan.drawingNumber}`);
+    ctx.log(`inspection plan ${plan.name}`);
     inspectionPlanIds[plan.key] = await seedInspectionPlan(ctx, plan);
   }
 
   for (const method of data.methods) {
     const mm = needMM(i, method.readableId);
-    for (const line of method.bom) {
-      await addBomLine(
-        ctx,
-        mm,
-        needItem(line.component),
-        line.quantity,
-        line.order,
-        {
-          methodType: line.methodType,
-          kit: line.kit
-        }
-      );
-    }
+    const opIdByOrder: Record<string, string> = {};
     for (const op of method.bop) {
       const operationId = await addBopOperation(
         ctx,
@@ -296,6 +287,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
             : undefined
         }
       );
+      opIdByOrder[String(op.order)] = operationId;
       for (const tool of op.tools ?? []) {
         await insertRow(ctx, "methodOperationTool", {
           operationId,
@@ -310,6 +302,23 @@ export async function runTier2(ctx: Ctx): Promise<void> {
           value: parameter.value
         });
       }
+    }
+    for (const line of method.bom) {
+      await addBomLine(
+        ctx,
+        mm,
+        needItem(line.component),
+        line.quantity,
+        line.order,
+        {
+          methodType: line.methodType,
+          kit: line.kit,
+          methodOperationId:
+            line.operation === undefined
+              ? undefined
+              : need(opIdByOrder, String(line.operation), "bop order")
+        }
+      );
     }
   }
 
@@ -330,59 +339,46 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     const itemRef = needItem(sl.item);
     const supplierId = need(ctx.refs.suppliers, sl.supplier);
 
+    // Authored in the company's base currency: currencyCode stays NULL, which
+    // every reader takes as base.
     const spId = await insertId(ctx, "supplierPart", {
       itemId: itemRef.id,
       supplierId,
-      unitPrice: sl.price,
+      supplierUnitPrice: sl.price,
       minimumOrderQuantity: 1
     });
     await insertRow(ctx, "supplierPartPrice", {
       supplierPartId: spId,
       quantity: 1,
-      unitPrice: sl.price,
+      supplierUnitPrice: sl.price,
       leadTime: sl.leadTime,
       sourceType: "Manual Entry"
     });
   }
 
-  // The active revision is the released one, so it goes to Production (locking
-  // its BOM/BOP in the app). The rungs share its readableId and stay out of
-  // ctx.refs.items so later tiers keep resolving the active revision.
+  // Every revision keeps the Design default: nothing in the app sets a
+  // revision status, and a Production revision locks its BOM/BOP. The rungs
+  // share the active revision's readableId and stay out of ctx.refs.items so
+  // later tiers keep resolving the active revision.
   ctx.log("revision ladder");
-  const allItemSpecs = [
-    ...data.buyParts,
-    ...data.materials,
-    ...data.consumables,
-    ...data.tools,
-    ...data.services,
-    ...data.makeParts
-  ];
+  const itemSpecs = allItemSpecs(data);
   for (const ladder of data.revisionLadder) {
-    const baseSpec = allItemSpecs.find(
-      (spec) => spec.readableId === ladder.item
-    );
+    const baseSpec = itemSpecs.find((spec) => spec.readableId === ladder.item);
     if (!baseSpec) {
       throw new Error(
         `Seed: revisionLadder item "${ladder.item}" is not a seeded item spec`
       );
     }
-    await ctx.client.query(
-      `UPDATE item SET "revisionStatus" = 'Production'
-       WHERE id = $1 AND "companyId" = $2`,
-      [needItem(ladder.item).id, ctx.companyId]
-    );
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.obsoleteRevision,
       active: false,
-      revisionStatus: "Obsolete",
       description: `Rev ${ladder.obsoleteRevision} — superseded; kept for historical jobs`
     });
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.nextRevision,
       active: false,
-      revisionStatus: ladder.nextStatus,
       description: `Rev ${ladder.nextRevision} — in work, not yet released`
     });
   }
@@ -459,78 +455,80 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   // requiresConfiguration is what shows the Configure button and the rules
   // panel; a rule's field is `${field}:${methodRowId}`, as the BoM/BoP
   // editors key it.
-  ctx.log("configuration parameters + rules");
   const cfg = data.configuration;
-  const cfgItem = needItem(cfg.item);
-  const flagged = await ctx.client.query(
-    `UPDATE "itemReplenishment" SET "requiresConfiguration" = true, "updatedBy" = $3
-     WHERE "itemId" = $1 AND "companyId" = $2`,
-    [cfgItem.id, ctx.companyId, ctx.userId]
-  );
-  if (flagged.rowCount !== 1) {
-    throw new Error(`Seed: "${cfg.item}" has no itemReplenishment row`);
-  }
-  const groupId = await insertId(ctx, "configurationParameterGroup", {
-    itemId: cfgItem.id,
-    name: cfg.group,
-    sortOrder: 1
-  });
-  for (const [index, parameter] of cfg.parameters.entries()) {
-    await insertRow(ctx, "configurationParameter", {
+  if (cfg) {
+    ctx.log("configuration parameters + rules");
+    const cfgItem = needItem(cfg.item);
+    const flagged = await ctx.client.query(
+      `UPDATE "itemReplenishment" SET "requiresConfiguration" = true, "updatedBy" = $3
+       WHERE "itemId" = $1 AND "companyId" = $2`,
+      [cfgItem.id, ctx.companyId, ctx.userId]
+    );
+    if (flagged.rowCount !== 1) {
+      throw new Error(`Seed: "${cfg.item}" has no itemReplenishment row`);
+    }
+    const groupId = await insertId(ctx, "configurationParameterGroup", {
       itemId: cfgItem.id,
-      configurationParameterGroupId: groupId,
-      key: parameter.key,
-      label: parameter.label,
-      dataType: parameter.dataType,
-      listOptions: parameter.listOptions ?? null,
-      sortOrder: index + 1
+      name: cfg.group,
+      sortOrder: 1
     });
-  }
-  const cfgMethodId = needMM(i, cfg.item);
-  for (const rule of cfg.rules) {
-    const row =
-      "component" in rule.target
-        ? await one<{ id: string }>(
-            ctx.client,
-            `SELECT id FROM "methodMaterial"
-             WHERE "makeMethodId" = $1 AND "itemId" = $2 AND "companyId" = $3`,
-            [cfgMethodId, needItem(rule.target.component).id, ctx.companyId]
-          )
-        : await one<{ id: string }>(
-            ctx.client,
-            `SELECT id FROM "methodOperation"
-             WHERE "makeMethodId" = $1 AND "companyId" = $2
-             ORDER BY "order" OFFSET $3 LIMIT 1`,
-            [cfgMethodId, ctx.companyId, rule.target.operation - 1]
-          );
-    await insertRow(ctx, "configurationRule", {
-      itemId: cfgItem.id,
-      field: `${rule.field}:${row.id}`,
-      code: rule.code,
-      updatedBy: ctx.userId
-    });
-  }
-  // The shape normalizePricingRule (sales.service.ts) gives a Configuration
-  // rule: one item, Fixed 0, the prices carrying the parameter's label so the
-  // price trace can name it.
-  if (cfg.prices?.length) {
-    const labelByKey = new Map(cfg.parameters.map((p) => [p.key, p.label]));
-    await insertRow(ctx, "pricingRule", {
-      name: `${cfg.item} Configuration`,
-      ruleType: "Configuration",
-      amountType: "Fixed",
-      amount: 0,
-      priority: 0,
-      itemIds: [cfgItem.id],
-      configurationPrices: JSON.stringify(
-        cfg.prices.map((price) => ({
-          key: price.key,
-          value: price.value ?? null,
-          amount: price.amount,
-          label: labelByKey.get(price.key)
-        }))
-      )
-    });
+    for (const [index, parameter] of cfg.parameters.entries()) {
+      await insertRow(ctx, "configurationParameter", {
+        itemId: cfgItem.id,
+        configurationParameterGroupId: groupId,
+        key: parameter.key,
+        label: parameter.label,
+        dataType: parameter.dataType,
+        listOptions: parameter.listOptions ?? null,
+        sortOrder: index + 1
+      });
+    }
+    const cfgMethodId = needMM(i, cfg.item);
+    for (const rule of cfg.rules) {
+      const row =
+        "component" in rule.target
+          ? await one<{ id: string }>(
+              ctx.client,
+              `SELECT id FROM "methodMaterial"
+               WHERE "makeMethodId" = $1 AND "itemId" = $2 AND "companyId" = $3`,
+              [cfgMethodId, needItem(rule.target.component).id, ctx.companyId]
+            )
+          : await one<{ id: string }>(
+              ctx.client,
+              `SELECT id FROM "methodOperation"
+               WHERE "makeMethodId" = $1 AND "companyId" = $2
+               ORDER BY "order" OFFSET $3 LIMIT 1`,
+              [cfgMethodId, ctx.companyId, rule.target.operation - 1]
+            );
+      await insertRow(ctx, "configurationRule", {
+        itemId: cfgItem.id,
+        field: `${rule.field}:${row.id}`,
+        code: rule.code,
+        updatedBy: ctx.userId
+      });
+    }
+    // The shape normalizePricingRule (sales.service.ts) gives a Configuration
+    // rule: one item, Fixed 0, the prices carrying the parameter's label so the
+    // price trace can name it.
+    if (cfg.prices?.length) {
+      const labelByKey = new Map(cfg.parameters.map((p) => [p.key, p.label]));
+      await insertRow(ctx, "pricingRule", {
+        name: `${cfg.item} Configuration`,
+        ruleType: "Configuration",
+        amountType: "Fixed",
+        amount: 0,
+        priority: 0,
+        itemIds: [cfgItem.id],
+        configurationPrices: JSON.stringify(
+          cfg.prices.map((price) => ({
+            key: price.key,
+            value: price.value ?? null,
+            amount: price.amount,
+            label: labelByKey.get(price.key)
+          }))
+        )
+      });
+    }
   }
 
   ctx.log("enforcement rules");

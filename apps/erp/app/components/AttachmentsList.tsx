@@ -17,6 +17,7 @@ import {
   Spinner,
   Subheading,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import {
@@ -122,7 +123,7 @@ export default function AttachmentsList({
               upsert: true
             });
           if (upload.error) {
-            toast.error(t`Failed to upload ${file.name}`);
+            toastError(t`Failed to upload ${file.name}`, upload.error);
           }
         }
         revalidator.revalidate();
@@ -147,7 +148,7 @@ export default function AttachmentsList({
         .company(company.id)
         .remove([a.path]);
       if (error) {
-        toast.error(error.message || t`Error removing file`);
+        toastError(t`Error removing file`, error);
       } else {
         revalidator.revalidate();
       }

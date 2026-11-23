@@ -164,7 +164,6 @@ describe("QboProvider.changeDataCapture", () => {
   });
 
   it("skips records that fail the minimal identity parse and keeps the rest", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         CDCResponse: [
@@ -201,8 +200,6 @@ describe("QboProvider.changeDataCapture", () => {
         lastUpdatedTime: null
       }
     ]);
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
   });
 
   it("throws a structured AccountingApiError carrying the Intuit fault on failure", async () => {

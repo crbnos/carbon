@@ -13,7 +13,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -28,7 +28,7 @@ import {
   SupplierContact
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { contractorValidator } from "~/modules/resources";
+import { contractorValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type ContractorFormProps = {
@@ -38,9 +38,9 @@ type ContractorFormProps = {
 const ContractorForm = ({ initialValues }: ContractorFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const location = useLocation();
-  const onClose = () => closeRoute();
+  const onClose = dialog.close;
 
   const [supplier, setSupplier] = useState<string | null>(
     initialValues?.supplierId ?? null
@@ -53,7 +53,7 @@ const ContractorForm = ({ initialValues }: ContractorFormProps) => {
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
+import type { PlanningGridColumns } from "../production/types";
 import type {
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
@@ -22,6 +23,7 @@ import type {
   getSupplierQuoteLines,
   getSupplierQuotes,
   getSupplierReportContacts,
+  getSupplierStages,
   getSuppliers,
   getSupplierTypes
 } from "./purchasing.service";
@@ -59,9 +61,18 @@ export type PurchaseOrderType =
 export type PurchaseOrderTransactionType =
   Database["public"]["Enums"]["purchaseOrderTransactionType"];
 
-export type PurchasingPlanningItem = NonNullable<
-  Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
->[number];
+export type PurchasingPlanningItem = Omit<
+  NonNullable<
+    Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
+  >[number],
+  keyof PlanningGridColumns | "defaultSupplierId"
+> &
+  PlanningGridColumns & {
+    /** The supplier the row orders from by default: the preferred supplier,
+     *  else the earliest active supplier part; null when the item has
+     *  neither. The Supplier column shows and filters on it. */
+    defaultSupplierId: string | null;
+  };
 
 export type PurchasingRFQ = NonNullable<
   Awaited<ReturnType<typeof getPurchasingRFQs>>["data"]
@@ -78,7 +89,9 @@ export type PurchasingRFQSupplier = NonNullable<
 export type PurchasingRFQStatusType =
   Database["public"]["Enums"]["purchasingRfqStatus"];
 
-export type Supplier = NonNullable<
+export type Supplier = Database["public"]["Views"]["suppliers"]["Row"];
+
+export type SupplierListItem = NonNullable<
   Awaited<ReturnType<typeof getSuppliers>>["data"]
 >[number];
 
@@ -91,8 +104,8 @@ export type SupplierContact = NonNullable<
 >[number];
 
 // Element types of each of the 3 parallel queries in getSupplierReportContacts,
-// keyed by supplier id / supplierId. Used to type the per-supplier report-contact
-// map built in the suppliers.tsx loader and consumed by SuppliersTable's CSV
+// keyed by supplier id / supplierId. Used to type the report contacts the
+// suppliers.tsx loader adds to each row, read by SuppliersTable's CSV
 // export-only columns.
 type SupplierReportContactsResult = Awaited<
   ReturnType<typeof getSupplierReportContacts>
@@ -107,14 +120,11 @@ export type SupplierShippingContact = NonNullable<
   SupplierReportContactsResult[2]["data"]
 >[number];
 
-export type SupplierReportContactsBySupplierId = Record<
-  string,
-  {
-    purchasingContact: SupplierPurchasingContact | null;
-    payment: SupplierPaymentContact | null;
-    shipping: SupplierShippingContact | null;
-  }
->;
+export type SupplierReportContacts = {
+  purchasingContact: SupplierPurchasingContact | null;
+  payment: SupplierPaymentContact | null;
+  shipping: SupplierShippingContact | null;
+};
 
 export type SupplierInteraction = NonNullable<
   Awaited<ReturnType<typeof getSupplierInteraction>>["data"]
@@ -142,6 +152,10 @@ export type SupplierQuoteLine = NonNullable<
 
 export type SupplierQuoteLinePrice = NonNullable<
   Awaited<ReturnType<typeof getSupplierQuoteLinePricesByQuoteId>>["data"]
+>[number];
+
+export type SupplierStage = NonNullable<
+  Awaited<ReturnType<typeof getSupplierStages>>["data"]
 >[number];
 
 export type SupplierType = NonNullable<

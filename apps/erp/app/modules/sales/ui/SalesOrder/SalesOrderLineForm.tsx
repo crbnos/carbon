@@ -40,12 +40,14 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  distinctItemText,
   equals,
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
   round
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -73,10 +75,13 @@ import {
   Number,
   NumberControlled,
   StorageUnit,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
@@ -84,20 +89,22 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
-import { itemType, methodType } from "~/modules/shared";
+import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils";
+import { itemType, methodType } from "~/modules/shared/shared.models";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
   isSalesOrderLocked,
   salesOrderLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type {
   PriceTraceStep,
   SalesOrder,
   SalesOrderLineType
 } from "../../types";
 import { PriceTraceModal } from "../Pricing/PriceTraceModal";
+import { DeliveryDateCheckAlert } from "./DeliveryDateCheckAlert";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -105,12 +112,14 @@ type SalesOrderLineFormProps = {
     assetName?: string;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SalesOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -136,7 +145,11 @@ const SalesOrderLineForm = ({
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
+    taxDate: string | null;
   }>(path.to.salesOrder(orderId));
+  // A picked code's rate on the document's date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(routeData?.taxDate ?? companyToday);
 
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
   const isEditable = !isLocked;
@@ -146,9 +159,23 @@ const SalesOrderLineForm = ({
   const [items] = useItems();
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<SalesOrderLineType | "Item">(
+    "Item"
+  );
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
+  );
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
+  );
+  // Held so the delivery date check can offer its earliest date.
+  const [promisedDate, setPromisedDate] = useState<string | null>(
+    initialValues.promisedDate || null
   );
   const [isPriceResolving, setIsPriceResolving] = useState(false);
   const [itemData, setItemData] = useState<{
@@ -181,12 +208,21 @@ const SalesOrderLineForm = ({
     configuration: initialValues.configuration as ConfiguratorValues | null
   });
   const { configuration } = configurator;
-  const requiresConfiguration = configurator.parameters !== null;
+  const requiresConfiguration =
+    configurator.parameters !== null &&
+    methodTakesConfiguration(itemData.methodType);
 
   const isEditing = initialValues.id !== undefined;
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
     isFixedAsset ? "asset" : "item"
+  );
+
+  const [itemTaxPercent, setItemTaxPercent] = useState(
+    initialValues.taxPercent ?? 0
+  );
+  const [itemTaxCodeId, setItemTaxCodeId] = useState(
+    initialValues.taxCodeId ?? ""
   );
 
   const [assetOptions, setAssetOptions] = useState<
@@ -262,13 +298,15 @@ const SalesOrderLineForm = ({
       });
   }, [pricingRuleId, carbon]);
 
-  const onTypeChange = (t: SalesOrderLineType) => {
-    // @ts-expect-error
-    setLineType(t);
+  const onTypeChange = (t: SalesOrderLineType | "Item") => {
+    setItemFilter(t);
+    // "Item" is the "All Items" filter, always compatible with the selection.
+    if (t === "Item") return;
+    setLineType(t as typeof lineType);
     // Clear itemData only when the new filter excludes the currently selected
     // item — otherwise a stale itemId of the old type would post with the new
-    // salesOrderLineType. "Item" is the "All Items" filter, always compatible.
-    if (!itemData.itemId || t === ("Item" as SalesOrderLineType)) return;
+    // salesOrderLineType.
+    if (!itemData.itemId) return;
     const currentType = items.find((i) => i.id === itemData.itemId)?.type;
     if (currentType && currentType === t) return;
     setItemData({
@@ -284,6 +322,8 @@ const SalesOrderLineForm = ({
       priceTrace: null
     });
   };
+
+  const isService = lineType === "Service";
 
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
@@ -372,7 +412,7 @@ const SalesOrderLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId, taxable"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -391,7 +431,8 @@ const SalesOrderLineForm = ({
           carbon,
           itemId,
           locationId,
-          company.id
+          company.id,
+          { source: true }
         )
       : null;
 
@@ -404,12 +445,24 @@ const SalesOrderLineForm = ({
       priceListId = result.priceListId;
     }
 
+    if (item.data?.type) {
+      setLineType(item.data.type as typeof lineType);
+    }
+    // A non-taxable item takes no tax.
+    if (item.data?.taxable === false) {
+      setItemTaxCodeId("");
+      setItemTaxPercent(0);
+    }
     setItemData({
       itemId,
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       unitPrice: resolvedPrice,
-      uom: item.data?.unitOfMeasureCode ?? "EA",
+      // A service is always sold in "EA"
+      uom:
+        item.data?.type === "Service"
+          ? "EA"
+          : (item.data?.unitOfMeasureCode ?? "EA"),
       storageUnitId: defaultStorageUnitId ?? "",
       modelUploadId: item.data?.modelUploadId ?? null,
       priceListId,
@@ -462,7 +515,8 @@ const SalesOrderLineForm = ({
       carbon,
       itemData.itemId,
       newLocation.value,
-      company.id
+      company.id,
+      { source: true }
     );
 
     setItemData((d) => ({
@@ -483,6 +537,7 @@ const SalesOrderLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             isCollapsible={isEditing}
             defaultCollapsed={false}
@@ -503,7 +558,7 @@ const SalesOrderLineForm = ({
               >
                 <HStack
                   className={cn(
-                    "w-full justify-between items-start",
+                    "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                     type === "modal" && "pr-16"
                   )}
                 >
@@ -538,11 +593,16 @@ const SalesOrderLineForm = ({
                     <ModalCardDescription>
                       {isEditing ? (
                         <div className="flex flex-col items-start gap-1">
-                          <span>
-                            {isFixedAsset
-                              ? initialValues.assetName || assetData.description
-                              : itemData?.description}
-                          </span>
+                          {isFixedAsset ? (
+                            <span>
+                              {initialValues.assetName || assetData.description}
+                            </span>
+                          ) : (
+                            distinctItemText(
+                              getItemReadableId(items, itemData?.itemId),
+                              itemData?.description
+                            ) && <span>{itemData?.description}</span>
+                          )}
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="outline"
@@ -577,7 +637,7 @@ const SalesOrderLineForm = ({
                       )}
                     </ModalCardDescription>
                   </ModalCardHeader>
-                  <div className="flex-shrink-0 flex items-center gap-2">
+                  <div className="flex-shrink-0 flex items-center gap-2 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                     {!isEditing && (
                       <TabsList>
                         <TabsTrigger value="item">
@@ -621,7 +681,11 @@ const SalesOrderLineForm = ({
                       name="priceTrace"
                       value={JSON.stringify(itemData?.priceTrace ?? null)}
                     />
-                    <Hidden name="unitOfMeasureCode" value={itemData.uom} />
+                    <Hidden name="salesOrderLineType" value={lineType} />
+                    <Hidden
+                      name="unitOfMeasureCode"
+                      value={isService ? "EA" : itemData.uom}
+                    />
                     <Hidden
                       name="configuration"
                       value={configuration ? JSON.stringify(configuration) : ""}
@@ -631,10 +695,11 @@ const SalesOrderLineForm = ({
                         <Item
                           autoFocus={!isEditing}
                           name="itemId"
-                          label={i18n._(itemTypeLabel(lineType as "Part"))}
-                          type={lineType as "Part"}
+                          label={i18n._(itemTypeLabel(itemFilter as "Part"))}
+                          type={itemFilter as "Part"}
                           validItemTypes={[...itemType]}
-                          typeFieldName="salesOrderLineType"
+                          // The line type is posted above; the filter is not it.
+                          typeFieldName="itemFilter"
                           value={itemData.itemId}
                           locationId={locationId}
                           onChange={(value) => {
@@ -738,11 +803,43 @@ const SalesOrderLineForm = ({
                                 }
                               />
                             </div>
-                            <DatePicker
-                              name="promisedDate"
-                              label={t`Promised Date`}
-                              termId="sales-order-line-promised-date"
-                            />
+                            {/* A service is promised for the day it starts, so
+                                the server copies the start date across. */}
+                            {!isService && (
+                              <>
+                                <DatePicker
+                                  name="requestedDate"
+                                  label={t`Requested Date`}
+                                />
+                                <DatePicker
+                                  name="promisedDate"
+                                  label={t`Promised Date`}
+                                  termId="sales-order-line-promised-date"
+                                  value={promisedDate ?? undefined}
+                                  onChange={setPromisedDate}
+                                />
+                              </>
+                            )}
+                            {isService && (
+                              <>
+                                <DatePicker
+                                  name="serviceStartDate"
+                                  label={t`Service start`}
+                                  onChange={(date) =>
+                                    setServiceStartDate(date ?? undefined)
+                                  }
+                                />
+                                <DatePicker
+                                  name="serviceEndDate"
+                                  label={t`Service end`}
+                                  minValue={
+                                    serviceStartDate
+                                      ? parseDate(serviceStartDate)
+                                      : undefined
+                                  }
+                                />
+                              </>
+                            )}
                             {[
                               "Part",
                               "Material",
@@ -786,6 +883,20 @@ const SalesOrderLineForm = ({
                         <CustomFormFields table="salesOrderLine" />
                       </div>
 
+                      {!isService && (
+                        <DeliveryDateCheckAlert
+                          orderId={orderId}
+                          lineId={initialValues.id}
+                          lineType={lineType}
+                          itemId={itemData.itemId}
+                          methodType={itemData.methodType}
+                          quantity={saleQuantity}
+                          locationId={locationId}
+                          promisedDate={promisedDate}
+                          onUseEarliestDate={setPromisedDate}
+                        />
+                      )}
+
                       {lineType !== "Comment" && (
                         <div className="w-full">
                           <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">
@@ -797,11 +908,9 @@ const SalesOrderLineForm = ({
                                 <Trans>Tax &amp; Additional Costs</Trans>
                               </Label>
                               <HStack>
-                                {(initialValues?.taxPercent ?? 0) > 0 && (
+                                {itemTaxPercent > 0 && (
                                   <Badge variant="red">
-                                    {percentFormatter.format(
-                                      initialValues?.taxPercent ?? 0
-                                    )}{" "}
+                                    {percentFormatter.format(itemTaxPercent)}{" "}
                                     <Trans>Tax</Trans>
                                   </Badge>
                                 )}
@@ -838,6 +947,7 @@ const SalesOrderLineForm = ({
                                   ))}
 
                                 <IconButton
+                                  aria-expanded={costsDisclosure.isOpen}
                                   icon={<LuChevronRight />}
                                   aria-label={
                                     costsDisclosure.isOpen
@@ -861,9 +971,23 @@ const SalesOrderLineForm = ({
                                 costsDisclosure.isOpen ? "" : "hidden"
                               }`}
                             >
-                              <Number
+                              <TaxCode
+                                name="taxCodeId"
+                                label={t`Tax Code`}
+                                value={itemTaxCodeId}
+                                onChange={(option) => {
+                                  setItemTaxCodeId(option?.value ?? "");
+                                  if (option)
+                                    setItemTaxPercent(
+                                      taxCodeRateOn(option.value) ?? option.rate
+                                    );
+                                }}
+                              />
+                              <NumberControlled
                                 name="taxPercent"
                                 label={t`Tax Percent`}
+                                value={itemTaxPercent}
+                                onChange={setItemTaxPercent}
                                 minValue={0}
                                 maxValue={1}
                                 step={INPUT_STEP.percent}
@@ -1010,6 +1134,7 @@ const SalesOrderLineForm = ({
                                 </Badge>
                               )}
                               <IconButton
+                                aria-expanded={assetCostsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   assetCostsDisclosure.isOpen
@@ -1031,6 +1156,18 @@ const SalesOrderLineForm = ({
                               assetCostsDisclosure.isOpen ? "" : "hidden"
                             }`}
                           >
+                            <TaxCode
+                              name="taxCodeId"
+                              label={t`Tax Code`}
+                              onChange={(option) => {
+                                if (option)
+                                  setAssetData((d) => ({
+                                    ...d,
+                                    taxPercent:
+                                      taxCodeRateOn(option.value) ?? option.rate
+                                  }));
+                              }}
+                            />
                             <NumberControlled
                               name="taxPercent"
                               label={t`Tax Percent`}
@@ -1102,7 +1239,7 @@ const SalesOrderLineForm = ({
                   )}
                 </ModalCardBody>
                 <ModalCardFooter>
-                  {activeTab === "item" && (
+                  {activeTab === "item" && requiresConfiguration && (
                     <ItemConfigureButton
                       configurator={configurator}
                       isDisabled={

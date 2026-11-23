@@ -9,22 +9,25 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { SalesRFQ } from "~/modules/sales";
+import {
+  isSalesRfqLocked,
+  salesRfqLineValidator
+} from "~/modules/sales/sales.models";
 import {
   getOpportunityLineDocuments,
   getSalesRFQ,
   getSalesRFQLine,
-  isSalesRfqLocked,
-  salesRfqLineValidator,
   upsertSalesRFQLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import type { SalesRFQ } from "~/modules/sales/types";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -119,10 +122,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (updateLine.error) {
     throw redirect(
       path.to.salesRfqLine(rfqId, lineId),
-      await flash(
-        request,
-        error(updateLine.error, "Failed to update quote line")
-      )
+      await flash(request, error(updateLine.error, "Failed to update RFQ line"))
     );
   }
 
@@ -195,7 +195,7 @@ export default function SalesRFQLine() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

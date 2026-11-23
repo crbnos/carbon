@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+import { RecordOutlet } from "@carbon/react";
+
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Workflow" }];
-};
+export const meta = moduleMeta("Workflow");
 
 // No breadcrumb here: the detail route ($id.tsx) already emits the "Workflows"
 // list link via detailBreadcrumb, so declaring it on the layout too would render
@@ -22,7 +21,7 @@ export const handle: Handle = {
 export default function WorkflowRoute() {
   return (
     <div className="h-full w-full bg-background">
-      <Outlet />
+      <RecordOutlet />
     </div>
   );
 }

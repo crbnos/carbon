@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { PrintJob } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -15,7 +16,8 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -32,18 +34,20 @@ import {
   LuRefreshCw,
   LuTrash
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { DateTime, Table } from "~/components";
 
 type PrintJobsTableProps = {
   jobs: PrintJob[];
   count: number;
+  nextCursor: string | null;
 };
 
 type ViewContent = {
   content: string;
   contentType: string;
   printJobId: string;
+  /** The dpi the job's ZPL was drawn for. */
+  dpi: number;
 };
 
 const statusConfig: Record<
@@ -140,10 +144,9 @@ const ExpandedRowContent = memo(({ job }: { job: PrintJob }) => {
 });
 ExpandedRowContent.displayName = "ExpandedRowContent";
 
-function parseZplDimensions(zplContent: string) {
+function parseZplDimensions(zplContent: string, dpi: number) {
   const pwMatch = zplContent.match(/\^PW(\d+)/);
   const llMatch = zplContent.match(/\^LL(\d+)/);
-  const dpi = 203;
   const dpmm = Math.round(dpi / 25.4);
 
   const widthInches = pwMatch
@@ -156,7 +159,7 @@ function parseZplDimensions(zplContent: string) {
   return { dpmm, width: widthInches, height: heightInches };
 }
 
-function ZplPreview({ zpl }: { zpl: string }) {
+function ZplPreview({ zpl, dpi }: { zpl: string; dpi: number }) {
   const { t } = useLingui();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +168,7 @@ function ZplPreview({ zpl }: { zpl: string }) {
   useEffect(() => {
     let revoked = false;
     let objectUrl: string | null = null;
-    const { dpmm, width, height } = parseZplDimensions(zpl);
+    const { dpmm, width, height } = parseZplDimensions(zpl, dpi);
 
     fetch(
       `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`,
@@ -198,7 +201,7 @@ function ZplPreview({ zpl }: { zpl: string }) {
       revoked = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [zpl]);
+  }, [zpl, dpi]);
 
   if (loading) {
     return (
@@ -235,26 +238,31 @@ function ZplPreview({ zpl }: { zpl: string }) {
   );
 }
 
-const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
+const PrintJobsTable = memo((props: PrintJobsTableProps) => {
+  const { jobs, count, nextCursor } = props;
   const { t } = useLingui();
-  const fetcher = useFetcher<{
-    success: boolean;
-    message?: string;
-    content?: string;
-    contentType?: string;
-    printJobId?: string;
-  }>();
   const [viewContent, setViewContent] = useState<ViewContent | null>(null);
-
-  useEffect(() => {
-    if (fetcher.data && "content" in fetcher.data && fetcher.data.content) {
-      setViewContent({
-        content: fetcher.data.content,
-        contentType: fetcher.data.contentType as string,
-        printJobId: fetcher.data.printJobId as string
-      });
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("content" in data) {
+        if (data.content) {
+          setViewContent({
+            content: data.content,
+            contentType: data.contentType as string,
+            printJobId: data.printJobId as string,
+            dpi: data.dpi
+          });
+          setIsViewOpen(true);
+        }
+      } else if ("printJobId" in data) {
+        toast.success(t`Reprint job created`);
+      } else {
+        toast.success(t`Print job deleted`);
+      }
     }
-  }, [fetcher.data]);
+  });
 
   const columns = useMemo<ColumnDef<PrintJob>[]>(
     () => [
@@ -276,6 +284,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -297,6 +306,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuFileText />
         }
       },
@@ -369,6 +379,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuCalendar />
         }
       }
@@ -440,14 +451,15 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
         table="printJob"
         withSearch
         withPagination
+        infinite={{ dataKey: "jobs", nextCursor }}
         renderExpandedRow={renderExpandedRow}
         renderContextMenu={renderContextMenu}
       />
       {viewContent && (
         <Modal
-          open
+          open={isViewOpen}
           onOpenChange={(open) => {
-            if (!open) setViewContent(null);
+            if (!open) setIsViewOpen(false);
           }}
         >
           <ModalContent size="large">
@@ -460,7 +472,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
             </ModalHeader>
             <ModalBody>
               {viewContent.contentType === "zpl" ? (
-                <ZplPreview zpl={viewContent.content} />
+                <ZplPreview zpl={viewContent.content} dpi={viewContent.dpi} />
               ) : viewContent.contentType === "pdf" ? (
                 <iframe
                   src={`data:application/pdf;base64,${viewContent.content}`}
@@ -470,7 +482,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
               ) : null}
             </ModalBody>
             <ModalFooter>
-              <Button variant="secondary" onClick={() => setViewContent(null)}>
+              <Button variant="secondary" onClick={() => setIsViewOpen(false)}>
                 <Trans>Close</Trans>
               </Button>
             </ModalFooter>

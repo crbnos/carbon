@@ -5,7 +5,7 @@
 import { Button, cn, getValidChildren, PrefetchLink } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
-import { cloneElement, forwardRef } from "react";
+import { cloneElement, createContext, forwardRef, useContext } from "react";
 import type { LinkProps } from "react-router";
 
 const Breadcrumbs = forwardRef<
@@ -36,6 +36,10 @@ const Breadcrumbs = forwardRef<
 });
 Breadcrumbs.displayName = "Breadcrumbs";
 
+// Whether the item a link sits in is the trail's last. Only the last crumb
+// (the current page) reads at full strength.
+const BreadcrumbPositionContext = createContext({ isLastChild: true });
+
 const BreadcrumbItem = forwardRef<
   HTMLLIElement,
   ComponentProps<"li"> & {
@@ -49,7 +53,11 @@ const BreadcrumbItem = forwardRef<
     {...props}
   >
     {!isFirstChild && <span className="text-muted-foreground">/</span>}
-    {children}
+    <BreadcrumbPositionContext.Provider
+      value={{ isLastChild: isLastChild ?? true }}
+    >
+      {children}
+    </BreadcrumbPositionContext.Provider>
   </li>
 ));
 BreadcrumbItem.displayName = "BreadcrumbItem";
@@ -60,11 +68,13 @@ const BreadcrumbLink = forwardRef<
     isCurrentPage?: boolean;
   }
 >(({ className, children, isCurrentPage, ...props }, ref) => {
+  const { isLastChild } = useContext(BreadcrumbPositionContext);
   return (
     <Button
       variant="ghost"
       className={cn(
         "px-2 outline-none focus-visible:ring-transparent",
+        !isLastChild && "text-muted-foreground hover:text-foreground",
         className
       )}
       asChild

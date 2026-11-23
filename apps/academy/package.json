@@ -8,9 +8,11 @@
     "@carbon/form": "workspace:*",
     "@carbon/content": "workspace:*",
     "@carbon/kv": "workspace:*",
+    "@carbon/locale": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
+    "@lingui/core": "catalog:",
     "@react-aria/i18n": "catalog:",
     "@react-router/dev": "catalog:",
     "@react-router/remix-routes-option-adapter": "catalog:",
@@ -59,8 +61,10 @@
     "dev": "NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem react-router dev",
     "lint": "biome lint --write",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsgo --noEmit",
+    "typecheck": "react-router typegen && tsc --noEmit",
     "typegen": "react-router typegen"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./app/zod.client.ts"
+  ]
 }

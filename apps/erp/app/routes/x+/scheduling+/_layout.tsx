@@ -2,25 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+import { ProductionSections } from "~/modules/production/ui/useProductionSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Schedule" }];
-};
+export const meta = moduleMeta("Schedule");
 
 export const handle: Handle = {
   realtime: ["job", "jobOperation"],
   breadcrumb: msg`Production`,
   to: path.to.production,
-  module: "production"
+  module: "production",
+  boardSidebar: ProductionSections
 };
 
 export default function SchedulingRoute() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

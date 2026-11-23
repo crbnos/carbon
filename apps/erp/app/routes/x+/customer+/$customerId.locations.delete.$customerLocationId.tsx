@@ -5,9 +5,9 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteCustomerLocation } from "~/modules/sales";
+import { deleteCustomerLocation } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,10 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!customerId || !customerLocationId) {
     throw redirect(
       path.to.customers,
-      await flash(
-        request,
-        error(params, "Failed to get a customer location id")
-      )
+      await flash(request, error(null, "Failed to get a customer location id"))
     );
   }
 
@@ -32,10 +29,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customerLocationId
   );
   if (deleteCustomerLocationError) {
-    const errorMessage =
-      deleteCustomerLocationError.code === "23503"
-        ? "Customer location is used elsewhere, cannot delete"
-        : "Failed to delete customer location";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteCustomerLocationError,
+      "Failed to delete customer location",
+      { referenced: "Customer location is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       path.to.customerLocations(customerId),

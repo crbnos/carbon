@@ -1,0 +1,513 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { expect } from "vitest";
+import { issueMaterial } from "../../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { handlesOf } from "../fixtures/handles";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "../fixtures/local-database";
+import { serviceJobFixture } from "../fixtures/service-job";
+
+type Fixture = Awaited<ReturnType<typeof serviceJobFixture>>;
+
+/** The journal lines of the job's parts, as [account, amount], newest last. */
+async function partLines(f: Fixture, serviceJobId: string) {
+  const lines = await f.db
+    .selectFrom("journalLine")
+    .innerJoin("journal", "journal.id", "journalLine.journalId")
+    .select([
+      "journalLine.accountId",
+      "journalLine.amount",
+      "journal.journalEntryId"
+    ])
+    .where("journalLine.companyId", "=", f.companyId)
+    .where("journalLine.documentType", "=", "Service Job Consumption")
+    .where("journalLine.documentId", "=", serviceJobId)
+    .orderBy("journal.journalEntryId")
+    .orderBy("journalLine.amount", "desc")
+    .execute();
+  return lines.map((line) => [line.accountId, Number(line.amount)]);
+}
+
+databaseTest(
+  "a part issued to a Billable job costs Cost of Service and relieves inventory",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("gasket", {
+        quantity: 5,
+        unitCost: 70
+      });
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+
+      const issued = await f.issue({
+        type: "serviceJobInventory",
+        serviceJobId: job.id,
+        itemId,
+        unitOfMeasureCode: "EA",
+        quantity: 1
+      });
+      expect(issued.error).toBeNull();
+
+      expect(await partLines(f, job.id)).toEqual([
+        [f.account("cost-of-service"), 70],
+        [f.account("inventory"), -70]
+      ]);
+
+      const part = await f.db
+        .selectFrom("serviceJobItem")
+        .select(["lineType", "quantity", "unitCost"])
+        .where("serviceJobId", "=", job.id)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(part.lineType).toBe("Part");
+      expect(Number(part.quantity)).toBe(1);
+      expect(Number(part.unitCost)).toBe(70);
+
+      const ledger = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "documentType"])
+        .where("documentId", "=", job.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [row.documentType, Number(row.quantity)])
+      ).toEqual([["Service Job Consumption", -1]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("a part issued to a Warranty job costs warranty", async () => {
+  const f = await serviceJobFixture();
+  try {
+    const { itemId, locationId } = await f.addStockedItem("seal", {
+      quantity: 5,
+      unitCost: 70
+    });
+    const job = await f.addJob({ locationId, coverage: "Warranty" });
+
+    const issued = await f.issue({
+      type: "serviceJobInventory",
+      serviceJobId: job.id,
+      itemId,
+      unitOfMeasureCode: "EA",
+      quantity: 2
+    });
+    expect(issued.error).toBeNull();
+
+    expect(await partLines(f, job.id)).toEqual([
+      [f.account("warranty"), 140],
+      [f.account("inventory"), -140]
+    ]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "returning a part reverses it at the issued cost and removes the line",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("valve", {
+        quantity: 5,
+        unitCost: 70
+      });
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+
+      const issued = await f.issue({
+        type: "serviceJobInventory",
+        serviceJobId: job.id,
+        itemId,
+        unitOfMeasureCode: "EA",
+        quantity: 2
+      });
+      expect(issued.error).toBeNull();
+      const serviceJobItemId = issued.data?.serviceJobItemId as string;
+
+      // The item's cost moves before the return: the return still books at
+      // what the job was charged.
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 999 })
+        .where("itemId", "=", itemId)
+        .execute();
+
+      const partial = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId,
+        quantity: 1
+      });
+      expect(partial.error).toBeNull();
+      const line = await f.db
+        .selectFrom("serviceJobItem")
+        .select(["quantity"])
+        .where("id", "=", serviceJobItemId)
+        .executeTakeFirstOrThrow();
+      expect(Number(line.quantity)).toBe(1);
+
+      const rest = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId
+      });
+      expect(rest.error).toBeNull();
+
+      expect(await partLines(f, job.id)).toEqual([
+        [f.account("cost-of-service"), 140],
+        [f.account("inventory"), -140],
+        [f.account("inventory"), 70],
+        [f.account("cost-of-service"), -70],
+        [f.account("inventory"), 70],
+        [f.account("cost-of-service"), -70]
+      ]);
+      const remaining = await f.db
+        .selectFrom("serviceJobItem")
+        .select(["id"])
+        .where("serviceJobId", "=", job.id)
+        .execute();
+      expect(remaining).toEqual([]);
+
+      const onHand = await f.db
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(onHand.quantity)).toBe(5);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("a Completed job takes no parts", async () => {
+  const f = await serviceJobFixture();
+  try {
+    const { itemId, locationId } = await f.addStockedItem("bolt", {
+      quantity: 5,
+      unitCost: 70
+    });
+    const job = await f.addJob({ locationId, status: "Completed" });
+
+    const issued = await f.issue({
+      type: "serviceJobInventory",
+      serviceJobId: job.id,
+      itemId,
+      unitOfMeasureCode: "EA",
+      quantity: 1
+    });
+    expect(issued.error?.message).toMatch(/This job is closed/);
+
+    const parts = await f.db
+      .selectFrom("serviceJobItem")
+      .select(["id"])
+      .where("serviceJobId", "=", job.id)
+      .execute();
+    expect(parts).toEqual([]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "a serial part is issued by its serial and returned to Available",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("module", {
+        quantity: 0,
+        unitCost: 70
+      });
+      const trackedEntityId = `${f.prefix}-serial-1`;
+      await f.db
+        .updateTable("item")
+        .set({ itemTrackingType: "Serial" })
+        .where("id", "=", itemId)
+        .execute();
+      await f.db
+        .insertInto("trackedEntity")
+        .values({
+          id: trackedEntityId,
+          readableId: "SN-1",
+          quantity: 1,
+          sourceDocument: "Item",
+          sourceDocumentId: itemId,
+          itemId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      await f.db
+        .insertInto("itemLedger")
+        .values({
+          postingDate: "2026-01-01",
+          entryType: "Positive Adjmt.",
+          itemId,
+          locationId,
+          quantity: 1,
+          trackedEntityId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      await f.db
+        .insertInto("costLedger")
+        .values({
+          itemLedgerType: "Positive Adjmt.",
+          costLedgerType: "Direct Cost",
+          adjustment: false,
+          itemId,
+          quantity: 1,
+          cost: 70,
+          remainingQuantity: 1,
+          trackedEntityId,
+          postingDate: "2026-01-01",
+          companyId: f.companyId
+        })
+        .execute();
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+
+      const issued = await f.issue({
+        type: "serviceJobTrackedEntities",
+        serviceJobId: job.id,
+        itemId,
+        unitOfMeasureCode: "EA",
+        children: [{ trackedEntityId, quantity: 1 }]
+      });
+      expect(issued.error).toBeNull();
+      const serviceJobItemId = issued.data?.serviceJobItemId as string;
+      const part = await f.db
+        .selectFrom("serviceJobItem")
+        .select(["unitCost"])
+        .where("id", "=", serviceJobItemId)
+        .executeTakeFirstOrThrow();
+      expect(Number(part.unitCost)).toBe(70);
+
+      const returned = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId
+      });
+      expect(returned.error).toBeNull();
+
+      expect(await partLines(f, job.id)).toEqual([
+        [f.account("cost-of-service"), 70],
+        [f.account("inventory"), -70],
+        [f.account("inventory"), 70],
+        [f.account("cost-of-service"), -70]
+      ]);
+      const entity = await f.db
+        .selectFrom("trackedEntity")
+        .select(["status"])
+        .where("id", "=", trackedEntityId)
+        .executeTakeFirstOrThrow();
+      expect(entity.status).toBe("Available");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "two partial returns of one part at the same time leave the line at what is still issued",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("seal", {
+        quantity: 5,
+        unitCost: 70
+      });
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+      const issued = await f.issue({
+        type: "serviceJobInventory",
+        serviceJobId: job.id,
+        itemId,
+        unitOfMeasureCode: "EA",
+        quantity: 2
+      });
+      expect(issued.error).toBeNull();
+      const serviceJobItemId = issued.data?.serviceJobItemId as string;
+
+      // Hold the job's row lock while both returns start, so each one reads
+      // the line before the other has changed it.
+      let release: () => void = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let locked: () => void = () => {};
+      const isLocked = new Promise<void>((resolve) => {
+        locked = resolve;
+      });
+      const holder = f.db.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("serviceJob")
+          .select("id")
+          .where("id", "=", job.id)
+          .forUpdate()
+          .execute();
+        locked();
+        await held;
+      });
+      await isLocked;
+      // The fixture's pool has one connection: each return gets its own.
+      const connections = await Promise.all([
+        connectLocalTestDatabase(),
+        connectLocalTestDatabase()
+      ]);
+      let results: { error: unknown }[];
+      try {
+        const returns = Promise.all(
+          connections.map((db) =>
+            invokePosting(
+              handlesOf({ db, companyId: f.companyId, userId: f.ctx.userId }),
+              "issue",
+              { type: "serviceJobUnconsume", serviceJobItemId, quantity: 1 },
+              issueMaterial
+            )
+          )
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        release();
+        await holder;
+        results = await returns;
+      } finally {
+        await Promise.all(connections.map((db) => db.destroy()));
+      }
+      expect(results.map((result) => result.error)).toEqual([null, null]);
+
+      // Both units are back: the line is gone, not left at a stale 1.
+      const remaining = await f.db
+        .selectFrom("serviceJobItem")
+        .select(["id", "quantity"])
+        .where("serviceJobId", "=", job.id)
+        .execute();
+      expect(remaining).toEqual([]);
+      const onHand = await f.db
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(onHand.quantity)).toBe(5);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "returning one of two serials of a part reverses that serial's own cost",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("module", {
+        quantity: 0,
+        unitCost: 70
+      });
+      await f.db
+        .updateTable("item")
+        .set({ itemTrackingType: "Serial" })
+        .where("id", "=", itemId)
+        .execute();
+      const serials = [
+        { id: `${f.prefix}-serial-a`, readableId: "SN-A", cost: 70 },
+        { id: `${f.prefix}-serial-b`, readableId: "SN-B", cost: 100 }
+      ];
+      await f.db
+        .insertInto("trackedEntity")
+        .values(
+          serials.map((serial) => ({
+            id: serial.id,
+            readableId: serial.readableId,
+            quantity: 1,
+            sourceDocument: "Item",
+            sourceDocumentId: itemId,
+            itemId,
+            companyId: f.companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+      await f.db
+        .insertInto("itemLedger")
+        .values(
+          serials.map((serial) => ({
+            postingDate: "2026-01-01",
+            entryType: "Positive Adjmt." as const,
+            itemId,
+            locationId,
+            quantity: 1,
+            trackedEntityId: serial.id,
+            companyId: f.companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+      await f.db
+        .insertInto("costLedger")
+        .values(
+          serials.map((serial) => ({
+            itemLedgerType: "Positive Adjmt." as const,
+            costLedgerType: "Direct Cost" as const,
+            adjustment: false,
+            itemId,
+            quantity: 1,
+            cost: serial.cost,
+            remainingQuantity: 1,
+            trackedEntityId: serial.id,
+            postingDate: "2026-01-01",
+            companyId: f.companyId
+          }))
+        )
+        .execute();
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+
+      const issue = (trackedEntityId: string) =>
+        f.issue({
+          type: "serviceJobTrackedEntities",
+          serviceJobId: job.id,
+          itemId,
+          unitOfMeasureCode: "EA",
+          children: [{ trackedEntityId, quantity: 1 }]
+        });
+      const a = await issue(serials[0]!.id);
+      expect(a.error).toBeNull();
+      const b = await issue(serials[1]!.id);
+      expect(b.error).toBeNull();
+
+      const returnedB = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId: b.data?.serviceJobItemId as string
+      });
+      expect(returnedB.error).toBeNull();
+      const returnedA = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId: a.data?.serviceJobItemId as string
+      });
+      expect(returnedA.error).toBeNull();
+
+      const reversals = await f.db
+        .selectFrom("costLedger")
+        .select(["trackedEntityId", "cost"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Service Job Consumption")
+        .where("documentId", "=", job.id)
+        .where("quantity", ">", 0)
+        .orderBy("cost", "desc")
+        .execute();
+      expect(
+        reversals.map((row) => [row.trackedEntityId, Number(row.cost)])
+      ).toEqual([
+        [serials[1]!.id, 100],
+        [serials[0]!.id, 70]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

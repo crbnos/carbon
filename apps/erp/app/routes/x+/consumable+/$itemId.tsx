@@ -5,33 +5,33 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useRouteData } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Await, Outlet, useLoaderData, useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
-import type { ConsumableSummary, ItemFile } from "~/modules/items";
 import {
   getConsumable,
   getItemFiles,
+  getItemTaxable,
   getMaterialUsedIn,
   getPickMethods,
-  getSupplierParts
-} from "~/modules/items";
-import { streamItemSupersession } from "~/modules/items/items.server";
+  getSupplierParts,
+  streamItemSupersession
+} from "~/modules/items/items.service";
+import type { ConsumableSummary, ItemFile } from "~/modules/items/types";
 import {
   ConsumableHeader,
   ConsumableProperties
 } from "~/modules/items/ui/Consumables";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -42,10 +42,8 @@ export const handle: Handle = {
   module: "items"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["itemId"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.consumableSummary?.readableIdWithRevision, "Consumable");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -55,6 +53,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+
+  const taxable = getItemTaxable(client, itemId, companyId);
 
   const { supersession, supersededBy } = streamItemSupersession(
     client,
@@ -82,6 +82,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     consumableSummary: consumableSummary.data,
+    taxable: (await taxable).data?.taxable ?? true,
     supersession,
     supersededBy,
     files: getItemFiles(client, itemId, companyId),
@@ -93,6 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ConsumableRoute() {
+  const { t } = useLingui();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
@@ -111,6 +113,7 @@ export default function ConsumableRoute() {
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
+            explorerLabel={t`Used In`}
             explorer={
               <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto">
@@ -240,7 +243,7 @@ export default function ConsumableRoute() {
             }
             content={
               <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                <Outlet />
+                <RecordOutlet />
               </div>
             }
             properties={<ConsumableProperties key={itemId} />}

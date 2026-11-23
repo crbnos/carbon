@@ -9,8 +9,8 @@ import {
   isHeic,
   MediaUploader
 } from "@carbon/files/media";
-import { cn, toast } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Button, cn, toastError, useViewport } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -25,6 +25,11 @@ interface FileDropzoneProps {
   disabled?: boolean;
   /** Override the wrapper classes (e.g. drop the default top margin). */
   className?: string;
+  /**
+   * The phone Upload button's variant. Pass `primary` where the dropzone is
+   * the only way to fill an empty slot; keep `secondary` beside a list.
+   */
+  phoneButtonVariant?: "primary" | "secondary";
 }
 
 const FileDropzone: React.FC<FileDropzoneProps> = ({
@@ -32,9 +37,11 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   accept,
   multiple = true,
   disabled = false,
-  className = "mt-4"
+  className = "mt-4",
+  phoneButtonVariant = "secondary"
 }) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const [isConverting, setIsConverting] = useState(false);
@@ -51,10 +58,11 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
       try {
         files = await uploader.prepareForUpload(files);
       } catch (error) {
-        toast.error(
+        toastError(
           error instanceof DuplicateFileNameError
             ? t`Duplicate file names after image conversion`
-            : t`Failed to convert image`
+            : t`Failed to convert image`,
+          error
         );
         return;
       } finally {
@@ -65,12 +73,31 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   };
 
   const isDisabled = disabled || isConverting;
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: onDropWithConversion,
     accept,
     multiple,
     disabled: isDisabled
   });
+
+  // Phones cannot drag files in: one Upload button opens the same picker.
+  if (isPhone) {
+    return (
+      <div className={className}>
+        <input {...getInputProps()} />
+        <Button
+          variant={phoneButtonVariant}
+          size="lg"
+          leftIcon={<LuCloudUpload />}
+          isDisabled={isDisabled}
+          className="w-full"
+          onClick={() => open()}
+        >
+          <Trans>Upload</Trans>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -38,7 +38,7 @@ import {
 import { itemTypeIdLabel } from "~/components/Form/itemTypeLabel";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { usePermissions } from "~/hooks";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -208,6 +208,23 @@ export function getLinkToItemDetails(type: ItemType, id: string) {
       return path.to.consumableDetails(id);
     case "Service":
       return path.to.serviceDetails(id);
+    default:
+      throw new Error("Invalid type");
+  }
+}
+
+export function getLinkToItemPurchasing(type: ItemType, id: string) {
+  switch (type) {
+    case "Part":
+      return path.to.partPurchasing(id);
+    case "Material":
+      return path.to.materialPurchasing(id);
+    case "Tool":
+      return path.to.toolPurchasing(id);
+    case "Consumable":
+      return path.to.consumablePurchasing(id);
+    case "Service":
+      return path.to.servicePurchasing(id);
     default:
       throw new Error("Invalid type");
   }

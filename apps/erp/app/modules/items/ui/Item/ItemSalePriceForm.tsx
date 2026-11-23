@@ -19,9 +19,14 @@ import { itemUnitSalePriceValidator } from "../../items.models";
 
 type ItemSalePriceFormProps = {
   initialValues: z.infer<typeof itemUnitSalePriceValidator>;
+  /** Only a shipped serial becomes a customer asset with a warranty. */
+  isSerialTracked?: boolean;
 };
 
-const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
+const ItemSalePriceForm = ({
+  initialValues,
+  isSerialTracked = false
+}: ItemSalePriceFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
   const { company } = useUser();
@@ -72,6 +77,22 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
               name="allowInvoiceDiscount"
               label={t`Allow Invoice Discount`}
             /> */}
+            {isSerialTracked && (
+              <>
+                <Number
+                  name="laborWarrantyMonths"
+                  label={t`Labor Warranty (months)`}
+                  helperText={t`Sets the labor warranty of a serial when it ships`}
+                  minValue={0}
+                />
+                <Number
+                  name="partsWarrantyMonths"
+                  label={t`Parts Warranty (months)`}
+                  helperText={t`Sets the parts warranty of a serial when it ships`}
+                  minValue={0}
+                />
+              </>
+            )}
             <CustomFormFields table="partUnitSalePrice" />
           </div>
         </CardContent>

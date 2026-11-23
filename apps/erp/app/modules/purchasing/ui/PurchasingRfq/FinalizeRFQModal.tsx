@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LuMailX } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { SupplierContact } from "~/components/Form";
@@ -28,6 +28,7 @@ import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { purchasingRfqFinalizeValidator } from "../../purchasing.models";
 import type { PurchasingRFQLine } from "../../types";
+import SupplierFilesPicker from "../SupplierQuote/SupplierFilesPicker";
 
 type FinalizeRFQModalProps = {
   rfqId: string;
@@ -37,20 +38,43 @@ type FinalizeRFQModalProps = {
     supplierId: string;
     supplier: { id: string; name: string };
   }[];
+  open?: boolean;
   onClose: () => void;
 };
 
 const FinalizeRFQModal = ({
+  open = true,
+  onClose,
+  ...props
+}: FinalizeRFQModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    <ModalContent>
+      <FinalizeRFQBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const FinalizeRFQBody = ({
   rfqId,
   lines,
   suppliers,
   onClose
-}: FinalizeRFQModalProps) => {
+}: Omit<FinalizeRFQModalProps, "open">) => {
   const { t } = useLingui();
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
   const fetcher = useFetcher<{ error: string | null }>();
   const isLoading = fetcher.state !== "idle";
+  const [filesLoading, setFilesLoading] = useState(() =>
+    lines.some((line) => line.itemId)
+  );
 
   useEffect(() => {
     if (fetcher.state === "loading") {
@@ -68,102 +92,101 @@ const FinalizeRFQModal = ({
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ValidatedForm
+      method="post"
+      validator={purchasingRfqFinalizeValidator}
+      action={path.to.purchasingRfqFinalize(rfqId)}
+      onSubmit={onClose}
+      defaultValues={defaultValues}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={purchasingRfqFinalizeValidator}
-          action={path.to.purchasingRfqFinalize(rfqId)}
-          onSubmit={onClose}
-          defaultValues={defaultValues}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Send RFQ to Suppliers</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              Create supplier quotes and send quote requests to the selected
-              suppliers.
-            </ModalDescription>
-          </ModalHeader>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Send RFQ to Suppliers</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          Create supplier quotes and send quote requests to the selected
+          suppliers.
+        </ModalDescription>
+      </ModalHeader>
 
-          <ModalBody>
-            <VStack spacing={4}>
-              {!canEmail ? (
-                <Alert variant="warning">
-                  <LuMailX className="h-4 w-4" />
-                  <AlertTitle>
-                    <Trans>Email notifications not configured</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    Configure the Resend integration to enable email
-                    notifications. Supplier quotes will still be created and you
-                    can share links manually.
-                  </AlertDescription>
-                </Alert>
-              ) : null}
-              <VStack spacing={4} className="w-full">
-                {suppliers.map((supplier, index) => (
-                  <VStack
-                    key={supplier.id}
-                    spacing={2}
-                    className="w-full p-4 border rounded-lg"
-                  >
-                    <HStack className="w-full justify-between">
-                      <Heading size="h4" as="h3">
-                        {supplier.supplier.name}
-                      </Heading>
-                    </HStack>
+      <ModalBody>
+        <VStack spacing={4}>
+          {!canEmail ? (
+            <Alert variant="warning">
+              <LuMailX className="h-4 w-4" />
+              <AlertTitle>
+                <Trans>Email notifications not configured</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                Configure the Resend integration to enable email notifications.
+                Supplier quotes will still be created and you can share links
+                manually.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <VStack spacing={4} className="w-full">
+            {suppliers.map((supplier, index) => (
+              <VStack
+                key={supplier.id}
+                spacing={2}
+                className="w-full p-4 border rounded-lg"
+              >
+                <HStack className="w-full justify-between">
+                  <Heading size="h4" as="h3">
+                    {supplier.supplier.name}
+                  </Heading>
+                </HStack>
 
-                    <input
-                      type="hidden"
-                      name={`suppliers[${index}].supplierId`}
-                      value={supplier.supplierId}
-                    />
-                    <input
-                      type="hidden"
-                      name={`suppliers[${index}].rfqSupplierId`}
-                      value={supplier.id}
-                    />
+                <input
+                  type="hidden"
+                  name={`suppliers[${index}].supplierId`}
+                  value={supplier.supplierId}
+                />
+                <input
+                  type="hidden"
+                  name={`suppliers[${index}].rfqSupplierId`}
+                  value={supplier.id}
+                />
 
-                    {canEmail && (
-                      <SupplierContact
-                        name={`suppliers[${index}].contactId`}
-                        supplier={supplier.supplierId}
-                        label={t`Contact (optional)`}
-                      />
-                    )}
-                  </VStack>
-                ))}
+                {canEmail && (
+                  <SupplierContact
+                    name={`suppliers[${index}].contactId`}
+                    supplier={supplier.supplierId}
+                    label={t`Contact (optional)`}
+                    warnIfNoEmail
+                  />
+                )}
               </VStack>
+            ))}
+          </VStack>
 
-              <div className="text-sm text-muted-foreground">
-                {lines.length} line item{lines.length !== 1 ? "s" : ""} will be
-                included in each supplier quote.
-              </div>
-            </VStack>
-          </ModalBody>
+          <SupplierFilesPicker
+            lines={lines}
+            onLoadingChange={setFilesLoading}
+          />
 
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button type="submit" isDisabled={isLoading} isLoading={isLoading}>
-              Send to {suppliers.length} Supplier
-              {suppliers.length !== 1 ? "s" : ""}
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          <div className="text-sm text-muted-foreground">
+            {lines.length} line item{lines.length !== 1 ? "s" : ""} will be
+            included in each supplier quote.
+          </div>
+        </VStack>
+      </ModalBody>
+
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          isDisabled={isLoading || filesLoading}
+          isLoading={isLoading}
+        >
+          Send to {suppliers.length} Supplier
+          {suppliers.length !== 1 ? "s" : ""}
+        </Button>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

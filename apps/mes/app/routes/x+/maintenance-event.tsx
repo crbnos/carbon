@@ -10,7 +10,6 @@ import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import {
   endMaintenanceEvent,
   getActiveMaintenanceEventByEmployee,
@@ -33,7 +32,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const workCenterId = formData.get("workCenterId") as string;
 
   if (!dispatchId) {
-    return data({}, await flash(request, error("Dispatch ID is required")));
+    return data(
+      {},
+      await flash(request, error(null, "Dispatch ID is required"))
+    );
   }
 
   const serviceRole = await getCarbonServiceRole();
@@ -58,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
       : null
   ]);
   if (!ownedDispatch.data || (ownedWorkCenter && !ownedWorkCenter.data)) {
-    logger.warn("Dispatch or work center not found in company", {
+    logger.warning("Dispatch or work center not found in company", {
       companyId,
       dispatchId,
       workCenterId,
@@ -66,7 +68,13 @@ export async function action({ request }: ActionFunctionArgs) {
     });
     return data(
       {},
-      await flash(request, error(null, "Maintenance dispatch not found"))
+      await flash(
+        request,
+        error(
+          ownedDispatch.error ?? ownedWorkCenter?.error ?? null,
+          "Maintenance dispatch not found"
+        )
+      )
     );
   }
 
@@ -161,28 +169,20 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const posting = await postMaintenanceLabor(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        maintenanceDispatchIds: [dispatchId],
-        companyId,
-        userId
-      }
-    );
+    const posting = await postMaintenanceLabor(serviceRole, {
+      maintenanceDispatchIds: [dispatchId],
+      companyId,
+      userId
+    });
     if (posting.error) {
-      logger.error("Failed to post maintenance labor", {
-        companyId,
-        dispatchId,
-        error: posting.error
-      });
       return data(
         {},
         await flash(
           request,
           error(
             posting.error,
-            "Maintenance paused, but its labor cost did not post"
+            "Maintenance paused, but its labor cost did not post",
+            { dispatchId }
           )
         )
       );
@@ -224,23 +224,11 @@ export async function action({ request }: ActionFunctionArgs) {
     await stampScheduleIfOffline();
 
     // Completion closed every open event on the dispatch — post their labor.
-    const posting = await postMaintenanceLabor(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        maintenanceDispatchIds: [dispatchId],
-        companyId,
-        userId
-      }
-    );
-    if (posting.error) {
-      logger.error("Failed to post maintenance labor", {
-        companyId,
-        dispatchId,
-        error: posting.error
-      });
-    }
-
+    const posting = await postMaintenanceLabor(serviceRole, {
+      maintenanceDispatchIds: [dispatchId],
+      companyId,
+      userId
+    });
     throw redirect(
       path.to.maintenance,
       await flash(
@@ -248,7 +236,8 @@ export async function action({ request }: ActionFunctionArgs) {
         posting.error
           ? error(
               posting.error,
-              "Maintenance completed, but its labor cost did not post"
+              "Maintenance completed, but its labor cost did not post",
+              { dispatchId }
             )
           : success("Maintenance completed")
       )

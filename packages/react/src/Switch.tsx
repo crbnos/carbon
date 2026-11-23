@@ -7,7 +7,7 @@
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
-
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 
 const variations = {
@@ -37,20 +37,26 @@ const Switch = forwardRef<
   SwitchProps
 >(({ className, label, variant, ...props }, ref) => {
   const { container, root, thumb, text } = variations[variant ?? "large"];
+  // Inside a FormControl the field's error, helper text and glossary
+  // definition describe the switch.
+  const { ariaProps } = useFormControl(props);
 
   return (
     <SwitchPrimitives.Root
       className={cn(
         "group flex items-center transition-colors focus-visible:outline-none",
+        // Phones: a 44x44 hit area around the visual switch.
+        "max-md:hit-area",
         container,
         className
       )}
       {...props}
+      aria-describedby={ariaProps["aria-describedby"]}
       ref={ref}
     >
       <div
         className={cn(
-          "inline-flex shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-xs transition-all outline-none group-focus-visible:border-ring group-focus-visible:ring-[3px] group-focus-visible:ring-ring/50 group-disabled:cursor-not-allowed group-disabled:opacity-50 group-data-[state=checked]:bg-primary group-data-[state=unchecked]:bg-input dark:group-data-[state=unchecked]:bg-input/80",
+          "inline-flex shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-xs transition-[background-color,border-color,box-shadow] outline-none group-focus-visible:border-ring group-focus-visible:ring-[3px] group-focus-visible:ring-ring/50 group-disabled:cursor-not-allowed group-disabled:opacity-50 group-data-[state=checked]:bg-primary group-data-[state=unchecked]:bg-input dark:group-data-[state=unchecked]:bg-input/80",
           root
         )}
       >

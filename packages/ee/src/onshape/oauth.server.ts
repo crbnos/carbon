@@ -5,10 +5,8 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
-import {
-  getConflictingOnshapeIntegration,
-  type OnshapeIntegrationId
-} from "./lib/connection";
+import { getConflictingOnshapeConnection } from "./lib/connection";
+import type { OnshapeOAuthIntegrationId } from "./lib/integration-id";
 import {
   getOnshapeAuthorizeUrl,
   getOnshapeOAuthConfig,
@@ -23,7 +21,7 @@ import {
  */
 export async function loadOnshapeOAuthConfig(
   companyId: string,
-  integrationId: OnshapeIntegrationId
+  integrationId: OnshapeOAuthIntegrationId
 ): Promise<OnshapeOAuthConfig | null> {
   const serviceRole = getCarbonServiceRole();
   const integration = await serviceRole
@@ -58,22 +56,19 @@ export type OnshapeAuthorizationStart =
   | { ok: false; reason: "not-configured" | "connection-conflict" };
 
 /**
- * Start the OAuth round trip for an Onshape connection: resolve its client,
- * refuse while the OTHER Onshape connection is active, and issue the state the
- * callback will consume. The state is bound to this browser, user, company and
- * integration — otherwise anyone could hand a victim a callback URL carrying
- * their own Onshape code and link the victim's company to the attacker's
- * account.
+ * Refuses a connection while the other one of its kind (sync or panel) is
+ * active. The state is bound to this browser, user, company and integration,
+ * so a callback URL carrying another account's code is refused.
  */
 export async function beginOnshapeAuthorization(
   request: Request,
   params: {
-    integrationId: OnshapeIntegrationId;
+    integrationId: OnshapeOAuthIntegrationId;
     userId: string;
     companyId: string;
   }
 ): Promise<OnshapeAuthorizationStart> {
-  const conflict = await getConflictingOnshapeIntegration(
+  const conflict = await getConflictingOnshapeConnection(
     getCarbonServiceRole(),
     params.companyId,
     params.integrationId

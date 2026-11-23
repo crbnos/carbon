@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PostgrestError } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
-import type { QuantityEffect } from "../shared";
+import type { QuantityEffect } from "../shared/types";
 import type {
   getCustomer,
   getCustomerBankAccounts,
@@ -19,9 +20,7 @@ import type {
   getPricingRule,
   getPricingRules,
   getQuoteLinePrices,
-  getQuoteLines,
   getQuoteMakeMethod,
-  getQuoteMaterials,
   getQuoteMethodTrees,
   getQuoteOperation,
   getQuotePayment,
@@ -37,6 +36,7 @@ import type {
   priceSourceTypes
 } from "./sales.service";
 import type {
+  getQuoteLines,
   pricingRuleConfigurationPriceValidator,
   QuoteLinePriceSource
 } from "./sales.utils";
@@ -96,6 +96,8 @@ export type PriceListRow = {
 export type PriceListResult = {
   data: PriceListRow[];
   count: number;
+  /** A failed read; the rows are then incomplete and must not be shown as the list. */
+  error: PostgrestError | null;
 };
 
 export type PriceResolutionInput = {
@@ -123,6 +125,9 @@ export type PriceTraceStep = {
   amount: number;
   adjustment?: number;
   ruleId?: string;
+  // The price override an Override / Type Override / All Override step
+  // applied, so the trace can open it.
+  overrideId?: string;
   // A readable name for the step's badge — the parameter label on a
   // Configuration step.
   label?: string;
@@ -178,7 +183,9 @@ export type CostEffects = {
   toolCost: QuantityEffect[];
 };
 
-export type Customer = NonNullable<
+export type Customer = Database["public"]["Views"]["customers"]["Row"];
+
+export type CustomerListItem = NonNullable<
   Awaited<ReturnType<typeof getCustomers>>["data"]
 >[number];
 
@@ -234,10 +241,6 @@ export type QuotationListItem = NonNullable<
 
 export type QuotationLine = NonNullable<
   Awaited<ReturnType<typeof getQuoteLines>>["data"]
->[number];
-
-export type QuotationMaterial = NonNullable<
-  Awaited<ReturnType<typeof getQuoteMaterials>>["data"]
 >[number];
 
 export type QuotationOperation = NonNullable<

@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useSubstance } from "~/components/Form/Substance";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialFinish } from "../../types";
@@ -31,10 +32,11 @@ import type { MaterialFinish } from "../../types";
 type MaterialFinishesTableProps = {
   data: MaterialFinish[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MaterialFinishesTable = memo(
-  ({ data, count }: MaterialFinishesTableProps) => {
+  ({ data, count, infinite }: MaterialFinishesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -50,6 +52,7 @@ const MaterialFinishesTable = memo(
           header: t`Substance`,
           cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
           meta: {
+            mobile: "P2",
             icon: <LuGlassWater />,
             filter: {
               type: "static",
@@ -76,6 +79,7 @@ const MaterialFinishesTable = memo(
               </Hyperlink>
             ),
           meta: {
+            mobile: "P1",
             icon: <LuDessert />
           }
         },
@@ -159,6 +163,7 @@ const MaterialFinishesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

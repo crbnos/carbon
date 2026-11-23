@@ -5,142 +5,56 @@
 import { describe, expect, it } from "vitest";
 import { completeJobOperationBatchValidator } from "./models";
 
-// The Complete Batch form submits variable-length per-member quantities as a
-// nested array (ValidatedForm), with quantity/scrap coerced from form strings via
-// zfd.numeric. The validator must parse that shape into a typed array the
-// batch-operations server fn "complete" path consumes. See
-// .ai/specs/2026-08-21-job-operation-batching.md.
+function parse(members: Record<string, unknown>[]) {
+  return completeJobOperationBatchValidator.safeParse({
+    batchId: "bat_1",
+    members
+  });
+}
+
 describe("completeJobOperationBatchValidator", () => {
-  it("parses per-member quantities and optional scrap", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
-      members: [
-        { jobOperationId: "op_1", quantity: 5 },
-        { jobOperationId: "op_2", quantity: 20, scrapQuantity: 2 },
-        { jobOperationId: "op_3", quantity: 10 }
-      ]
-    });
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.batchId).toBe("bat_1");
-      expect(result.data.members).toHaveLength(3);
-      expect(result.data.members[1]).toEqual({
-        jobOperationId: "op_2",
-        quantity: 20,
-        scrapQuantity: 2
-      });
-    }
+  it("parses per-member form strings into numbers", () => {
+    expect(
+      parse([
+        { jobOperationId: "op_1", quantity: "7", scrapQuantity: "1" },
+        { jobOperationId: "op_2", quantity: "20" }
+      ]).data?.members
+    ).toEqual([
+      { jobOperationId: "op_1", quantity: 7, scrapQuantity: 1 },
+      { jobOperationId: "op_2", quantity: 20 }
+    ]);
   });
 
-  it("coerces numeric strings from the form (zfd.numeric)", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
-      members: [{ jobOperationId: "op_1", quantity: "7", scrapQuantity: "1" }]
-    });
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.members[0]).toEqual({
-        jobOperationId: "op_1",
-        quantity: 7,
-        scrapQuantity: 1
-      });
-    }
+  it("keeps fractional quantities, rounded to internal precision", () => {
+    // Operation quantities can be fractional for weight/length units of measure.
+    expect(
+      parse([
+        { jobOperationId: "op_1", quantity: 0.123456, scrapQuantity: 0.25 }
+      ]).data?.members
+    ).toEqual([
+      { jobOperationId: "op_1", quantity: 0.12346, scrapQuantity: 0.25 }
+    ]);
   });
 
-  it("rejects an empty members array", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
-      members: []
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects a missing batchId", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      members: [{ jobOperationId: "op_1", quantity: 5 }]
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects a negative quantity", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
+  it.each([
+    { name: "no members", members: [] },
+    {
+      name: "a negative quantity",
       members: [{ jobOperationId: "op_1", quantity: -1 }]
-    });
-    expect(result.success).toBe(false);
-  });
-
-  // An excluded ("Not in this run") member's quantity input is disabled, so its
-  // NumberControlled is omitted from FormData entirely — the member arrives with
-  // NO `quantity` key. The validator must accept that (quantity is optional); the
-  // route then forces the excluded member to 0. This is the revert-guard for
-  // making `quantity` optional.
-  it("accepts an excluded member with no quantity key", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
-      members: [
-        { jobOperationId: "op_1", quantity: 5 },
-        { jobOperationId: "op_2", excluded: "true" }
-      ]
-    });
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.members[1].quantity).toBeUndefined();
-      expect(result.data.members[1].excluded).toBe("true");
     }
+  ])("rejects $name", ({ members }) => {
+    expect(parse(members).success).toBe(false);
   });
 
-  // "Not in this run" travels as a string flag from a Hidden input (the same
-  // idiom as productionEventValidator's `exclusive`); the route maps
-  // `excluded === "true"` to a boolean before invoking the server fn. An empty
-  // string (row included) must parse as absent, not as a truthy flag.
-  it("parses the excluded string flag per member", () => {
-    const result = completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
-      members: [
+  it("accepts an excluded member whose disabled quantity input was not submitted", () => {
+    expect(
+      parse([
         { jobOperationId: "op_1", quantity: 5, excluded: "" },
-        { jobOperationId: "op_2", quantity: 0, excluded: "true" }
-      ]
-    });
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.members[0].excluded).toBeUndefined();
-      expect(result.data.members[1].excluded).toBe("true");
-    }
-  });
-});
-
-describe("completeJobOperationBatchValidator — decimals", () => {
-  const parseMember = (member: Record<string, unknown>) =>
-    completeJobOperationBatchValidator.safeParse({
-      batchId: "bat_1",
-      members: [{ jobOperationId: "op_1", ...member }]
-    });
-
-  it("accepts a fractional quantity", () => {
-    const result = parseMember({ quantity: 0.5 });
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.members[0]!.quantity).toBe(0.5);
-  });
-
-  it("rounds quantity to internal precision at parse", () => {
-    const result = parseMember({ quantity: 0.123456 });
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.members[0]!.quantity).toBe(0.12346);
-  });
-
-  it("accepts a fractional scrap quantity", () => {
-    const result = parseMember({ quantity: 1, scrapQuantity: 0.25 });
-    expect(result.success).toBe(true);
-    if (result.success)
-      expect(result.data.members[0]!.scrapQuantity).toBe(0.25);
-  });
-
-  it("rejects a negative quantity", () => {
-    expect(parseMember({ quantity: -1 }).success).toBe(false);
+        { jobOperationId: "op_2", excluded: "true" }
+      ]).data?.members
+    ).toEqual([
+      { jobOperationId: "op_1", quantity: 5 },
+      { jobOperationId: "op_2", excluded: "true" }
+    ]);
   });
 });

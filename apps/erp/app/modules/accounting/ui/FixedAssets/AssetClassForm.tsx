@@ -42,6 +42,7 @@ type AssetClassFormProps = {
   initialValues: z.infer<typeof fixedAssetClassValidator>;
   taxDepreciationEnabled: boolean;
   type?: "modal" | "drawer";
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -49,6 +50,7 @@ const AssetClassForm = ({
   initialValues,
   taxDepreciationEnabled,
   type = "drawer",
+  open = true,
   onClose
 }: AssetClassFormProps) => {
   const { t } = useLingui();
@@ -56,7 +58,7 @@ const AssetClassForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -66,7 +68,7 @@ const AssetClassForm = ({
         t`Failed to create asset class: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -80,7 +82,7 @@ const AssetClassForm = ({
   return (
     <ModalDrawerProvider type={type}>
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

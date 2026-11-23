@@ -20,6 +20,10 @@ export type ModelArtifacts = {
   lodPath: string | null;
   glbPath: string | null;
   thumbnailPath: string | null;
+  /** The model's `pmi.json` (PMI read from a STEP AP242 source by the
+   *  optimise ingest), or null when the model has none. Absent (older
+   *  server) → treat as null. */
+  pmiPath?: string | null;
   /** Raw upload (non-`.zst`) for the viewer's WASM fallback tier, with its
    *  resolved bucket (temp-staging for current uploads, private for old rows). */
   rawPath: string | null;

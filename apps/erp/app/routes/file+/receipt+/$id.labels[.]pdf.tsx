@@ -9,13 +9,14 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getReceiptTracking } from "~/modules/inventory";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
+import { getReceiptTracking } from "~/modules/inventory/inventory.utils";
 import {
+  getCompany,
   getCompanyLogoForLabel,
+  getCompanySettings,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "id-labels-pdf");
 
@@ -34,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    logger.error(company.error);
+    logger.error("Failed to load the company", { error: company.error });
     throw new Error("Failed to load company");
   }
 
@@ -45,7 +46,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const labelSizeId =
     labelParam || companySettings.data?.productLabelSize || "avery5163";
 
-  // Find the label size configuration
   let labelSize = labelSizes.find((size) => size.id === labelSizeId);
 
   if (!labelSize) {

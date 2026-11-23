@@ -8,32 +8,35 @@ Every ERP module lives under `apps/erp/app/modules/{module}/`:
 
 ```
 modules/{module}/
+├── {module}.server.ts    # defineServiceFn operations: the module's API
+├── {module}.service.ts   # building blocks the operations call (server-only)
 ├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # Supabase/Kysely data operations
-├── {module}.server.ts    # server-only helpers (optional)
+├── {module}.utils.ts     # browser-safe helpers (optional)
 ├── types.ts              # shared types (optional)
-├── index.ts              # barrel: re-exports models/service/types
 └── ui/                   # feature components (PascalCase filenames)
 ```
 
 ### Naming Rules
 
 - **Folder names**: kebab-case (`storage-rules`, not `storageRules`)
-- **Module files**: match folder name (`purchasing.service.ts`, `purchasing.models.ts`)
+- **Module files**: match folder name (`purchasing.server.ts`, `purchasing.models.ts`)
 - **React components**: PascalCase filenames in `ui/` (`PurchaseOrderForm.tsx`)
-- **Barrel exports**: `index.ts` re-exports everything; import from module root (`~/modules/sales`), not deep files
+- **No barrel**: there is no `index.ts`. Import from the file that defines the thing (`~/modules/sales/sales.models`)
+- **Operation names**: the const's name is the public name — `setQuoteStatus` in `sales.server.ts` is `api.sales.setQuoteStatus`, the MCP tool `sales_setQuoteStatus` and `POST /api/v1/sales/setQuoteStatus`
 - **License header**: every new file starts with its SPDX header — AGPL, or commercial for `.ee.` files (e.g. `ui/ApprovalRuleForm.ee.tsx`). Run `pnpm --filter @carbon/checks license-headers` rather than typing it.
 
 ### Required Files
 
 | File | Purpose | Always Required? |
 |------|---------|-----------------|
+| `{module}.server.ts` | `defineServiceFn` consts only | Yes |
+| `{module}.service.ts` | Queries, writes and helpers the operations call | Yes |
 | `{module}.models.ts` | Zod validators + derived TypeScript types | Yes |
-| `{module}.service.ts` | Data operations (Supabase client as first arg) | Yes |
-| `index.ts` | Barrel re-export | Yes |
-| `{module}.server.ts` | Server-only helpers | When needed |
+| `{module}.utils.ts` | Pure helpers a component calls | When needed |
 | `types.ts` | Shared type definitions | When needed |
 | `ui/` | React components | When there's UI |
+
+Full rules and the checks that enforce them: `.claude/rules/module-files.md`.
 
 ### MES Module Layout
 
@@ -43,15 +46,16 @@ MES is lighter — flat structure:
 
 ## Service Functions
 
-Every service function:
-1. Takes **client as its first argument** (`SupabaseClient<Database>`)
+An operation is a `defineServiceFn` const in `{module}.server.ts`
+(`.claude/rules/conventions-services.md`). It names its input schema and
+permission, and its `run` calls the building blocks in `{module}.service.ts`.
+A building block:
+1. Takes **client as its first argument** (`SupabaseClient<Database>`, or `db: Kysely<KyselyDatabase>`)
 2. Returns the raw `{ data, error }` from Supabase — does NOT throw, does NOT unwrap
 3. Includes `companyId` scoping on every query
 
 ```typescript
-import type { Database } from "@carbon/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
+// items.service.ts
 export async function getItems(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -64,6 +68,22 @@ export async function getItems(
     .ilike("name", `%${args.search ?? ""}%`)
     .limit(args.limit ?? 50);
 }
+
+// items.server.ts
+import * as service from "./items.service";
+
+/**
+ * List items.
+ *
+ * @mcp
+ */
+export const getItems = defineServiceFn({
+  input: z.object({ search: z.string().optional() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return unwrap(ctx, await service.getItems(ctx.asCaller.supabase, ctx.company.id, input));
+  }
+});
 ```
 
 ## Models (Zod Validators)
@@ -88,15 +108,12 @@ Routes live under `apps/erp/app/routes/` using `remix-flat-routes` conventions.
 ### Loader Pattern
 
 ```typescript
+import { carbon } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { requirePermissions } from "@carbon/auth/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing",
-  });
-
-  const items = await getItems(client, companyId, {});
+  const api = await carbon(request);
+  const items = await api.items.getItems({});
   return { items: items.data ?? [] };
 }
 ```
@@ -104,44 +121,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 ### Action Pattern
 
 ```typescript
-import type { ActionFunctionArgs } from "react-router";
-import { redirect, data } from "react-router";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing",
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(itemValidator).request(args, { params: ["itemId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.items.updateItem({ ...input.data, id: input.params.itemId });
+  return respond(args.request, result).redirect(path.to.item(input.params.itemId), {
+    message: "Updated item"
   });
-
-  const validation = await validator(itemValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return data(
-      { errors: validation.error },
-      await flash(request, error(validation.error, "Validation failed"))
-    );
-  }
-
-  const result = await createItem(client, companyId, userId, validation.data);
-  if (result.error) {
-    return data({}, await flash(request, error(result.error, "Failed to create")));
-  }
-
-  throw redirect(`/x/items/${result.data.id}`);
 }
 ```
 
 **Key rules:**
-- On success: `throw redirect(...)` (NOT `return redirect(...)`)
-- On failure: `return data({}, await flash(request, error(...)))`
-- Always call `assertIsPost(request)` first
-- Always validate with `validator(schema).validate(formData)`, not `schema.parse()`
+- `validator(schema).request(args, { params })` checks the method (POST by default), the route params and the form, before any auth
+- One call through `carbon(request)`; the operation runs the permission gate
+- A fetcher form returns the result (the component's `useAction` toasts it); a navigating form uses `respond(request, result).redirect(to, { message, onError })`
 
 ## Database Tables
 

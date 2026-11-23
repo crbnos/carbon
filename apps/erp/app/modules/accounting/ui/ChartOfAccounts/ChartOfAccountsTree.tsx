@@ -9,11 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   MENU_ITEM_SHORTCUTS,
-  NumberField,
-  NumberInput,
   ScrollArea
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
@@ -29,23 +26,21 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
-import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import {
-  useCurrencyDecimals,
-  useRealtime,
-  useSettings,
-  useUrlParams,
-  useUser
-} from "~/hooks";
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "~/components/TreeView";
+import { useRealtime, useSettings, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
+import { hasAccountingCutover } from "../../accounting.utils";
 import type { Chart } from "../../types";
 
 type ChartOfAccountsTreeProps = {
   data: Chart[];
   search: string;
-  openingBalanceMode?: boolean;
-  amounts?: Record<string, number>;
-  onAmountChange?: (accountId: string, value: number) => void;
 };
 
 function accountsToFlatTree(accounts: Chart[]): FlatTree<Chart> {
@@ -118,28 +113,17 @@ function formatCurrency(value: number): string {
 }
 
 const ChartOfAccountsTree = memo(
-  ({
-    data,
-    search,
-    openingBalanceMode = false,
-    amounts = {},
-    onAmountChange
-  }: ChartOfAccountsTreeProps) => {
+  ({ data, search }: ChartOfAccountsTreeProps) => {
     const { t } = useLingui();
     useRealtime("journal");
     const settings = useSettings();
-    const accountingEnabled = (settings as any).accountingEnabled ?? false;
+    const showBalances = hasAccountingCutover(settings);
     const parentRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const [params] = useUrlParams();
-    const { company } = useUser();
-    const currencyCode = company.baseCurrencyCode;
-    const currencyDecimals = useCurrencyDecimals(currencyCode);
 
     const openLedger = (accountId: string) => {
-      const nextParams = new URLSearchParams(params);
-      nextParams.delete("offset");
-      const qs = nextParams.toString();
+      const qs = params.toString();
       const to = path.to.chartOfAccountsLedger(accountId);
       navigate(qs ? `${to}?${qs}` : to);
     };
@@ -164,6 +148,7 @@ const ChartOfAccountsTree = memo(
 
     const {
       nodes,
+      selected,
       getTreeProps,
       getNodeProps,
       selectNode,
@@ -175,6 +160,30 @@ const ChartOfAccountsTree = memo(
       estimatedRowHeight: () => 36,
       isEager: true
     });
+    // The role="treeitem" wrappers take the focus, one at a time, so the
+    // tree's arrow keys (Right/Left expand and collapse) work from the
+    // keyboard.
+    const rovingFocus = useRovingTreeFocus({
+      selected,
+      selectNode,
+      getTreeProps,
+      parentRef,
+      virtualizer
+    });
+
+    // A group expands or collapses; an account opens its ledger.
+    const activateAccount = (node: FlatTreeItem<Chart>) => {
+      selectNode(node.id, false);
+      if (node.data.isGroup) {
+        toggleExpandNode(node.id);
+      } else {
+        openLedger(node.data.id as string);
+      }
+    };
+    const nodesById = useMemo(
+      () => new Map(tree.map((node) => [node.id, node])),
+      [tree]
+    );
 
     return (
       <ScrollArea className="h-[calc(100dvh-var(--header-height)-61px)] w-full">
@@ -182,23 +191,29 @@ const ChartOfAccountsTree = memo(
           <div className="flex-1 px-4">
             <Trans>Account</Trans>
           </div>
-          {openingBalanceMode ? (
-            <span className="w-44 text-right px-4">
-              <Trans>Opening Balance</Trans>
+          {showBalances && (
+            <span className="w-32 text-right px-4 max-md:w-24 max-md:pl-0">
+              {params.get("startDate") ? t`Net Change` : t`Balance`}
             </span>
-          ) : (
-            accountingEnabled && (
-              <span className="w-32 text-right px-4">
-                {params.get("startDate") ? t`Net Change` : t`Balance`}
-              </span>
-            )
           )}
         </div>
         <TreeView<Chart>
           tree={tree}
           nodes={nodes}
-          getTreeProps={getTreeProps}
-          getNodeProps={getNodeProps}
+          getTreeProps={rovingFocus.getTreeProps}
+          getNodeProps={(id) => ({
+            ...getNodeProps(id),
+            ...rovingFocus.getRowProps(id),
+            className: treeRowFocusClassName,
+            onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key !== "Enter" && e.key !== " ") return;
+              const node = nodesById.get(id);
+              if (!node) return;
+              e.preventDefault();
+              activateAccount(node);
+            }
+          })}
           virtualizer={virtualizer}
           parentRef={parentRef}
           parentClassName="h-full"
@@ -212,9 +227,10 @@ const ChartOfAccountsTree = memo(
             const balance = account.netChange ?? 0;
 
             return (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer surface of the role="treeitem" wrapper (TreeView getNodeProps), which takes the focus and handles Enter/Space; the arrow keys live on the role="tree" container, and the ledger/actions are real buttons in the row
               <div
                 className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row",
+                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
@@ -225,14 +241,7 @@ const ChartOfAccountsTree = memo(
                     suppressRowClickRef.current = false;
                     return;
                   }
-                  selectNode(node.id, false);
-                  if (isGroup) {
-                    toggleExpandNode(node.id);
-                  } else if (!openingBalanceMode) {
-                    // In opening-balance mode a leaf row hosts an input; don't
-                    // navigate away and lose the entered amounts.
-                    openLedger(account.id as string);
-                  }
+                  activateAccount(node);
                 }}
               >
                 {/* Indentation lines */}
@@ -241,8 +250,20 @@ const ChartOfAccountsTree = memo(
                     <LevelLine key={index} isSelected={state.selected} />
                   ))}
 
-                  {/* Expand/collapse chevron */}
-                  <div
+                  {/* Expand/collapse chevron: a pointer shortcut. From the
+                      keyboard, Right/Left on the focused row expand and
+                      collapse it. */}
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={
+                      node.hasChildren
+                        ? isExpanded
+                          ? t`Collapse`
+                          : t`Expand`
+                        : undefined
+                    }
+                    aria-hidden={node.hasChildren ? undefined : true}
                     className={cn(
                       "flex h-9 w-5 items-center justify-center",
                       node.hasChildren && "hover:bg-accent"
@@ -259,9 +280,9 @@ const ChartOfAccountsTree = memo(
                         <LuChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       )
                     ) : (
-                      <div className="h-9 w-5" />
+                      <span className="h-9 w-5" />
                     )}
-                  </div>
+                  </button>
                 </div>
 
                 {/* Folder/dot icon */}
@@ -284,47 +305,16 @@ const ChartOfAccountsTree = memo(
                   <span className="truncate">{account.name}</span>
                 </div>
 
-                {/* Balance / opening-balance input */}
-                {openingBalanceMode ? (
-                  isGroup ? (
-                    // Groups are rollups — no balance can be posted to them.
-                    <span className="w-44 shrink-0" />
-                  ) : (
-                    <div
-                      className="w-44 shrink-0 pl-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <NumberField
-                        aria-label={t`Opening balance for ${account.name}`}
-                        value={amounts[account.id as string] ?? 0}
-                        onChange={(value) =>
-                          onAmountChange?.(
-                            account.id as string,
-                            isNaN(value) ? 0 : value
-                          )
-                        }
-                        formatOptions={INPUT_FORMAT.rate(
-                          currencyCode,
-                          currencyDecimals
-                        )}
-                      >
-                        <NumberInput
-                          size="sm"
-                          className="h-7 text-right font-mono tabular-nums"
-                        />
-                      </NumberField>
-                    </div>
-                  )
-                ) : (
-                  accountingEnabled &&
+                {/* Balance */}
+                {showBalances &&
                   (isGroup ? (
-                    <span className="w-32 text-right tabular-nums shrink-0 text-muted-foreground">
+                    <span className="w-32 text-right tabular-nums shrink-0 text-muted-foreground max-md:w-24">
                       {formatCurrency(balance)}
                     </span>
                   ) : (
                     <button
                       type="button"
-                      className="w-32 text-right tabular-nums shrink-0 text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                      className="w-32 max-md:w-24 text-right tabular-nums shrink-0 text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
                       onClick={(e) => {
                         e.stopPropagation();
                         openLedger(account.id as string);
@@ -332,73 +322,24 @@ const ChartOfAccountsTree = memo(
                     >
                       {formatCurrency(balance)}
                     </button>
-                  ))
-                )}
+                  ))}
 
-                {/* Actions menu — hidden while entering opening balances */}
-                {!openingBalanceMode && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="ml-1 shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {isGroup ? (
-                        <>
-                          {!account.isSystem && (
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.edit}
-                              onClick={() =>
-                                runMenuAction(() =>
-                                  navigate(account.id as string)
-                                )
-                              }
-                            >
-                              <LuPencil className="mr-2 h-4 w-4" />
-                              <Trans>Edit Group</Trans>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() =>
-                              runMenuAction(() =>
-                                navigate(`new-group?parentId=${account.id}`)
-                              )
-                            }
-                          >
-                            <LuFolderPlus className="mr-2 h-4 w-4" />
-                            <Trans>Add Group</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              runMenuAction(() =>
-                                navigate(`new?parentId=${account.id}`)
-                              )
-                            }
-                          >
-                            <LuFilePlus className="mr-2 h-4 w-4" />
-                            <Trans>Add Account</Trans>
-                          </DropdownMenuItem>
-                          {!account.isSystem && (
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.delete}
-                              className="text-destructive"
-                              onClick={() =>
-                                runMenuAction(() =>
-                                  navigate(`delete/${account.id}`)
-                                )
-                              }
-                            >
-                              <LuTrash2 className="mr-2 h-4 w-4" />
-                              <Trans>Delete</Trans>
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      ) : (
-                        <>
+                {/* Actions menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={t`Actions`}
+                      className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground max-md:size-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {isGroup ? (
+                      <>
+                        {!account.isSystem && (
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.edit}
                             onClick={() =>
@@ -408,8 +349,30 @@ const ChartOfAccountsTree = memo(
                             }
                           >
                             <LuPencil className="mr-2 h-4 w-4" />
-                            <Trans>Edit</Trans>
+                            <Trans>Edit Group</Trans>
                           </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            runMenuAction(() =>
+                              navigate(`new-group?parentId=${account.id}`)
+                            )
+                          }
+                        >
+                          <LuFolderPlus className="mr-2 h-4 w-4" />
+                          <Trans>Add Group</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            runMenuAction(() =>
+                              navigate(`new?parentId=${account.id}`)
+                            )
+                          }
+                        >
+                          <LuFilePlus className="mr-2 h-4 w-4" />
+                          <Trans>Add Account</Trans>
+                        </DropdownMenuItem>
+                        {!account.isSystem && (
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.delete}
                             className="text-destructive"
@@ -422,11 +385,35 @@ const ChartOfAccountsTree = memo(
                             <LuTrash2 className="mr-2 h-4 w-4" />
                             <Trans>Delete</Trans>
                           </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
+                          onClick={() =>
+                            runMenuAction(() => navigate(account.id as string))
+                          }
+                        >
+                          <LuPencil className="mr-2 h-4 w-4" />
+                          <Trans>Edit</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.delete}
+                          className="text-destructive"
+                          onClick={() =>
+                            runMenuAction(() =>
+                              navigate(`delete/${account.id}`)
+                            )
+                          }
+                        >
+                          <LuTrash2 className="mr-2 h-4 w-4" />
+                          <Trans>Delete</Trans>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             );
           }}

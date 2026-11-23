@@ -11,52 +11,6 @@ const BAR_WIDTH = 2;
 const BAR_HEIGHT = 14;
 const BAR_GAP = 3;
 
-/**
- * Interpolates between two [r,g,b] colors at a given ratio (0-1).
- */
-function lerpColor(
-  a: [number, number, number],
-  b: [number, number, number],
-  t: number
-): string {
-  const r = Math.round(a[0] + (b[0] - a[0]) * t);
-  const g = Math.round(a[1] + (b[1] - a[1]) * t);
-  const bl = Math.round(a[2] + (b[2] - a[2]) * t);
-  return `rgb(${r},${g},${bl})`;
-}
-
-type GradientStop = { pos: number; color: [number, number, number] };
-
-// red -> yellow -> green
-const GRADIENT_STOPS: GradientStop[] = [
-  { pos: 0, color: [239, 68, 68] }, // red-500
-  { pos: 0.5, color: [234, 179, 8] }, // yellow-500
-  { pos: 0.8, color: [34, 197, 94] }, // green-500
-  { pos: 1, color: [34, 197, 94] } // green-500
-];
-
-// green -> yellow -> red (inverted)
-const GRADIENT_STOPS_INVERTED: GradientStop[] = [
-  { pos: 0, color: [34, 197, 94] }, // green-500
-  { pos: 0.2, color: [34, 197, 94] }, // green-500
-  { pos: 0.5, color: [234, 179, 8] }, // yellow-500
-  { pos: 0.8, color: [239, 68, 68] }, // red-500
-  { pos: 1, color: [239, 68, 68] } // red-500
-];
-
-function getGradientColor(ratio: number, stops: GradientStop[]): string {
-  const clamped = Math.min(Math.max(ratio, 0), 1);
-  for (let i = 0; i < stops.length - 1; i++) {
-    const curr = stops[i]!;
-    const next = stops[i + 1]!;
-    if (clamped >= curr.pos && clamped <= next.pos) {
-      const t = (clamped - curr.pos) / (next.pos - curr.pos);
-      return lerpColor(curr.color, next.color, t);
-    }
-  }
-  return lerpColor(stops[0]!.color, stops[0]!.color, 0);
-}
-
 type Segment = {
   value: number;
   className: string;
@@ -71,18 +25,16 @@ interface BarProgressProps {
   label?: string;
   /** Value string displayed above-right of the bar */
   value?: string;
-  /** Enable a red-yellow-green gradient across active bars */
-  gradient?: boolean;
-  /** Invert the gradient to green-yellow-red */
-  invertGradient?: boolean;
-  /** Multi-segment progress (renders segments in order, ignores progress/gradient/activeClassName) */
+  /** Multi-segment progress (renders segments in order, ignores progress/activeClassName) */
   segments?: Segment[];
   /** Additional class names for the outer wrapper */
   className?: string;
-  /** Class name for the active (filled) bars (ignored when gradient is true) */
+  /** Class name for the active (filled) bars */
   activeClassName?: string;
   /** Class name for the inactive (unfilled) bars */
   inactiveClassName?: string;
+  /** Phones: label above the bar, value under it, value not truncated. */
+  stackOnPhone?: boolean;
 }
 
 export function BarProgress({
@@ -90,12 +42,11 @@ export function BarProgress({
   max = 100,
   label,
   value,
-  gradient = false,
-  invertGradient = false,
   segments,
   className,
   activeClassName = "bg-emerald-500",
-  inactiveClassName = "bg-muted"
+  inactiveClassName = "bg-muted",
+  stackOnPhone = false
 }: BarProgressProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [barCount, setBarCount] = useState(0);
@@ -135,37 +86,33 @@ export function BarProgress({
       return inactiveClassName;
     }
 
-    const isActive = i < activeBars;
-    if (gradient && isActive) return "";
-    if (isActive) return activeClassName;
-    return inactiveClassName;
-  };
-
-  const getBarStyle = (i: number): React.CSSProperties | undefined => {
-    if (segments) return undefined;
-    const isActive = i < activeBars;
-    if (isActive && gradient && barCount > 0) {
-      return {
-        backgroundColor: getGradientColor(
-          i / (barCount - 1 || 1),
-          invertGradient ? GRADIENT_STOPS_INVERTED : GRADIENT_STOPS
-        )
-      };
-    }
-    return undefined;
+    return i < activeBars ? activeClassName : inactiveClassName;
   };
 
   return (
     <div className={cn("w-full", className)}>
       {hasHeader && (
-        <div className="mb-0.5 flex items-baseline justify-between">
+        <div className="mb-0.5 flex items-baseline justify-between gap-2">
           {label ? (
-            <span className="text-sm font-medium text-foreground">{label}</span>
+            <span
+              className={cn(
+                "shrink-0 text-sm font-medium text-foreground",
+                stackOnPhone && "max-md:min-w-0 max-md:truncate max-md:text-xs"
+              )}
+            >
+              {label}
+            </span>
           ) : (
             <div />
           )}
           {value && (
-            <span className="text-xs font-mono tabular-nums text-muted-foreground">
+            <span
+              title={value}
+              className={cn(
+                "min-w-0 truncate text-xs font-mono tabular-nums text-muted-foreground",
+                stackOnPhone && "max-md:hidden"
+              )}
+            >
               {value}
             </span>
           )}
@@ -178,6 +125,8 @@ export function BarProgress({
         aria-valuemin={0}
         aria-valuemax={max}
         aria-label={label ?? "Progress"}
+        // The shown text ("2h / 8h", "3 / 4"), not a bare percentage.
+        aria-valuetext={value || undefined}
         className="flex w-full items-center gap-[3px]"
       >
         {barCount > 0 &&
@@ -189,15 +138,16 @@ export function BarProgress({
                 "shrink-0 rounded-[2px] transition-colors duration-200",
                 getBarClassName(i)
               )}
-              style={{
-                width: BAR_WIDTH,
-                height: BAR_HEIGHT,
-                ...getBarStyle(i)
-              }}
+              style={{ width: BAR_WIDTH, height: BAR_HEIGHT }}
             />
           ))}
         <span className="sr-only">{Math.round(percentage)}%</span>
       </div>
+      {stackOnPhone && value ? (
+        <span className="mt-1 hidden break-words text-xs font-mono tabular-nums text-muted-foreground max-md:block">
+          {value}
+        </span>
+      ) : null}
     </div>
   );
 }

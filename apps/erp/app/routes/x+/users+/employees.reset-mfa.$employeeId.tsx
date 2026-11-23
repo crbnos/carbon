@@ -19,7 +19,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -107,14 +107,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function ResetMfaRoute() {
   const { user, hasFactors } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const formFetcher = useFetcher<Result>();
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalOverlay />
@@ -154,7 +154,7 @@ export default function ResetMfaRoute() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => closeRoute()}
+                onClick={() => dialog.close()}
               >
                 <Trans>Cancel</Trans>
               </Button>

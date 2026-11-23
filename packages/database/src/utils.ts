@@ -37,7 +37,10 @@ export const journalReference = {
     job: (id: string) => `job:${id}`,
     materialIssue: (id: string) => `material-issue:${id}`,
     productionEvent: (id: string) => `production-event:${id}`,
-    maintenanceEvent: (id: string) => `maintenance-event:${id}`
+    maintenanceEvent: (id: string) => `maintenance-event:${id}`,
+    serviceJobTime: (id: string) => `service-job-time:${id}`,
+    timesheet: (entryId: string) => `timesheet:${entryId}`,
+    projectExpense: (entryId: string) => `project-expense:${entryId}`
   }
 };
 
@@ -149,6 +152,79 @@ export async function fetchAllRecords<T extends object>(
       code: "PGRST_PAGINATION_LIMIT",
       name: "PostgrestError"
     } as PostgrestError
+  };
+}
+
+// Ids per request. `.in()` writes every id into the URL, and the gateway
+// rejects a request line it cannot buffer (HTTP 431); 100 ids is about 3 kB.
+const IN_FILTER_BATCH_SIZE = 100;
+
+/**
+ * Reads every row for an id list. Walks the ids in groups of 100, so each
+ * `.in()` fits in the request URL, and pages each group past the row cap with
+ * `fetchAllRecords`. The factory gets one group and must order its query, so
+ * the pages of a group are stable. A failed group fails the whole read: a
+ * partial list would read as "no rows" for the ids it dropped.
+ */
+export async function fetchAllByIds<T extends object>(
+  ids: readonly string[],
+  buildQuery: (batch: string[]) => PageQuery<T>
+): Promise<PaginatedResult<T>> {
+  const rows: T[] = [];
+  for (let start = 0; start < ids.length; start += IN_FILTER_BATCH_SIZE) {
+    const batch = ids.slice(start, start + IN_FILTER_BATCH_SIZE);
+    const result = await fetchAllRecords(() => buildQuery(batch));
+    if (result.error) return { data: null, count: null, error: result.error };
+    rows.push(...result.data);
+  }
+  return { data: rows, count: rows.length, error: null };
+}
+
+/**
+ * The lots (tracked entities) among these whose stock sits in a non-nettable
+ * (quarantine) storage unit. A consumption picker leaves them out: issuing a
+ * lot consumes it from the bin it is in, and nobody chose that bin.
+ */
+export async function getNonNettableTrackedEntityIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  trackedEntityIds: readonly string[]
+): Promise<{ data: Set<string> | null; error: PostgrestError | null }> {
+  const ids = [...new Set(trackedEntityIds)];
+  if (ids.length === 0) return { data: new Set(), error: null };
+  const rows = await fetchAllByIds<{
+    trackedEntityId: string | null;
+    quantity: number;
+  }>(
+    ids,
+    (batch) =>
+      client
+        .from("itemLedger")
+        .select(
+          "trackedEntityId, quantity, storageUnit!inner(effectiveNettable)"
+        )
+        .in("trackedEntityId", batch)
+        .eq("companyId", companyId)
+        .eq("storageUnit.effectiveNettable", false)
+        .order("id") as unknown as PageQuery<{
+        trackedEntityId: string | null;
+        quantity: number;
+      }>
+  );
+  if (rows.error) return { data: null, error: rows.error };
+  const onHand = new Map<string, number>();
+  for (const row of rows.data) {
+    if (!row.trackedEntityId) continue;
+    onHand.set(
+      row.trackedEntityId,
+      (onHand.get(row.trackedEntityId) ?? 0) + Number(row.quantity)
+    );
+  }
+  return {
+    data: new Set(
+      [...onHand].filter(([, quantity]) => quantity > 0).map(([id]) => id)
+    ),
+    error: null
   };
 }
 

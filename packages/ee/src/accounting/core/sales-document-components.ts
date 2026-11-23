@@ -38,12 +38,23 @@ export type SalesDocumentComponent = {
    * place that decides.
    */
   invoiceLineType: string | null;
+  /**
+   * The service job the source line bills, `null` for HeaderShipping and for
+   * every line that is not a service job's. Load-bearing like
+   * `invoiceLineType`: `post-sales-invoice` credits a service job line's
+   * revenue to Service Revenue, not to the Sales account, so the provider
+   * line must take `serviceRevenueAccountId` (`isServiceRevenueComponent`).
+   */
+  serviceJobId: string | null;
   description: string;
   quantity: number;
   unitAmount: number;
   netAmount: number;
   taxPercent: number;
   taxAmount: number;
+  /** The Carbon tax code the provider tax rate is mapped from; null for a
+   *  legacy line and for untaxed header shipping. */
+  taxCodeId: string | null;
 };
 
 /** A line whose proceeds are NOT sales revenue in Carbon's own journal. */
@@ -70,6 +81,35 @@ export function hasRevenueComponent(
   components: readonly SalesDocumentComponent[]
 ): boolean {
   return components.some(isRevenueComponent);
+}
+
+/**
+ * Does this revenue component post to Service Revenue rather than to the
+ * Sales account? Every revenue component of a service job line does: its
+ * labor, parts and charges are one performance obligation. Its shipping
+ * stays on Shipping Revenue.
+ */
+export function isServiceRevenueComponent(
+  component: SalesDocumentComponent
+): boolean {
+  return isRevenueComponent(component) && component.serviceJobId !== null;
+}
+
+/** Does this document need the replayed Sales account? */
+export function hasSalesRevenueComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(
+    (component) =>
+      isRevenueComponent(component) && !isServiceRevenueComponent(component)
+  );
+}
+
+/** Does this document need the replayed Service Revenue account? */
+export function hasServiceRevenueComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(isServiceRevenueComponent);
 }
 
 /**
@@ -133,6 +173,11 @@ function finite(value: number, name: string): number {
   return value;
 }
 
+/** The line discount, a fraction in [0, 1]; absent is no discount. */
+function lineDiscount(line: Accounting.SalesInvoiceLine): number {
+  return finite(line.discountPercent ?? 0, "Line discount");
+}
+
 function precision(value: number): void {
   if (!Number.isInteger(value) || value < 0 || value > SCALE) {
     throw new Error("Missing or unsupported currency decimal precision");
@@ -165,7 +210,8 @@ export function buildSalesDocumentComponents(
   const baseAmounts = lines.map((line) =>
     calculateSalesPostingAmounts({
       ...line,
-      allocatedHeaderShipping: headerAllocations.get(line.id) ?? 0
+      allocatedHeaderShipping: headerAllocations.get(line.id) ?? 0,
+      taxesShipping: line.taxesShipping ?? false
     })
   );
   const sourceEnvelope = (lines.length * 4 + 1) / (2 * 10 ** SCALE) + EPSILON;
@@ -208,8 +254,10 @@ export function buildSalesDocumentComponents(
     line?: Accounting.SalesInvoiceLine;
     baseNet: number;
     taxPercent: number;
+    taxCodeId?: string | null;
     description: string;
     quantity?: number;
+    id?: string;
   }) => {
     const { line, kind, baseNet, taxPercent } = args;
     const baseTax = finite(baseNet * taxPercent, "Component tax");
@@ -217,8 +265,16 @@ export function buildSalesDocumentComponents(
     const quantity = args.quantity ?? 1;
     let unitAmount = toDocumentAmount(baseNet, rate, decimals);
     if (kind === "Merchandise" && line) {
-      const convertedUnit = line.convertedUnitPrice;
-      const expectedUnit = finite(line.unitPrice * rate, "Document unit price");
+      // Both prices are LIST prices; the provider is sent the NET unit price,
+      // so the line discount is applied to each before they are compared. A
+      // discounted price is a rate, so it is rounded to storage scale; an
+      // undiscounted mirror is sent exactly as stored.
+      const discount = lineDiscount(line);
+      const net = 1 - discount;
+      const netUnit = line.unitPrice * net;
+      const convertedUnit =
+        line.convertedUnitPrice == null ? null : line.convertedUnitPrice * net;
+      const expectedUnit = finite(netUnit * rate, "Document unit price");
       if (
         convertedUnit != null &&
         Math.abs(
@@ -231,24 +287,33 @@ export function buildSalesDocumentComponents(
         );
       }
       unitAmount =
-        convertedUnit ?? toDocumentAmount(line.unitPrice, rate, SCALE);
+        convertedUnit == null
+          ? toDocumentAmount(netUnit, rate, SCALE)
+          : discount
+            ? round(convertedUnit)
+            : convertedUnit;
     }
     raw.push({
       baseNet,
       baseTax,
       component: {
-        id: `${line?.id ?? source.id}:${kind}`,
+        id: args.id ?? `${line?.id ?? source.id}:${kind}`,
         sourceLineId: line?.id ?? null,
         kind,
         itemId: line?.itemId ?? null,
         itemCode: line?.itemCode ?? null,
         invoiceLineType: line?.invoiceLineType ?? null,
+        serviceJobId: line?.serviceJobId ?? null,
         description: args.description,
         quantity,
         unitAmount,
         netAmount: toDocumentAmount(baseNet, rate, decimals),
         taxPercent,
-        taxAmount: toDocumentAmount(baseTax, rate, decimals)
+        taxAmount: toDocumentAmount(baseTax, rate, decimals),
+        taxCodeId:
+          args.taxCodeId !== undefined
+            ? args.taxCodeId
+            : (line?.taxCodeId ?? null)
       }
     });
   };
@@ -256,7 +321,9 @@ export function buildSalesDocumentComponents(
     push({
       kind: "Merchandise",
       line,
-      baseNet: line.quantity * line.unitPrice,
+      // The same expression `calculateSalesPostingAmounts` and the
+      // `salesInvoices` view use, so the reconciliation above holds.
+      baseNet: line.quantity * line.unitPrice * (1 - lineDiscount(line)),
       taxPercent: line.taxPercent,
       quantity: line.quantity,
       description: line.description ?? line.itemCode ?? "Invoice line"
@@ -273,6 +340,9 @@ export function buildSalesDocumentComponents(
       line,
       baseNet: line.nonTaxableAddOnCost ?? 0,
       taxPercent: 0,
+      // Untaxed whatever the line's code: it goes out at the provider's
+      // no-tax rate, not the code's.
+      taxCodeId: null,
       description: `Non-taxable add-on — ${line.description ?? line.itemCode ?? "Invoice line"}`
     });
     push({
@@ -283,11 +353,39 @@ export function buildSalesDocumentComponents(
       description: `Shipping — ${line.description ?? line.itemCode ?? "Invoice line"}`
     });
   }
-  push({
-    kind: "HeaderShipping",
-    baseNet: header,
-    taxPercent: 0,
-    description: "Shipping"
+  // Header shipping, split by tax: each line's share at that line's rate
+  // when its code taxes shipping (as `salesTaxableBase` taxes it), the rest
+  // untaxed. One component per (code, rate), in line-id order; the first keeps
+  // the single-component id.
+  const headerGroups = new Map<
+    string,
+    { taxCodeId: string | null; taxPercent: number; baseNet: number }
+  >();
+  for (const line of [...lines].sort((a, b) => a.id.localeCompare(b.id))) {
+    const share = headerAllocations.get(line.id) ?? 0;
+    const taxed = line.taxesShipping === true && line.taxPercent !== 0;
+    const taxCodeId = taxed ? (line.taxCodeId ?? null) : null;
+    const taxPercent = taxed ? line.taxPercent : 0;
+    const key = `${taxCodeId ?? ""}:${taxPercent}`;
+    const group = headerGroups.get(key);
+    if (group) group.baseNet += share;
+    else headerGroups.set(key, { taxCodeId, taxPercent, baseNet: share });
+  }
+  if (headerGroups.size === 0) {
+    headerGroups.set(":0", { taxCodeId: null, taxPercent: 0, baseNet: header });
+  }
+  [...headerGroups.values()].forEach((group, index) => {
+    push({
+      kind: "HeaderShipping",
+      id:
+        index === 0
+          ? `${source.id}:HeaderShipping`
+          : `${source.id}:HeaderShipping:${index}`,
+      baseNet: round(group.baseNet),
+      taxPercent: group.taxPercent,
+      taxCodeId: group.taxCodeId,
+      description: "Shipping"
+    });
   });
 
   const totalAmount = toDocumentAmount(source.totalAmount, rate, decimals);

@@ -13,8 +13,8 @@ import type {
 } from "react-router";
 import { Outlet } from "react-router";
 import { MeshGradientBackground } from "~/components/MeshGradientBackground";
-import { getLocationsList } from "~/modules/resources";
-import { getCompany } from "~/modules/settings";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getCompany } from "~/modules/settings/settings.service";
 import { onboardingSequence, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;

@@ -1,0 +1,196 @@
+---
+title: Service jobs
+description: "Work on a customer's unit at your depot or on site: coverage, estimates, time, parts, the MES clock, invoicing and the dispatch schedule."
+---
+
+A <Term>service job</Term> is the work on one customer unit, such as a returned drive at your repair bench or a site visit to a running machine. It holds the problem, one <Term id="service-coverage">coverage</Term>, the technicians' time, the parts and charges, and for billable work an estimate.
+
+Open **Service → Jobs** in the ERP. The Service module also has **Schedule** (the dispatch grid) and **Customer Assets** (the [installed base](/docs/reference/customer-assets)). On the shop floor, technicians use **Service** in the [MES](/docs/reference/mes).
+
+<Screenshot label="The service job page with Estimate, Time and Parts in the explorer, Problem, Repairable, Findings and Resolution in the center, and the properties panel" caption="One page holds the whole job." />
+
+## Where a job comes from
+
+| Origin | How | The new job |
+|---|---|---|
+| An [RMA](/docs/reference/rmas) line | Post the receipt of a **Return for Service** or **Return for Warranty** line | Open, at the receiving location, work site Depot. Billable for Service, Warranty for Warranty |
+| The office | **Service → Jobs → New**, the **New Service Job** drawer | Open. The coverage you choose, or a suggestion from the asset |
+| The shop floor or a site | MES **Service → New Job**: scan or pick a serial or a customer, type the problem | In Progress, assigned to you, with your clock running |
+
+When you pick a **Customer Asset**, the job takes the asset's item and serial. If you leave **Coverage** empty, Carbon suggests Warranty while the asset's labor or parts warranty runs today, else Billable. Every new job copies the default bill rate from **Settings → Service**.
+
+## Status
+
+<StatusFlow entity="serviceJob">
+  <Status name="Open">Waiting for a technician. **Start** moves it on; so does the first MES clock.</Status>
+  <Status name="Awaiting Approval" branch>The estimate was sent. **Record Response** moves it to Open when the customer accepts, or to In Progress, marked not repairable, when they decline.</Status>
+  <Status name="In Progress">Work is underway. Time and parts can change; each change posts its cost.</Status>
+  <Status name="On Hold" branch>Parked with **Hold**. **Resume** returns it to In Progress.</Status>
+  <Status name="Completed" accent>**Complete** locks the job. **Reopen** returns it to In Progress; the posted time cost stays.</Status>
+  <Status name="Invoiced">**Create Invoice** drafted the customer invoice. An invoiced job cannot reopen.</Status>
+  <Status name="Cancelled" terminal>Closed unworked. **Cancel Job** is disabled while the job has time entries or issued parts.</Status>
+</StatusFlow>
+
+A Completed, Invoiced or Cancelled job is locked: its time, parts, charges, estimate and fields no longer change.
+
+The header shows one primary action, chosen by status: **Start**, **Send Estimate** or **Complete**, **Record Response**, then **Create Invoice** for a Billable job. Hold, Resume, Reopen, Print Estimate and Cancel Job are in the ⋯ menu.
+
+## Coverage and cost
+
+Coverage decides where the job's cost goes. Carbon posts the cost as the work happens: parts when they are issued, time when each entry is saved or its clock stops. The customer owns the unit, so nothing goes to work in progress.
+
+| Coverage | Cost account | Invoiced? |
+|---|---|---|
+| **Billable** | Cost of Service, else Cost of Goods Sold | Yes |
+| **Warranty** | Warranty Expense | No |
+| **Contract** | Cost of Service, else Cost of Goods Sold | No |
+
+Set **Cost of Service** and **Warranty Expense** in **Accounting → Default Accounts**. Without Warranty Expense, every Warranty posting is refused.
+
+<Callout type="warn" title="Changing coverage moves the cost already booked.">
+Change **Coverage** in the properties panel while the job is open. Carbon moves the cost of the parts already issued and the time already posted from the old account to the new one.
+</Callout>
+
+## Estimates
+
+A Billable job can carry an estimate: **Labor** lines (hours at the job's bill rate), parts and charges at a unit price. **Send Estimate** marks it Sent and the job Awaiting Approval; **Print Estimate** opens the PDF. While the estimate is Sent or Accepted, its lines and the job's bill rate are locked.
+
+**Record Response** stores the customer's answer and the name of whoever gave it. On a Fixed Price job, acceptance sets the job's **Fixed Price** to the estimate total. You can also set it in the properties panel; **Complete** and **Create Invoice** ask for it when it is empty.
+
+<Callout type="info" title="An estimate is optional.">
+A job completes without an accepted estimate. Send one when the customer must approve the work or the price first.
+</Callout>
+
+## Labor rates
+
+Set two rates per hour, in your base currency, in **Settings → Service**:
+
+| Rate | What it does |
+|---|---|
+| **Labor cost per hour** | The cost of every time entry. Without it, no time can be logged. |
+| **Default bill rate per hour** | Copied to each new job as its **Bill Rate**. |
+
+Change a job's **Bill Rate** in its properties panel until the estimate is sent. Its Labor estimate lines follow the new rate. While the cost rate, or a Billable job's bill rate, is missing, the job page shows a warning with a link to Settings → Service.
+
+## Time
+
+- **On the job page**, add an entry under **Time** with the employee, date, hours and **Billable**.
+- **In the MES**, tap **Start** on the job. **Stop** records the hours. You can run one clock at a time; a second **Start** is refused until you stop the first.
+- **On My Time**, each service job you work on or are scheduled on has its own row below your [charge numbers](/docs/reference/projects#time). Drag a day's bar to set your total hours for that job. Service rows never go through timesheet submit or approval, and they lock when the job completes.
+
+Each entry posts its cost as soon as it is saved or its clock stops: one journal that debits the coverage account and credits labor absorption, at hours × the cost rate. An entry keeps the cost rate it first posted at, so a later rate change does not move it. Editing an entry posts the difference, and deleting it reverses its cost.
+
+**Complete** is refused while a clock runs. In the ERP, the Complete dialog offers **Stop clock and complete**.
+
+## Parts and charges
+
+**Issue Part** takes stock from the job's location. Its cost posts to the coverage account at once, because the part has left the shelf. **Return to Stock** on a part line puts everything still issued back and reverses its cost. In the MES, technicians add parts from the job page.
+
+**Add Charge** adds a Service item at a price, such as a trip fee. A charge that was a real cost, like a hotel night, can name the line that paid it in **Paid By**: a line of a posted reimbursement or of a posted supplier invoice. The charge then shows that line's cost, and the job posts nothing for it, because the linked document already did.
+
+## Invoicing
+
+**Create Invoice** drafts a sales [invoice](/docs/reference/invoices) for a Completed Billable job and moves the job to Invoiced.
+
+- **Time and Materials** bills one line named "Labor", the billable hours at the job's bill rate, then each billable part and charge.
+- **Fixed Price** bills one line, "Fixed price service", at the job's **Fixed Price**. Time, parts and charges are in the price. If the job has no price, the dialog asks for it.
+
+Every line is a Service line. The "Labor" and "Fixed price service" lines have no item, so the invoice shows the line's description as its name. On the invoice, you can change their description, quantity, price and tax.
+
+Posting the invoice records revenue only. The parts already left inventory when they were issued.
+
+## Revenue
+
+A Billable job earns its revenue as the work is done, not when it is invoiced. Each month, the [revenue recognition run](/docs/reference/accounting#revenue-recognition-and-lease-runs) (**Accounting → Closing → Revenue Recognition**) accrues what an open Billable job has earned and not yet billed: debit Contract Assets, credit Service Revenue.
+
+| Billing | Earned so far |
+|---|---|
+| **Time and Materials** | Billable hours logged × the bill rate, plus billable parts and charges |
+| **Fixed Price** | The fixed price × hours logged ÷ the Labor hours on the accepted estimate, up to 100%. All of it once the job is Completed |
+
+When the invoice posts, it clears that accrual off Contract Assets and credits the rest to Service Revenue. A job that leaves Billable coverage or is cancelled before it is invoiced reverses its accrual in the next run. A Warranty or Contract job earns no revenue.
+
+Set **Service Revenue** and **Contract Assets** in **Accounting → Default Accounts**. Without Service Revenue, service revenue posts to Sales. Without Contract Assets, the run refuses to accrue service revenue.
+
+## The dispatch schedule
+
+**Service → Schedule** shows a week for one location: technicians as rows, days as columns. Each cell lists the day's jobs with their planned hours and a total against the person's shift. A day marked absent is greyed out.
+
+The **Backlog** panel lists the location's open jobs that nobody is scheduled on. Drag a job onto a cell to schedule it, drag a block to another cell to move it, or drag it back to the backlog to unschedule it. The department filter brings that department's people to the top.
+
+<Screenshot label="Service Schedule with technicians by day, job blocks with planned hours, and the Backlog panel" caption="Drag a job from the backlog onto a technician's day." />
+
+## Related
+
+<Cards>
+  <Card title="RMAs" href="/docs/reference/rmas">
+    Return types, the service receipt, ship-back and replacement.
+  </Card>
+  <Card title="Customer assets" href="/docs/reference/customer-assets">
+    The installed base a job is about, with its warranty dates.
+  </Card>
+  <Card title="Maintenance" href="/docs/reference/maintenance">
+    The same flat record of time and parts, for your own work centers.
+  </Card>
+  <Card title="Invoices" href="/docs/reference/invoices">
+    Post and settle the invoice a Billable job creates.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "This job is closed. A Completed, Invoiced or Cancelled job cannot change."
+The job is locked. Reopen a Completed job first; an Invoiced or Cancelled job cannot change.
+
+### "Set the labor cost rate in Settings → Service."
+The company has no labor cost rate, so a time entry has no cost to post. Every time write is refused: the job's Time list, the MES clock and New Job, and My Time in the ERP and the MES. Set **Labor cost per hour** in Settings → Service.
+
+### "Set the job's bill rate first."
+A Labor estimate line, or Create Invoice on a Time and Materials job with billable hours, needs the job's **Bill Rate**. Set it in the job's properties panel.
+
+### "The bill rate is locked: the estimate was sent to the customer."
+The estimate is Sent or Accepted. The bill rate cannot change after the customer saw it.
+
+### "Set the job's fixed price first."
+A Fixed Price job has no price to bill. Enter it in the Create Invoice dialog or the properties panel.
+
+### "Stop the running clock first."
+A clock still runs on the job. In the ERP, use **Stop clock and complete**.
+
+### "Time entry saved, but its cost did not post: …" / "Clock stopped, but its labor cost did not post"
+The write was kept, and its cost will post with the next change to the job's time. **Complete** posts it too, and refuses if it still cannot.
+
+### "This time entry was posted before your accounting cutover. Record a journal entry to correct it instead."
+An entry that posted before the accounting cutover cannot change. Correct it with a manual journal entry.
+
+### "Set the Contract Assets account default before recognizing service revenue."
+The revenue recognition run has service revenue to accrue and no Contract Assets default.
+
+### "Set the Warranty Expense account in Accounting → Default Accounts."
+A Warranty job posted a part, its time, or a coverage change with no Warranty Expense default.
+
+### "A job with time entries or issued parts cannot be cancelled. Remove them first."
+Delete the time entries and return the parts to stock, then cancel.
+
+### "Your clock is running on … Stop it first." / "Your clock is already running on another job. Stop it first."
+An employee can run one clock at a time (`serviceJobTime_open_clock_key`).
+
+### "This day has clock time on the job. Edit it on the job."
+On My Time, the new total is below the day's clock hours. Clock entries are edited on the job page.
+
+### "An invoiced job cannot be reopened."
+Voiding the invoice does not move the job back from Invoiced.
+
+### "This line already pays a charge on …"
+A reimbursement or supplier invoice line pays one charge only.
+
+## Internals
+- Tables: `serviceJob` (`sj`, readable `serviceJobId`, sequence `serviceJob`, prefix SJ), `serviceJobTime`, `serviceJobItem` (Part / Charge), `serviceJobEstimateLine`, `serviceJobAssignment`.
+- Rates: `companySettings.serviceLaborCostRate` / `serviceLaborBillRate` (Settings → Service, `/x/settings/service`); `serviceJob.laborBillRate`; `serviceJobTime.unitCost` holds the rate an entry posted at.
+- Postings: `postServiceJob` (`post-time`, `complete`, `reopen`, `set-coverage`) and `createServiceInvoice` in `apps/erp/app/modules/service/service.service.ts`; the time reconcile is `reconcileServiceJobTime`; parts through the `issue` types `serviceJobInventory`, `serviceJobTrackedEntities`, `serviceJobUnconsume`.
+- Journals: source `Service Job` (time cost per entry, `documentLineReference` `service-job-time:<id>`; coverage reclass); part issues write `Service Job Consumption` ledger rows. Complete and Reopen write no journal.
+- Revenue: `synthesizeServiceJobRevenue` writes Accrual rows (`revenueRecognitionSchedule.serviceJobId`) in the Revenue Recognition run; `postSalesInvoice` clears them on the job's invoice (`planServiceJobRevenue`) and credits `accountDefault.serviceRevenueAccount` (falls back to Sales). The labor and fixed price lines are `invoiceLineType` `Service` with no item; lines written before 2026-11-01 have the type `Labor` and post the same way.
+- Routes: list `/x/service-jobs`, job `/x/service-job/<id>`, schedule `/x/service-jobs/schedule`, assets `/x/service-jobs/assets`; MES `/x/service`.
+- Rules: `.claude/rules/service-jobs.md`.
+</AgentContext>

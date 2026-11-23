@@ -6,27 +6,18 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import { useRouteDialog } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { fixedAssetClassValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetClassValidator,
   getFixedAssetClass,
   upsertFixedAssetClass
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { AssetClassForm } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["assetClassId"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -94,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AssetClassRoute() {
   const { assetClass, taxDepreciationEnabled } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: assetClass.id,
@@ -127,7 +118,8 @@ export default function AssetClassRoute() {
 
   return (
     <AssetClassForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       key={initialValues.id}
       initialValues={initialValues}
       taxDepreciationEnabled={taxDepreciationEnabled}

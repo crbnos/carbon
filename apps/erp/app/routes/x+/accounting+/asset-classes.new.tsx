@@ -6,17 +6,17 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { fixedAssetClassValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetClassValidator,
   getDefaultAccounts,
   upsertFixedAssetClass
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { AssetClassForm } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -81,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewAssetClassRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { defaults, taxDepreciationEnabled } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -103,7 +103,8 @@ export default function NewAssetClassRoute() {
 
   return (
     <AssetClassForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
       taxDepreciationEnabled={taxDepreciationEnabled}
     />

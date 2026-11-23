@@ -9,8 +9,8 @@ import { Area } from "@visx/shape";
 import { Text } from "@visx/text";
 import { motion } from "motion/react";
 import { Fragment, useMemo, useRef, useState } from "react";
-import { useIsMobile } from "./hooks";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 interface FunnelStep {
   id: string;
@@ -77,7 +77,7 @@ function FunnelChartContent({
   numberFormatter,
   defaultTooltipStepId
 }: FunnelChartContentProps) {
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
 
   const [activeTooltip, setActiveTooltip] = useState<string | null>(
     defaultTooltipStepId ?? null
@@ -118,7 +118,16 @@ function FunnelChartContent({
 
   return (
     <div className="relative">
-      <svg width={width} height={height}>
+      <svg
+        width={width}
+        height={height}
+        role="img"
+        aria-label={steps
+          .map(
+            ({ label, value }) => `${label}: ${numberFormatter.format(value)}`
+          )
+          .join(", ")}
+      >
         {steps.map(({ id, value, colorClassName }, idx) => {
           const stepCenterX = (xScale(idx) + xScale(idx + 1)) / 2;
           return (

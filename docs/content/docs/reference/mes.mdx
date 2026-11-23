@@ -5,7 +5,7 @@ description: The shop-floor surface where operators run operations, report quant
 
 The <Term>MES</Term> app is Carbon's shop-floor interface. Planners release and schedule work in the ERP; operators execute and report that work from tablets or shared stations in MES. See the [run the floor tour](/guides/floor) for a walkthrough and [jobs](/docs/reference/jobs), [picking lists](/docs/reference/picking), and [quality](/docs/reference/quality) for the underlying records.
 
-MES requires a network connection for all writes. It caches item and people picker data in IndexedDB for faster reads, but it has **no offline mode**. Operators cannot start work, report output, or issue material while disconnected.
+MES requires a network connection for all writes. It caches item and people picker data in IndexedDB for faster reads, but it has **no offline mode**. Operators cannot start work, report output, or issue material while disconnected. A page opened without a connection shows an offline page instead of the browser's error, and Carbon reloads it once the connection is back.
 
 ## Getting onto the floor
 
@@ -53,7 +53,11 @@ The **"Open Jobs"** list is the job-level view: columns for **Job**, **Item**, *
 The ERP job status <Term id="job">jobs</Term> reach when they're cleared to run is `Ready`, but the MES Open Jobs list renders that same value as **"Released"** — the floor's word for "you can start this now." It's a display alias, not a different status. `Closed` jobs also surface in this list.
 </Callout>
 
-Opening a job shows its operations as a directed graph (the routing DAG), so an operator sees what feeds what. The toolbar lays it out **"Left to Right"** or **"Top to Bottom"** and offers **"Fit"**; nodes flag a **"Rework"** loop and a scrapped-quantity count when they apply.
+Opening a job shows a list of its operations in run order: each operation comes after every operation it depends on. A row shows the step number, the part, the operation (tagged **"Rework"** for a rework, and with its batch number while a batch runs), the status, and a bar of completed, reworked and scrapped quantity against the target. Tap a row to open that operation.
+
+A List / Flow chart switch in the header changes the view, and the device remembers the choice for every job page. The flow chart draws the routing as a directed graph, so an operator sees what feeds what. Its toolbar changes the layout (**"Winding"** on a wide screen, **"Left to Right"**, **"Top to Bottom"**) and offers **"Fit"**. Nodes flag a **"Rework"** loop and a scrapped-quantity count when they apply.
+
+<Screenshot label="MES job page in List view: numbered operation rows with part, operation name, status and a progress bar, and the List / Flow chart switch in the header" caption="A job opens on its operations in run order; the flow chart is one switch away." />
 
 ## Running an operation
 
@@ -93,6 +97,24 @@ Good, bad, and reworked units are reported separately, so yield stays honest:
 
 Reworking *in place* is different from sending a unit back upstream. **"Create Rework"** does the latter: pick an operation under **"Go back to operation"**, give a **"Reason for rework"**, and Carbon re-runs every operation from that point forward to the current one.
 
+A choice list with only one option fills itself in. This applies to **"Scrap Reason"**, **"Go back to operation"**, and the **"Issue Type"** of a quality issue.
+
+### Serial units on later operations
+
+On the first operation of a serial-tracked part, units go in order: the screen holds the next open unit, and after a completion the next one follows. On a later operation with more than one open unit, the operator must pick the unit or scan its traveler label first. When only one open unit is left, the screen picks it.
+
+Until a unit is picked, **"Log Completed"**, Scrap, Rework, recording steps and issuing material are disabled. The steps show no unit's progress, and the unit counter reads **"No unit selected"**. **"Select a unit"** opens the unit picker again.
+
+- **The picker's field** takes a unit id, a serial number, or a pasted traveler link.
+- **A unit's traveler label** picks that unit when scanned, with the picker open or closed.
+- **An item sticker or a part's traveler** scanned with no unit picked issues nothing. The station says **"Select a unit first"** and opens the picker.
+- **A kanban complete card** for such an operation also asks for the unit. It never chooses one for the operator.
+- **A kanban start card** starts the timer with no unit, as the **Start** button does. The screen then asks for the unit.
+
+<Callout type="note" title="A finished unit can still be opened.">
+Pick a unit that is already complete at this operation to look back at its records. Work that needs an open unit stays disabled. You can still raise a quality issue against the unit and unconsume parts from it. **Issue** stays disabled with the note **"This unit is complete here"**.
+</Callout>
+
 Closing the operation is a distinct action. **"Finish"** ends any open events and flips the operation to `Done`. If quantities or steps aren't satisfied Carbon warns (**"Insufficient quantity"**, **"Steps are missing"**) and offers **"Finish Anyways"**. A guard also fires when tracked material was never issued; the operator must acknowledge **"I understand and want to complete without issuing"** to proceed.
 
 <Callout type="warn" title="&quot;End Operations&quot; is not the same as finishing.">
@@ -104,6 +126,15 @@ Closing the operation is a distinct action. **"Finish"** ends any open events an
 Material is consumed against an operation from the same panel. The **"Issue"** action has an Adjustment Type: **"Add to Inventory"** (a `Positive Adjmt.`) or **"Pull from Inventory"** (a `Negative Adjmt.`). For serial- or batch-<Term id="tracked-entity">tracked</Term> material, tabs let the operator **"Scan"** a barcode, **"Select"** from stock, or **"Unconsume"** to return material already issued.
 
 Two edge cases surface right in the flow rather than failing silently. Issuing expired stock is governed by a policy (`Warn`, `Block`, or `BlockWithOverride`); an overridable block asks for a **"Reason for issuing expired stock"**. And when a pick splits a batch, the station reports a **"Batch Split Occurred"** and offers to **"Convert to New Size/Revision"** or scrap the remainder.
+
+### When you don't have the required ability
+
+A process can require an ability (see [requiring an ability](/docs/reference/work-centers#requiring-an-ability)). When you open one of its operations without that ability, or with a qualification that has expired, a banner says so and names the training that grants it. The process decides what happens next:
+
+- **Warn**: a yellow banner, **"You don't have the … ability"**, and you can work as usual.
+- **Block**: a red banner, **"You can't work on this operation"**. Start, **"Log completed"**, Scrap, Rework, **"Mark as Done"**, recording steps, issuing material and inspection verdicts are disabled, and the timer does not start by itself. A timer that is already running can still be paused.
+
+The same applies in the guided assembly view and the inspection view.
 
 ### Clocking in and out
 
@@ -162,6 +193,18 @@ The picking list is already `Completed` or `Cancelled`, which locks it — the f
 
 ### Finish is blocked or warns ("Insufficient quantity" / "Steps are missing")
 **"Finish"** flips the operation to `Done`, but guards fire first. If reported quantity is short you'll see **"Insufficient quantity"**; if procedure steps aren't satisfied, **"Steps are missing"**. You can override with **"Finish Anyways"**. Separately, if tracked material was never issued, the operator must tick **"I understand and want to complete without issuing"** to proceed.
+
+### "Select a unit first" / Log Completed, Scrap and Rework are disabled
+The operation is a later operation of a serial-tracked part with more than one open unit, and no unit is picked. Every write there must name a unit (`resolveWorkUnit`, mode `require`, in `apps/mes/app/services/work-unit.server.ts`). Tap **"Select a unit"**, or scan the unit's traveler label. A kanban card scanned from outside the MES on such an operation redirects to it with the same message and records nothing.
+
+### "This unit is not part of this operation"
+The scanned or typed unit is not one of this operation's units (another job, or outside the operation's scope). Scan the label of a unit the operation lists.
+
+### "This unit is complete here"
+The unit on screen is already done at this operation and is open only to look back at. Issuing parts is disabled; unconsuming parts and raising a quality issue still work. Pick an open unit to issue parts.
+
+### "You can't work on this operation"
+The operation's process requires an ability you don't hold, or your qualification expired, and the process is set to **Block**. Complete the training the banner names, or ask a supervisor to add the ability on your Abilities page. A planner can also switch the process to **Warn** under **Resources → Processes**.
 
 ### "Forgot to Clock Out?"
 A time card was left open for twelve hours or more. Choose **"I'm Still Working"** to keep the shift open, or **"Set Clock Out"** to close it. Time cards are labor/presence time for payroll — separate from the per-operation production events that drive job costing.

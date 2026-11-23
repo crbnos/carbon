@@ -10,32 +10,27 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  HStack,
   Table,
   Tbody,
   Td,
   Th,
   Thead,
-  Tr,
-  VStack
+  Tr
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { EmployeeAvatar, Hyperlink } from "~/components";
-import { useAuditLog } from "~/components/AuditLog";
+import { EmployeeAvatar } from "~/components";
 // Imported by PATH, deliberately not re-exported from `~/components`. This
 // component pulls the `@carbon/ee` barrel for the provider logo, and the
 // components barrel is imported by nearly every route — putting it there drags
 // the integrations registry into the chunk they all share.
 import DocumentSourceBadge from "~/components/DocumentSourceBadge";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
-import { useCurrencyFormatter, useUser } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import { getColor } from "~/modules/accounting/ui/JournalEntries/DimensionSelector";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
-import { path } from "~/utils/path";
-import ReimbursementStatus from "./ReimbursementStatus";
 
 type ReimbursementRow = Database["public"]["Tables"]["reimbursement"]["Row"];
 type ReimbursementLineRow =
@@ -60,7 +55,6 @@ type ReimbursementSummaryProps = {
     string,
     { id: string; number: string | null; name: string }
   >;
-  journal: { id: string; journalEntryId: string } | null;
   mapping: {
     externalId: string | null;
     metadata: { deepLink?: string } | null;
@@ -115,25 +109,21 @@ function resolveLineDimensions(
   return [...byDimensionId.values()];
 }
 
+/**
+ * Read mode of a reimbursement, laid flat under the page header: its facts,
+ * then its coding lines. The id and status live in the header, and the
+ * employee's page, the journal entry and the payments under Documents.
+ */
 const ReimbursementSummary = ({
   reimbursement,
   lines,
   accountsById,
-  journal,
   mapping,
   availableDimensions
 }: ReimbursementSummaryProps) => {
   const { locale } = useLocale();
-  const { company } = useUser();
   const currencyFormatter = useCurrencyFormatter({
     currency: reimbursement.currencyCode
-  });
-
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "reimbursement",
-    entityId: reimbursement.id,
-    companyId: company.id,
-    variant: "card-action"
   });
 
   const dimensionsByLineId = useMemo(
@@ -157,173 +147,144 @@ const ReimbursementSummary = ({
 
   return (
     <>
-      <Card>
-        {/*
-          `flex-wrap` + a shrink-proof right group: the SOURCE field carries the
-          provider's 36-character external id in a mono font, which cannot wrap,
-          so the right-hand group has an intrinsic width it will not give up.
-          VStack defaults to `w-full`, so the title block claimed the whole row,
-          squeezed the group below that width and the History button spilled
-          past the card's right edge. The title block takes only what it needs
-          (`w-auto`, `min-w-0` so it is the one that yields), and on a narrow
-          card the group wraps to its own line rather than bleeding off.
-        */}
-        <CardHeader className="flex-row flex-wrap items-start justify-between gap-4">
-          <VStack spacing={2} className="w-auto min-w-0">
-            <CardTitle>{reimbursement.reimbursementId}</CardTitle>
-            <HStack spacing={2}>
-              <ReimbursementStatus status={reimbursement.status} />
-              <EmployeeAvatar employeeId={reimbursement.employeeId} />
-            </HStack>
-          </VStack>
-          <HStack spacing={4} className="items-start shrink-0">
-            <DocumentSourceBadge
-              integration={reimbursement.integration}
-              externalId={mapping?.externalId}
-              deepLink={mapping?.metadata?.deepLink}
-            />
-            {auditLogTrigger}
-          </HStack>
-        </CardHeader>
-        <CardContent>
-          <VStack spacing={4}>
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm w-full">
+      <div className="flex flex-col gap-4 w-full pt-2 pb-4">
+        <DocumentSourceBadge
+          integration={reimbursement.integration}
+          externalId={mapping?.externalId}
+          deepLink={mapping?.metadata?.deepLink}
+        />
+        <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm w-full">
+          <dt className="text-muted-foreground">
+            <Trans>Employee</Trans>
+          </dt>
+          <dd className="min-w-0">
+            <EmployeeAvatar employeeId={reimbursement.employeeId} />
+          </dd>
+
+          <dt className="text-muted-foreground">
+            <Trans>Reimbursement Date</Trans>
+          </dt>
+          <dd>
+            {formatDate(reimbursement.reimbursementDate, undefined, locale)}
+          </dd>
+
+          <dt className="text-muted-foreground">
+            <Trans>Amount</Trans>
+          </dt>
+          <dd className="tabular-nums">
+            {currencyFormatter.format(Number(reimbursement.amount))}
+          </dd>
+
+          <dt className="text-muted-foreground">
+            <Trans>Currency</Trans>
+          </dt>
+          <dd>{reimbursement.currencyCode}</dd>
+
+          <dt className="text-muted-foreground">
+            <Trans>Reference</Trans>
+          </dt>
+          <dd className="min-w-0 break-words">
+            {reimbursement.reference ?? "—"}
+          </dd>
+
+          {reimbursement.postingDate && (
+            <>
               <dt className="text-muted-foreground">
-                <Trans>Reimbursement Date</Trans>
+                <Trans>Posting Date</Trans>
               </dt>
               <dd>
-                {formatDate(reimbursement.reimbursementDate, undefined, locale)}
+                {formatDate(reimbursement.postingDate, undefined, locale)}
               </dd>
+            </>
+          )}
 
+          {reimbursement.notes && (
+            <>
               <dt className="text-muted-foreground">
-                <Trans>Amount</Trans>
+                <Trans>Notes</Trans>
               </dt>
-              <dd className="tabular-nums">
-                {currencyFormatter.format(Number(reimbursement.amount))}
+              <dd className="min-w-0 whitespace-pre-wrap break-words">
+                {reimbursement.notes}
               </dd>
+            </>
+          )}
+        </dl>
+      </div>
 
-              <dt className="text-muted-foreground">
-                <Trans>Currency</Trans>
-              </dt>
-              <dd>{reimbursement.currencyCode}</dd>
-
-              <dt className="text-muted-foreground">
-                <Trans>Reference</Trans>
-              </dt>
-              <dd>{reimbursement.reference ?? "—"}</dd>
-
-              {reimbursement.postingDate && (
-                <>
-                  <dt className="text-muted-foreground">
-                    <Trans>Posting Date</Trans>
-                  </dt>
-                  <dd>
-                    {formatDate(reimbursement.postingDate, undefined, locale)}
-                  </dd>
-                </>
-              )}
-
-              {reimbursement.journalId && (
-                <>
-                  <dt className="text-muted-foreground">
-                    <Trans>Journal</Trans>
-                  </dt>
-                  <dd>
-                    {journal ? (
-                      <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
-                        {journal.journalEntryId}
-                      </Hyperlink>
-                    ) : (
-                      reimbursement.journalId
-                    )}
-                  </dd>
-                </>
-              )}
-
-              {reimbursement.notes && (
-                <>
-                  <dt className="text-muted-foreground">
-                    <Trans>Notes</Trans>
-                  </dt>
-                  <dd className="whitespace-pre-wrap">{reimbursement.notes}</dd>
-                </>
-              )}
-            </dl>
-
-            <div className="w-full">
-              <Table>
-                <Thead>
-                  <Tr>
-                    <Th>
-                      <Trans>Account</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Dimensions</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Description</Trans>
-                    </Th>
-                    <Th className="text-right">
-                      <Trans>Amount</Trans>
-                    </Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {lines.length === 0 ? (
-                    <Tr>
-                      <Td
-                        colSpan={4}
-                        className="text-center text-muted-foreground"
-                      >
-                        <Trans>No lines</Trans>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Line items</Trans>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <Thead>
+              <Tr>
+                <Th>
+                  <Trans>Account</Trans>
+                </Th>
+                <Th>
+                  <Trans>Dimensions</Trans>
+                </Th>
+                <Th>
+                  <Trans>Description</Trans>
+                </Th>
+                <Th className="text-right">
+                  <Trans>Amount</Trans>
+                </Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {lines.length === 0 ? (
+                <Tr>
+                  <Td colSpan={4} className="text-center text-muted-foreground">
+                    <Trans>No lines</Trans>
+                  </Td>
+                </Tr>
+              ) : (
+                lines.map((line) => {
+                  const dimensions = dimensionsByLineId.get(line.id) ?? [];
+                  return (
+                    <Tr key={line.id}>
+                      <Td>{accountLabel(line.accountId)}</Td>
+                      <Td>
+                        {dimensions.length === 0 ? (
+                          "—"
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {dimensions.map((dimension) => (
+                              <Badge
+                                key={dimension.dimensionId}
+                                variant="outline"
+                                className={cn(
+                                  "inline-flex items-center gap-1",
+                                  getColor(dimension.entityType)
+                                )}
+                              >
+                                <DimensionEntityTypeIcon
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                  entityType={dimension.entityType as any}
+                                  className="size-3"
+                                />
+                                <span>{dimension.valueName}</span>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </Td>
+                      <Td>{line.description ?? "—"}</Td>
+                      <Td className="text-right tabular-nums">
+                        {currencyFormatter.format(Number(line.amount))}
                       </Td>
                     </Tr>
-                  ) : (
-                    lines.map((line) => {
-                      const dimensions = dimensionsByLineId.get(line.id) ?? [];
-                      return (
-                        <Tr key={line.id}>
-                          <Td>{accountLabel(line.accountId)}</Td>
-                          <Td>
-                            {dimensions.length === 0 ? (
-                              "—"
-                            ) : (
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {dimensions.map((dimension) => (
-                                  <Badge
-                                    key={dimension.dimensionId}
-                                    variant="outline"
-                                    className={cn(
-                                      "inline-flex items-center gap-1",
-                                      getColor(dimension.entityType)
-                                    )}
-                                  >
-                                    <DimensionEntityTypeIcon
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      entityType={dimension.entityType as any}
-                                      className="size-3"
-                                    />
-                                    <span>{dimension.valueName}</span>
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </Td>
-                          <Td>{line.description ?? "—"}</Td>
-                          <Td className="text-right tabular-nums">
-                            {currencyFormatter.format(Number(line.amount))}
-                          </Td>
-                        </Tr>
-                      );
-                    })
-                  )}
-                </Tbody>
-              </Table>
-            </div>
-          </VStack>
+                  );
+                })
+              )}
+            </Tbody>
+          </Table>
         </CardContent>
       </Card>
-      {auditLogDrawer}
     </>
   );
 };

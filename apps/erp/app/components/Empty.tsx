@@ -4,23 +4,58 @@
 
 import { cn, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { ComponentProps } from "react";
-import { LuCircleDashed } from "react-icons/lu";
+import type { ComponentProps, ReactNode } from "react";
+
+type EmptyProps = Omit<ComponentProps<"div">, "title"> & {
+  /** The heading. Defaults to "No data yet". */
+  title?: ReactNode;
+  /** The line under the heading. Pass `null` to render no line. */
+  description?: ReactNode;
+};
 
 export default function Empty({
   className,
   children,
+  title,
+  description,
   ...props
-}: ComponentProps<"div">) {
+}: EmptyProps) {
   return (
     <VStack
-      className={cn("w-full h-full justify-center items-center", className)}
+      className={cn(
+        "w-full h-full justify-center items-center py-8",
+        className
+      )}
       {...props}
     >
-      <LuCircleDashed className="size-8 text-muted-foreground" />
-      <h3 className="text-xs text-muted-foreground">
-        <Trans>Looks empty here</Trans>&nbsp;&nbsp;👀
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 64 64"
+        className="size-16 shrink-0 mb-4 text-muted-foreground/40"
+      >
+        <circle
+          cx="32"
+          cy="32"
+          r="30"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
+      </svg>
+      <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[1.0625rem] max-md:font-semibold">
+        {title ?? <Trans>No data yet</Trans>}
       </h3>
+      {description !== null && (
+        <p className="max-w-56 text-center text-xs text-muted-foreground text-balance">
+          {description ?? (
+            <Trans>
+              Your data will appear here once you create or import your first
+              records
+            </Trans>
+          )}
+        </p>
+      )}
       {children}
     </VStack>
   );

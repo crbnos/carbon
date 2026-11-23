@@ -52,7 +52,7 @@ export const clientMiddleware = [
   flashClientMiddleware,
   createInvalidationMiddleware({
     getCache: () => window.clientCache,
-    skipPaths: [path.to.refreshSession]
+    skipPaths: [path.to.refreshSession, path.to.root]
   })
 ];
 ```
@@ -65,7 +65,8 @@ middleware wraps fetcher submissions too, so a modal's save is covered.
 - A route does not name what its action changes. Do not add a `clientAction`
   to invalidate.
 - `skipPaths` is for POSTs that change no data. `/refresh-session` fires on
-  every tab focus and would otherwise refetch every list.
+  every tab focus and would otherwise refetch every list. The root action
+  (`/`) only writes appearance cookies (mode, theme, text size, density).
 - It is deliberately blunt: saving a part also marks customer types stale,
   which costs one extra fetch the next time that list is used.
 - Realtime invalidates the same entries when another user changes a reference
@@ -75,7 +76,7 @@ middleware wraps fetcher submissions too, so a modal's save is covered.
 
 | Hook | Use |
 |---|---|
-| `useLoaderQuery<T>(url \| null)` | Render with an `api+` URL's data. One request per URL however many components read it; refetches when invalidated. `T` is the data, or `typeof loader`. `null` waits |
+| `useLoaderQuery<T>(url \| null)` | Render with an `api+` URL's data. One request per URL however many components read it; refetches when invalidated. `T` is the data, or `typeof loader`. `null` waits. `{ invalidate: false, refetchInterval }` is for data no save or realtime change touches: it is keyed under `SELF_REFRESHED`, so neither marks it stale (leaving the company still drops it) |
 | `cachedApiQuery<T>(url)` | The same read from an event handler or an effect |
 | `useAction<T>({ onSuccess, onError, onSettled })` | A mutation fetcher whose result goes to a callback instead of an effect watching `fetcher.data`. Submit with `.submit()` or `<action.Form>` as with `useFetcher`. `onSettled` runs whenever a submission finishes; `onSuccess` / `onError` only when the action returned data (an action that redirects returns none) |
 

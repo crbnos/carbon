@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  configurationParameterValidator,
-  upsertConfigurationParameter
-} from "~/modules/items";
+import { configurationParameterValidator } from "~/modules/items/items.models";
+import { upsertConfigurationParameter } from "~/modules/items/items.service";
 
 const logger = getLogger("erp", "itemid-parameter");
 
@@ -45,7 +43,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (upsert.error) {
-    logger.error(upsert.error);
+    logger.error("Failed to save the configuration parameter", {
+      itemId,
+      error: upsert.error
+    });
     return {
       success: false,
       error: upsert.error.message

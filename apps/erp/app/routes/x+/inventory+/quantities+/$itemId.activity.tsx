@@ -13,21 +13,21 @@ import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
+import { getItemLedgerBalance } from "~/modules/inventory/inventory.service";
+import { getItemLedgerActivity } from "~/modules/inventory/inventory.utils";
+import type { ItemLedger } from "~/modules/inventory/types";
 import type {
   BalanceAnchor,
-  CollapsedItemLedger,
-  ItemLedger
-} from "~/modules/inventory";
+  CollapsedItemLedger
+} from "~/modules/inventory/ui";
 import {
   collapseTransferPairs,
-  getItemLedgerActivity,
-  getItemLedgerBalance,
   InventoryActivity,
   withRunningBalance
-} from "~/modules/inventory";
-import { getItem } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+} from "~/modules/inventory/ui";
+import { getItem } from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -167,7 +167,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
+// The feed keeps the pages it has loaded in state, seeded from the loader. A
+// reload for another location or highlight is a new feed: without the key it
+// kept showing the first one, with the new one's paging cursors. An entry
+// posted while the feed is open is deliberately not a new feed: remounting
+// would drop the older pages already loaded and the scroll position.
 export default function ItemInventoryActivityRoute() {
+  const { itemId, locationId, highlightId } = useLoaderData<typeof loader>();
+  return (
+    <ItemInventoryActivity key={`${itemId}:${locationId}:${highlightId}`} />
+  );
+}
+
+function ItemInventoryActivity() {
   const {
     initialItemLedgers,
     itemId,
@@ -281,7 +293,7 @@ export default function ItemInventoryActivityRoute() {
   }, [carbon, itemId, companyId, locationId]);
 
   return (
-    <div className="w-full space-y-4 pt-6 px-4">
+    <div className="w-full space-y-4 pt-6 px-4 max-md:p-0">
       <Heading size="h2" className="mb-4">
         <Trans>Activity</Trans>
       </Heading>

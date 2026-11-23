@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { IntegrationID } from "@carbon/ee";
+import { getIntegrationConfigById } from "@carbon/ee";
 import type { WorkflowNodeType } from "@carbon/ee/workflows";
 import { FAILURE_HANDLE } from "@carbon/ee/workflows";
 import {
@@ -32,6 +34,7 @@ import {
   useBuilderStoreApi,
   useBuilderStoreShallow
 } from "../context";
+import { useDataOperationLabel } from "../dataOperationLabels";
 import { asWorkflowNode, canConnect } from "../graph";
 import { NodeCard } from "../NodeCard";
 import { portsFor } from "../ports";
@@ -52,8 +55,16 @@ import { NODE_KIND_META } from "./meta";
 function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const { t } = useLingui();
   const eventLabel = useWorkflowEventLabel();
+  const operationLabel = useDataOperationLabel();
   const node = asWorkflowNode(id, type as WorkflowNodeType, data);
   const meta = NODE_KIND_META[node.type];
+  // Once an app is chosen, the node wears that app's own logo instead of the
+  // generic plug. An integration's card id IS the piece name (by design — see
+  // workflow-integrations.md), so the settings grid's logo is reused verbatim.
+  const PieceLogo =
+    node.type === "integration" && node.data.piece
+      ? getIntegrationConfigById(node.data.piece as IntegrationID)?.logo
+      : undefined;
 
   const store = useBuilderStoreApi();
   const builderNode = useBuilderStore(selectNode(id));
@@ -118,7 +129,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   // shipped label and would otherwise render its raw id on the card.
   const label = catalogId ? eventLabel(catalogId, catalogId) : undefined;
 
-  const summary = label ?? meta.summary?.(node);
+  const summary = label ?? meta.summary?.(node, { operation: operationLabel });
 
   const ports = portsFor(node, t);
 
@@ -173,7 +184,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         <TooltipContent side="top">
           {hasIssues
             ? t`Fix the problems with this workflow before testing it`
-            : t`Test run — results are not saved to the Runs page`}
+            : t`Test runs are saved to the run history, marked as tests.`}
         </TooltipContent>
       </Tooltip>
     ) : null;
@@ -220,7 +231,17 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         title={titleSlot}
         description={meta.description}
         summary={summary}
-        icon={<meta.Icon className="size-3.5" />}
+        icon={
+          PieceLogo ? (
+            // Brand marks are drawn for white, not for the primary-colored chip
+            // behind Carbon's own glyphs; the tile exactly overlays the chip.
+            <span className="flex size-6 items-center justify-center rounded-md bg-white">
+              <PieceLogo className="size-4" />
+            </span>
+          ) : (
+            <meta.Icon className="size-3.5" />
+          )
+        }
         ports={ports}
         hasTarget={meta.hasTarget}
         issues={cardIssues.map((issue) => issue.message)}
@@ -241,7 +262,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
           </div>
         )}
         {hasFailureHandle && !hasFailureEdge && (
-          <p className="mt-1 flex items-center gap-1 text-[10.5px] text-amber-600 dark:text-amber-400">
+          <p className="mt-1 flex items-center gap-1 text-[0.65625rem] text-amber-600 dark:text-amber-400">
             <LuTriangleAlert className="size-3 shrink-0" />
             <Trans>
               No failure path — the run stops here and is marked failed

@@ -7,38 +7,37 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getApprovalRulesForApprover } from "@carbon/ee/approvals.server";
 import {
-  Heading,
   HStack,
+  RecordOutlet,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { New } from "~/components";
-import { getCostCentersTree } from "~/modules/accounting";
+import { SettingsPageHeading } from "~/components/SettingsPage";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
+import { getCostCentersTree } from "~/modules/accounting/accounting.service";
 import {
   CostCentersListView,
   CostCentersTreeView
 } from "~/modules/accounting/ui/CostCenters";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringTabDisplay } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Cost Centers`,
   to: path.to.costCenters
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
+export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -69,6 +68,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Route() {
   const { t } = useLingui();
+  const [, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = usePersistentPageTab(
+    "view",
+    ["tree", "list"],
+    "tree",
+    "tab"
+  );
   const { costCenters } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
@@ -94,9 +100,26 @@ export default function Route() {
   );
 
   return (
-    <Tabs defaultValue="tree" className="w-full">
+    <Tabs
+      value={activeTab}
+      onValueChange={(tab) => {
+        setActiveTab(tab);
+        setSearchParams(
+          (previous) => {
+            const next = new URLSearchParams(previous);
+            if (tab === "list") next.set("tab", "list");
+            else next.delete("tab");
+            return next;
+          },
+          { replace: true, preventScrollReset: true }
+        );
+      }}
+      className="w-full"
+    >
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-        <Heading size="h3">Cost Centers</Heading>
+        <SettingsPageHeading>
+          <Trans>Cost Centers</Trans>
+        </SettingsPageHeading>
         <HStack>
           <TabsList>
             <TabsTrigger value="tree">Tree View</TabsTrigger>
@@ -128,7 +151,7 @@ export default function Route() {
         />
       </TabsContent>
 
-      <Outlet />
+      <RecordOutlet />
     </Tabs>
   );
 }

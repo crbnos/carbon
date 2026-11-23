@@ -10,16 +10,21 @@ import { forwardRef } from "react";
 import { LuCircle } from "react-icons/lu";
 
 import { buttonVariants } from "./Button";
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 
 const RadioGroup = forwardRef<
   ElementRef<typeof RadioGroupPrimitive.Root>,
   ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
 >(({ className, ...props }, ref) => {
+  // Inside a FormControl the field's error, helper text and glossary
+  // definition describe the group.
+  const { ariaProps } = useFormControl(props);
   return (
     <RadioGroupPrimitive.Root
       className={cn("grid gap-2", className)}
       {...props}
+      aria-describedby={ariaProps["aria-describedby"]}
       ref={ref}
     />
   );
@@ -35,6 +40,8 @@ const RadioGroupItem = forwardRef<
       ref={ref}
       className={cn(
         "aspect-square size-4 shrink-0 rounded-full border-2 border-muted-foreground/50 shadow-xs transition-[color,box-shadow,border-color] outline-none hover:border-primary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:text-primary dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary dark:data-[state=checked]:text-primary-foreground",
+        // Phones: a 44x44 hit area around the visual dot.
+        "max-md:hit-area",
         className
       )}
       {...props}

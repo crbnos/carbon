@@ -8,17 +8,21 @@ import { normalizeSwaggerSchema } from "./lib/swagger-schema";
 
 async function main(): Promise<void> {
   loadDotEnv();
-  // PostgREST's own OpenAPI document, through Kong with the anon key. Studio's
+  // PostgREST's own OpenAPI document, through the API gateway. Studio's
   // /api/platform/.../api/rest returns these exact bytes, so reading it here
-  // keeps this script working when Studio isn't running.
+  // keeps this script working when Studio isn't running. The gateway serves
+  // it to the service role key only, as the hosted platform does, so the
+  // service key opens the route and the anon JWT keeps PostgREST describing
+  // what anon can see (the service role also sees tables like employeePin).
   const apiPort = process.env.PORT_API;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.SUPABASE_ANON_KEY;
-  if (!apiPort || !anonKey)
+  if (!apiPort || !serviceKey || !anonKey)
     throw new Error(
-      "PORT_API / SUPABASE_ANON_KEY not set (expected in .env.local). Run `crbn up` first."
+      "PORT_API / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY not set (expected in .env.local). Run `crbn up` first."
     );
   const response = await fetch(`http://127.0.0.1:${apiPort}/rest/v1/`, {
-    headers: { apikey: anonKey },
+    headers: { apikey: serviceKey, Authorization: `Bearer ${anonKey}` },
     signal: AbortSignal.timeout(30_000)
   });
   if (!response.ok)

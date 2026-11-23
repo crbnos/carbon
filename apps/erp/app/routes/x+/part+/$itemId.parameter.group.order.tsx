@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  configurationParameterGroupOrderValidator,
-  updateConfigurationParameterGroupOrder
-} from "~/modules/items";
+import { configurationParameterGroupOrderValidator } from "~/modules/items/items.models";
+import { updateConfigurationParameterGroupOrder } from "~/modules/items/items.service";
 
 const logger = getLogger("erp", "itemid-parameter-group-order");
 
@@ -29,7 +27,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ).validate(formData);
 
   if (validation.error) {
-    logger.error(validation.error);
+    logger.error("Invalid configuration parameter group order", {
+      itemId,
+      error: validation.error
+    });
     return {
       success: false,
       error: "Invalid form data"
@@ -41,7 +42,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (upsert.error) {
-    logger.error(upsert.error);
+    logger.error("Failed to reorder configuration parameter groups", {
+      itemId,
+      error: upsert.error
+    });
     return {
       success: false,
       error: upsert.error.message

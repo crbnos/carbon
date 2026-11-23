@@ -12,7 +12,7 @@ import {
   deletePurchaseReturnOrder,
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLines
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -83,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           purchaseReturnOrderDelete.error,
-          purchaseReturnOrderDelete.error.message
+          "Failed to delete the purchase return order"
         )
       )
     );

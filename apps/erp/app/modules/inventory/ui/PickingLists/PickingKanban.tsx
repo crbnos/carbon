@@ -59,11 +59,11 @@ const PickingKanban = memo(
     return (
       <div className="flex flex-col flex-1 min-h-0">
         <ScrollArea className="flex-1">
-          <div className="flex gap-0 items-start flex-row justify-start">
+          <div className="flex gap-0 items-start flex-row justify-start max-md:px-4">
             {columns.map((column) => (
               <div
                 key={column.id}
-                className="w-[350px] max-w-full flex flex-col flex-shrink-0 bg-card/30 border-r border-border h-[calc(100dvh-var(--header-height)*2)]"
+                className="w-[350px] max-w-full flex flex-col flex-shrink-0 bg-card/30 border-r border-border h-[calc(100dvh-var(--header-height)*2)] max-md:w-[300px]"
               >
                 <div className="p-4 w-full font-semibold text-left flex flex-row items-center gap-2 sticky top-0 z-1 border-b border-border bg-card">
                   <PulsingDot inactive className="mt-1" />

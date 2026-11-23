@@ -4,12 +4,12 @@
 
 import {
   Badge,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Status,
   useDisclosure,
   VStack
@@ -39,9 +39,10 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { AssemblyInstructionListItem } from "../../types";
@@ -50,6 +51,7 @@ import AssemblyInstructionStatus from "./AssemblyInstructionStatus";
 type AssemblyInstructionsTableProps = {
   data: AssemblyInstructionListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const itemTypesWithDetails = ["Part", "Material", "Tool", "Consumable"];
@@ -71,7 +73,7 @@ function ProcessingStatus({ status }: { status?: string | null }) {
 }
 
 const AssemblyInstructionsTable = memo(
-  ({ data, count }: AssemblyInstructionsTableProps) => {
+  ({ data, count, infinite }: AssemblyInstructionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -96,6 +98,7 @@ const AssemblyInstructionsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBlocks />
           }
         },
@@ -106,6 +109,8 @@ const AssemblyInstructionsTable = memo(
             <AssemblyInstructionStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
+            mobilePill: true,
             icon: <LuCircleCheck />
           }
         },
@@ -128,6 +133,7 @@ const AssemblyInstructionsTable = memo(
             );
           },
           meta: {
+            mobile: "P3",
             icon: <LuSquareStack />,
             // Without this the exporter substitutes the item's name for the id
             // (Download.tsx idNameMaps), losing the readable id the cell shows.
@@ -200,15 +206,20 @@ const AssemblyInstructionsTable = memo(
             }>;
 
             return (
-              <HoverCard>
-                <HoverCardTrigger>
+              <Popover>
+                <PopoverTrigger
+                  aria-label={t`Versions of ${row.original.name} (${versions.length})`}
+                  className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                   <Badge variant="secondary" className="cursor-pointer">
                     {versions.length} Version
                     {versions.length === 1 ? "" : "s"}
                     <LuEllipsisVertical className="w-3 h-3 ml-2" />
                   </Badge>
-                </HoverCardTrigger>
-                <HoverCardContent>
+                </PopoverTrigger>
+                <PopoverContent
+                  aria-label={t`Versions of ${row.original.name}`}
+                >
                   <div className="flex flex-col w-full gap-4 text-sm">
                     {versions
                       .sort((a, b) => a.version - b.version)
@@ -231,8 +242,8 @@ const AssemblyInstructionsTable = memo(
                         </div>
                       ))}
                   </div>
-                </HoverCardContent>
-              </HoverCard>
+                </PopoverContent>
+              </Popover>
             );
           },
           meta: {
@@ -240,7 +251,7 @@ const AssemblyInstructionsTable = memo(
           }
         }
       ],
-      [items]
+      [items, t]
     );
 
     const renderContextMenu = useCallback(
@@ -283,6 +294,7 @@ const AssemblyInstructionsTable = memo(
           data={data}
           columns={columns}
           count={count}
+          infinite={infinite}
           primaryAction={
             permissions.can("create", "production") && (
               <New
@@ -294,18 +306,12 @@ const AssemblyInstructionsTable = memo(
           renderContextMenu={renderContextMenu}
           title="Assembly Instructions"
         />
-        {deleteDisclosure.isOpen && selectedInstruction && (
+        {selectedInstruction && (
           <ConfirmDelete
             action={path.to.deleteAssemblyInstruction(selectedInstruction.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedInstruction(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedInstruction(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedInstruction.name ?? "assembly instruction"}
             text="Are you sure you want to delete this assembly instruction?"
           />

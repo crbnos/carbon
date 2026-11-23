@@ -10,8 +10,9 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { SupplierDetail } from "~/modules/purchasing";
-import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
+import { supplierValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertSupplier } from "~/modules/purchasing/purchasing.service";
+import type { SupplierDetail } from "~/modules/purchasing/types";
 import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -71,6 +72,7 @@ export default function SupplierEditRoute() {
     name: routeData?.supplier?.name ?? "",
     supplierTypeId: routeData?.supplier?.supplierTypeId ?? undefined,
     supplierStatus: routeData?.supplier?.status as "Active",
+    supplierStageId: routeData?.supplier?.supplierStageId ?? undefined,
     accountManagerId: routeData?.supplier?.accountManagerId ?? undefined,
     currencyCode: routeData?.supplier?.currencyCode ?? undefined,
     website: routeData?.supplier?.website ?? "",

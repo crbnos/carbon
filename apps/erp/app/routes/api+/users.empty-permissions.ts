@@ -9,7 +9,7 @@ import { makeEmptyPermissionsFromModules } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getModules } from "~/modules/users";
+import { getModules } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

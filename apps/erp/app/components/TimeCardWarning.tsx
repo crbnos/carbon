@@ -33,7 +33,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
-import { setClockOutValidator } from "~/modules/people";
+import { setClockOutValidator } from "~/modules/people/people.models";
 import { path } from "~/utils/path";
 import { DateTimePicker, Hidden, Submit } from "./Form";
 
@@ -53,13 +53,9 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { locale } = useLocale();
   const [showClockWarning, setShowClockWarning] = useState(false);
   const fetcher = useAction({
-    onSettled: (data) => {
-      if (data) {
-        if ((data as { success?: boolean }).success) {
-          toast.success(t`Updated successfully`);
-          setShowClockWarning(false);
-        }
-      }
+    onSuccess: () => {
+      toast.success(t`Updated successfully`);
+      setShowClockWarning(false);
     }
   });
 
@@ -117,6 +113,13 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
         minute: "2-digit"
       }
     );
+    // A shift's length after clock in, never later than now: a time typed
+    // with only the hours changed then stays after the clock in.
+    const shiftEnd = clockedInAt.add({ hours: 8 });
+    const nowInZone = now(timeZone);
+    const defaultClockOut = (
+      shiftEnd.compare(nowInZone) < 0 ? shiftEnd : nowInZone
+    ).toAbsoluteString();
     const clockedInDaysAgo = formatRelativeCalendarDays(
       toCalendarDate(clockedInAt).toString(),
       today(timeZone).toString(),
@@ -144,6 +147,7 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
             validator={setClockOutValidator}
             method="post"
             action={path.to.api.timecard}
+            defaultValues={{ clockOut: defaultClockOut }}
             fetcher={fetcher}
           >
             <ModalBody>
@@ -164,6 +168,7 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
                   </Trans>
                 </p>
                 <Hidden name="intent" value="clockOut" />
+                <Hidden name="clockIn" value={openClockEntry.clockIn} />
                 <DateTimePicker
                   name="clockOut"
                   label={t`Clock out`}

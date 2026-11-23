@@ -4,7 +4,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, matchesGlob, relative, resolve } from "node:path";
-import ts from "typescript";
+import ts from "typescript5";
 import { describe, expect, it } from "vitest";
 
 // The tool manifest is CACHED by turbo (`//#generate:mcp` in the root
@@ -13,10 +13,11 @@ import { describe, expect, it } from "vitest";
 // changed, restores the old output, and the app validates requests against a
 // schema the code no longer has.
 //
-// The validators are the part that reaches furthest — the generator EXECUTES
-// every `*.models.ts`, so whatever those files import can change a schema (an
-// enum array in `sales.utils.ts`, a helper in `@carbon/utils`). This pins every
-// such import to the cache inputs.
+// The generator reads each published service function's TYPE, from the
+// `<module>.server.ts` files the router imports: their inputs are validators
+// from `*.models.ts` or a package (`@carbon/ee`), and whatever those import
+// can change a schema (an enum array in `sales.utils.ts`, a helper in
+// `@carbon/utils`). This pins every import of both to the cache inputs.
 const ROOT = resolve(__dirname, "../../..");
 const APP = join(ROOT, "apps/erp/app");
 const MODULES = join(APP, "modules");
@@ -54,20 +55,27 @@ function resolveImport(from: string, specifier: string): string | null {
   return dir ? join(dir, "src/index.ts") : null;
 }
 
-const modelsFiles = readdirSync(MODULES).flatMap((module) =>
+const moduleDirs = readdirSync(MODULES, { withFileTypes: true }).filter(
+  (entry) => entry.isDirectory()
+);
+const modelsFiles = moduleDirs.flatMap(({ name: module }) =>
   readdirSync(join(MODULES, module))
     .filter((file) => file.endsWith(".models.ts"))
     .map((file) => join(MODULES, module, file))
 );
+const serverFiles = moduleDirs
+  .map(({ name: module }) => join(MODULES, module, `${module}.server.ts`))
+  .filter((file) => existsSync(file));
 
 describe("the manifest cache inputs", () => {
-  it("found the models files", () => {
+  it("found the models and server files", () => {
     expect(modelsFiles.length).toBeGreaterThan(10);
+    expect(serverFiles.length).toBeGreaterThan(10);
   });
 
-  it("cover every file a models file imports", () => {
+  it("cover every file a models or server file imports", () => {
     const missing: string[] = [];
-    for (const file of modelsFiles) {
+    for (const file of [...modelsFiles, ...serverFiles]) {
       if (!covered(file)) missing.push(relative(ROOT, file));
       for (const { fileName } of ts.preProcessFile(readFileSync(file, "utf8"))
         .importedFiles) {

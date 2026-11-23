@@ -152,6 +152,16 @@ export const PERCENT_FORMAT: Intl.NumberFormatOptions = Object.freeze({
   maximumFractionDigits: PERCENT_DIGITS
 });
 
+/** Progress (0-1 fractions) beside a bar or as a headline figure: whole
+ *  percents, "13%". A progress figure is read at a glance, and its decimals are
+ *  noise — 12.834% of a budget says nothing 13% does not. Display only: never an
+ *  input, where the digits are part of the stored value. */
+export const PROGRESS_FORMAT: Intl.NumberFormatOptions = Object.freeze({
+  style: "percent",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0
+});
+
 /** The same rate typed as percentage POINTS — a bare 6.25 in a field already
  *  labelled "%", where the caller divides by 100. Same digits as the percent
  *  kind, so the two agree on what a rate can express. */
@@ -172,6 +182,14 @@ export const SCALE_FORMAT: Intl.NumberFormatOptions = Object.freeze({
   maximumFractionDigits: SCALE
 });
 
+/** An inspection reading, judged against a tolerance band: never rounded
+ *  (20 is Intl's ceiling), and ungrouped so it reads like the gauge. */
+export const MEASUREMENT_FORMAT: Intl.NumberFormatOptions = Object.freeze({
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 20,
+  useGrouping: false
+});
+
 /** Editable inputs MUST use these: react-aria's blur commit runs parse(format(x)),
  *  making the input formatter part of the storage round-trip. */
 export const INPUT_FORMAT = {
@@ -179,6 +197,7 @@ export const INPUT_FORMAT = {
   percentPoints: PERCENT_POINTS_FORMAT,
   quantity: SCALE_FORMAT,
   exchangeRate: SCALE_FORMAT,
+  measurement: MEASUREMENT_FORMAT,
   /** Editable currency — money and per-unit prices alike, and the SAME digits
    *  they display with, padding included: an empty cost reads "$0.00".
    *  react-aria's blur commit is literally `setNumberValue(parse(format(x)))`,

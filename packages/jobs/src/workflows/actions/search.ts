@@ -16,11 +16,18 @@ import {
   WORKFLOW_ENTITIES
 } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { selectInCompany, withoutMembership } from "../company-scope";
 
 /** The scalar a criterion filters by; a list has no single value to compare. */
 function scalarOf(value: RuntimeValue): string | number | boolean | undefined {
   if (value.kind === "entity") return value.id;
-  if (value.kind === "list" || value.kind === "pairs") return undefined;
+  if (
+    value.kind === "list" ||
+    value.kind === "pairs" ||
+    value.kind === "record"
+  ) {
+    return undefined;
+  }
   return value.value === null ? undefined : value.value;
 }
 
@@ -70,8 +77,7 @@ export async function runSearch(params: {
 
   // The entity is only known at run time; typing it costs a 350-way instantiation.
   const untyped = client as unknown as SupabaseClient;
-  // Row-level security already scopes this read; the filter is the second lock.
-  let query = untyped.from(table).select(columns).eq("companyId", companyId);
+  let query = selectInCompany(untyped, table, columns, companyId);
 
   for (const criterion of criteria) {
     const { field, operator, value } = criterion;
@@ -158,7 +164,7 @@ export async function runSearch(params: {
   for (const row of rows) {
     // The row rides along, so a later dot-path costs no second read.
     if (typeof row.id === "string")
-      found.push(entityValue(entity, row.id, row));
+      found.push(entityValue(entity, row.id, withoutMembership(table, row)));
   }
 
   if (returns === "one") {

@@ -5,21 +5,19 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import { getCustomerTypes } from "~/modules/sales";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { getCustomerTypes } from "~/modules/sales/sales.service";
+import { CustomerAccountsTable } from "~/modules/users/ui";
 import {
-  CustomerAccountsTable,
   getCustomers,
   getUnrevokedInviteEmails
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -27,11 +25,6 @@ export const handle: Handle = {
   breadcrumb: msg`Customers`,
   to: path.to.customerAccounts
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { search: "all" })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -43,17 +36,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const { sorts, filters } = getGenericQueryFilters(searchParams);
 
   const [customers, customerTypes, invites] = await Promise.all([
-    getCustomers(client, companyId, { search, limit, offset, sorts, filters }),
+    getCustomers(client, companyId, {
+      search,
+      // A single-load list: its default sort is on the joined user, which a
+      // cursor cannot follow.
+      limit: SINGLE_LOAD_LIMIT,
+      offset: 0,
+      sorts,
+      filters
+    }),
     getCustomerTypes(client, companyId),
     getUnrevokedInviteEmails(client, companyId)
   ]);
 
   if (customers.error) {
-    redirect(
+    throw redirect(
       path.to.users,
       await flash(request, error(customers.error, "Failed to fetch customers"))
     );
@@ -62,24 +62,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     count: customers.count ?? 0,
     customers: customers.data ?? [],
+    isTruncated: (customers.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
     customerTypes: customerTypes.data ?? [],
     unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? []
   };
 }
 
 export default function UsersCustomersRoute() {
-  const { count, customers, customerTypes, unrevokedInviteEmails } =
-    useLoaderData<typeof loader>();
+  const {
+    count,
+    customers,
+    isTruncated,
+    customerTypes,
+    unrevokedInviteEmails
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <CustomerAccountsTable
         data={customers}
         count={count}
+        isTruncated={isTruncated}
         customerTypes={customerTypes}
         unrevokedInviteEmails={unrevokedInviteEmails}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -2,52 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  trackedEntityExpiryValidator,
-  updateTrackedEntityExpiry
-} from "~/modules/inventory";
+import { trackedEntityExpiryValidator } from "~/modules/inventory/inventory.models";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "inventory"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(trackedEntityExpiryValidator).validate(
-    formData
-  );
-  if (validation.error) return validationError(validation.error);
-
-  const { trackedEntityId, expirationDate, reason } = validation.data;
-
-  const result = await updateTrackedEntityExpiry(client, {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(trackedEntityExpiryValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { trackedEntityId, expirationDate, reason } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateTrackedEntityExpiry({
     trackedEntityId,
-    expirationDate:
-      expirationDate && expirationDate.length > 0 ? expirationDate : null,
-    reason,
-    userId
+    // Empty clears the date.
+    expirationDate: expirationDate || null,
+    reason
   });
-
-  if (result.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.trackedEntities,
-      await flash(
-        request,
-        error(result.error, "Failed to update expiration date")
-      )
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.trackedEntities,
-    await flash(request, success("Expiration date updated"))
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.trackedEntities,
+    { message: "Expiration date updated" }
   );
 }

@@ -19,6 +19,7 @@ const EditableList =
     value,
     row,
     accessorKey,
+    label,
     onError,
     onUpdate
   }: EditableTableCellComponentProps<T>) => {
@@ -43,6 +44,7 @@ const EditableList =
     return (
       <Combobox
         autoFocus
+        aria-label={label}
         className="rounded-none"
         value={options.find((option) => option.value === value)?.value}
         options={options}

@@ -24,7 +24,7 @@ Implementation Hub — onboarding blueprint, pure logic, server DB helpers, and 
 
 ```bash
 pnpm --filter @carbon/onboarding test        # vitest
-pnpm --filter @carbon/onboarding typecheck   # tsgo --noEmit
+pnpm --filter @carbon/onboarding typecheck   # tsc --noEmit
 ```
 
 ## Key Patterns

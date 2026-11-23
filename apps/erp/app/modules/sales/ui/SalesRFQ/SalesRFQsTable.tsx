@@ -33,7 +33,9 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -45,9 +47,11 @@ import { SalesRFQStatus } from ".";
 type SalesRFQsTableProps = {
   data: SalesRFQ[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
+const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -74,6 +78,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -85,6 +90,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <CustomerAvatar customerId={row.original.customerId} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -103,6 +109,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           return <SalesRFQStatus status={status} />;
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesRFQStatusType.map((status) => ({
@@ -268,12 +275,16 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     );
   }, [deleteSalesRFQModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesRFQ>("sales-rfqs");
+
   return (
     <>
       <Table<SalesRFQ>
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
+        {...lineItemRows}
         defaultColumnPinning={{
           left: ["rfqId"]
         }}
@@ -300,11 +311,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           text={t`Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`}
           onCancel={() => {
             deleteSalesRFQModal.onClose();
-            setSelectedSalesRFQ(null);
           }}
           onSubmit={() => {
             deleteSalesRFQModal.onClose();
-            setSelectedSalesRFQ(null);
           }}
         />
       )}

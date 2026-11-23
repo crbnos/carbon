@@ -4,7 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getSuggestedAllocationForMaterial } from "~/services/inventory.service";
+import {
+  getJobOperationIssueScope,
+  getSuggestedAllocationForMaterial
+} from "~/services/inventory.service";
 
 /**
  * On-the-fly batch/lot suggestion for issuing a tracked material with no picking
@@ -16,18 +19,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
-  const locationId = url.searchParams.get("locationId");
   const quantity = Number(url.searchParams.get("quantity") ?? "0");
+  const operationId = url.searchParams.get("operationId");
 
-  if (!itemId || !locationId || !Number.isFinite(quantity) || quantity <= 0) {
+  if (!itemId || !Number.isFinite(quantity) || quantity <= 0) {
     return { data: [], error: null };
   }
+
+  // Suggest only what the job can draw: stock at its own location (read here,
+  // never taken from the browser), in its project's stripe, then common stock.
+  const scope = operationId
+    ? await getJobOperationIssueScope(client, {
+        jobOperationId: operationId,
+        companyId
+      })
+    : undefined;
+  const locationId = scope
+    ? scope.locationId
+    : url.searchParams.get("locationId");
+  if (!locationId) return { data: [], error: null };
 
   const data = await getSuggestedAllocationForMaterial(client, {
     itemId,
     companyId,
     locationId,
-    quantity
+    quantity,
+    projectIds: scope?.stripes
   });
 
   return { data, error: null };

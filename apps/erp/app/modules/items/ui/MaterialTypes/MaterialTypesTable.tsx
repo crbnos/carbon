@@ -26,6 +26,7 @@ import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShape } from "~/components/Form/Shape";
 import { useSubstance } from "~/components/Form/Substance";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialType } from "../../types";
@@ -33,9 +34,11 @@ import type { MaterialType } from "../../types";
 type MaterialTypesTableProps = {
   data: MaterialType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
+const MaterialTypesTable = memo((props: MaterialTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -52,6 +55,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
         header: t`Substance`,
         cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
         meta: {
+          mobile: "P2",
           icon: <LuGlassWater />,
           filter: {
             type: "static",
@@ -67,6 +71,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
         header: t`Shape`,
         cell: ({ row }) => <Enumerable value={row.original.formName} />,
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -93,6 +98,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -171,6 +177,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       importCSV={[

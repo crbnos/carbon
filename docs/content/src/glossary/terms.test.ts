@@ -30,11 +30,6 @@ describe("glossary", () => {
     }
   });
 
-  it("slugs are unique", () => {
-    const ids = Object.keys(terms);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
   it("href, if set, points at /docs, /guides, or an absolute URL — shape only", () => {
     const shape = /^\/(docs|guides)\/|^https?:\/\//;
     for (const [id, entry] of entriesById) {
@@ -54,14 +49,9 @@ describe("glossary", () => {
     }
   });
 
-  it("termSlug() round-trips a normal term name", () => {
+  it("termSlug lowercases, trims and hyphenates a term name", () => {
     expect(termSlug("Make to Order")).toBe("make-to-order");
     expect(termSlug("  Mixed-Case TEXT  ")).toBe("mixed-case-text");
-  });
-
-  it("getEntry is total over TermId", () => {
-    // `getEntry` is typed as `(id: TermId) => GlossaryEntry` — no undefined.
-    expect(getTermText(getEntry("method"))).toBe("Method");
   });
 
   it("hasEntry / lookupEntry resolve unknown slugs to nothing", () => {

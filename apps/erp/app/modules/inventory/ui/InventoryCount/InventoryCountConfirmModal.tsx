@@ -25,6 +25,7 @@ type InventoryCountConfirmModalProps = {
   inventoryCountId: string;
   summary: { uncounted: number; variances: number };
   isLoading?: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -36,6 +37,7 @@ const InventoryCountConfirmModal = ({
   inventoryCountId,
   summary,
   isLoading = false,
+  open = true,
   onClose
 }: InventoryCountConfirmModalProps) => {
   const fetcher = useFetcher();
@@ -56,7 +58,7 @@ const InventoryCountConfirmModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

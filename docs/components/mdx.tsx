@@ -16,7 +16,7 @@ import { Glossary } from "@/components/editorial/glossary";
 // click-to-enlarge visuals as the Guide (one component, both surfaces).
 import { AgentContext, Diagram, Figure, Screenshot } from "@/components/editorial/mdx";
 // Editorial Callout/Card so the Reference matches the Guide (not Fumadocs defaults).
-import { Callout, Card, Cards, EnvVar, EnvVars, PlanBadge } from "@/components/editorial/reference-components";
+import { Callout, Card, Cards, EnvVar, EnvVars, JournalStep, PlanBadge } from "@/components/editorial/reference-components";
 import { StatusFlow, Status } from "@/components/editorial/status-flow";
 import { Term } from "@/components/editorial/term";
 import { Zoomable } from "@/components/editorial/zoomable";
@@ -60,6 +60,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Card,
     Cards,
     Callout,
+    JournalStep,
     EnvVar,
     EnvVars,
     FieldTable,

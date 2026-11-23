@@ -40,6 +40,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   usePercentFormatter,
   usePermissions,
@@ -57,6 +58,7 @@ type GaugeCalibrationRecordsTableProps = {
   data: GaugeCalibrationRecord[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -70,7 +72,7 @@ const defaultColumnVisibility = {
 };
 
 const GaugeCalibrationRecordsTable = memo(
-  ({ data, types, count }: GaugeCalibrationRecordsTableProps) => {
+  ({ data, types, count, infinite }: GaugeCalibrationRecordsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -116,6 +118,7 @@ const GaugeCalibrationRecordsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -126,6 +129,7 @@ const GaugeCalibrationRecordsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "dateRange"
             },
@@ -141,6 +145,7 @@ const GaugeCalibrationRecordsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",
@@ -182,7 +187,12 @@ const GaugeCalibrationRecordsTable = memo(
         {
           accessorKey: "requiresAction",
           header: t`Requires Action`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Requires Action`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -197,7 +207,12 @@ const GaugeCalibrationRecordsTable = memo(
         {
           accessorKey: "requiresAdjustment",
           header: t`Requires Adjustment`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Requires Adjustment`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -212,7 +227,12 @@ const GaugeCalibrationRecordsTable = memo(
         {
           accessorKey: "requiresRepair",
           header: t`Requires Repair`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Requires Repair`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -232,6 +252,7 @@ const GaugeCalibrationRecordsTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -394,6 +415,7 @@ const GaugeCalibrationRecordsTable = memo(
       <>
         <Table<GaugeCalibrationRecord>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
@@ -412,20 +434,14 @@ const GaugeCalibrationRecordsTable = memo(
           table="gaugeCalibrationRecord"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedGaugeCalibrationRecord && (
+        {selectedGaugeCalibrationRecord && (
           <ConfirmDelete
             action={path.to.deleteGaugeCalibrationRecord(
               selectedGaugeCalibrationRecord.id!
             )}
-            isOpen
-            onCancel={() => {
-              setSelectedGaugeCalibrationRecord(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedGaugeCalibrationRecord(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={`record for ${
               selectedGaugeCalibrationRecord.gaugeReadableId ?? "gauge"
             }`}

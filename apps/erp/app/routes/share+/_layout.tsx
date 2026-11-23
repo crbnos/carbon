@@ -50,7 +50,11 @@ export default function ExternalLayout() {
                   onClick={() => {
                     fetcher.submit(
                       { mode: "light" },
-                      { method: "post", action: "/" }
+                      {
+                        method: "post",
+                        action: "/",
+                        defaultShouldRevalidate: false
+                      }
                     );
                   }}
                 >
@@ -61,7 +65,11 @@ export default function ExternalLayout() {
                   onClick={() => {
                     fetcher.submit(
                       { mode: "dark" },
-                      { method: "post", action: "/" }
+                      {
+                        method: "post",
+                        action: "/",
+                        defaultShouldRevalidate: false
+                      }
                     );
                   }}
                 >

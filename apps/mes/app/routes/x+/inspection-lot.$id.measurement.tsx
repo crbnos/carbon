@@ -4,6 +4,7 @@
 
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertInspectionMeasurement } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
@@ -11,6 +12,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionMeasurementValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -33,7 +35,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertInspectionMeasurement(getDatabaseClient(), {
+  const db = getDatabaseClient();
+
+  // A job-operation lot carries its operation as sourceDocumentLineId;
+  // receipt lots have no operation to gate.
+  const lot = await db
+    .selectFrom("inspection")
+    .select(["sourceDocument", "sourceDocumentLineId"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const refusal =
+    lot?.sourceDocument === "Job Operation" && lot.sourceDocumentLineId
+      ? await abilityBlockRefusal(await getCarbonServiceRole(), {
+          operationId: lot.sourceDocumentLineId,
+          employeeId: userId,
+          companyId
+        })
+      : null;
+  if (refusal) {
+    return data(
+      { error: { message: refusal } },
+      await flash(request, error(null, refusal))
+    );
+  }
+
+  const result = await upsertInspectionMeasurement(db, {
     ...validation.data,
     companyId,
     userId

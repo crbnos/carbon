@@ -57,7 +57,7 @@ async function archiveCompanyLogs(
     return { recordsArchived: 0, recordsDeleted: 0 };
   }
 
-  log.info(`Archiving ${records.length} records for company ${companyId}`);
+  log.info("Archiving audit log records", { count: records.length, companyId });
 
   // Convert to JSONL format
   const jsonl = records.map((r) => JSON.stringify(r)).join("\n");
@@ -72,13 +72,10 @@ async function archiveCompanyLogs(
   const timestamp = `${year}-${month}-${day}`;
   // Keys in the company bucket start with `${companyId}/` — the module-wide
   // private-storage invariant (it is what backup listing and the prefix-guarded
-  // helpers key off). Pre-migration archives used `audit-logs/${companyId}/...`
-  // in the legacy shared bucket; readers resolve via the stored `archivePath`,
-  // so both shapes stay readable.
+  // helpers key off).
   const archivePath = `${companyId}/audit-logs/${year}/${month}/${timestamp}.jsonl.gz`;
 
-  // Upload to the company's own private bucket (auditConfig.archiveBucket is
-  // the legacy shared bucket, kept only as a read fallback for old archives).
+  // Upload to the company's own private bucket.
   const archiveBucket = getCompanyPrivateBucket(companyId);
   const { error: uploadError } = await client.storage
     .from(archiveBucket)
@@ -146,9 +143,9 @@ export const auditArchiveFunction = inngest.createFunction(
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
 
-      logger.info(
-        `Archiving audit logs older than ${cutoffDate.toISOString()}`
-      );
+      logger.info("Archiving audit logs older than {cutoffDate}", {
+        cutoffDate: cutoffDate.toISOString()
+      });
 
       // Get companies with audit logs enabled
       const { data: companies, error: companiesError } = await client

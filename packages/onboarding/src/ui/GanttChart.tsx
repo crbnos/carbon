@@ -52,7 +52,7 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
                 key={t.label + t.leftPct}
                 style={{ left: `${t.leftPct}%` }}
                 className={cn(
-                  "absolute -translate-x-1/2 text-[10px] font-medium tabular-nums",
+                  "absolute -translate-x-1/2 text-[0.625rem] font-medium tabular-nums",
                   t.dim ? "text-muted-foreground/60" : "text-muted-foreground"
                 )}
               >
@@ -78,7 +78,7 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
           <div className="flex items-start h-7">
             <div
               className={cn(
-                "shrink-0 pr-4 pt-1 text-[9.5px] uppercase tracking-wider text-muted-foreground",
+                "shrink-0 pr-4 pt-1 text-[0.59375rem] uppercase tracking-wider text-muted-foreground",
                 LABEL_COL
               )}
             >
@@ -89,7 +89,7 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
                 <div
                   key={b.key}
                   style={{ left: `${b.gatePct}%`, backgroundColor: b.color }}
-                  className="absolute top-0 -translate-x-1/2 size-5 rounded-full border-2 border-card text-white shadow flex items-center justify-center text-[10px] font-semibold tabular-nums"
+                  className="absolute top-0 -translate-x-1/2 size-5 rounded-full border-2 border-card text-white shadow flex items-center justify-center text-[0.625rem] font-semibold tabular-nums"
                   title={
                     b.gateDate
                       ? `${b.gate} · ${formatDate(b.gateDate)}`
@@ -116,10 +116,10 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
                   className="shrink-0 size-2.5 rounded-[3px] mt-1"
                 />
                 <div className="min-w-0">
-                  <div className="text-[13px] font-semibold leading-tight tracking-tight truncate">
+                  <div className="text-[0.8125rem] font-semibold leading-tight tracking-tight truncate">
                     {b.title}
                   </div>
-                  <div className="text-[10px] text-muted-foreground tabular-nums mt-0.5">
+                  <div className="text-[0.625rem] text-muted-foreground tabular-nums mt-0.5">
                     {b.timing}
                   </div>
                 </div>
@@ -154,15 +154,15 @@ function GateLegendRow({ bar }: { bar: TimelineBar }) {
     <div className="flex items-center gap-2.5">
       <span
         style={{ backgroundColor: bar.color }}
-        className="shrink-0 inline-flex items-center justify-center size-[18px] rounded-full text-white text-[10px] font-semibold tabular-nums"
+        className="shrink-0 inline-flex items-center justify-center size-[18px] rounded-full text-white text-[0.625rem] font-semibold tabular-nums"
       >
         {bar.n}
       </span>
-      <span className="text-[13px] leading-snug flex-1 min-w-0 truncate">
+      <span className="text-[0.8125rem] leading-snug flex-1 min-w-0 truncate">
         {bar.gate}
       </span>
       {bar.gateDate ? (
-        <span className="shrink-0 text-[11px] font-medium text-muted-foreground tabular-nums">
+        <span className="shrink-0 text-[0.6875rem] font-medium text-muted-foreground tabular-nums">
           <DateTime
             value={toISODate(bar.gateDate)}
             variant="date"

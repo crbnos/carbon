@@ -372,8 +372,12 @@ export class JiraClient {
   async searchIssues(companyId: string, query: string): Promise<JiraIssue[]> {
     try {
       // Escape special characters in query for JQL text search
-      const escapedQuery = query.replace(/['"\\]/g, "\\$&");
-      const jql = `text ~ "${escapedQuery}" ORDER BY updated DESC`;
+      // No query: the most recently updated issues, for the Link dialog
+      // before a search.
+      const escapedQuery = query.trim().replace(/['"\\]/g, "\\$&");
+      const jql = escapedQuery
+        ? `text ~ "${escapedQuery}" ORDER BY updated DESC`
+        : "updated >= -365d ORDER BY updated DESC";
 
       const response = await this.request<{ issues: JiraIssue[] }>(
         companyId,
@@ -441,7 +445,6 @@ export class JiraClient {
         }
       );
 
-      // Fetch the full issue details
       return this.getIssue(companyId, response.key);
     } catch (e) {
       logger.error("Error creating Jira issue", { error: e });
@@ -456,7 +459,7 @@ export class JiraClient {
     companyId: string,
     issueId: string,
     input: UpdateJiraIssueInput
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       const fields: Record<string, any> = {};
 
@@ -478,12 +481,33 @@ export class JiraClient {
         fields.priority = { name: input.priority };
       }
 
+      if (input.duedate !== undefined) {
+        fields.duedate = input.duedate;
+      }
+
       await this.request(companyId, `/issue/${issueId}`, {
         method: "PUT",
         body: JSON.stringify({ fields })
       });
+      return true;
     } catch (e) {
       logger.error("Error updating Jira issue", { error: e });
+      return false;
+    }
+  }
+
+  /** The site's issue priorities (Highest, High, Medium, …). */
+  async listPriorities(
+    companyId: string
+  ): Promise<Array<{ id: string; name: string }>> {
+    try {
+      return await this.request<Array<{ id: string; name: string }>>(
+        companyId,
+        "/priority"
+      );
+    } catch (e) {
+      logger.error("Error listing Jira priorities", { error: e });
+      return [];
     }
   }
 
@@ -523,9 +547,10 @@ export class JiraClient {
       );
 
       if (!transition) {
-        logger.warn(
-          `No transition found to ${targetCategory} for issue ${issueId}`
-        );
+        logger.warning("No transition found to the target status category", {
+          targetCategory,
+          issueId
+        });
         return false;
       }
 

@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -32,9 +37,11 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
+  useViewport,
   VStack
 } from "@carbon/react";
-import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES, requireAffected } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -51,8 +58,7 @@ import {
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import type { ModelUpload } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
@@ -101,7 +107,7 @@ const useJobDocuments = ({
         .remove([getPath(file, bucket as "job" | "parts")]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -114,12 +120,15 @@ const useJobDocuments = ({
   const deleteModel = useCallback(async () => {
     if (!carbon) return;
 
-    const { error } = await carbon
-      .from("job")
-      .update({ modelUploadId: null })
-      .eq("id", jobId);
+    const { error } = await requireAffected(
+      carbon
+        .from("job")
+        .update({ modelUploadId: null })
+        .eq("id", jobId)
+        .select("id")
+    );
     if (error) {
-      toast.error(t`Error removing model from job`);
+      toastError(t`Error removing model from job`, error);
       return;
     }
     toast.success(t`Model removed from job`);
@@ -149,7 +158,7 @@ const useJobDocuments = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Failed to process file operation", { error });
       }
     },
@@ -260,7 +269,7 @@ const useJobDocuments = ({
           });
 
         if (uploadError) {
-          toast.error(t`Failed to upload file to new location`);
+          toastError(t`Failed to upload file to new location`, uploadError);
           return;
         }
 
@@ -270,7 +279,7 @@ const useJobDocuments = ({
           .remove([sourcePath]);
 
         if (deleteError) {
-          toast.error(t`Failed to delete file from old location`);
+          toastError(t`Failed to delete file from old location`, deleteError);
           return;
         }
 
@@ -281,7 +290,7 @@ const useJobDocuments = ({
         );
         revalidator.revalidate();
       } catch (error) {
-        toast.error(t`Error moving file`);
+        toastError(t`Error moving file`, error);
         logger.error("Failed to process file operation", { error });
       }
     },
@@ -357,6 +366,10 @@ const JobDocuments = ({
     a.name.localeCompare(b.name)
   ) as FileObject[];
 
+  // Phones: an empty card is one line; the header's New uploads.
+  const { isPhone } = useViewport();
+  const isEmpty = allFiles.length === 0 && !modelUpload?.modelName;
+
   return (
     <>
       <Card className="flex-grow">
@@ -373,230 +386,251 @@ const JobDocuments = ({
           </CardAction>
         </HStack>
         <CardContent>
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Size</Th>
-                <Th>Bucket</Th>
-                <Th>Created</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {modelUpload?.modelName &&
-                (modelUpload.modelSize ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES && (
-                  <Tr>
-                    <Td>
-                      <HStack>
-                        <DocumentIcon type="Model" />
-                        <VStack>
-                          <Hyperlink
-                            target="_blank"
-                            to={getModelPath(modelUpload)}
+          {isPhone && isEmpty ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No files</Trans>
+            </p>
+          ) : (
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Name</Th>
+                  <Th>Size</Th>
+                  <Th>Bucket</Th>
+                  <Th>Created</Th>
+                  <Th />
+                </Tr>
+              </Thead>
+              <Tbody>
+                {modelUpload?.modelName &&
+                  (modelUpload.modelSize ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES && (
+                    <Tr>
+                      <Td>
+                        <HStack>
+                          <DocumentIcon type="Model" />
+                          <VStack>
+                            <Hyperlink
+                              target="_blank"
+                              to={getModelPath(modelUpload)}
+                            >
+                              {modelUpload.modelName}
+                            </Hyperlink>
+                          </VStack>
+                          <ModelOptimizedIndicator
+                            modelPath={modelUpload.modelPath}
+                          />
+                        </HStack>
+                      </Td>
+                      <Td>
+                        {modelUpload.modelSize
+                          ? convertKbToString(
+                              Math.floor((modelUpload.modelSize ?? 0) / 1024)
+                            )
+                          : "--"}
+                      </Td>
+                      <Td>
+                        <Enumerable value="Job" />
+                      </Td>
+                      <Td className="text-xs font-mono">--</Td>
+                      <Td>
+                        <div className="flex justify-end w-full">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <IconButton
+                                aria-label={t`More`}
+                                icon={<LuEllipsisVertical />}
+                                variant="secondary"
+                              />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.view}
+                                asChild
+                              >
+                                <Link to={getModelPath(modelUpload)}>
+                                  <Trans>View</Trans>
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.download}
+                                onClick={() => downloadModel(modelUpload)}
+                              >
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                destructive
+                                disabled={!canDelete || isReadOnly}
+                                onClick={() => deleteModel()}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </Td>
+                    </Tr>
+                  )}
+                {allFiles.map((file) => {
+                  const type = getDocumentType(file.name);
+                  return (
+                    <Tr key={file.id}>
+                      <Td>
+                        <HStack>
+                          <DocumentIcon type={type} />
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(
+                              e: React.KeyboardEvent<HTMLSpanElement>
+                            ) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              }
+                            }}
+                            className="font-medium cursor-pointer"
+                            onClick={() => {
+                              if (["PDF", "Image"].includes(type)) {
+                                const bucket =
+                                  (file as any).bucket === "parts"
+                                    ? "parts"
+                                    : "job";
+                                window.open(
+                                  path.to.file.previewFile(
+                                    `${"private"}/${getPath(
+                                      file,
+                                      bucket as "job" | "parts"
+                                    )}`
+                                  ),
+                                  "_blank"
+                                );
+                              } else {
+                                download(file);
+                              }
+                            }}
                           >
-                            {modelUpload.modelName}
-                          </Hyperlink>
-                        </VStack>
-                        <ModelOptimizedIndicator
-                          modelPath={modelUpload.modelPath}
+                            {["PDF", "Image"].includes(type) ? (
+                              <DocumentPreview
+                                bucket="private"
+                                pathToFile={getPath(
+                                  file,
+                                  (file as any).bucket === "parts"
+                                    ? "parts"
+                                    : "job"
+                                )}
+                                // @ts-expect-error
+                                type={type}
+                              >
+                                {file.name}
+                              </DocumentPreview>
+                            ) : (
+                              file.name
+                            )}
+                          </span>
+                        </HStack>
+                      </Td>
+                      <Td>
+                        {convertKbToString(
+                          Math.floor((file.metadata?.size ?? 0) / 1024)
+                        )}
+                      </Td>
+                      <Td>
+                        <Enumerable
+                          value={
+                            (file as any).bucket === "parts"
+                              ? "Item"
+                              : (file as any).bucket === "opportunity-line"
+                                ? "Opportunity"
+                                : "Job"
+                          }
                         />
-                      </HStack>
-                    </Td>
-                    <Td>
-                      {modelUpload.modelSize
-                        ? convertKbToString(
-                            Math.floor((modelUpload.modelSize ?? 0) / 1024)
-                          )
-                        : "--"}
-                    </Td>
-                    <Td>
-                      <Enumerable value="Job" />
-                    </Td>
-                    <Td className="text-xs font-mono">--</Td>
-                    <Td>
-                      <div className="flex justify-end w-full">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <IconButton
-                              aria-label={t`More`}
-                              icon={<LuEllipsisVertical />}
-                              variant="secondary"
-                            />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.view}
-                              asChild
-                            >
-                              <Link to={getModelPath(modelUpload)}>
-                                <Trans>View</Trans>
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.download}
-                              onClick={() => downloadModel(modelUpload)}
-                            >
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              destructive
-                              disabled={!canDelete || isReadOnly}
-                              onClick={() => deleteModel()}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      </Td>
+                      <Td className="text-xs font-mono">
+                        <DateTime
+                          value={file.created_at}
+                          variant="date"
+                          fallback="--"
+                        />
+                      </Td>
+                      <Td>
+                        <div className="flex justify-end w-full">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <IconButton
+                                aria-label={t`More`}
+                                icon={<LuEllipsisVertical />}
+                                variant="secondary"
+                              />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.download}
+                                onClick={() => download(file)}
+                              >
+                                Download
+                              </DropdownMenuItem>
+                              {itemId &&
+                                (file as any).bucket !== "opportunity-line" && (
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger
+                                      disabled={!canUpdate || isReadOnly}
+                                    >
+                                      Move to
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuRadioGroup
+                                        value={
+                                          (file as any).bucket === "parts"
+                                            ? "parts"
+                                            : "job"
+                                        }
+                                        onValueChange={(value) =>
+                                          moveFile(
+                                            file,
+                                            value as "job" | "parts"
+                                          )
+                                        }
+                                      >
+                                        <DropdownMenuRadioItem value="job">
+                                          Job
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="parts">
+                                          Item
+                                        </DropdownMenuRadioItem>
+                                      </DropdownMenuRadioGroup>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                )}
+                              <DropdownMenuItem
+                                destructive
+                                disabled={!canDelete || isReadOnly}
+                                onClick={() => deleteFile(file)}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+                {allFiles.length === 0 && !modelUpload && (
+                  <Tr>
+                    <Td
+                      colSpan={5}
+                      className="py-8 text-muted-foreground text-center"
+                    >
+                      No files
                     </Td>
                   </Tr>
                 )}
-              {allFiles.map((file) => {
-                const type = getDocumentType(file.name);
-                return (
-                  <Tr key={file.id}>
-                    <Td>
-                      <HStack>
-                        <DocumentIcon type={type} />
-                        <span
-                          className="font-medium cursor-pointer"
-                          onClick={() => {
-                            if (["PDF", "Image"].includes(type)) {
-                              const bucket =
-                                (file as any).bucket === "parts"
-                                  ? "parts"
-                                  : "job";
-                              window.open(
-                                path.to.file.previewFile(
-                                  `${"private"}/${getPath(
-                                    file,
-                                    bucket as "job" | "parts"
-                                  )}`
-                                ),
-                                "_blank"
-                              );
-                            } else {
-                              download(file);
-                            }
-                          }}
-                        >
-                          {["PDF", "Image"].includes(type) ? (
-                            <DocumentPreview
-                              bucket="private"
-                              pathToFile={getPath(
-                                file,
-                                (file as any).bucket === "parts"
-                                  ? "parts"
-                                  : "job"
-                              )}
-                              // @ts-expect-error
-                              type={type}
-                            >
-                              {file.name}
-                            </DocumentPreview>
-                          ) : (
-                            file.name
-                          )}
-                        </span>
-                      </HStack>
-                    </Td>
-                    <Td>
-                      {convertKbToString(
-                        Math.floor((file.metadata?.size ?? 0) / 1024)
-                      )}
-                    </Td>
-                    <Td>
-                      <Enumerable
-                        value={
-                          (file as any).bucket === "parts"
-                            ? "Item"
-                            : (file as any).bucket === "opportunity-line"
-                              ? "Opportunity"
-                              : "Job"
-                        }
-                      />
-                    </Td>
-                    <Td className="text-xs font-mono">
-                      <DateTime
-                        value={file.created_at}
-                        variant="date"
-                        fallback="--"
-                      />
-                    </Td>
-                    <Td>
-                      <div className="flex justify-end w-full">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <IconButton
-                              aria-label={t`More`}
-                              icon={<LuEllipsisVertical />}
-                              variant="secondary"
-                            />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.download}
-                              onClick={() => download(file)}
-                            >
-                              Download
-                            </DropdownMenuItem>
-                            {itemId &&
-                              (file as any).bucket !== "opportunity-line" && (
-                                <DropdownMenuSub>
-                                  <DropdownMenuSubTrigger
-                                    disabled={!canUpdate || isReadOnly}
-                                  >
-                                    Move to
-                                  </DropdownMenuSubTrigger>
-                                  <DropdownMenuSubContent>
-                                    <DropdownMenuRadioGroup
-                                      value={
-                                        (file as any).bucket === "parts"
-                                          ? "parts"
-                                          : "job"
-                                      }
-                                      onValueChange={(value) =>
-                                        moveFile(file, value as "job" | "parts")
-                                      }
-                                    >
-                                      <DropdownMenuRadioItem value="job">
-                                        Job
-                                      </DropdownMenuRadioItem>
-                                      <DropdownMenuRadioItem value="parts">
-                                        Item
-                                      </DropdownMenuRadioItem>
-                                    </DropdownMenuRadioGroup>
-                                  </DropdownMenuSubContent>
-                                </DropdownMenuSub>
-                              )}
-                            <DropdownMenuItem
-                              destructive
-                              disabled={!canDelete || isReadOnly}
-                              onClick={() => deleteFile(file)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </Td>
-                  </Tr>
-                );
-              })}
-              {allFiles.length === 0 && !modelUpload && (
-                <Tr>
-                  <Td
-                    colSpan={5}
-                    className="py-8 text-muted-foreground text-center"
-                  >
-                    No files
-                  </Td>
-                </Tr>
-              )}
-            </Tbody>
-          </Table>
-          {!isReadOnly && <FileDropzone onDrop={onDrop} />}
+              </Tbody>
+            </Table>
+          )}
+          {!isReadOnly && !(isPhone && isEmpty) && (
+            <FileDropzone onDrop={onDrop} />
+          )}
         </CardContent>
       </Card>
     </>

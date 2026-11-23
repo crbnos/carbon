@@ -13,35 +13,40 @@ const redis = {
 };
 vi.mock("@carbon/kv", () => ({ redis }));
 
-const detect = vi.fn();
-vi.mock("@carbon/onboarding/server", () => ({
-  detectImplementationSignals: detect
-}));
+const { getImplementationSignals } = await import("./shared.service");
 
-// shared.server.ts also holds the sales-order/return PDF and email helpers;
-// stub their imports so this test loads only what it exercises.
-vi.mock("@carbon/documents/email", () => ({}));
-vi.mock("@carbon/jobs", () => ({}));
-vi.mock("~/modules/accounting", () => ({}));
-vi.mock("~/modules/sales", () => ({}));
-vi.mock("~/modules/users/users.server", () => ({}));
-vi.mock("~/routes/file+/purchase-return-order+/$id[.]pdf", () => ({}));
-vi.mock("~/routes/file+/sales-return-order+/$id[.]pdf", () => ({}));
-vi.mock("../documents/documents.service", () => ({}));
-vi.mock("~/modules/shared/shared.service", () => ({}));
-vi.mock("~/modules/settings", () => ({}));
+type Client = Parameters<typeof getImplementationSignals>[0];
 
-const { getImplementationSignals } = await import("./shared.server");
+// In-memory tables keyed by companyId; records which tables were probed.
+function fakeClient(rows: Record<string, string[]>) {
+  const probed: string[] = [];
+  const client = {
+    from: (table: string) => ({
+      select: () => ({
+        eq: (_column: string, companyId: string) => ({
+          limit: async () => {
+            probed.push(table);
+            return {
+              data: (rows[table] ?? [])
+                .filter((owner) => owner === companyId)
+                .map((_, i) => ({ id: `${table}-${i}` }))
+            };
+          }
+        })
+      })
+    })
+  } as unknown as Client;
+  return { client, probed };
+}
 
-const client = {} as Parameters<typeof getImplementationSignals>[0];
-const signals = (overrides: Record<string, boolean>) => ({
+const none = {
   hasItems: false,
   hasMakeMethod: false,
   hasJob: false,
   hasSalesOrder: false,
-  hasTrackedEntity: false,
-  ...overrides
-});
+  hasTrackedEntity: false
+};
+const allTables = ["item", "makeMethod", "job", "salesOrder", "trackedEntity"];
 
 beforeEach(() => {
   store.clear();
@@ -49,37 +54,42 @@ beforeEach(() => {
 });
 
 describe("getImplementationSignals", () => {
-  it("remembers the signals seen true and passes them as known next time", async () => {
-    detect.mockResolvedValueOnce(signals({ hasItems: true, hasJob: true }));
-    await getImplementationSignals(client, "c1");
-    expect(detect).toHaveBeenLastCalledWith(client, "c1", {});
+  it("skips the probe for a signal already seen true", async () => {
+    const first = fakeClient({ item: ["c1"], job: ["c1"] });
+    await expect(getImplementationSignals(first.client, "c1")).resolves.toEqual(
+      { ...none, hasItems: true, hasJob: true }
+    );
+    expect(first.probed.sort()).toEqual([...allTables].sort());
 
-    detect.mockResolvedValueOnce(signals({ hasItems: true, hasJob: true }));
-    await getImplementationSignals(client, "c1");
-    expect(detect).toHaveBeenLastCalledWith(client, "c1", {
-      hasItems: true,
-      hasJob: true
-    });
-    // Nothing new was seen the second time, so nothing is rewritten.
-    expect(redis.set).toHaveBeenCalledTimes(1);
+    const second = fakeClient({ item: ["c1"], job: ["c1"] });
+    await expect(
+      getImplementationSignals(second.client, "c1")
+    ).resolves.toEqual({ ...none, hasItems: true, hasJob: true });
+    expect(second.probed.sort()).toEqual(
+      ["makeMethod", "salesOrder", "trackedEntity"].sort()
+    );
   });
 
   it("keeps one company's signals away from another's", async () => {
-    detect.mockResolvedValueOnce(signals({ hasItems: true }));
-    await getImplementationSignals(client, "c1");
+    const data = { item: ["c1"] };
+    await getImplementationSignals(fakeClient(data).client, "c1");
 
-    detect.mockResolvedValueOnce(signals({}));
-    await getImplementationSignals(client, "c2");
-    expect(detect).toHaveBeenLastCalledWith(client, "c2", {});
+    const other = fakeClient(data);
+    await expect(getImplementationSignals(other.client, "c2")).resolves.toEqual(
+      none
+    );
+    expect(other.probed).toContain("item");
   });
 
   it("probes everything when Redis is unavailable", async () => {
     redis.get.mockRejectedValueOnce(new Error("down"));
     redis.set.mockRejectedValueOnce(new Error("down"));
-    detect.mockResolvedValueOnce(signals({ hasItems: true }));
-    await expect(getImplementationSignals(client, "c1")).resolves.toEqual(
-      signals({ hasItems: true })
-    );
-    expect(detect).toHaveBeenLastCalledWith(client, "c1", {});
+    const { client, probed } = fakeClient({ item: ["c1"] });
+
+    await expect(getImplementationSignals(client, "c1")).resolves.toEqual({
+      ...none,
+      hasItems: true
+    });
+    expect(probed).toHaveLength(allTables.length);
   });
 });

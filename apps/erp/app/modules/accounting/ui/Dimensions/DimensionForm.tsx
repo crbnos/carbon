@@ -27,6 +27,7 @@ import {
 
 type DimensionFormProps = {
   initialValues: z.infer<typeof dimensionValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -48,7 +49,11 @@ const entityTypeLabels: Record<string, string> = {
   ScrapReason: "Scrap Reason"
 };
 
-const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
+const DimensionForm = ({
+  initialValues,
+  open = true,
+  onClose
+}: DimensionFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
 
@@ -74,7 +79,7 @@ const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

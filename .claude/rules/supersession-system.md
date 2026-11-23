@@ -1,9 +1,11 @@
+---
 paths:
   - "packages/database/src/supersession-pick.ts"
-  - "packages/server-functions/src/get-method/**"
+  - "apps/erp/app/modules/production/production.service.ts"
   - "packages/planning/src/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
+---
 
 # Item Supersession
 
@@ -37,7 +39,7 @@ Do not assume one rule. Each answers something different, deliberately.
 
 | Consumer | Source | Question |
 |---|---|---|
-| **MRP** (`mrp/index.ts`) | live, every run | what should we BUY? |
+| **MRP** (`runMrp`, `@carbon/planning` — `packages/planning/src/mrp/mrp.ts`) | live, every run | what should we replenish (buy or make), and how should existing supply change? |
 | **Job creation** (`get-method`) | live at creation, then **frozen** | what does this job consume? (a `Consume First` predecessor with stock at the job's location keeps its Pull from Inventory lines, bought or made — the item-level `withoutStockedConsumeFirst` filter in `loadSupersessionRedirect` is provisional and `settleConsumeFirstLines` applies the per-line whole-assembly rule after insert. A made predecessor's **Make to Order** line follows the same rule by becoming a Pull from Inventory line on the predecessor when its stock covers at least one whole assembly — a Make to Order line is built in the job and never consumes stock, so pulling it is the only way the old sub-assemblies get used; with no whole assembly in stock it swaps to the successor's method and is built) |
 | **Picking** (`inventory/supersession-pick.ts`) | live, at pick time | what do we pull off the shelf? |
 
@@ -142,8 +144,11 @@ The item planning tab's supply/demand list (`api+/items.$id.$locationId.forecast
 lines so the rows match the bars: the predecessor keeps what its on-hand
 covers, the successor lists the remainder "via <predecessor>".
 `hasWarehouseStock` / the SQL `EXISTS … GROUP BY storageUnitId HAVING SUM > 0`
-both count any single non-lineside bin (including the unassigned bin) with
-positive on-hand.
+both count any single non-lineside, nettable bin (including the unassigned bin)
+with positive on-hand. Stock in a non-nettable unit (quarantine) is never
+picked, and the job-creation and MRP Consume First reads use nettable on-hand
+(`quantityOnHand - quantityNonNettable`), so quarantined predecessor stock never
+keeps a line on the predecessor.
 
 **Lineside credit.** Before anything is picked, material already at the
 operation's lineside bin is credited, and both the generator and the schedule
@@ -217,9 +222,10 @@ recover the source's target (`estimatedQuantity − scrapQuantity` on a Buy/Pick
 row), convert, and re-derive scrap at the TARGET item's rate — the rate the
 row now carries.
 
-Cancelling a job (`$jobId.status.tsx`) returns the staged material first, then
-`cancelOpenPickingListsForJob` cancels its lines on every open list and the
-lists that have no live line left; a list shared with other jobs stays open.
+Cancelling a job (`cancelJob`, `production.server.ts`) sets it Cancelled, then
+returns the staged material, then `cancelOpenPickingListsForJob` cancels its
+lines on every open list and the lists that have no live line left; a list
+shared with other jobs stays open.
 `get_picking_schedule` ignores a cancelled LINE as well as a cancelled list, so
 a reopened job's operation returns to the schedule. Its Consume First
 predecessor stock test is the whole-assembly one (warehouse on-hand ≥

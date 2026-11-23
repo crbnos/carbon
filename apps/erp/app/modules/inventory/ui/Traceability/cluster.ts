@@ -7,7 +7,7 @@ import type {
   ActivityInput,
   ActivityOutput,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 
 /**
  * Serial items at quantity N create N quantity-1 tracked entities by design
@@ -219,6 +219,35 @@ export function clusterEntities(
   }
 
   return { clusters, memberToCluster };
+}
+
+/**
+ * The attributes every member of a cluster holds with the same value — a
+ * receipt line's batch properties, its receipt and supplier. A key that one
+ * member lacks or holds differently (its position on the line) is left out.
+ */
+export function sharedMemberAttributes(
+  members: Pick<ClusterMember, "id">[],
+  entities: Pick<TrackedEntity, "id" | "attributes">[]
+): Record<string, unknown> {
+  const attributesById = new Map(
+    entities.map((entity) => [
+      entity.id,
+      (entity.attributes ?? {}) as Record<string, unknown>
+    ])
+  );
+  const memberAttributes = members.map((m) => attributesById.get(m.id));
+  const [first, ...rest] = memberAttributes;
+  if (!first || rest.some((attributes) => !attributes)) return {};
+  return Object.fromEntries(
+    Object.entries(first).filter(([key, value]) =>
+      rest.every(
+        (attributes) =>
+          key in attributes! &&
+          JSON.stringify(attributes![key]) === JSON.stringify(value)
+      )
+    )
+  );
 }
 
 /**

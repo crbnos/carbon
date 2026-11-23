@@ -17,19 +17,21 @@ import {
   InputGroup,
   InputLeftElement,
   MENU_ITEM_SHORTCUTS,
-  ShortcutKey,
+  PrefetchLink,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDisclosure,
   useMount,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, formatDate, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Suspense, useRef, useState } from "react";
+import { useLocale } from "@react-aria/i18n";
+import { Suspense, useState } from "react";
 import {
+  LuCalendarX,
   LuChevronDown,
   LuChevronRight,
   LuCirclePlus,
@@ -39,7 +41,7 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Await, Link, useNavigate, useParams } from "react-router";
+import { Await, Link, useParams } from "react-router";
 import {
   Empty,
   Hyperlink,
@@ -63,10 +65,11 @@ import {
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores/items";
+import { usePeople } from "~/stores/people";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
 import type {
@@ -130,6 +133,7 @@ function getRelatedItems(
 }
 
 export default function SalesOrderExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -137,6 +141,7 @@ export default function SalesOrderExplorer() {
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
     customer: Customer;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesOrder(orderId));
   const permissions = usePermissions();
 
@@ -149,11 +154,16 @@ export default function SalesOrderExplorer() {
     nonTaxableAddOnCost: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
-    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    taxPercent:
+      salesOrderData?.resolvedTax?.taxPercent ??
+      salesOrderData?.customer?.taxPercent ??
+      0,
+    taxCodeId: salesOrderData?.resolvedTax?.taxCodeId ?? undefined,
     promisedDate:
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",
+    requestedDate: salesOrderData?.salesOrder?.receiptRequestedDate ?? "",
     shippingCost: 0
   };
 
@@ -179,20 +189,8 @@ export default function SalesOrderExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const lines = salesOrderData?.lines ?? [];
   const canReorder =
@@ -259,36 +257,19 @@ export default function SalesOrderExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newSalesOrderLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newSalesOrderLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -299,15 +280,21 @@ export default function SalesOrderExplorer() {
           )}
         </div>
       </VStack>
-      {newSalesOrderLineDisclosure.isOpen && (
+      {newSalesOrderLineDisclosure.openCount > 0 && (
         <SalesOrderLineForm
+          key={newSalesOrderLineDisclosure.openCount}
+          open={newSalesOrderLineDisclosure.isOpen}
           initialValues={salesOrderLineInitialValues}
           type="modal"
           onClose={newSalesOrderLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSalesOrderLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeleteSalesOrderLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );
@@ -323,17 +310,19 @@ function SalesOrderLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const readableId = getItemReadableId(items, line.itemId);
+  const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
         <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
         <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">
-            {getItemReadableId(items, line.itemId)}
-          </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.description}
-          </span>
+          <span className="font-semibold line-clamp-1">{readableId}</span>
+          {description && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -345,6 +334,61 @@ type SalesOrderLineItemProps = {
   isDisabled: boolean;
   onDelete: (line: SalesOrderLine) => void;
 };
+
+/**
+ * A mark on a line's delivery date check. A spinner while the background
+ * capacity check still runs (`Pending`). For a date the check failed: amber
+ * while nobody has confirmed it (a converted line), muted once a user saved
+ * the line and kept the date, naming that user.
+ */
+function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const [people] = usePeople();
+  if (line.deliveryDateStatus === "Pending") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="relative z-10 shrink-0 text-muted-foreground">
+            <Spinner
+              className="h-3 w-3"
+              aria-label={t`Checking the delivery date`}
+            />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{t`Checking the delivery date…`}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  if (line.deliveryDateStatus !== "Missed") return null;
+  const earliest = formatDate(line.earliestDeliveryDate, undefined, locale);
+  const keptBy = line.deliveryDateOverriddenBy
+    ? (people.find((person) => person.id === line.deliveryDateOverriddenBy)
+        ?.name ?? t`a user`)
+    : null;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "relative z-10 shrink-0",
+            keptBy ? "text-muted-foreground" : "text-amber-500"
+          )}
+        >
+          <LuCalendarX
+            className="h-3.5 w-3.5"
+            aria-label={keptBy ? t`Date kept` : t`Date not confirmed`}
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {keptBy
+          ? t`${keptBy} kept this date. The earliest delivery date is ${earliest}.`
+          : t`Date not confirmed. The earliest delivery date is ${earliest}.`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function SalesOrderLineItem({
   line,
@@ -358,8 +402,8 @@ function SalesOrderLineItem({
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
   const searchDisclosure = useDisclosure();
+  const { t } = useLingui();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -370,11 +414,18 @@ function SalesOrderLineItem({
   const isSelected =
     location.pathname === path.to.salesOrderLine(orderId, line.id!);
 
-  const onLineClick = () => {
-    if (location.pathname !== path.to.salesOrderLine(orderId, line.id!)) {
-      navigate(path.to.salesOrderLine(orderId, line.id!));
-    }
-  };
+  const lineName =
+    line.salesOrderLineType === "Fixed Asset"
+      ? (line as any).assetReadableId || t`Fixed Asset`
+      : getItemReadableId(items, line.itemId);
+
+  const secondaryText =
+    line.salesOrderLineType === "Fixed Asset"
+      ? (line as any).assetName || line.description
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
 
   return (
     <VStack spacing={0} className="border-b">
@@ -383,33 +434,45 @@ function SalesOrderLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={onLineClick}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail
-            thumbnailPath={line.thumbnailPath}
-            type="Part" // TODO
-          />
+        <PrefetchLink
+          to={path.to.salesOrderLine(orderId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.thumbnailPath}
+              type="Part" // TODO
+            />
 
-          <VStack spacing={0} className="min-w-0">
-            <span className="font-semibold line-clamp-1">
-              {line.salesOrderLineType === "Fixed Asset"
-                ? (line as any).assetReadableId || "Fixed Asset"
-                : getItemReadableId(items, line.itemId)}
-            </span>
-            <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {line.salesOrderLineType === "Fixed Asset"
-                ? (line as any).assetName || line.description
-                : line.description}
-            </span>
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+            <VStack spacing={0} className="min-w-0">
+              <HStack spacing={1} className="min-w-0">
+                <span className="font-semibold line-clamp-1">
+                  {line.salesOrderLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : getItemReadableId(items, line.itemId)}
+                </span>
+                <DeliveryDateFlag line={line} />
+              </HStack>
+              {secondaryText && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {secondaryText}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             <IconButton
-              aria-label={disclosure.isOpen ? "Hide" : "Show"}
+              aria-label={
+                disclosure.isOpen
+                  ? t`Hide details for ${lineName}`
+                  : t`Show details for ${lineName}`
+              }
+              aria-expanded={disclosure.isOpen}
               className={cn(
-                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -423,8 +486,8 @@ function SalesOrderLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"
@@ -547,6 +610,7 @@ function SalesOrderLineRelatedItems({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search related items`}
               placeholder={t`Search related items...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -584,6 +648,8 @@ function RelatedItemTreeNode({
   return (
     <>
       <button
+        type="button"
+        aria-expanded={isExpanded}
         className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
         onClick={(e) => {
           e.stopPropagation();

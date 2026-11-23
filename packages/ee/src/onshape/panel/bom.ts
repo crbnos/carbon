@@ -1,0 +1,383 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+/**
+ * Onshape indented BOM → typed tree. Columns are found by `bomColumnIds`
+ * (`standard-sources.ts`); nesting comes from the dotted Item index ("1.1.2").
+ * Non-empty cells are kept as properties keyed by column id, so a row
+ * resolves through the company's property map like a part.
+ */
+
+import { isNotApplicable, type OnshapePropertyValue } from "./properties";
+import {
+  bomColumnIds,
+  DEFAULT_STANDARD_SOURCES,
+  type StandardSources,
+  sourceLabel
+} from "./standard-sources";
+
+export type OnshapeBomNode = {
+  /** Dotted position, e.g. "1.2". */
+  index: string;
+  level: number;
+  partNumber: string | null;
+  revision: string | null;
+  name: string | null;
+  description: string | null;
+  quantity: number;
+  /** "Show Assembly only": one line, no components. Not a make/buy signal. */
+  shownAsUnit?: true;
+  standardContent?: true;
+  /** Non-empty cells, one per column. Dropped before a plan is stored. */
+  properties?: OnshapePropertyValue[];
+  itemSource: {
+    documentId?: string;
+    elementId?: string;
+    partId?: string;
+    wvmType?: string;
+    wvmId?: string;
+    /** Onshape's configuration string; "default" for the default one. */
+    configuration?: string;
+  } | null;
+  children: OnshapeBomNode[];
+};
+
+type BomHeader = {
+  id: string;
+  name: string;
+  propertyName?: unknown;
+  valueType?: unknown;
+};
+type BomRow = {
+  headerIdToValue?: Record<string, unknown>;
+  itemSource?: Record<string, unknown>;
+  isStandardContent?: unknown;
+};
+
+/** "Subassembly BOM behavior" label; the API returns it as text. */
+const SHOWN_AS_UNIT = "show assembly only";
+
+function cell(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === "object") {
+    const display = (value as Record<string, unknown>).displayName;
+    return typeof display === "string" && display.trim() !== ""
+      ? display
+      : null;
+  }
+  const text = String(value).trim();
+  return text === "" ? null : text;
+}
+
+/**
+ * Without Item every row reads as the root and a push would apply an empty
+ * BOM. Part number is the join key to Carbon. Without Quantity every line
+ * would push as 1.
+ */
+const BOM_REQUIRED_FIELDS = ["item", "partNumber", "quantity"] as const;
+
+export function parseBomTree(
+  payload: unknown,
+  sources: StandardSources = DEFAULT_STANDARD_SOURCES
+): {
+  /** The assembly's own row (index "0"), when the export included it. */
+  root: OnshapeBomNode | null;
+  lines: OnshapeBomNode[];
+  /** Labels of required columns missing or blank; callers refuse to plan. */
+  missingColumns: string[];
+  /** Chosen Item or Quantity columns (labels) a line has no usable value in. */
+  blankColumns: string[];
+} {
+  const bom = (payload ?? {}) as {
+    headers?: BomHeader[];
+    rows?: BomRow[];
+  };
+  const headers = Array.isArray(bom.headers) ? bom.headers : [];
+  const rows = Array.isArray(bom.rows) ? bom.rows : [];
+
+  const columns = bomColumnIds(headers, sources);
+  const missingColumns =
+    rows.length === 0
+      ? []
+      : BOM_REQUIRED_FIELDS.filter((field) => !columns[field]).map((field) =>
+          sourceLabel(field, sources)
+        );
+  const get = (row: BomRow, field: keyof typeof columns) => {
+    const id = columns[field];
+    const text = id ? cell(row.headerIdToValue?.[id]) : null;
+    return isNotApplicable(text) ? null : text;
+  };
+
+  // Onshape's own columns always hold a value; a chosen one may hold nothing.
+  const own = bomColumnIds(headers);
+  const chosenItem = columns.item !== own.item;
+  const chosenQuantity = columns.quantity !== own.quantity;
+  const readsAsRoot = (index: string | null) => index === null || index === "0";
+  // A chosen Item column says nothing about the assembly's own row. Onshape's
+  // column finds it; a BOM without that column lists it first.
+  const chosenRootRow = !chosenItem
+    ? undefined
+    : own.item
+      ? rows.find((row) =>
+          readsAsRoot(cell(row.headerIdToValue?.[own.item as string]))
+        )
+      : rows[0] && readsAsRoot(get(rows[0], "item"))
+        ? rows[0]
+        : undefined;
+  const blank = new Set<"item" | "quantity">();
+
+  const nodes: OnshapeBomNode[] = rows.map((row) => {
+    const itemText = get(row, "item");
+    const index = row === chosenRootRow ? "0" : (itemText ?? "");
+    const quantityText = get(row, "quantity");
+    const quantity = quantityText ? Number(quantityText) : Number.NaN;
+    const validQuantity = Number.isFinite(quantity) && quantity > 0;
+    const isRoot =
+      row === chosenRootRow || (!chosenItem && readsAsRoot(itemText));
+    if (!isRoot) {
+      if (chosenItem && readsAsRoot(itemText)) blank.add("item");
+      if (chosenQuantity && !validQuantity) blank.add("quantity");
+    }
+    const source = row.itemSource ?? null;
+    const shownAsUnit =
+      get(row, "bomBehavior")?.toLowerCase() === SHOWN_AS_UNIT;
+    const standardContent =
+      row.isStandardContent === true || source?.isStandardContent === true;
+    const properties: OnshapePropertyValue[] = [];
+    for (const header of headers) {
+      const value = row.headerIdToValue?.[header.id];
+      if (cell(value) === null || isNotApplicable(value)) continue;
+      properties.push({
+        propertyId: header.id,
+        name: header.name,
+        valueType:
+          typeof header.valueType === "string" ? header.valueType : "STRING",
+        value
+      });
+    }
+    return {
+      index,
+      level: index === "" ? 0 : index.split(".").length,
+      partNumber: get(row, "partNumber"),
+      revision: get(row, "revision"),
+      name: get(row, "name"),
+      description: get(row, "description"),
+      quantity: validQuantity ? quantity : 1,
+      ...(shownAsUnit ? { shownAsUnit: true as const } : {}),
+      ...(standardContent ? { standardContent: true as const } : {}),
+      ...(properties.length > 0 ? { properties } : {}),
+      itemSource: source
+        ? {
+            documentId: cell(source.documentId) ?? undefined,
+            elementId: cell(source.elementId) ?? undefined,
+            partId: cell(source.partId) ?? undefined,
+            wvmType: cell(source.wvmType) ?? undefined,
+            wvmId: cell(source.wvmId) ?? undefined,
+            configuration: cell(source.configuration) ?? undefined
+          }
+        : null,
+      children: []
+    };
+  });
+
+  const byIndex = new Map<string, OnshapeBomNode>();
+  const lines: OnshapeBomNode[] = [];
+  let root: OnshapeBomNode | null = null;
+
+  // Sort by depth so parents exist before children regardless of row order.
+  for (const node of [...nodes].sort((a, b) => a.level - b.level)) {
+    if (node.index === "" || node.index === "0") {
+      root = node;
+      continue;
+    }
+    byIndex.set(node.index, node);
+    const dot = node.index.lastIndexOf(".");
+    if (dot === -1) {
+      lines.push(node);
+    } else {
+      const parent = byIndex.get(node.index.substring(0, dot));
+      if (parent) {
+        parent.children.push(node);
+      } else {
+        lines.push(node);
+      }
+    }
+  }
+
+  const sortRec = (list: OnshapeBomNode[]) => {
+    list.sort((a, b) =>
+      a.index.localeCompare(b.index, undefined, { numeric: true })
+    );
+    for (const item of list) sortRec(item.children);
+  };
+  sortRec(lines);
+
+  const blankColumns = [...blank].map((field) => sourceLabel(field, sources));
+  return {
+    root,
+    lines,
+    missingColumns: [...missingColumns, ...blankColumns],
+    blankColumns
+  };
+}
+
+export type AssemblyPartSource = {
+  documentId: string;
+  /** "v" for a part linked from a version; null for one in this document. */
+  wvm: "v" | null;
+  wvmId: string | null;
+  elementId: string;
+  partId: string;
+};
+
+/**
+ * First non-Standard-content part of an assembly definition: its metadata
+ * lists the part-scoped properties an assembly's metadata lacks.
+ */
+export function firstOwnAssemblyPart(
+  definition: unknown
+): AssemblyPartSource | null {
+  const parts =
+    definition && typeof definition === "object"
+      ? (definition as { parts?: unknown }).parts
+      : null;
+  if (!Array.isArray(parts)) return null;
+  for (const part of parts) {
+    if (!part || typeof part !== "object") continue;
+    const entry = part as Record<string, unknown>;
+    if (entry.isStandardContent === true) continue;
+    const { documentId, elementId, partId, documentVersion } = entry;
+    if (
+      typeof documentId !== "string" ||
+      typeof elementId !== "string" ||
+      typeof partId !== "string" ||
+      documentId === "" ||
+      elementId === "" ||
+      partId === ""
+    ) {
+      continue;
+    }
+    const version =
+      typeof documentVersion === "string" && documentVersion !== ""
+        ? documentVersion
+        : null;
+    return {
+      documentId,
+      wvm: version ? "v" : null,
+      wvmId: version,
+      elementId,
+      partId
+    };
+  }
+  return null;
+}
+
+export function withoutProperties(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
+  return nodes.map(({ properties: _properties, children, ...node }) => ({
+    ...node,
+    children: withoutProperties(children)
+  }));
+}
+
+export function missingBomColumnsMessage(
+  missingColumns: string[],
+  blankColumns: string[] = []
+): string {
+  const quoted = (columns: string[]) =>
+    new Intl.ListFormat("en", {
+      style: "long",
+      type: "conjunction"
+    }).format(columns.map((name) => `"${name}"`));
+  const absent = missingColumns.filter((name) => !blankColumns.includes(name));
+  const plural = absent.length > 1;
+  const absentText = `Onshape's BOM for this assembly has no ${quoted(absent)} column${
+    plural ? "s" : ""
+  }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, or choose the column${
+    plural ? "s" : ""
+  } on the Fields page, then try again.`;
+  const blankPlural = blankColumns.length > 1;
+  const blankText = `${quoted(blankColumns)} ${
+    blankPlural ? "are" : "is"
+  } blank or unreadable on some rows of this assembly's BOM, so the BOM can't be read. Fill ${
+    blankPlural ? "them" : "it"
+  } in Onshape, or choose another column on the Fields page, then try again.`;
+  return [
+    absent.length > 0 ? absentText : null,
+    blankColumns.length > 0 ? blankText : null
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** At most this many headers go into a diagnostics report. */
+const DIAGNOSTIC_HEADER_LIMIT = 60;
+
+/**
+ * The shape of a BOM response and its column headers, for the panel's Details
+ * when a BOM can't be read. Never a cell value.
+ */
+export type BomDiagnostics = {
+  /** Top-level keys of the response. */
+  payloadKeys: string[];
+  /** "array", "missing", or what `headers` was instead. */
+  headersType: string;
+  headerCount: number;
+  headers: {
+    id: string | null;
+    name: string | null;
+    propertyName: string | null;
+  }[];
+  rowCount: number;
+  formatVersion: string | null;
+  templateId: string | null;
+  topLevelAssemblyRow: boolean;
+};
+
+export function describeBomPayload(payload: unknown): BomDiagnostics {
+  const bom =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const headers = bom.headers;
+  const text = (value: unknown) =>
+    typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : null;
+  const headerList = Array.isArray(headers) ? headers : [];
+  return {
+    payloadKeys: payload && typeof payload === "object" ? Object.keys(bom) : [],
+    headersType: Array.isArray(headers)
+      ? "array"
+      : headers === undefined
+        ? "missing"
+        : headers === null
+          ? "null"
+          : typeof headers,
+    headerCount: headerList.length,
+    headers: headerList.slice(0, DIAGNOSTIC_HEADER_LIMIT).map((header) => {
+      const h = (header ?? {}) as Record<string, unknown>;
+      return {
+        id: text(h.id),
+        name: text(h.name),
+        propertyName: text(h.propertyName)
+      };
+    }),
+    rowCount: Array.isArray(bom.rows) ? bom.rows.length : 0,
+    formatVersion: text(bom.formatVersion),
+    templateId: text(bom.templateId),
+    topLevelAssemblyRow: !!bom.topLevelAssemblyRow
+  };
+}
+
+export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {
+  const out: OnshapeBomNode[] = [];
+  const walk = (list: OnshapeBomNode[]) => {
+    for (const node of list) {
+      out.push(node);
+      walk(node.children);
+    }
+  };
+  walk(lines);
+  return out;
+}

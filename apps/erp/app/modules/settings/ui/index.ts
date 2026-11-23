@@ -18,5 +18,5 @@ export * from "./Printing";
 export * from "./Security";
 export * from "./Sequences";
 export * from "./SerialNumbers";
-export * from "./Theme";
+export * from "./StrictBackflush";
 export { useSettingsSubmodules };

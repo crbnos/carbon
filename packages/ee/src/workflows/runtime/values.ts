@@ -2,13 +2,21 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import {
+  parseAbsolute,
+  parseDateTime,
+  parseZonedDateTime,
+  toZoned
+} from "@internationalized/date";
 import { MAX_LIST_ITEMS } from "../definition/schema";
 import type {
   Literal,
   PrimitiveKind,
+  RecordType,
   ScalarType,
   ValueType
 } from "../definition/types";
+import { assertNever } from "../definition/types";
 import type { RuntimeValue } from "./types";
 
 export function primitiveValue(
@@ -65,43 +73,160 @@ export function isNull(value: RuntimeValue): boolean {
   return value.kind === "primitive" && value.value === null;
 }
 
+export function recordValue(
+  of: RecordType,
+  fields: Record<string, RuntimeValue>
+): RuntimeValue {
+  return { kind: "record", of, fields };
+}
+
 /** Coerces a raw database column value against its catalog type; anything unusable is null. */
 export function fromColumn(type: ValueType, raw: unknown): RuntimeValue {
-  if (type.kind === "list") {
-    if (!Array.isArray(raw)) return { kind: "list", of: type.of, items: [] };
-    return listValue(
-      type.of,
-      raw.map((entry) => fromColumn(type.of, entry))
-    ).value;
-  }
-
-  if (raw === null || raw === undefined) return nullValue();
-
-  if (type.kind === "entity") {
-    return raw === "" ? nullValue() : entityValue(type.of, String(raw));
-  }
-
-  switch (type.of) {
-    case "date": {
-      const parsed = new Date(raw as string);
-      return Number.isNaN(parsed.getTime())
-        ? nullValue()
-        : primitiveValue("date", parsed.toISOString());
+  switch (type.kind) {
+    case "list": {
+      if (!Array.isArray(raw)) return { kind: "list", of: type.of, items: [] };
+      return listValue(
+        type.of,
+        raw.map((entry) => fromColumn(type.of, entry))
+      ).value;
     }
-    case "number": {
-      const parsed = Number(raw);
-      return Number.isFinite(parsed)
-        ? primitiveValue("number", parsed)
-        : nullValue();
+    case "entity": {
+      if (raw === null || raw === undefined) return nullValue();
+      return raw === "" ? nullValue() : entityValue(type.of, String(raw));
     }
-    case "boolean":
-      return primitiveValue("boolean", Boolean(raw));
-    case "string":
-      return primitiveValue("string", String(raw));
-    case "null":
-      return nullValue();
+    case "record": {
+      // Driven by the DECLARED fields, not the raw object's keys, so a vendor
+      // sending something extra cannot smuggle it into a typed value. A field the
+      // response omits becomes null rather than absent, which is what lets a walk
+      // into it answer "nothing" instead of failing.
+      const source =
+        raw !== null && typeof raw === "object" && !Array.isArray(raw)
+          ? (raw as Record<string, unknown>)
+          : {};
+      const fields: Record<string, RuntimeValue> = {};
+      for (const [name, fieldType] of Object.entries(type.fields)) {
+        fields[name] = fromColumn(fieldType, source[name]);
+      }
+      return recordValue(type, fields);
+    }
+    case "primitive": {
+      if (raw === null || raw === undefined) return nullValue();
+      switch (type.of) {
+        case "date": {
+          const parsed = new Date(raw as string);
+          return Number.isNaN(parsed.getTime())
+            ? nullValue()
+            : primitiveValue("date", parsed.toISOString());
+        }
+        case "number": {
+          const parsed = Number(raw);
+          return Number.isFinite(parsed)
+            ? primitiveValue("number", parsed)
+            : nullValue();
+        }
+        case "boolean":
+          return primitiveValue("boolean", Boolean(raw));
+        case "string":
+          return primitiveValue("string", String(raw));
+        case "null":
+          return nullValue();
+      }
+    }
+    default:
+      return assertNever(type);
   }
 }
+
+/**
+ * Coerces vendor JSON (an integration step's response) against its declared type.
+ *
+ * Strict where `fromColumn` is forgiving: a database column already holds the
+ * declared type, but a vendor's response is validated by nobody, so each
+ * primitive is checked by `typeof` and anything mistyped is null. `"false"` is
+ * not a boolean, an object is not text, and a numeric string is not a number.
+ * Text accepts any JSON scalar: an output with no vendor `format` is text, and a
+ * numeric id written as text is still that id.
+ */
+export function fromJson(type: ValueType, raw: unknown): RuntimeValue {
+  switch (type.kind) {
+    case "list": {
+      if (!Array.isArray(raw)) return { kind: "list", of: type.of, items: [] };
+      return listValue(
+        type.of,
+        raw.map((entry) => fromJson(type.of, entry))
+      ).value;
+    }
+    case "entity":
+      return typeof raw === "string" && raw !== ""
+        ? entityValue(type.of, raw)
+        : nullValue();
+    case "record": {
+      // Driven by the DECLARED fields, as in `fromColumn`.
+      const source =
+        raw !== null && typeof raw === "object" && !Array.isArray(raw)
+          ? (raw as Record<string, unknown>)
+          : {};
+      const fields: Record<string, RuntimeValue> = {};
+      for (const [name, fieldType] of Object.entries(type.fields)) {
+        fields[name] = fromJson(
+          fieldType,
+          Object.hasOwn(source, name) ? source[name] : undefined
+        );
+      }
+      return recordValue(type, fields);
+    }
+    case "primitive": {
+      switch (type.of) {
+        case "date": {
+          const iso = typeof raw === "string" ? vendorInstant(raw) : null;
+          return iso === null ? nullValue() : primitiveValue("date", iso);
+        }
+        case "number":
+          return typeof raw === "number" && Number.isFinite(raw)
+            ? primitiveValue("number", raw)
+            : nullValue();
+        case "boolean":
+          return typeof raw === "boolean"
+            ? primitiveValue("boolean", raw)
+            : nullValue();
+        case "string":
+          if (typeof raw === "string") return primitiveValue("string", raw);
+          return (typeof raw === "number" && Number.isFinite(raw)) ||
+            typeof raw === "boolean"
+            ? primitiveValue("string", String(raw))
+            : nullValue();
+        case "null":
+          return nullValue();
+      }
+    }
+    default:
+      return assertNever(type);
+  }
+}
+
+/** A vendor's date or date-time as a UTC ISO instant, or null. Tried in order:
+ * a bracketed zone (`…+05:30[Asia/Kolkata]`), an offset or `Z`, then a value
+ * with no offset at all (`2026-08-31T09:00`, `2026-08-31`). The last has no
+ * zone we could know, so it is read as UTC — never in the server's own zone,
+ * which would make the same response mean different instants on different
+ * hosts. */
+function vendorInstant(raw: string): string | null {
+  for (const parse of VENDOR_INSTANT_PARSERS) {
+    try {
+      return parse(raw);
+    } catch {
+      // Not this shape; try the next.
+      continue;
+    }
+  }
+  return null;
+}
+
+const VENDOR_INSTANT_PARSERS: readonly ((raw: string) => string)[] = [
+  (raw) => parseZonedDateTime(raw).toAbsoluteString(),
+  (raw) => parseAbsolute(raw, "UTC").toAbsoluteString(),
+  (raw) => toZoned(parseDateTime(raw), "UTC").toAbsoluteString()
+];
 
 export function fromLiteral(literal: Literal): RuntimeValue {
   return fromColumn(literal.type, literal.value);

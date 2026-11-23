@@ -6,14 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  materialSubstanceValidator,
-  upsertMaterialSubstance
-} from "~/modules/items";
+import { materialSubstanceValidator } from "~/modules/items/items.models";
+import { upsertMaterialSubstance } from "~/modules/items/items.service";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -69,10 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!materialSubstanceId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertMaterialSubstance, "Failed to insert material substance")
-      )
+      await flash(request, error(null, "Failed to insert material substance"))
     );
   }
 
@@ -85,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMaterialSubstancesRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     code: "",
@@ -94,7 +89,8 @@ export default function NewMaterialSubstancesRoute() {
 
   return (
     <MaterialSubstanceForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

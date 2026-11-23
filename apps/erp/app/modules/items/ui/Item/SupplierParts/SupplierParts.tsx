@@ -5,24 +5,27 @@
 import { Card, CardContent, CardHeader, CardTitle, cn } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { LuTrash } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { SupplierAvatar } from "~/components";
 import Grid from "~/components/Grid";
 import Hyperlink from "~/components/Hyperlink";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { useSuppliers } from "~/stores/suppliers";
 import type { SupplierPart } from "../../../types";
+import SupplierPartPrice from "./SupplierPartPrice";
 
 type Part = Pick<
   SupplierPart,
   | "id"
   | "supplierId"
   | "supplierPartId"
-  | "unitPrice"
+  | "currencyCode"
+  | "supplierUnitPrice"
   | "supplierUnitOfMeasureCode"
   | "minimumOrderQuantity"
   | "conversionFactor"
@@ -52,11 +55,15 @@ const SupplierParts = ({
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "parts") && !isReadOnly;
   const canDelete = permissions.can("delete", "parts") && !isReadOnly;
-  const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
 
-  const [deleteTarget, setDeleteTarget] = useState<Part | null>(null);
+  const {
+    item: deleteTarget,
+    isOpen: isDeleteOpen,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<Part>();
 
   const supplierName = (supplierId: string | null) => {
     if (!supplierId || !suppliers) return t`this supplier`;
@@ -76,17 +83,20 @@ const SupplierParts = ({
       },
       {
         accessorKey: "supplierPartId",
-        header: t`Supplier ID`,
+        header: t`Supplier Part ID`,
         cell: (item) => item.getValue()
       },
       {
-        accessorKey: "unitPrice",
+        // In each supplier part's own currency, so a column total would add
+        // euros to dollars — there is none.
+        accessorKey: "supplierUnitPrice",
         header: t`Unit Price`,
-        cell: (item) => formatter.format(item.getValue<number>()),
-        meta: {
-          formatter: formatter.format,
-          renderTotal: true
-        }
+        cell: ({ row }) => (
+          <SupplierPartPrice
+            price={row.original.supplierUnitPrice}
+            currencyCode={row.original.currencyCode}
+          />
+        )
       },
       {
         accessorKey: "supplierUnitOfMeasureCode",
@@ -119,7 +129,7 @@ const SupplierParts = ({
             className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteTarget(row.original);
+              openDelete(row.original);
             }}
           >
             <LuTrash className="w-4 h-4" />
@@ -129,7 +139,7 @@ const SupplierParts = ({
     }
 
     return cols;
-  }, [customColumns, formatter, t, canDelete, deleteSupplierPath]);
+  }, [customColumns, t, canDelete, deleteSupplierPath, openDelete]);
 
   return (
     <>
@@ -155,8 +165,9 @@ const SupplierParts = ({
           action={deleteSupplierPath(deleteTarget.id)}
           name={t`Supplier Part`}
           text={t`Are you sure you want to remove ${supplierName(deleteTarget.supplierId)} as a supplier for this item? This cannot be undone.`}
-          onCancel={() => setDeleteTarget(null)}
-          onSubmit={() => setDeleteTarget(null)}
+          isOpen={isDeleteOpen}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </>

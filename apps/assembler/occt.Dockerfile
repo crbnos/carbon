@@ -2,9 +2,10 @@
 # kept (OCCT + the patch change ~never); the app Dockerfile FROMs this so
 # per-code rebuilds skip the ~30-min OCCT compile entirely.
 #
+# Carbon's CI publishes it to public.ecr.aws/b8l5b8t9/carbon/occt, tagged with
+# a hash of this file + occt-patches/ (.github/scripts/build-images.sh), and the
+# app Dockerfile uses that image by default. Build it yourself only to change it:
 #   docker build -f apps/assembler/occt.Dockerfile -t carbon-occt:8.0.0-p1 apps/assembler
-#   # push to a registry so CI / other machines reuse it:
-#   #   docker tag carbon-occt:8.0.0-p1 <registry>/carbon-occt:8.0.0-p1 && docker push ...
 #
 # OCCT V8_0_0_p1 + the CommonBaseAllocator thread_local patch (occt-patches/) —
 # THE lever that lifts in-process STEP-convert scaling from ~3.5x to near-linear

@@ -2,39 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+import { getOnshapePanelOrigin } from "@carbon/ee/onshape";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
+import { ExternalSourceCard } from "~/components/ExternalSource";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
-  getConfigurationParameters,
-  getConfigurationRules,
-  getItemManufacturing,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   itemManufacturingValidator,
-  partValidator,
-  upsertItemManufacturing,
-  upsertPart
-} from "~/modules/items";
+  partValidator
+} from "~/modules/items/items.models";
 import {
+  getConfigurationRules,
   getItemChangeNoticeDataOnce,
+  getItemManufacturing,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
   getRevisionLock
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
+import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items/types";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -51,13 +50,12 @@ import {
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
+import { methodVersionSlot } from "~/modules/items/ui/Item/MakeMethodTools";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "itemid-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -75,15 +73,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // everything that needs only the chosen method's id goes in the next. Read
   // one after another, this loader took the sum of its queries (about half a
   // second) instead of the slowest of them.
-  const [makeMethods, revisionLock, changeNoticeData, tags, partManufacturing] =
-    await Promise.all([
-      getMakeMethodsOnce(client, itemId, companyId),
-      getRevisionLock(client, { itemId, companyId }),
-      // Part → CO traceability (4b): CO history for this part + type labels.
-      getItemChangeNoticeDataOnce(client, itemId, companyId),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
-    ]);
+  const [
+    makeMethods,
+    revisionLock,
+    changeNoticeData,
+    tags,
+    partManufacturing,
+    onshapeOrigin
+  ] = await Promise.all([
+    getMakeMethodsOnce(client, itemId, companyId),
+    getRevisionLock(client, { itemId, companyId }),
+    // Part → CO traceability (4b): CO history for this part + type labels.
+    getItemChangeNoticeDataOnce(client, itemId, companyId),
+    getTagsList(client, companyId, "operation"),
+    getItemManufacturing(client, itemId, companyId),
+    getOnshapePanelOrigin(client, companyId)
+  ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
 
@@ -104,6 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
+      onshapeOrigin,
       ...changeNoticeData
     };
   }
@@ -132,6 +138,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
+      onshapeOrigin,
       ...changeNoticeData
     };
   }
@@ -160,82 +167,50 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     revisionStatus,
     releaseControl,
+    onshapeOrigin,
     ...changeNoticeData
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+// The details form, and the manufacturing card (`intent=manufacturing`).
+const intentForm = z.object({ intent: zfd.text(z.string().optional()) });
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(intentForm).request(args, {
+    params: ["itemId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { itemId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
 
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "manufacturing") {
+  if (input.data.intent === "manufacturing") {
     const validation = await validator(itemManufacturingValidator).validate(
       formData
     );
-
-    if (validation.error) {
-      logger.error(validation.error);
-      return validationError(validation.error);
-    }
-
-    const updatePartManufacturing = await upsertItemManufacturing(client, {
+    if (validation.error) return validationError(validation.error);
+    const result = await api.items.updateItemManufacturing({
       ...validation.data,
       requiresConfiguration: validation.data.requiresConfiguration ?? false,
       itemId,
-      updatedBy: userId,
       customFields: setCustomFields(formData)
     });
-    if (updatePartManufacturing.error) {
-      throw redirect(
-        path.to.part(itemId),
-        await flash(
-          request,
-          error(
-            updatePartManufacturing.error,
-            "Failed to update part manufacturing"
-          )
-        )
-      );
-    }
-
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(request, success("Updated part manufacturing"))
-    );
+    return respond(args.request, result).redirect(path.to.partDetails(itemId), {
+      message: "Updated part manufacturing",
+      onError: path.to.part(itemId)
+    });
   }
 
   const validation = await validator(partValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updatePart = await upsertPart(client, {
+  if (validation.error) return validationError(validation.error);
+  const result = await api.items.updatePart({
     ...validation.data,
     id: itemId,
-    companyId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: setCustomFields(formData)
   });
-  if (updatePart.error) {
-    throw redirect(
-      path.to.part(itemId),
-      await flash(request, error(updatePart.error, "Failed to update part"))
-    );
-  }
-
-  throw redirect(
-    path.to.part(itemId),
-    await flash(request, success("Updated part"))
-  );
+  return respond(args.request, result).redirect(path.to.part(itemId), {
+    message: "Updated part"
+  });
 }
 
 export default function PartDetailsRoute() {
@@ -249,6 +224,7 @@ export default function PartDetailsRoute() {
     tags,
     revisionStatus,
     releaseControl,
+    onshapeOrigin,
     changeNotices,
     changeNoticeTypes
   } = useLoaderData<typeof loader>();
@@ -293,6 +269,7 @@ export default function PartDetailsRoute() {
                   makeMethods={makeMethods?.data ?? []}
                   type="Part"
                   currentMethodId={methodData.makeMethod.id}
+                  versionInSlot
                 />
               )}
             </Await>
@@ -334,6 +311,8 @@ export default function PartDetailsRoute() {
             partData.partSummary?.replenishmentSystem ?? ""
           ) && (
             <>
+              {/* Phones: the method version chip, right above the method. */}
+              <methodVersionSlot.Target className="flex md:hidden [&_button]:h-9 [&_button]:rounded-full [&_button]:border [&_button]:border-border [&_button]:bg-card [&_button]:px-3" />
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
@@ -405,6 +384,11 @@ export default function PartDetailsRoute() {
             modelUpload={partData?.partSummary ?? null}
             title={t`CAD Model`}
             titleExtras={lockHint}
+          />
+          <ExternalSourceCard
+            itemId={itemId}
+            canDetach={permissions.can("update", "parts")}
+            onshapeOrigin={onshapeOrigin}
           />
           <ItemRiskRegister itemId={itemId} />
           <ItemChangeNotices

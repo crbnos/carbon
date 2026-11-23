@@ -1,0 +1,86 @@
+---
+title: Strict backflush
+description: Backflush each material only from the storage unit on its material line, and stop the work when that storage unit is short.
+---
+
+By default, a <Term>backflush</Term> that finds its material's storage unit short takes the rest from another storage unit with stock. **Strict backflush** turns that off: each material is drawn only from the **Pull From** storage unit on its material line, so on-hand stays correct per storage unit.
+
+<Screenshot label="Settings, Items page, Strict Backflush card with Strict backflush is on, Prevent negative stock on, and the active-methods and open-jobs gap rows" />
+
+## Turn it on
+
+You need permission to update settings.
+
+<Steps>
+  <Step>
+    Open **Settings → Items** and find the **Strict Backflush** card under Bill of Materials.
+  </Step>
+  <Step>
+    Turn on the first switch. It reads **"Strict backflush is on"**. Nothing asks for confirmation, and no existing method or job changes.
+  </Step>
+  <Step>
+    Choose **Prevent negative stock** (on by default). On, an operation or job that would take its storage unit below zero is stopped until the stock is there. Off, the storage unit goes below zero and the work still completes.
+  </Step>
+  <Step>
+    Press **Review** on each gap row the card shows: active methods with materials that have no Pull From, and open jobs with materials that have no storage unit. Each opens a searchable list. Fix a method through a new version, since an Active method cannot be edited.
+  </Step>
+</Steps>
+
+## Which lines need a Pull From
+
+A material line needs a Pull From when it is pulled from stock: its method type is not **Make to Order**, the item is a Part, Material or Consumable, and the item is not Non-Inventory. Purchase to Order, batch and serial lines count.
+
+The rule applies only at a location that has an active work center and an active storage unit. At any other location, backflush works as if the setting were off. Set the Pull From in the [bill of materials](/docs/reference/methods): expand the line, then under **Pull From** pick the location and its storage unit. A line that is missing one shows a red **"No storage unit"** badge.
+
+## What it stops
+
+- **Activating a method version** with a line that has no Pull From.
+- **Releasing a job** with a line that has no storage unit, from the job's **Release** dialog, bulk release, batch release, or a [kanban](/docs/reference/kanban) scan with Auto Release. A new job's line takes the BoM's Pull From, else the item's default storage unit for the location. It never takes the storage unit with the most stock.
+- **Completing an operation or a job**, and **issuing a planned material**, when its storage unit is missing or short. The check runs before the quantity is recorded, so a refused completion records nothing.
+
+<Callout type="warn" title="Picked material is used first">
+Material already [picked](/docs/reference/picking) to the operation's lineside storage unit is consumed before the Pull From is checked. Only the rest must be in the Pull From storage unit. After a pick, the Pull From is the storage unit the oldest pick took the material from.
+</Callout>
+
+Batch- and serial-tracked materials still need a Pull From to activate and release, but the operator scans the unit to issue it, as before.
+
+## Related
+
+<Cards>
+  <Card title="Methods" href="/docs/reference/methods">
+    Where each material line's Pull From is set.
+  </Card>
+  <Card title="Jobs" href="/docs/reference/jobs">
+    Release, backflush, and completion.
+  </Card>
+  <Card title="Picking" href="/docs/reference/picking">
+    Staging material at the operation before it is consumed.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+The settings are `companySettings.requireBackflushStorageUnit` (default false) and `companySettings.preventNegativeBackflush` (default true, active only while strict is on). Both are saved by `updateItemsSettings`, which needs settings update. Not plan-gated.
+
+### "Set a Pull From storage unit before you activate this version: …"
+Activating a method version, or creating a new version of an item's only version, found a pulled line with no Pull From at a location with an active work center and an active storage unit. The message names up to 5 parts, then "and N more". Set the Pull From on each line, then activate again.
+
+### "set a Pull From storage unit on …"
+A release refused the job: a pulled line has no storage unit. The job's Release dialog shows "Missing Storage Units" and lists every part. Set the storage unit on each job material, or fix the method and run Get Method again, then release.
+
+### "… has no Pull From storage unit on job …"
+A completion or issue found a material with no storage unit. This is refused even with Prevent negative stock off. Set the storage unit on the job material.
+
+### "Not enough … in …: need …, have …"
+Prevent negative stock is on and the Pull From storage unit holds less than the backflush needs. One refusal lists every short material (3 shown, then "and N more"). Move or receive stock into that storage unit, then complete again, or turn off Prevent negative stock.
+
+### "Units completed, but …"
+The MES recorded the units, then the material issue failed. The strict check runs first, so this is rare. Issue the material by hand.
+
+### "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+The Settings → Items card could not load its gap counts. Reload the page.
+
+### The gap counts and the job I am looking at disagree
+The open-jobs count includes only Ready, In Progress and Paused jobs at a location with an active work center and storage unit, and skips batch and serial lines and lines with nothing left to issue. Release, by contrast, also refuses batch and serial lines.
+</AgentContext>

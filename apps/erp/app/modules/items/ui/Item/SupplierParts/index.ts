@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import SupplierPartPrice from "./SupplierPartPrice";
 import SupplierParts from "./SupplierParts";
 
+export { SupplierPartPrice };
 export default SupplierParts;

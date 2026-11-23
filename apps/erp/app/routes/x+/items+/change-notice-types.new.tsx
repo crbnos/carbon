@@ -6,13 +6,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  changeNoticeTypeValidator,
-  upsertChangeNoticeType
-} from "~/modules/items";
+import { changeNoticeTypeValidator } from "~/modules/items/items.models";
+import { upsertChangeNoticeType } from "~/modules/items/items.service";
 import { ChangeNoticeTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
@@ -68,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewChangeNoticeTypeRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: ""
   };
@@ -76,7 +74,8 @@ export default function NewChangeNoticeTypeRoute() {
   return (
     <ChangeNoticeTypeForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

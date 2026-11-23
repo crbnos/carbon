@@ -26,12 +26,12 @@ import {
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Customer } from "~/modules/users";
+import type { Customer } from "~/modules/users/types";
 import {
   DeactivateUsersModal,
   ResendInviteModal,
   RevokeInviteModal
-} from "~/modules/users";
+} from "~/modules/users/ui";
 import { useCustomers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -39,6 +39,8 @@ import { path } from "~/utils/path";
 type CustomerAccountsTableProps = {
   data: Customer[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   customerTypes: ListItem[];
   unrevokedInviteEmails: string[];
 };
@@ -52,6 +54,7 @@ const CustomerAccountsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     customerTypes,
     unrevokedInviteEmails
   }: CustomerAccountsTableProps) => {
@@ -120,6 +123,7 @@ const CustomerAccountsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -153,6 +157,7 @@ const CustomerAccountsTable = memo(
           header: t`Customer`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuSquareUser />,
             filter: {
               type: "static",
@@ -184,8 +189,17 @@ const CustomerAccountsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const email = item.row.original.user?.email;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${email}`}
+              />
+            );
+          },
           meta: {
+            mobile: "P2",
             icon: <LuUserCheck />,
             filter: {
               type: "static",
@@ -280,29 +294,35 @@ const CustomerAccountsTable = memo(
                 <MenuIcon icon={<LuBan />} />
                 <Trans>Deactivate Account</Trans>
               </MenuItem>
-            ) : hasUnrevokedInvite ? (
-              permissions.can("delete", "users") && (
+            ) : (
+              <>
                 <MenuItem
+                  disabled={!permissions.can("create", "users")}
                   onClick={() => {
                     setSelectedUserIds([row.user.id]);
-                    revokeInviteModal.onOpen();
+                    resendInviteModal.onOpen();
                   }}
-                  destructive
                 >
-                  <MenuIcon icon={<LuBan />} />
-                  <Trans>Revoke Invite</Trans>
+                  <MenuIcon icon={<LuMailCheck />} />
+                  {hasUnrevokedInvite ? (
+                    <Trans>Resend Invite</Trans>
+                  ) : (
+                    <Trans>Send Invite</Trans>
+                  )}
                 </MenuItem>
-              )
-            ) : (
-              <MenuItem
-                onClick={() => {
-                  setSelectedUserIds([row.user.id]);
-                  resendInviteModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuMailCheck />} />
-                <Trans>Send Invite</Trans>
-              </MenuItem>
+                {hasUnrevokedInvite && permissions.can("delete", "users") && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedUserIds([row.user.id]);
+                      revokeInviteModal.onOpen();
+                    }}
+                    destructive
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    <Trans>Revoke Invite</Trans>
+                  </MenuItem>
+                )}
+              </>
             )}
           </>
         );
@@ -320,6 +340,7 @@ const CustomerAccountsTable = memo(
       <>
         <Table<(typeof rows)[number]>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
@@ -334,28 +355,22 @@ const CustomerAccountsTable = memo(
           withSelectableRows={canEdit}
         />
 
-        {deactivateCustomerModal.isOpen && (
-          <DeactivateUsersModal
-            userIds={selectedUserIds}
-            isOpen={deactivateCustomerModal.isOpen}
-            redirectTo={path.to.customerAccounts}
-            onClose={deactivateCustomerModal.onClose}
-          />
-        )}
-        {resendInviteModal.isOpen && (
-          <ResendInviteModal
-            userIds={selectedUserIds}
-            isOpen={resendInviteModal.isOpen}
-            onClose={resendInviteModal.onClose}
-          />
-        )}
-        {revokeInviteModal.isOpen && (
-          <RevokeInviteModal
-            userIds={selectedUserIds}
-            isOpen={revokeInviteModal.isOpen}
-            onClose={revokeInviteModal.onClose}
-          />
-        )}
+        <DeactivateUsersModal
+          userIds={selectedUserIds}
+          isOpen={deactivateCustomerModal.isOpen}
+          redirectTo={path.to.customerAccounts}
+          onClose={deactivateCustomerModal.onClose}
+        />
+        <ResendInviteModal
+          userIds={selectedUserIds}
+          isOpen={resendInviteModal.isOpen}
+          onClose={resendInviteModal.onClose}
+        />
+        <RevokeInviteModal
+          userIds={selectedUserIds}
+          isOpen={revokeInviteModal.isOpen}
+          onClose={revokeInviteModal.onClose}
+        />
       </>
     );
   }

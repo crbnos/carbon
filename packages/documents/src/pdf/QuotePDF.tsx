@@ -4,23 +4,35 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
+import { DEFAULT_CURRENCY_DECIMALS } from "@carbon/utils";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  quoteTexts,
+  resolveTemplate,
+  type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
 import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
+import {
+  buildTaxSummary,
+  lineTaxSummaryEntries,
+  type TaxCodeSummaryRow,
+  type TaxSummaryLine,
+  toTaxSummaryCodes
+} from "../utils/tax-summary";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
-import { Template } from "./components";
 
 type QuoteLinePrice = Database["public"]["Tables"]["quoteLinePrice"]["Row"];
 
 interface QuotePDFProps extends PDF {
+  valueCollector?: ValueCollector;
+  /** The day this prints, `YYYY-MM-DD`, in the company's time zone. */
+  printDate: string;
   exchangeRate: number;
   quote: Database["public"]["Views"]["quotes"]["Row"];
   quoteLines: Database["public"]["Views"]["quoteLines"]["Row"][];
@@ -40,9 +52,14 @@ interface QuotePDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The codes the lines name (`TAX_CODE_SUMMARY_SELECT`), for the tax summary. */
+  taxCodes?: TaxCodeSummaryRow[] | null;
+  /** The date the codes' components are read on (YYYY-MM-DD). */
+  taxDate?: string | null;
 }
 
 const QuotePDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -51,6 +68,7 @@ const QuotePDF = ({
   quoteLines: allQuoteLines,
   quoteLinePrices: allQuoteLinePrices,
   quoteCustomerDetails,
+  printDate,
   payment,
   paymentTerms,
   shipment,
@@ -60,7 +78,8 @@ const QuotePDF = ({
   currencyDecimals,
   template,
   sections = {},
-  title = "Quote"
+  taxCodes,
+  taxDate
 }: QuotePDFProps) => {
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
@@ -105,11 +124,6 @@ const QuotePDF = ({
     (line) => (priceForFirstQty(line)?.leadTime ?? 0) > 0
   );
 
-  const columnCount =
-    3 + (!hasSinglePricePerLine ? 1 : 0) + (hasAnyLeadTime ? 1 : 0);
-  const colWidth =
-    columnCount === 3 ? "w-1/3" : columnCount === 4 ? "w-1/4" : "w-1/5";
-
   let maxLeadTime = 0;
   for (const prices of Object.values(pricesByLine)) {
     for (const price of prices) {
@@ -138,6 +152,7 @@ const QuotePDF = ({
     return total + charges;
   }, 0);
 
+  const taxLines: TaxSummaryLine[] = [];
   const taxes = quoteLines.reduce((total, line) => {
     const price = priceForFirstQty(line);
     const netExtendedPrice = price?.convertedNetExtendedPrice ?? 0;
@@ -154,8 +169,24 @@ const QuotePDF = ({
     );
     const lineShipping = price?.convertedShippingCost ?? 0;
     const taxableAmount = netExtendedPrice + taxableFees + lineShipping;
+    taxLines.push({
+      taxCodeId: line.taxCodeId,
+      taxPercent: line.taxPercent ?? 0,
+      base: taxableAmount
+    });
     return total + taxableAmount * (line.taxPercent ?? 0);
   }, 0);
+
+  // Quotes have no ledger: the summary splits each line's tax across its
+  // code's components on `taxDate`.
+  const taxSummary =
+    taxDate && taxCodes && taxCodes.length > 0
+      ? buildTaxSummary(
+          lineTaxSummaryEntries(taxLines, toTaxSummaryCodes(taxCodes), taxDate),
+          taxes,
+          currencyDecimals ?? DEFAULT_CURRENCY_DECIMALS
+        )
+      : [];
 
   const totals = {
     subtotal,
@@ -165,15 +196,33 @@ const QuotePDF = ({
     total: subtotal + shipping + fees + taxes
   };
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("quote", template);
+  const resolved = resolveTemplate("quote", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildQuoteVars({
-    quote,
-    quoteCustomerDetails,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildQuoteVars({
+      quote,
+      quoteCustomerDetails,
+      printDate,
+      company,
+      currencyCode,
+      locale,
+      payment,
+      paymentTerms,
+      shipment,
+      maxLeadTime,
+      totals,
+      numberFormatter
+    })
+  );
+  const chrome = documentChrome({
+    texts: quoteTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -183,11 +232,6 @@ const QuotePDF = ({
     vars
   });
 
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
-
   const data: QuoteData = {
     company,
     companySettings,
@@ -196,6 +240,7 @@ const QuotePDF = ({
     quoteLines,
     quoteLinePrices,
     quoteCustomerDetails,
+    printDate,
     payment,
     shipment,
     paymentTerms,
@@ -206,63 +251,35 @@ const QuotePDF = ({
     pricesByLine,
     hasSinglePricePerLine,
     hasAnyLeadTime,
-    colWidth,
     maxLeadTime,
     totals,
     theme,
     sections,
     currencyCode,
     numberFormatter,
+    values,
     vars,
-    headerOptions
+    headerOptions,
+    taxSummary,
+    documentTitle,
+    documentNumber
   };
-
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
 
   const displayId = getQuoteDisplayId(quote);
 
   return (
-    <Template
-      theme={theme}
-      title={displayId ? `${title}: ${displayId}` : title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "quote",
-        subject: meta?.subject ?? "Quote"
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="quote"
+      title={displayId ? `${documentTitle}: ${displayId}` : documentTitle}
       footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = quoteBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={quoteBlockRegistry}
+      data={data}
+    />
   );
 };
 

@@ -15,6 +15,7 @@ export {
   evaluateSalesRuleLines,
   evaluateSalesRulesForSalesDocument,
   isSalesRulesEnabledForCompany,
+  resolveSalesInvoiceShipTo,
   resolveSalesOrderShipTo,
   type SalesDocumentType
 } from "./sales/server";

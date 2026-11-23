@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getOpenSalesOrderLinesForItem } from "~/modules/sales";
+import { getOpenSalesOrderLinesForItem } from "~/modules/sales/sales.service";
 
 /**
  * Sales order lines a job can be linked to: open/draft orders whose line item

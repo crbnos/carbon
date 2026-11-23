@@ -9,7 +9,7 @@ import {
   ResizablePanel,
   Skeleton
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { lazy, Suspense } from "react";
 import { LuDownload, LuX } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -79,6 +79,7 @@ const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
 };
 
 const DocumentView = ({ bucket, document }: DocumentPreviewProps) => {
+  const { t } = useLingui();
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.documents);
   const { download } = useDocument();
@@ -89,13 +90,21 @@ const DocumentView = ({ bucket, document }: DocumentPreviewProps) => {
         defaultSize={50}
         maxSize={70}
         minSize={25}
-        className="bg-background"
+        className="bg-background max-md:overflow-y-auto"
+        compactFocus
       >
         <div className="flex items-center justify-between p-0.5">
-          <Button isIcon variant={"ghost"} onClick={onClose}>
-            <LuX className="w-4 h-4" />
+          <Button
+            isIcon
+            variant={"ghost"}
+            aria-label={t`Close`}
+            onClick={onClose}
+          >
+            <LuX className="w-4 h-4" aria-hidden />
           </Button>
-          <span className="text-sm">{document.name}</span>
+          <span className="text-sm max-md:min-w-0 max-md:truncate">
+            {document.name}
+          </span>
           <Button variant={"ghost"} onClick={() => download(document)}>
             <LuDownload className="w-4 h-4 mr-2" />
             <Trans>Download</Trans>

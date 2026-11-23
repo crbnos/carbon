@@ -4,16 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import type {
-  Consumable,
-  ItemFile,
-  MakeMethod,
-  MaterialSummary,
-  PartSummary,
-  PickMethod,
-  SupplierPart,
-  Tool
-} from "~/modules/items";
+import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
 import {
   getConsumable,
   getItemFiles,
@@ -22,12 +13,21 @@ import {
   getPart,
   getPickMethods,
   getSupplierParts,
-  getTool
-} from "~/modules/items";
-import type { UnreleasedChangeOrderItem } from "~/modules/items/items.server";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+  getTool,
+  getUnreleasedChangeOrderForItem
+} from "~/modules/items/items.service";
+import type {
+  ConsumableSummary,
+  ItemFile,
+  MakeMethod,
+  MaterialSummary,
+  PartSummary,
+  PickMethod,
+  SupplierPart,
+  Tool
+} from "~/modules/items/types";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { ListItem } from "~/types";
 
 type CommonFields = {
@@ -47,7 +47,7 @@ export type ItemPropertiesResult = CommonFields &
     | { type: "Part"; summary: PartSummary; makeMethods: MakeMethod[] }
     | { type: "Material"; summary: MaterialSummary }
     | { type: "Tool"; summary: Tool; makeMethods: MakeMethod[] }
-    | { type: "Consumable"; summary: Consumable }
+    | { type: "Consumable"; summary: ConsumableSummary }
   );
 
 const typeConfig = {
@@ -133,7 +133,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return {
         ...common,
         type,
-        summary: summary.data as unknown as Consumable
+        summary: summary.data as unknown as ConsumableSummary
       };
     case "Tool":
       return {

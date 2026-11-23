@@ -13,28 +13,41 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { isEoriCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
-import { LuPaperclip } from "react-icons/lu";
+import { LuPaperclip, LuTrash2 } from "react-icons/lu";
 import type { z } from "zod";
 import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
+import {
+  Boolean,
+  Hidden,
+  Input,
+  Select,
+  Submit,
+  TaxCode
+} from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { taxExemptionReasons } from "~/modules/shared";
+import { taxExemptionReasons } from "~/modules/shared/shared.models";
 import { supplierTaxValidator } from "../../purchasing.models";
 
 type SupplierTaxFormProps = {
   initialValues: z.infer<typeof supplierTaxValidator> & {
     taxExemptionCertificatePath?: string | null;
   };
+  /** The first tax code whose country and state match the supplier's address. */
+  suggestedTaxCode?: { id: string; name: string } | null;
 };
 
-const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
+const SupplierTaxForm = ({
+  initialValues,
+  suggestedTaxCode
+}: SupplierTaxFormProps) => {
   const { t } = useLingui();
   const taxExemptionReasonOptions = taxExemptionReasons.map((reason) => ({
     label: <Enumerable value={reason} />,
@@ -48,6 +61,8 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
     initialValues.taxExemptionCertificatePath ?? ""
   );
   const [taxExempt, setTaxExempt] = useState(initialValues.taxExempt ?? false);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId);
+  const suggestedName = suggestedTaxCode?.name;
 
   const isDisabled = !permissions.can("update", "purchasing");
 
@@ -64,7 +79,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
         .upload(fileName, file);
 
       if (result.error) {
-        toast.error(t`Failed to upload certificate`);
+        toastError(t`Failed to upload certificate`, result.error);
       } else {
         setCertificatePath(result.data.path);
         toast.success(t`Certificate uploaded`);
@@ -100,8 +115,29 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
             ) : (
               <div />
             )}
+            <div className="flex flex-col gap-2">
+              <TaxCode
+                name="taxCodeId"
+                label={t`Tax Code`}
+                value={taxCodeId}
+                onChange={(option) => setTaxCodeId(option?.value)}
+              />
+              {suggestedTaxCode && suggestedTaxCode.id !== taxCodeId && (
+                <div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    isDisabled={isDisabled}
+                    onClick={() => setTaxCodeId(suggestedTaxCode.id)}
+                  >
+                    <Trans>Use {suggestedName}</Trans>
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="col-span-2 max-md:hidden" />
 
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"
                 label={t`Tax Exempt`}
@@ -147,6 +183,17 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
                     </a>
                   </Button>
                 )}
+                {certificatePath && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<LuTrash2 />}
+                    isDisabled={isDisabled}
+                    onClick={() => setCertificatePath("")}
+                  >
+                    <Trans>Remove</Trans>
+                  </Button>
+                )}
               </div>
               <FileDropzone
                 onDrop={onDrop}
@@ -159,7 +206,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

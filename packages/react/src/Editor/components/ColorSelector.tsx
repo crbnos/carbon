@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { EditorBubbleItem, useEditor } from "@carbon/tiptap";
+import { useLingui } from "@lingui/react/macro";
 import { LuCheck, LuChevronDown } from "react-icons/lu";
 import { RiPaintFill } from "react-icons/ri";
 
@@ -99,6 +100,7 @@ interface ColorSelectorProps {
 
 export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
   const { editor } = useEditor();
+  const { t } = useLingui();
 
   if (!editor) return null;
   const activeColorItem = TEXT_COLORS.find(({ color }) =>
@@ -113,6 +115,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
     <Popover modal={true} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button
+          aria-label={t`Text color`}
           variant="ghost"
           rightIcon={<LuChevronDown className="h-4 w-4" />}
           style={{

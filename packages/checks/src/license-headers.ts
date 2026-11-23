@@ -89,6 +89,11 @@ export const PATH_EXCLUSIONS: readonly PathExclusion[] = [
       "generated: `pnpm run generate:types` (scripts/lib/generate-db-types.ts)"
   },
   {
+    match: "packages/database/src/constants.ts",
+    reason:
+      "generated: `pnpm run generate:types` (scripts/lib/generate-db-types.ts)"
+  },
+  {
     match: "packages/database/src/swagger-docs-schema.ts",
     reason:
       "generated: `pnpm run generate:swagger` (scripts/generate-swagger-docs.ts)"

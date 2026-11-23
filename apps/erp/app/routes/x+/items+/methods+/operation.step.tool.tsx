@@ -10,7 +10,7 @@ import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
   setMethodOperationToolStepLink
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 
 // Toggle a tool↔step link from the step editor's "Tools" picker (method/item tier).
 // `toolId` is the tool ITEM id — the picker offers the whole tool library, and the

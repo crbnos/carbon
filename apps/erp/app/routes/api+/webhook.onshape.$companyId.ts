@@ -3,11 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getOnshapeIntegration } from "@carbon/ee/onshape";
+import {
+  getOnshapeIntegration,
+  ONSHAPE_INTEGRATION_IDS
+} from "@carbon/ee/onshape";
+import { ONSHAPE_PANEL_INTEGRATION_IDS } from "@carbon/ee/onshape/integration-id";
 import { trigger } from "@carbon/jobs";
+import { inngest } from "@carbon/lib/inngest";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+
+const logger = getLogger("erp", "webhook", "onshape");
 
 // Inbound receiver for Onshape lifecycle webhooks (mirrors
 // webhook.jira.$companyId.ts / webhook.linear.$companyId.ts).
@@ -18,7 +26,15 @@ import { z } from "zod";
 //                        │  validate minimal envelope, log the event
 //                        ▼
 //     onshape.revision.created ──▶ trigger("onshape-revision-sync")
+//     onshape.model.translation.complete
+//                              ──▶ carbon/onshape-translation-complete (wakes
+//                                  the element sync waiting on it)
 //     everything else          ──▶ ack 200 (logged, no dispatch)
+//
+// The translation webhook is registered by the element sync for any Onshape
+// connection, the panel's included, so it and Onshape's own webhook.* events
+// are answered before the sync connection's checks: a webhook answered with an
+// error is dropped by Onshape.
 //
 // AUTH: like the jira/linear receivers, no signature verification — the endpoint
 // relies on the callback URL + the active-integration check. A forged event can't
@@ -62,14 +78,74 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (parseError) {
+    logger.error("Onshape webhook body is not valid JSON", {
+      companyId,
+      error: parseError
+    });
+    return data(
+      { success: false, error: "Invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
+  const parsed = onshapeWebhookEnvelope.safeParse(body);
+
+  if (!parsed.success) {
+    return data(
+      { success: false, error: parsed.error.format() },
+      { status: 400 }
+    );
+  }
+
   const serviceRole = getCarbonServiceRole();
+
+  if (
+    parsed.data.event === "onshape.model.translation.complete" ||
+    parsed.data.event.startsWith("webhook.")
+  ) {
+    const connection = await serviceRole
+      .from("companyIntegration")
+      .select("id")
+      .in("id", [...ONSHAPE_INTEGRATION_IDS, ...ONSHAPE_PANEL_INTEGRATION_IDS])
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .limit(1);
+    if (connection.error) {
+      logger.error("Onshape webhook integration query failed", {
+        error: connection.error
+      });
+      return data(
+        { success: false, error: "Integration query failed" },
+        { status: 400 }
+      );
+    }
+    if (connection.data.length === 0) {
+      return data(
+        { success: false, error: "Integration not active" },
+        { status: 400 }
+      );
+    }
+    // Only a wake-up: the sync reads the translation from Onshape itself.
+    if (parsed.data.translationId) {
+      await inngest.send({
+        name: "carbon/onshape-translation-complete",
+        data: { companyId, translationId: parsed.data.translationId }
+      });
+    }
+    return { success: true };
+  }
+
   const integration = await getOnshapeIntegration(serviceRole, companyId);
 
   if (integration.error) {
-    console.error(
-      "Onshape webhook: integration query failed",
-      integration.error
-    );
+    logger.error("Onshape webhook integration query failed", {
+      companyId,
+      error: integration.error
+    });
     return data(
       { success: false, error: "Integration query failed" },
       { status: 400 }
@@ -98,30 +174,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     unknown
   >;
   if (integrationMetadata.assetSyncEnabled !== true) {
-    console.log("Onshape webhook: asset sync disabled; ignoring event", {
+    logger.info("Onshape webhook ignored: asset sync is off", {
       companyId
     });
     return { success: true };
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch (parseError) {
-    console.error("Onshape webhook: body is not valid JSON", parseError);
-    return data(
-      { success: false, error: "Invalid JSON body" },
-      { status: 400 }
-    );
-  }
-
-  const parsed = onshapeWebhookEnvelope.safeParse(body);
-
-  if (!parsed.success) {
-    return data(
-      { success: false, error: parsed.error.format() },
-      { status: 400 }
-    );
   }
 
   const {
@@ -135,7 +191,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     revisionId
   } = parsed.data;
 
-  console.log("Onshape webhook received", {
+  logger.info("Onshape webhook received", {
     companyId,
     event,
     messageId,
@@ -164,8 +220,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         !elementId ||
         typeof elementType !== "number"
       ) {
-        console.warn(
-          "Onshape webhook: revision.created missing required fields; skipping dispatch",
+        logger.warning(
+          "Onshape revision.created is missing required fields; not dispatched",
           { companyId, messageId, partNumber }
         );
         break;
@@ -189,8 +245,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // that follow a release instead, so there is nothing to dispatch here.
       break;
     default:
-      // System events (webhook.register / ping) and anything we don't handle:
-      // ack so Onshape doesn't retry-storm; the log above captures them.
+      // Anything we don't handle: ack so Onshape doesn't retry-storm; the log
+      // above captures it.
       break;
   }
 

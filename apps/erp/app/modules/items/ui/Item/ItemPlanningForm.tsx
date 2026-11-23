@@ -11,13 +11,18 @@ import {
   CardHeader,
   CardTitle,
   Combobox,
-  HStack
+  HStack,
+  VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Boolean,
   CustomFormFields,
+  DeliveryDateControl,
+  Employee,
+  FormSection,
   Hidden,
   Number,
   Select as SelectForm,
@@ -33,7 +38,19 @@ import {
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
-  initialValues: z.infer<typeof itemPlanningValidator>;
+  // the DB row carries responsibleEmployee / planningHorizonDays /
+  // deliveryDateControl as nullable; the validator treats them as optional —
+  // accept both
+  initialValues: Omit<
+    z.infer<typeof itemPlanningValidator>,
+    "responsibleEmployee" | "planningHorizonDays" | "deliveryDateControl"
+  > & {
+    responsibleEmployee?: string | null;
+    planningHorizonDays?: number | null;
+    deliveryDateControl?:
+      | z.infer<typeof itemPlanningValidator>["deliveryDateControl"]
+      | null;
+  };
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
 };
@@ -52,15 +69,20 @@ const ItemPlanningForm = ({
   }));
 
   const [policy, setPolicy] = useState(initialValues.reorderingPolicy);
+  // A Select shows its placeholder only for an empty value, not null.
+  const defaultValues: ItemPlanningFormProps["initialValues"] = {
+    ...initialValues,
+    deliveryDateControl: initialValues.deliveryDateControl ?? undefined
+  };
 
   return (
     <Card>
       <ValidatedForm
         method="post"
         validator={itemPlanningValidator}
-        defaultValues={initialValues}
+        defaultValues={defaultValues}
       >
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:items-center">
           <CardHeader>
             <CardTitle>
               <Trans>Planning</Trans>
@@ -68,6 +90,7 @@ const ItemPlanningForm = ({
           </CardHeader>
           <CardAction>
             <Combobox
+              aria-label={t`Location`}
               size="sm"
               value={initialValues.locationId}
               options={locationOptions}
@@ -85,95 +108,128 @@ const ItemPlanningForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <Hidden name="locationId" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <SelectForm
-              name="reorderingPolicy"
-              label={t`Reordering Policy`}
-              termId="reordering-policy"
-              options={itemReorderingPolicies.map((policy) => ({
-                label: <ItemReorderPolicy reorderingPolicy={policy} />,
-                value: policy
-              }))}
-              onChange={(selected) => {
-                // @ts-expect-error
-                setPolicy(selected?.value || "Manual Reorder");
-              }}
-            />
-            {policy === "Maximum Quantity" && (
-              <>
-                <Number
-                  name="reorderPoint"
-                  label={t`Reorder Point`}
-                  termId="reorder-point"
-                  minValue={0}
-                />
-                <Number
-                  name="maximumInventoryQuantity"
-                  label={t`Maximum Inventory Quantity`}
-                  termId="item-max-inventory-quantity"
-                  minValue={0}
-                />
-              </>
-            )}
+          <VStack spacing={4}>
+            <FormSection title={t`Reordering`}>
+              <SelectForm
+                name="reorderingPolicy"
+                label={t`Reordering Policy`}
+                termId="reordering-policy"
+                options={itemReorderingPolicies.map((policy) => ({
+                  label: <ItemReorderPolicy reorderingPolicy={policy} />,
+                  value: policy
+                }))}
+                onChange={(selected) => {
+                  // @ts-expect-error
+                  setPolicy(selected?.value || "Manual Reorder");
+                }}
+              />
+              {policy === "Maximum Quantity" && (
+                <>
+                  <Number
+                    name="reorderPoint"
+                    label={t`Reorder Point`}
+                    termId="reorder-point"
+                    minValue={0}
+                  />
+                  <Number
+                    name="maximumInventoryQuantity"
+                    label={t`Maximum Inventory Quantity`}
+                    termId="item-max-inventory-quantity"
+                    minValue={0}
+                  />
+                </>
+              )}
 
-            {policy === "Demand-Based Reorder" && (
-              <>
-                <Number
-                  name="demandAccumulationPeriod"
-                  label={t`Accumulation Period (Weeks)`}
-                  termId="item-accumulation-period-weeks"
-                  minValue={0}
-                />
-                <Number
-                  name="demandAccumulationSafetyStock"
-                  label={t`Safety Stock`}
-                  termId="item-safety-stock"
-                  minValue={0}
-                />
-              </>
-            )}
-            {policy === "Fixed Reorder Quantity" && (
-              <>
-                <Number
-                  name="reorderPoint"
-                  label={t`Reorder Point`}
-                  termId="reorder-point"
-                  minValue={0}
-                />
-                <Number
-                  name="reorderQuantity"
-                  label={t`Reorder Quantity`}
-                  termId="item-reorder-quantity"
-                  minValue={0}
-                />
-              </>
-            )}
-            {policy !== "Fixed Reorder Quantity" && (
-              <>
-                <Number
-                  name="orderMultiple"
-                  label={t`Order Multiple`}
-                  termId="item-planning-order-multiple"
-                  minValue={0}
-                />
-                <Number
-                  name="minimumOrderQuantity"
-                  label={t`Minimum Order Quantity`}
-                  termId="item-planning-moq"
-                  minValue={0}
-                />
-                <Number
-                  name="maximumOrderQuantity"
-                  label={t`Maximum Order Quantity`}
-                  termId="item-planning-max-order-quantity"
-                  minValue={0}
-                />
-              </>
-            )}
-            {/* <Boolean name="critical" label={t`Critical`} /> */}
+              {policy === "Demand-Based Reorder" && (
+                <>
+                  <Number
+                    name="demandAccumulationPeriod"
+                    label={t`Accumulation Period (Weeks)`}
+                    termId="item-accumulation-period-weeks"
+                    minValue={0}
+                  />
+                  <Number
+                    name="demandAccumulationSafetyStock"
+                    label={t`Safety Stock`}
+                    termId="item-safety-stock"
+                    minValue={0}
+                  />
+                </>
+              )}
+              {policy === "Fixed Reorder Quantity" && (
+                <>
+                  <Number
+                    name="reorderPoint"
+                    label={t`Reorder Point`}
+                    termId="reorder-point"
+                    minValue={0}
+                  />
+                  <Number
+                    name="reorderQuantity"
+                    label={t`Reorder Quantity`}
+                    termId="item-reorder-quantity"
+                    minValue={0}
+                  />
+                </>
+              )}
+              {policy !== "Fixed Reorder Quantity" && (
+                <>
+                  <Number
+                    name="orderMultiple"
+                    label={t`Order Multiple`}
+                    termId="item-planning-order-multiple"
+                    minValue={0}
+                  />
+                  <Number
+                    name="minimumOrderQuantity"
+                    label={t`Minimum Order Quantity`}
+                    termId="item-planning-moq"
+                    minValue={0}
+                  />
+                  <Number
+                    name="maximumOrderQuantity"
+                    label={t`Maximum Order Quantity`}
+                    termId="item-planning-max-order-quantity"
+                    minValue={0}
+                  />
+                </>
+              )}
+              {/* <Boolean name="critical" label={t`Critical`} /> */}
+            </FormSection>
 
-            <CustomFormFields table="itemPlanning" />
-          </div>
+            <FormSection title={t`Planning and Sales`}>
+              <Number
+                name="planningHorizonDays"
+                label={t`Planning Horizon (Days)`}
+                termId="item-planning-horizon"
+                minValue={0}
+              />
+
+              <DeliveryDateControl
+                name="deliveryDateControl"
+                label={t`Delivery Date Check`}
+                placeholder={t`Company default`}
+                helperText={t`Leave empty to use the check in Settings → Sales.`}
+              />
+
+              <Employee
+                name="responsibleEmployee"
+                label={t`Responsible Employee`}
+                type="assignee"
+              />
+
+              <div className="col-span-3 max-md:col-span-full">
+                <Boolean
+                  bordered
+                  name="allowCommonSupplyForProjects"
+                  label={t`Unassigned stock for projects`}
+                  description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
+                />
+              </div>
+
+              <CustomFormFields table="itemPlanning" />
+            </FormSection>
+          </VStack>
         </CardContent>
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>

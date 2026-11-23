@@ -6,16 +6,16 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import type { PaymentTermCalculationMethod } from "~/modules/accounting";
+import { paymentTermValidator } from "~/modules/accounting/accounting.models";
 import {
   getPaymentTerm,
-  paymentTermValidator,
   upsertPaymentTerm
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type { PaymentTermCalculationMethod } from "~/modules/accounting/types";
 import { PaymentTermForm } from "~/modules/accounting/ui/PaymentTerms";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -77,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditPaymentTermsRoute() {
   const { paymentTerm } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: paymentTerm?.id ?? undefined,
@@ -94,7 +94,8 @@ export default function EditPaymentTermsRoute() {
     <PaymentTermForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

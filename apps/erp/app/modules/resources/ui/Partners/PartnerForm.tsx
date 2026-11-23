@@ -18,6 +18,8 @@
 // import { useNavigate } from "react-router";
 // import { useState } from "react";
 import type { z } from "zod";
+import type { partnerValidator } from "~/modules/resources/resources.models";
+
 // import {
 //   CustomFormFields,
 //   Number,
@@ -26,8 +28,6 @@ import type { z } from "zod";
 //   SupplierLocation,
 // } from "~/components/Form";
 // import { usePermissions } from "~/hooks";
-import type { partnerValidator } from "~/modules/resources";
-
 // import { path } from "~/utils/path";
 
 type PartnerFormProps = {

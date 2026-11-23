@@ -16,9 +16,13 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
+  /** Fill the field when it is empty and there is exactly one option. */
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   termId?: TermId;
@@ -41,6 +45,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
 };
 
 const Combobox = ({
+  autoSelectSingleOption = false,
   name,
   label,
   termId,
@@ -58,11 +63,25 @@ const Combobox = ({
     formState.isReadOnly || formState.isDisabled || props.isReadOnly;
   const resolvedIsOptional =
     isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label,
+    isEmpty: !value,
+    isReadOnly
+  });
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
       setValue(props.value ?? "");
   }, [props.value, setValue]);
+
+  useAutoSelectSingleOption({
+    enabled: autoSelectSingleOption,
+    options: props.options,
+    value,
+    setValue,
+    onChange: props.onChange
+  });
 
   const onChange = (value: string) => {
     if (value) {
@@ -74,7 +93,7 @@ const Combobox = ({
 
   return (
     <FormControl isInvalid={!!error} isRequired={isRequired}>
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
           <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
@@ -101,6 +120,7 @@ const Combobox = ({
         isReadOnly={isReadOnly}
         isLoading={isLoading}
         emptyMessage={isLoading ? undefined : emptyMessage}
+        inlinePlaceholder={inlineField.placeholder}
         className="w-full"
       />
       {error ? (

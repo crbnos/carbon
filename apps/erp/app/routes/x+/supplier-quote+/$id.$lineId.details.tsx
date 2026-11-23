@@ -9,25 +9,27 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { useRouteData } from "@carbon/react";
+import { RecordOutlet, useRouteData } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
-import type {
-  SupplierQuote,
-  SupplierQuoteLinePrice
-} from "~/modules/purchasing";
+import {
+  isSupplierQuoteLocked,
+  supplierQuoteLineValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierInteractionLineDocuments,
   getSupplierQuote,
   getSupplierQuoteLine,
   getSupplierQuoteLinePrices,
-  isSupplierQuoteLocked,
-  supplierQuoteLineValidator,
   upsertSupplierQuoteLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type {
+  SupplierQuote,
+  SupplierQuoteLinePrice
+} from "~/modules/purchasing/types";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -36,7 +38,7 @@ import {
   SupplierQuoteLineForm,
   SupplierQuoteLinePricing
 } from "~/modules/purchasing/ui/SupplierQuote";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -210,7 +212,7 @@ export default function SupplierQuoteLine() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

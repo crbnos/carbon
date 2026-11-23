@@ -25,6 +25,8 @@ import type { ProductionQuantity, ScrapReason } from "../../types";
 type ProductionQuantitiesTableProps = {
   data: ProductionQuantity[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   operations: { id: string; description: string | null }[];
   scrapReasons: ScrapReason[];
 };
@@ -33,6 +35,7 @@ const ProductionQuantitiesTable = memo(
   ({
     data,
     count,
+    nextCursor,
     operations,
     scrapReasons
   }: ProductionQuantitiesTableProps) => {
@@ -52,6 +55,7 @@ const ProductionQuantitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: operations.map((operation) => ({
@@ -76,6 +80,7 @@ const ProductionQuantitiesTable = memo(
             <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -102,6 +107,7 @@ const ProductionQuantitiesTable = memo(
             </Badge>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Production", "Rework", "Scrap"].map((type) => ({
@@ -126,7 +132,8 @@ const ProductionQuantitiesTable = memo(
         {
           accessorKey: "quantity",
           header: t`Quantity`,
-          cell: ({ row }) => row.original.quantity
+          cell: ({ row }) => row.original.quantity,
+          meta: { mobile: "P2" }
         },
         {
           accessorKey: "scrapReasonId",
@@ -178,7 +185,6 @@ const ProductionQuantitiesTable = memo(
     };
 
     const onDeleteCancel = () => {
-      setSelectedEvent(null);
       deleteModal.onClose();
     };
 
@@ -219,6 +225,8 @@ const ProductionQuantitiesTable = memo(
         <Table<ProductionQuantity>
           compact
           count={count}
+          // Scoped to one job: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "events", nextCursor }}
           columns={columns}
           data={data}
           primaryAction={
@@ -232,10 +240,10 @@ const ProductionQuantitiesTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Production Quantities`}
         />
-        {deleteModal.isOpen && selectedEvent && (
+        {selectedEvent && (
           <ConfirmDelete
             action={path.to.deleteProductionQuantity(selectedEvent.id)}
-            isOpen
+            isOpen={deleteModal.isOpen}
             name={`${
               selectedEvent.jobOperation?.description ?? "Operation"
             } by ${

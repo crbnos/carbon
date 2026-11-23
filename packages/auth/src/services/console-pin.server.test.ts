@@ -2,26 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("../config/env", () => ({
-  CarbonEdition: "Community",
-  CONTROLLED_ENVIRONMENT: false,
-  DOMAIN: "localhost",
-  SESSION_IDLE_LOCK_MS: 15 * 60 * 1000,
-  SESSION_SECRET: "test-session-secret"
-}));
-
-// Import-safety only: these tests exercise the cookie (real react-router
-// signing); the database re-validation in `resolveConsolePinIn` is not faked.
-vi.mock("../lib/supabase/client.server", () => ({
-  getCarbonServiceRole: vi.fn()
-}));
-
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 import {
   readConsolePinInCookieUnverified,
+  setConsolePinActivity,
   setConsolePinIn
 } from "./console-pin.server";
+
+// The module reads its configuration once, at import, and builds a Supabase
+// client there.
+vi.hoisted(() => {
+  vi.stubEnv("DOMAIN", "localhost");
+  vi.stubEnv("CARBON_EDITION", "");
+  vi.stubEnv("AUTH_COOKIE_SUFFIX", "");
+  vi.stubEnv("CONTROLLED_ENVIRONMENT", "");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret");
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+});
+
+afterAll(() => vi.unstubAllEnvs());
 
 const companyId = "company-1";
 const terminal = "terminal-user";
@@ -56,12 +64,15 @@ describe("console pin-in cookie", () => {
   it("round-trips a signed pin-in", async () => {
     const cookie = await setConsolePinIn(companyId, terminal, operator);
     expect(cookie).toMatch(/HttpOnly/i);
+    // The server's idle window, not a fixed browser cookie age, ends the pin-in.
+    expect(cookie).not.toMatch(/Max-Age=/i);
     const read = await readConsolePinInCookieUnverified(
       requestWithCookie(cookieValue(cookie)),
       companyId,
       terminal
     );
-    expect(read).toEqual(operator);
+    expect(read).toMatchObject(operator);
+    expect(read?.pinId).toEqual(expect.any(String));
   });
 
   it("rejects a hand-crafted unsigned (legacy) cookie", async () => {
@@ -160,5 +171,63 @@ describe("console pin-in cookie", () => {
         terminal
       )
     ).toBeNull();
+  });
+
+  it("renews activity without reissuing the operator identity", async () => {
+    const identity = cookieValue(
+      await setConsolePinIn(companyId, terminal, operator)
+    );
+    const initial = await readConsolePinInCookieUnverified(
+      requestWithCookie(identity),
+      companyId,
+      terminal
+    );
+    expect(initial).not.toBeNull();
+
+    vi.setSystemTime(Date.now() + 50 * 60 * 1000);
+    const activity = cookieValue(
+      await setConsolePinActivity(companyId, terminal, initial!.pinId)
+    );
+    vi.setSystemTime(Date.now() + 20 * 60 * 1000);
+    const renewed = await readConsolePinInCookieUnverified(
+      requestWithCookie(`${identity}; ${activity}`),
+      companyId,
+      terminal
+    );
+    expect(renewed).toMatchObject({
+      userId: operator.userId,
+      pinnedAt: operator.pinnedAt + 50 * 60 * 1000
+    });
+  });
+
+  it("ignores a delayed heartbeat from the previous operator", async () => {
+    const oldIdentity = cookieValue(
+      await setConsolePinIn(companyId, terminal, operator)
+    );
+    const oldPin = await readConsolePinInCookieUnverified(
+      requestWithCookie(oldIdentity),
+      companyId,
+      terminal
+    );
+    const delayedActivity = cookieValue(
+      await setConsolePinActivity(companyId, terminal, oldPin!.pinId)
+    );
+
+    vi.setSystemTime(Date.now() + 5 * 60 * 1000);
+    const nextOperator = {
+      ...operator,
+      userId: "operator-2",
+      pinnedAt: Date.now()
+    };
+    const newIdentity = cookieValue(
+      await setConsolePinIn(companyId, terminal, nextOperator)
+    );
+    const current = await readConsolePinInCookieUnverified(
+      requestWithCookie(`${newIdentity}; ${delayedActivity}`),
+      companyId,
+      terminal
+    );
+    expect(current).toMatchObject(nextOperator);
+    expect(current?.pinId).not.toBe(oldPin?.pinId);
   });
 });

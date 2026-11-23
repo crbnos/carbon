@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { toWebhookBody } from "./webhook-body.ts";
+import { signWebhookBody, toWebhookBody } from "./webhook-body.ts";
 
 // PUBLIC contract — these cases mirror the deleted `webhook` edge function
 // (git history: packages/database/supabase/functions/webhook/index.ts), which
@@ -149,5 +150,34 @@ describe("toWebhookBody", () => {
       );
     expect(attempt()).toEqual(attempt());
     expect(attempt().eventId).toBe("77");
+  });
+});
+
+// PUBLIC contract — the verification sample in docs/building/webhooks.mdx.
+describe("signWebhookBody", () => {
+  const secret = "whsec_test";
+  const body = JSON.stringify({ type: "INSERT", record: { id: "c1" } });
+
+  it('signs "<t>.<body>" with HMAC-SHA256 keyed by the whole secret', () => {
+    const expected = createHmac("sha256", secret)
+      .update(`1760000000.${body}`)
+      .digest("hex");
+    expect(signWebhookBody(secret, body, 1760000000)).toBe(
+      `t=1760000000,v1=${expected}`
+    );
+  });
+
+  it("pins a known answer", () => {
+    // Computed outside Node (Python's hmac), so a consumer in any language agrees.
+    expect(signWebhookBody("whsec_abc", "{}", 1)).toBe(
+      "t=1,v1=07301c55760783275ad3b893a15abe1d07b70c8e96b12a204061b23840f0b05b"
+    );
+  });
+
+  it("changes with the body, the timestamp and the secret", () => {
+    const base = signWebhookBody(secret, body, 1);
+    expect(signWebhookBody(secret, `${body} `, 1)).not.toBe(base);
+    expect(signWebhookBody(secret, body, 2)).not.toBe(base);
+    expect(signWebhookBody("whsec_other", body, 1)).not.toBe(base);
   });
 });

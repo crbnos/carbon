@@ -4,7 +4,7 @@
 
 import { cn, Tr } from "@carbon/react";
 import type { Row as RowType } from "@tanstack/react-table";
-import type { MutableRefObject } from "react";
+import type { Ref } from "react";
 import { memo } from "react";
 import type {
   EditableTableCellComponent,
@@ -20,7 +20,18 @@ type RowProps<T> = {
   row: RowType<T>;
   rowIsClickable?: boolean;
   rowIsSelected: boolean;
-  rowRef?: MutableRefObject<HTMLTableRowElement | null>;
+  rowRef?: Ref<HTMLTableRowElement>;
+  /** The row's index in a virtualized grid, read back when it is measured. */
+  virtualIndex?: number;
+  /** The row's place in the whole grid, header included, when only some rows render. */
+  ariaRowIndex?: number;
+  /**
+   * Draw a line between body rows. A virtualized grid scrolls its rows under a
+   * pinned header, where rows with no separator read as one tall cell per
+   * column. The header row already draws the line under itself, so the first
+   * row adds none and nothing doubles up.
+   */
+  withRowBorder?: boolean;
   onCellClick: (row: number, column: number) => void;
   onCellUpdate: (row: number) => (updates: Record<string, unknown>) => void;
   onEditRow?: (row: T) => void;
@@ -35,6 +46,9 @@ const Row = <T extends object>({
   rowIsSelected,
   rowRef,
   selectedCell,
+  virtualIndex,
+  ariaRowIndex,
+  withRowBorder = false,
   onCellClick,
   onCellUpdate
 }: RowProps<T>) => {
@@ -44,7 +58,12 @@ const Row = <T extends object>({
     <Tr
       key={row.id}
       ref={rowRef}
-      className={cn(rowIsClickable && "cursor-pointer")}
+      data-index={virtualIndex}
+      aria-rowindex={ariaRowIndex}
+      className={cn(
+        withRowBorder && "border-t border-border first:border-t-0",
+        rowIsClickable && "cursor-pointer"
+      )}
     >
       {row.getVisibleCells().map((cell, columnIndex) => {
         const isSelected =
@@ -78,7 +97,8 @@ const MemoizedRow = memo(
     next.selectedCell?.row === prev.row.index &&
     next.row.index === prev.selectedCell?.row &&
     next.selectedCell?.column === prev.selectedCell?.column &&
-    next.isEditing === prev.isEditing
+    next.isEditing === prev.isEditing &&
+    next.ariaRowIndex === prev.ariaRowIndex
 ) as typeof Row;
 
 // props are equal if:

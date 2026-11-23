@@ -33,7 +33,10 @@ import type {
   getTrainingAssignment,
   getTrainingQuestions,
   getTrainings,
-  getWorkCenters
+  getWorkCenters,
+  ProcessReferenceKey,
+  ResourceReference,
+  WorkCenterReferenceKey
 } from "./resources.service";
 
 export type Ability = NonNullable<
@@ -95,10 +98,11 @@ export type TrainingQuestion = NonNullable<
 
 export type TrainingAssignmentStatusItem = {
   trainingAssignmentId: string;
-  trainingId: string;
+  trainingId: string | null;
   trainingName: string;
   frequency: (typeof trainingFrequency)[number];
   trainingType: "Mandatory" | "Optional";
+  isExternal: boolean;
   employeeId: string;
   employeeName: string | null;
   avatarUrl: string | null;
@@ -107,13 +111,16 @@ export type TrainingAssignmentStatusItem = {
   currentPeriod: string | null;
   completionId: number | null;
   completedAt: string | null;
+  certificatePath: string | null;
   status: (typeof trainingAssignmentStatusOptions)[number];
 };
 
 export type TrainingAssignmentSummaryItem = {
-  trainingId: string;
+  trainingAssignmentId: string;
+  trainingId: string | null;
   trainingName: string;
   frequency: (typeof trainingFrequency)[number];
+  isExternal: boolean;
   currentPeriod: string | null;
   totalAssigned: number;
   completed: number;
@@ -185,3 +192,7 @@ export type MaintenanceDispatchByLocation = NonNullable<
 export type MaintenanceScheduleByLocation = NonNullable<
   Awaited<ReturnType<typeof getMaintenanceSchedulesByLocation>>["data"]
 >[number];
+
+/** A table whose rows block deleting a work center or process. */
+export type ResourceReferenceKey = WorkCenterReferenceKey | ProcessReferenceKey;
+export type { ResourceReference };

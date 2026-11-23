@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import {
   fromAbsolute,
   parseDate,
@@ -45,6 +46,8 @@ import {
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
+const log = getLogger("planning", "quote-lead-time");
+
 const DAY_MS = 24 * 3_600_000;
 /** Same fallback MRP uses when an item has no itemReplenishment.leadTime. */
 const DEFAULT_ITEM_LEAD_TIME_DAYS = 7;
@@ -85,10 +88,17 @@ export type QuoteOperationRow = {
   machineUnit: string;
   operationLeadTime: number;
 };
+/** The routing rows the engine places: a quote line's, or an item's (`loadItemRouting`). */
+export type QuoteLineRouting = {
+  makeMethods: QuoteMakeMethodRow[];
+  materials: QuoteMaterialRow[];
+  operations: QuoteOperationRow[];
+};
+
 export type MaterialAvailability = {
   /** itemReplenishment.leadTime, default 7 */
   leadTimeDaysByItem: Map<string, number>;
-  /** itemStockQuantities at the location */
+  /** Nettable on-hand at the location (itemStockQuantities) */
   onHandByItem: Map<string, number>;
 };
 
@@ -469,11 +479,7 @@ async function loadQuoteLineRouting(
   db: Kysely<DB>,
   quoteLineId: string,
   companyId: string
-): Promise<{
-  makeMethods: QuoteMakeMethodRow[];
-  materials: QuoteMaterialRow[];
-  operations: QuoteOperationRow[];
-} | null> {
+): Promise<QuoteLineRouting | null> {
   const [makeMethodRows, materialRows, operationRows] = await Promise.all([
     db
       .selectFrom("quoteMakeMethod")
@@ -563,7 +569,7 @@ async function loadQuoteLineRouting(
 
 /**
  * Item lead times (itemReplenishment.leadTime, default 7) and location on-hand
- * (itemStockQuantities, the aggregate runMrp reads) for the material floors.
+ * (nettable itemStockQuantities, as runMrp reads it) for the material floors.
  */
 async function loadMaterialAvailability(
   db: Kysely<DB>,
@@ -584,10 +590,17 @@ async function loadMaterialAvailability(
       .execute(),
     db
       .selectFrom("itemStockQuantities")
-      .select(["itemId", "quantityOnHand"])
+      .select((eb) => [
+        "itemId",
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityNettable"
+        )
+      ])
       .where("itemId", "in", itemIds)
       .where("locationId", "=", locationId)
       .where("companyId", "=", companyId)
+      // Common stock only, as runMrp reads it, until Phase 2b.
+      .where("projectId", "=", "")
       .execute()
   ]);
   for (const r of replenishmentRows) {
@@ -600,7 +613,7 @@ async function loadMaterialAvailability(
   }
   for (const r of stockRows) {
     if (r.itemId != null) {
-      onHandByItem.set(r.itemId, Number(r.quantityOnHand) || 0);
+      onHandByItem.set(r.itemId, Number(r.quantityNettable) || 0);
     }
   }
   return { leadTimeDaysByItem, onHandByItem };
@@ -612,6 +625,9 @@ async function loadMaterialAvailability(
  * queue", excludeJobIds []) and against the location's open jobs excluded
  * ("best case", the same snapshot runExpediteWhatIf uses). Persists nothing.
  * Returns null when the line has no routing to schedule.
+ *
+ * A caller that already holds the rows (a sales order line's item routing)
+ * passes `routing`; `quoteLineId` then only names the synthetic job.
  */
 export async function runQuoteLeadTimeWhatIf(params: {
   db: Kysely<DB>;
@@ -622,6 +638,7 @@ export async function runQuoteLeadTimeWhatIf(params: {
   quoteLineId: string;
   quantities: number[];
   dueDate?: string | null;
+  routing?: QuoteLineRouting;
 }): Promise<QuoteLeadTimeForecast | null> {
   const {
     db,
@@ -647,7 +664,8 @@ export async function runQuoteLeadTimeWhatIf(params: {
   const timeZone = locationRow?.timezone ?? "UTC";
   const locationName = locationRow?.name ?? "this location";
 
-  const routing = await loadQuoteLineRouting(db, quoteLineId, companyId);
+  const routing =
+    params.routing ?? (await loadQuoteLineRouting(db, quoteLineId, companyId));
   if (!routing) return null;
 
   const availability = await loadMaterialAvailability(
@@ -678,8 +696,13 @@ export async function runQuoteLeadTimeWhatIf(params: {
       horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
       persist: false
     });
-  } catch {
+  } catch (err) {
     // fall through — the sim runs with per-member placement
+    log.warning("Batch pre-pass failed; members place individually", {
+      locationId,
+      companyId,
+      error: err
+    });
   }
 
   const selector = new WorkCenterSelector(provider, locationId);

@@ -3,37 +3,28 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList,
   getUnitOfMeasuresList
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+} from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Materials" }];
-};
+export const meta = moduleMeta("Materials");
 
 export const handle: Handle = {
   breadcrumb: msg`Items`,
   to: path.to.items,
   module: "items"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -56,5 +47,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaterialRoute() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

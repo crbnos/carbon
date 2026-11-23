@@ -7,11 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  deleteSalesRFQLine,
-  getSalesRFQ,
-  isSalesRfqLocked
-} from "~/modules/sales";
+import { isSalesRfqLocked } from "~/modules/sales/sales.models";
+import { deleteSalesRFQLine, getSalesRFQ } from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -46,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (deleteLine.error) {
     throw redirect(
       path.to.quoteLine(rfqId, lineId),
-      await flash(
-        request,
-        error(deleteLine.error, "Failed to update quote line")
-      )
+      await flash(request, error(deleteLine.error, "Failed to delete RFQ line"))
     );
   }
 

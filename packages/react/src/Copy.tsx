@@ -43,35 +43,41 @@ const Copy = ({
   };
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <IconButton
-          variant={variant}
-          aria-label={label ?? t`Copy`}
-          icon={
-            isCopied ? (
-              // Keep a custom icon's sizing so the button does not resize
-              <LuCheck className={icon?.props?.className} />
-            ) : (
-              (icon ?? <LuCopy />)
-            )
-          }
-          size={size}
-          className={cn(
-            isCopied && "text-emerald-500 hover:text-emerald-500",
-            className
-          )}
-          onClick={handleCopy}
-        />
-      </TooltipTrigger>
-      <TooltipContent className={tooltipClassName}>
-        <span>
-          {isCopied
-            ? t`Copied!`
-            : (label ?? (withTextInTooltip ? text : t`Copy to clipboard`))}
-        </span>
-      </TooltipContent>
-    </Tooltip>
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <IconButton
+            variant={variant}
+            aria-label={label ?? t`Copy`}
+            icon={
+              isCopied ? (
+                // Keep a custom icon's sizing so the button does not resize
+                <LuCheck className={icon?.props?.className} />
+              ) : (
+                (icon ?? <LuCopy />)
+              )
+            }
+            size={size}
+            className={cn(
+              isCopied && "text-emerald-500 hover:text-emerald-500",
+              className
+            )}
+            onClick={handleCopy}
+          />
+        </TooltipTrigger>
+        <TooltipContent className={tooltipClassName}>
+          <span>
+            {isCopied
+              ? t`Copied!`
+              : (label ?? (withTextInTooltip ? text : t`Copy to clipboard`))}
+          </span>
+        </TooltipContent>
+      </Tooltip>
+      {/* The tooltip only shows on hover; this says it to a screen reader. */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {isCopied ? t`Copied` : ""}
+      </span>
+    </>
   );
 };
 

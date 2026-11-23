@@ -1,0 +1,43 @@
+# Execution log — rental invoice automation
+
+Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II. Context: `.ai/runs/2026-10-02-contracts.md` (U1–U4, G7).
+
+## Task 1 — baseline
+- Committed the uncommitted spec/plan docs (c59a49e52d), merged origin/main (a528a17865). 24 conflicts, none in the plan's stop-list files. Main's side of the 13 UI conflicts was only the `MENU_ITEM_SHORTCUTS` Delete/Edit shortcut; HEAD had moved those menus into `*Header` components (DocumentPage), so HEAD was kept and the shortcut re-applied there. `invoicing.service.ts` / `sales.service.ts`: main's column-strip destructure combined with HEAD's service period. Fixed-asset docs: HEAD text kept (describes building/capitalizing/work-center link). MCP digest regenerated.
+- `pnpm db:migrate` applied main's migrations.
+- Environment: the shell profile exports `SUPABASE_DB_URL` on port 54322, overriding this worktree's `.env.local` (58145). DB gates and `@carbon/database` tests need `SUPABASE_DB_URL` from `.env.local`; with it, everything passes.
+- Baseline: typecheck erp, mes, jobs, lib, database, documents, utils — all green. Tests: jobs 853 passed, database 82 passed, lib 44 passed.
+- Task 5b: the plan's deno-check verify greps colour-coded output and always counts 0; ran with NO_COLOR=1 — 41 identical lines before/after. rental-posting tests 15/15.
+- Task 18: nav entry omits `table: "salesInvoice"` (it would list the saved views twice). Known limit: the sidebar highlights by pathname, so Sales Invoices stays highlighted on the filtered page.
+- Task 13: named the notification validator/service/intent source-agnostically (`invoiceNotificationValidator`, `updateInvoiceNotificationSetting`, intent `invoiceNotifications`) per grill U1 — the group is company-wide for every recurring source. Added labels "When an invoice is created" / "Email".
+- Task 11: `body` reaches the topbar only through `description` ("Recurring invoicing: 2 posted, …"); defaults copied from Workflow's [InApp, Email] (no Sales event sends email by default). notify logs a 'not digest-capable' note when documentIds has >1 entry — harmless.
+- Task 7: prop types derived via `Parameters<typeof SalesInvoicePDF>[0]` (documents exports none); renders by calling `SalesInvoicePDF(props)` (no JSX toolchain in @carbon/lib); the salesInvoices read is also scoped by companyId (service-role callers).
+- Task 14: Select uses a "default" sentinel (Radix refuses an empty item value), sent as "" → null. "Post and email" is filtered out (form Select has no disabled option) with the helper text. Route validates with safeParse (plain object). `types.ts` gains `contactEmail`. The $id.tsx / types.ts hunks for Task 16 are committed with Task 14 (shared files).
+- Task 9 (deviations, all in `packages/jobs/src/invoicing/automate-invoice.ts`):
+  - The no-email message lives in the shared layer as `INVOICE_SEND_NO_EMAIL` (grill U1: send/hold layer is source-agnostic); `RENTAL_SEND_NO_EMAIL` removed from the planner.
+  - `emailPostedInvoice` reads `company.companyGroupId` itself (no `companyGroupId` arg), as Task 10 already said.
+  - `sendEmail` returning `{ data: null, error: null }` (no SMTP transport) stamps `sendError` "Email sending is not configured" rather than `sentAt` — nothing was sent.
+  - The PDF renders with `SUPABASE_INTERNAL_URL` logos (server fetch), but the email HTML swaps them for `SUPABASE_URL` — the recipient's mail client cannot reach an internal URL.
+  - Any load/render/upload failure in the email step stamps `sendError` (the invoice shows "Not sent" in Needs Review) instead of throwing.
+  - Party-contact check uses `salesInvoice.customerId`, mirroring the manual post route exactly.
+  - Tests follow the ramp-sync-bill precedent (stateful fake rows) and assert on outcomes/stored rows, per testing-no-mock-theater; 14 (12 behavioural + 2 pure header helpers).
+- Task 12: email body now spreads the loader's `email` (same sources as the old reads); kept the route's existing timestamped file name; early returns (missing contact/seller) don't stamp sendError.
+- Task 17: badges use Status's `tooltip` prop (`title` would add a native tooltip). "Posted" = postingDate set and not Voided, as the header already reads it.
+- Task 10: digest results are keyed by `sourceId` (source-agnostic, U4). "N posted" counts every invoice that was posted (emailed and unsent included); Draft Only drafts are not reported; an invoice whose automation step threw is reported as needing review. 5 digest tests (plan's 4 + 'links posted invoices when nothing needs review').
+- Task 19:
+  - lint, license headers (0 to fix), MCP digest current. Typecheck erp/mes/jobs/lib/database/notifications green. Tests: database 94, jobs 872, lib 68, checks 250 — all pass.
+  - Conformance gate (`@carbon/checks` run.test) had 2 new findings: `Math.round` file size in automate-invoice.ts (baselined, like its file-size siblings) and merge fallout — main's new `index-redirect-before-loaders` check vs the branch's `rental-agreement+/$id._index.tsx` (fixed with `redirectBeforeLoaders`).
+  - Translations: /translate filled 3,900 strings (325 × 12 locales; erp + mes, mostly strings already pending on the branch, not only this plan's). linguito check exit 0; glossary check exit 0 (advisory hits only). Two zh/ko strings written by hand after round 1.
+  - PRE-EXISTING, out of scope: `apps/erp/app/routes/x+/payments+/payment-refund.test.ts` fails (erp: 1 file, 135 pass). Merge fallout: main's module-level `SUPABASE_URL` in settings.service.ts vs the branch's DocumentPage import; with that mocked the loader still redirects because the branch's DocumentPage rewrite of `$paymentId.tsx` (ef532cb35f, before this plan) added reads the test doesn't mock. Not fixed.
+- Task 20: also corrected docs/content/docs/reference/rental-agreements.mdx (it said invoices are only drafted; button renamed Invoice Now) — outside the task's file list, but a confidently wrong reader doc (keep-sources-in-sync).
+
+## Self-review fixes (after Task 20)
+1. Failed posts were held with supabase-js's fixed "non-2xx" text: the job now reads the edge function's body via `getEdgeFunctionErrorMessage`, moved to `@carbon/lib/edge-function-error` (ERP `~/utils/error` re-exports it); the test fakes a real `FunctionsHttpError`.
+2. A throw in one agreement's transaction dropped the invoices earlier agreements had committed from automation: `createRentalInvoicesForDuePeriods` now isolates each agreement and returns `failures`; the cron logs them (company counted failed), `generateRentalInvoicesNow` throws them (single agreement).
+3. The manual Post route's unconditional `status: "Pending"` could double-post an invoice automation had claimed: it is now a conditional claim on Draft, scoped by companyId.
+4. `needsReview` matched Voided/Pending invoices with a `sendError`, trapping them in Needs Review: follow-up migration `20261003053100_sales-invoices-needs-review-posted.sql` limits it to posted statuses.
+
+## Task 21 — browser verification (2026-10-03, after the server-functions merge)
+PASS: Settings → Invoicing (5 cards, mode + receivables email persist; Sales lost the two cards); agreement UI (Invoice Now, schedule line per status, Invoicing override offers Post and email only with a contact email, "posted but not emailed" note); activate (server fn); Invoice Now → invoice-automate posts AR000012 (Dr AR / Cr Deferred Revenue, Deferral row); charge → held separate invoice (HELD on card + header); Needs Review list; VOID → period Pending + voidedSalesInvoiceId → re-bill held, still held after deleting the draft; early return → −2,800 adjustment → held "Includes an early-return credit"; manual post (Draft claim, shared PDF stored under the opportunity); PDF route (rental + non-rental); revenue recognition run proposal (server fn); return + close (server fn); fixed asset Return to Inventory + Capitalize (post-asset-transfer; serial's own cost layer); Not sent (no contact, Post and email → Submitted + NOT SENT + Send, in Needs Review).
+NOT RUN: anything that sends mail — the emailed path (From/Reply-To/attachment), the Send button actually sending, and the recurring-billing digest. `.env.local` has no SMTP_*, so mail falls back to the real RESEND_API_KEY; Inbucket publishes only its web port. Needs SMTP pointed at a local catcher (or explicit OK to send through Resend).
+Data left in the dev DB: RA000001 (Closed), RA000003 (Active), AR000012 (Voided), AR000013/15/16/17 (Submitted), RR000002 (Draft), FA000008 (re-capitalized unit). Company default restored to Post; receivables email receivables@example.com.

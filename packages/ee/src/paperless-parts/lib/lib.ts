@@ -7,14 +7,14 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { processImage } from "@carbon/files/media";
 import { initNodeImageCodecs } from "@carbon/files/media/node";
 import { getLogger } from "@carbon/logger";
 import {
   getMaterialDescription,
   getMaterialId,
-  openAiCategorizationModel,
-  textToTiptap
+  openAiCategorizationModel
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateText, Output } from "ai";
@@ -98,7 +98,7 @@ async function downloadFileFromUrl(
   filename: string
 ): Promise<File | null> {
   try {
-    logger.info(`Downloading file from: ${url}`);
+    logger.info("Downloading a file", { url });
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -112,7 +112,7 @@ async function downloadFileFromUrl(
     const blob = await response.blob();
     const file = new File([blob], filename, { type: blob.type });
 
-    logger.info(`Successfully downloaded: ${filename} (${blob.size} bytes)`);
+    logger.info("Downloaded a file", { filename, size: blob.size });
     return file;
   } catch (error) {
     logger.error("Error downloading file", { url, error });
@@ -265,13 +265,11 @@ async function getCachedMaterialProperties(
     cleanExpiredCache();
   }
 
-  // Check if we have cached data for this substance
   const cached = materialPropertiesCache.get(substanceId);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached;
   }
 
-  // Fetch from database
   const [grades, dimensions, finishes, types, forms, substance] =
     await Promise.all([
       carbon
@@ -548,10 +546,9 @@ export async function getMaterialProperties(
       .single();
 
     if (materialNamingDetails.error || !materialNamingDetails.data) {
-      logger.error(
-        "Failed to get material naming details:",
-        materialNamingDetails.error
-      );
+      logger.error("Failed to get material naming details", {
+        error: materialNamingDetails.error
+      });
       return null;
     }
 
@@ -702,7 +699,10 @@ export async function getOrCreateMaterial(
         .eq("readableId", materialResult.data.id);
 
       if (item.error || !item.data?.length) {
-        logger.error(`Failed to find item:`);
+        logger.error("Failed to find item {readableId}", {
+          readableId: materialResult.data.id,
+          error: item.error
+        });
 
         return null;
       }
@@ -748,7 +748,7 @@ export async function getOrCreateMaterial(
         .single();
 
       if (itemInsert.error) {
-        logger.error(`Failed to insert item:`, itemInsert.error);
+        logger.error("Failed to insert item", { error: itemInsert.error });
         return null;
       }
 
@@ -771,7 +771,9 @@ export async function getOrCreateMaterial(
         .single();
 
       if (materialInsert.error) {
-        logger.error(`Failed to insert material:`, materialInsert.error);
+        logger.error("Failed to insert material", {
+          error: materialInsert.error
+        });
         return null;
       }
 
@@ -826,15 +828,20 @@ async function uploadModelFile(
         .eq("id", salesOrderLineId);
 
       if (lineUpdate.error) {
-        logger.error(
-          `Failed to link existing model to sales order line:`,
-          lineUpdate.error
-        );
+        logger.error("Failed to link existing model to sales order line", {
+          error: lineUpdate.error
+        });
         return false;
       }
 
       logger.info(
-        `Item ${itemId} already has model ${existingItem.data.modelUploadId}; skipped uploading ${file.name} and linked line ${salesOrderLineId} to existing model`
+        "Item already has a model; skipped the upload and linked the line to the existing model",
+        {
+          itemId,
+          modelUploadId: existingItem.data.modelUploadId,
+          fileName: file.name,
+          salesOrderLineId
+        }
       );
       return true;
     }
@@ -843,7 +850,7 @@ async function uploadModelFile(
     const fileExtension = file.name.split(".").pop();
     const modelPath = `${companyId}/models/${modelId}.${fileExtension}`;
 
-    logger.info(`Uploading CAD model ${file.name} to ${modelPath}`);
+    logger.info("Uploading a CAD model", { fileName: file.name, modelPath });
 
     // Upload model to storage
     const modelUpload = await storage(carbon)
@@ -895,21 +902,22 @@ async function uploadModelFile(
     ]);
 
     if (lineUpdate.error) {
-      logger.error(
-        `Failed to link model to sales order line:`,
-        lineUpdate.error
-      );
+      logger.error("Failed to link model to sales order line", {
+        error: lineUpdate.error
+      });
       return false;
     }
 
     if (itemUpdate.error) {
-      logger.error(`Failed to link model to item:`, itemUpdate.error);
+      logger.error("Failed to link model to item", { error: itemUpdate.error });
       return false;
     }
 
-    logger.info(
-      `Successfully uploaded CAD model ${file.name} and linked to line ${salesOrderLineId} and item ${itemId}`
-    );
+    logger.info("Uploaded a CAD model and linked it to the line and item", {
+      fileName: file.name,
+      salesOrderLineId,
+      itemId
+    });
     return true;
   } catch (error) {
     logger.error("Error uploading model", { fileName: file.name, error });
@@ -938,7 +946,7 @@ async function uploadFileToItem(
       file.name
     )}`;
 
-    logger.info(`Uploading ${file.name} to ${storagePath}`);
+    logger.info("Uploading a file", { fileName: file.name, storagePath });
 
     const fileUpload = await storage(carbon)
       .company(companyId)
@@ -990,18 +998,18 @@ async function processSupportingFiles(
     return;
   }
 
-  logger.info(
-    `Processing ${supportingFiles.length} supporting files for line ${lineId}`
-  );
+  logger.info("Processing supporting files", {
+    count: supportingFiles.length,
+    lineId
+  });
 
   let hasModel = false;
 
   for (const supportingFile of supportingFiles) {
     if (!supportingFile.url || !supportingFile.filename) {
-      logger.warn(
-        "Skipping supporting file with missing URL or filename:",
+      logger.warning("Skipping a supporting file with no URL or filename", {
         supportingFile
-      );
+      });
       continue;
     }
 
@@ -1020,9 +1028,10 @@ async function processSupportingFiles(
         continue;
       }
 
-      // Check if this is a CAD model file
       if (isModelFile(file.name) && !hasModel) {
-        logger.info(`Processing ${file.name} as CAD model`);
+        logger.info("Processing a file as a CAD model", {
+          fileName: file.name
+        });
         const uploadSuccess = await uploadModelFile(carbon, {
           file,
           companyId,
@@ -1039,8 +1048,7 @@ async function processSupportingFiles(
           });
         }
       } else {
-        logger.info(`Processing ${file.name} as document`);
-        // Upload as regular document
+        logger.info("Processing a file as a document", { fileName: file.name });
         const uploadSuccess = await uploadFileToItem(carbon, {
           file,
           companyId,
@@ -1140,10 +1148,9 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (newCustomer.error || !newCustomer.data) {
-          logger.error(
-            "Failed to create customer in Carbon",
-            newCustomer.error
-          );
+          logger.error("Failed to create customer in Carbon", {
+            error: newCustomer.error
+          });
           throw new Error("Failed to create customer in Carbon");
         }
 
@@ -1201,9 +1208,13 @@ export async function getCustomerIdAndContactId(
         if (err instanceof Response) {
           try {
             const errorBody = await err.text();
-            logger.info("Error response body", { errorBody });
+            logger.warning("Paperless Parts error response body", {
+              errorBody
+            });
           } catch (e) {
-            logger.info("Could not read error body", { error: e });
+            logger.warning("Could not read the Paperless Parts error body", {
+              error: e
+            });
           }
         }
         // Set to an error state to trigger the fallback logic
@@ -1213,17 +1224,22 @@ export async function getCustomerIdAndContactId(
       if (newPaperlessPartsAccount.error) {
         // If we get an error creating the account (e.g., "An account with this name already exists"),
         // search again more thoroughly to find the existing account
-        logger.info(
-          `Account creation failed in Paperless Parts, searching more thoroughly for: ${customerName}`
+        logger.warning(
+          "Account creation failed in Paperless Parts; searching more thoroughly",
+          { customerName }
         );
 
         // If the error is a Response object, try to get the actual error message
         if (newPaperlessPartsAccount.error instanceof Response) {
           try {
             const errorBody = await newPaperlessPartsAccount.error.text();
-            logger.info("Error response body", { errorBody });
+            logger.warning("Paperless Parts error response body", {
+              errorBody
+            });
           } catch (e) {
-            logger.info("Could not read error body", { error: e });
+            logger.warning("Could not read the Paperless Parts error body", {
+              error: e
+            });
           }
         }
 
@@ -1349,10 +1365,9 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (newCustomer.error || !newCustomer.data) {
-          logger.error(
-            "Failed to create customer in Carbon",
-            newCustomer.error
-          );
+          logger.error("Failed to create customer in Carbon", {
+            error: newCustomer.error
+          });
           throw new Error("Failed to create customer in Carbon");
         }
 
@@ -1399,18 +1414,38 @@ export async function getCustomerIdAndContactId(
   }
 
   if (!customerContactId) {
-    // If there is no matching contact in Carbon, check if contact exists by email first
+    // If there is no matching contact in Carbon, check if contact exists by email first.
+    // Contacts may share an email: reuse one already on this customer, or the only match.
     const existingContactByEmail = await carbon
       .from("contact")
-      .select("id")
+      .select("id, customerContact(customerId)")
       .eq("companyId", company.id)
       .eq("email", contact.email!)
       .eq("isCustomer", true)
-      .maybeSingle();
+      .order("id");
+
+    if (existingContactByEmail.error) {
+      logger.error("Failed to look up contact by email in Carbon", {
+        error: existingContactByEmail.error
+      });
+      return {
+        customerContactId: null,
+        customerId
+      };
+    }
+
+    const contactsWithEmail = existingContactByEmail.data;
+    const reusableContact =
+      contactsWithEmail.find((c) =>
+        c.customerContact.some((link) => link.customerId === customerId)
+      ) ??
+      // Several contacts with this email and none on the customer: they are
+      // other people's, so create a new one rather than take one over.
+      (contactsWithEmail.length === 1 ? contactsWithEmail[0] : undefined);
 
     let contactId: string;
 
-    if (existingContactByEmail.data) {
+    if (reusableContact) {
       // Update the existing contact
       const updatedContact = await carbon
         .from("contact")
@@ -1418,7 +1453,7 @@ export async function getCustomerIdAndContactId(
           firstName: contact.first_name!,
           lastName: contact.last_name!
         })
-        .eq("id", existingContactByEmail.data.id)
+        .eq("id", reusableContact.id)
         .select()
         .single();
 
@@ -1613,10 +1648,9 @@ export async function getCustomerLocationIds(
             .single();
 
           if (newAddress.error || !newAddress.data) {
-            logger.error(
-              "Failed to create billing address in Carbon",
-              newAddress.error
-            );
+            logger.error("Failed to create billing address in Carbon", {
+              error: newAddress.error
+            });
             throw new Error("Failed to create billing address in Carbon");
           }
 
@@ -1736,10 +1770,9 @@ export async function getCustomerLocationIds(
             .single();
 
           if (newAddress.error || !newAddress.data) {
-            logger.error(
-              "Failed to create shipping address in Carbon",
-              newAddress.error
-            );
+            logger.error("Failed to create shipping address in Carbon", {
+              error: newAddress.error
+            });
             throw new Error("Failed to create shipping address in Carbon");
           }
 
@@ -1807,7 +1840,7 @@ export async function getEmployeeAndSalesPersonId(
     .eq("companyId", company.id);
 
   if (employees.error) {
-    logger.error("Failed to fetch employees", employees.error);
+    logger.error("Failed to fetch employees", { error: employees.error });
     return {
       salesPersonId: null,
       estimatorId: null,
@@ -2083,7 +2116,6 @@ export async function createPartFromComponent(
       operation
     ] of component.shop_operations.entries()) {
       if (operation.category === "operation") {
-        // Check if operation is blacklisted
         const operationName =
           operation.operation_definition_name ?? operation.name;
         if (billOfProcessBlackList.length > 0 && operationName) {
@@ -2091,7 +2123,7 @@ export async function createPartFromComponent(
             operationName.toLowerCase().includes(blacklistedName.toLowerCase())
           );
           if (isBlacklisted) {
-            logger.info(`Skipping blacklisted operation: ${operationName}`);
+            logger.info("Skipping a blacklisted operation", { operationName });
             continue;
           }
         }
@@ -2120,12 +2152,12 @@ export async function createPartFromComponent(
             machineTime: (operation.runtime ?? 0) * 60,
             machineUnit: "Minutes/Piece",
             workInstruction: operation.notes
-              ? textToTiptap(operation.notes)
+              ? TiptapText(operation.notes, { format: "text" }).toDocument()
               : {}
           });
         }
       } else {
-        logger.error("operation.category is not operation", operation);
+        logger.error("operation.category is not operation", { operation });
       }
       // if (operation.costing_variables) {
       //   operation.costing_variables.forEach((cv: any) => {
@@ -2241,9 +2273,10 @@ export async function createPartFromComponent(
       );
 
       if (unitCost > 0) {
-        logger.info(
-          `Updating itemCost for existing purchased component ${partId} with unitCost: ${unitCost}`
-        );
+        logger.info("Updating itemCost for an existing purchased component", {
+          partId,
+          unitCost
+        });
 
         const itemCostUpdate = await carbon
           .from("itemCost")
@@ -2261,7 +2294,7 @@ export async function createPartFromComponent(
           });
           // Don't throw here, just log the error and continue
         } else {
-          logger.info(`Successfully updated itemCost for existing ${partId}`);
+          logger.info("Updated itemCost for an existing part", { partId });
         }
       }
     }
@@ -2293,7 +2326,7 @@ export async function createPartFromComponent(
     .single();
 
   if (itemInsert.error) {
-    logger.error("Failed to create item:", itemInsert.error);
+    logger.error("Failed to create item", { error: itemInsert.error });
     throw new Error(`Failed to create item: ${itemInsert.error.message}`);
   }
 
@@ -2316,9 +2349,10 @@ export async function createPartFromComponent(
     );
 
     if (unitCost > 0) {
-      logger.info(
-        `Updating itemCost for purchased component ${partId} with unitCost: ${unitCost}`
-      );
+      logger.info("Updating itemCost for a purchased component", {
+        partId,
+        unitCost
+      });
 
       const itemCostUpdate = await carbon
         .from("itemCost")
@@ -2337,7 +2371,7 @@ export async function createPartFromComponent(
         });
         // Don't throw here, just log the error and continue
       } else {
-        logger.info(`Successfully updated itemCost for ${partId}`);
+        logger.info("Updated itemCost", { partId });
       }
     }
   }
@@ -2359,10 +2393,9 @@ export async function createPartFromComponent(
         .eq("id", itemId);
 
       if (thumbnailUpdate.error) {
-        logger.error(
-          "Failed to update item with thumbnail path:",
-          thumbnailUpdate.error
-        );
+        logger.error("Failed to update item with thumbnail path", {
+          error: thumbnailUpdate.error
+        });
         // Don't throw here, just log the error and continue
       }
     }
@@ -2397,10 +2430,10 @@ export async function createPartFromComponent(
   }
 
   if (partInsert.error) {
-    logger.error("Failed to create part:", partInsert.error);
+    logger.error("Failed to create part", { error: partInsert.error });
   }
   if (makeMethod.error) {
-    logger.error("Failed to create make method:", makeMethod.error);
+    logger.error("Failed to create make method", { error: makeMethod.error });
   }
 
   const makeMethodId = makeMethod.data?.id;
@@ -2414,10 +2447,9 @@ export async function createPartFromComponent(
         }))
       );
       if (operationInsert.error) {
-        logger.error(
-          "Failed to create method operations:",
-          operationInsert.error
-        );
+        logger.error("Failed to create method operations", {
+          error: operationInsert.error
+        });
       }
     }
 
@@ -2429,10 +2461,9 @@ export async function createPartFromComponent(
         }))
       );
       if (materialInsert.error) {
-        logger.error(
-          "Failed to create method materials:",
-          materialInsert.error
-        );
+        logger.error("Failed to create method materials", {
+          error: materialInsert.error
+        });
       }
     }
   }
@@ -2522,7 +2553,8 @@ export async function getOrCreatePart(
 
       if (unitCost > 0) {
         logger.info(
-          `Updating itemCost for existing purchased component (external ID) ${existingPart.partId} with unitCost: ${unitCost}`
+          "Updating itemCost for an existing purchased component (external ID)",
+          { partId: existingPart.partId, unitCost }
         );
 
         const itemCostUpdate = await carbon
@@ -2545,9 +2577,9 @@ export async function getOrCreatePart(
           );
           // Don't throw here, just log the error and continue
         } else {
-          logger.info(
-            `Successfully updated itemCost for existing (external ID) ${existingPart.partId}`
-          );
+          logger.info("Updated itemCost for an existing part (external ID)", {
+            partId: existingPart.partId
+          });
         }
       }
     }
@@ -2597,7 +2629,7 @@ async function getOrCreateProcess(
     .single();
 
   if (processInsert.error) {
-    logger.error("Failed to create process:", processInsert.error);
+    logger.error("Failed to create process", { error: processInsert.error });
     return null;
   }
   return processInsert.data ?? null;
@@ -2667,7 +2699,9 @@ export async function insertOrderLines(
           .single();
 
         if (result.error) {
-          logger.error("Failed to insert comment line:", result.error);
+          logger.error("Failed to insert comment line", {
+            error: result.error
+          });
           continue;
         }
 
@@ -2713,7 +2747,9 @@ export async function insertOrderLines(
           .eq("itemId", itemId);
 
         if (updateLeadTime.error) {
-          logger.error("Failed to update lead time:", updateLeadTime.error);
+          logger.error("Failed to update lead time", {
+            error: updateLeadTime.error
+          });
         }
 
         const promisedDate = calculatePromisedDate(
@@ -2757,10 +2793,14 @@ export async function insertOrderLines(
                 ? new Date(promisedDate ?? orderItem.ships_on!).toISOString()
                 : null,
             internalNotes: orderItem.private_notes
-              ? textToTiptap(orderItem.private_notes)
+              ? TiptapText(orderItem.private_notes, {
+                  format: "text"
+                }).toDocument()
               : null,
             externalNotes: orderItem.public_notes
-              ? textToTiptap(orderItem.public_notes)
+              ? TiptapText(orderItem.public_notes, {
+                  format: "text"
+                }).toDocument()
               : null
           };
 
@@ -2844,7 +2884,7 @@ export async function insertOrderLines(
   }
 
   if (insertedLinesCount === 0) {
-    logger.warn("No valid order lines were inserted");
+    logger.warning("No valid order lines were inserted");
     return;
   }
 }
@@ -3010,10 +3050,14 @@ export async function insertQuoteLines(
           companyId,
           createdBy,
           internalNotes: quoteItem.private_notes
-            ? textToTiptap(quoteItem.private_notes)
+            ? TiptapText(quoteItem.private_notes, {
+                format: "text"
+              }).toDocument()
             : null,
           externalNotes: quoteItem.public_notes
-            ? textToTiptap(quoteItem.public_notes)
+            ? TiptapText(quoteItem.public_notes, {
+                format: "text"
+              }).toDocument()
             : null
         };
 
@@ -3138,7 +3182,9 @@ export async function insertQuoteLines(
                       overheadRate: operationRates.overheadRate,
                       machineRate: operationRates.machineRate,
                       workInstruction: operation.notes
-                        ? textToTiptap(operation.notes)
+                        ? TiptapText(operation.notes, {
+                            format: "text"
+                          }).toDocument()
                         : {},
                       companyId,
                       createdBy
@@ -3314,10 +3360,9 @@ export async function insertQuoteLines(
                     .select("id");
 
                   if (madeMaterialResult.error) {
-                    logger.error(
-                      "Failed to insert made materials:",
-                      madeMaterialResult.error
-                    );
+                    logger.error("Failed to insert made materials", {
+                      error: madeMaterialResult.error
+                    });
                   } else if (madeMaterialResult.data) {
                     // Query for auto-created quoteMakeMethod records
                     const childQuoteMakeMethods = await carbon
@@ -3458,9 +3503,9 @@ export async function insertQuoteLines(
   }
 
   if (insertedLinesCount === 0) {
-    logger.warn("No valid quote lines were inserted");
+    logger.warning("No valid quote lines were inserted");
     return;
   }
 
-  logger.info(`✅ Successfully inserted ${insertedLinesCount} quote lines`);
+  logger.info("Inserted quote lines", { count: insertedLinesCount });
 }

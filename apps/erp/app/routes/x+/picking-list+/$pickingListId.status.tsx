@@ -2,148 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  getUnresolvedPickingListLines,
-  isPickingListLocked,
-  pickingListStatusType,
-  updatePickingListStatus
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { pickingListStatusType } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+const statusChange = z.object({
+  status: z.enum(pickingListStatusType),
+  acknowledged: zfd.checkbox({ trueValue: "true" })
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(statusChange).request(args, {
+    params: ["pickingListId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { pickingListId } = input.params;
 
-  const { pickingListId: id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  let status = formData.get("status") as (typeof pickingListStatusType)[number];
-
-  if (!status || !pickingListStatusType.includes(status)) {
-    throw redirect(
-      path.to.pickingList(id),
-      await flash(request, error(null, "Invalid status"))
-    );
-  }
-
-  // Reopening a closed (Completed/Cancelled) picking list requires the stronger
-  // inventory `delete` permission — it unlocks completed inventory moves.
-  const current = await client
-    .from("pickingList")
-    .select("status")
-    .eq("id", id)
-    .single();
-  const isReopen =
-    isPickingListLocked(current.data?.status) && !isPickingListLocked(status);
-  if (isReopen) {
-    await requirePermissions(request, { delete: "inventory" });
-  }
-
-  // Finishing must not silently complete a list with material still unpicked —
-  // same policy the MES Finish enforces. 'error' blocks; 'warn' requires an
-  // acknowledgement; any shortfall lands the list on Partial, not Completed.
-  if (status === "Completed") {
-    const [lineResult, settings] = await Promise.all([
-      getUnresolvedPickingListLines(client, id, companyId),
-      getCompanySettings(client, companyId)
-    ]);
-
-    if (lineResult.error) {
-      throw redirect(
-        path.to.pickingList(id),
-        await flash(
-          request,
-          error(lineResult.error, "Failed to check picking list lines")
-        )
-      );
-    }
-
-    // Fail closed: an unreadable policy must not fall back to the bypassable
-    // 'warn' default.
-    if (settings.error || !settings.data) {
-      throw redirect(
-        path.to.pickingList(id),
-        await flash(
-          request,
-          error(
-            settings.error,
-            "Failed to read the picking list completion policy"
-          )
-        )
-      );
-    }
-
-    const policy =
-      settings.data.incompletePickingListPolicy === "error" ? "error" : "warn";
-    const { unresolved, hasShort } = lineResult;
-    const acknowledged = formData.get("acknowledged") === "true";
-
-    if (unresolved.length > 0) {
-      if (policy === "error") {
-        throw redirect(
-          path.to.pickingList(id),
-          await flash(
-            request,
-            error(
-              null,
-              `Can't finish — still unpicked: ${unresolved.map((l) => l.itemName).join(", ")}`
-            )
-          )
-        );
-      }
-      if (!acknowledged) {
-        return { needsAcknowledgement: true, unresolvedLines: unresolved };
-      }
-    }
-
-    status = unresolved.length === 0 && !hasShort ? "Completed" : "Partial";
-  }
-
-  const update = await updatePickingListStatus(client, id, status, userId);
-
-  if (update.error) {
-    throw redirect(
-      path.to.pickingList(id),
-      await flash(
-        request,
-        error(update.error, "Failed to update picking list status")
-      )
-    );
-  }
-
-  if (status === "Completed" || status === "Partial") {
-    // Partial is the interesting one: it means a line could not be filled,
-    // which is the material-availability half of job cycle time.
-    //
-    // The status is the discriminator, not just a property: a list goes
-    // Partial and later Completed, and both are real occurrences. Keyed on the
-    // list alone the second collapses into the first and the completion is
-    // lost, while re-saving the same status still de-duplicates.
-    trackWorkEvent(
-      "picking_list_completed",
-      {
-        companyId,
-        userId,
-        pickingListId: id,
-        finalStatus: status,
-        source: "erp"
-      },
-      { discriminator: status }
-    );
-  }
-
-  throw redirect(
-    path.to.pickingList(id),
-    await flash(request, success("Updated picking list status"))
+  const api = await carbon(args.request);
+  const result = await api.inventory.setPickingListStatus({
+    pickingListId,
+    ...input.data
+  });
+  // Lines left unpicked under the 'warn' policy: the header asks first.
+  if (result.data && "needsAcknowledgement" in result.data) return result;
+  return respond(args.request, result).redirect(
+    path.to.pickingList(pickingListId),
+    { message: "Updated picking list status" }
   );
 }

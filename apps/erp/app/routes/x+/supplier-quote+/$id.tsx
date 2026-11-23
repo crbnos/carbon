@@ -6,16 +6,17 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode, getExchangeRate } from "~/modules/accounting";
+import {
+  getCurrencyByCode,
+  getExchangeRate,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
 import {
   getSiblingQuotesForQuote,
   getSupplier,
@@ -24,14 +25,16 @@ import {
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import {
   SupplierQuoteHeader,
   SupplierQuoteProperties
 } from "~/modules/purchasing/ui/SupplierQuote";
 import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -46,10 +49,8 @@ export const handle: Handle = {
   module: "purchasing"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.quote?.supplierQuoteId, "Supplier Quote");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, companyGroupId } = await requirePermissions(request, {
@@ -80,6 +81,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const taxDate =
+    quote.data.quotedDate ??
+    datetime.today(await getCompanyTimeZone(serviceRole, companyId)).toString();
   const [
     lines,
     prices,
@@ -88,7 +92,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     presentationCurrency,
     supplier,
     companySettings,
-    rate
+    rate,
+    resolvedTax
   ] = await Promise.all([
     getSupplierQuoteLines(serviceRole, id),
     getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
@@ -103,7 +108,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           quote.data.companyId,
           quote.data.currencyCode
         )
-      : null
+      : null,
+    // The tax a new price break takes: the supplier's code (or bare
+    // percent), on the quote's date.
+    resolveLineTaxes(serviceRole, companyId, {
+      source: "purchase",
+      supplierId: quote.data.supplierId,
+      date: taxDate
+    })
   ]);
 
   if (supplierInteraction.error) {
@@ -160,7 +172,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     exchangeRate,
     siblingQuotes: siblingQuotesData,
     defaultCc,
-    supplier: supplier?.data ?? null
+    supplier: supplier?.data ?? null,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 
@@ -180,7 +194,7 @@ export default function SupplierQuoteRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

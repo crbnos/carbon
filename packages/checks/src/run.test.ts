@@ -23,18 +23,16 @@ describe("conformance gate (real migrations vs baseline)", () => {
   // Whole-repo filesystem scan (migrations + both apps' route trees): ~3s alone,
   // but 20-38s inside CI's `pnpm test`, where it shares the runner's CPU with
   // every other package's suite.
-  it(
-    "introduces no NEW deprecated patterns beyond the committed baseline",
-    { timeout: 120_000 },
-    () => {
-      const fresh = newViolations();
-      const detail = fresh
-        .map(
-          (f) =>
-            `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
-        )
-        .join("\n");
-      expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
-    }
-  );
+  it("introduces no NEW deprecated patterns beyond the committed baseline", {
+    timeout: 120_000
+  }, () => {
+    const fresh = newViolations();
+    const detail = fresh
+      .map(
+        (f) =>
+          `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
+      )
+      .join("\n");
+    expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
+  });
 });

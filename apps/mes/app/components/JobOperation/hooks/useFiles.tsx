@@ -4,7 +4,7 @@
 
 import { downloadBlob, downloadUrl } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useCallback } from "react";
 import { useUser } from "~/hooks";
 import type { Job, StorageItem } from "~/services/types";
@@ -45,7 +45,7 @@ export function useFiles(job: Job) {
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error("Error downloading file");
+        toastError("Error downloading file", error);
         log.error("Error downloading file", { error });
       }
     },
@@ -75,7 +75,7 @@ export function useFiles(job: Job) {
         }
         downloadBlob(await response.blob(), model.modelName);
       } catch (error) {
-        toast.error("Error downloading file");
+        toastError("Error downloading file", error);
         log.error("Error downloading file", { error });
       }
     },

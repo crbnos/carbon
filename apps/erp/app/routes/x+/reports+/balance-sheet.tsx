@@ -5,7 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
@@ -13,38 +13,38 @@ import {
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import {
-  financialReportParamsValidator,
-  getCompaniesInGroup,
-  getFinancialStatementPeriodSeries,
-  getFiscalYearSettings
-} from "~/modules/accounting";
+import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
   applyCtaToReportPeriodSeriesForReport,
-  getConsolidatedPeriodSeriesForReport
-} from "~/modules/accounting/accounting.server";
+  getCompaniesInGroup,
+  getConsolidatedPeriodSeriesForReport,
+  getFinancialStatementPeriodSeries,
+  getFiscalYearSettings
+} from "~/modules/accounting/accounting.service";
+import { selectReportCompanyIds } from "~/modules/accounting/accounting.utils";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,
   MultiPeriodStatementTree,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Balance Sheet`,
   to: path.to.balanceSheet
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -91,18 +91,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
 
-  const selectedCompanyIds =
-    companiesParam === "all"
-      ? companiesList.map((c) => c.id)
-      : companiesParam
-        ? [companiesParam]
-        : [companyId];
-  if (
-    selectedCompanyIds.length === 0 ||
-    selectedCompanyIds.some(
-      (id) => !companiesList.some((company) => company.id === id)
-    )
-  ) {
+  const selectedCompanyIds = selectReportCompanyIds(
+    companiesParam,
+    companiesList.map((c) => c.id),
+    companyId
+  );
+  if (!selectedCompanyIds) {
     throw new Response("Company not found", { status: 404 });
   }
   const isMultiCompany = selectedCompanyIds.length > 1;
@@ -159,10 +153,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         path.to.accounting,
         await flash(
           request,
-          error(
-            adjusted.error,
-            adjusted.error?.message ?? "Failed to apply currency translation"
-          )
+          error(adjusted.error, "Failed to apply currency translation")
         )
       );
     }
@@ -229,10 +220,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         path.to.accounting,
         await flash(
           request,
-          error(
-            adjusted.error,
-            adjusted.error?.message ?? "Failed to apply currency translation"
-          )
+          error(adjusted.error, "Failed to apply currency translation")
         )
       );
     }
@@ -274,6 +262,9 @@ export default function BalanceSheetRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Balance Sheet</Trans>
+      </h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}
@@ -311,7 +302,7 @@ export default function BalanceSheetRoute() {
         search={search}
         ledgerPath={path.to.balanceSheetLedger}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

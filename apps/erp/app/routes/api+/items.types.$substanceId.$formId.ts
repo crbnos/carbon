@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getMaterialTypeList } from "~/modules/items";
+import { getMaterialTypeList } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

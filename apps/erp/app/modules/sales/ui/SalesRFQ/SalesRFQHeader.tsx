@@ -10,15 +10,8 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
@@ -28,27 +21,24 @@ import {
   ModalHeader,
   ModalTitle,
   useDisclosure,
-  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuCircleCheck,
   LuCircleX,
-  LuEllipsisVertical,
   LuLoaderCircle,
-  LuPanelLeft,
-  LuPanelRight,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
@@ -80,154 +70,127 @@ const SalesRFQHeader = () => {
 
   const statusFetcher = useFetcher<{}>();
 
+  // Phones lead the action bar with the step the desktop highlights; No
+  // Quote sits beside Quote while both are open.
+  const readyForQuoteSlot = status === "Draft" ? "primary" : "overflow";
+  const isQuotable = ["Ready for Quote", "Quoted"].includes(status);
+  const quoteSlot = isQuotable ? "primary" : "overflow";
+  const noQuoteSlot = status === "Ready for Quote" ? "secondary" : "overflow";
+  const menuItems = (
+    <>
+      <DropdownMenuItem
+        disabled={
+          routeData?.rfqSummary?.status === "Draft" ||
+          (routeData?.opportunity?.quotes.length ?? 0) > 0 ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("update", "sales")
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            { status: "Draft" },
+            {
+              method: "post",
+              action: path.to.salesRfqStatus(rfqId)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          isLocked ||
+          !permissions.can("delete", "sales") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteRFQModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete RFQ</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const statusBadge = <SalesRFQStatus status={routeData?.rfqSummary?.status} />;
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide ">
-      <HStack className="w-full justify-between">
-        <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
-          <Link to={path.to.salesRfqDetails(rfqId)}>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{routeData?.rfqSummary?.rfqId}</span>
-            </Heading>
-          </Link>
-          <Copy text={routeData?.rfqSummary?.rfqId ?? ""} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                disabled={
-                  routeData?.rfqSummary?.status === "Draft" ||
-                  (routeData?.opportunity?.quotes.length ?? 0) > 0 ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
-                }
-                onClick={() => {
-                  statusFetcher.submit(
-                    { status: "Draft" },
-                    {
-                      method: "post",
-                      action: path.to.salesRfqStatus(rfqId)
+    <>
+      <RecordHeader
+        title={routeData?.rfqSummary?.rfqId}
+        titleTo={path.to.salesRfqDetails(rfqId)}
+        copyValue={routeData?.rfqSummary?.rfqId ?? ""}
+        menu={menuItems}
+        status={statusBadge}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {routeData?.rfqSummary?.customerId ? (
+              <RecordAction slot={readyForQuoteSlot}>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.salesRfqStatus(rfqId)}
+                >
+                  <input type="hidden" name="status" value="Ready for Quote" />
+                  <Button
+                    isDisabled={
+                      status !== "Draft" ||
+                      routeData?.lines?.length === 0 ||
+                      !permissions.can("update", "sales")
                     }
-                  );
-                }}
-              >
-                <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                <Trans>Reopen</Trans>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.delete}
-                disabled={
-                  isLocked ||
-                  !permissions.can("delete", "sales") ||
-                  !permissions.is("employee")
-                }
-                destructive
-                onClick={deleteRFQModal.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete RFQ</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <SalesRFQStatus status={routeData?.rfqSummary?.status} />
-        </HStack>
-        <HStack>
-          {routeData?.rfqSummary?.customerId ? (
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesRfqStatus(rfqId)}
-            >
-              <input type="hidden" name="status" value="Ready for Quote" />
-              <Button
-                isDisabled={
-                  status !== "Draft" ||
-                  routeData?.lines?.length === 0 ||
-                  !permissions.can("update", "sales")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Ready for Quote"
-                }
-                leftIcon={<LuCircleCheck />}
-                variant={status === "Draft" ? "primary" : "secondary"}
-                type="submit"
-              >
-                <Trans>Ready for Quote</Trans>
-              </Button>
-            </statusFetcher.Form>
-          ) : (
-            <Button
-              isDisabled={
-                status !== "Ready for Quote" ||
-                routeData?.lines?.length === 0 ||
-                !permissions.can("update", "sales")
-              }
-              leftIcon={<LuCircleCheck />}
-              variant={status === "Draft" ? "primary" : "secondary"}
-              onClick={requiresCustomerAlert.onOpen}
-            >
-              <Trans>Ready for Quote</Trans>
-            </Button>
-          )}
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") ===
+                        "Ready for Quote"
+                    }
+                    leftIcon={<LuCircleCheck />}
+                    variant={status === "Draft" ? "primary" : "secondary"}
+                    type="submit"
+                  >
+                    <Trans>Ready for Quote</Trans>
+                  </Button>
+                </statusFetcher.Form>
+              </RecordAction>
+            ) : (
+              <RecordAction slot={readyForQuoteSlot}>
+                <Button
+                  isDisabled={
+                    status !== "Ready for Quote" ||
+                    routeData?.lines?.length === 0 ||
+                    !permissions.can("update", "sales")
+                  }
+                  leftIcon={<LuCircleCheck />}
+                  variant={status === "Draft" ? "primary" : "secondary"}
+                  onClick={requiresCustomerAlert.onOpen}
+                >
+                  <Trans>Ready for Quote</Trans>
+                </Button>
+              </RecordAction>
+            )}
 
+            <RecordAction slot={quoteSlot}>
+              <Button
+                isLoading={statusFetcher.state !== "idle"}
+                isDisabled={
+                  status !== "Ready for Quote" ||
+                  routeData?.lines?.length === 0 ||
+                  !permissions.can("create", "sales")
+                }
+                leftIcon={<RiProgress4Line />}
+                type="submit"
+                variant={isQuotable ? "primary" : "secondary"}
+                onClick={convertToQuoteModal.onOpen}
+              >
+                <Trans>Quote</Trans>
+              </Button>
+            </RecordAction>
+            {/* <statusFetcher.Form
+          method="post"
+          action={path.to.salesRfqStatus(rfqId)}
+        >
+          <input type="hidden" name="status" value="Closed" />
           <Button
-            isLoading={statusFetcher.state !== "idle"}
-            isDisabled={
-              status !== "Ready for Quote" ||
-              routeData?.lines?.length === 0 ||
-              !permissions.can("create", "sales")
-            }
-            leftIcon={<RiProgress4Line />}
-            type="submit"
-            variant={
-              ["Ready for Quote", "Quoted"].includes(status)
-                ? "primary"
-                : "secondary"
-            }
-            onClick={convertToQuoteModal.onOpen}
-          >
-            <Trans>Quote</Trans>
-          </Button>
-          {/* <statusFetcher.Form
-            method="post"
-            action={path.to.salesRfqStatus(rfqId)}
-          >
-            <input type="hidden" name="status" value="Closed" />
-            <Button
-              isDisabled={
-                status !== "Ready for Quote" ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "sales")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "Closed"
-              }
-              leftIcon={<LuCircleX />}
-              type="submit"
-              variant={
-                ["Ready for Quote", "Closed"].includes(status)
-                  ? "destructive"
-                  : "secondary"
-              }
-            >
-              No Quote
-            </Button>
-          </statusFetcher.Form> */}
-          <Button
-            onClick={noQuoteReasonModal.onOpen}
             isDisabled={
               status !== "Ready for Quote" ||
               statusFetcher.state !== "idle" ||
@@ -238,56 +201,71 @@ const SalesRFQHeader = () => {
               statusFetcher.formData?.get("status") === "Closed"
             }
             leftIcon={<LuCircleX />}
+            type="submit"
             variant={
               ["Ready for Quote", "Closed"].includes(status)
                 ? "destructive"
                 : "secondary"
             }
           >
-            <Trans>No Quote</Trans>
+            No Quote
           </Button>
-
-          <IconButton
-            aria-label={t`Toggle Properties`}
-            icon={<LuPanelRight />}
-            onClick={toggleProperties}
-            variant="ghost"
-          />
-        </HStack>
-      </HStack>
-      {convertToQuoteModal.isOpen && (
-        <ConvertToQuoteModal
-          lines={routeData?.lines ?? []}
-          rfqId={rfqId}
-          onClose={convertToQuoteModal.onClose}
-        />
-      )}
-      {requiresCustomerAlert.isOpen && (
-        <RequiresCustomerAlert onClose={requiresCustomerAlert.onClose} />
-      )}
-      {noQuoteReasonModal.isOpen && (
-        <NoQuoteReasonModal
-          fetcher={statusFetcher}
-          rfqId={rfqId}
-          onClose={noQuoteReasonModal.onClose}
-        />
-      )}
-      {deleteRFQModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesRfq(rfqId)}
-          isOpen={deleteRFQModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to delete ${routeData?.rfqSummary
-            ?.rfqId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteRFQModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteRFQModal.onClose();
-          }}
-        />
-      )}
-    </div>
+        </statusFetcher.Form> */}
+            <RecordAction slot={noQuoteSlot}>
+              <Button
+                onClick={noQuoteReasonModal.onOpen}
+                isDisabled={
+                  status !== "Ready for Quote" ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Closed"
+                }
+                leftIcon={<LuCircleX />}
+                variant={
+                  ["Ready for Quote", "Closed"].includes(status)
+                    ? "destructive"
+                    : "secondary"
+                }
+              >
+                <Trans>No Quote</Trans>
+              </Button>
+            </RecordAction>
+          </>
+        }
+      />
+      <ConvertToQuoteModal
+        open={convertToQuoteModal.isOpen}
+        lines={routeData?.lines ?? []}
+        rfqId={rfqId}
+        onClose={convertToQuoteModal.onClose}
+      />
+      <RequiresCustomerAlert
+        open={requiresCustomerAlert.isOpen}
+        onClose={requiresCustomerAlert.onClose}
+      />
+      <NoQuoteReasonModal
+        open={noQuoteReasonModal.isOpen}
+        fetcher={statusFetcher}
+        rfqId={rfqId}
+        onClose={noQuoteReasonModal.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.deleteSalesRfq(rfqId)}
+        isOpen={deleteRFQModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to delete ${routeData?.rfqSummary
+          ?.rfqId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteRFQModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteRFQModal.onClose();
+        }}
+      />
+    </>
   );
 };
 
@@ -299,10 +277,12 @@ const rfqNoQuoteReasonValidator = z.object({
 });
 
 function NoQuoteReasonModal({
+  open,
   fetcher,
   rfqId,
   onClose
 }: {
+  open: boolean;
   fetcher: FetcherWithComponents<{}>;
   rfqId: string;
   onClose: () => void;
@@ -328,12 +308,13 @@ function NoQuoteReasonModal({
     );
   };
 
-  useMount(() => {
-    fetchReasons();
-  });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load the reasons each time the modal opens
+  useEffect(() => {
+    if (open) fetchReasons();
+  }, [open]);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ValidatedForm
           method="post"
@@ -376,9 +357,15 @@ function NoQuoteReasonModal({
   );
 }
 
-function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
+function RequiresCustomerAlert({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>
@@ -410,10 +397,12 @@ function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
 }
 
 function ConvertToQuoteModal({
+  open,
   lines,
   rfqId,
   onClose
 }: {
+  open: boolean;
   lines: SalesRFQLine[];
   rfqId: string;
   onClose: () => void;
@@ -446,7 +435,7 @@ function ConvertToQuoteModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

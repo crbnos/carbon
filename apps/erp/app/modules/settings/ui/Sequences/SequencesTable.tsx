@@ -17,16 +17,19 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Sequence } from "~/modules/settings";
+import type { Sequence } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 type SequencesTableProps = {
   data: Sequence[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
+const SequencesTable = memo((props: SequencesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -41,6 +44,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
           <Hyperlink to={row.original.table}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuText />
         }
       },
@@ -49,6 +53,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         header: t`Prefix`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuTextCursor />
         }
       },
@@ -57,6 +62,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         header: t`Current`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P2",
           icon: <LuArrowRight />
         }
       },
@@ -112,6 +118,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       renderContextMenu={renderContextMenu}

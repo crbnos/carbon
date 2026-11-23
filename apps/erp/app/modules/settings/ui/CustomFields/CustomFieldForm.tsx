@@ -22,6 +22,7 @@ import {
   LuContainer,
   LuFile,
   LuHash,
+  LuLink,
   LuList,
   LuSquareUser,
   LuToggleLeft,
@@ -32,20 +33,23 @@ import { useParams } from "react-router";
 import type { z } from "zod";
 import { Array, Boolean, Hidden, Input, Submit, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { customFieldValidator } from "~/modules/settings";
-import { DataType, tablesWithTags } from "~/modules/shared";
+import type { AttributeDataType } from "~/modules/people/types";
+import { customFieldValidator } from "~/modules/settings/settings.models";
+import { tablesWithTags } from "~/modules/shared/shared.models";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 type CustomFieldFormProps = {
   initialValues: z.infer<typeof customFieldValidator>;
   dataTypes: AttributeDataType[];
+  open?: boolean;
   onClose: () => void;
 };
 
 const CustomFieldForm = ({
   initialValues,
   dataTypes,
+  open = true,
   onClose
 }: CustomFieldFormProps) => {
   const { t } = useLingui();
@@ -80,7 +84,7 @@ const CustomFieldForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -191,6 +195,8 @@ function CustomFieldDataTypeIcon({
       );
     case DataType.File:
       return <LuFile className={cn("w-4 h-4 text-indigo-600", className)} />;
+    case DataType.Link:
+      return <LuLink className={cn("w-4 h-4 text-sky-600", className)} />;
     default:
       return null;
   }

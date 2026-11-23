@@ -8,14 +8,15 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAbilityShortfall,
   getBatchMaterialTotals,
   getBatchWorkInstructions,
-  getJobByOperationId,
+  getJob,
   getJobFiles,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
@@ -25,17 +26,20 @@ import {
   getJobOperationForCompany,
   getJobOperationProcedure,
   getKanbanByJobId,
-  getNextIncompleteSerialEntity,
   getNonConformanceActions,
   getProductionEventsForBatch,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getReworkCorrectionName,
   getThumbnailPathByItemId,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   getWorkCenter,
+  isFirstOpenOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
+import { recordMeta } from "~/utils/meta";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -86,11 +90,29 @@ export const handle: Handle = {
       table: "pickingListLine",
       filter: ({ data }) =>
         data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      // Stock of the job's parts placed in, or taken from, a bin while the
+      // operation is open: the Source column shows where it is now.
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds: string[] = data?.materialItemIds ?? [];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ]
 };
 
 const logger = getLogger("mes", "operation");
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    [
+      data?.batch?.readableId ?? data?.operation?.jobReadableId,
+      data?.operation?.description
+    ],
+    "Operation"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -117,7 +139,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null
   ]);
   if (!ownedOperation.data || (ownedEntity && !ownedEntity.data)) {
-    logger.warn("Operation or tracked entity not found in company", {
+    logger.warning("Operation or tracked entity not found in company", {
       companyId,
       operationId,
       trackedEntityId,
@@ -125,18 +147,128 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
     throw redirect(
       path.to.operations,
-      await flash(request, error(null, "Operation not found"))
+      await flash(
+        request,
+        error(
+          ownedOperation.error ?? ownedEntity?.error ?? null,
+          "Operation not found"
+        )
+      )
     );
   }
 
-  let [events, quantities, job, operation] = await Promise.all([
+  // One wave: everything below needs only ids the ownership check returned, so
+  // it is read before the redirect checks rather than one step after another.
+  // A redirect discards reads the page then never uses; the ids are the
+  // company's, so nothing leaks.
+  const {
+    jobId,
+    jobMakeMethodId,
+    jobOperationBatchId: batchId,
+    operationType
+  } = ownedOperation.data;
+
+  // Redirect guard (ADR-0005): each view has its own route. Guards only
+  // redirect kinds they don't serve, so no loop. Checked before the read wave,
+  // which the other route runs itself.
+  if (resolveOperationView(operationType) === "assembly") {
+    throw redirect(path.to.assembly(operationId) + url.search);
+  }
+  if (resolveOperationView(operationType) === "inspection") {
+    throw redirect(path.to.inspection(operationId) + url.search);
+  }
+
+  const operationPromise = getJobOperationById(serviceRole, operationId);
+  // The batch's events and material totals are used only once it is released.
+  const batchPromise = batchId
+    ? getJobOperationBatch(serviceRole, batchId, companyId)
+    : null;
+  const releasedBatchId = batchPromise?.then((result) =>
+    result.data?.status === "Active" || result.data?.status === "Completing"
+      ? batchId
+      : null
+  );
+  const [
+    opEvents,
+    quantities,
+    job,
+    operation,
+    batchResult,
+    batchEvents,
+    batchMaterialTotals,
+    thumbnailPath,
+    correctionName,
+    trackedEntities,
+    jobMakeMethod,
+    kanban,
+    bomIdMap,
+    companySettings,
+    abilityWarning,
+    isFirstOperation,
+    isFirstOpenOperation,
+    materialItems
+  ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
       userId
     }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
-    getJobByOperationId(serviceRole, operationId),
-    getJobOperationById(serviceRole, operationId)
+    getJob(serviceRole, jobId),
+    operationPromise,
+    batchPromise,
+    releasedBatchId?.then((id) =>
+      id ? getProductionEventsForBatch(serviceRole, id) : null
+    ) ?? null,
+    releasedBatchId?.then((id) =>
+      id
+        ? getBatchMaterialTotals(serviceRole, { batchId: id, companyId })
+        : null
+    ) ?? null,
+    operationPromise.then((result) => {
+      const itemId = result.data?.[0]?.itemId;
+      return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
+    }),
+    operationPromise.then((result) =>
+      getReworkCorrectionName(
+        serviceRole,
+        result.data?.[0]?.reworkId,
+        companyId
+      )
+    ),
+    jobMakeMethodId
+      ? getTrackedEntitiesForOperation(serviceRole, {
+          operationId,
+          jobMakeMethodId: jobMakeMethodId,
+          companyId
+        })
+      : null,
+    jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
+    getKanbanByJobId(serviceRole, jobId),
+    getJobMethodBomIdMap(serviceRole, jobId),
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    }),
+    jobMakeMethodId
+      ? isFirstOperationOfMakeMethod(serviceRole, { companyId, operationId })
+      : false,
+    jobMakeMethodId
+      ? isFirstOpenOperationOfMakeMethod(
+          serviceRole,
+          companyId,
+          operationId,
+          jobMakeMethodId
+        )
+      : false,
+    // Only the ids: the realtime filter above needs them before the deferred
+    // materials read resolves.
+    serviceRole
+      .from("jobMaterial")
+      .select("itemId")
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
   ]);
 
   if (job.error) {
@@ -161,44 +293,60 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const op = operation.data?.[0];
+  if (!op) {
+    logger.warning("Operation not found after the ownership check", {
+      companyId,
+      operationId
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, "Operation not found"))
+    );
+  }
+
+  // The type the early redirect used came from the ownership read; check the
+  // row this page renders too.
+  if (resolveOperationView(op.operationType) === "assembly") {
+    throw redirect(path.to.assembly(operationId) + url.search);
+  }
+  if (resolveOperationView(op.operationType) === "inspection") {
+    throw redirect(path.to.inspection(operationId) + url.search);
+  }
 
   // Subcontracted work runs at the supplier, never on the shop floor. The
   // boards hide it; this refuses a job-view or direct link too.
-  if (op?.operationType === "Outside Processing") {
+  if (op.operationType === "Outside Processing") {
     throw redirect(
       path.to.operations,
       await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
     );
   }
 
-  // Redirect guard (ADR-0005): each view has its own route. Guards only
-  // redirect kinds they don't serve, so no loop.
-  if (resolveOperationView(op?.operationType) === "assembly") {
-    throw redirect(path.to.assembly(operationId) + url.search);
-  }
-  if (resolveOperationView(op?.operationType) === "inspection") {
-    throw redirect(path.to.inspection(operationId) + url.search);
-  }
-
-  // Batch membership. get_job_operation_by_id omits jobOperationBatchId, so read
-  // it directly. When the op belongs to a batch that is still Active/Completing,
-  // the operation view runs in batch mode: it shows the shared batch timer and
-  // completes the whole batch. A Completed batch was already re-sliced per member
-  // — it renders as a plain operation view.
-  const batchMembership = await serviceRole
-    .from("jobOperation")
-    .select("jobOperationBatchId")
-    .eq("id", operationId)
-    .single();
+  // Batch membership (from the ownership check: get_job_operation_by_id omits
+  // jobOperationBatchId). When the op belongs to a batch that is still
+  // Active/Completing, the operation view runs in batch mode: it shows the
+  // shared batch timer and completes the whole batch. A Completed batch was
+  // already re-sliced per member — it renders as a plain operation view.
   let batch: Awaited<ReturnType<typeof getJobOperationBatch>>["data"] | null =
     null;
-  const batchId = batchMembership.data?.jobOperationBatchId ?? null;
-  if (batchId) {
-    const batchResult = await getJobOperationBatch(
-      serviceRole,
-      batchId,
-      companyId
-    );
+  let events = opEvents;
+  if (batchResult) {
+    // An unread batch cannot prove it was released: refuse rather than skip
+    // the floor rule below.
+    // A partial read (members or planned lots missing) refuses too: the
+    // completion form must not run on lots it could not read.
+    if (!batchResult.data || batchResult.error) {
+      throw redirect(
+        path.to.operations,
+        await flash(
+          request,
+          error(batchResult.error, "Failed to load the operation's batch", {
+            operationId,
+            batchId
+          })
+        )
+      );
+    }
     // Floor rule: a batched operation is only floor-visible once its batch
     // has been released (Active/Completing). A Planned batch stays off the
     // floor regardless of its members' job statuses.
@@ -220,8 +368,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         batchResult.data.status === "Completing")
     ) {
       batch = batchResult.data;
-      // Read the batch's events (all members' timers) instead of this op's.
-      events = await getProductionEventsForBatch(serviceRole, batchId);
+      // The batch's events (all members' timers) instead of this op's.
+      if (batchEvents) events = batchEvents;
     }
   } else if (
     !job.data.status ||
@@ -238,32 +386,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [
-    thumbnailPath,
-    trackedEntities,
-    jobMakeMethod,
-    kanban,
-    bomIdMap,
-    companySettings
-  ] = await Promise.all([
-    getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      operation.data?.[0].jobMakeMethodId,
-      companyId
-    ),
-    getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
-    getKanbanByJobId(serviceRole, job.data.id),
-    getJobMethodBomIdMap(serviceRole, job.data.id!),
-    getCompanySettings(serviceRole, companyId)
-  ]);
-
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
     inventoryShelfLife?.expiredEntityPolicy ?? "Block";
   const autoSelectMaterialWithoutPickingList =
     companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.data?.requireTrackedMaterialsIssued ?? false;
 
   // Is this the first operation in the routing? A serial unit only earns a
   // printed label when it is completed at its first operation, so:
@@ -271,26 +401,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   //    (auto-select here on arrival, and in the client after each completion);
   //  - later operations: every unit already has a label → the operator
   //    scans/selects each unit (no auto-select, here or in the client).
-  // An operation is "first" when nothing precedes it in THIS make method's
-  // routing — i.e. it has no jobOperationDependency whose predecessor lives in
-  // the same jobMakeMethod. Dependencies also model subassembly ordering (a
-  // parent-assembly op waits on its child subassembly's ops), and those cross
-  // make-method dependencies must NOT count: the parent serial still has no
-  // printed label just because a subassembly finished first. `order` is only a
-  // display/sort field and isn't a reliable precedence signal, so it's not used.
-  const priorDependency = await serviceRole
-    .from("jobOperationDependency")
-    .select(
-      "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
-    )
-    .eq("operationId", operationId)
-    .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
-    .limit(1)
-    .maybeSingle();
-  // Fail closed: a query error also returns null data, so treat an errored lookup
-  // as "not first" — later ops require scan/select, which is the safe default when
-  // we can't confirm the operation has no predecessor.
-  const isFirstOperation = !priorDependency.error && !priorDependency.data;
+  //    (isFirstOperation is read in the first wave above.)
 
   // On the first operation only, auto-select the first incomplete unit when none
   // is in the URL. Later operations leave it unset so the client presents the
@@ -298,10 +409,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (
     !trackedEntityId &&
     isFirstOperation &&
-    trackedEntities.data &&
-    trackedEntities.data.length > 0
+    trackedEntities?.data &&
+    trackedEntities?.data.length > 0
   ) {
-    const nextTrackedEntity = trackedEntities.data.find((entity) =>
+    const nextTrackedEntity = trackedEntities?.data.find((entity) =>
       isSerialEntityIncompleteForOperation(entity, operationId)
     );
     if (nextTrackedEntity) {
@@ -329,17 +440,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       { scrap: 0, production: 0, rework: 0 }
     ),
     job: job.data,
-    jobMakeMethod: jobMakeMethod.data,
+    materialItemIds: [
+      ...new Set((materialItems.data ?? []).map((row) => row.itemId))
+    ],
+    jobMakeMethod: jobMakeMethod?.data ?? null,
     kanban: kanban.data,
     files: getJobFiles(serviceRole, companyId, job.data, operation.data),
     // Batch mode: the combined per-item requirement across every member, so
     // the materials panel can show the one shared pick.
-    batchMaterialTotals: batch
-      ? await getBatchMaterialTotals(serviceRole, {
-          batchId: batch.id as string,
-          companyId
-        })
-      : null,
+    batchMaterialTotals: batch ? batchMaterialTotals : null,
     // Batch mode: steps, parameters and files across every member (deferred).
     batchWorkInstructions: batch
       ? getBatchWorkInstructions(serviceRole, {
@@ -349,21 +458,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
+      // A serial part shows a unit's inputs only for the unit in the URL; a
+      // batch part shows its lot's.
       trackedEntityId:
         trackedEntityId ??
-        getNextIncompleteSerialEntity(trackedEntities.data ?? [], operationId)
-          ?.id,
+        (jobMakeMethod?.data?.requiresSerialTracking
+          ? undefined
+          : trackedEntities?.data?.find(
+              (entity) =>
+                entity.status !== "Consumed" && entity.status !== "Scrapped"
+            )?.id),
       requiresSerialTracking:
-        jobMakeMethod.data?.requiresSerialTracking ?? false
+        jobMakeMethod?.data?.requiresSerialTracking ?? false
     }),
-    trackedEntities: trackedEntities.data ?? [],
+    trackedEntities: trackedEntities?.data ?? [],
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
       companyId
     }),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
+    abilityWarning,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
@@ -379,7 +497,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         blockingDispatchReadableId: string | null;
       }>
     >,
-    thumbnailPath
+    thumbnailPath,
+    correctionName
   };
 }
 
@@ -388,6 +507,7 @@ export default function OperationRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const {
+    abilityWarning,
     batch,
     batchMaterialTotals,
     batchWorkInstructions,
@@ -402,8 +522,11 @@ export default function OperationRoute() {
     operation,
     procedure,
     thumbnailPath,
+    correctionName,
     trackedEntities,
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -411,6 +534,7 @@ export default function OperationRoute() {
   return (
     <JobOperation
       key={`job-operation-${operationId}`}
+      abilityWarning={abilityWarning}
       batch={batch}
       batchMaterialTotals={batchMaterialTotals}
       batchWorkInstructions={batchWorkInstructions}
@@ -425,11 +549,14 @@ export default function OperationRoute() {
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
       isFirstOperation={isFirstOperation}
+      isFirstOpenOperation={isFirstOpenOperation}
+      requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}
       job={job}
       thumbnailPath={thumbnailPath}
+      correctionName={correctionName}
       workCenter={workCenter}
     />
   );

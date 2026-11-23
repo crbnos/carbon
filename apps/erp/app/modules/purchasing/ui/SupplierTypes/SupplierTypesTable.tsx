@@ -8,20 +8,23 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SupplierType } from "~/modules/purchasing";
+import type { SupplierType } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 type SupplierTypesTableProps = {
   data: SupplierType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
+const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -34,19 +37,21 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
         accessorKey: "name",
         header: t`Supplier Type`,
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id as string)}
-            className="cursor-pointer"
-          />
+          <Link
+            to={row.original.id as string}
+            className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Enumerable value={row.original.name} className="cursor-pointer" />
+          </Link>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuShapes />
         }
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [navigate, customColumns, t]);
+  }, [customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: SupplierType) => {
@@ -95,6 +100,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       primaryAction={
         permissions.can("create", "purchasing") && (
           <New

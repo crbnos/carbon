@@ -5,7 +5,6 @@
 import { getAppUrl } from "@carbon/env";
 import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { buildMcpManifest } from "./api+/mcp+/lib/manifest";
 
 /**
  * The MCP server manifest, at the well-known path a client or registry probes.
@@ -16,6 +15,9 @@ import { buildMcpManifest } from "./api+/mcp+/lib/manifest";
  * the agent as "no manifest exists".
  */
 export async function loader({ request }: LoaderFunctionArgs) {
+  // Loaded here, not at module scope: the manifest reads tool-metadata.json
+  // (~20 MB), and the dev server evaluates every route module up front.
+  const { buildMcpManifest } = await import("./api+/mcp+/lib/manifest");
   const origin =
     getAppUrl() || getRequestOrigin(request) || new URL(request.url).origin;
 

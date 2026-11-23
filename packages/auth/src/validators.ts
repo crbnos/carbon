@@ -38,6 +38,16 @@ export const magicLinkValidator = z.object({
   botToken: zfd.text(z.string().optional())
 });
 
+// The 6-digit code a sign-in email carries beside its link (Auth's
+// {{ .Token }}): the same one-time token, typed instead of followed.
+export const signInCodeValidator = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email("Must be a valid email"),
+  code: z.string().regex(/^\d{6}$/, { message: "Enter the 6-digit code" })
+});
+
 export const passwordLoginValidator = z.object({
   email: z
     .string()

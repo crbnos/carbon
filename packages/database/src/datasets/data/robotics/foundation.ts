@@ -200,7 +200,7 @@ export const WAREHOUSES: WarehouseSpec[] = [
   { key: "QC", name: "Incoming Inspection Hold", requiresBin: true }
 ];
 
-export const STORAGE_TYPES = ["Shelf", "Bin", "Rack"];
+export const STORAGE_TYPES = ["Shelf", "Bin", "Rack", "Quarantine"];
 
 // Names here are the contract for OPENING_STOCK[].shelf — a mismatch is a hard
 // error, so the racking rows are listed rather than generated.
@@ -216,7 +216,12 @@ export const SHELVES: ShelfSpec[] = [
   { name: "A3-L2", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
   { name: "A3-L3", warehouse: "Main", storageType: "Bin", parent: "Aisle-A" },
   // Electrostatic-sensitive stock (drives, PCBs, encoders) lives apart.
-  { name: "ESD-Cage", warehouse: "Main", storageType: "Shelf" }
+  { name: "ESD-Cage", warehouse: "Main", storageType: "Shelf" },
+  // Non-nettable (its storage type is): stock held here pending a quality
+  // decision is not planned against or picked.
+  { name: "MRB-Hold", warehouse: "Main", storageType: "Quarantine" },
+  // Non-nettable: inspected goods-in receipts wait here for their lot's decision.
+  { name: "QC-Inspection", warehouse: "QC", storageType: "Quarantine" }
 ];
 
 export const PRINTER_ROUTE: PrinterRouteSpec = {
@@ -255,28 +260,32 @@ export const CUSTOMERS = [
     type: "Automotive",
     status: "Active",
     phone: "+1-313-555-0100",
-    website: "https://lakeshoreauto.com"
+    website: "https://lakeshoreauto.com",
+    taxCode: "PA – Allegheny"
   },
   {
     name: "Cascade Integration Group",
     type: "System Integrator",
     status: "Active",
     phone: "+1-503-555-0200",
-    website: "https://cascadeintegration.com"
+    website: "https://cascadeintegration.com",
+    taxCode: "PA – Allegheny"
   },
   {
     name: "Northwind Electronics",
     type: "Electronics",
     status: "Active",
     phone: "+1-408-555-0300",
-    website: "https://northwindelectronics.com"
+    website: "https://northwindelectronics.com",
+    taxCode: "PA – Allegheny"
   },
   {
     name: "Alpine Research Institute",
     type: "Research",
     status: "Lead",
     phone: "+1-608-555-0400",
-    website: "https://alpineresearch.edu"
+    website: "https://alpineresearch.edu",
+    taxCode: "PA – Allegheny"
   }
 ];
 
@@ -308,48 +317,63 @@ export const CUSTOMER_CONTACTS = [
     lastName: "Rahn",
     email: "erahn@alpineresearch.edu",
     title: "Principal Investigator"
+  },
+  {
+    customer: "Alpine Research Institute",
+    firstName: "Tomas",
+    lastName: "Weber",
+    email: "tweber@alpineresearch.edu",
+    title: "Robotics Lab Supervisor",
+    sharesLocation: true as const
   }
 ];
 
 export const SUPPLIERS = [
   {
     name: "Kestrel Motion",
+    stage: "Production" as const,
     type: "Motion Control",
     phone: "+1-508-555-0500",
     website: "https://kestrelmotion.com"
   },
   {
     name: "Torqline Gearing",
+    stage: "Production" as const,
     type: "Motion Control",
     phone: "+1-847-555-0600",
     website: "https://torqline.com"
   },
   {
     name: "Northgate Electronics",
+    stage: "Qualified" as const,
     type: "Electronics",
     phone: "+1-408-555-0700",
     website: "https://northgateelec.com"
   },
   {
     name: "Ironbark Metals",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+1-216-555-0800",
     website: "https://ironbarkmetals.com"
   },
   {
     name: "Precision Fasteners Co",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-630-555-0900",
     website: "https://precisionfasteners.com"
   },
   {
     name: "Kappa Contract Machining",
+    stage: "Qualified" as const,
     type: "Contract Manufacturer",
     phone: "+1-414-555-1000",
     website: "https://kappamachining.com"
   },
   {
     name: "Vertex Calibration Services",
+    stage: "Production" as const,
     type: "Services",
     phone: "+1-919-555-1100",
     website: "https://vertexcal.com"
@@ -365,6 +389,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Voltaic Drive Systems",
+    stage: "Sampling" as const,
     type: "Electronics",
     phone: "+1-614-555-1300",
     website: "https://voltaicdrives.com",
@@ -372,6 +397,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Discount Servo Supply",
+    stage: "Prospect" as const,
     type: "Motion Control",
     phone: "+1-216-555-1400",
     website: "https://discountservo.com",
@@ -379,6 +405,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Schwarzwald Antriebstechnik GmbH",
+    stage: "Production" as const,
     type: "Motion Control",
     phone: "+49-761-555-1500",
     website: "https://schwarzwald-antrieb.de",
@@ -818,6 +845,56 @@ export const roboticsFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  taxAuthorities: [
+    { name: "Pennsylvania Department of Revenue" },
+    { name: "Allegheny County" }
+  ],
+  taxCodes: [
+    {
+      name: "PA – Allegheny",
+      countryCode: "US",
+      state: "PA",
+      components: [
+        {
+          name: "Pennsylvania State",
+          authority: "Pennsylvania Department of Revenue",
+          taxPercent: 6
+        },
+        {
+          name: "Allegheny County",
+          authority: "Allegheny County",
+          taxPercent: 1
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Pennsylvania sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Pennsylvania Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 7%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "PA",
+      components: [
+        {
+          name: "Pennsylvania Use Tax",
+          authority: "Pennsylvania Department of Revenue",
+          taxPercent: 7
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
@@ -828,7 +905,10 @@ export const roboticsFoundation: FoundationData = {
   employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
+  nonNettableStorageTypes: ["Quarantine"],
   shelves: SHELVES,
+  inspectionShelf: "QC-Inspection",
+  rejectedShelf: "MRB-Hold",
   printerRoute: PRINTER_ROUTE,
   holidays: HOLIDAYS,
   tags: TAGS,

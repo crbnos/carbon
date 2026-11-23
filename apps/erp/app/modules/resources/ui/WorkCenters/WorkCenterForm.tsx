@@ -30,7 +30,15 @@ import {
   SelectTrigger,
   SelectValue,
   Subheading,
+  Table,
+  Tbody,
+  Td,
+  Tfoot,
+  Th,
+  Thead,
+  Tr,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -39,23 +47,39 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
+import { Hyperlink } from "~/components";
 import CustomFormFields from "~/components/Form/CustomFormFields";
 import Department from "~/components/Form/Department";
 import Location from "~/components/Form/Location";
 import Processes from "~/components/Form/Processes";
 import Shifts from "~/components/Form/Shifts";
 import StandardFactor from "~/components/Form/StandardFactor";
-import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import { workCenterValidator } from "~/modules/resources";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
+import type { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
+import {
+  workCenterFormValidator,
+  type workCenterValidator
+} from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type ScheduleMode = "all" | "some" | "lightsOut";
+
+type WorkCenterCapitalCost = NonNullable<
+  Awaited<ReturnType<typeof getWorkCenterCapitalCost>>["data"]
+>;
 
 type WorkCenterFormProps = {
   initialValues: z.infer<typeof workCenterValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   showProcesses?: boolean;
+  /** The fixed assets that serve this work center (edit route only). */
+  capitalCost?: WorkCenterCapitalCost;
   onClose: () => void;
 };
 
@@ -64,6 +88,7 @@ const WorkCenterForm = ({
   open = true,
   type = "drawer",
   showProcesses = true,
+  capitalCost,
   onClose
 }: WorkCenterFormProps) => {
   const { t } = useLingui();
@@ -73,6 +98,21 @@ const WorkCenterForm = ({
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const currencyFormatter = useCurrencyFormatter({ currency: baseCurrency });
+
+  // Book depreciation is only derivable for Straight Line assets, so the
+  // monthly total covers the assets that have one and is absent when none do.
+  const totalNetBookValue = (capitalCost ?? []).reduce(
+    (sum, asset) => sum + asset.netBookValue,
+    0
+  );
+  const monthlyDepreciations = (capitalCost ?? []).flatMap((asset) =>
+    asset.monthlyDepreciation === null ? [] : [asset.monthlyDepreciation]
+  );
+  const totalMonthlyDepreciation =
+    monthlyDepreciations.length > 0
+      ? monthlyDepreciations.reduce((sum, value) => sum + value, 0)
+      : null;
 
   const [selectedLocationId, setSelectedLocationId] = useState<
     string | undefined
@@ -87,17 +127,15 @@ const WorkCenterForm = ({
   );
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
       toast.success(t`Created work center`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create work center: ${fetcher.data.error.message}`
-      );
+      toastError(t`Failed to create work center`, fetcher.data.error);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -114,7 +152,7 @@ const WorkCenterForm = ({
       >
         <ModalDrawerContent size="lg">
           <ValidatedForm
-            validator={workCenterValidator}
+            validator={workCenterFormValidator}
             method="post"
             action={
               isEditing
@@ -147,6 +185,8 @@ const WorkCenterForm = ({
                     name="processes"
                     label={t`Processes`}
                     termId="work-center-processes"
+                    inHouseOnly
+                    saved={initialValues.processes}
                   />
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
@@ -200,6 +240,71 @@ const WorkCenterForm = ({
                   />
                 </div>
 
+                {capitalCost && capitalCost.length > 0 && (
+                  <>
+                    <Subheading variant="heavy" className="block pt-2">
+                      <Trans>Capital Cost</Trans>
+                    </Subheading>
+                    <Table>
+                      <Thead>
+                        <Tr>
+                          <Th>
+                            <Trans>Asset</Trans>
+                          </Th>
+                          <Th>
+                            <Trans>Name</Trans>
+                          </Th>
+                          <Th className="text-right">
+                            <Trans>Net Book Value</Trans>
+                          </Th>
+                          <Th className="text-right">
+                            <Trans>Monthly Depreciation</Trans>
+                          </Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {capitalCost.map((asset) => (
+                          <Tr key={asset.id}>
+                            <Td>
+                              <Hyperlink to={path.to.fixedAsset(asset.id)}>
+                                {asset.fixedAssetId}
+                              </Hyperlink>
+                            </Td>
+                            <Td>{asset.name}</Td>
+                            <Td className="text-right tabular-nums">
+                              {currencyFormatter.format(asset.netBookValue)}
+                            </Td>
+                            <Td className="text-right tabular-nums">
+                              {asset.monthlyDepreciation === null
+                                ? "—"
+                                : currencyFormatter.format(
+                                    asset.monthlyDepreciation
+                                  )}
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                      <Tfoot>
+                        <Tr>
+                          <Td colSpan={2}>
+                            <Trans>Total</Trans>
+                          </Td>
+                          <Td className="text-right tabular-nums">
+                            {currencyFormatter.format(totalNetBookValue)}
+                          </Td>
+                          <Td className="text-right tabular-nums">
+                            {totalMonthlyDepreciation === null
+                              ? "—"
+                              : currencyFormatter.format(
+                                  totalMonthlyDepreciation
+                                )}
+                          </Td>
+                        </Tr>
+                      </Tfoot>
+                    </Table>
+                  </>
+                )}
+
                 <Subheading variant="heavy" className="block pt-2">
                   <Trans>Scheduling</Trans>
                 </Subheading>
@@ -243,6 +348,7 @@ const WorkCenterForm = ({
                   name="shifts"
                   active={scheduleMode === "some"}
                 />
+                <Hidden name="operatingHours" value={scheduleMode} />
                 {scheduleMode === "lightsOut" && (
                   <Hidden name="alwaysOn" value="on" />
                 )}

@@ -12,7 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,8 +26,8 @@ import {
   toEmployeeTypePermissions,
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users";
-import { employeeTypeValidator } from "~/modules/users";
+import type { CompanyPermission } from "~/modules/users/types";
+import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type EmployeeTypeFormProps = {
@@ -45,8 +45,8 @@ type EmployeeTypeFormProps = {
 const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
   const { t } = useLingui();
   const userPermissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const { state: initialState, modules } = useMemo(
     () => fromEmployeeTypePermissions(initialValues.permissions),
@@ -71,7 +71,7 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

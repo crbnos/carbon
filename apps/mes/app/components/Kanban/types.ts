@@ -32,6 +32,7 @@ export type DisplaySettings = {
   showProgress: boolean;
   showStatus: boolean;
   showSalesOrder: boolean;
+  showProject: boolean;
   showThumbnail: boolean;
 };
 
@@ -50,6 +51,9 @@ const itemValidator = z.object({
   employeeIds: z.array(z.string()).optional(),
   description: z.string().optional(),
   dueDate: z.string().optional(), // 2024-05-28
+  // Whose due date dueDate is: the job's (Schedule) or the operation's
+  // (Assigned). Names the date on the card. Defaults to the job's.
+  dueDateScope: z.enum(["job", "operation"]).optional(),
   duration: z.number().optional(), // miliseconds
   deadlineType: z.enum(deadlineTypes).optional(),
   itemDescription: z.string().optional(),
@@ -70,6 +74,10 @@ const itemValidator = z.object({
   salesOrderReadableId: z.string().optional(),
   salesOrderId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
+  projectId: z.string().optional(),
+  projectElementId: z.string().nullable().optional(),
+  projectReadableId: z.string().optional(),
+  projectName: z.string().optional(),
   tags: z.array(z.string()).optional(),
   thumbnailPath: z.string().optional(),
   batchId: z.string().nullable().optional(),

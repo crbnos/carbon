@@ -24,13 +24,15 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { type RefObject, useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
-import { triggerReworkValidator } from "~/services/models";
+import {
+  CORRECTION_TARGET_PREFIX,
+  triggerReworkValidator
+} from "~/services/models";
 import type { OperationWithDetails } from "~/services/types";
 import { path } from "~/utils/path";
 
@@ -47,6 +49,23 @@ type UpstreamOperation = {
 
 type TrackedEntity = Database["public"]["Tables"]["trackedEntity"]["Row"];
 
+type ReworkTargets = {
+  operations: UpstreamOperation[];
+  corrections?: { id: string; name: string; returnTo: string }[];
+};
+
+/**
+ * The earlier operations and the part's corrections an operation can send
+ * units to. Loaded once per mount: the parent remounts the modal on each open.
+ */
+function useReworkTargets(operationId: string) {
+  const { data, load } = useFetcher<ReworkTargets>();
+  useEffect(() => {
+    load(path.to.reworkTargets(operationId));
+  }, [load, operationId]);
+  return data;
+}
+
 export function ReworkModal({
   operation,
   jobId,
@@ -54,7 +73,8 @@ export function ReworkModal({
   onClose,
   trackedEntities = [],
   parentIsSerial,
-  parentIsBatch
+  parentIsBatch,
+  returnFocusRef
 }: {
   operation: OperationWithDetails;
   jobId: string;
@@ -63,19 +83,25 @@ export function ReworkModal({
   trackedEntities?: TrackedEntity[];
   parentIsSerial?: boolean;
   parentIsBatch?: boolean;
+  // Where focus goes on close when the control that opened the modal is gone
+  // (an item in a sheet that closed as the modal opened).
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const { t } = useLingui();
+  // The modal opens from state, not a DialogTrigger, so Radix has no trigger
+  // to return focus to and it falls to <body>. Remember the opener instead.
+  const [opener] = useState(() =>
+    typeof document === "undefined"
+      ? null
+      : (document.activeElement as HTMLElement | null)
+  );
+  // The route's flash already toasts the result.
   const fetcher = useAction<Result>({
     onSuccess: (data) => {
-      if (data?.success) {
-        toast.success(t`Rework created successfully`);
-        onClose();
-      }
+      if (data?.success) onClose();
     }
   });
-  const targetsFetcher = useFetcher<{
-    operations: UpstreamOperation[];
-  }>();
+  const reworkTargets = useReworkTargets(operation.id);
 
   const maxQuantity = operation.operationQuantity ?? 0;
   const defaultQuantity = Math.max(
@@ -84,38 +110,21 @@ export function ReworkModal({
       (operation.quantityScrapped ?? 0),
     1
   );
+  // The parent remounts this modal on every open (`key`), so these start
+  // fresh each time; a lone unit or batch is chosen for the operator.
   const [quantity, setQuantity] = useState(defaultQuantity);
-  const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(
-    new Set()
+  const [selectedEntityIds, setSelectedEntityIds] = useState<Set<string>>(() =>
+    parentIsSerial && trackedEntities.length === 1
+      ? new Set([trackedEntities[0].id])
+      : new Set()
   );
   const [scanInput, setScanInput] = useState("");
-  const [selectedBatchId, setSelectedBatchId] = useState<string>("");
+  const [selectedBatchId, setSelectedBatchId] = useState(() =>
+    parentIsBatch && trackedEntities.length === 1 ? trackedEntities[0].id : ""
+  );
 
-  const targets = targetsFetcher.data?.operations ?? [];
-
-  useEffect(() => {
-    if (isOpen) {
-      targetsFetcher.load(path.to.reworkTargets(operation.id));
-      setSelectedEntityIds(
-        parentIsSerial && trackedEntities.length === 1
-          ? new Set([trackedEntities[0].id])
-          : new Set()
-      );
-      setScanInput("");
-      setSelectedBatchId(
-        parentIsBatch && trackedEntities.length === 1
-          ? trackedEntities[0].id
-          : ""
-      );
-    }
-  }, [
-    isOpen,
-    operation.id,
-    parentIsSerial,
-    parentIsBatch,
-    trackedEntities,
-    targetsFetcher.load
-  ]);
+  const targets = reworkTargets?.operations ?? [];
+  const corrections = reworkTargets?.corrections ?? [];
 
   const filteredEntities = useMemo(() => {
     if (!scanInput) return trackedEntities;
@@ -161,8 +170,6 @@ export function ReworkModal({
       ? JSON.stringify([selectedBatchId])
       : undefined;
 
-  if (!isOpen) return null;
-
   return (
     <Modal
       open={isOpen}
@@ -170,7 +177,16 @@ export function ReworkModal({
         if (!open) onClose();
       }}
     >
-      <ModalContent>
+      <ModalContent
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target =
+            opener?.isConnected && opener !== document.body
+              ? opener
+              : returnFocusRef?.current;
+          target?.focus();
+        }}
+      >
         <ValidatedForm
           method="post"
           action={path.to.triggerRework}
@@ -189,10 +205,18 @@ export function ReworkModal({
               <Trans>Create Rework</Trans>
             </ModalTitle>
             <ModalDescription>
-              <Trans>
-                Select the operation to go back to. All operations from that
-                point to the current operation will be redone.
-              </Trans>
+              {corrections.length > 0 ? (
+                <Trans>
+                  Go back to an earlier operation to redo every operation from
+                  there, or send the unit through a correction, such as a rework
+                  station.
+                </Trans>
+              ) : (
+                <Trans>
+                  Select the operation to go back to. All operations from that
+                  point to the current operation will be redone.
+                </Trans>
+              )}
             </ModalDescription>
           </ModalHeader>
           <ModalBody>
@@ -204,21 +228,34 @@ export function ReworkModal({
             <VStack spacing={2}>
               <Select
                 name="targetJobOperationId"
-                label={t`Go back to operation`}
+                label={
+                  corrections.length > 0
+                    ? t`Go back to operation, or run a correction`
+                    : t`Go back to operation`
+                }
                 size="lg"
-                options={targets.map((op) => ({
-                  value: op.id,
-                  label: op.jobMakeMethod?.item?.name ? (
-                    <span>
-                      {op.description || op.processId}
-                      <span className="text-muted-foreground text-xs ml-2">
-                        {op.jobMakeMethod.item.name}
+                autoSelectSingleOption
+                options={[
+                  ...targets.map((op) => ({
+                    value: op.id,
+                    label: op.jobMakeMethod?.item?.name ? (
+                      <span>
+                        {op.description || op.processId}
+                        <span className="text-muted-foreground text-xs ml-2">
+                          {op.jobMakeMethod.item.name}
+                        </span>
                       </span>
-                    </span>
-                  ) : (
-                    op.description || op.processId
-                  )
-                }))}
+                    ) : (
+                      op.description || op.processId
+                    )
+                  })),
+                  // A correction runs its own operations for these units
+                  // only, then re-inspects or continues as it is set up.
+                  ...corrections.map((correction) => ({
+                    value: `${CORRECTION_TARGET_PREFIX}${correction.id}`,
+                    label: t`Correction: ${correction.name}`
+                  }))
+                ]}
               />
 
               {parentIsSerial ? (
@@ -238,6 +275,7 @@ export function ReworkModal({
                       onChange={(e) => setScanInput(e.target.value)}
                       onKeyDown={handleScanKeyDown}
                       placeholder={t`Scan or search serial number...`}
+                      aria-label={t`Serial numbers`}
                       size="lg"
                     />
                     <div className="max-h-48 overflow-y-auto rounded-lg border">
@@ -284,13 +322,19 @@ export function ReworkModal({
                     name="_batchSelect"
                     label={t`Batch`}
                     size="lg"
+                    autoSelectSingleOption
                     options={trackedEntities.map((entity) => ({
                       value: entity.id,
                       label: `${entity.readableId || entity.id} (qty: ${entity.quantity})`
                     }))}
                     onChange={(option) => {
-                      setSelectedBatchId(option?.value ?? "");
-                      setQuantity(1);
+                      const lot = trackedEntities.find(
+                        (e) => e.id === option?.value
+                      );
+                      setSelectedBatchId(lot?.id ?? "");
+                      if (lot) {
+                        setQuantity((q) => Math.min(q, Number(lot.quantity)));
+                      }
                     }}
                   />
                   <NumberControlled

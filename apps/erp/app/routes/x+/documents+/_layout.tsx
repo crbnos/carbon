@@ -2,20 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+
 import { ContentSidebar } from "~/components/Layout/Navigation";
-import { useDocumentsSubmodules } from "~/modules/documents";
+import { useDocumentsSubmodules } from "~/modules/documents/ui";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Documents" }];
-};
+export const meta = moduleMeta("Documents");
 
 function DocumentsSidebar() {
   const { links } = useDocumentsSubmodules();
@@ -32,7 +30,7 @@ export const handle: Handle = {
 export default function DocumentsRoute() {
   return (
     <VStack spacing={0} className="h-full">
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

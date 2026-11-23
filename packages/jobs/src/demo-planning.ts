@@ -3,8 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { runLocationSchedule, runMrp } from "@carbon/planning";
+import { getLogger } from "@carbon/logger";
+import { type MrpDeps, runLocationSchedule, runMrp } from "@carbon/planning";
 import { getJobDatabaseClient } from "./db";
+
+const logger = getLogger("jobs", "demo-planning");
 
 export type DemoPlanningResult = {
   mrp: "ok" | string;
@@ -21,8 +24,24 @@ function message(err: unknown): string {
 }
 
 /**
+ * The commercial planning group functions for `runMrp`, loaded lazily. Under
+ * plain tsx (the `plan:company` script) `@carbon/ee/pegging.server` cannot
+ * load: it reaches `@carbon/auth`, whose graph uses Lingui macros. The run
+ * then degrades as for a company without PLANNING_GROUPS, as it did before
+ * the deps were injected (the check failed and read as "no").
+ */
+async function loadMrpDeps(): Promise<MrpDeps | undefined> {
+  try {
+    return (await import("@carbon/ee/pegging.server")).planningGroupMrpDeps;
+  } catch (err) {
+    logger.warning("Planning groups are off for this run", { error: err });
+    return undefined;
+  }
+}
+
+/**
  * Same calls as the MRP cron and `api+/schedule.ts`. Must run after the seed commits
- * (both engines read over PostgREST). Never throws: the 3-hourly MRP cron is the backstop.
+ * (both engines read over PostgREST). Never throws: the scheduled MRP run is the backstop.
  */
 export async function planDemoCompany({
   companyId,
@@ -42,12 +61,12 @@ export async function planDemoCompany({
 
   let mrp: DemoPlanningResult["mrp"] = "ok";
   try {
-    await runMrp(client, db, {
-      type: "company",
-      id: companyId,
-      companyId,
-      userId
-    });
+    await runMrp(
+      client,
+      db,
+      { type: "company", id: companyId, companyId, userId },
+      await loadMrpDeps()
+    );
   } catch (err) {
     mrp = message(err);
   }

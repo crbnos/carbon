@@ -2,8 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { supportedLanguages } from "@carbon/locale";
+import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+export const modulePreferencesValidator = z.object({
+  preferences: z.array(
+    z.object({
+      module: z.string().min(1),
+      position: z.number(),
+      hidden: z.boolean(),
+      hiddenSubmodules: z.array(z.string()).optional(),
+      submoduleOrder: z.array(z.string()).optional()
+    })
+  )
+});
 
 export const bulkPermissionsValidator = z.object({
   editType: z.string().min(1, { message: "Update type is required" }),
@@ -36,6 +50,10 @@ export const createEmployeeValidator = z.object({
   // ordinary deployments (no checkbox rendered) still validate.
   usPersonAttestation: zfd.checkbox()
 });
+
+/** `inviteEmployee`'s refusal of an invite without the attestation above. */
+export const US_PERSON_ATTESTATION_REQUIRED =
+  "You must confirm a reasonable basis that this individual is a U.S. person";
 
 // ITAR certification — Screen 1 (entity Rider acceptance). The two checkboxes
 // must be checked; z.literal(true) rejects an unchecked/absent box server-side
@@ -190,3 +208,147 @@ export const userFlagValidator = z.object({
 });
 
 export const userFlagsValidator = z.record(userFlagKeyValidator, z.boolean());
+
+// "Every matching row" in place of the selected users: the list and its URL
+// search as JSON (`allMatchingRequest`, `~/components/Table`).
+const allMatchingField = z.string().min(1, { message: "Invalid selection" });
+
+export const bulkPermissionsAllMatchingValidator = bulkPermissionsValidator
+  .omit({ userIds: true })
+  .extend({ allMatching: allMatchingField });
+
+export const deactivateUsersAllMatchingValidator = deactivateUsersValidator
+  .omit({ users: true })
+  .extend({ allMatching: allMatchingField });
+
+export const resendInviteAllMatchingValidator = z.object({
+  allMatching: allMatchingField
+});
+
+/** The Employees table's bulk actions on users. */
+export type BulkUserAction = "deactivate" | "invite" | "permissions";
+
+/**
+ * Whether a bulk action on the Employees table acts on this user: the rule
+ * the table applies to its selection, and the background job to every
+ * matching row. Edit Permissions takes active users, Deactivate active users
+ * other than the actor, and Send Invite inactive users with an email and no
+ * unrevoked invite.
+ */
+export function canBulkActOnUser(
+  action: BulkUserAction,
+  user: { id: string | null; active: boolean | null; email: string | null },
+  context: { actorId: string; unrevokedInviteEmails: ReadonlySet<string> }
+): boolean {
+  switch (action) {
+    case "permissions":
+      return user.active === true;
+    case "deactivate":
+      return user.active === true && user.id !== context.actorId;
+    case "invite":
+      return (
+        user.active === false &&
+        !!user.email &&
+        !context.unrevokedInviteEmails.has(user.email)
+      );
+  }
+}
+
+export const notificationPreferenceValidator = z.object({
+  topic: z.nativeEnum(NotificationTopic),
+  channel: z.enum(["email", "slack"]),
+  enabled: z.enum(["true", "false"])
+});
+
+// The browser's PushSubscription.toJSON(), plus the endpoint it replaces when
+// the service worker re-subscribes after a pushsubscriptionchange.
+export const pushSubscriptionValidator = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1)
+  }),
+  oldEndpoint: z.string().url().optional()
+});
+
+export const pushSubscriptionEndpointValidator = z.object({
+  endpoint: z.string().url()
+});
+
+export const onboardingUserValidator = z.object({
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().min(1, { message: "Last name is required" }),
+  // about: zfd.text(z.string().optional()),
+  next: z.string().min(1, { message: "Next is required" })
+});
+
+export const accountLanguageValidator = z.object({
+  locale: z.enum(supportedLanguages)
+});
+
+export const accountPasswordValidator = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(6, { message: "Current password is required" }),
+    password: z.string().min(6, { message: "Password is required" }),
+    confirmPassword: z
+      .string()
+      .min(6, { message: "Confirm password is required" })
+  })
+  .superRefine(({ confirmPassword, password }, ctx) => {
+    if (confirmPassword !== password) {
+      ctx.addIssue({
+        code: "custom",
+        message: "The passwords did not match"
+      });
+    }
+  });
+
+export const accountPersonalDataValidator = z.object({});
+
+const attributeDefaults = {
+  type: z.string().min(1, { message: "Type is required" }),
+  userAttributeId: z.string().min(20),
+  userAttributeValueId: zfd.text(z.string().optional())
+};
+
+export const attributeBooleanValidator = z.object({
+  ...attributeDefaults,
+  value: zfd.checkbox()
+});
+
+export const attributeNumericValidator = z.object({
+  ...attributeDefaults,
+  value: zfd.numeric(z.number())
+});
+
+export const attributeTextValidator = z.object({
+  ...attributeDefaults,
+  value: z.string().min(1, { message: "Value is required" })
+});
+
+export const attributeUserValidator = z.object({
+  ...attributeDefaults,
+  value: z.string().min(1, { message: "User is required" })
+});
+
+export const attributeCustomerValidator = z.object({
+  ...attributeDefaults,
+  value: z.string().min(1, { message: "Customer is required" })
+});
+
+export const attributeSupplierValidator = z.object({
+  ...attributeDefaults,
+  value: z.string().min(1, { message: "Supplier is required" })
+});
+
+export const attributeFileValidator = z.object({
+  ...attributeDefaults,
+  value: z.string().min(1, { message: "File is required" })
+});
+
+export const deleteUserAttributeValueValidator = z.object({
+  userAttributeId: z.string().min(20),
+  userAttributeValueId: z.string().min(20)
+});

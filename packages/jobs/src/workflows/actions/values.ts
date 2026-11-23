@@ -14,6 +14,14 @@ export function toPlainValue(value: RuntimeValue): unknown {
       value.entries.map((e) => [e.name, toPlainValue(e.value)])
     );
   }
+  if (value.kind === "record") {
+    return Object.fromEntries(
+      Object.entries(value.fields).map(([name, field]) => [
+        name,
+        toPlainValue(field)
+      ])
+    );
+  }
   // A date primitive already carries its ISO string; see runtime `fromColumn`.
   return value.value;
 }

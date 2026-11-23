@@ -8,23 +8,15 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertEnforcementRule } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ConditionAst } from "@carbon/utils";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
-import { storageRuleValidator } from "~/modules/inventory";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { storageRuleValidator } from "~/modules/inventory/inventory.models";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
-import { getEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -77,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditStorageRuleRoute() {
   const { rule } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.storageRules);
   return (
     <StorageRuleForm
       initialValues={
@@ -87,7 +79,8 @@ export default function EditStorageRuleRoute() {
             .conditionAst as unknown as ConditionAst
         } as never
       }
-      onClose={() => navigate(path.to.storageRules)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

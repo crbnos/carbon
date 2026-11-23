@@ -96,6 +96,7 @@ export default function ValueCombobox({
         <div className="flex items-center gap-2 border-b border-border px-3 h-10">
           <LuSearch className="size-4 shrink-0 text-muted-foreground" />
           <input
+            aria-label={t`Search values`}
             ref={inputRef}
             type="text"
             value={search}

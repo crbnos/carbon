@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useIsomorphicLayoutEffect } from "@carbon/react";
+import { readFormError } from "@carbon/utils";
 import type React from "react";
 import type { ComponentProps, FormEvent, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,7 +13,11 @@ import type {
   FormMethod,
   SubmitOptions
 } from "react-router";
-import { Form as ReactRouterForm, useSubmit } from "react-router";
+import {
+  Form as ReactRouterForm,
+  useActionData,
+  useSubmit
+} from "react-router";
 import * as R from "remeda";
 import type { z } from "zod";
 import { useIsSubmitting, useIsValid } from "./hooks";
@@ -21,6 +26,7 @@ import {
   AdditionalValidatorsContext
 } from "./internal/AdditionalValidators";
 import { FORM_ID_FIELD } from "./internal/constants";
+import { FormErrorAlert } from "./internal/FormErrorAlert";
 import type { InternalFormContextValue } from "./internal/formContext";
 import { InternalFormContext } from "./internal/formContext";
 import { FormStateContext } from "./internal/formStateContext";
@@ -295,6 +301,9 @@ export function ValidatedForm<
 }: FormProps<DataType, Subaction>) {
   const formId = useFormId(id);
   const providedDefaultValues = useDeepEqualsMemo(unMemoizedDefaults);
+  // See `ownsState`. State, not a ref: the fields must render again once it
+  // is true. A form with no `id` has a key of its own and owns it from the start.
+  const [ownsState, setOwnsState] = useState(id === undefined);
   const contextValue = useMemo<InternalFormContextValue>(
     () => ({
       formId,
@@ -302,15 +311,30 @@ export function ValidatedForm<
       subaction,
       defaultValuesProp: providedDefaultValues,
       fetcher,
-      validatorSchema: validator
+      validatorSchema: validator,
+      ownsState
     }),
-    [action, fetcher, formId, providedDefaultValues, subaction, validator]
+    [
+      action,
+      fetcher,
+      formId,
+      ownsState,
+      providedDefaultValues,
+      subaction,
+      validator
+    ]
   );
   const formStateValue = useMemo(
     () => ({ isDisabled, isReadOnly }),
     [isDisabled, isReadOnly]
   );
   const backendError = useErrorResponseForForm(contextValue);
+  // Without a fetcher, action data belongs to whichever form posted: only the one that did shows it.
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const actionData = useActionData();
+  const formError = readFormError(
+    fetcher ? fetcher.data : hasSubmitted ? actionData : null
+  );
   const backendDefaultValues = useDefaultValuesFromLoader(contextValue);
   const hasActiveSubmission = useHasActiveFormSubmit(contextValue);
   const formRef = useRef<HTMLFormElement>(null);
@@ -362,6 +386,7 @@ export function ValidatedForm<
   // There must be a nice way to avoid this.
   useIsomorphicLayoutEffect(() => {
     registerForm(formId);
+    setOwnsState(true);
     return () => cleanupForm(formId);
   }, [cleanupForm, formId, registerForm]);
 
@@ -492,6 +517,7 @@ export function ValidatedForm<
         return;
       }
 
+      setHasSubmitted(true);
       const opts: SubmitOptions = {
         method: formMethod,
         replace,
@@ -555,6 +581,7 @@ export function ValidatedForm<
                 <input type="hidden" value={subaction} name="subaction" />
               )}
               {id && <input type="hidden" value={id} name={FORM_ID_FIELD} />}
+              {formError && <FormErrorAlert error={formError} />}
               {children}
             </>
           </FormStateContext.Provider>

@@ -5,14 +5,13 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
+import { billSendsTax } from "../../../core/bill-tax-plan";
 import {
-  type CostingLine,
-  costingLineItemLabel,
-  loadBillCostingLines,
-  toTransactionCurrencyLines
+  type BillCostingResult,
+  loadBillCostingLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
-import { JournalEntrySyncError } from "../../../core/posting";
+import { getTaxCodeMappings } from "../../../core/tax-mapping";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -20,6 +19,12 @@ import {
 } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
+import { buildQboBillPayloadLines } from "./bill-lines";
+import {
+  isQboUsCompany,
+  loadQboInvoiceTaxCatalog,
+  QboTaxContext
+} from "./invoice-tax";
 import {
   buildQboDocNumberFields,
   loadQboAccountRefsById,
@@ -115,92 +120,20 @@ const SYNCABLE_STATUSES: Accounting.Bill["status"][] = [
   "Overdue"
 ];
 
-/**
- * Build QBO bill lines as an account-costed replay of the bill's posted
- * "Purchase Invoice" journal: one `AccountBasedExpenseLineDetail` per costing
- * line to the journal's mapped account (GR-IR / PPV / clearing), NEVER the
- * item's account. The item is a Description label only. Pure — exported for
- * tests. Amounts are already in the invoice's transaction currency
- * (`toTransactionCurrencyLines`). Tax-neutral: no `TxnTaxDetail`, no per-line
- * tax (the replay amounts embed tax; the purchase posting folds it into cost).
- *
- * Unmapped / account-less lines throw the structured UNMAPPED_ACCOUNTS
- * Warning (user-fixable: map the account, then retry) — the same envelope the
- * Rillet bill and the QBO journal syncer use.
- */
-export function buildQboBillLines(args: {
-  bill: Accounting.Bill;
-  costingLines: CostingLine[];
-  accountRefsById: ReadonlyMap<string, Qbo.Ref>;
-}): Array<Omit<Qbo.ExpenseLine, "Id">> {
-  const { bill } = args;
-
-  if (args.costingLines.length === 0) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
-      warning: true,
-      metadata: { billId: bill.id }
-    });
-  }
-
-  const unmapped = new Set<string>();
-  const lineIdsWithoutAccount: string[] = [];
-  for (const line of args.costingLines) {
-    if (!line.accountId) {
-      lineIdsWithoutAccount.push(line.id);
-      continue;
-    }
-    if (!args.accountRefsById.get(line.accountId)) {
-      unmapped.add(line.accountId);
-    }
-  }
-
-  if (unmapped.size > 0 || lineIdsWithoutAccount.length > 0) {
-    const parts: string[] = [];
-    if (unmapped.size > 0) {
-      parts.push(
-        `${unmapped.size} account(s) have no QuickBooks Online account mapping`
-      );
-    }
-    if (lineIdsWithoutAccount.length > 0) {
-      parts.push(
-        `${lineIdsWithoutAccount.length} posting journal line(s) have no account`
-      );
-    }
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: ${parts.join(
-        "; "
-      )}. Map the account(s) on the integration settings page, then retry.`,
-      warning: true,
-      metadata: {
-        billId: bill.id,
-        unmappedAccountIds: [...unmapped],
-        ...(lineIdsWithoutAccount.length > 0 ? { lineIdsWithoutAccount } : {})
-      }
-    });
-  }
-
-  return args.costingLines.map((line) => {
-    const description = costingLineItemLabel(line) ?? line.description;
-    return {
-      Amount: line.amount,
-      ...(description ? { Description: description } : {}),
-      DetailType: "AccountBasedExpenseLineDetail",
-      AccountBasedExpenseLineDetail: {
-        AccountRef: args.accountRefsById.get(line.accountId!)!
-      }
-    };
-  });
-}
-
 export class QboBillSyncer extends BaseEntitySyncer<
   Accounting.Bill,
   Qbo.Bill,
   QboWriteOmit
 > {
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;
+  private readonly taxContext = new QboTaxContext({
+    catalog: () => loadQboInvoiceTaxCatalog(this.qboProvider),
+    mappings: () =>
+      getTaxCodeMappings(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      })
+  });
   private remoteMetaById = new Map<
     string,
     { syncToken?: string; lastUpdatedTime?: string }
@@ -455,6 +388,19 @@ export class QboBillSyncer extends BaseEntitySyncer<
   protected async mapToRemote(
     local: Accounting.Bill
   ): Promise<Omit<Qbo.Bill, QboWriteOmit>> {
+    // Account-costed replay of the bill's posted Purchase Invoice journal —
+    // the item is a label only, so NO item dependency sync is needed here (the
+    // PO keeps item lines via buildQboExpenseLines; the bill does not).
+    const accountRefsById = await this.getAccountRefsById();
+    const costing = await loadBillCostingLines(this.database, {
+      companyId: this.companyId,
+      billId: local.id
+    });
+    const { currencyCode, exchangeRate, baseCurrencyCode } = costing;
+    // Lines and tax resolve before the vendor is pushed, so a refused bill
+    // writes nothing to QuickBooks.
+    const lines = await this.buildLines(local, costing, accountRefsById);
+
     // JIT dependency: vendor before the document
     let vendorRemoteId = local.supplierExternalId;
     if (!vendorRemoteId && local.supplierId) {
@@ -469,28 +415,6 @@ export class QboBillSyncer extends BaseEntitySyncer<
         `Cannot sync bill ${local.id}: No supplier linked or supplier not synced to QuickBooks Online`
       );
     }
-
-    // Account-costed replay of the bill's posted Purchase Invoice journal —
-    // the item is a label only, so NO item dependency sync is needed here (the
-    // PO keeps item lines via buildQboExpenseLines; the bill does not).
-    const accountRefsById = await this.getAccountRefsById();
-    const {
-      lines: costingLines,
-      currencyCode,
-      exchangeRate,
-      documentTotal,
-      decimalPlaces,
-      baseCurrencyCode
-    } = await loadBillCostingLines(this.database, {
-      companyId: this.companyId,
-      billId: local.id
-    });
-
-    const transactionLines = toTransactionCurrencyLines(costingLines, {
-      exchangeRate,
-      documentTotal,
-      decimalPlaces
-    });
 
     // Due date: use dateDue if provided, otherwise default to Net 30
     // (Xero-syncer parity)
@@ -523,12 +447,36 @@ export class QboBillSyncer extends BaseEntitySyncer<
             ExchangeRate: 1 / exchangeRate
           }
         : {}),
-      Line: buildQboBillLines({
-        bill: local,
-        costingLines: transactionLines,
-        accountRefsById
-      })
+      ...lines
     };
+  }
+
+  /**
+   * The bill's lines and tax, read before any dependency is pushed. The
+   * QuickBooks catalog and the tax code mappings are read only for a bill
+   * that sends tax.
+   */
+  private async buildLines(
+    local: Accounting.Bill,
+    costing: BillCostingResult,
+    accountRefsById: ReadonlyMap<string, Qbo.Ref>
+  ): Promise<Pick<Qbo.Bill, "Line" | "TxnTaxDetail" | "GlobalTaxCalculation">> {
+    let tax: Parameters<typeof buildQboBillPayloadLines>[0]["tax"] = null;
+    if (billSendsTax(costing.lines)) {
+      const catalog = await this.taxContext.catalog(local.id);
+      tax = {
+        catalog,
+        mappings: isQboUsCompany(catalog)
+          ? new Map()
+          : await this.taxContext.mappings(local.id)
+      };
+    }
+    return buildQboBillPayloadLines({
+      bill: local,
+      costing,
+      accountRefsById,
+      tax
+    });
   }
 
   // =================================================================
@@ -807,6 +755,7 @@ export class QboBillSyncer extends BaseEntitySyncer<
           supplierUnitPrice: line.unitPrice,
           itemId: line.itemId,
           accountId: line.accountId ?? null,
+          // No tax code (Phase 1): posting folds a pulled bill's tax into cost.
           taxPercent: line.taxPercent,
           supplierTaxAmount: line.taxAmount ?? 0,
           exchangeRate: invoice.exchangeRate,

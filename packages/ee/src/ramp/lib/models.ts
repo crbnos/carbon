@@ -180,7 +180,13 @@ export const RampBillPaymentSchema = z
     payment_method: z.string().nullish(),
     effective_date: z.string().nullish(),
     payment_date: z.string().nullish(),
-    amount: z.union([RampCurrencyAmountSchema, z.number()]).optional()
+    amount: z.union([RampCurrencyAmountSchema, z.number()]).optional(),
+    // ApiPaymentDetailsResource: for a card payment, the Ramp transactions
+    // that paid the bill. Ramp marks the bill paid once one is matched.
+    details: z
+      .object({ transaction_ids: z.array(z.string()).nullish() })
+      .passthrough()
+      .nullish()
   })
   .passthrough();
 
@@ -383,16 +389,12 @@ export type RampSyncResult = z.infer<typeof RampSyncResultSchema>;
 // *                    Credentials                         *
 // \********************************************************/
 
-export const RampEnvironmentSchema = z.enum(["production", "sandbox"]);
-export type RampEnvironment = z.infer<typeof RampEnvironmentSchema>;
-
 export const RampCredentialsSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("client_credentials"),
       clientId: z.string(),
-      clientSecret: z.string(),
-      environment: RampEnvironmentSchema
+      clientSecret: z.string()
     })
     .passthrough(),
   z
@@ -400,8 +402,7 @@ export const RampCredentialsSchema = z.discriminatedUnion("type", [
       type: z.literal("oauth2"),
       accessToken: z.string(),
       refreshToken: z.string().optional(),
-      expiresAt: z.string().optional(),
-      environment: RampEnvironmentSchema
+      expiresAt: z.string().optional()
     })
     .passthrough()
 ]);

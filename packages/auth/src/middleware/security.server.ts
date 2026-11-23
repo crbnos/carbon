@@ -82,7 +82,7 @@ export const securityMiddleware: MiddlewareFunction<Response> = async (
 ) => {
   const { pathname } = new URL(request.url);
   if (!isCrossOriginRequestAllowed(request.method, pathname, request.headers)) {
-    log.warn("Refused a cross-origin {method} {pathname}", {
+    log.warning("Refused a cross-origin {method} {pathname}", {
       method: request.method,
       pathname,
       origin: request.headers.get("origin"),
@@ -103,7 +103,7 @@ export const securityMiddleware: MiddlewareFunction<Response> = async (
 export function rejectCrossSiteNavigation(request: Request): void {
   if (!isCrossSiteNavigation(request.headers)) return;
   const { pathname } = new URL(request.url);
-  log.warn("Refused a cross-site navigation to {pathname}", { pathname });
+  log.warning("Refused a cross-site navigation to {pathname}", { pathname });
   throw new Response("Cross-site request refused", { status: 403 });
 }
 
@@ -116,7 +116,7 @@ export async function cspReportAction(request: Request): Promise<Response> {
   try {
     const report = JSON.parse(body)["csp-report"];
     if (!report || typeof report !== "object") throw new Error("not a report");
-    log.warn("CSP violation: {directive} {blocked}", {
+    log.warning("CSP violation: {directive} {blocked}", {
       directive: report["effective-directive"] ?? report["violated-directive"],
       blocked: report["blocked-uri"],
       document: report["document-uri"],
@@ -124,7 +124,7 @@ export async function cspReportAction(request: Request): Promise<Response> {
       line: report["line-number"]
     });
   } catch {
-    log.warn("Unreadable CSP report", { body: body.slice(0, 512) });
+    log.warning("Unreadable CSP report", { body: body.slice(0, 512) });
   }
   return new Response(null, { status: 204 });
 }

@@ -1,0 +1,494 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// Runs against the local database (SUPABASE_DB_URL); skipped without one.
+// Scanning units into a Draft inventory count: each row of the spec's scan
+// table (.ai/specs/2026-10-30-inventory-count-tracked-units.md).
+
+import { expect } from "vitest";
+import {
+  generateInventoryCountLines,
+  importInventoryCountRows,
+  postInventoryCount,
+  recordInventoryCountUnit,
+  removeInventoryCountUnit
+} from "../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
+import {
+  alwaysPostFixture,
+  type Fixture,
+  seed,
+  USER
+} from "./fixtures/always-post";
+import { countUnits, draftCount } from "./fixtures/count-units";
+import { databaseTest } from "./fixtures/local-database";
+
+async function setup() {
+  const f = await alwaysPostFixture();
+  const units = await countUnits(f);
+  const countId = await draftCount(f, "1", (args) =>
+    generateInventoryCountLines(f.db, args)
+  );
+  const scan = (args: {
+    storageUnitId: string | null;
+    code: string;
+    itemId?: string;
+    quantity?: number;
+  }) =>
+    recordInventoryCountUnit(f.db, {
+      inventoryCountId: countId,
+      companyId: f.companyId,
+      userId: USER,
+      ...args
+    });
+  return { f, units, countId, scan };
+}
+
+async function lineOf(f: Fixture, lineId: string) {
+  return f.db
+    .selectFrom("inventoryCountLine")
+    .select([
+      "storageUnitId",
+      "trackedEntityId",
+      "readableId",
+      "systemQuantity",
+      "countedQuantity",
+      "foundDuringCount"
+    ])
+    .where("id", "=", lineId)
+    .executeTakeFirstOrThrow();
+}
+
+databaseTest("a serial expected in the bin is counted Found", async () => {
+  const { f, units, scan } = await setup();
+  try {
+    const result = await scan({
+      storageUnitId: units.binA,
+      code: units.number("SN-1")
+    });
+    expect(result?.outcome).toBe("counted");
+    if (result?.outcome !== "counted") return;
+    expect(await lineOf(f, result.lineId)).toMatchObject({
+      trackedEntityId: units.entity("SN-1"),
+      countedQuantity: 1,
+      foundDuringCount: false
+    });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("scanning a counted serial again changes nothing", async () => {
+  const { f, units, scan } = await setup();
+  try {
+    await scan({ storageUnitId: units.binA, code: units.number("SN-1") });
+    const again = await scan({
+      storageUnitId: units.binA,
+      code: units.number("SN-1")
+    });
+    expect(again?.outcome).toBe("alreadyCounted");
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "a serial expected in another bin adds an Unexpected line in this bin",
+  async () => {
+    const { f, units, scan } = await setup();
+    try {
+      const result = await scan({
+        storageUnitId: units.binA,
+        code: units.number("SN-3")
+      });
+      expect(result?.outcome).toBe("added");
+      if (result?.outcome !== "added") return;
+      expect(await lineOf(f, result.lineId)).toMatchObject({
+        storageUnitId: units.binA,
+        trackedEntityId: units.entity("SN-3"),
+        systemQuantity: 0,
+        countedQuantity: 1,
+        foundDuringCount: true
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("a batch number asks for its quantity, then counts it", async () => {
+  const { f, units, scan } = await setup();
+  try {
+    const first = await scan({
+      storageUnitId: units.binA,
+      code: units.number("LOT-1")
+    });
+    expect(first).toEqual({
+      outcome: "needsQuantity",
+      itemId: units.batchItemId
+    });
+    const second = await scan({
+      storageUnitId: units.binA,
+      code: units.number("LOT-1"),
+      quantity: 7
+    });
+    expect(second?.outcome).toBe("counted");
+    if (second?.outcome !== "counted") return;
+    expect((await lineOf(f, second.lineId)).countedQuantity).toBe(7);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "an unknown number asks for the item, then adds a new unit",
+  async () => {
+    const { f, units, scan } = await setup();
+    try {
+      const code = units.number("SN-NEW");
+      expect(await scan({ storageUnitId: units.binA, code })).toEqual({
+        outcome: "unknown"
+      });
+      const added = await scan({
+        storageUnitId: units.binA,
+        code,
+        itemId: units.serialItemId
+      });
+      expect(added?.outcome).toBe("added");
+      if (added?.outcome !== "added") return;
+      expect(await lineOf(f, added.lineId)).toMatchObject({
+        trackedEntityId: null,
+        readableId: code,
+        countedQuantity: 1,
+        foundDuringCount: true
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("an item code of a serial item asks for the serial", async () => {
+  const { f, units, scan } = await setup();
+  try {
+    expect(
+      await scan({ storageUnitId: units.binA, code: `${f.prefix}-SER` })
+    ).toEqual({ outcome: "needsUnitNumber", itemId: units.serialItemId });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("a storage unit of another location is refused", async () => {
+  const { f, units, scan } = await setup();
+  try {
+    expect(
+      await scan({ storageUnitId: "not-a-bin", code: units.number("SN-1") })
+    ).toEqual({ outcome: "wrongStorageUnit" });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "only an added line can be removed, and only on a Draft count",
+  async () => {
+    const { f, units, countId, scan } = await setup();
+    try {
+      const counted = await scan({
+        storageUnitId: units.binA,
+        code: units.number("SN-1")
+      });
+      const added = await scan({
+        storageUnitId: units.binA,
+        code: units.number("SN-3")
+      });
+      if (counted?.outcome !== "counted" || added?.outcome !== "added") {
+        throw new Error("setup failed");
+      }
+      expect(
+        await removeInventoryCountUnit(f.db, {
+          lineId: counted.lineId,
+          companyId: f.companyId
+        })
+      ).toBeUndefined();
+      expect(
+        await removeInventoryCountUnit(f.db, {
+          lineId: added.lineId,
+          companyId: f.companyId
+        })
+      ).toEqual({ id: added.lineId });
+
+      await f.db
+        .updateTable("inventoryCount")
+        .set({ status: "Pending" })
+        .where("id", "=", countId)
+        .execute();
+      expect(
+        await scan({ storageUnitId: units.binA, code: units.number("SN-2") })
+      ).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an import counts the units it lists and marks the rest of the bin Missing",
+  async () => {
+    const { f, units, countId } = await setup();
+    try {
+      const result = await importInventoryCountRows(f.db, {
+        inventoryCountId: countId,
+        companyId: f.companyId,
+        userId: USER,
+        rows: [
+          {
+            line: 2,
+            item: `${f.prefix}-SER`,
+            storageUnit: "A1",
+            code: units.number("SN-1"),
+            quantity: 1
+          }
+        ]
+      });
+      expect(result).toEqual({ counted: 2, added: 0, removed: 0 });
+      const counted = await f.db
+        .selectFrom("inventoryCountLine")
+        .select(["trackedEntityId", "countedQuantity"])
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", units.serialItemId)
+        .orderBy("trackedEntityId")
+        .execute();
+      expect(counted).toEqual([
+        { trackedEntityId: units.entity("SN-1"), countedQuantity: 1 },
+        { trackedEntityId: units.entity("SN-2"), countedQuantity: 0 },
+        // SN-3 is in B2, which the file does not name.
+        { trackedEntityId: units.entity("SN-3"), countedQuantity: null }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("an import with an error writes nothing", async () => {
+  const { f, units, countId } = await setup();
+  try {
+    const result = await importInventoryCountRows(f.db, {
+      inventoryCountId: countId,
+      companyId: f.companyId,
+      userId: USER,
+      rows: [
+        {
+          line: 2,
+          item: `${f.prefix}-SER`,
+          storageUnit: "A1",
+          code: units.number("SN-1"),
+          quantity: 1
+        },
+        {
+          line: 3,
+          item: `${f.prefix}-SER`,
+          storageUnit: "Nowhere",
+          code: units.number("SN-2"),
+          quantity: 1
+        }
+      ]
+    });
+    expect(result).toEqual({
+      errors: [
+        { line: 3, message: 'Unknown storage unit "Nowhere" at this location' }
+      ]
+    });
+    const anyCounted = await f.db
+      .selectFrom("inventoryCountLine")
+      .select("id")
+      .where("inventoryCountId", "=", countId)
+      .where("countedQuantity", "is not", null)
+      .execute();
+    expect(anyCounted).toEqual([]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("the snapshot leaves out a unit with no stock left in a bin", async () => {
+  const f = await alwaysPostFixture();
+  try {
+    const units = await countUnits(f);
+    // SN-3 leaves B2.
+    await f.db
+      .insertInto("itemLedger")
+      .values({
+        postingDate: f.today,
+        entryType: "Negative Adjmt.",
+        itemId: units.serialItemId,
+        locationId: f.locationId,
+        storageUnitId: units.binB,
+        trackedEntityId: units.entity("SN-3"),
+        quantity: -1,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    const countId = await draftCount(f, "1", (args) =>
+      generateInventoryCountLines(f.db, args)
+    );
+    const lines = await f.db
+      .selectFrom("inventoryCountLine")
+      .select("trackedEntityId")
+      .where("inventoryCountId", "=", countId)
+      .where("trackedEntityId", "=", units.entity("SN-3"))
+      .execute();
+    expect(lines).toEqual([]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "a batch scan spreads its count over the batch's parts in the bin",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      // A second part of LOT-1 (a split keeps the number) holds 4 in A1.
+      await f.db
+        .insertInto("trackedEntity")
+        .values({
+          id: `${f.prefix}-te-LOT-1b`,
+          readableId: units.number("LOT-1"),
+          itemId: units.batchItemId,
+          quantity: 4,
+          status: "Available",
+          sourceDocument: "Item",
+          sourceDocumentId: units.batchItemId,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await f.db
+        .insertInto("itemLedger")
+        .values({
+          postingDate: f.today,
+          entryType: "Positive Adjmt.",
+          itemId: units.batchItemId,
+          locationId: f.locationId,
+          storageUnitId: units.binA,
+          trackedEntityId: `${f.prefix}-te-LOT-1b`,
+          quantity: 4,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const result = await recordInventoryCountUnit(f.db, {
+        inventoryCountId: countId,
+        companyId: f.companyId,
+        userId: USER,
+        storageUnitId: units.binA,
+        code: units.number("LOT-1"),
+        quantity: 14
+      });
+      expect(result?.outcome).toBe("counted");
+      const parts = await f.db
+        .selectFrom("inventoryCountLine")
+        .select(["systemQuantity", "countedQuantity"])
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", units.batchItemId)
+        .execute();
+      expect(parts).toHaveLength(2);
+      for (const part of parts) {
+        expect(part.countedQuantity).toBe(part.systemQuantity);
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a new batch number counted in 2 bins posts as one batch",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const code = units.number("LOT-NEW");
+      for (const [storageUnitId, quantity] of [
+        [units.binA, 3],
+        [units.binB, 2]
+      ] as const) {
+        const result = await recordInventoryCountUnit(f.db, {
+          inventoryCountId: countId,
+          companyId: f.companyId,
+          userId: USER,
+          storageUnitId,
+          code,
+          itemId: units.batchItemId,
+          quantity
+        });
+        expect(result?.outcome).toBe("added");
+      }
+      await f.db
+        .updateTable("inventoryCount")
+        .set({ status: "Pending" })
+        .where("id", "=", countId)
+        .execute();
+      const posted = await invokePosting(
+        f.service,
+        "post-inventory-count",
+        { inventoryCountId: countId },
+        postInventoryCount
+      );
+      expect(posted.error).toBeNull();
+      const batches = await f.db
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("readableId", "=", code)
+        .execute();
+      expect(batches).toEqual([{ id: batches[0].id, quantity: 5 }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest("a Non-Inventory item is refused", async () => {
+  const { f, scan } = await setup();
+  try {
+    await seed(f, (trx) =>
+      trx
+        .insertInto("item")
+        .values({
+          id: `${f.prefix}-non`,
+          readableId: `${f.prefix}-NON`,
+          name: "Service fee",
+          type: "Part",
+          itemTrackingType: "Non-Inventory",
+          replenishmentSystem: "Buy",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    );
+    const result = await scan({
+      storageUnitId: null,
+      code: `${f.prefix}-NON`,
+      quantity: 2
+    });
+    expect(result).toEqual({
+      outcome: "notInventory",
+      itemId: `${f.prefix}-non`
+    });
+  } finally {
+    await f.cleanup();
+  }
+});

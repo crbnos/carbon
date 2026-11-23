@@ -16,7 +16,6 @@ const TYPESCRIPT_ROOTS = [
   "apps/mes/app",
   "packages/database/supabase/functions",
   "packages/database/src",
-  "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",
   "packages/documents/src/pdf",
@@ -37,7 +36,7 @@ const EXCLUDED_DIRS = new Set(["node_modules"]);
 
 // `*-test-fixture.ts` is test support code (live-database fixtures), not
 // shipped code, so it is held to the same rules as the tests that import it.
-const isTest = (name: string) =>
+export const isTest = (name: string) =>
   name.endsWith("-test-fixture.ts") ||
   name.endsWith(".test.ts") ||
   name.endsWith(".test.tsx") ||
@@ -74,7 +73,6 @@ export const REQUEST_HANDLING_ROOTS = [
   "apps/starter/app",
   "packages/auth/src",
   "packages/database/supabase/functions",
-  "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",
   "packages/lib/src",

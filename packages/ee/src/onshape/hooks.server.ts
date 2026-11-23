@@ -4,8 +4,16 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { getOnshapeClient } from "./lib/client";
-import { getOnshapeIntegration } from "./lib/connection";
+import {
+  getOnshapeIntegration,
+  type OnshapeIntegrationId
+} from "./lib/connection";
+import type { OnshapeOAuthIntegrationId } from "./lib/integration-id";
+import { patchOnshapeCompanyId } from "./lib/state";
+
+const logger = getLogger("ee", "onshape");
 
 // The release webhook's callback path for a company. We match/deregister by this
 // PATH (not the full URL) so a host change — localhost, a tunnel, or the prod
@@ -48,18 +56,20 @@ async function resolveAndStoreOnshapeCompanyId(
   const resolved = companies[0]?.id;
   if (!resolved) return null;
 
-  const update = await carbon
-    .from("companyIntegration")
-    .update({ metadata: { ...metadata, onshapeCompanyId: resolved } })
-    .eq("id", integrationId)
-    .eq("companyId", companyId);
-  if (update.error) {
+  try {
+    await patchOnshapeCompanyId(
+      carbon,
+      companyId,
+      integrationId as OnshapeIntegrationId,
+      resolved
+    );
+  } catch (error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall
     // back to their own getCompanies() resolve if the store didn't stick.
-    console.error(
-      "onshape: failed to persist resolved Onshape company id",
-      update.error
-    );
+    logger.error("Failed to persist resolved Onshape company id", {
+      companyId,
+      error
+    });
   }
   return resolved;
 }
@@ -101,17 +111,22 @@ export async function registerOnshapeWebhook(
 ): Promise<OnshapeWebhookResult> {
   const onshape = await onshapeClientForCompany(companyId);
   if (onshape.error || !onshape.client) {
-    console.error(
-      "onshape: could not build client; skipping webhook registration",
-      onshape.error
+    logger.error(
+      "Could not build Onshape client; skipping webhook registration",
+      { companyId, error: onshape.error }
     );
     return { ok: false, error: onshape.error ?? "no client" };
   }
   const path = callbackPath(companyId);
   try {
     const existing = await onshape.client.getWebhooks();
+    // The element sync's transient translation webhooks share the path.
     const alreadyRegistered = (existing.items ?? []).some(
-      (webhook) => typeof webhook.url === "string" && webhook.url.includes(path)
+      (webhook) =>
+        typeof webhook.url === "string" &&
+        webhook.url.includes(path) &&
+        Array.isArray(webhook.events) &&
+        webhook.events.includes("onshape.revision.created")
     );
     if (alreadyRegistered) return { ok: true };
 
@@ -120,8 +135,9 @@ export async function registerOnshapeWebhook(
       onshape.client
     );
     if (!onshapeCompanyId) {
-      console.error(
-        "onshape: could not resolve Onshape company id; skipping webhook registration"
+      logger.error(
+        "Could not resolve Onshape company id; skipping webhook registration",
+        { companyId }
       );
       return { ok: false, error: "could not resolve Onshape company id" };
     }
@@ -130,10 +146,10 @@ export async function registerOnshapeWebhook(
       events: ["onshape.revision.created"],
       companyId: onshapeCompanyId
     });
-    console.log(`onshape: registered release webhook for company ${companyId}`);
+    logger.info("Registered Onshape release webhook", { companyId });
     return { ok: true };
   } catch (error) {
-    console.error("onshape: webhook registration failed", error);
+    logger.error("Onshape webhook registration failed", { companyId, error });
     return webhookFailure(error);
   }
 }
@@ -144,10 +160,10 @@ export async function deregisterOnshapeWebhooks(
 ): Promise<OnshapeWebhookResult> {
   const onshape = await onshapeClientForCompany(companyId);
   if (onshape.error || !onshape.client) {
-    console.error(
-      "onshape: could not build client; skipping webhook cleanup",
-      onshape.error
-    );
+    logger.error("Could not build Onshape client; skipping webhook cleanup", {
+      companyId,
+      error: onshape.error
+    });
     return { ok: false, error: onshape.error ?? "no client" };
   }
   const path = callbackPath(companyId);
@@ -159,12 +175,13 @@ export async function deregisterOnshapeWebhooks(
     for (const webhook of ours) {
       await onshape.client.deleteWebhook(webhook.id);
     }
-    console.log(
-      `onshape: deregistered ${ours.length} webhook(s) for company ${companyId}`
-    );
+    logger.info("Deregistered Onshape webhooks", {
+      companyId,
+      count: ours.length
+    });
     return { ok: true };
   } catch (error) {
-    console.error("onshape: webhook deregistration failed", error);
+    logger.error("Onshape webhook deregistration failed", { companyId, error });
     return webhookFailure(error);
   }
 }
@@ -189,4 +206,39 @@ export async function ensureOnshapeReleaseWebhook(
 // Disconnect: remove the subscription so it doesn't keep firing at a dead callback.
 export async function onshapeOnUninstall(companyId: string): Promise<void> {
   await deregisterOnshapeWebhooks(companyId);
+}
+
+/**
+ * Building the client refreshes an expired token and one read proves it is
+ * accepted, so a revoked grant reads unhealthy. `getIntegrationHealth` caches a
+ * healthy answer for five hours, which bounds the quota this spends.
+ */
+export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
+  return async (companyId: string): Promise<boolean> => {
+    try {
+      const onshape = await getOnshapeClient(
+        getCarbonServiceRole(),
+        companyId,
+        "system",
+        integrationId
+      );
+      if (!onshape.client) {
+        logger.warning("Onshape healthcheck: no client", {
+          companyId,
+          integrationId,
+          error: onshape.error
+        });
+        return false;
+      }
+      await onshape.client.getCompanies();
+      return true;
+    } catch (error) {
+      logger.warning("Onshape healthcheck: request failed", {
+        companyId,
+        integrationId,
+        error
+      });
+      return false;
+    }
+  };
 }

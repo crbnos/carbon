@@ -2,20 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { isPurchaseInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
-  deletePurchaseInvoiceLine,
   getPurchaseInvoice,
-  getPurchaseInvoiceLine,
-  isPurchaseInvoiceLocked
-} from "~/modules/invoicing";
+  getPurchaseInvoiceLine
+} from "~/modules/invoicing/invoicing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -49,40 +51,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { purchaseInvoiceLine: purchaseInvoiceLine.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["invoiceId", "lineId"]
   });
-
-  const { lineId, invoiceId } = params;
-  if (!lineId) throw notFound("Could not find lineId");
-  if (!invoiceId) throw notFound("Could not find invoiceId");
-
-  const purchaseInvoice = await getPurchaseInvoice(client, invoiceId);
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseInvoiceLocked(purchaseInvoice.data?.status),
-    redirectTo: path.to.purchaseInvoiceDetails(invoiceId),
-    message: "Cannot delete lines on a confirmed purchase invoice."
-  });
-
-  const { error: deleteTypeError } = await deletePurchaseInvoiceLine(
-    client,
+  if ("invalid" in input) return input.invalid;
+  const { invoiceId, lineId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.deleteDraftPurchaseInvoiceLine({
+    invoiceId,
     lineId
-  );
-  if (deleteTypeError) {
-    throw redirect(
-      path.to.purchaseInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete purchase invoice line")
-      )
-    );
-  }
-
-  throw redirect(
+  });
+  return respond(args.request, result).redirect(
     path.to.purchaseInvoiceDetails(invoiceId),
-    await flash(request, success("Successfully deleted purchase invoice line"))
+    { message: "Successfully deleted purchase invoice line" }
   );
 }
 
@@ -90,13 +72,11 @@ export default function DeletePurchaseInvoiceLineRoute() {
   const { t } = useLingui();
   const { lineId, invoiceId } = useParams();
   const { purchaseInvoiceLine } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.purchaseInvoiceDetails(invoiceId!));
 
   if (!purchaseInvoiceLine) return null;
   if (!lineId) throw notFound("Could not find lineId");
   if (!invoiceId) throw notFound("Could not find invoiceId");
-
-  const onCancel = () => navigate(path.to.purchaseInvoiceDetails(invoiceId));
 
   return (
     <ConfirmDelete
@@ -105,7 +85,8 @@ export default function DeletePurchaseInvoiceLineRoute() {
       text={t`Are you sure you want to delete the purchase invoice line for ${
         purchaseInvoiceLine.quantity ?? 0
       } ${purchaseInvoiceLine.description ?? ""}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

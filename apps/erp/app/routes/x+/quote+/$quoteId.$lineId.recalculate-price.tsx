@@ -8,10 +8,8 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import {
-  priceTraceStepValidator,
-  upsertQuoteLinePrices
-} from "~/modules/sales";
+import { priceTraceStepValidator } from "~/modules/sales/sales.models";
+import { upsertQuoteLinePrices } from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-recalculate-price");

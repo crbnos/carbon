@@ -2,20 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync } from "node:fs";
 import { intro, log, outro } from "@clack/prompts";
-import { execa } from "execa";
-import { join } from "pathe";
 import pc from "picocolors";
-import { currentBranch, isLinkedWorktree, mainCheckoutRoot } from "../git.js";
+import { syncStaleCopyFiles } from "../copy-files.js";
 import {
-  canonicalSlug,
-  ensureSlugAvailable,
+  currentBranch,
   getWorktreeRoot,
-  persistSlug,
-  projectName
-} from "../worktree.js";
-import { syncStaleCopyFiles } from "./copy.js";
+  isLinkedWorktree,
+  mainCheckoutRoot
+} from "../git.js";
+import { installSkills } from "../services/apps.js";
+import { ensureSlugAvailable } from "../services/compose.js";
+import { projectName } from "../topology.js";
+import { canonicalSlug, persistSlug } from "../worktree.js";
 
 // `crbn init` — provision the CURRENT worktree so it matches a `crbn checkout`
 // worktree: a deterministic, branch-derived slug (`.carbon-worktree`), the
@@ -73,20 +72,13 @@ export async function initWorktree(opts?: {
     );
   }
 
-  await installSkills(root, say);
-
-  say(() => outro(`ready — ${pc.cyan("crbn up")} to boot the stack`));
-}
-
-// Link `.ai` rules/skills into `.claude`/`.codex` (both gitignored, so absent in
-// a fresh worktree). Idempotent — the script re-points existing symlinks.
-async function installSkills(root: string, say: (fn: () => void) => void) {
-  const script = join(root, ".ai", "scripts", "install-skills.sh");
-  if (!existsSync(script)) return;
-  const r = await execa("bash", [script], { cwd: root, reject: false });
+  // `.claude`/`.codex` are gitignored: a fresh worktree has no skills.
+  const linked = await installSkills(root);
   say(() =>
-    r.exitCode === 0
+    linked
       ? log.info("skills linked into .claude/.codex")
       : log.warn("install-skills step failed (worktree still initialized)")
   );
+
+  say(() => outro(`ready — ${pc.cyan("crbn up")} to boot the stack`));
 }

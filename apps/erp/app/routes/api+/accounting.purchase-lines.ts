@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPurchaseLinePivotLines } from "~/modules/accounting";
+import { getPurchaseLinePivotLines } from "~/modules/accounting/accounting.service";
 
 /**
  * Fetcher endpoint for the Purchases pivot drill-through drawer

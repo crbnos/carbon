@@ -2,16 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  success
-} from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -19,8 +13,8 @@ import {
   getTxtRecord,
   isSsoEnabled
 } from "@carbon/ee/sso.server";
-import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
-import { ValidatedForm } from "@carbon/form";
+import { ValidatedForm, validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -42,6 +36,8 @@ import {
   ModalTitle,
   ScrollArea,
   Switch,
+  toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -50,14 +46,18 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useEffect, useState } from "react";
 import { LuShieldCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
+import { z } from "zod";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
-import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
+import {
+  ssoConnectionValidator,
+  ssoDomainValidator
+} from "~/modules/settings/settings.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -148,73 +148,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
-  const formData = await request.formData();
+// The two-factor switch posts `enabled`; the SSO forms post to `/settings/sso`.
+const securitySettingsForm = z
+  .object({ enabled: z.string().optional() })
+  .transform(({ enabled }) => ({ requireMfa: enabled === "true" }));
 
-  const requireMfa = formData.get("enabled") === "true";
-
-  if (requireMfa) {
-    await requireFeature({
-      request,
-      client,
-      companyId,
-      feature: "TWO_FACTOR",
-      redirectTo: path.to.security,
-      message: "Upgrade to Business to require two-factor authentication"
-    });
-  }
-
-  // Read the stored value first: the switch re-submits on every flip, and a
-  // toggle that lands on the value it already had must not re-announce.
-  const previous = await client
-    .from("companySettings")
-    .select("requireMfa")
-    .eq("id", companyId)
-    .single();
-
-  const update = await updateRequireMfaSetting(client, companyId, requireMfa);
-  if (update.error)
-    return data(
-      {},
-      await flash(
-        request,
-        error(update.error, "Failed to update two-factor requirement")
-      )
-    );
-
-  // Only the off → on transition is news. If the prior read failed we don't
-  // know it was a transition, so we stay quiet rather than mailing the company.
-  //
-  // CONTROLLED_ENVIRONMENT is checked separately because effective enforcement
-  // is `CONTROLLED_ENVIRONMENT || requireMfa` (see the ERP/MES shell loaders),
-  // and nothing ever writes the column in such a deployment — it stays false
-  // while MFA is already mandatory. Without this guard the column would read as
-  // a fresh off → on and the company would be told a requirement "now" applies
-  // that has applied since the day it was deployed. Enforcement there is a
-  // deployment fact, not an event, so there is nothing to announce.
-  if (
-    !CONTROLLED_ENVIRONMENT &&
-    requireMfa &&
-    previous.data?.requireMfa === false
-  ) {
-    await sendMfaRequiredEmails(getCarbonServiceRole(), companyId);
-  }
-
-  return data(
-    {},
-    await flash(
-      request,
-      success(
-        requireMfa
-          ? "Two-factor authentication is now required"
-          : "Two-factor authentication is no longer required"
-      )
-    )
-  );
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(securitySettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateSecuritySettings(input.data);
 }
 
 function StatusDot({
@@ -275,12 +218,13 @@ function SsoDomainRow({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
+  const removeModal = useDisclosure();
   const isPending = domain.status !== "verified";
   const isBusy = fetcher.state !== "idle";
   const submitting = fetcher.formData?.get("intent");
 
   return (
-    <div className="w-full rounded-md border border-border p-4">
+    <div className="w-full rounded-md border border-border p-4 max-md:border-0 max-md:p-0 max-md:rounded-none">
       <HStack className="w-full justify-between items-center">
         <HStack spacing={2}>
           <span className="text-sm font-medium font-mono">{domain.domain}</span>
@@ -303,20 +247,64 @@ function SsoDomainRow({
               </Button>
             </fetcher.Form>
           )}
-          <fetcher.Form method="post" action={path.to.sso}>
-            <input type="hidden" name="intent" value="removeDomain" />
-            <input type="hidden" name="domainId" value={domain.id} />
-            <Button
-              type="submit"
-              variant="ghost"
-              isLoading={isBusy && submitting === "removeDomain"}
-              isDisabled={!canEdit || isBusy}
-            >
-              <Trans>Remove</Trans>
-            </Button>
-          </fetcher.Form>
+          <Button
+            variant="ghost"
+            isLoading={isBusy && submitting === "removeDomain"}
+            isDisabled={!canEdit || isBusy}
+            onClick={removeModal.onOpen}
+          >
+            <Trans>Remove</Trans>
+          </Button>
         </HStack>
       </HStack>
+      <Modal
+        open={removeModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) removeModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Remove {domain.domain}</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {isPending ? (
+                <Trans>
+                  Are you sure you want to remove this domain? Its verification
+                  record will no longer be checked.
+                </Trans>
+              ) : (
+                <Trans>
+                  Are you sure you want to remove this domain? Users on it will
+                  no longer sign in through your identity provider, and adding
+                  it again needs a new DNS verification.
+                </Trans>
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={removeModal.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <fetcher.Form method="post" action={path.to.sso}>
+              <input type="hidden" name="intent" value="removeDomain" />
+              <input type="hidden" name="domainId" value={domain.id} />
+              <Button
+                variant="destructive"
+                type="submit"
+                isLoading={isBusy && submitting === "removeDomain"}
+                isDisabled={isBusy}
+              >
+                <Trans>Remove</Trans>
+              </Button>
+            </fetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       {isPending && (
         <VStack spacing={2} className="mt-4">
           <p className="text-sm text-muted-foreground">
@@ -346,7 +334,16 @@ export default function Security() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "settings");
-  const mfaFetcher = useFetcher<{}>();
+  const mfaFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.requireMfa
+          ? t`Two-factor authentication is now required`
+          : t`Two-factor authentication is no longer required`
+      );
+    }
+  });
   const settings = useSettings();
   const requireMfa = settings.requireMfa === true;
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
@@ -443,14 +440,11 @@ export default function Security() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-8"
-      >
+      <SettingsPage className="gap-8">
         <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3">
+          <SettingsPageHeading>
             <Trans>Security</Trans>
-          </Heading>
+          </SettingsPageHeading>
           <p className="text-sm text-muted-foreground text-pretty">
             <Trans>
               Manage authentication and sign-in requirements for your company.
@@ -668,55 +662,52 @@ export default function Security() {
               </Card>
             )}
 
-            {deactivateModalOpen && (
-              <Modal
-                open
-                onOpenChange={(open) => {
-                  if (!open) setDeactivateModalOpen(false);
-                }}
-              >
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>
-                    <ModalTitle>
-                      <Trans>Deactivate Single Sign-On</Trans>
-                    </ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>
-                        Are you sure you want to deactivate SAML SSO? Users on
-                        your registered domains will no longer be able to sign
-                        in through your identity provider. This cannot be
-                        undone.
-                      </Trans>
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
+            <Modal
+              open={deactivateModalOpen}
+              onOpenChange={(open) => {
+                if (!open) setDeactivateModalOpen(false);
+              }}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>
+                    <Trans>Deactivate Single Sign-On</Trans>
+                  </ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      Are you sure you want to deactivate SAML SSO? Users on
+                      your registered domains will no longer be able to sign in
+                      through your identity provider. This cannot be undone.
+                    </Trans>
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDeactivateModalOpen(false)}
+                  >
+                    <Trans>Cancel</Trans>
+                  </Button>
+                  <deactivateFetcher.Form method="post" action={path.to.sso}>
+                    <input type="hidden" name="intent" value="deactivate" />
                     <Button
-                      variant="secondary"
-                      onClick={() => setDeactivateModalOpen(false)}
+                      variant="destructive"
+                      type="submit"
+                      isLoading={deactivateFetcher.state !== "idle"}
+                      isDisabled={deactivateFetcher.state !== "idle"}
                     >
-                      <Trans>Cancel</Trans>
+                      <Trans>Deactivate</Trans>
                     </Button>
-                    <deactivateFetcher.Form method="post" action={path.to.sso}>
-                      <input type="hidden" name="intent" value="deactivate" />
-                      <Button
-                        variant="destructive"
-                        type="submit"
-                        isLoading={deactivateFetcher.state !== "idle"}
-                        isDisabled={deactivateFetcher.state !== "idle"}
-                      >
-                        <Trans>Deactivate</Trans>
-                      </Button>
-                    </deactivateFetcher.Form>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
-            )}
+                  </deactivateFetcher.Form>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </>
         )}
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

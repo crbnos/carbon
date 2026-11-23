@@ -16,3 +16,4 @@ export {
   MEDIA_CONTENT_TYPES
 } from "./media/media";
 export * from "./storage";
+export * from "./stored-document";

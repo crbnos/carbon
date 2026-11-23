@@ -3,27 +3,21 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+
 import { GroupedContentSidebar } from "~/components/Layout";
-import { useInventorySubmodules } from "~/modules/inventory";
-import { getUnitOfMeasuresList } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+import { useInventorySubmodules } from "~/modules/inventory/ui";
+import { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Inventory" }];
-};
+export const meta = moduleMeta("Inventory");
 
 function InventorySidebar() {
   const { groups } = useInventorySubmodules();
@@ -36,9 +30,6 @@ export const handle: Handle = {
   module: "inventory",
   sidebar: InventorySidebar
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -59,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function InventoryRoute() {
   return (
     <VStack spacing={0} className="h-full">
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

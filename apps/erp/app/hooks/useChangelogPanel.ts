@@ -4,8 +4,8 @@
 
 import { useRouteData } from "@carbon/react";
 import { useFetcher } from "react-router";
-import type { ChangelogPanelEntry } from "~/modules/account";
-import { changelogFlagKey } from "~/modules/users";
+import { changelogFlagKey } from "~/modules/users/users.models";
+import type { ChangelogPanelEntry } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import { useResolved } from "./useResolved";
 import { useUser } from "./useUser";

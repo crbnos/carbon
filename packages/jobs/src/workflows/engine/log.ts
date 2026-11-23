@@ -5,6 +5,7 @@
 import { datetime } from "@carbon/utils";
 import { sql } from "kysely";
 import type { JobDatabase } from "../../db";
+import { redactText } from "./ledger";
 
 export interface RunContext {
   run: {
@@ -159,8 +160,10 @@ export async function finishRun(
     .updateTable("workflowRun")
     .set({
       status: params.status,
-      statusReason: params.statusReason ?? null,
-      error: params.error ?? null,
+      // Redacted and capped exactly as the step row's are (`settleStep`): the
+      // text came from an executor, and a vendor can echo a token into it.
+      statusReason: redactText(params.statusReason),
+      error: redactText(params.error),
       completedAt,
       durationMs
     })

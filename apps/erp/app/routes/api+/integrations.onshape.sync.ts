@@ -2,100 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { onShapeDataValidator } from "@carbon/ee/onshape";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
+import { carbon } from "@carbon/api/carbon.server";
+import type { onShapeDataValidator } from "@carbon/ee/onshape";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "integrations-onshape-sync");
+// The Onshape panel's Sync: `rows` is the assembly's bill of materials as JSON.
+const onshapeSyncForm = z.object({
+  makeMethodId: z.string().min(1),
+  documentId: z.string(),
+  versionId: z.string(),
+  elementId: z.string(),
+  rows: zfd.json(z.unknown())
+});
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(onshapeSyncForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const { rows, ...ids } = input.data;
+  // The operation checks `rows` with its own schema; the panel toasts what is wrong.
+  return api.items.syncOnshapeMethod({
+    ...ids,
+    rows: rows as z.input<typeof onShapeDataValidator>
   });
-
-  const formData = await request.formData();
-  const documentId = formData.get("documentId");
-  const versionId = formData.get("versionId");
-  const elementId = formData.get("elementId");
-
-  const makeMethodId = formData.get("makeMethodId");
-  const rows = formData.get("rows");
-
-  if (!makeMethodId || !rows) {
-    return data(
-      { success: false, message: "Missing required fields" },
-      { status: 400 }
-    );
-  }
-
-  const record = await client
-    .from("makeMethod")
-    .select("itemId, companyId")
-    .eq("id", makeMethodId as string)
-    .single();
-
-  if (record.data?.companyId !== companyId) {
-    return data(
-      { success: false, message: "Invalid make method id" },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const parsed = onShapeDataValidator.parse(JSON.parse(rows as string));
-    const serviceRole = await getCarbonServiceRole();
-
-    const synced = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("sync", {
-        type: "onshape",
-        makeMethodId: makeMethodId as string,
-        data: parsed
-      });
-
-    if (synced.error) {
-      logger.info("Failed to sync onshape data", { error: synced.error });
-      return data(
-        { success: false, message: "Failed to sync onshape data" },
-        { status: 400 }
-      );
-    }
-
-    const itemId = record.data?.itemId as string;
-
-    // Upsert the OnShape mapping in externalIntegrationMapping
-    await serviceRole
-      .from("externalIntegrationMapping")
-      .delete()
-      .eq("entityType", "item")
-      .eq("entityId", itemId)
-      .eq("integration", "onshape")
-      .eq("companyId", companyId);
-
-    await client.from("externalIntegrationMapping").insert({
-      entityType: "item",
-      entityId: itemId,
-      integration: "onshape",
-      metadata: {
-        documentId: documentId as string,
-        versionId: versionId as string,
-        elementId: elementId as string
-      },
-      lastSyncedAt: new Date().toISOString(),
-      companyId
-    });
-  } catch (error) {
-    logger.error("Failed to sync onshape data", { error: error });
-    return data(
-      { success: false, message: "Invalid rows data" },
-      { status: 400 }
-    );
-  }
-
-  return { success: true, message: "Synced successfully" };
 }

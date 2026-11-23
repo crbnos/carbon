@@ -29,14 +29,30 @@ const listOf = (value: string | null) =>
 /**
  * The client's IP address, or null when no proxy reported one.
  *
- * `X-Forwarded-For` is a chain each proxy APPENDS to, so only its LAST entry —
- * the address the proxy in front of the app saw — cannot be forged: the ALB
- * appends to whatever the caller sent, and a first-entry read there hands the
- * caller any rate-limit bucket or audit-log address it likes. Vercel and Caddy
- * write a single entry, which is the same address.
+ * `X-Forwarded-For` is a chain each proxy APPENDS to, so only the entries our
+ * own proxies wrote — the last ones — cannot be forged: the ALB appends to
+ * whatever the caller sent, and a first-entry read there hands the caller any
+ * rate-limit bucket or audit-log address it likes. With one proxy in front of
+ * the app (Vercel, the ALB, Caddy) the client is the last entry.
+ *
+ * `TRUSTED_PROXIES` counts the proxies when there are more. Behind an ALB and
+ * then Traefik the chain arrives as `client, alb`, and the last entry is the
+ * ALB's own address — every user one rate-limit bucket. With 2 the client is
+ * the second from the end. A chain shorter than that came from fewer proxies
+ * than promised, and its first entry is the client.
  */
 export function getClientIp(input: RequestLike): string | null {
-  return listOf(headersOf(input).get("x-forwarded-for")).at(-1) ?? null;
+  const chain = listOf(headersOf(input).get("x-forwarded-for"));
+  return chain.at(-trustedProxies()) ?? chain[0] ?? null;
+}
+
+// Read here rather than through @carbon/env, which depends on this package.
+// Declared in packages/env/src/schema.ts like every other variable.
+function trustedProxies(): number {
+  const raw =
+    typeof process === "undefined" ? undefined : process.env.TRUSTED_PROXIES;
+  const n = Number.parseInt(raw ?? "", 10);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
 /** `https` or `http` as the client used it: the proxy's, else `request.url`'s. */

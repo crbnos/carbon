@@ -4,12 +4,14 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 const log = getLogger("mes");
 
@@ -28,59 +30,88 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const {
-    materialId,
     jobOperationId,
-    itemId,
     batchId,
     parentTrackedEntityId,
-    children,
     jobOperationStepId,
     unitNumber,
     overrideExpired,
-    overrideReason
+    overrideReason,
+    allowOverIssue
   } = validation.data;
+  const { materialId, itemId, children } = validation.data;
 
-  if (batchId ? !itemId : !parentTrackedEntityId) {
+  if (batchId ? !itemId : !parentTrackedEntityId || !jobOperationId) {
     return data(
       { success: false, message: "Failed to validate payload" },
       { status: 400 }
     );
   }
 
-  // Batch mode: one pick for the whole operation batch. The server fn splits the
+  let parentId = parentTrackedEntityId;
+  if (!batchId && jobOperationId) {
+    const serviceRole = getCarbonServiceRole();
+    const work = await resolveWorkUnit({
+      client: serviceRole,
+      companyId,
+      operationId: jobOperationId,
+      requestedUnitId: parentTrackedEntityId,
+      mode: "require"
+    });
+    if (work.kind === "refuse") {
+      return data(
+        { success: false, message: work.message, pickUnit: work.pickUnit },
+        { status: 409 }
+      );
+    }
+    if (work.kind === "unit") parentId = work.unitId;
+
+    const refusal = await abilityBlockRefusal(serviceRole, {
+      operationId: jobOperationId,
+      employeeId: userId,
+      companyId
+    });
+    if (refusal) {
+      return data({ success: false, message: refusal }, { status: 403 });
+    }
+  }
+
+  // Batch mode: one pick for the whole operation batch. The posting splits the
   // picked lots pro-rata by each member's remaining requirement and records
   // per-member consumption, so costing and genealogy stay per job.
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke(
-      "issue",
-      batchId
-        ? {
-            type: "trackedEntitiesToBatch",
-            batchId,
-            itemId: itemId!,
-            children,
-            overrideExpired,
-            overrideReason
-          }
-        : {
-            type: "trackedEntitiesToOperation",
-            materialId,
-            jobOperationId,
-            itemId,
-            parentTrackedEntityId: parentTrackedEntityId!,
-            children,
-            jobOperationStepId,
-            unitNumber,
-            overrideExpired,
-            overrideReason
-          }
-    );
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    batchId
+      ? {
+          type: "trackedEntitiesToBatch",
+          batchId,
+          itemId: itemId!,
+          children,
+          overrideExpired,
+          overrideReason
+        }
+      : {
+          type: "trackedEntitiesToOperation",
+          materialId,
+          jobOperationId,
+          itemId,
+          parentTrackedEntityId: parentId!,
+          children,
+          jobOperationStepId,
+          unitNumber,
+          overrideExpired,
+          overrideReason,
+          allowOverIssue
+        }
+  );
 
   if (issued.error) {
     log.error("Failed to issue material", { error: issued.error });
     const message = issued.error.message || "Failed to issue material";
-    return data({ success: false, message }, { status: 400 });
+    // The requirement is already filled: the dialog asks before issuing more.
+    const overIssue = issued.error.body.overIssue === true;
+    return data({ success: false, message, overIssue }, { status: 400 });
   }
 
   const splitEntities = issued.data?.splitEntities || [];

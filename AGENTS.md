@@ -12,8 +12,10 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
+- A new record type copies its closest sibling — the record users would call the same kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase order, RMA ↔ supplier return) — routes and UI file for file. Name the sibling in the spec and the plan. Ask before you deviate from it (see `.ai/lessons.md` → "A new record type copies its sibling's UI").
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
+- Only the main agent runs the heavy checks — the `erp` typecheck, `pnpm generate:mcp` and `pnpm check:manifest` — once, after its subagents finish. A subagent never runs them, nor raw `tsc` in `apps/erp`. Each can take up to ~10 GB, and a machine-wide lock (`packages/dev/bin/heavy-lock`) queues them one at a time across every worktree.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
 - Resolve every merge or rebase conflict with the `resolving-merge-conflicts` skill (`.claude/skills/resolving-merge-conflicts/SKILL.md`): load it before touching a conflicted file. Its checks here are the scoped typecheck and tests, Biome, and `pnpm --filter @carbon/checks clobbers` when migrations are involved.
@@ -32,10 +34,11 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
 - Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
-- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (inside a server function when apps, the API or jobs share the write), or an RPC when it must also be callable through PostgREST.
-- Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — service files are re-exported through the module barrel that client components import, so they are bundled for the browser. Build the client in a `.server` file (`getDatabaseClient()` from `~/services/database.server`) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
+- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (`ctx.transaction` inside a service function, or a building block in `{module}.service.ts` that takes `db`), or an RPC when it must also be callable through PostgREST.
+- Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — a building block takes `db: Kysely<KyselyDatabase>` as an argument; inside a service function that handle is `ctx.asSystem.pg`. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
-- Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
+- Never name a field, column, enum or form label "Kind" (or `*Kind`). Name what the choice decides — `revenueType` (One-time / Recurring), `billingFrequency`, `entryType`. "Kind" tells the reader nothing (see `.claude/rules/conventions-database.md`).
+- Never scatter module files — one `{module}.server.ts` (its `defineServiceFn` operations), one `{module}.service.ts` (the building blocks) and one `{module}.models.ts` per module, and no `index.ts` barrel (see `.claude/rules/module-files.md`).
 - Never rebuild the database to test changes — wait for the user.
 - Never commit credentials, tokens, or private keys.
 
@@ -89,15 +92,17 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | RLS policies and RLS helpers (authz manifest) | `.claude/rules/authz-manifest.md` |
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
-| Writing service functions | `.claude/rules/conventions-services.md` |
+| Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
+| Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
-| Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
+| Service functions, building blocks, module files, postings for jobs and ee | `.claude/rules/module-files.md` + `.claude/rules/conventions-services.md` |
 | Adding a Deno edge function (embedding only) | `.claude/rules/workflow-edge-function.md` |
 | Adding event handlers | `.claude/rules/workflow-event-system.md` |
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |
 | UI components and conventions | `.claude/rules/conventions-ui.md` + `packages/react/AGENTS.md` |
+| List tables: cursor paging, infinite scroll, list registry | `.claude/rules/table-infinite-scroll.md` + `.claude/rules/table-csv-export.md` |
 | i18n / translations (Lingui) | `.claude/rules/i18n-lingui-system.md` + `packages/locale/AGENTS.md` |
 | Flash messages and toasts | `.claude/rules/flash-system.md` |
 | Document templates / customizer | `.claude/rules/document-template-customizer.md` |
@@ -106,6 +111,11 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Inventory (lots, bins, adjustments) | `.claude/rules/inventory-system.md` + `modules/inventory/AGENTS.md` |
 | Production (work orders, scheduling, routings) | `.claude/rules/scheduling-data-structures.md` + `modules/production/AGENTS.md` |
 | MES (shop floor, job operations) | `.claude/rules/mes-job-operation-ui.md` |
+| Projects (elements, charge numbers, timesheets, project ledger) | `.claude/rules/projects-system.md` + `apps/erp/app/modules/projects/AGENTS.md` |
+| Project billing (T&M and Cost Plus contract lines, bill rates, billable items, funding) | `.claude/rules/project-billing.md` + `.claude/rules/projects-system.md` + `apps/erp/app/modules/sales/AGENTS.md` (Contracts) |
+| Service jobs (depot and field service, warranty, RMA service lines, customer assets, the dispatch grid) | `.claude/rules/service-jobs.md` + `apps/erp/app/modules/service/AGENTS.md` |
+| Government contracting (DCAA timekeeping, unallowable cost, labor distribution, CLIN funding) | `.claude/rules/government-contracting.md` + `.claude/rules/projects-system.md` |
+| Contract financing (progress payments, SF 1443, PBP, liquidation) | `.claude/rules/contract-financing.md` + `.claude/rules/government-contracting.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |
@@ -117,7 +127,10 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Kanban | `.claude/rules/kanban-system.md` |
 | Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/ee/src/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
+| Workflow integration steps (Activepieces pieces) | `.claude/rules/workflow-integrations.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
+| Rental agreements / leases / revenue recognition | `apps/erp/app/modules/sales/AGENTS.md` (Rentals) + `apps/erp/app/modules/accounting/AGENTS.md` (Revenue recognition, Sales-type leases) + `.claude/rules/fixed-asset-lifecycle.md` + `.claude/rules/accounting-sync-handlers.md` |
+| Lessee leases (ASC 842, leases the company pays) / lease runs | `apps/erp/app/modules/purchasing/AGENTS.md` (Leases) + `apps/erp/app/modules/accounting/AGENTS.md` (Run types, Lessee leases, Lease Liabilities report, Lessee cutover) + `apps/erp/app/modules/invoicing/AGENTS.md` (Lease line) + `.claude/rules/fixed-asset-lifecycle.md` (purchase option) |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
 | File uploads, images, HEIC, MIME types, CAD formats | `packages/files/AGENTS.md` |
@@ -135,12 +148,15 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Docs content, glossary, in-app agent knowledge base | `.claude/rules/agent-knowledge-base.md` + `docs/content/AGENTS.md` |
 | **Integrations** | |
 | Ramp integration (charges, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
-| Jira integration | `.claude/rules/jira-integration.md` |
-| Linear integration | `.claude/rules/linear-integration.md` |
+| Jira integration | `.claude/rules/jira-integration.md` + `.claude/rules/issue-sync.md` |
+| Linear integration | `.claude/rules/linear-integration.md` + `.claude/rules/issue-sync.md` |
+| OEE providers / machine monitoring (Sense, loaded operation, unattributed machine time) | `.claude/rules/oee-provider.md` + `apps/erp/app/modules/production/AGENTS.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
+| Shared dev containers (`crbn-shared`, database per worktree, pg_cron/pg_net forwarding, `--isolated`) | `.claude/rules/dev-shared-services.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |
 | Realtime (broadcast, `handle.realtime`, live lists, change log) | `.claude/rules/realtime-system.md` + `packages/query/AGENTS.md` |
+| Service workers, offline page, app icon badge, installing the app | `.claude/rules/service-workers.md` |
 | Event triggers and interceptors (attachments manifest) | `.claude/rules/authz-manifest.md` |
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
@@ -156,7 +172,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Adding a new module | `.ai/docs/module-conventions.md` |
 | Creating/refreshing an AGENTS.md | `.claude/skills/create-agents-md/SKILL.md` |
 | **Design Specs** | |
-| Check existing specs before building | `.ai/specs/` + `.ai/specs/implemented/` |
+| Check existing specs before building | `.ai/specs/` + `.ai/specs/implemented/` (superseded designs: `.ai/specs/archived/`, history only) |
 | Writing a new spec | `.claude/skills/spec-writing/SKILL.md` + `.claude/rules/writing-ste.md` |
 | Explain a spec/plan as an HTML page (diagram + plain prose) | `.claude/skills/explain/SKILL.md` |
 | **Workflows** | |
@@ -176,7 +192,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
 | Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
-| Test-first work: good tests, seams, anti-patterns | `.claude/skills/tdd/SKILL.md` + `.claude/skills/test-driven-development/SKILL.md` |
+| Writing, reviewing or deleting a test (house style, where a check lives) | `.claude/rules/testing.md` |
+| Test-first work: the red→green loop, proof vs committed test | `.claude/skills/test-driven-development/SKILL.md` + `.claude/skills/tdd/SKILL.md` |
 
 ## Core Principles
 
@@ -217,7 +234,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 29 under `packages/` — auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Packages**: 30 under `packages/` — account, auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, serve, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
@@ -228,13 +245,16 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ```
 apps/erp/app/modules/{module}/
+├── {module}.server.ts    # defineServiceFn operations: the module's API
+├── {module}.service.ts   # building blocks the operations call (server-only)
 ├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # Supabase/Kysely data operations
-├── {module}.server.ts    # server-only helpers (optional)
+├── {module}.utils.ts     # browser-safe helpers (optional)
 ├── types.ts              # shared types (optional)
-├── index.ts              # barrel re-export
 └── ui/                   # feature components
 ```
+
+No barrel: import from the file that defines the thing. Routes call operations
+through `carbon(request)` (`@carbon/api/carbon.server`). See `.claude/rules/module-files.md`.
 
 MES is lighter: services in `apps/mes/app/services/`, components in `apps/mes/app/components/`.
 

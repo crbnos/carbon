@@ -79,7 +79,7 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
             <CustomFormFields table="customerPayment" />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

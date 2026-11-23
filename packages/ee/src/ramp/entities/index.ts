@@ -22,6 +22,6 @@ export const rampSyncerRegistry: SyncerRegistry = {
 
 SyncFactory.register(SpendProviderID.RAMP, rampSyncerRegistry);
 
-export { RampBillSyncer, RampPurchaseOrderSyncer };
 export type { RampBillRemote } from "./bill";
 export type { RampPurchaseOrderRemote } from "./purchase-order";
+export { RampBillSyncer, RampPurchaseOrderSyncer };

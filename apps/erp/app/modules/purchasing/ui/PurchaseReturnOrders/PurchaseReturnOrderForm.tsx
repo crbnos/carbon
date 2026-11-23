@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -101,7 +102,7 @@ const PurchaseReturnOrderForm = ({
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(t`Error fetching supplier data`);
+        toastError(t`Error fetching supplier data`, error);
       } else {
         setSupplier((prev) => ({
           ...prev,
@@ -128,7 +129,7 @@ const PurchaseReturnOrderForm = ({
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Supplier Return</Trans>
             ) : (
@@ -220,7 +221,7 @@ const PurchaseReturnOrderForm = ({
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

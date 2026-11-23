@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -105,7 +106,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(t`Error fetching customer data`);
+        toastError(t`Error fetching customer data`, error);
       } else {
         setCustomer((prev) => ({
           ...prev,
@@ -134,7 +135,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Sales Order</Trans>
             ) : (
@@ -287,7 +288,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

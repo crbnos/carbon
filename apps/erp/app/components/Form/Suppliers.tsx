@@ -4,10 +4,11 @@
 
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
+import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { useSuppliers } from "~/stores";
+import SupplierAvatar from "../SupplierAvatar";
 import { useEmptyState } from "./emptyStates";
 
 type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
@@ -15,9 +16,7 @@ type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
 };
 
 const Suppliers = (props: SupplierSelectProps) => {
-  const newSupplierModal = useDisclosure();
-
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const [suppliers] = useSuppliers();
@@ -25,13 +24,14 @@ const Suppliers = (props: SupplierSelectProps) => {
     return (
       suppliers.map((c) => ({
         value: c.id,
-        label: c.name
+        label: <SupplierAvatar supplierId={c.id} />,
+        keywords: c.name
       })) ?? []
     );
   }, [suppliers]);
 
   const emptyMessage = useEmptyState("supplier", {
-    onCreate: () => newSupplierModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -43,20 +43,20 @@ const Suppliers = (props: SupplierSelectProps) => {
         label={props?.label ?? "Work Center"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newSupplierModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newSupplierModal.isOpen && (
+      {create.item !== null && (
         <SupplierForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newSupplierModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}

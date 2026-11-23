@@ -13,6 +13,13 @@ export type InternalFormContextValue = {
   defaultValuesProp?: { [fieldName: string]: any };
   fetcher?: FetcherWithComponents<unknown>;
   validatorSchema?: z.ZodTypeAny;
+  /**
+   * False until this form instance has registered its own state. A form with a
+   * fixed `id` shares its store key with the instance it replaces (a keyed
+   * remount for another record), and that one's state is still there on the
+   * new instance's first render. Absent for a context built outside a form.
+   */
+  ownsState?: boolean;
 };
 
 export const InternalFormContext =

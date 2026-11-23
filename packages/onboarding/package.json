@@ -10,14 +10,10 @@
     "./ui": "./src/ui/index.ts"
   },
   "dependencies": {
-    "@carbon/database": "workspace:*",
-    "@carbon/form": "workspace:*",
     "@carbon/react": "workspace:*",
-    "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
     "@lingui/core": "catalog:",
     "@lingui/react": "catalog:",
-    "@supabase/supabase-js": "catalog:",
     "react": "catalog:",
     "react-icons": "catalog:",
     "zod": "catalog:",
@@ -25,6 +21,10 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@carbon/form": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "@types/react": "catalog:",
     "rimraf": "catalog:",
     "tsup": "catalog:",
@@ -36,6 +36,6 @@
     "dev": "tsup --watch",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   }
 }

@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { afterEach, describe, expect, it } from "vitest";
-import { applyTableRenames, TABLE_RENAMES } from "./renames";
+import {
+  applyTableRenames,
+  LIVE_COLUMN_RENAMES,
+  TABLE_RENAMES
+} from "./renames";
 
 const catalog = (...names: string[]) => ({
   tables: names.map((name) => ({ name }))
@@ -146,6 +150,47 @@ describe("applyTableRenames", () => {
       { id: "x", companyId: "c", chargeId: "CARD-1" }
     ]);
     expect(input.data.cardTransaction?.[0]).toHaveProperty("cardTransactionId");
+  });
+
+  it("renames a column on a table that kept its name", () => {
+    const input = {
+      manifest: {
+        tables: [
+          { name: "supplierPart", rows: 1, columns: ["id", "unitPrice"] }
+        ]
+      },
+      data: { supplierPart: [{ id: "sp", unitPrice: 4.25 }] }
+    };
+    const out = applyTableRenames(catalog("supplierPart"), input);
+    expect(out.manifest.tables[0]!.columns).toEqual([
+      "id",
+      "supplierUnitPrice"
+    ]);
+    expect(out.data.supplierPart).toEqual([
+      { id: "sp", supplierUnitPrice: 4.25 }
+    ]);
+    expect(input.data.supplierPart[0]).toHaveProperty("unitPrice");
+  });
+
+  it("leaves a backup taken after the column rename alone", () => {
+    expect(LIVE_COLUMN_RENAMES.supplierPart).toEqual({
+      unitPrice: "supplierUnitPrice"
+    });
+    const input = {
+      manifest: {
+        tables: [
+          {
+            name: "supplierPart",
+            rows: 1,
+            columns: ["id", "supplierUnitPrice"]
+          }
+        ]
+      },
+      data: { supplierPart: [{ id: "sp", supplierUnitPrice: 4.25 }] }
+    };
+    const out = applyTableRenames(catalog("supplierPart"), input);
+    expect(out.manifest.tables[0]).toBe(input.manifest.tables[0]);
+    expect(out.data.supplierPart).toBe(input.data.supplierPart);
   });
 
   it("does not mutate the backup it was given", () => {

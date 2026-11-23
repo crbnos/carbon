@@ -17,15 +17,17 @@ import { LuBookMarked, LuPencil, LuTrash, LuUsers } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Avatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Group } from "~/modules/users";
+import type { Group } from "~/modules/users/types";
 import { path } from "~/utils/path";
 
 type GroupsTableProps = {
   data: Group[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
 };
 
-const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
+const GroupsTable = memo(({ data, count, isTruncated }: GroupsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -63,6 +65,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -90,6 +93,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
           </AvatarGroup>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUsers />
         }
       }
@@ -141,6 +145,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
     <Table<(typeof rows)[number]>
       data={rows}
       count={count}
+      isTruncated={isTruncated}
       columns={columns}
       primaryAction={
         permissions.can("create", "users") && (

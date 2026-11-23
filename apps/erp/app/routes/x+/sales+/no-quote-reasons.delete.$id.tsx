@@ -5,12 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { useRouteDialog } from "@carbon/react";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteNoQuoteReason, getNoQuoteReason } from "~/modules/sales";
+import {
+  deleteNoQuoteReason,
+  getNoQuoteReason
+} from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       `${path.to.noQuoteReasons}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an no quote reason id"))
+      await flash(request, error(null, "Failed to get an no quote reason id"))
     );
   }
 
@@ -53,10 +57,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id
   );
   if (deleteNoQuoteReasonError) {
-    const errorMessage =
-      deleteNoQuoteReasonError.code === "23503"
-        ? "No quote reason is used elsewhere, cannot delete"
-        : "Failed to delete noQuote reason";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteNoQuoteReasonError,
+      "Failed to delete noQuote reason",
+      { referenced: "No quote reason is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.noQuoteReasons}?${getParams(request)}`,
@@ -74,18 +79,18 @@ export default function DeleteNoQuoteReasonRoute() {
   const { t } = useLingui();
   const { id } = useParams();
   const { noQuoteReason } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.noQuoteReasons);
 
   if (!noQuoteReason) return null;
   if (!id) throw notFound("id not found");
 
-  const onCancel = () => navigate(path.to.noQuoteReasons);
   return (
     <ConfirmDelete
       action={path.to.deleteNoQuoteReason(id)}
       name={noQuoteReason.name}
       text={t`Are you sure you want to delete the no quote reason: ${noQuoteReason.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

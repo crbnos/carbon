@@ -15,8 +15,9 @@ import {
   HStack,
   IconButton,
   Loading,
-  toast,
-  useDisclosure
+  toastError,
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
@@ -55,6 +56,7 @@ export default function RiskRegisterCard({
 
   const [risks, setRisks] = useState<Risk[]>([]);
   const [loading, setLoading] = useState(false);
+  const { isPhone } = useViewport();
   const formDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const [selectedRisk, setSelectedRisk] = useState<Risk | undefined>(undefined);
@@ -71,7 +73,7 @@ export default function RiskRegisterCard({
       .order("createdAt", { ascending: false });
 
     if (error) {
-      toast.error(t`Failed to fetch risks`);
+      toastError(t`Failed to fetch risks`, error);
       return;
     }
 
@@ -125,7 +127,13 @@ export default function RiskRegisterCard({
             <Loading isLoading={true} />
           </div>
         ) : risks.length === 0 ? (
-          <Empty className="py-8" />
+          isPhone ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No risks</Trans>
+            </p>
+          ) : (
+            <Empty className="py-8" />
+          )
         ) : (
           <div className="flex flex-col gap-4">
             {risks.map((risk) => (
@@ -141,8 +149,9 @@ export default function RiskRegisterCard({
         )}
       </CardContent>
 
-      {formDisclosure.isOpen && (
+      {formDisclosure.openCount > 0 && (
         <RiskRegisterForm
+          key={`risk-form-${formDisclosure.openCount}`}
           open={formDisclosure.isOpen}
           onClose={() => {
             formDisclosure.onClose();
@@ -179,17 +188,15 @@ export default function RiskRegisterCard({
         />
       )}
 
-      {selectedRisk && deleteDisclosure.isOpen && (
+      {selectedRisk && (
         <Confirm
           isOpen={deleteDisclosure.isOpen}
           confirmText={t`Delete`}
           onCancel={() => {
             deleteDisclosure.onClose();
-            setSelectedRisk(undefined);
           }}
           onSubmit={() => {
             deleteDisclosure.onClose();
-            setSelectedRisk(undefined);
             fetchRisks();
           }}
           title={t`Delete Risk`}
@@ -215,6 +222,7 @@ function RiskRegisterCardItem({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const riskTitle = risk.title;
 
   return (
     <div
@@ -235,9 +243,9 @@ function RiskRegisterCardItem({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity">
           <IconButton
-            aria-label={t`Edit`}
+            aria-label={t`Edit ${riskTitle}`}
             icon={<LuSettings2 className="h-4 w-4" />}
             variant="secondary"
             size="sm"

@@ -67,6 +67,7 @@ const PeriodsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuCalendarCheck />,
             exportValue: (row) => periodLabel(row)
           }
@@ -78,6 +79,7 @@ const PeriodsTable = memo(
             <DateTime value={row.original.startDate} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuCalendar />
           }
         },
@@ -100,6 +102,7 @@ const PeriodsTable = memo(
             </Status>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: (["Active", "Inactive"] as const).map((v) => ({
@@ -126,6 +129,7 @@ const PeriodsTable = memo(
             </Status>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: periodCloseStatuses.map((v) => ({

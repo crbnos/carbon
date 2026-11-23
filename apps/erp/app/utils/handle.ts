@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { RouteRealtimeTable } from "@carbon/database/realtime-tables";
+import type { Mode } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import type { ComponentType, ReactNode } from "react";
 
@@ -20,6 +21,19 @@ export type Handle = {
   // full-screen detail views that provide their own left panel (e.g. the
   // change-order workspace) so the app doesn't stack two left sidebars.
   hideModuleSidebar?: boolean;
+  // Phones only: the section switcher for a route that is a module section
+  // but has no desktop sidebar (desktop is unchanged). Makes it a root screen.
+  compactSidebar?: ComponentType;
+  // A full-width board that is a section of its module. Phones get the
+  // section switcher; desktop hides the module sidebar until the person shows
+  // it with the menu button (one cookie for every board).
+  boardSidebar?: ComponentType;
+  // Phones only: the app bar's subtitle under a record's ID ("Sales Order"),
+  // in place of the list crumb. Child routes (a line page) inherit it.
+  appBarSubtitle?: MessageDescriptor;
+  // A page another product frames (the Onshape panel) takes its mode from the
+  // host's URL, not from the user's own mode.
+  hostMode?: (searchParams: URLSearchParams) => Mode;
 };
 
 // A breadcrumb label may be plain text/markup or a Lingui MessageDescriptor

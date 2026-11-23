@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateQuoteLinePrecision } from "~/modules/sales";
+import { updateQuoteLinePrecision } from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-update-precision");

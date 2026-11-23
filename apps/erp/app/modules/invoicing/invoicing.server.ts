@@ -1,0 +1,4691 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
+import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
+import { assertPostingStatusUnchanged } from "@carbon/database/journal-posting-status";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import {
+  linkFinancingPayment,
+  markFinancingRequestsPaid
+} from "@carbon/ee/contract-financing.server";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked,
+  resolveSalesInvoiceShipTo,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
+import { trigger } from "@carbon/jobs";
+import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { raiseMoment } from "@carbon/lib/workflows";
+import { getLogger } from "@carbon/logger";
+import {
+  datetime,
+  deriveRate,
+  indexByMapped,
+  isUniqueViolation,
+  pluckUnique,
+  taxableBase,
+  toBaseAmount
+} from "@carbon/utils";
+import { sql } from "kysely";
+import { z } from "zod";
+import {
+  lineTaxForUpsert,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
+import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  resolveItemIdFromExtractedText,
+  upsertPart
+} from "~/modules/items/items.service";
+import {
+  chargeNumberError,
+  chargeNumbersError
+} from "~/modules/projects/projects.service";
+import {
+  deletePurchaseInvoiceLineReleasingLeases,
+  deletePurchaseInvoiceReleasingLeases,
+  purchaseOrderFundsGate,
+  resolvePurchaseLineTax
+} from "~/modules/purchasing/purchasing.service";
+import {
+  customerContactHasEmail,
+  deleteRentalCreditMemoReleasingPeriods,
+  deleteSalesInvoiceLineReleasingRentals,
+  deleteSalesInvoiceReleasingRentals,
+  recalculateSalesDocumentTaxes,
+  recordSalesRuleOutcome,
+  resolveSalesLineTax
+} from "~/modules/sales/sales.service";
+import {
+  getCompanySettings,
+  getNextSequence
+} from "~/modules/settings/settings.service";
+import {
+  FORCE_DELETE_MIN_REASON_LENGTH,
+  forceDeleteApprovalRefusal,
+  forceDeleteDocumentLabel,
+  forceDeleteDocumentTypes,
+  forceDeleteWithdrawRefusal,
+  isForceDeleteConfirmed
+} from "~/modules/shared/shared.models";
+import { refuseUnlessOwned } from "~/modules/shared/shared.service";
+import { stripSpecialCharacters } from "~/utils/string";
+import * as accountingPostings from "../accounting/accounting.service";
+import * as purchasingPostings from "../purchasing/purchasing.service";
+import { fromServerFn, invokePosting } from "../shared/shared.service";
+import {
+  isMemoLocked,
+  paymentValidator,
+  purchaseInvoiceSupplierChange,
+  purchaseInvoiceValidator,
+  reimbursementLinesValidator,
+  reimbursementPaymentValidator,
+  reimbursementUpdateValidator,
+  salesInvoiceCustomerChange,
+  salesInvoiceLineValidator,
+  salesInvoicePostValidator
+} from "./invoicing.models";
+import type { SalesRuleCheck, StripeSendContext } from "./invoicing.service";
+import * as service from "./invoicing.service";
+
+const logger = getLogger("erp", "invoicing");
+
+// --- Shared -------------------------------------------------------------------
+
+const customFieldValues = z.record(
+  z.string(),
+  z.union([z.string(), z.number(), z.boolean()])
+);
+// --- Sales invoices -----------------------------------------------------------
+const salesInvoiceFields = [
+  "invoiceCustomerId",
+  "customerId",
+  "dateIssued",
+  "paymentTermId",
+  "currencyCode",
+  "invoiceCustomerContactId",
+  "invoiceCustomerLocationId",
+  "locationId",
+  "customerReference",
+  "exchangeRate",
+  "dateDue",
+  "datePaid"
+] as const;
+
+/**
+ * Set one field on one or more sales invoices.
+ *
+ * @remarks
+ * Refused when any of the invoices is posted, except for the issue, due and
+ * paid dates. A new invoice customer brings its currency at today's rate
+ * (a customer with none keeps the invoice's) and clears the invoice contact
+ * and address. A new customer clears the ship-to of each invoice whose
+ * customer changes. A new issue date or payment term on a single invoice
+ * recomputes its due date; with several invoices nothing is written. A new
+ * currency brings today's exchange rate. An empty value clears the field.
+ */
+export const updateSalesInvoiceField = defineServiceFn({
+  input: service.fieldUpdate(salesInvoiceFields),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const locked = await service.refuseLockedInvoices(
+      ctx,
+      "salesInvoice",
+      ids,
+      field,
+      "Cannot modify a locked sales invoice."
+    );
+    if (locked) return locked;
+    const audit = {
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    };
+
+    if (field === "invoiceCustomerId") {
+      if (!value)
+        return ctx.error("validation", "Invoice customer is required");
+      const currency = await service.partyCurrency(ctx, "customer", value);
+      if (currency instanceof Error) return currency;
+      const update = await client
+        .from("salesInvoice")
+        .update({ ...salesInvoiceCustomerChange(value, currency), ...audit })
+        .in("id", ids)
+        .eq("companyId", companyId);
+      if (update.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update the invoices",
+          update.error
+        );
+      }
+      return { ids };
+    }
+
+    if (field === "customerId") {
+      // A ship-to is one of the old customer's locations, so a customer
+      // change clears it (sales rules would otherwise evaluate an address
+      // that is not the new customer's).
+      if (value) {
+        const changed = await client
+          .from("salesInvoice")
+          .select("id")
+          .in("id", ids)
+          .eq("companyId", companyId)
+          .neq("customerId", value);
+        if (changed.error) {
+          return ctx.error(
+            "internal",
+            "Failed to load the invoices",
+            changed.error
+          );
+        }
+        const changedIds = changed.data.map((row) => row.id);
+        if (changedIds.length > 0) {
+          const cleared = await client
+            .from("salesInvoiceShipment")
+            .update({ customerLocationId: null, ...audit })
+            .in("id", changedIds)
+            .eq("companyId", companyId);
+          if (cleared.error) {
+            return ctx.error(
+              "internal",
+              "Failed to clear the ship-to",
+              cleared.error
+            );
+          }
+        }
+      }
+      const update = await client
+        .from("salesInvoice")
+        .update({ customerId: value || undefined, ...audit })
+        .in("id", ids)
+        .eq("companyId", companyId);
+      if (update.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update the invoices",
+          update.error
+        );
+      }
+      return { ids };
+    }
+
+    return service.writeInvoiceField(ctx, "salesInvoice", {
+      ids,
+      field,
+      value
+    });
+  }
+});
+const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
+  customFields: customFieldValues.optional(),
+  acknowledged: z.boolean().default(false)
+});
+
+/**
+ * Add a line to a sales invoice.
+ *
+ * @remarks
+ * Refused while the invoice is posted. `discountPercent` is in percent points
+ * (0–100). A line with an item is first checked against the sales rules at
+ * the invoice's ship-to (none is assumed when the invoice has none): an
+ * error, or a warning not `acknowledged`, returns `violations` and adds
+ * nothing.
+ *
+ * @mcp
+ */
+export const createSalesInvoiceLine = defineServiceFn({
+  // A plain string, not the form validator's text field: the route sends
+  // "" for a code the user cleared, which must not read as "not sent".
+  input: salesInvoiceLineInput.safeExtend({
+    taxCodeId: z.string().optional()
+  }),
+  permission: { create: "invoicing" },
+
+  async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
+    const line = service.salesInvoiceLineRow(input);
+    // Only service job invoicing writes a Service line with no item.
+    if (line.invoiceLineType === "Service" && !line.itemId) {
+      return ctx.error("validation", "Item is required");
+    }
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      line.invoiceId,
+      "Cannot modify a locked sales invoice. Reopen it first."
+    );
+    if (locked) return locked;
+
+    let check: SalesRuleCheck = { violations: [], ruleNames: {} };
+    if (line.itemId) {
+      // A standalone line has no order, so the invoice's own ship-to.
+      const shipTo = await resolveSalesInvoiceShipTo(
+        ctx.asSystem.supabase,
+        line.invoiceId,
+        ctx.company.id
+      );
+      const gate = await service.salesInvoiceLineGate(ctx, {
+        invoiceId: line.invoiceId,
+        lineId: null,
+        itemId: line.itemId,
+        quantity: line.quantity ?? 1,
+        shipTo,
+        acknowledged
+      });
+      if (gate.blocked) return gate.blocked;
+      check = gate.check;
+    }
+
+    // A caller that sends no tax code (the API, MCP) takes the resolved tax;
+    // a non-taxable item carries none.
+    const tax = await resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesInvoice",
+        documentId: line.invoiceId,
+        lineId: null,
+        itemId: line.itemId,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
+    const created = await service.upsertSalesInvoiceLine(
+      ctx.asCaller.supabase,
+      {
+        ...line,
+        ...lineTaxForUpsert(tax.data),
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId,
+        customFields
+      }
+    );
+    if (created.error) {
+      return ctx.error(
+        "internal",
+        "Failed to create sales invoice line.",
+        created.error
+      );
+    }
+
+    if (line.itemId && check.violations.length > 0) {
+      await service.recordSalesInvoiceLineOutcome(
+        ctx,
+        {
+          invoiceId: line.invoiceId,
+          lineId: created.data.id,
+          itemId: line.itemId
+        },
+        "acknowledged",
+        check
+      );
+    }
+    return { salesInvoiceLineId: created.data.id };
+  }
+});
+
+/**
+ * Change a sales invoice line.
+ *
+ * @remarks
+ * Refused while the invoice is posted, and for a line that is not on
+ * `invoiceId`. A line with an item is first checked against the sales rules
+ * (see `createSalesInvoiceLine`); a line converted from a sales order is
+ * checked at that order's ship-to.
+ *
+ * @mcp
+ */
+export const updateSalesInvoiceLine = defineServiceFn({
+  input: salesInvoiceLineInput.safeExtend({ id: z.string() }),
+  permission: { create: "invoicing" },
+
+  async run(ctx, { id, acknowledged, customFields, ...input }) {
+    const line = service.salesInvoiceLineRow(input);
+    const refused = await refuseUnlessOwned(ctx, "salesInvoiceLine", {
+      id,
+      invoiceId: line.invoiceId
+    });
+    if (refused) return refused;
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      line.invoiceId,
+      "Cannot modify a locked sales invoice. Reopen it first."
+    );
+    if (locked) return locked;
+
+    // A Service line saved with no item must have had none: a service job's
+    // labor or fixed price line. A line with an item keeps one.
+    if (line.invoiceLineType === "Service" && !line.itemId) {
+      const stored = await ctx.asSystem.supabase
+        .from("salesInvoiceLine")
+        .select("itemId")
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .single();
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the sales invoice line",
+          stored.error
+        );
+      }
+      if (stored.data.itemId) {
+        return ctx.error("validation", "Item is required");
+      }
+    }
+
+    let check: SalesRuleCheck = { violations: [], ruleNames: {} };
+    if (line.itemId) {
+      const serviceRole = ctx.asSystem.supabase;
+      const existing = await serviceRole
+        .from("salesInvoiceLine")
+        .select("salesOrderId")
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (existing.error) {
+        // A failed read must not evaluate the wrong destination.
+        return ctx.error(
+          "internal",
+          "Failed to load the sales invoice line",
+          existing.error
+        );
+      }
+      // An order's line ships where the order does (drop-ship included).
+      const shipTo = existing.data?.salesOrderId
+        ? await resolveSalesOrderShipTo(
+            serviceRole,
+            existing.data.salesOrderId,
+            ctx.company.id
+          )
+        : await resolveSalesInvoiceShipTo(
+            serviceRole,
+            line.invoiceId,
+            ctx.company.id
+          );
+      const gate = await service.salesInvoiceLineGate(ctx, {
+        invoiceId: line.invoiceId,
+        lineId: id,
+        itemId: line.itemId,
+        quantity: line.quantity ?? 1,
+        shipTo,
+        acknowledged
+      });
+      if (gate.blocked) return gate.blocked;
+      check = gate.check;
+    }
+
+    // A non-taxable item carries no tax, and a code sets the rate.
+    const tax = await resolveSalesLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesInvoice",
+        documentId: line.invoiceId,
+        lineId: id,
+        itemId: line.itemId,
+        taxCodeId: updatedTaxCodeId(line),
+        taxPercent: line.taxPercent
+      }
+    );
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+
+    const updated = await service.upsertSalesInvoiceLine(
+      ctx.asCaller.supabase,
+      {
+        id,
+        ...line,
+        ...lineTaxForUpsert(tax.data),
+        updatedBy: ctx.auditUserId,
+        customFields
+      }
+    );
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update sales invoice line",
+        updated.error
+      );
+    }
+
+    if (line.itemId && check.violations.length > 0) {
+      await service.recordSalesInvoiceLineOutcome(
+        ctx,
+        { invoiceId: line.invoiceId, lineId: id, itemId: line.itemId },
+        "acknowledged",
+        check
+      );
+    }
+    return { salesInvoiceLineId: id };
+  }
+});
+
+/**
+ * Delete a line of a Draft sales invoice.
+ *
+ * @remarks
+ * Refused while the invoice is posted. A line that billed a rental period, a
+ * rental charge or a contract schedule line releases it in the same
+ * transaction, so the next invoice run bills it again.
+ *
+ * @mcp destructive
+ */
+export const deleteDraftSalesInvoiceLine = defineServiceFn({
+  input: z.object({ invoiceId: z.string(), lineId: z.string() }),
+  permission: { delete: "invoicing" },
+
+  async run(ctx, { invoiceId, lineId }) {
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      invoiceId,
+      "Cannot delete lines on a locked sales invoice."
+    );
+    if (locked) return locked;
+    try {
+      await deleteSalesInvoiceLineReleasingRentals(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        invoiceId,
+        salesInvoiceLineId: lineId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to delete sales invoice line", err);
+    }
+    return { invoiceId, lineId };
+  }
+});
+
+/**
+ * Recalculate the tax of every line on a sales invoice.
+ *
+ * @remarks
+ * Refused while the invoice is posted. Each line takes the tax decision for
+ * its item at the invoice's ship-to (`recalculateSalesDocumentTaxes`): run
+ * it after the ship-to or the customer's tax code changed. Rental and
+ * contract lines keep the tax of their agreement or contract.
+ *
+ * @mcp
+ */
+export const recalculateSalesInvoiceTaxes = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      invoiceId,
+      "Cannot modify a locked sales invoice. Reopen it first."
+    );
+    if (locked) return locked;
+    const result = await recalculateSalesDocumentTaxes(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        document: "salesInvoice",
+        documentId: invoiceId
+      }
+    );
+    if (result.refused) return ctx.error("rule", result.error);
+    if (result.error !== null) {
+      return ctx.error("internal", "Failed to recalculate taxes", result.error);
+    }
+    return { invoiceId, updated: result.data.updated };
+  }
+});
+
+/**
+ * Delete a Draft sales invoice.
+ *
+ * @remarks
+ * Refused once the invoice is posted. An invoice that billed rental periods,
+ * rental charges or contract schedule lines releases them in the same
+ * transaction, so the next invoice run bills them again.
+ *
+ * @mcp destructive
+ */
+export const deleteDraftSalesInvoice = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { delete: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      invoiceId,
+      "Only a Draft sales invoice can be deleted."
+    );
+    if (locked) return locked;
+    try {
+      await deleteSalesInvoiceReleasingRentals(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        invoiceId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to delete sales invoice", err);
+    }
+    return { invoiceId };
+  }
+});
+
+/**
+ * Void a posted sales invoice.
+ *
+ * @remarks
+ * Refused for an invoice that was never posted. The `post-sales-invoice`
+ * server function reverses its journal, its stock and its order and shipment
+ * updates; its refusal is returned as it is.
+ *
+ * @mcp destructive
+ */
+export const voidSalesInvoice = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const invoice = await ctx.asCaller.supabase
+      .from("salesInvoice")
+      .select("status, postingDate")
+      .eq("id", invoiceId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (invoice.error) {
+      return ctx.error(
+        "internal",
+        "Failed to void sales invoice",
+        invoice.error
+      );
+    }
+    if (!invoice.data) return ctx.error("notFound", "Sales invoice not found");
+    if (!invoice.data.postingDate) {
+      return ctx.error("rule", "Can only void posted invoices");
+    }
+
+    const voided = await invokePosting(
+      ctx,
+      "post-sales-invoice",
+      {
+        type: "void",
+        invoiceId
+      },
+      service.postSalesInvoice
+    );
+    if (voided.error) {
+      return fromServerFn(ctx, voided.error, "Failed to void sales invoice");
+    }
+    return { invoiceId };
+  }
+});
+
+/**
+ * Send a posted sales invoice again, after its send failed.
+ *
+ * @remarks
+ * Refused for an invoice that is not posted, is voided, or was already sent.
+ * Queues invoice automation with `resend`: it sends through Stripe when the
+ * invoice's recurring source sends via Stripe, otherwise by email.
+ *
+ * @mcp
+ */
+export const sendSalesInvoice = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const companyId = ctx.company.id;
+    const invoice = await ctx.asCaller.supabase
+      .from("salesInvoice")
+      .select("id, status, postingDate, sentAt")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (invoice.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load sales invoice",
+        invoice.error
+      );
+    }
+    if (!invoice.data) return ctx.error("notFound", "Sales invoice not found");
+
+    // Posted, as the header reads it: has a posting date and is not voided.
+    if (!invoice.data.postingDate || invoice.data.status === "Voided") {
+      return ctx.error("rule", "Only a posted invoice can be sent");
+    }
+    if (invoice.data.sentAt) {
+      return ctx.error("rule", "This invoice has already been sent");
+    }
+
+    try {
+      await trigger("invoice-automate", { companyId, invoiceId, resend: true });
+    } catch (err) {
+      return ctx.error("internal", "Failed to send invoice", err);
+    }
+    return { invoiceId };
+  }
+});
+/**
+ * Post a Draft sales invoice, then send it.
+ *
+ * @remarks
+ * In order, before anything is written: the customer must have a reachable
+ * contact when the company requires one; the sales-rule gate re-checks every
+ * line (an error, or a warning not `acknowledged`, returns `violations` and
+ * posts nothing); for `notification` Stripe, the Stripe customer the user
+ * confirmed (`stripeCustomerAction`) is resolved and linked. Then the invoice
+ * is claimed (Draft to Pending, refused when it is no longer a Draft) and
+ * posted by the `post-sales-invoice` server function; a failed post returns
+ * the invoice to Draft. After the post: the PDF is filed and, with Email, it
+ * is emailed to `customerContact` (and `cc`), or with Stripe the invoice is
+ * sent through the connected account. A failure after the post keeps the
+ * invoice posted, stamps the send error on it and returns `warning`.
+ * `locale` formats the PDF.
+ *
+ * @mcp
+ */
+export const postSalesInvoice = defineServiceFn({
+  input: salesInvoicePostValidator.safeExtend({
+    invoiceId: z.string(),
+    acknowledged: z.boolean().default(false),
+    locale: z.string().default("en-US")
+  }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, input) {
+    const { invoiceId, notification, customerContact, locale } = input;
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    // Everything below reads and writes through the service role, so the
+    // invoice must be this company's before anything happens.
+    const refused = await refuseUnlessOwned(ctx, "salesInvoice", {
+      id: invoiceId
+    });
+    if (refused) return refused;
+
+    // Off by default: only for a company that asked for the policy. The read
+    // fails CLOSED: a party with no id is not checked at all.
+    const invoiceCustomer = await client
+      .from("salesInvoice")
+      .select("customerId")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (invoiceCustomer.error || !invoiceCustomer.data) {
+      return ctx.error(
+        "internal",
+        "Failed to post sales invoice",
+        invoiceCustomer.error
+      );
+    }
+    const contactRequired = await checkPartyContactRequirement(
+      client,
+      companyId,
+      { kind: "customer", id: invoiceCustomer.data.customerId }
+    );
+    if (contactRequired) return ctx.error("rule", contactRequired);
+
+    // The revenue checkpoint, and the only gate a standalone invoice passes:
+    // lines arrive from convert, the API and MCP without the per-line check.
+    // Before the claim below, or a blocked post strands the invoice Pending.
+    let found: SalesRuleCheck;
+    try {
+      found = await evaluateSalesRulesForSalesDocument({
+        client: serviceRole,
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId
+      });
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        `Invoice not posted — ${
+          err instanceof Error ? err.message : "sales rule evaluation failed"
+        }`,
+        err
+      );
+    }
+    const check = {
+      violations: dedupeViolations(found.violations),
+      ruleNames: found.ruleNames
+    };
+    if (
+      check.violations.length > 0 &&
+      isBlocked(check.violations, input.acknowledged)
+    ) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId,
+        outcome: "blocked",
+        ...check
+      });
+      return check;
+    }
+
+    if (
+      notification === "Email" &&
+      (!customerContact ||
+        !(await customerContactHasEmail(
+          serviceRole,
+          customerContact,
+          companyId
+        )))
+    ) {
+      return ctx.error(
+        "rule",
+        "Invoice not posted — the invoice contact has no email address"
+      );
+    }
+
+    let stripeSend: StripeSendContext | null = null;
+    if (notification === "Stripe") {
+      const preflight = await service
+        .preflightStripeSend(ctx, {
+          invoiceId,
+          customerContact,
+          stripeCustomerAction: input.stripeCustomerAction,
+          stripeCustomerId: input.stripeCustomerId,
+          stripeContactEmail: input.stripeContactEmail
+        })
+        .catch(
+          (err: unknown) =>
+            ({
+              ok: false,
+              message:
+                err instanceof Error
+                  ? err.message
+                  : "the Stripe preflight failed"
+            }) as const
+        );
+      if (!preflight.ok) {
+        return ctx.error("rule", `Invoice not posted — ${preflight.message}`);
+      }
+      stripeSend = preflight.context;
+    }
+
+    // Claim: only a Draft. Invoice automation's own claim IS a Pending row,
+    // so re-claiming Pending here could post twice.
+    const claimed = await client
+      .from("salesInvoice")
+      .update({ status: "Pending" })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .select("id")
+      .maybeSingle();
+    if (claimed.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update sales invoice status",
+        claimed.error
+      );
+    }
+    if (!claimed.data) {
+      return ctx.error(
+        "conflict",
+        "This invoice is no longer a draft — it may be posting already"
+      );
+    }
+
+    const posted = await invokePosting(
+      ctx,
+      "post-sales-invoice",
+      {
+        invoiceId
+      },
+      service.postSalesInvoice
+    );
+    if (posted.error) {
+      // Put back OUR claim only: a failed response can still have posted, so
+      // a bare reset to Draft could un-post a posted invoice.
+      const released = await client
+        .from("salesInvoice")
+        .update({ status: "Draft" })
+        .eq("id", invoiceId)
+        .eq("companyId", companyId)
+        .eq("status", "Pending");
+      if (released.error) {
+        logger.error("Failed to release a failed post", {
+          companyId,
+          invoiceId,
+          error: released.error
+        });
+      }
+      return fromServerFn(ctx, posted.error, "Failed to post sales invoice");
+    }
+
+    // Override evidence only once the post has committed.
+    if (check.violations.length > 0) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId,
+        outcome: "acknowledged",
+        ...check
+      });
+    }
+
+    // Below the rollback above: a post returned to Draft fires no workflow.
+    await raiseMoment("invoicing.salesInvoicePosted", {
+      outputs: { salesInvoice: { id: invoiceId }, postedBy: { id: userId } },
+      companyId,
+      actorId: userId
+    });
+    trackWorkEvent("sales_invoice_posted", {
+      companyId,
+      userId,
+      salesInvoiceId: invoiceId
+    });
+
+    const sentVia =
+      notification === "Email" || notification === "Stripe"
+        ? notification
+        : null;
+    const warning = await service.sendPostedSalesInvoice(ctx, {
+      invoiceId,
+      notification: sentVia,
+      customerContact,
+      cc: input.cc,
+      stripeSend,
+      stripeDueDate: input.stripeDueDate,
+      locale
+    });
+    return { invoiceId, sentVia, warning };
+  }
+});
+// --- Purchase invoices --------------------------------------------------------
+/**
+ * Create a purchase invoice.
+ *
+ * @remarks
+ * The invoice is created with its supplier interaction and delivery, and the
+ * supplier's payment and shipping defaults. Then, optionally: one line per
+ * extracted `lines` entry that has a part number or description (an item
+ * when its text matches one directly, otherwise a Comment line), with the
+ * whole `taxAmount` on the first line; and the file at `documentPath` (an
+ * extraction upload) copied onto the supplier interaction as a document. A
+ * failed line or copy does not fail the invoice.
+ *
+ * @mcp
+ */
+export const createPurchaseInvoice = defineServiceFn({
+  input: purchaseInvoiceValidator.safeExtend({
+    customFields: customFieldValues.optional(),
+    lines: z
+      .array(
+        z.object({
+          partNumber: z.coerce.string<string>().nullish(),
+          description: z.coerce.string<string>().nullish(),
+          quantity: z.coerce.number<number>().nullish(),
+          unitPrice: z.coerce.number<number>().nullish()
+        })
+      )
+      .default([]),
+    taxAmount: z.number().default(0),
+    documentPath: z.string().optional()
+  }),
+  permission: { create: "invoicing" },
+
+  async run(
+    ctx,
+    { id: _id, lines, taxAmount, documentPath, customFields, ...invoice }
+  ) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const result = await service.insertPurchaseInvoice(client, {
+      ...invoice,
+      invoiceId: invoice.invoiceId || undefined,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      createdBy: userId,
+      customFields
+    });
+    if (result.error || !result.data) {
+      return ctx.error(
+        "internal",
+        "Failed to insert purchase invoice",
+        result.error
+      );
+    }
+    const id = result.data.id;
+
+    const work: Promise<unknown>[] = [];
+    let taxApplied = false;
+    for (const line of lines) {
+      if (!line.description && !line.partNumber) continue;
+
+      // The document's whole tax lands on the first line. The AMOUNT is what
+      // the supplier charged; the rate is derived from it, held inside the
+      // 0..1 fraction the validator requires. No shipping: it is 0 here.
+      const lineTax = taxApplied ? 0 : taxAmount;
+      taxApplied = true;
+      const subtotal = taxableBase(line.unitPrice || 0, line.quantity || 1, 0);
+      const taxPercent = Math.min(1, deriveRate(lineTax, subtotal));
+
+      // Map the line when its text directly matches an item; the rest stay
+      // comments for the review modal.
+      const itemId = await resolveItemIdFromExtractedText(
+        client,
+        companyId,
+        { type: "supplier", id: invoice.supplierId },
+        [line.partNumber, line.description]
+      );
+      work.push(
+        service.upsertPurchaseInvoiceLine(client, {
+          invoiceId: id,
+          invoiceLineType: itemId ? "Part" : "Comment",
+          itemId: itemId ?? undefined,
+          description: line.partNumber || line.description || "Line Item",
+          quantity: line.quantity || 1,
+          supplierUnitPrice: line.unitPrice || 0,
+          supplierShippingCost: 0,
+          supplierTaxAmount: lineTax,
+          taxPercent,
+          locationId: invoice.locationId,
+          companyId,
+          createdBy: userId,
+          customFields: {}
+        })
+      );
+    }
+
+    if (documentPath) {
+      work.push(
+        (async () => {
+          const created = await service.getPurchaseInvoice(client, id);
+          const interactionId = created.data?.supplierInteractionId;
+          if (!interactionId) return;
+          const basename =
+            documentPath.split("/").pop() || "Extracted_Invoice.pdf";
+          const originalFilename = basename.includes("_")
+            ? basename.split("_").slice(1).join("_")
+            : basename;
+          const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${stripSpecialCharacters(originalFilename)}`;
+          const copied = await storage(client)
+            .company(companyId)
+            .copy(documentPath, newStoragePath);
+          if (copied.error) return;
+          await upsertDocument(client, {
+            path: newStoragePath,
+            name: originalFilename,
+            size: 0,
+            sourceDocument: "Purchase Invoice",
+            sourceDocumentId: id,
+            readGroups: [userId],
+            writeGroups: [userId],
+            createdBy: userId,
+            companyId
+          });
+        })()
+      );
+    }
+    await Promise.all(work);
+
+    return { id, invoiceId: result.data.invoiceId };
+  }
+});
+
+const purchaseInvoiceFields = [
+  "invoiceSupplierId",
+  "supplierId",
+  "dateIssued",
+  "paymentTermId",
+  "currencyCode",
+  "invoiceSupplierContactId",
+  "invoiceSupplierLocationId",
+  "locationId",
+  "supplierReference",
+  "exchangeRate",
+  "dateDue",
+  "datePaid"
+] as const;
+
+/**
+ * Set one field on one or more purchase invoices.
+ *
+ * @remarks
+ * Refused when any of the invoices is posted, except for the issue, due and
+ * paid dates. A new invoice supplier brings its currency at today's rate
+ * (a supplier with none keeps the invoice's) and clears the invoice contact
+ * and address. A new issue date or payment term on a single invoice
+ * recomputes its due date; with several invoices nothing is written. A new
+ * currency brings today's exchange rate. An empty value clears the field.
+ */
+export const updatePurchaseInvoiceField = defineServiceFn({
+  input: service.fieldUpdate(purchaseInvoiceFields),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const locked = await service.refuseLockedInvoices(
+      ctx,
+      "purchaseInvoice",
+      ids,
+      field,
+      "Cannot modify a confirmed purchase invoice."
+    );
+    if (locked) return locked;
+
+    if (field === "invoiceSupplierId") {
+      if (!value)
+        return ctx.error("validation", "Invoice supplier is required");
+      const currency = await service.partyCurrency(ctx, "supplier", value);
+      if (currency instanceof Error) return currency;
+      const update = await ctx.asCaller.supabase
+        .from("purchaseInvoice")
+        .update({
+          ...purchaseInvoiceSupplierChange(value, currency),
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .in("id", ids)
+        .eq("companyId", ctx.company.id);
+      if (update.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update the invoices",
+          update.error
+        );
+      }
+      return { ids };
+    }
+
+    return service.writeInvoiceField(ctx, "purchaseInvoice", {
+      ids,
+      field,
+      value
+    });
+  }
+});
+
+/**
+ * Post a Draft purchase invoice.
+ *
+ * @remarks
+ * The supplier must have a reachable contact when the company requires one.
+ * The invoice is claimed (Draft or Pending to Pending; refused once posted)
+ * and posted by the `post-purchase-invoice` server function, which receives
+ * its lines; with `skipReceiptPost` the receipt is created but not posted,
+ * for tracked items, and its id is returned as `receiptId`. When the company
+ * updates purchase prices on invoice post, they are updated next. A failed
+ * post or price update returns the invoice to Draft.
+ *
+ * @mcp
+ */
+export const postPurchaseInvoice = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string(),
+    skipReceiptPost: z.boolean().default(false)
+  }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId, skipReceiptPost }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const refused = await refuseUnlessOwned(ctx, "purchaseInvoice", {
+      id: invoiceId
+    });
+    if (refused) return refused;
+
+    // A supplier with no reachable contact cannot be created as a vendor at
+    // a spend platform, so the invoice would be rejected there hours later.
+    // The read fails CLOSED: a party with no id is not checked at all.
+    const invoiceSupplier = await client
+      .from("purchaseInvoice")
+      .select("supplierId")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (invoiceSupplier.error || !invoiceSupplier.data) {
+      return ctx.error(
+        "internal",
+        "Failed to post purchase invoice",
+        invoiceSupplier.error
+      );
+    }
+    const contactRequired = await checkPartyContactRequirement(
+      client,
+      companyId,
+      { kind: "supplier", id: invoiceSupplier.data.supplierId }
+    );
+    if (contactRequired) return ctx.error("rule", contactRequired);
+
+    // The funds gate (approved, released orders within their approved
+    // amounts) runs in the posting itself, so Ramp's bill sync and every
+    // other caller of `post-purchase-invoice` get the same refusal.
+
+    const claimed = await client
+      .from("purchaseInvoice")
+      .update({ status: "Pending" })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .in("status", ["Draft", "Pending"])
+      .select("id");
+    if (claimed.error) {
+      return ctx.error(
+        "internal",
+        "Failed to post purchase invoice",
+        claimed.error
+      );
+    }
+    if (!claimed.data.length) {
+      return ctx.error(
+        "conflict",
+        "This purchase invoice has already been posted"
+      );
+    }
+
+    // Known gap, kept from the route: the price update runs after the post
+    // has committed, so a failed one sets a posted invoice back to Draft.
+    const backToDraft = async () => {
+      const reverted = await client
+        .from("purchaseInvoice")
+        .update({ status: "Draft" })
+        .eq("id", invoiceId)
+        .eq("companyId", companyId);
+      if (reverted.error) {
+        logger.error("Failed to return a purchase invoice to Draft", {
+          companyId,
+          invoiceId,
+          error: reverted.error
+        });
+      }
+    };
+
+    let receiptIds: string[] | undefined;
+    try {
+      const posted = await invokePosting(
+        ctx,
+        "post-purchase-invoice",
+        {
+          invoiceId,
+          skipReceiptPost
+        },
+        service.postPurchaseInvoice
+      );
+      if (posted.error) {
+        await backToDraft();
+        logger.error("Failed to post purchase invoice", {
+          companyId,
+          invoiceId,
+          error: posted.error
+        });
+        // A refusal the user can act on (a 4xx, such as a Reverse Charge
+        // line that still carries a tax amount) says what to fix; anything
+        // else stays generic.
+        return fromServerFn(
+          ctx,
+          posted.error,
+          "Failed to post purchase invoice"
+        );
+      }
+      receiptIds = posted.data?.receiptIds;
+
+      const settings = await getCompanySettings(
+        ctx.asSystem.supabase,
+        companyId
+      );
+      const timing = settings.data?.purchasePriceUpdateTiming;
+      if (!timing || timing === "Purchase Invoice Post") {
+        const prices = await invokePosting(
+          ctx,
+          "update-purchased-prices",
+          {
+            invoiceId,
+            source: "purchaseInvoice",
+            updatePrices: true,
+            updateLeadTimes: false
+          },
+          purchasingPostings.updatePurchasedPrices
+        );
+        if (prices.error) {
+          await backToDraft();
+          return ctx.error("internal", "Failed to update prices", prices.error);
+        }
+      }
+    } catch (err) {
+      await backToDraft();
+      return ctx.error("internal", "Failed to post purchase invoice", err);
+    }
+
+    // Below the rollback: a post returned to Draft fires no workflow.
+    await raiseMoment("invoicing.purchaseInvoicePosted", {
+      outputs: { purchaseInvoice: { id: invoiceId }, postedBy: { id: userId } },
+      companyId,
+      actorId: userId
+    });
+    trackWorkEvent("purchase_invoice_posted", {
+      companyId,
+      userId,
+      purchaseInvoiceId: invoiceId
+    });
+
+    return {
+      invoiceId,
+      receiptId: (skipReceiptPost && receiptIds?.[0]) || null
+    };
+  }
+});
+
+/**
+ * Void a posted purchase invoice.
+ *
+ * @remarks
+ * Refused for an invoice that was never posted, is already voided, or has a
+ * payment applied (reverse the payment first). The `post-purchase-invoice`
+ * server function reverses its journal and its receipts; its refusal is
+ * returned as it is.
+ *
+ * @mcp destructive
+ */
+export const voidPurchaseInvoice = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const invoice = await ctx.asCaller.supabase
+      .from("purchaseInvoice")
+      .select("status, postingDate")
+      .eq("id", invoiceId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (invoice.error) {
+      return ctx.error(
+        "internal",
+        "Failed to void purchase invoice",
+        invoice.error
+      );
+    }
+    if (!invoice.data) {
+      return ctx.error("notFound", "Purchase invoice not found");
+    }
+    const { status, postingDate } = invoice.data;
+    if (!postingDate) {
+      return ctx.error("rule", "Can only void posted purchase invoices");
+    }
+    if (status === "Voided") {
+      return ctx.error("rule", "Purchase invoice is already voided");
+    }
+    if (status === "Paid" || status === "Partially Paid") {
+      return ctx.error(
+        "rule",
+        "Cannot void a purchase invoice with payments applied. Reverse the payment first."
+      );
+    }
+
+    const voided = await invokePosting(
+      ctx,
+      "post-purchase-invoice",
+      {
+        type: "void",
+        invoiceId
+      },
+      service.postPurchaseInvoice
+    );
+    if (voided.error) {
+      return fromServerFn(ctx, voided.error, "Failed to void purchase invoice");
+    }
+    return { invoiceId };
+  }
+});
+
+/**
+ * Delete a Draft purchase invoice.
+ *
+ * @remarks
+ * Refused once the invoice is posted. An invoice that billed lease payment
+ * rows returns them to Pending in the same transaction, so the next lease
+ * run bills them again.
+ *
+ * @mcp destructive
+ */
+export const deleteDraftPurchaseInvoice = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { delete: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const locked = await service.unlockedPurchaseInvoice(
+      ctx,
+      invoiceId,
+      "Only a Draft purchase invoice can be deleted."
+    );
+    if (locked) return locked;
+    try {
+      await deletePurchaseInvoiceReleasingLeases(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        invoiceId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to delete purchase invoice", err);
+    }
+    return { invoiceId };
+  }
+});
+
+/**
+ * Delete a line of a Draft purchase invoice.
+ *
+ * @remarks
+ * Refused while the invoice is posted. A Lease line returns the payment row
+ * it billed to Pending in the same transaction.
+ *
+ * @mcp destructive
+ */
+export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
+  input: z.object({ invoiceId: z.string(), lineId: z.string() }),
+  permission: { delete: "invoicing" },
+
+  async run(ctx, { invoiceId, lineId }) {
+    const locked = await service.unlockedPurchaseInvoice(
+      ctx,
+      invoiceId,
+      "Cannot delete lines on a confirmed purchase invoice."
+    );
+    if (locked) return locked;
+    try {
+      await deletePurchaseInvoiceLineReleasingLeases(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        invoiceId,
+        purchaseInvoiceLineId: lineId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        "Failed to delete purchase invoice line",
+        err
+      );
+    }
+    return { invoiceId, lineId };
+  }
+});
+
+/**
+ * Map a purchase invoice's extracted Comment lines to items.
+ *
+ * @remarks
+ * Every line must be on the invoice and every named item the company's.
+ * `map` sets the line's item; `create` first reuses the item whose part
+ * number is `createName` (or the description), or creates it as a bought
+ * part; `ignore` skips the line. A mapped line becomes a Part line.
+ * `failed` counts the lines that could not be mapped.
+ *
+ * @mcp
+ */
+export const mapPurchaseInvoiceLines = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string(),
+    mappings: z.array(
+      z.object({
+        lineId: z.string(),
+        action: z.enum(["map", "create", "ignore"]),
+        itemId: z.string().nullish(),
+        createName: z.string().nullish(),
+        description: z.string().nullish()
+      })
+    )
+  }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId, mappings }) {
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    // Every line and item id is the caller's: prove each line is on this
+    // invoice and each item this company's before any write.
+    const active = mappings.filter((map) => map.action !== "ignore");
+    const lineIds = [...new Set(active.map((map) => map.lineId))];
+    const itemIds = [
+      ...new Set(active.flatMap((map) => (map.itemId ? [map.itemId] : [])))
+    ];
+    if (lineIds.length > 0) {
+      const lines = await serviceRole
+        .from("purchaseInvoiceLine")
+        .select("id")
+        .eq("invoiceId", invoiceId)
+        .eq("companyId", companyId)
+        .in("id", lineIds);
+      if (lines.error || lines.data.length !== lineIds.length) {
+        logger.error("Invoice lines not found for mapping", {
+          companyId,
+          invoiceId,
+          lineIds,
+          error: lines.error
+        });
+        return ctx.error("notFound", "Invoice line not found");
+      }
+    }
+    if (itemIds.length > 0) {
+      const items = await serviceRole
+        .from("item")
+        .select("id")
+        .eq("companyId", companyId)
+        .in("id", itemIds);
+      if (items.error || items.data.length !== itemIds.length) {
+        logger.error("Items not found for invoice line mapping", {
+          companyId,
+          invoiceId,
+          itemIds,
+          error: items.error
+        });
+        return ctx.error("notFound", "Item not found");
+      }
+    }
+
+    // Reuse an item with that part number rather than fail on the unique
+    // constraint or create a duplicate. One read for every new name.
+    const newNames = pluckUnique(active, (map) =>
+      map.action === "create"
+        ? (map.createName || map.description || "").trim() || null
+        : null
+    );
+    // Kysely, not PostgREST: free-text names in an `.in()` URL break on a quote
+    // or the gateway's URL limit. Lowest revision first (by length, so 10 sorts
+    // after 9 and AA after Z), so the highest wins.
+    const existing =
+      newNames.length > 0
+        ? await ctx.asSystem.pg
+            .selectFrom("item")
+            .select(["id", "readableId"])
+            .where("companyId", "=", companyId)
+            .where("readableId", "in", newNames)
+            .orderBy(sql`length("revision")`)
+            .orderBy("revision")
+            .orderBy("createdAt")
+            .execute()
+        : [];
+    const existingByName = indexByMapped(
+      existing,
+      (item) => item.readableId,
+      (item) => item.id
+    );
+
+    let failed = 0;
+    for (const map of active) {
+      let itemId = map.itemId;
+
+      if (map.action === "create") {
+        const name = (map.createName || map.description || "").trim();
+        if (!name) continue;
+
+        const existingId = existingByName.get(name);
+        if (existingId) {
+          itemId = existingId;
+        } else {
+          // The service role: the invoicing-scoped client cannot insert items.
+          const created = await upsertPart(serviceRole, {
+            id: name,
+            name,
+            revision: "0",
+            description: map.description || undefined,
+            replenishmentSystem: "Buy",
+            defaultMethodType: "Pull from Inventory",
+            itemTrackingType: "Inventory",
+            unitOfMeasureCode: "EA",
+            shelfLifeCalculateFromBom: false,
+            companyId,
+            createdBy: userId
+          });
+          if (created.error || !created.data?.id) {
+            failed++;
+            logger.error("Failed to create part for invoice line", {
+              companyId,
+              invoiceId,
+              lineId: map.lineId,
+              readableId: name,
+              error: created.error
+            });
+          } else {
+            itemId = created.data.id;
+            existingByName.set(name, created.data.id);
+          }
+        }
+      }
+      if (!itemId) continue;
+
+      // Set the line's item and promote it from a Comment to a Part line.
+      const mapped = await ctx.asCaller.supabase
+        .from("purchaseInvoiceLine")
+        .update({ itemId, invoiceLineType: "Part", updatedBy: userId })
+        .eq("id", map.lineId)
+        .eq("companyId", companyId);
+      if (mapped.error) {
+        failed++;
+        logger.error("Failed to map invoice line to item", {
+          companyId,
+          invoiceId,
+          lineId: map.lineId,
+          itemId,
+          error: mapped.error
+        });
+      }
+    }
+
+    return { failed };
+  }
+});
+
+// --- Payments -----------------------------------------------------------------
+/**
+ * Create a Draft payment.
+ *
+ * @remarks
+ * A deposit (`salesOrderId` / `rentalAgreementId` / `customerContractId`)
+ * must name this company's and this customer's document, and a supplier
+ * prepayment (`purchaseOrderId`) this supplier's purchase order; a new one
+ * needs an open document. That refusal is a `validation` error. The currency must be
+ * configured for the company. Without a `paymentId` the next number is used.
+ * A contract deposit made from a financing request (`financingRequestId`)
+ * receives that request; a failed link is logged and the payment kept. Then
+ * one application is seeded per `seedInvoiceIds` invoice of the payment's
+ * party in the payment's currency, for its full open balance less any
+ * early-payment discount as of the payment date. When seeding fails the
+ * payment is kept and `warning` says so.
+ *
+ * @mcp
+ */
+export const createPayment = defineServiceFn({
+  input: paymentValidator.safeExtend({
+    customFields: customFieldValues.optional(),
+    seedInvoiceIds: z.array(z.string()).default([]),
+    financingRequestId: z.string().optional()
+  }),
+  permission: { create: "invoicing" },
+
+  async run(
+    ctx,
+    { id: _id, seedInvoiceIds, customFields, financingRequestId, ...payment }
+  ) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    // The deposit ids arrive as hidden fields: never trust them to name this
+    // company's, this customer's, open document.
+    const depositError = await service.checkDepositDocument(
+      client,
+      companyId,
+      payment
+    );
+    if (depositError) return ctx.error("validation", depositError);
+
+    try {
+      await service.getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        payment.currencyCode
+      );
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Invalid currency configuration",
+        err
+      );
+    }
+
+    let paymentId = payment.paymentId;
+    if (!paymentId) {
+      const next = await getNextSequence(client, "payment", companyId);
+      if (next.error || !next.data) {
+        return ctx.error(
+          "internal",
+          "Failed to allocate payment id",
+          next.error
+        );
+      }
+      paymentId = next.data;
+    }
+
+    const inserted = await service.upsertPayment(client, {
+      ...payment,
+      paymentId,
+      companyId,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (inserted.error || !inserted.data) {
+      return ctx.error("internal", "Failed to create payment", inserted.error);
+    }
+    const id = inserted.data.id;
+
+    // A payment made from a contract financing request receives that request.
+    if (financingRequestId && payment.customerContractId) {
+      try {
+        await linkFinancingPayment(client, ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          customerContractId: payment.customerContractId,
+          requestId: financingRequestId,
+          paymentId: id
+        });
+      } catch (err) {
+        logger.error("Failed to link the payment to the financing request", {
+          companyId,
+          financingRequestId,
+          error: err
+        });
+      }
+    }
+
+    let warning: string | null = null;
+    if (seedInvoiceIds.length > 0) {
+      try {
+        await service.seedPaymentApplications(ctx, {
+          id,
+          ...payment,
+          seedInvoiceIds
+        });
+      } catch (err) {
+        // A Draft with no applications is valid; they are applied by hand.
+        logger.error("Failed to seed payment applications", {
+          companyId,
+          paymentId: id,
+          error: err
+        });
+        warning = "Payment created, but applying it to the invoices failed";
+      }
+    }
+    return { id, paymentId, warning };
+  }
+});
+/**
+ * Post a Draft payment.
+ *
+ * @remarks
+ * The `post-payment` server function books the payment's journal and its
+ * applications; its refusal is returned as it is. The contract financing
+ * requests the payment receives are then Paid (a failure is logged, the
+ * payment stays posted).
+ *
+ * @mcp
+ */
+export const postPayment = defineServiceFn({
+  input: z.object({ paymentId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { paymentId }) {
+    const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
+    if (refused) return refused;
+    const posted = await invokePosting(
+      ctx,
+      "post-payment",
+      {
+        type: "post",
+        paymentId
+      },
+      service.postPayment
+    );
+    if (posted.error) {
+      return fromServerFn(ctx, posted.error, "Failed to post payment");
+    }
+    // A contract deposit can receive a financing request: it is now Paid.
+    try {
+      await markFinancingRequestsPaid(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        paymentId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      logger.error("Failed to mark the financing request paid", {
+        companyId: ctx.company.id,
+        paymentId,
+        error: err
+      });
+    }
+    return { paymentId };
+  }
+});
+
+/**
+ * Void a posted payment.
+ *
+ * @remarks
+ * The `post-payment` server function reverses the payment's journal and its
+ * applications; its refusal is returned as it is.
+ *
+ * @mcp destructive
+ */
+export const voidPayment = defineServiceFn({
+  input: z.object({ paymentId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { paymentId }) {
+    const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
+    if (refused) return refused;
+    const voided = await invokePosting(
+      ctx,
+      "post-payment",
+      {
+        type: "void",
+        paymentId
+      },
+      service.postPayment
+    );
+    if (voided.error) {
+      return fromServerFn(ctx, voided.error, "Failed to void payment");
+    }
+    return { paymentId };
+  }
+});
+
+// --- Memos and charges ---------------------------------------------------------
+
+/**
+ * Post a Draft credit or debit memo.
+ *
+ * @remarks
+ * The `post-memo` server function books its journal; its refusal is
+ * returned as it is.
+ *
+ * @mcp
+ */
+export const postMemo = defineServiceFn({
+  input: z.object({ memoId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { memoId }) {
+    const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
+    if (refused) return refused;
+    const posted = await invokePosting(
+      ctx,
+      "post-memo",
+      {
+        type: "post",
+        memoId
+      },
+      service.postMemo
+    );
+    if (posted.error) {
+      return fromServerFn(ctx, posted.error, "Failed to post memo");
+    }
+    return { memoId };
+  }
+});
+
+/**
+ * Void a posted credit or debit memo.
+ *
+ * @remarks
+ * The `post-memo` server function reverses its journal; its refusal is
+ * returned as it is.
+ *
+ * @mcp destructive
+ */
+export const voidMemo = defineServiceFn({
+  input: z.object({ memoId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { memoId }) {
+    const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
+    if (refused) return refused;
+    const voided = await invokePosting(
+      ctx,
+      "post-memo",
+      {
+        type: "void",
+        memoId
+      },
+      service.postMemo
+    );
+    if (voided.error) {
+      return fromServerFn(ctx, voided.error, "Failed to void memo");
+    }
+    return { memoId };
+  }
+});
+
+/**
+ * Delete a Draft credit or debit memo.
+ *
+ * @remarks
+ * Refused once the memo is posted. A rental early-return credit returns the
+ * billing periods it credits to Pending in the same transaction, so the next
+ * invoice run credits them again. `party` says which list the memo was on.
+ *
+ * @mcp destructive
+ */
+export const deleteDraftMemo = defineServiceFn({
+  input: z.object({ memoId: z.string() }),
+  permission: { delete: "invoicing" },
+
+  async run(ctx, { memoId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const memo = await service.getMemo(client, memoId, companyId);
+    if (memo.error) {
+      return ctx.error("internal", "Failed to delete memo", memo.error);
+    }
+    if (!memo.data) return ctx.error("notFound", "Memo not found");
+    if (isMemoLocked(memo.data.status)) {
+      return ctx.error("rule", "Only a Draft memo can be deleted");
+    }
+    const party = memo.data.supplierId ? "supplier" : "customer";
+
+    if (memo.data.rentalAgreementId) {
+      try {
+        await deleteRentalCreditMemoReleasingPeriods(ctx.asSystem.pg, {
+          companyId,
+          memoId,
+          userId: ctx.auditUserId
+        });
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          err instanceof Error ? err.message : "Failed to delete memo",
+          err
+        );
+      }
+      return { memoId, party };
+    }
+
+    const removed = await service.deleteMemo(client, memoId, companyId);
+    if (removed.error) {
+      return ctx.error("internal", "Failed to delete memo", removed.error);
+    }
+    return { memoId, party };
+  }
+});
+
+/**
+ * Void a posted card charge.
+ *
+ * @remarks
+ * The `post-charge` server function posts the reversing journal; its refusal
+ * (an already voided charge, a Draft one) is returned as it is.
+ *
+ * @mcp destructive
+ */
+export const voidCharge = defineServiceFn({
+  input: z.object({ chargeId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { chargeId }) {
+    const refused = await refuseUnlessOwned(ctx, "charge", { id: chargeId });
+    if (refused) return refused;
+    const voided = await invokePosting(
+      ctx,
+      "post-charge",
+      {
+        type: "void",
+        chargeId
+      },
+      accountingPostings.postCharge
+    );
+    if (voided.error) {
+      return fromServerFn(ctx, voided.error, "Failed to void charge");
+    }
+    return { chargeId };
+  }
+});
+
+// --- Receivables and payables ------------------------------------------------
+const adjustInput = z.object({ asOfDate: z.string().optional() });
+
+/**
+ * Create a Draft journal entry for the receivables tie-out variance.
+ *
+ * @remarks
+ * Refused before the accounting cutover, and when there is no variance as
+ * of `asOfDate` (default: today). The variance is recomputed here. When the
+ * subledger is above the GL, receivables is debited; otherwise it is
+ * credited; the rounding account takes the other side. When the lines
+ * cannot be written the Draft entry is kept and `warning` says so.
+ *
+ * @mcp
+ */
+export const adjustReceivables = defineServiceFn({
+  input: adjustInput,
+  permission: { create: "accounting" },
+  run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "receivables", asOfDate)
+});
+
+/**
+ * Create a Draft journal entry for the payables tie-out variance.
+ *
+ * @remarks
+ * Refused before the accounting cutover, and when there is no variance as
+ * of `asOfDate` (default: today). The variance is recomputed here. When the
+ * subledger is above the GL, payables is credited; otherwise it is debited;
+ * the rounding account takes the other side. When the lines cannot be
+ * written the Draft entry is kept and `warning` says so.
+ *
+ * @mcp
+ */
+export const adjustPayables = defineServiceFn({
+  input: adjustInput,
+  permission: { create: "accounting" },
+  run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "payables", asOfDate)
+});
+
+// --- Reimbursements -------------------------------------------------------------
+const REIMBURSEMENT_UNBALANCED_MESSAGE =
+  "The coding lines must sum to the reimbursement amount before posting";
+const reimbursementInput = reimbursementUpdateValidator.safeExtend({
+  customFields: customFieldValues.optional(),
+  lines: reimbursementLinesValidator
+});
+
+/**
+ * Change a Draft reimbursement and replace its coding lines.
+ *
+ * @remarks
+ * Refused once the reimbursement is posted, and when a line's charge number
+ * is not this company's project or an element of it. The header is updated,
+ * then the lines are replaced as sent (each with its dimension pairs).
+ * Currency and exchange rate are the source transaction's facts and are not
+ * changed.
+ *
+ * @mcp
+ */
+export const saveReimbursement = defineServiceFn({
+  input: reimbursementInput,
+  permission: { update: "invoicing" },
+
+  async run(ctx, { lines, customFields, ...header }) {
+    // Each line's charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumbersError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      lines
+    );
+    if (chargeError) return ctx.error("validation", chargeError);
+
+    const existing = await service.loadReimbursement(ctx, header.id);
+    if (existing instanceof Error) return existing;
+    // A readable refusal beats the raw 55000 the draft guard trigger raises.
+    if (existing.status !== "Draft") {
+      return ctx.error("rule", "A posted reimbursement cannot be edited");
+    }
+
+    const updated = await service.updateReimbursement(ctx.asCaller.supabase, {
+      ...header,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId,
+      customFields
+    });
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update reimbursement",
+        updated.error
+      );
+    }
+
+    try {
+      await service.upsertReimbursementLines(ctx.asSystem.pg, {
+        reimbursementId: header.id,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId,
+        lines
+      });
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to save coding lines",
+        err
+      );
+    }
+    return { reimbursementId: header.id };
+  }
+});
+
+/**
+ * Change a Draft reimbursement, replace its coding lines, then post it.
+ *
+ * @remarks
+ * Before anything is written, the lines must sum to the amount. Then as
+ * `saveReimbursement`, then as `postReimbursement`. When the post fails
+ * the changes are kept.
+ *
+ * @mcp
+ */
+export const saveAndPostReimbursement = defineServiceFn({
+  input: reimbursementInput,
+  permission: { update: "invoicing" },
+
+  async run(ctx, input) {
+    if (
+      !service.linesBalanceHeader(
+        input.amount,
+        input.lines.map((line) => line.amount)
+      )
+    ) {
+      return ctx.error("rule", REIMBURSEMENT_UNBALANCED_MESSAGE);
+    }
+    const updated = await saveReimbursement(ctx, input);
+    if (updated.error) return updated.error;
+    const posted = await postReimbursement(ctx, { reimbursementId: input.id });
+    if (posted.error) return posted.error;
+    return { reimbursementId: input.id };
+  }
+});
+
+/**
+ * Post a Draft reimbursement.
+ *
+ * @remarks
+ * Refused unless the reimbursement is a Draft whose coding lines sum to its
+ * amount. The `post-reimbursement` server function books its journal; its
+ * refusal is returned as it is.
+ *
+ * @mcp
+ */
+export const postReimbursement = defineServiceFn({
+  input: z.object({ reimbursementId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { reimbursementId }) {
+    const reimbursement = await service.loadReimbursement(ctx, reimbursementId);
+    if (reimbursement instanceof Error) return reimbursement;
+    if (reimbursement.status !== "Draft") {
+      return ctx.error("rule", "Only a Draft reimbursement can be posted");
+    }
+    // Checked here, with a readable message, before the server function.
+    const lines = reimbursement.reimbursementLine ?? [];
+    if (
+      !service.linesBalanceHeader(
+        Number(reimbursement.amount),
+        lines.map((line) => Number(line.amount))
+      )
+    ) {
+      return ctx.error("rule", REIMBURSEMENT_UNBALANCED_MESSAGE);
+    }
+
+    const posted = await invokePosting(
+      ctx,
+      "post-reimbursement",
+      {
+        type: "post",
+        reimbursementId
+      },
+      accountingPostings.postReimbursement
+    );
+    if (posted.error) {
+      return fromServerFn(ctx, posted.error, "Failed to post reimbursement");
+    }
+    return { reimbursementId };
+  }
+});
+
+/**
+ * Void a posted reimbursement.
+ *
+ * @remarks
+ * The `post-reimbursement` server function reverses whatever was posted; its
+ * refusal is returned as it is.
+ *
+ * @mcp destructive
+ */
+export const voidReimbursement = defineServiceFn({
+  input: z.object({ reimbursementId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { reimbursementId }) {
+    const refused = await refuseUnlessOwned(ctx, "reimbursement", {
+      id: reimbursementId
+    });
+    if (refused) return refused;
+    const voided = await invokePosting(
+      ctx,
+      "post-reimbursement",
+      {
+        type: "void",
+        reimbursementId
+      },
+      accountingPostings.postReimbursement
+    );
+    if (voided.error) {
+      return fromServerFn(ctx, voided.error, "Failed to void reimbursement");
+    }
+    return { reimbursementId };
+  }
+});
+
+/**
+ * Pay a posted reimbursement to the employee.
+ *
+ * @remarks
+ * Refused unless the reimbursement is Posted, has a balance due, and
+ * `amount` (in its currency) is at most that balance, read again here. The
+ * currency must be configured for the company. Creates a disbursement to
+ * the employee at the reimbursement's own exchange rate, applies it to the
+ * reimbursement, and posts it with `post-payment`. When the application or
+ * the post fails, the Draft payment is kept and `warning` says so.
+ *
+ * @mcp
+ */
+export const payReimbursement = defineServiceFn({
+  input: reimbursementPaymentValidator.safeExtend({
+    reimbursementId: z.string()
+  }),
+  permission: { create: "invoicing" },
+
+  async run(ctx, { reimbursementId, amount, paymentDate, bankAccount }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const reimbursement = await service.loadReimbursement(ctx, reimbursementId);
+    if (reimbursement instanceof Error) return reimbursement;
+    if (reimbursement.status !== "Posted") {
+      return ctx.error("rule", "Only a posted reimbursement can be paid");
+    }
+
+    // The modal's default came from a loader that may be minutes old, and
+    // a second payout must not overdraw the payable.
+    const open = await service.getOpenReimbursementsForEmployee(
+      client,
+      companyId,
+      reimbursement.employeeId,
+      reimbursement.currencyCode
+    );
+    if (open.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the balance due",
+        open.error
+      );
+    }
+    const balance = (open.data ?? []).find((r) => r.id === reimbursementId);
+    if (!balance) {
+      return ctx.error("rule", "This reimbursement is fully paid");
+    }
+    if (amount > balance.remainingDocument) {
+      return ctx.error(
+        "rule",
+        "The amount exceeds the reimbursement's balance due"
+      );
+    }
+
+    try {
+      await service.getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        reimbursement.currencyCode
+      );
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Invalid currency configuration",
+        err
+      );
+    }
+
+    const next = await getNextSequence(client, "payment", companyId);
+    if (next.error || !next.data) {
+      return ctx.error("internal", "Failed to allocate payment id", next.error);
+    }
+
+    // Paid at the reimbursement's own rate: no revaluation nobody asked for.
+    const exchangeRate = Number(reimbursement.exchangeRate);
+    const payment = await service.upsertPayment(client, {
+      paymentId: next.data,
+      paymentType: "Disbursement",
+      employeeId: reimbursement.employeeId,
+      paymentDate,
+      currencyCode: reimbursement.currencyCode,
+      exchangeRate,
+      totalAmount: amount,
+      bankAccount,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (payment.error || !payment.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create the payment",
+        payment.error
+      );
+    }
+    const paymentId = payment.data.id;
+
+    try {
+      // The employee arm here is the authority on party, currency, Posted
+      // status and the balance ceiling.
+      await service.replaceInvoiceSettlements(ctx.asSystem.pg, {
+        paymentId,
+        companyId,
+        createdBy: ctx.auditUserId,
+        applications: [
+          {
+            targetReimbursementId: reimbursementId,
+            sourceAmount: amount,
+            appliedAmount: toBaseAmount(amount, exchangeRate),
+            discountAmount: 0,
+            writeOffAmount: 0,
+            targetExchangeRate: exchangeRate,
+            sourceExchangeRate: exchangeRate,
+            appliedDate: paymentDate
+          }
+        ]
+      });
+    } catch (err) {
+      logger.error("Failed to apply a reimbursement payout", {
+        companyId,
+        reimbursementId,
+        paymentId,
+        error: err
+      });
+      return {
+        paymentId,
+        warning: "Payment created, but applying it to the reimbursement failed"
+      };
+    }
+
+    const posted = await invokePosting(
+      ctx,
+      "post-payment",
+      {
+        type: "post",
+        paymentId
+      },
+      service.postPayment
+    );
+    if (posted.error) {
+      logger.error("Failed to post a reimbursement payout", {
+        companyId,
+        reimbursementId,
+        paymentId,
+        error: posted.error
+      });
+      return {
+        paymentId,
+        warning: posted.error.message || "Failed to post the payment"
+      };
+    }
+    return { paymentId, warning: null };
+  }
+});
+/**
+ * Create purchase invoice from purchase order
+ *
+ * @mcp
+ */
+export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
+  input: z.looseObject({ purchaseOrderId: z.string() }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    // As the system: approval requests have no API read policy.
+    const refused = await purchaseOrderFundsGate(
+      ctx,
+      input.purchaseOrderId as string,
+      { intent: "invoice" }
+    );
+    if (refused) return refused;
+    return unwrap(
+      ctx,
+      await service.createPurchaseInvoiceFromPurchaseOrder(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.purchaseOrderId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Create sales invoice from sales order
+ *
+ * @mcp
+ */
+export const createSalesInvoiceFromSalesOrder = defineServiceFn({
+  input: z.looseObject({ salesOrderId: z.string() }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.createSalesInvoiceFromSalesOrder(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.salesOrderId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Create sales invoice from shipment
+ *
+ * @mcp
+ */
+export const createSalesInvoiceFromShipment = defineServiceFn({
+  input: z.looseObject({ shipmentId: z.string() }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.createSalesInvoiceFromShipment(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.shipmentId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoice = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPurchaseInvoice(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoices
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoices = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPurchaseInvoices(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice delivery
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoiceDelivery = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPurchaseInvoiceDelivery(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice lines
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoiceLines = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPurchaseInvoiceLines(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice line
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoiceLine = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPurchaseInvoiceLine(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceLineId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice
+ *
+ * @mcp read
+ */
+export const getSalesInvoice = defineServiceFn({
+  input: z.looseObject({ salesInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getSalesInvoice(
+        ctx.asCaller.supabase,
+        input.salesInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoices
+ *
+ * @mcp read
+ */
+export const getSalesInvoices = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    customerId: z.string().nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSalesInvoices(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice shipment
+ *
+ * @mcp read
+ */
+export const getSalesInvoiceShipment = defineServiceFn({
+  input: z.looseObject({ salesInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getSalesInvoiceShipment(
+        ctx.asCaller.supabase,
+        input.salesInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice lines
+ *
+ * @mcp read
+ */
+export const getSalesInvoiceLines = defineServiceFn({
+  input: z.looseObject({ salesInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getSalesInvoiceLines(
+        ctx.asCaller.supabase,
+        input.salesInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice line
+ *
+ * @mcp read
+ */
+export const getSalesInvoiceLine = defineServiceFn({
+  input: z.looseObject({ salesInvoiceLineId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getSalesInvoiceLine(
+        ctx.asCaller.supabase,
+        input.salesInvoiceLineId as never
+      )
+    );
+  }
+});
+
+/**
+ * Update purchase invoice exchange rate
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
+  input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updatePurchaseInvoiceExchangeRate(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Update sales invoice exchange rate
+ *
+ * @mcp
+ */
+export const updateSalesInvoiceExchangeRate = defineServiceFn({
+  input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updateSalesInvoiceExchangeRate(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Update purchase invoice
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoice = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    invoiceId: z.string().optional(),
+    supplierId: z.string().optional(),
+    supplierReference: z.string().nullable().optional(),
+    paymentTermId: z.string().nullable().optional(),
+    currencyCode: z.string().optional(),
+    locationId: z.string().optional(),
+    invoiceSupplierId: z.string().nullable().optional(),
+    invoiceSupplierContactId: z.string().nullable().optional(),
+    invoiceSupplierLocationId: z.string().nullable().optional(),
+    dateIssued: z.string().nullable().optional(),
+    dateDue: z.string().nullable().optional(),
+    exchangeRate: z.number().optional(),
+    exchangeRateUpdatedAt: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updatePurchaseInvoice(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Updates an invoice's delivery
+ *
+ * @mcp
+ */
+export const upsertPurchaseInvoiceDelivery = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    locationId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    shippingTermId: z.string().optional(),
+    supplierShippingCost: z.number().optional(),
+    incoterm: z
+      .enum([
+        "EXW",
+        "FCA",
+        "FAS",
+        "FOB",
+        "CPT",
+        "CIP",
+        "CFR",
+        "CIF",
+        "DAP",
+        "DPU",
+        "DDP"
+      ])
+      .optional(),
+    incotermLocation: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertPurchaseInvoiceDelivery(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a purchase invoice line
+ *
+ * @remarks
+ * Upsert purchase invoice line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the invoice date; an empty `taxCodeId` keeps the
+ * sent percent with no code. A sent code sets the rate (its rate on the
+ * invoice date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
+ *
+ * @mcp
+ */
+export const createPurchaseInvoiceLine = defineServiceFn({
+  input: z.looseObject({
+    invoiceId: z.string().min(1),
+    invoiceLineType: z.enum([
+      "Part",
+      "Material",
+      "Tool",
+      "Consumable",
+      "Service",
+      "Fixture",
+      "G/L Account",
+      "Fixed Asset",
+      "Lease",
+      "Comment"
+    ]),
+    purchaseOrderId: z.string().optional(),
+    purchaseOrderLineId: z.string().optional(),
+    itemId: z.string().optional(),
+    accountId: z.string().optional(),
+    costCenterId: z.string().optional(),
+    projectId: z.string().optional(),
+    projectElementId: z.string().optional(),
+    assetId: z.string().optional(),
+    leaseId: z.string().optional(),
+    leasePaymentId: z.string().optional(),
+    description: z.string().optional(),
+    quantity: z.number().optional(),
+    purchaseUnitOfMeasureCode: z.string().optional(),
+    inventoryUnitOfMeasureCode: z.string().optional(),
+    conversionFactor: z.number().optional(),
+    supplierUnitPrice: z.number().optional(),
+    supplierShippingCost: z
+      .number()
+      .default(0)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    supplierTaxAmount: z
+      .number()
+      .optional()
+      .describe(
+        "Omit to restate it from the tax code's rate (0 with no code). Refused on a Reverse Charge code."
+      ),
+    taxPercent: z
+      .number()
+      .min(0)
+      .max(1)
+      .default(0)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
+    requiredDate: z.string().optional(),
+    locationId: z.string().optional(),
+    storageUnitId: z.string().optional(),
+    exchangeRate: z.number().optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    // The charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumberError(client, companyId, input);
+    if (chargeError) return ctx.error("validation", chargeError.message);
+
+    const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+      intent: "invoice",
+      purchaseOrderLineIds: [input.purchaseOrderLineId]
+    });
+    if (refused) return refused;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseInvoice",
+      documentId: input.invoiceId,
+      lineId: input.id ?? null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.quantity ?? 0,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+    return unwrap(
+      ctx,
+      await service.upsertPurchaseInvoiceLine(
+        client,
+        payload(ctx, {
+          ...input,
+          supplierTaxAmount: input.supplierTaxAmount ?? 0,
+          ...tax.data
+        }).forCreate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a purchase invoice line
+ *
+ * @remarks
+ * Upsert purchase invoice line. A charge number (`projectId`,
+ * `projectElementId`) must name this company's project and an element of it.
+ * A non-taxable item carries no tax, whatever was sent. A sent code (or the
+ * stored one, when only a percent is sent) sets the rate; an empty
+ * `taxCodeId` clears the code. A Reverse Charge code refuses a supplier tax
+ * amount.
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoiceLine = defineServiceFn({
+  input: z
+    .looseObject({
+      invoiceId: z.string().min(1),
+      invoiceLineType: z.enum([
+        "Part",
+        "Material",
+        "Tool",
+        "Consumable",
+        "Service",
+        "Fixture",
+        "G/L Account",
+        "Fixed Asset",
+        "Lease",
+        "Comment"
+      ]),
+      purchaseOrderId: z.string().optional(),
+      purchaseOrderLineId: z.string().optional(),
+      itemId: z.string().optional(),
+      accountId: z.string().optional(),
+      costCenterId: z.string().optional(),
+      projectId: z.string().optional(),
+      projectElementId: z.string().optional(),
+      assetId: z.string().optional(),
+      leaseId: z.string().optional(),
+      leasePaymentId: z.string().optional(),
+      description: z.string().optional(),
+      quantity: z.number().optional(),
+      purchaseUnitOfMeasureCode: z.string().optional(),
+      inventoryUnitOfMeasureCode: z.string().optional(),
+      conversionFactor: z.number().optional(),
+      supplierUnitPrice: z.number().optional(),
+      supplierShippingCost: z
+        .number()
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      supplierTaxAmount: z
+        .number()
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      taxPercent: z
+        .number()
+        .min(0)
+        .max(1)
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      taxCodeId: z.string().optional(),
+      requiredDate: z.string().optional(),
+      locationId: z.string().optional(),
+      storageUnitId: z.string().optional(),
+      exchangeRate: z.number().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    // The charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumberError(client, ctx.company.id, input);
+    if (chargeError) return ctx.error("validation", chargeError.message);
+
+    // An update that leaves an order reference out keeps the stored one, so
+    // the gate reads it: a price edit still bills the order's line, and an
+    // edit that sends only the line still bills the stored order.
+    let { purchaseOrderId, purchaseOrderLineId } = input;
+    if (purchaseOrderId === undefined || purchaseOrderLineId === undefined) {
+      const stored = await ctx.asCaller.supabase
+        .from("purchaseInvoiceLine")
+        .select("purchaseOrderId, purchaseOrderLineId")
+        .eq("id", input.id)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the purchase invoice line",
+          stored.error
+        );
+      }
+      if (!stored.data) {
+        return ctx.error("notFound", "Purchase invoice line not found");
+      }
+      purchaseOrderId ??= stored.data.purchaseOrderId ?? undefined;
+      purchaseOrderLineId ??= stored.data.purchaseOrderLineId ?? undefined;
+    }
+    const refused = await purchaseOrderFundsGate(ctx, purchaseOrderId, {
+      intent: "invoice",
+      purchaseOrderLineIds: [purchaseOrderLineId]
+    });
+    if (refused) return refused;
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseInvoice",
+      documentId: input.invoiceId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.quantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
+    return unwrap(
+      ctx,
+      await service.upsertPurchaseInvoiceLine(
+        client,
+        payload(ctx, { ...input, ...tax.data }).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Update purchase invoice line order
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoiceLineOrder = defineServiceFn({
+  input: z.looseObject({
+    invoiceId: z.string(),
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return await service.updatePurchaseInvoiceLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.invoiceId as never,
+      payload(ctx, input.updates).forUpdate() as never
+    );
+  }
+});
+
+/**
+ * Insert sales invoice
+ *
+ * @mcp destructive
+ */
+export const insertSalesInvoice = defineServiceFn({
+  input: z.looseObject({
+    customerId: z.string(),
+    invoiceId: z.string().optional(),
+    customerReference: z.string().optional(),
+    paymentTermId: z.string().optional(),
+    currencyCode: z.string().optional(),
+    locationId: z.string().optional(),
+    invoiceCustomerId: z.string().optional(),
+    invoiceCustomerContactId: z.string().optional(),
+    invoiceCustomerLocationId: z.string().optional(),
+    dateIssued: z.string().optional(),
+    dateDue: z.string().optional(),
+    exchangeRate: z.number().optional(),
+    exchangeRateUpdatedAt: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.insertSalesInvoice(
+        ctx.asCaller.supabase,
+        payload(ctx, input).withGroup().forUpsert() as never
+      )
+    );
+  }
+});
+
+/**
+ * Updates an invoice's shipment
+ *
+ * @mcp
+ */
+export const upsertSalesInvoiceShipment = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    locationId: z.string().optional(),
+    customerLocationId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    shippingTermId: z.string().optional(),
+    shippingCost: z.number().optional(),
+    incoterm: z
+      .enum([
+        "EXW",
+        "FCA",
+        "FAS",
+        "FOB",
+        "CPT",
+        "CIP",
+        "CFR",
+        "CIF",
+        "DAP",
+        "DPU",
+        "DDP"
+      ])
+      .optional(),
+    incotermLocation: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertSalesInvoiceShipment(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Update sales invoice line order
+ *
+ * @mcp
+ */
+export const updateSalesInvoiceLineOrder = defineServiceFn({
+  input: z.looseObject({
+    invoiceId: z.string(),
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return await service.updateSalesInvoiceLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.invoiceId as never,
+      payload(ctx, input.updates).forUpdate() as never
+    );
+  }
+});
+
+/**
+ * Get payment
+ *
+ * @mcp read
+ */
+export const getPayment = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPayment(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get payments
+ *
+ * @mcp read
+ */
+export const getPayments = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    paymentType: z.enum(["Receipt", "Disbursement"]).nullable().optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
+    customerId: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional(),
+    counterpartyIds: z.array(z.string()).nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPayments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get charge
+ *
+ * @mcp read
+ */
+export const getCharge = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getCharge(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get charges
+ *
+ * @mcp read
+ */
+export const getCharges = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    type: z
+      .enum(["Charge", "Credit", "Payment", "Cashback", "Repayment"])
+      .nullable()
+      .optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getCharges(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get reimbursement
+ *
+ * @mcp read
+ */
+export const getReimbursement = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getReimbursement(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get reimbursements
+ *
+ * @mcp read
+ */
+export const getReimbursements = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
+    employeeId: z.string().nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getReimbursements(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * The payments that settle a reimbursement, for its Documents panel
+ *
+ * @mcp read
+ */
+export const getReimbursementRelatedItems = defineServiceFn({
+  input: z.looseObject({ reimbursementId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return await service.getReimbursementRelatedItems(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.reimbursementId as never
+    );
+  }
+});
+
+/**
+ * Get invoice settlements
+ *
+ * @mcp read
+ */
+export const getInvoiceSettlements = defineServiceFn({
+  input: z.looseObject({ paymentId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getInvoiceSettlements(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.paymentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get invoice settlements for invoice
+ *
+ * @remarks
+ * Lists posted payments and memos applied to the invoice, and the
+ * applications of Draft payments with `pending: true`. A pending row pays
+ * nothing until its payment posts, so leave it out of what is paid.
+ *
+ * @mcp read
+ */
+export const getInvoiceSettlementsForInvoice = defineServiceFn({
+  input: z.looseObject({
+    side: z.enum(["sales", "purchase"]),
+    invoiceId: z.string()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getInvoiceSettlementsForInvoice(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.side as never,
+        input.invoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get memo applications
+ *
+ * @mcp read
+ */
+export const getMemoApplications = defineServiceFn({
+  input: z.looseObject({ memoId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getMemoApplications(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.memoId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open sales invoices for customer
+ *
+ * @mcp read
+ */
+export const getOpenSalesInvoicesForCustomer = defineServiceFn({
+  input: z.looseObject({
+    customerId: z.string(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getOpenSalesInvoicesForCustomer(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.customerId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open purchase invoices for supplier
+ *
+ * @mcp read
+ */
+export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
+  input: z.looseObject({
+    supplierId: z.string(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getOpenPurchaseInvoicesForSupplier(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.supplierId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Posted reimbursements an employee is still owed money on.
+ *
+ * @remarks
+ * The apply table's target list when a payment's payee is an employee, and the
+ * balance the Pay expense modal defaults to. A read only: posting a payment
+ * locks and checks the reimbursements again.
+ *
+ * @mcp read
+ */
+export const getOpenReimbursementsForEmployee = defineServiceFn({
+  input: z.looseObject({
+    employeeId: z.string(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getOpenReimbursementsForEmployee(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.employeeId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get payment currency configuration
+ *
+ * @mcp read
+ */
+export const getPaymentCurrencyConfiguration = defineServiceFn({
+  input: z.looseObject({ currencyCode: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return await service.getPaymentCurrencyConfiguration(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.currencyCode as never
+    );
+  }
+});
+
+/**
+ * Get available on account credit sources
+ *
+ * @mcp read
+ */
+export const getAvailableOnAccountCreditSources = defineServiceFn({
+  input: z.looseObject({
+    party: z.union([
+      z.looseObject({
+        paymentType: z.literal("Receipt"),
+        customerId: z.string()
+      }),
+      z.looseObject({
+        paymentType: z.literal("Disbursement"),
+        supplierId: z.string()
+      })
+    ]),
+    currencyCode: z.string()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    // Invoicing staff can use deposits without access to the underlying journals.
+    return unwrap(
+      ctx,
+      await service.getAvailableOnAccountCreditSources(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input.party).build() as never,
+        input.currencyCode as never,
+        ctx.asSystem.supabase
+      )
+    );
+  }
+});
+
+/**
+ * Update a payment
+ *
+ * @remarks
+ * Upsert payment
+ *
+ * @mcp
+ */
+export const updatePayment = defineServiceFn({
+  input: z
+    .looseObject({
+      paymentType: z.enum(["Receipt", "Disbursement"]),
+      customerId: z.string().optional(),
+      supplierId: z.string().optional(),
+      employeeId: z.string().optional(),
+      paymentDate: z.string().min(1),
+      currencyCode: z.string().min(1),
+      exchangeRate: z
+        .number()
+        .gt(0)
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      totalAmount: z.number().min(0),
+      bankAccount: z.string().min(1),
+      reference: z.string().optional(),
+      memo: z.string().optional(),
+      salesOrderId: z.string().optional(),
+      rentalAgreementId: z.string().optional(),
+      paymentId: z.string().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertPayment(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forUpdate() as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete payment
+ *
+ * @mcp destructive
+ */
+export const deletePayment = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deletePayment(
+        ctx.asSystem.pg,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Replace invoice settlements
+ *
+ * @mcp destructive
+ */
+export const replaceInvoiceSettlements = defineServiceFn({
+  input: z.looseObject({
+    paymentId: z.string(),
+    applications: z.array(
+      z.looseObject({
+        memoId: z.string().optional(),
+        targetSalesInvoiceId: z.string().optional(),
+        targetPurchaseInvoiceId: z.string().optional(),
+        targetMemoId: z.string().optional(),
+        targetReimbursementId: z.string().optional(),
+        sourceAmount: z.number().min(0).optional(),
+        appliedAmount: z.number().min(0).default(0),
+        discountAmount: z.number().min(0).default(0),
+        writeOffAmount: z.number().min(0).default(0),
+        targetExchangeRate: z.number().gt(0),
+        sourceExchangeRate: z.number().gt(0),
+        appliedDate: z.string().min(1)
+      })
+    )
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return await service.replaceInvoiceSettlements(
+      ctx.asSystem.pg,
+      payload(ctx, input).forCreate() as never
+    );
+  }
+});
+
+/**
+ * Get memo
+ *
+ * @mcp read
+ */
+export const getMemo = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getMemo(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get memos
+ *
+ * @mcp read
+ */
+export const getMemos = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    direction: z.enum(["Credit", "Debit"]).nullable().optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
+    counterpartyIds: z.array(z.string()).nullable().optional(),
+    party: z.enum(["customer", "supplier"]).nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMemos(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a memo
+ *
+ * @remarks
+ * Upsert memo
+ *
+ * @mcp
+ */
+export const createMemo = defineServiceFn({
+  input: z.looseObject({
+    direction: z.enum(["Credit", "Debit"]),
+    customerId: z.string().optional(),
+    supplierId: z.string().optional(),
+    memoDate: z.string().min(1),
+    currencyCode: z.string().min(1),
+    exchangeRate: z
+      .number()
+      .gt(0)
+      .default(1)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    netAmount: z
+      .number()
+      .gt(0)
+      .describe(
+        "The amount before tax. The tax is computed from `taxCodeId` on the memo date; the memo's amount is net plus tax."
+      )
+      .optional(),
+    taxCodeId: z.string().optional(),
+    amount: z
+      .number()
+      .gt(0)
+      .describe(
+        "A gross with no tax, when `netAmount` is not sent. Refused on a memo that carries tax."
+      )
+      .optional(),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+    memoId: z.string().optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertMemo(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forCreate(),
+        companyGroupId: ctx.company.groupId
+      } as never)
+    );
+  }
+});
+
+/**
+ * Update a memo
+ *
+ * @remarks
+ * Upsert memo
+ *
+ * @mcp
+ */
+export const updateMemo = defineServiceFn({
+  input: z
+    .looseObject({
+      direction: z.enum(["Credit", "Debit"]),
+      customerId: z.string().optional(),
+      supplierId: z.string().optional(),
+      memoDate: z.string().min(1),
+      currencyCode: z.string().min(1),
+      exchangeRate: z
+        .number()
+        .gt(0)
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      netAmount: z
+        .number()
+        .gt(0)
+        .describe(
+          "The amount before tax. The tax is computed from `taxCodeId` on the memo date; the memo's amount is net plus tax."
+        )
+        .optional(),
+      taxCodeId: z.string().optional(),
+      amount: z
+        .number()
+        .gt(0)
+        .describe(
+          "A gross with no tax, when `netAmount` is not sent. Refused on a memo that carries tax."
+        )
+        .optional(),
+      reference: z.string().optional(),
+      notes: z.string().optional(),
+      memoId: z.string().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertMemo(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyGroupId: ctx.company.groupId
+      } as never)
+    );
+  }
+});
+
+/**
+ * Get available credits for party
+ *
+ * @mcp read
+ */
+export const getAvailableCreditsForParty = defineServiceFn({
+  input: z.looseObject({
+    party: z.union([
+      z.looseObject({ side: z.literal("sales"), customerId: z.string() }),
+      z.looseObject({ side: z.literal("purchase"), supplierId: z.string() })
+    ]),
+    excludePaymentId: z.string().optional(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getAvailableCreditsForParty(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input.party).build() as never,
+        input.excludePaymentId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get company has open credits
+ *
+ * @mcp read
+ */
+export const getCompanyHasOpenCredits = defineServiceFn({
+  input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return await service.getCompanyHasOpenCredits(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.side as never
+    );
+  }
+});
+
+/**
+ * Get staged credits for payment
+ *
+ * @mcp read
+ */
+export const getStagedCreditsForPayment = defineServiceFn({
+  input: z.looseObject({
+    paymentId: z.string(),
+    side: z.enum(["sales", "purchase"])
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getStagedCreditsForPayment(
+        ctx.asCaller.supabase,
+        input.paymentId as never,
+        input.side as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Apply credits to invoices
+ *
+ * @mcp destructive
+ */
+export const applyCreditsToInvoices = defineServiceFn({
+  input: z.looseObject({
+    paymentId: z.string(),
+    appliedDate: z.string(),
+    side: z.enum(["sales", "purchase"]),
+    applications: z.array(
+      z.looseObject({
+        memoId: z.string(),
+        invoiceId: z.string(),
+        amount: z.number(),
+        sourceAmount: z.number().optional()
+      })
+    )
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return await service.applyCreditsToInvoices(
+      ctx.asSystem.pg,
+      payload(ctx, input).forCreate() as never
+    );
+  }
+});
+
+/**
+ * Get ar tie out
+ *
+ * @mcp read
+ */
+export const getArTieOut = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getArTieOut(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ap tie out
+ *
+ * @mcp read
+ */
+export const getApTieOut = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getApTieOut(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ar open by customer
+ *
+ * @mcp read
+ */
+export const getArOpenByCustomer = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getArOpenByCustomer(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ap open by supplier
+ *
+ * @mcp read
+ */
+export const getApOpenBySupplier = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getApOpenBySupplier(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ar aging
+ *
+ * @mcp read
+ */
+export const getArAging = defineServiceFn({
+  input: z.looseObject({
+    asOfDate: z.string(),
+    options: z
+      .looseObject({
+        agingMethod: z.enum(["dueDate", "documentDate"]).optional(),
+        bucketDays: z.array(z.number()).nullable().optional()
+      })
+      .optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getArAging(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never,
+        payload(ctx, input.options).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ap aging
+ *
+ * @mcp read
+ */
+export const getApAging = defineServiceFn({
+  input: z.looseObject({
+    asOfDate: z.string(),
+    options: z
+      .looseObject({
+        agingMethod: z.enum(["dueDate", "documentDate"]).optional(),
+        bucketDays: z.array(z.number()).nullable().optional()
+      })
+      .optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getApAging(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never,
+        payload(ctx, input.options).build() as never
+      )
+    );
+  }
+});
+
+// --- Admin force delete: invoices, receipts and payments -----------------------
+
+const NOT_ADMIN_DOCUMENT_FORCE_DELETE = "Only an Admin can force delete";
+
+const forceDeleteDocumentType = z.enum(forceDeleteDocumentTypes);
+
+/** Who may run a force delete of each document type: its module's delete. */
+const forceDeleteRule = {
+  by: "documentType",
+  rules: {
+    purchaseInvoice: { delete: "invoicing" },
+    salesInvoice: { delete: "invoicing" },
+    payment: { delete: "invoicing" },
+    receipt: { delete: "inventory" }
+  }
+} as const;
+
+/**
+ * Ask to force delete a purchase invoice, sales invoice, receipt or payment.
+ *
+ * @remarks
+ * An Admin override for a document the normal delete refuses (anything past
+ * Draft). The caller must be an Admin, give a reason and type the document's
+ * number. Nothing is deleted here: the request and its `approvalRequest`
+ * (type `documentForceDelete`) are opened and the other Admins notified.
+ * Another Admin approves it with `decideDocumentForceDelete`, which
+ * unapplies what is applied to the document, voids it (or reverses it by
+ * journal when the void refuses) and deletes it. Refused only while the
+ * document is being posted. One open request per document.
+ *
+ * @returns `requestId`, the new request.
+ */
+export const requestDocumentForceDelete = defineServiceFn({
+  input: z.object({
+    documentType: forceDeleteDocumentType,
+    documentId: z.string().min(1),
+    reason: z.string().trim().min(FORCE_DELETE_MIN_REASON_LENGTH),
+    confirmation: z.string()
+  }),
+  permission: forceDeleteRule,
+
+  async run(ctx, { documentType, documentId, reason, confirmation }) {
+    const db = ctx.asSystem.pg;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    if (!(await isCompanyAdmin(ctx.asSystem.supabase, companyId, userId))) {
+      return ctx.error("forbidden", NOT_ADMIN_DOCUMENT_FORCE_DELETE);
+    }
+
+    const document = await service.getForceDeleteDocument(db, {
+      companyId,
+      documentType,
+      documentId
+    });
+    if (!document) {
+      return ctx.error(
+        "notFound",
+        `The ${forceDeleteDocumentLabel[documentType]} was not found`
+      );
+    }
+    if (!isForceDeleteConfirmed(confirmation, document.readableId)) {
+      return ctx.error(
+        "validation",
+        `Type ${document.readableId} to confirm the force delete`
+      );
+    }
+
+    const refusal = await service.getForceDeleteRefusal(db, {
+      companyId,
+      document
+    });
+    if (refusal) return ctx.error("rule", refusal);
+
+    let requestId: string;
+    try {
+      const opened = await ctx.transaction(async (tx) => {
+        const request = await tx.asSystem.pg
+          .insertInto("forceDeleteRequest")
+          .values({
+            companyId,
+            documentType,
+            documentId,
+            documentReadableId: document.readableId,
+            documentStatus: document.status,
+            reason,
+            requestedBy: userId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await tx.asSystem.pg
+          .insertInto("approvalRequest")
+          .values({
+            documentType: "documentForceDelete",
+            documentId: request.id,
+            companyId,
+            requestedBy: userId,
+            createdBy: userId
+          })
+          .execute();
+        return request;
+      });
+      if (!opened.data) {
+        return ctx.error("internal", "Failed to request the force delete");
+      }
+      requestId = opened.data.id;
+    } catch (err) {
+      return isUniqueViolation(err)
+        ? ctx.error(
+            "conflict",
+            `A force delete of ${document.readableId} is already waiting for approval`
+          )
+        : ctx.error("internal", "Failed to request the force delete", err);
+    }
+
+    await service.auditDocumentForceDelete(ctx, {
+      documentType,
+      documentId,
+      requestId,
+      operation: "INSERT",
+      diff: {
+        status: { old: null, new: "Pending" },
+        reason: { old: null, new: reason },
+        documentStatus: { old: null, new: document.status }
+      }
+    });
+    await service.notifyDocumentForceDelete(ctx, {
+      event: "Requested",
+      documentType,
+      documentId,
+      requestId,
+      requestedBy: userId
+    });
+
+    return { requestId };
+  }
+});
+
+/**
+ * Approve or reject a document force delete.
+ *
+ * @remarks
+ * Admins only, and never the Admin who asked. Approving:
+ *
+ * 1. A posted document is voided through its own void, which reverses its
+ *    postings exactly; its refusal stops the approval and the request stays
+ *    Pending. A purchase order receipt whose void refused only because its
+ *    stock moved, or because it predates the accounting cutover, is left
+ *    for step 2. The void commits on its own: if step 2 refuses, the
+ *    document stays voided and approving again picks up from there.
+ * 2. One transaction: the request, its approval and the document are
+ *    locked, what holds the document is read again
+ *    (`getForceDeleteRefusal`), and the document is deleted
+ *    (`deleteForceDeleteDocument`, which adjusts a receipt left by step 1
+ *    out). The approval and request are marked Approved / Executed.
+ *
+ * Rejecting marks both Rejected. The requester is notified either way.
+ *
+ * @returns `status`: Executed (the document was deleted) or Rejected.
+ */
+export const decideDocumentForceDelete = defineServiceFn({
+  input: z.object({
+    documentType: forceDeleteDocumentType,
+    requestId: z.string().min(1),
+    decision: z.enum(["approve", "reject"]),
+    notes: z.string().optional()
+  }),
+  permission: forceDeleteRule,
+
+  async run(ctx, { documentType, requestId, decision, notes }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const system = ctx.asSystem.pg;
+    const isAdmin = await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      companyId,
+      userId
+    );
+    // A claim an approval left for ten minutes is given back first.
+    if (decision === "reject")
+      await service.releaseExpiredForceDeleteClaim(ctx.asSystem.pg, {
+        companyId,
+        requestId
+      });
+    if (!isAdmin)
+      return ctx.error("forbidden", NOT_ADMIN_DOCUMENT_FORCE_DELETE);
+
+    const readRequest = (db: typeof system, lock: boolean) => {
+      const query = db
+        .selectFrom("forceDeleteRequest")
+        .select([
+          "id",
+          "status",
+          "requestedBy",
+          "documentType",
+          "documentId",
+          "documentReadableId",
+          "decidedBy"
+        ])
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType);
+      return (lock ? query.forUpdate() : query).executeTakeFirst();
+    };
+
+    // Approving claims the request first (Approving), so a cancel or reject
+    // cannot run while step 1's void commits on its own. Any refusal or
+    // failure after the claim gives it back (Pending) for another try.
+    if (decision === "approve") {
+      const claimed = await service.claimForceDeleteRequest(system, {
+        companyId,
+        requestId,
+        documentType,
+        userId
+      });
+      if (!claimed) {
+        const request = await readRequest(system, false);
+        if (!request) {
+          return ctx.error("notFound", "Force delete request not found");
+        }
+        return ctx.error(
+          "rule",
+          forceDeleteApprovalRefusal({
+            status: request.status,
+            requestedBy: request.requestedBy,
+            userId,
+            isAdmin
+          }) ?? "This force delete request can no longer be approved"
+        );
+      }
+    }
+    const release = async () => {
+      if (decision !== "approve") return;
+      await service.releaseForceDeleteClaim(system, {
+        companyId,
+        requestId,
+        userId
+      });
+    };
+
+    // Step 1 (approve), each part committing on its own (a void opens its
+    // own transaction), so approving again after a refusal resumes:
+    //   a. what is applied to the document is unapplied, and a sales
+    //      invoice's recognized revenue taken back;
+    //   b. a posted document is voided. When its void refuses, step 2
+    //      reverses it by journal instead.
+    let reversal: purchasingPostings.ForceDeleteReversalAccounting | null =
+      null;
+    let adjustOut = false;
+    let byJournal = false;
+    if (decision === "approve") {
+      try {
+        const pending = await readRequest(system, false);
+        const document = pending
+          ? await service.getForceDeleteDocument(system, {
+              companyId,
+              documentType,
+              documentId: pending.documentId
+            })
+          : null;
+        if (document) {
+          const blocked = await service.getForceDeleteRefusal(system, {
+            companyId,
+            document
+          });
+          if (blocked) {
+            await release();
+            return ctx.error("rule", blocked);
+          }
+          reversal =
+            await purchasingPostings.resolveForceDeleteReversalAccounting(
+              system,
+              { companyId, userId }
+            );
+          await service.unapplyForceDeleteSettlements(system, {
+            companyId,
+            userId,
+            document,
+            accounting: reversal
+          });
+          await service.reverseRecognizedRevenue(system, {
+            companyId,
+            userId,
+            document,
+            reversal
+          });
+          if (document.step === "void") {
+            const voided = await service.voidForceDeleteDocument(ctx, document);
+            if (voided.refusal !== null) {
+              // The postings report refusals as server errors too, so any
+              // void failure falls back to the reversal by journal; a real
+              // fault fails that step as well, and the claim is released.
+              logger.warning(
+                "Force delete: the void refused, reversing by journal",
+                {
+                  documentId: document.id,
+                  refusal: voided.refusal,
+                  error: "internal" in voided ? voided.internal : undefined
+                }
+              );
+              byJournal = true;
+            } else {
+              adjustOut = voided.adjustOut;
+            }
+          }
+        }
+      } catch (error) {
+        await release();
+        const raised = raisedMessage(error);
+        if (raised) return ctx.error("rule", `Cannot force delete: ${raised}`);
+        if (error instanceof InvalidInputError) {
+          return ctx.error("rule", error.message);
+        }
+        throw error;
+      }
+    }
+
+    const settled = await ctx
+      .transaction(async (tx) => {
+        const db = tx.asSystem.pg;
+        const request = await readRequest(db, true);
+        if (!request) {
+          return ctx.error("notFound", "Force delete request not found");
+        }
+        if (decision === "approve") {
+          if (request.status !== "Approving" || request.decidedBy !== userId) {
+            return ctx.error(
+              "conflict",
+              "This force delete request is no longer being approved by you"
+            );
+          }
+        } else {
+          const refusal = forceDeleteApprovalRefusal({
+            status: request.status,
+            requestedBy: request.requestedBy,
+            userId,
+            isAdmin
+          });
+          if (refusal) return ctx.error("rule", refusal);
+        }
+
+        const approval = await db
+          .selectFrom("approvalRequest")
+          .select("id")
+          .where("documentType", "=", "documentForceDelete")
+          .where("documentId", "=", requestId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Pending")
+          .forUpdate()
+          .executeTakeFirst();
+        if (!approval) {
+          return ctx.error(
+            "conflict",
+            "This force delete request is no longer waiting for approval"
+          );
+        }
+
+        if (decision === "approve") {
+          const document = await service.getForceDeleteDocument(db, {
+            companyId,
+            documentType,
+            documentId: request.documentId,
+            lock: true
+          });
+          if (!document) {
+            return ctx.error(
+              "conflict",
+              `${request.documentReadableId} no longer exists`
+            );
+          }
+          const blocked = await service.getForceDeleteRefusal(db, {
+            companyId,
+            document
+          });
+          if (blocked) return ctx.error("rule", blocked);
+          if (reversal) {
+            await assertPostingStatusUnchanged(
+              db,
+              companyId,
+              reversal.accounting.postingStatus
+            );
+          }
+          try {
+            // Its void refused: its postings, stock and sources come back
+            // by journal (`reverseDocumentByJournal`), then it is deleted.
+            const reversedByJournal =
+              byJournal && document.step === "void" && reversal !== null;
+            if (reversedByJournal && reversal) {
+              await service.reverseDocumentByJournal(db, {
+                companyId,
+                userId,
+                document,
+                reversal
+              });
+            }
+            await service.deleteForceDeleteDocument(db, {
+              companyId,
+              userId,
+              document,
+              reversal: adjustOut ? reversal : null,
+              reversedByJournal
+            });
+          } catch (error) {
+            // A rule raised by the database (held stock, a picked Put Away):
+            // a refusal in words for the person.
+            const raised = raisedMessage(error);
+            if (raised) {
+              return ctx.error("rule", `Cannot force delete: ${raised}`);
+            }
+            if (error instanceof InvalidInputError) {
+              return ctx.error("rule", error.message);
+            }
+            throw error;
+          }
+        }
+
+        const now = datetime.timestamp();
+        await db
+          .updateTable("approvalRequest")
+          .set({
+            status: decision === "approve" ? "Approved" : "Rejected",
+            decisionBy: userId,
+            decisionAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", approval.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        await db
+          .updateTable("forceDeleteRequest")
+          .set({
+            status: decision === "approve" ? "Executed" : "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .execute();
+        return request;
+      })
+      .catch(async (error: unknown) => {
+        await release();
+        throw error;
+      });
+    if (settled.error) {
+      await release();
+      return settled.error;
+    }
+    const request = settled.data;
+    const status = decision === "approve" ? "Executed" : "Rejected";
+
+    await service.auditDocumentForceDelete(ctx, {
+      documentType,
+      documentId: request.documentId,
+      requestId,
+      operation: status === "Executed" ? "DELETE" : "UPDATE",
+      diff: { status: { old: "Pending", new: status } }
+    });
+    await service.notifyDocumentForceDelete(ctx, {
+      event: decision === "approve" ? "Approved" : "Rejected",
+      documentType,
+      documentId: request.documentId,
+      requestId,
+      requestedBy: request.requestedBy
+    });
+
+    return {
+      requestId,
+      status,
+      documentReadableId: request.documentReadableId
+    };
+  }
+});
+
+/**
+ * Cancel a document force delete.
+ *
+ * @remarks
+ * Only the Admin who asked, while it is Pending; its approval request is
+ * cancelled with it. Other Admins reject it instead.
+ */
+export const cancelDocumentForceDelete = defineServiceFn({
+  input: z.object({
+    documentType: forceDeleteDocumentType,
+    requestId: z.string().min(1)
+  }),
+  permission: forceDeleteRule,
+
+  async run(ctx, { documentType, requestId }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const isAdmin = await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      companyId,
+      userId
+    );
+    // A claim an approval left for ten minutes is given back first.
+    await service.releaseExpiredForceDeleteClaim(ctx.asSystem.pg, {
+      companyId,
+      requestId
+    });
+
+    const settled = await ctx.transaction(async (tx) => {
+      const db = tx.asSystem.pg;
+      const request = await db
+        .selectFrom("forceDeleteRequest")
+        .select(["id", "status", "requestedBy", "documentId"])
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!request) {
+        return ctx.error("notFound", "Force delete request not found");
+      }
+      const refusal = forceDeleteWithdrawRefusal({
+        intent: "cancel",
+        status: request.status,
+        requestedBy: request.requestedBy,
+        userId,
+        isAdmin
+      });
+      if (refusal) return ctx.error(isAdmin ? "rule" : "forbidden", refusal);
+
+      const now = datetime.timestamp();
+      await db
+        .updateTable("forceDeleteRequest")
+        .set({
+          status: "Cancelled",
+          decidedBy: userId,
+          decidedAt: now,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await db
+        .updateTable("approvalRequest")
+        .set({ status: "Cancelled", updatedBy: userId, updatedAt: now })
+        .where("documentType", "=", "documentForceDelete")
+        .where("documentId", "=", requestId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Pending")
+        .execute();
+      return request;
+    });
+    if (settled.error) return settled.error;
+
+    await service.auditDocumentForceDelete(ctx, {
+      documentType,
+      documentId: settled.data.documentId,
+      requestId,
+      operation: "UPDATE",
+      diff: { status: { old: "Pending", new: "Cancelled" } }
+    });
+    return { requestId, status: "Cancelled" as const };
+  }
+});
+
+/**
+ * Change the GL account of a posted sales invoice line.
+ *
+ * @remarks
+ * Posts one journal, dated on the invoice's posting date in its accounting
+ * period, that moves the line's posted revenue from the account it is on to
+ * `accountId` (an active Revenue account that is not a group), with the
+ * line's dimensions, and records the new account on the line. Only a line
+ * whose revenue posted to the Sales account can change: deferred, contract,
+ * rental, service job and fixed asset lines cannot. Refused while the period
+ * is Locked or Closed (the refusal names it), for an invoice dated before the
+ * accounting cutover, and for a voided invoice. A void of the invoice
+ * reverses the change with the posting. Needs invoicing and accounting
+ * update.
+ *
+ * @param accountId - The Revenue account the line's revenue moves to.
+ *
+ * @mcp
+ */
+export const changeSalesInvoiceLineAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1),
+    accountId: z.string().min(1)
+  }),
+  permission: { update: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "change-invoice-line-account", () =>
+      service.changeInvoiceLineAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/**
+ * Change the GL account of a posted purchase invoice line.
+ *
+ * @remarks
+ * Posts one journal, dated on the invoice's posting date in its accounting
+ * period, that moves the line's posted cost from the account it is on to
+ * `accountId` (an active Asset, Liability, Equity or Expense account that
+ * is not a group), with the
+ * line's dimensions, and records the new account on the line. Only a G/L
+ * Account line can change, and not one charged to a project. Refused while
+ * the period is Locked or Closed (the refusal names it), for an invoice dated
+ * before the accounting cutover, and for a voided invoice. A void of the
+ * invoice reverses the change with the posting. Needs invoicing and
+ * accounting update.
+ *
+ * @param accountId - The Asset, Liability, Equity or Expense account the
+ *   line's cost moves to.
+ *
+ * @mcp
+ */
+export const changePurchaseInvoiceLineAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1),
+    accountId: z.string().min(1)
+  }),
+  permission: { update: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "change-invoice-line-account", () =>
+      service.changeInvoiceLineAccount(ctx, { side: "purchase", ...input })
+    );
+  }
+});
+
+/**
+ * Adjust a purchase invoice's total for rounding.
+ *
+ * @remarks
+ * Brings the invoice total to `targetTotal`, the amount the supplier actually
+ * charged (for example a card charge a cent off the computed total), with a
+ * single G/L Account line described "Rounding" on the company's default
+ * Rounding Account; other lines on that account are left alone. The other
+ * lines, inventory lines included, keep their prices, so receipts and
+ * purchase orders are untouched. Calling again with another total replaces
+ * the adjustment; a total the other lines already match removes it.
+ *
+ * On a posted invoice it also posts the change: one journal dated on the
+ * invoice's posting date, debiting the Rounding Account and crediting the
+ * invoice's Accounts Payable (the reverse for a lower total), so balances
+ * and payments read the new total and a void reverses it. That needs
+ * accounting update permission too, and is refused when the period is Locked
+ * or Closed, for an invoice dated before the accounting cutover, and for a
+ * lower total than is already paid.
+ *
+ * Refused for a Pending or Voided invoice, when no Rounding Account is set,
+ * and when the difference is more than 100 minor units of the invoice's
+ * currency (1.00 USD). Returns the rounding line's amount in the invoice's
+ * currency, and on a posted invoice the journal it posted.
+ *
+ * @param targetTotal - The invoice total to reach, in the invoice's currency.
+ *
+ * @mcp
+ */
+export const adjustPurchaseInvoiceRounding = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    targetTotal: z.number().finite()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return run(ctx, "adjust-purchase-invoice-rounding", () =>
+      service.adjustPurchaseInvoiceRounding(ctx, input)
+    );
+  }
+});
+
+/** Get the account a posted sales invoice line's revenue is on now (not the
+ *  line's own account, which sales posting does not read). */
+export const getSalesInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/** Get the account a posted purchase invoice line's cost is on now. */
+export const getPurchaseInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "purchase", ...input })
+    );
+  }
+});

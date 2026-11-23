@@ -5,12 +5,13 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteGroup, getGroup } from "~/modules/users";
+import { deleteGroup, getGroup } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -42,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!groupId) {
     throw redirect(
       path.to.groups,
-      await flash(request, error(params, "Failed to get an group id"))
+      await flash(request, error(null, "Failed to get an group id"))
     );
   }
 
@@ -63,20 +64,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteEmployeeTypeRoute() {
   const { groupId } = useParams();
   const { group } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.groups);
   const { t } = useLingui();
 
   if (!group) return null;
   if (!groupId) throw new Error("groupId not found");
-
-  const onCancel = () => navigate(path.to.groups);
 
   return (
     <ConfirmDelete
       action={path.to.deleteGroup(groupId)}
       name={group.name}
       text={t`Are you sure you want to delete the group: ${group.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

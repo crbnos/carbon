@@ -574,7 +574,7 @@ export const roboticsAssembly: AssemblySpec = {
       parent: "sa-controller",
       title: "Fit the status lamp",
       instruction:
-        "Fit the status lamp on the cabinet roof and check every colour lights.",
+        "Fit the status lamp on the cabinet roof and check every color lights.",
       componentNodeIds: ["7ca9f42baa23c434"],
       motion: { type: "linear", direction: [0, 0, -1], distance: 55 },
       view: [0.987, 0, 0.158]

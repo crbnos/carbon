@@ -2,12 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
+import { toBaseAmount } from "@carbon/database/accounting-currency";
+import { round } from "@carbon/database/precision";
+import { moneyFormatOptions } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 // Import the constants from the models file directly (not the `../shared` barrel),
 // which also re-exports shared.service/shared.server — those transitively pull in
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
 import { incoterms, itemType, methodType } from "../shared/shared.models";
+
+/** The classes a purchase or purchase order G/L Account line may be coded to.
+ *  Revenue is left out: a supplier's credit belongs on a credit memo, not a
+ *  debit to sales. */
+export const purchaseLineAccountClasses = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Expense"
+] as const;
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -17,6 +32,7 @@ export const purchaseInvoiceLineType = [
   "Consumable",
   // "Fixed Asset",
   "G/L Account",
+  "Lease",
   "Comment"
 ] as const;
 
@@ -146,7 +162,14 @@ export const purchaseInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(
-      [...itemType, "Fixture", "G/L Account", "Fixed Asset", "Comment"],
+      [
+        ...itemType,
+        "Fixture",
+        "G/L Account",
+        "Fixed Asset",
+        "Lease",
+        "Comment"
+      ],
 
       {
         error: "Type is required"
@@ -157,7 +180,12 @@ export const purchaseInvoiceLineValidator = z
     itemId: zfd.text(z.string().optional()),
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
+    projectId: zfd.text(z.string().optional()),
+    projectElementId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
+    // A Lease line names the lease; a drafted one also its payment row.
+    leaseId: zfd.text(z.string().optional()),
+    leasePaymentId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
     quantity: zfd.numeric(z.number().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
@@ -166,6 +194,7 @@ export const purchaseInvoiceLineValidator = z
     supplierUnitPrice: zfd.numeric(z.number().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
     supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0)),
     requiredDate: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
@@ -209,6 +238,17 @@ export const purchaseInvoiceLineValidator = z
       path: ["description"]
     }
   )
+  .refine((data) => (data.invoiceLineType === "Lease" ? data.leaseId : true), {
+    message: "Lease is required",
+    path: ["leaseId"]
+  })
+  .refine(
+    (data) => (data.invoiceLineType === "Lease" ? data.description : true),
+    {
+      message: "Description is required",
+      path: ["description"]
+    }
+  )
   .refine(
     (data) =>
       data.invoiceLineType === "Fixed Asset"
@@ -244,6 +284,18 @@ export const stripeCustomerActions = [
   "create"
 ] as const;
 
+/** The fields this panel emits, plus the email its parent commits — for a
+ *  form outside the invoice post modal (the contract confirm modal) that
+ *  submits the user's Stripe customer choice. The action re-checks it with
+ *  `linkStripeCustomerForBilling`. */
+export const stripeCustomerChoiceValidator = z.object({
+  stripeCustomerAction: z.enum(stripeCustomerActions).optional(),
+  stripeCustomerId: zfd.text(z.string().optional()),
+  stripeContactEmail: zfd.text(
+    z.string().email({ message: "Email is invalid" }).optional()
+  )
+});
+
 export const salesInvoicePostValidator = z
   .object({
     notification: z.enum(["Email", "Stripe", "None"]).optional(),
@@ -258,7 +310,7 @@ export const salesInvoicePostValidator = z
       z.string().email({ message: "Email is invalid" }).optional()
     ),
     // Supplied only when the invoice's own dateDue wouldn't survive
-    // clampDueDate (missing, past, or too far out) — see the post modal.
+    // stripeDueDate (missing, on/before today, or too far out) — see the post modal.
     stripeDueDate: zfd.text(z.string().optional())
   })
   .refine(
@@ -296,6 +348,9 @@ export const salesInvoicePostValidator = z
 export const salesInvoiceShipmentValidator = z.object({
   id: z.string(),
   locationId: zfd.text(z.string().optional()),
+  // The customer's ship-to (a `customerLocation` of the invoice's customer).
+  // Never the bill-to: sales rules evaluate standalone lines against it.
+  customerLocationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   shippingTermId: zfd.text(z.string().optional()),
   shippingCost: zfd.numeric(z.number().optional().default(0)),
@@ -304,17 +359,69 @@ export const salesInvoiceShipmentValidator = z.object({
   customFields: z.any().optional()
 });
 
+/**
+ * A service period is both dates or neither, with the end on or after the
+ * start. `zfd.text` has already turned an empty submission into undefined.
+ * A malformed date fails the check instead of throwing out of the refine.
+ */
+function isValidServicePeriod(data: {
+  serviceStartDate?: string;
+  serviceEndDate?: string;
+}): boolean {
+  const { serviceStartDate, serviceEndDate } = data;
+  if (!serviceStartDate && !serviceEndDate) return true;
+  if (!serviceStartDate || !serviceEndDate) return false;
+  try {
+    return parseDate(serviceEndDate).compare(parseDate(serviceStartDate)) >= 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A sales invoice line that bills a service with no item: a service job's
+ * labor or fixed price line, written by `createServiceInvoice`. Its
+ * description names it, and it has no method, location or stock. "Labor" is
+ * the type those lines had before 2026-11-01; old rows still carry it and
+ * read the same way.
+ */
+export function isItemlessServiceLine(line: {
+  invoiceLineType?: string | null;
+  itemId?: string | null;
+}): boolean {
+  return (
+    (line.invoiceLineType === "Service" || line.invoiceLineType === "Labor") &&
+    !line.itemId
+  );
+}
+
+/**
+ * An edit of a Service line with no item. Only an existing line may have no
+ * item: `updateSalesInvoiceLine` refuses one that had an item.
+ */
+function isEditedItemlessServiceLine(data: {
+  id?: string;
+  invoiceLineType: string;
+  itemId?: string;
+}): boolean {
+  return !!data.id && isItemlessServiceLine(data);
+}
+
 export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
-    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset"], {
+    // "Rental" lines are written by rental invoice generation, never offered as
+    // a choice (it is not in `salesInvoiceLineType`); it is accepted here so a
+    // rental line's shape validates. The DB requires a rental agreement line on
+    // every Rental row, so a hand-posted one is still refused.
+    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset", "Rental"], {
       error: "Type is required"
     }),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
     // Requiredness is enforced conditionally by the refine below, which exempts
-    // Fixed Asset lines.
+    // Fixed Asset and Rental lines and a Service line with no item.
     methodType: zfd.text(
       z
         .enum(methodType, {
@@ -333,18 +440,24 @@ export const salesInvoiceLineValidator = z
     quantity: zfd.numeric(z.number().optional()),
     unitOfMeasureCode: zfd.text(z.string().default("EA")),
     unitPrice: zfd.numeric(z.number().optional()),
+    // Percent points (0–100), as the form types it; the route stores the 0–1
+    // fraction the column holds. It discounts the merchandise only.
+    discountPercent: zfd.numeric(z.number().min(0).max(100).optional()),
     shippingCost: zfd.numeric(z.number().optional().default(0)),
     taxPercent: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
-    exchangeRate: zfd.numeric(z.number().optional())
+    exchangeRate: zfd.numeric(z.number().optional()),
+    serviceStartDate: zfd.text(z.string().optional()),
+    serviceEndDate: zfd.text(z.string().optional())
   })
   .refine(
     (data) =>
       ["Part", "Service", "Material", "Tool", "Consumable"].includes(
         data.invoiceLineType
       )
-        ? data.itemId
+        ? !!data.itemId || isEditedItemlessServiceLine(data)
         : true,
     {
       message: "Item is required",
@@ -363,7 +476,12 @@ export const salesInvoiceLineValidator = z
   )
   .refine(
     (data) => {
-      if (data.invoiceLineType === "Fixed Asset") return true;
+      if (
+        data.invoiceLineType === "Fixed Asset" ||
+        data.invoiceLineType === "Rental" ||
+        isEditedItemlessServiceLine(data)
+      )
+        return true;
       return !!data.methodType;
     },
     {
@@ -379,6 +497,22 @@ export const salesInvoiceLineValidator = z
     {
       message: "Fixed Asset quantity must be 1",
       path: ["quantity"]
+    }
+  )
+  .refine((data) => isValidServicePeriod(data), {
+    message: "Service end must be on or after service start",
+    path: ["serviceEndDate"]
+  })
+  // Rental lines carry their billing period in these columns, written by
+  // rental invoice generation; every other non-Service type is a physical good.
+  .refine(
+    (data) =>
+      data.invoiceLineType === "Service" ||
+      data.invoiceLineType === "Rental" ||
+      (!data.serviceStartDate && !data.serviceEndDate),
+    {
+      message: "Service dates only apply to Service lines",
+      path: ["serviceStartDate"]
     }
   );
 
@@ -415,13 +549,34 @@ export const memoValidator = z
     memoDate: z.string().min(1, { message: "Date is required" }),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().positive().default(1)),
-    amount: zfd.numeric(z.number().positive({ message: "Amount must be > 0" })),
+    // The memo form enters the NET and a tax code; `upsertMemo` computes the
+    // tax forward from the code's rate on the memo date and stores
+    // amount = net + tax (spec "Memo tax"). A caller that sends `amount` and
+    // no `netAmount` keeps the old meaning: a gross with no tax — refused on
+    // an update of a memo that carries tax (`resolveMemoTaxAmounts` in invoicing.utils).
+    netAmount: zfd.numeric(
+      z.number().positive({ message: "Net amount must be > 0" }).optional()
+    ),
+    taxCodeId: zfd.text(z.string().optional()),
+    amount: zfd.numeric(
+      z.number().positive({ message: "Amount must be > 0" }).optional()
+    ),
     reference: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional())
   })
   .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
     message: "A memo is for exactly one party (customer or supplier)",
     path: ["customerId"]
+  })
+  .refine((d) => d.netAmount !== undefined || d.amount !== undefined, {
+    message: "Net amount is required",
+    path: ["netAmount"]
+  })
+  // A tax code is applied to a net. Taken with only a gross, the tax would
+  // have to be worked out backwards from it, which posting never does.
+  .refine((d) => !d.taxCodeId || d.netAmount !== undefined, {
+    message: "A tax code needs a net amount",
+    path: ["taxCodeId"]
   });
 
 // ----------------------------------------------------------------------
@@ -437,6 +592,10 @@ export type PaymentStatusType = (typeof paymentStatus)[number];
 export function isPaymentLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+/** The account type a supplier payment may be paid from besides an Asset. */
+export const CARD_ACCOUNT_TYPE =
+  "Credit Card" satisfies Database["public"]["Enums"]["accountType"];
 
 export const paymentValidator = z
   .object({
@@ -461,7 +620,19 @@ export const paymentValidator = z
     ),
     bankAccount: z.string().min(1, { message: "Bank account is required" }),
     reference: zfd.text(z.string().optional()),
-    memo: zfd.text(z.string().optional())
+    memo: zfd.text(z.string().optional()),
+    // A customer deposit names the document it is held against — at most one
+    // (`payment_deposit_document_check`). post-payment books the unapplied cash
+    // of a payment carrying either reference on the prepayment account.
+    salesOrderId: zfd.text(z.string().optional()),
+    rentalAgreementId: zfd.text(z.string().optional()),
+    // A contract deposit: how a progress or performance-based payment is
+    // received (contract financing).
+    customerContractId: zfd.text(z.string().optional()),
+    // A supplier prepayment names the purchase order it is held against;
+    // post-payment books its unapplied cash on the supplier prepayment
+    // account (an asset) instead of inside payables.
+    purchaseOrderId: zfd.text(z.string().optional())
   })
   .refine(
     (d) =>
@@ -471,7 +642,53 @@ export const paymentValidator = z
         "A payment requires exactly one party (customer, supplier, or employee)",
       path: ["customerId"]
     }
-  );
+  )
+  .refine(
+    (d) =>
+      [
+        d.salesOrderId,
+        d.rentalAgreementId,
+        d.customerContractId,
+        d.purchaseOrderId
+      ].filter(Boolean).length <= 1,
+    {
+      message:
+        "A deposit is held against one sales order, rental agreement, contract or purchase order",
+      path: ["rentalAgreementId"]
+    }
+  )
+  .refine(
+    (d) =>
+      Boolean(d.customerId) ||
+      !(d.salesOrderId || d.rentalAgreementId || d.customerContractId),
+    {
+      message: "Only a customer payment can be a deposit",
+      path: ["rentalAgreementId"]
+    }
+  )
+  .refine((d) => Boolean(d.supplierId) || !d.purchaseOrderId, {
+    message: "Only a supplier payment can be a prepayment",
+    path: ["purchaseOrderId"]
+  });
+
+// A document a payment can be a deposit for or a refund of, as the payment
+// form's "Deposit for" / "Prepayment for" picker lists them: a sales order,
+// rental agreement or contract of a customer, or a purchase order of a
+// supplier. Loaded company-wide with the party on each row — the form narrows
+// to the selected party, which can change before the payment is saved. `open`
+// is whether a NEW deposit may be taken against it (an open order / a Draft or
+// Active agreement); a refund can name any document that already holds a
+// deposit, closed or not.
+export type DepositDocument = {
+  id: string;
+  readableId: string;
+  /** The customer, or for a purchase order the supplier. */
+  partyId: string;
+  kind: "salesOrder" | "rentalAgreement" | "customerContract" | "purchaseOrder";
+  status: string;
+  open: boolean;
+  refundableCurrencyCodes?: string[];
+};
 
 // ----------------------------------------------------------------------
 // Charges (Ramp spend-management sync)
@@ -530,18 +747,24 @@ export const reimbursementLineDimensionValidator = z.object({
   valueId: z.string().min(1)
 });
 
-export const reimbursementLineValidator = z.object({
-  id: z.string().optional(),
-  accountId: z.string().min(1, { message: "Account is required" }),
-  costCenterId: z.string().nullish(),
-  projectId: z.string().nullish(),
-  description: z.string().nullish(),
-  amount: z
-    .number()
-    .finite()
-    .positive({ message: "Line amount must be positive" }),
-  dimensions: z.array(reimbursementLineDimensionValidator).default([])
-});
+export const reimbursementLineValidator = z
+  .object({
+    id: z.string().optional(),
+    accountId: z.string().min(1, { message: "Account is required" }),
+    costCenterId: z.string().nullish(),
+    projectId: z.string().nullish(),
+    projectElementId: z.string().nullish(),
+    description: z.string().nullish(),
+    amount: z
+      .number()
+      .finite()
+      .positive({ message: "Line amount must be positive" }),
+    dimensions: z.array(reimbursementLineDimensionValidator).default([])
+  })
+  .refine((line) => !line.projectElementId || !!line.projectId, {
+    message: "An element needs its project",
+    path: ["projectElementId"]
+  });
 
 // The editor submits the whole line set as ONE hidden JSON field, so the
 // route parses that string and runs it through this array.
@@ -635,4 +858,78 @@ export function isInvoicePayable(
     Number.isFinite(Number(balance)) &&
     Number(balance ?? 0) > 0
   );
+}
+
+/**
+ * The lines that take a payment's journal from `before` to `after`: per
+ * account, description, target and role, what changed. Pure.
+ */
+export function paymentJournalDifference<
+  T extends {
+    accountId: string;
+    description: string;
+    amount: number;
+    documentLineReference?: string | null;
+    journalLineReference?: string | null;
+    accountDefaultRole?: string | null;
+  }
+>(before: T[], after: T[]): T[] {
+  const key = (line: T) =>
+    [
+      line.accountId,
+      line.description,
+      line.documentLineReference ?? "",
+      // journalLineReference is new on every build: not part of the key.
+      line.accountDefaultRole ?? ""
+    ].join("|");
+  const net = new Map<string, { line: T; amount: number }>();
+  for (const [lines, sign] of [
+    [after, 1],
+    [before, -1]
+  ] as const) {
+    for (const line of lines) {
+      const entry = net.get(key(line)) ?? { line, amount: 0 };
+      entry.amount = toBaseAmount(entry.amount + sign * Number(line.amount), 1);
+      net.set(key(line), entry);
+    }
+  }
+  return [...net.values()]
+    .filter((entry) => entry.amount !== 0)
+    .map((entry) => ({ ...entry.line, amount: entry.amount }));
+}
+
+export const invoiceLineAccountValidator = z.object({
+  accountId: z.string().min(1, { message: "Account is required" })
+});
+
+export const purchaseInvoiceRoundingValidator = z.object({
+  targetTotal: zfd.numeric(z.number({ error: "Amount to match is required" }))
+});
+
+/** A rounding adjustment never exceeds 100 minor units (1.00 USD, 100 JPY). */
+export const MAX_ROUNDING_MINOR_UNITS = 100;
+
+/** The rounding line amount that brings an invoice whose other lines total
+ *  `totalWithoutRounding` to `targetTotal`, or a refusal when the gap is too
+ *  large to be rounding. Amounts are in the invoice's currency. */
+export function purchaseInvoiceRoundingAmount(
+  totalWithoutRounding: number,
+  targetTotal: number,
+  decimals: number
+): { amount: number } | { refusal: string } {
+  // Against the total as the invoice shows it (rounded half away from zero,
+  // like the view), or a half-unit remainder tips the new total one unit over.
+  const amount = round(
+    targetTotal - round(totalWithoutRounding, decimals),
+    decimals
+  );
+  const max = round(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals, decimals);
+  if (Math.abs(amount) > max) {
+    const format = new Intl.NumberFormat("en-US", moneyFormatOptions(decimals))
+      .format;
+    return {
+      refusal: `The difference of ${format(amount)} is more than ${format(max)}, too large for a rounding adjustment. Correct the invoice lines instead.`
+    };
+  }
+  return { amount };
 }

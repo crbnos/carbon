@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  configurationRuleValidator,
-  upsertConfigurationRule
-} from "~/modules/items";
+import { configurationRuleValidator } from "~/modules/items/items.models";
+import { upsertConfigurationRule } from "~/modules/items/items.service";
 
 const logger = getLogger("erp", "itemid-rule");
 
@@ -43,7 +41,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (upsert.error) {
-    logger.error(upsert.error);
+    logger.error("Failed to save the configuration rule", {
+      itemId,
+      error: upsert.error
+    });
     return {
       success: false,
       error: upsert.error.message

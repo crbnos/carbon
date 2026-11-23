@@ -2,173 +2,51 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
-import { datetime } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
-import { productionEventValidator } from "~/services/models";
-import {
-  endProductionEvent,
-  getOperationEligibility,
-  startProductionEvent
-} from "~/services/operations.service";
-import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
+import { productionEventAction } from "~/services/production-event.server";
+import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
+import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action(args: ActionFunctionArgs) {
+  const result = await startOrEnd(args);
+  // A press before the page hydrates submits the start/stop form as a full
+  // page POST, which would leave the operator on this resource route with a
+  // bare JSON body. Send them back to the page they came from, keeping the
+  // flash cookie, so the outcome shows as a toast there.
+  if (args.request.headers.get("Sec-Fetch-Mode") === "navigate") {
+    const headers =
+      result instanceof Response ? result.headers : result.init?.headers;
+    throw redirect(requestReferrer(args.request) ?? path.to.operations, {
+      headers
+    });
+  }
+  return result;
+}
+
+async function startOrEnd({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {});
-
-  const formData = await request.formData();
-  const validation = await validator(productionEventValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    id,
-    action: productionAction,
-    trackedEntityId,
-    unitIndex,
-    exclusive,
-    ...d
-  } = validation.data;
-
-  if (productionAction === "Start") {
-    // Ability gate: the shop-floor Start button posts here, so the
-    // qualification check must run on this path (not only in the
-    // start.$operationId loader)
-    const serviceRole = await getCarbonServiceRole();
-    const operation = await serviceRole
-      .from("jobOperation")
-      .select("operationType")
-      .eq("id", d.jobOperationId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (operation.data?.operationType === "Outside Processing") {
-      return data(
-        {},
-        await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
-      );
-    }
-
-    const eligibility = await getOperationEligibility(serviceRole, {
-      operationId: d.jobOperationId,
-      employeeId: userId,
-      companyId
-    });
-    if (!eligibility.eligible) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(
-            null,
-            eligibility.reason ?? "Not qualified to start this operation"
-          )
-        )
-      );
-    }
-
-    // Single-phase (assembly) clocking: end any other open work type for this
-    // operator on this operation before starting, so Setup and Labor can never
-    // run simultaneously. Post each ended event so its cost still books.
-    if (exclusive === "true") {
-      const openOthers = await client
-        .from("productionEvent")
-        .select("id")
-        .eq("jobOperationId", d.jobOperationId)
-        .eq("employeeId", userId)
-        .is("endTime", null)
-        .neq("type", d.type);
-      if (openOthers.data && openOthers.data.length > 0) {
-        const endTime = datetime.timestamp();
-        for (const ev of openOthers.data) {
-          const ended = await endProductionEvent(client, {
-            id: ev.id,
-            endTime,
-            employeeId: userId
-          });
-          if (ended.data && ended.data.length > 0) {
-            await serverFns
-              .system({
-                db: getDatabaseClient(),
-                companyId,
-                userId
-              })
-              .invoke("post-production-event", {
-                productionEventId: ended.data[0].id
-              });
-          }
-        }
-      }
-    }
-    const startEvent = await startProductionEvent(
+  return productionEventAction(
+    {
       client,
-      {
-        ...d,
-        startTime: datetime.timestamp(),
-        employeeId: userId,
-        companyId,
-        createdBy: userId
+      serviceRole: getCarbonServiceRole(),
+      db: getDatabaseClient,
+      permitted: async (permission) => {
+        try {
+          await requirePermissions(request, permission);
+          return true;
+        } catch (thrown) {
+          if (thrown instanceof Response) return false;
+          throw thrown;
+        }
       },
-      trackedEntityId,
-      unitIndex
-    );
-
-    if (startEvent.error) {
-      return data(
-        {},
-        await flash(request, error(startEvent.error, "Failed to start event"))
-      );
-    }
-
-    return data(
-      startEvent.data,
-      await flash(request, success(`Started ${d.type.toLowerCase()} operation`))
-    );
-  } else {
-    if (!id) {
-      return data({}, await flash(request, error("No event id provided")));
-    }
-    const endEvent = await endProductionEvent(client, {
-      id,
-      endTime: datetime.timestamp(),
-      employeeId: userId
-    });
-    if (endEvent.error) {
-      return data(
-        {},
-        await flash(request, error(endEvent.error, "Failed to end event"))
-      );
-    }
-    if (endEvent.data && endEvent.data.length > 0) {
-      // Batch timers post cost at batch completion, when the aggregate event is
-      // sliced per member (batch-operations). Posting it here too would
-      // double-book the cost, so skip post-production-event for a batch event.
-      if (!endEvent.data[0].jobOperationBatchId) {
-        await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("post-production-event", {
-            productionEventId: endEvent.data[0].id
-          });
-      }
-    }
-    return data(
-      endEvent.data,
-      await flash(request, success(`Ended ${d.type.toLowerCase()} operation`))
-    );
-  }
+      numberUnit: assignSerialNumberOnFirstTouch
+    },
+    { request, companyId, userId }
+  );
 }

@@ -7,8 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-
-import { updateProcedureStepOrder } from "~/modules/production";
+import { updateProcedureStepOrder } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -38,7 +37,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateSortOrders, "Failed to update sort order")
+        error(
+          updateSortOrders.find((update) => update.error)?.error,
+          "Failed to update sort order"
+        )
       )
     );
 

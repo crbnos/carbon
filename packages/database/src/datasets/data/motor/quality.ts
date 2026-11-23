@@ -191,7 +191,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 20 at AQL 1.0 / level II → code letter C, n = 5.
 const NOMEX_PLAN = {
-  drawingNumber: "SPEC-INS-410 Rev B",
+  name: "SPEC-INS-410 Rev B",
   aql: 1.0,
   features: [
     {
@@ -273,7 +273,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:terminal-blocks",
     receipt: "receipt:copperline-restock",
     item: "TRM-BLK-6P",
-    drawingNumber: "CW-TB6-35 Rev C",
+    name: "CW-TB6-35 Rev C",
     aql: 1.0,
     features: [
       {
@@ -354,6 +354,27 @@ export const INSPECTIONS: InspectionSpec[] = [
     job: "floor-shaft",
     status: "Pending",
     samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-MAG45-2609"],
+    workCenter: "CMM Inspection Bench",
+    assignee: "self",
+    notes:
+      "Surface-flux and demagnetization-curve check of the held magnet lot.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-MAG45-2609"],
+    workCenter: "CMM Inspection Bench",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
+    samples: []
   }
 ];
 
@@ -411,6 +432,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Gauge Block",
     description:
       "Grade 0 steel gauge block set, 47 pc — inspection bench master",
+    manufacturer: "Mitutoyo",
     modelNumber: "GBS-47-0",
     serialNumber: "GB-21-0388",
     role: "Master",
@@ -439,6 +461,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Micrometer - Outside",
     description:
       "0–25 mm outside micrometer — new unit for magnet segment thickness at incoming",
+    manufacturer: "Starrett",
     modelNumber: "OM-25D",
     serialNumber: "M26-11907",
     role: "Standard",
@@ -452,6 +475,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Bore Gauge",
     description:
       "150–200 mm dial bore gauge for stator bore after impregnation — retired after failed calibration",
+    manufacturer: "Mahr",
     modelNumber: "DBG-200",
     serialNumber: "BG18-30271",
     role: "Standard",

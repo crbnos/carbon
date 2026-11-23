@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { isAccountSettingsTab } from "@carbon/account";
+import { redirect, redirectBeforeLoaders } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { path } from "~/utils/path";
+
+// Account settings is a modal now. The old pages stay as links into it —
+// emails, the MES and the notification bell still point here.
+export async function loader({ params }: LoaderFunctionArgs) {
+  // The old theme page is the Appearance pane now.
+  const requested = params.tab === "theme" ? "appearance" : params.tab;
+  const tab = isAccountSettingsTab(requested) ? requested : "profile";
+  throw redirect(path.to.accountSettings(tab));
+}
+
+export const middleware = [redirectBeforeLoaders(loader)];

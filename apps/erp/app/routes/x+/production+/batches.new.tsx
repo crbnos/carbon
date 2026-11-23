@@ -5,7 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -13,10 +13,13 @@ import { useLoaderData } from "react-router";
 import {
   getBatchableProcesses,
   getJobOperationBatchWithMembers
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { BatchBuilder } from "~/modules/production/ui/Batches/BatchBuilder";
-import { getLocationsList, getWorkCentersList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import {
+  getLocationsList,
+  getWorkCentersList
+} from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -146,11 +149,12 @@ export default function NewBatchRoute() {
     initialProcessId,
     batch
   } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <BatchBuilder
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       defaultLocationId={defaultLocationId}
       initialLocationId={initialLocationId}
       initialProcessId={initialProcessId}

@@ -29,11 +29,8 @@ import {
 } from "~/components";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import {
-  onboardingUserValidator,
-  updatePublicAccount
-} from "~/modules/account";
-import { getUser } from "~/modules/users/users.server";
+import { onboardingUserValidator } from "~/modules/users/users.models";
+import { getUser, updatePublicAccount } from "~/modules/users/users.service";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -80,7 +77,9 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (updateAccount.error) {
-    logger.error(updateAccount.error);
+    logger.error("Failed to update the account", {
+      error: updateAccount.error
+    });
     throw new Error("Fatal: failed to update account");
   }
 

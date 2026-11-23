@@ -56,6 +56,25 @@ describe("maskClientCode", () => {
     expect(scan(src)).toHaveLength(0);
   });
 
+  it("masks a component whose destructured props span lines", () => {
+    // `}: {` and `}) {` close the signature, not the component.
+    const src = [
+      "function TaskRow({",
+      "  task",
+      "}: {",
+      "  task: Task;",
+      "}) {",
+      "  const d = today(getLocalTimeZone());",
+      "  return null;",
+      "}",
+      "",
+      "export async function loader() {",
+      "  const d = today(getLocalTimeZone());",
+      "}"
+    ].join("\n");
+    expect(scan(src)).toHaveLength(1);
+  });
+
   it("skips clientLoader and clientAction, which run in the browser", () => {
     const src = [
       "export async function clientAction({ serverAction }) {",

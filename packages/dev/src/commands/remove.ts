@@ -2,14 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  cancel,
-  intro,
-  isCancel,
-  log,
-  multiselect,
-  outro
-} from "@clack/prompts";
+import { intro, isCancel, log, multiselect, outro } from "@clack/prompts";
 import { resolve } from "pathe";
 import pc from "picocolors";
 import {
@@ -19,20 +12,11 @@ import {
   mainCheckoutRoot,
   removeWorktree
 } from "../git.js";
-import { confirmRemove, requireTerminal } from "../prompts.js";
-import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
-import { destroyProjectVolumes, flushDb } from "../services/compose.js";
+import { abort, confirmDestructive, requireTerminal } from "../prompts.js";
+import { stackAt } from "../stack.js";
+import { teardown } from "../teardown.js";
 import {
-  branchToPrefix,
-  pruneStaleRoutes,
-  unregisterAliases
-} from "../services/portless.js";
-import { spinner } from "../ui.js";
-import {
-  getSlot,
   listSlugs,
-  projectName,
-  removeSlot,
   sameWorktreePath,
   slugForWorktreePath
 } from "../worktree.js";
@@ -48,7 +32,7 @@ export async function removeWorktreeCmd(opts?: {
   const wtsAll = await gitListWorktrees();
   const mainRoot = await mainCheckoutRoot();
   const wts = wtsAll.filter(
-    (w) => !w.bare && !w.current && w.path !== mainRoot
+    (w) => !w.bare && !w.current && !sameWorktreePath(w.path, mainRoot)
   );
   if (wts.length === 0) {
     log.warn("no other worktrees to remove");
@@ -82,137 +66,64 @@ export async function removeWorktreeCmd(opts?: {
       })),
       required: true
     });
-    if (isCancel(choices)) {
-      cancel("aborted");
-      process.exit(0);
-    }
+    if (isCancel(choices)) abort();
     selectedPaths = choices as string[];
   }
   const targets = selectedPaths.map((p) => wts.find((w) => w.path === p)!);
 
   const registry = listSlugs();
-
-  // Build context once (isDirty, slug, etc.) — reused for warnings + removal.
   const jobs = await Promise.all(
     targets.map(async (target) => {
       const slug = slugForWorktreePath(target.path, registry);
       return {
         target,
+        label: target.branch ?? target.path,
         dirty: await isDirty(target.path),
-        slug,
-        projectLabel: slug ? projectName(slug) : null,
-        slotInfo: slug ? getSlot(slug) : null,
-        branchPrefix: slug ? branchToPrefix(target.branch, slug) : null
+        stack: slug ? stackAt(target.path, slug) : null
       };
     })
   );
 
-  // Show warnings and confirm for each target.
-  for (const job of jobs) {
-    const { target, dirty, slug, projectLabel } = job;
-
+  for (const { target, label, dirty, stack } of jobs) {
     const warnings: string[] = [];
-    if (dirty)
+    if (dirty) {
       warnings.push(
         `${pc.yellow("⚠")} uncommitted changes will be LOST (force remove)`
       );
-    if (slug)
+    }
+    if (stack) {
       warnings.push(
-        `${pc.yellow("⚠")} stack ${projectLabel} will be destroyed (volumes wiped)`
+        `${pc.yellow("⚠")} stack ${stack.project} will be destroyed (volumes wiped)`
       );
-    if (pruneBranches && target.branch)
+    }
+    if (pruneBranches && target.branch) {
       warnings.push(
         `${pc.yellow("⚠")} branch '${target.branch}' will be force-deleted (git branch -D, even if unmerged)`
       );
-    if (warnings.length)
-      log.warn(`${target.branch ?? target.path}\n${warnings.join("\n")}`);
+    }
+    if (warnings.length) log.warn(`${label}\n${warnings.join("\n")}`);
+    await confirmDestructive(
+      "Confirming a removal",
+      `Permanently remove ${label} and ${stack ? "wipe its docker volumes" : "the worktree"}?`
+    );
+  }
 
-    const ok = await confirmRemove({
-      branchOrPath: target.branch ?? target.path,
-      hasStack: !!slug
-    });
-    if (!ok) {
-      cancel("aborted");
-      process.exit(0);
+  let failed = 0;
+  for (const { target, label, stack } of jobs) {
+    log.step(label);
+    try {
+      // First: its dev servers hold the folder open, and `git worktree
+      // remove` fails on a busy directory.
+      if (stack) {
+        const failures = await teardown(stack, { purge: true });
+        for (const failure of failures) log.warn(failure);
+      }
+      await removeWorktree(target.path);
+      if (pruneBranches && target.branch) await deleteBranch(target.branch);
+    } catch (err) {
+      failed++;
+      log.error(`${label}: ${(err as Error).message}`);
     }
   }
-
-  const s = spinner();
-  let done = 0;
-  const total = jobs.length;
-  const needsPrune = jobs.some((j) => j.branchPrefix);
-
-  const progress = (label: string) => {
-    s.message(`(${done}/${total}) ${label}`);
-  };
-
-  s.start(`Removing ${total} worktree${total > 1 ? "s" : ""}`);
-
-  // Run all removals concurrently.
-  const results = await Promise.allSettled(
-    jobs.map(async (job) => {
-      const label = job.target.branch ?? job.target.path;
-      const { target, dirty, slug, projectLabel, slotInfo, branchPrefix } = job;
-
-      if (branchPrefix) {
-        progress(`${label}: unregistering aliases`);
-        await unregisterAliases(target.path, branchPrefix);
-      }
-      if (slug && projectLabel) {
-        progress(`${label}: tearing down stack`);
-        await destroyProjectVolumes(target.path, projectLabel);
-      }
-      // Kill host dev servers + stripe listener that outlive `crbn up`.
-      // Without this, their cwd holds the worktree dir open and
-      // `git worktree remove` fails on macOS (busy directory).
-      if (slotInfo) {
-        progress(`${label}: killing dev servers`);
-        await killOrphanedApps(slotInfo.ports);
-      }
-      await killOrphanedStripe(target.path);
-      if (slotInfo && typeof slotInfo.redisDb === "number") {
-        progress(`${label}: flushing redis db ${slotInfo.redisDb}`);
-        await flushDb(slotInfo.redisDb);
-      }
-
-      try {
-        progress(`${label}: removing worktree`);
-        await removeWorktree(target.path, dirty);
-
-        if (pruneBranches && target.branch) {
-          progress(`${label}: deleting branch`);
-          await deleteBranch(target.branch);
-        }
-      } finally {
-        // Always release the port slot — a failed dir removal must not leak it.
-        if (slug) removeSlot(slug);
-      }
-
-      done++;
-      progress(pc.green(label));
-    })
-  );
-
-  // One global prune after all aliases removed.
-  if (needsPrune) {
-    s.message("pruning stale routes");
-    await pruneStaleRoutes();
-  }
-
-  s.stop(`Removed ${done}/${total} worktree${total > 1 ? "s" : ""}`);
-
-  // Report failures.
-  const failed = results.filter(
-    (r): r is PromiseRejectedResult => r.status === "rejected"
-  );
-  for (let i = 0; i < results.length; i++) {
-    if (results[i]!.status === "rejected") {
-      const label = jobs[i]!.target.branch ?? jobs[i]!.target.path;
-      log.error(
-        `${label}: ${(results[i] as PromiseRejectedResult).reason?.message ?? "unknown error"}`
-      );
-    }
-  }
-
-  outro(failed.length ? `done with ${failed.length} error(s)` : "done");
+  outro(failed ? `done with ${failed} error(s)` : "done");
 }

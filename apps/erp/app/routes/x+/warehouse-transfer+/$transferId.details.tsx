@@ -2,85 +2,41 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { warehouseTransferValidator } from "~/modules/inventory/inventory.models";
 import type {
   WarehouseTransfer,
   WarehouseTransferLine
-} from "~/modules/inventory";
-import {
-  getWarehouseTransfer,
-  isWarehouseTransferLocked,
-  updateWarehouseTransfer,
-  warehouseTransferValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import {
   WarehouseTransferForm,
   WarehouseTransferLines
 } from "~/modules/inventory/ui/WarehouseTransfers";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(warehouseTransferValidator).request(args, {
+    params: ["transferId"]
   });
-
-  const { transferId } = params;
-  if (!transferId) throw new Error("transferId not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
+  if ("invalid" in input) return input.invalid;
+  // The transfer in the URL is the one updated, whatever the form's id says.
+  const { id: _, transferId: readableId, ...transfer } = input.data;
+  const { transferId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateWarehouseTransfer({
+    ...transfer,
+    id: transferId,
+    transferId: readableId || undefined,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-  const transfer = await getWarehouseTransfer(viewClient, transferId);
-  await requireUnlocked({
-    request,
-    isLocked: isWarehouseTransferLocked(transfer.data?.status),
-    redirectTo: path.to.warehouseTransfer(transferId),
-    message: "Cannot modify a locked warehouse transfer. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(warehouseTransferValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, transferId: validatedTransferId, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  const updateTransfer = await updateWarehouseTransfer(client, {
-    id,
-    transferId: validatedTransferId || undefined,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (updateTransfer.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateTransfer.error, "Failed to update warehouse transfer")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.warehouseTransfer(id),
-    await flash(request, success("Updated warehouse transfer"))
+  return respond(args.request, result).redirect(
+    path.to.warehouseTransfer(transferId),
+    { message: "Updated warehouse transfer" }
   );
 }
 

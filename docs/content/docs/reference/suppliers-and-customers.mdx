@@ -7,7 +7,9 @@ description: The parties you buy from and sell to, and the ways their records di
 
 ## Suppliers
 
-A supplier lives in purchasing and anchors the buy side: <Term id="purchase-order">purchase orders</Term>, <Term id="supplier-quote">supplier quotes</Term>, and bills all reference it. Its **status** is a fixed set: *Active*, *Inactive*, *Pending*, *Rejected*. A supplier links to the items you buy through **supplier parts**, each carrying the supplier's own part number, a minimum order quantity, and a <Term>conversion factor</Term> from their pack to your stock unit.
+A supplier lives in purchasing and anchors the buy side: <Term id="purchase-order">purchase orders</Term>, <Term id="supplier-quote">supplier quotes</Term>, and bills all reference it. Its **status** is a fixed set: *Active*, *Inactive*, *Pending*, *Rejected*. A supplier links to the items you buy through **supplier parts**, each carrying the supplier's own part number, a minimum order quantity, and a <Term>conversion factor</Term> from their pack to your stock unit. The supplier's **Parts** tab lists every supplier part that names it, with each price in its own currency, and a search box filters the list by part number, name, or the supplier's part number. **New** adds one by picking a purchased item, and opening a row edits it in place. The same records can be added from the item's Purchasing tab.
+
+A supplier part's **unit price** and its price breaks are stored as the supplier quoted them: per purchase unit, in the supplier part's **currency**. A new supplier part takes the supplier's currency, and you can change it. When the price lands on a purchase order or bill, Carbon converts it into the document's currency at the current exchange rate. A price already in the document's currency is used exactly as entered. Quote costing converts the same price into your base currency per stock unit.
 
 <Callout type="note">
 A supplier part has **no lead time** — purchasing lead time is set per item, not per supplier-part. The supplier part is about identity and pack size, not delivery time.
@@ -21,9 +23,23 @@ A customer lives in sales and anchors the sell side: <Term id="quote">quotes</Te
 The asymmetry to remember: **supplier status is a fixed four-value set; customer status is a company-configurable lookup.** Their type catalogs (supplier type, customer type) are both user-defined.
 </Callout>
 
+Suppliers also have a <Term id="supplier-stage">Supplier Stage</Term>, a list your company manages under **Purchasing → Stages**. It starts with Prospect, Sampling, Qualified and Production, and you can add more. A stage records where a supplier is in your onboarding. It does not affect approvals or which suppliers you can use.
+
 ## What they share
 
 Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a [customer portal](/docs/reference/customer-portal).
+
+A contact needs a first name, a last name or an email. A contact with no email address can still go on a document, such as a purchase order, but Carbon cannot email that document to it. When you choose **Email** as **Send Via**, pick a contact that has an email address, or send without email.
+
+To keep emails required, turn on **Require an Email on Supplier Contacts** in **Settings → Purchasing**, or **Require an Email on Customer Contacts** in **Settings → Sales**. A new or edited contact then needs an email, and so does a contact imported from CSV. Contacts saved before the setting was turned on stay as they are until someone edits them.
+
+## Tax
+
+The **Tax Information** card of a customer or a supplier holds its **"Tax Code"**. New document lines take that <Term>tax code</Term> and its rate. A customer ship-to location can carry its own **"Tax Code"**, which wins over the customer's on sales lines that ship there. A customer can also be marked <Term>tax exempt</Term>: its sales lines then take no tax. See [which code a line takes](/docs/reference/accounting#which-code-a-line-takes).
+
+Before tax codes, a party carried a bare **"Tax Percent"**. A line still takes that percent when the party has no code. Once the company has a tax code, the customer form no longer shows **"Tax Percent"**.
+
+To move parties to codes, select them in the customer or supplier list and choose **Assign Tax Code**, then pick the code. While parties with a percent and no code remain, the list shows a **"Move to tax codes"** banner with their count. The customer and supplier CSV import also takes a **Tax Code** column. It sets a code but never clears one.
 
 ## Bank accounts
 

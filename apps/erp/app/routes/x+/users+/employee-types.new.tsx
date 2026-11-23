@@ -2,26 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  insertEmployeeType,
-  makeEmptyPermissionsFromModules,
-  upsertEmployeeTypePermissions
-} from "@carbon/ee/permissions.server";
+import { makeEmptyPermissionsFromModules } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import type { CompanyPermission } from "~/modules/users";
-import {
-  EmployeeTypeForm,
-  employeeTypePermissionsValidator,
-  employeeTypeValidator,
-  getModules
-} from "~/modules/users";
+import { useLoaderData } from "react-router";
+import { EmployeeTypeForm } from "~/modules/users/ui";
+import { employeeTypeValidator } from "~/modules/users/users.models";
+import { getModules } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -50,94 +43,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    create: "users"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    redirectTo: path.to.employeeAccounts,
-    feature: "PERMISSIONS"
-  });
-
-  const validation = await validator(employeeTypeValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { name, data: permissionData } = validation.data;
-
-  const permissions = JSON.parse(permissionData) as {
-    name: string;
-    permission: CompanyPermission;
-  }[];
-  const jsonValidation =
-    employeeTypePermissionsValidator.safeParse(permissions);
-  if (jsonValidation.success === false) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(jsonValidation.error, "Failed to parse permissions")
-      )
-    );
-  }
-
-  const createEmployeeType = await insertEmployeeType(client, {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(employeeTypeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { name, data: permissions } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.users.createEmployeeType({
     name,
-    companyId
+    permissions: JSON.parse(permissions)
   });
-  if (createEmployeeType.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(createEmployeeType.error, "Failed to insert employee type")
-      )
-    );
-  }
-
-  const employeeTypeId = createEmployeeType.data?.id;
-  if (!employeeTypeId) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(createEmployeeType, "Failed to insert employee type")
-      )
-    );
-  }
-  const insertEmployeeTypePermissions = await upsertEmployeeTypePermissions(
-    client,
-    employeeTypeId,
-    companyId,
-    permissions
-  );
-
-  if (insertEmployeeTypePermissions.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          insertEmployeeTypePermissions.error,
-          "Failed to insert employee type permissions"
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.employeeTypes,
-    await flash(request, success("Employee type created"))
-  );
+  return respond(args.request, result).redirect(path.to.employeeTypes, {
+    message: "Employee type created",
+    onError: path.to.newEmployeeType
+  });
 }
 
 export default function NewEmployeeTypesRoute() {

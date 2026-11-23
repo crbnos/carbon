@@ -14,7 +14,6 @@ import { DateSelect } from "./DateSelect";
 import { DateTime } from "./DateTime";
 import { DeferredFiles } from "./DeferredFiles";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
-import DocumentHeader from "./DocumentHeader";
 import DocumentPreview from "./DocumentPreview";
 import Documents from "./Documents";
 import EmployeeAvatar from "./EmployeeAvatar";
@@ -22,7 +21,9 @@ import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Empty from "./Empty";
 import { Enumerable } from "./Enumerable";
 import { EnumerableGroup } from "./EnumerableGroup";
+import { ExchangeRateUpdatedAt } from "./ExchangeRateUpdatedAt";
 import FileDropzone from "./FileDropzone";
+import { Highlight, searchMatches } from "./Highlight";
 import Hyperlink from "./Hyperlink";
 import {
   MethodBadge,
@@ -37,6 +38,8 @@ import {
 } from "./Icons";
 import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
+import JournalPreview, { type JournalPreviewRow } from "./JournalPreview";
+import LinkValue from "./LinkValue";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
 import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
@@ -48,6 +51,7 @@ import {
   onboardingFormClassName
 } from "./OnboardingCard";
 import PeriodSelector from "./PeriodSelector";
+import { ReadOnlyField, ReadOnlyFields } from "./ReadOnlyField";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 import { RevisionSuffix } from "./RevisionSuffix";
 import SearchFilter from "./SearchFilter";
@@ -58,6 +62,7 @@ import SupplierAvatarGroup from "./SupplierAvatarGroup";
 import Table, { exportOnlyColumn } from "./Table";
 import { VersionMenu } from "./VersionMenu";
 
+export type { JournalPreviewRow };
 export {
   Assignee,
   Avatar,
@@ -72,7 +77,6 @@ export {
   DateTime,
   DeferredFiles,
   DirectionAwareTabs,
-  DocumentHeader,
   DocumentPreview,
   Documents,
   EmployeeAvatar,
@@ -80,26 +84,33 @@ export {
   Empty,
   Enumerable,
   EnumerableGroup,
+  ExchangeRateUpdatedAt,
+  exportOnlyColumn,
   FileDropzone,
+  Highlight,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
+  JournalPreview,
+  LinkValue,
   Location,
   MethodBadge,
   MethodIcon,
   MethodItemTypeIcon,
   MetricCard,
   ModelOptimizedIndicator,
-  MotionMoney,
   ModuleIcon,
+  MotionMoney,
   New,
   OnboardingCard,
   OnboardingCardContent,
-  onboardingFormClassName,
   OperationStatusIcon,
   OperationTypeIcon,
+  onboardingFormClassName,
   PeriodSelector,
   PrintButton,
+  ReadOnlyField,
+  ReadOnlyFields,
   RealtimeDataProvider,
   RevisionSuffix,
   SearchFilter,
@@ -108,10 +119,10 @@ export {
   SourcingTypeIcon,
   SupplierAvatar,
   SupplierAvatarGroup,
+  searchMatches,
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
-  exportOnlyColumn,
   useOptimisticAssignment,
   VersionMenu
 };

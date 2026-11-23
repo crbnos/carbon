@@ -20,9 +20,8 @@ import type {
   User,
   UserSelectGroup,
   UserSelectGroupMembers
-} from "~/modules/users";
+} from "~/modules/users/types";
 import { path } from "~/utils/path";
-
 import type {
   GroupNode,
   IndividualOrGroup,
@@ -41,7 +40,6 @@ const defaultProps = {
   checkedSelections: false,
   disabled: false,
   hideSelections: false,
-  id: "MultiUserSelect",
   innerInputRender: null,
   isMulti: false,
   placeholder: "",

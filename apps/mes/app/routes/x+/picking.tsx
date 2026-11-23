@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Outlet } from "react-router";
+import { RecordOutlet } from "@carbon/react";
 
 export default function PickingLayout() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

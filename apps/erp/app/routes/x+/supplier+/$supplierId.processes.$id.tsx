@@ -6,16 +6,14 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { SupplierProcess } from "~/modules/purchasing";
-import {
-  supplierProcessValidator,
-  upsertSupplierProcess
-} from "~/modules/purchasing";
+import { supplierProcessValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertSupplierProcess } from "~/modules/purchasing/purchasing.service";
+import type { SupplierProcess } from "~/modules/purchasing/types";
 import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -73,7 +71,7 @@ export default function SupplierProcessRoute() {
   const process = routeData?.processes.find((process) => process.id === id);
   if (!process) throw new Error("Could not find process");
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: process.id ?? undefined,
@@ -86,7 +84,8 @@ export default function SupplierProcessRoute() {
   return (
     <SupplierProcessForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

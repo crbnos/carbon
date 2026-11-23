@@ -8,10 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  documentLabelsValidator,
-  updateDocumentLabels
-} from "~/modules/documents";
+import { documentLabelsValidator } from "~/modules/documents/documents.models";
+import { updateDocumentLabels } from "~/modules/documents/documents.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
-import { isUnsafeStoragePath } from "../storage";
+import { isUnsafeStoragePath, PRIVATE_PREVIEW_ALIAS } from "../storage";
 
 /**
  * Preview URL for a stored private-bucket file. Demo-template artwork ships
@@ -16,10 +16,10 @@ const encodeStoragePath = (path: string) =>
 
 export const getPrivateUrl = (path: string) => {
   // Private files live in one bucket PER COMPANY and stored paths keep the
-  // `${companyId}/...` first segment, so the bucket is that segment. The
-  // preview route also accepts the legacy shared `private` bucket, which is
-  // the fallback when a path has no leading segment.
-  const bucket = path.split("/")[0] || "private";
+  // `${companyId}/...` first segment, so the bucket is that segment. A path
+  // with no leading segment falls back to the `private` alias, which the
+  // preview route serves from the caller's own company bucket.
+  const bucket = path.split("/")[0] || PRIVATE_PREVIEW_ALIAS;
   return (
     getDatasetAssetUrl(path) ??
     `/file/preview/${encodeURIComponent(bucket)}/${encodeStoragePath(path)}`
@@ -27,8 +27,8 @@ export const getPrivateUrl = (path: string) => {
 };
 
 /**
- * Raw model source for the viewer's WASM fallback tier — the bucket varies by
- * era (current uploads: temp-staging; pre-assembler rows: private).
+ * Raw model source for the viewer's WASM fallback tier: the company bucket
+ * once the raw is durable, `temp-staging` before that.
  */
 export const getRawModelUrl = (bucket: string, path: string) => {
   return `/file/preview/${encodeURIComponent(bucket)}/${encodeStoragePath(path)}`;

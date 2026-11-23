@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DetailSidebar } from "~/components/Layout";
-import type { PublicAttributes } from "~/modules/account";
+import type { PublicAttributes } from "~/modules/users/types";
 import { usePersonSidebar } from "./usePersonSidebar";
 
 type PersonSidebarProps = {

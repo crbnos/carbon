@@ -28,6 +28,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
@@ -47,6 +48,7 @@ import MaintenanceStatus from "./MaintenanceStatus";
 type MaintenanceDispatchesTableProps = {
   data: MaintenanceDispatch[];
   count: number;
+  infinite: InfiniteOptions;
   failureModes: ListItem[];
   locations: { id: string; name: string }[];
   locationId: string | null;
@@ -56,6 +58,7 @@ const MaintenanceDispatchesTable = memo(
   ({
     data,
     count,
+    infinite,
     failureModes,
     locations,
     locationId
@@ -91,6 +94,7 @@ const MaintenanceDispatchesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -115,6 +119,7 @@ const MaintenanceDispatchesTable = memo(
             );
           },
           meta: {
+            mobile: "P3",
             icon: <LuBuilding />,
             filter: {
               type: "static",
@@ -133,6 +138,7 @@ const MaintenanceDispatchesTable = memo(
             return <MaintenanceSource source={source} />;
           },
           meta: {
+            mobile: "P2",
             icon: <LuDna />,
             filter: {
               type: "static",
@@ -152,6 +158,7 @@ const MaintenanceDispatchesTable = memo(
             return <MaintenanceStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             icon: <LuStar />,
             filter: {
               type: "static",
@@ -374,6 +381,7 @@ const MaintenanceDispatchesTable = memo(
     return (
       <Table<MaintenanceDispatch>
         data={data}
+        infinite={infinite}
         columns={columns}
         defaultColumnPinning={{
           left: ["maintenanceDispatchId"]
@@ -391,6 +399,7 @@ const MaintenanceDispatchesTable = memo(
             {locationId && (
               <Combobox
                 asButton
+                aria-label={t`Location`}
                 size="sm"
                 value={locationId}
                 options={locationOptions}

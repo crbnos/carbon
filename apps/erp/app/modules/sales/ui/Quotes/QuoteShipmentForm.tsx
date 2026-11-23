@@ -8,7 +8,8 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
+  useViewport
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -31,7 +32,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { incoterms } from "~/modules/shared";
+import { incoterms } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import { isQuoteLocked, quoteShipmentValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
@@ -80,6 +81,8 @@ const QuoteShipmentForm = forwardRef<
 
   const isLocked = isQuoteLocked(routeData?.quote?.status);
   const isEditable = !isLocked;
+  const { isPhone } = useViewport();
+  const quoteStatus = routeData?.quote?.status ?? "";
 
   const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(company?.baseCurrencyCode);
@@ -104,6 +107,13 @@ const QuoteShipmentForm = forwardRef<
           <CardTitle>
             <Trans>Shipping</Trans>
           </CardTitle>
+          {isPhone && isLocked ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                Locked while the quote is {quoteStatus}. Reopen it to edit.
+              </Trans>
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <Hidden name="id" />

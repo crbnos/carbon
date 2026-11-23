@@ -47,6 +47,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBuilding />
         }
       },
@@ -61,6 +62,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuBuilding />
         }
       }

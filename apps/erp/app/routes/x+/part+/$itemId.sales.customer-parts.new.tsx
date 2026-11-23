@@ -6,14 +6,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import {
-  customerPartValidator,
-  getItem,
-  upsertItemCustomerPart
-} from "~/modules/items";
+import { customerPartValidator } from "~/modules/items/items.models";
+import { getItem, upsertItemCustomerPart } from "~/modules/items/items.service";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 
@@ -60,10 +57,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createCustomerPart.error) {
     const flashMessage =
-      // 23505 means the unique constraint on ("customerId", "itemId") was violated
-      createCustomerPart.error.code == "23505"
-        ? "Customer Part record already defined for customer"
-        : "Failed to create customer part";
+      // duplicate = the unique constraint on ("customerId", "itemId")
+      getDatabaseErrorMessage(
+        createCustomerPart.error,
+        "Failed to create customer part",
+        { duplicate: "Customer Part record already defined for customer" }
+      );
 
     throw redirect(
       path.to.partSales(itemId),

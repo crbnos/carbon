@@ -6,30 +6,32 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { prefillInspectionSamples } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import {
   getBalloons,
   getInspection,
   getInspectionDocument,
+  getInspectionDocumentParameters,
   getInspectionGauges,
+  getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
-  getIssueTypesList
-} from "~/modules/quality";
-import {
+  getIssueTypesList,
+  getManualInspectionTrackedEntities,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
-} from "~/modules/quality/quality.server";
+} from "~/modules/quality/quality.service";
 import type {
   InspectionGauge,
+  InspectionIssue,
   InspectionMeasurement,
   InspectionRow,
   InspectionSample,
@@ -38,9 +40,13 @@ import type {
   IssueTypeListItem
 } from "~/modules/quality/types";
 import InspectionView from "~/modules/quality/ui/Inspections/InspectionView";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "inspection");
 
 export const handle: Handle = {
   realtime: [
@@ -54,10 +60,8 @@ export const handle: Handle = {
   module: "quality"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.inspection?.inspectionId, "Inspection");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -68,7 +72,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(id, "id is required");
 
   const [inspection, settings, issueTypes] = await Promise.all([
-    getInspection(client, id),
+    // A serial lot whose plan inspects every unit gets every unit as a sample
+    // up front, so the inspector records results without scanning. Scoped to
+    // the company inside the engine; a lot of another company is left alone.
+    // It runs before the lot is read, whose embed carries the samples. A
+    // failure only leaves the scanner to add them, so it is logged, not thrown.
+    prefillInspectionSamples(getDatabaseClient(), {
+      inspectionId: id,
+      companyId,
+      userId
+    }).then((prefill) => {
+      if (prefill.error) {
+        logger.error("Failed to prefill the inspection samples", {
+          companyId,
+          inspectionId: id,
+          error: prefill.error
+        });
+      }
+      return getInspection(client, id);
+    }),
     getCompanySettings(client, companyId),
     getIssueTypesList(client, companyId)
   ]);
@@ -98,7 +120,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The lot references its inspection document live — resolve per-lot plan
   // rows for any features added to the document after receipt.
   if (insp.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(id, companyId);
+    await reconcileInspectionSamplingPlans(getDatabaseClient(), id, companyId);
   }
 
   const isReceiptSource = insp.sourceDocument === "Receipt";
@@ -111,19 +133,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lotEntities,
     document,
     balloons,
-    receipt
+    receipt,
+    issues,
+    parameters
   ] = await Promise.all([
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
     getInspectionGauges(client, companyId, id),
-    getRecentInspectionGauges({ inspectionId: id, companyId }),
+    getRecentInspectionGauges(getDatabaseClient(), {
+      inspectionId: id,
+      companyId
+    }),
     isReceiptSource && insp.sourceDocumentLineId
       ? getInspectionTrackedEntities(
           client,
           insp.sourceDocumentLineId,
           companyId
         )
-      : Promise.resolve({ data: null, error: null }),
+      : insp.sourceDocument === "Manual"
+        ? getManualInspectionTrackedEntities(client, id, companyId).then(
+            (result) => ({
+              data: (result.data ?? [])
+                .map((row) => row.trackedEntity)
+                .filter(Boolean),
+              error: result.error
+            })
+          )
+        : Promise.resolve({ data: null, error: null }),
     insp.inspectionDocumentId
       ? getInspectionDocument(serviceRole, insp.inspectionDocumentId, companyId)
       : Promise.resolve({ data: null, error: null }),
@@ -135,21 +171,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     isReceiptSource
       ? client
           .from("receipt")
-          .select("createdBy")
+          .select("createdBy, status")
           .eq("id", insp.sourceDocumentId)
           .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    getInspectionIssues(client, id, companyId),
+    insp.inspectionDocumentId
+      ? getInspectionDocumentParameters(
+          serviceRole,
+          insp.inspectionDocumentId,
+          companyId
+        )
       : Promise.resolve({ data: null, error: null })
   ]);
 
   const doc = document.data as {
     name?: string | null;
     content?: { pdfUrl?: string | null };
+    model?: { modelUploadId: string; modelPath: string | null } | null;
+    workInstruction?: JSONContent | null;
   } | null;
 
   return data({
     inspection: insp,
     sourceDocumentReadableId: insp.sourceDocumentReadableId ?? null,
     receiverId: receipt.data?.createdBy ?? null,
+    receiptVoided: receipt.data?.status === "Voided",
     itemName: insp.item?.name ?? "",
     itemTrackingType: insp.item?.itemTrackingType ?? null,
     supplierName: insp.supplier?.name ?? null,
@@ -170,9 +217,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       regionHeight: Number(b.regionHeight ?? 0)
     })),
     documentName: doc?.name ?? null,
+    parameters: parameters.data ?? [],
+    workInstruction: doc?.workInstruction ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,
+    model: doc?.model ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
     issueTypes: (issueTypes.data ?? []) as IssueTypeListItem[],
+    issues: (issues.data ?? [])
+      .map((link) => link.nonConformance)
+      .filter((issue): issue is InspectionIssue => Boolean(issue)),
     enforceFourEyes:
       ((settings.data as any)?.enforceInspectionFourEyes as boolean) ?? false,
     currentUserId: userId
@@ -187,6 +240,7 @@ export default function InspectionExecutionRoute() {
       inspection={loaderData.inspection as InspectionRow}
       sourceDocumentReadableId={loaderData.sourceDocumentReadableId}
       receiverId={loaderData.receiverId}
+      receiptVoided={loaderData.receiptVoided}
       itemName={loaderData.itemName}
       itemTrackingType={loaderData.itemTrackingType}
       supplierName={loaderData.supplierName}
@@ -197,9 +251,13 @@ export default function InspectionExecutionRoute() {
       recentGaugeIds={loaderData.recentGaugeIds}
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
+      parameters={loaderData.parameters}
+      workInstruction={loaderData.workInstruction as JSONContent | null}
       pdfUrl={loaderData.pdfUrl}
+      model={loaderData.model}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}
       issueTypes={loaderData.issueTypes as IssueTypeListItem[]}
+      issues={loaderData.issues}
       currentUserId={loaderData.currentUserId}
       enforceFourEyes={loaderData.enforceFourEyes}
     />

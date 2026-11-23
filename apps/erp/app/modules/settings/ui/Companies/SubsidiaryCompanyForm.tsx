@@ -8,7 +8,8 @@ import type { z } from "zod";
 import { Currency, Input, Select, Submit, Timezone } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { useRouteData } from "~/hooks";
-import { type Company, subsidiaryValidator } from "~/modules/settings";
+import { subsidiaryValidator } from "~/modules/settings/settings.models";
+import type { Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 type CompanyFormProps = {

@@ -5,11 +5,11 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox, FieldEmptyState } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
+import { afterDialogCloses, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef } from "react";
-import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
-import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
+import type { getSupplierProcessesByProcess } from "~/modules/purchasing/purchasing.service";
+import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
@@ -63,12 +63,14 @@ const SupplierProcess = ({
           newSupplierProcessModal.onOpen();
         }}
       />
-      {newSupplierProcessModal.isOpen && processId && (
+      {newSupplierProcessModal.openCount > 0 && processId && (
         <SupplierProcessForm
+          key={`supplier-process-${newSupplierProcessModal.openCount}`}
+          open={newSupplierProcessModal.isOpen}
           type="modal"
           onClose={() => {
             newSupplierProcessModal.onClose();
-            triggerRef.current?.click();
+            afterDialogCloses(() => triggerRef.current?.click());
           }}
           initialValues={{
             processId,

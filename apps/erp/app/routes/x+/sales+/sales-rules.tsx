@@ -5,13 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   SalesRulesGroups,
@@ -20,17 +18,15 @@ import {
 import {
   getEnforcementRuleAssignmentCounts,
   getEnforcementRules
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Sales Rules`,
   to: path.to.salesRules
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -40,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const rules = await getEnforcementRules(client, "sales", companyId, {
     search: null,
-    limit: 1000,
+    limit: SINGLE_LOAD_LIMIT,
     offset: 0,
     sorts: []
   });
@@ -75,7 +71,7 @@ export default function SalesRulesRoute() {
   return (
     <>
       <SalesRulesGroups rules={rows as never} />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

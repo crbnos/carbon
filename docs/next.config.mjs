@@ -33,7 +33,9 @@ const config = {
   // compiles the macro down to plain `{ id, message }` literals so docs reads
   // `.message` directly without pulling the macro runtime.
   experimental: {
-    swcPlugins: [["@lingui/swc-plugin", {}]],
+    // "message" keeps the source English in production; the default ("auto")
+    // strips it to the id alone, which blanked every glossary entry.
+    swcPlugins: [["@lingui/swc-plugin", { descriptorFields: "message" }]],
     // Static generation is the memory peak here: the API and MCP reference
     // pages expand ~108 MDX sources into ~2,180 pages, rendered across a pool
     // of worker processes that each hold their own Next runtime.

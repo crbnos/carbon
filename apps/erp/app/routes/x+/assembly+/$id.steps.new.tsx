@@ -6,20 +6,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyInstructionStepNewValidator,
-  insertAssemblyInstructionStep
-} from "~/modules/production";
-import {
-  logAssemblyStep,
-  readAndLogFormData
-} from "~/modules/production/assembly-debug.server";
+import { assemblyInstructionStepNewValidator } from "~/modules/production/production.models";
+import { insertAssemblyInstructionStep } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "assembly-step-new");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -30,13 +21,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: assemblyInstructionId } = params;
   if (!assemblyInstructionId) throw new Error("id is not found");
 
-  const formData = await readAndLogFormData(request, "new.action");
+  const formData = await request.formData();
   const validation = await validator(
     assemblyInstructionStepNewValidator
   ).validate(formData);
 
   if (validation.error) {
-    logAssemblyStep("new.validationError", { error: validation.error });
     return data(
       { success: false },
       await flash(request, error(validation.error, "Failed to create step"))
@@ -53,23 +43,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       userId
     });
-    logAssemblyStep("new.result", {
-      createdId: stepId,
-      componentNodeIds: rest.componentNodeIds
-    });
     return { success: true, id: stepId };
   } catch (err) {
-    logger.error("Failed to insert assembly instruction step", {
-      companyId,
-      assemblyInstructionId,
-      parentStepId: rest.parentStepId ?? null,
-      error: err
-    });
     return data(
       { success: false },
       await flash(
         request,
-        error(err, "Failed to insert assembly instruction step")
+        error(err, "Failed to insert assembly instruction step", {
+          assemblyInstructionId,
+          parentStepId: rest.parentStepId ?? null
+        })
       )
     );
   }

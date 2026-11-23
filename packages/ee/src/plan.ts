@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { Plan } from "@carbon/utils";
+import { Edition, isInternalEmail, Plan } from "@carbon/utils";
 import type { IntegrationID } from "./index";
 
 /**
@@ -34,7 +34,14 @@ export const FEATURE_PLANS = {
   // Tiered document-approval rules (POs by amount, quality docs, suppliers).
   APPROVAL_RULES: [Plan.Business, Plan.Partner],
   // Company backup / restore (self-service export + restore of company data).
-  BACKUPS: [Plan.Business, Plan.Partner]
+  BACKUPS: [Plan.Business, Plan.Partner],
+  // Projects Phase 3: planning groups pool projects with project stock into
+  // one MRP netting segment, with live pegging and distribution at receipt.
+  PLANNING_GROUPS: [Plan.Business, Plan.Partner],
+  // Cost Plus billing, Percent Complete revenue and the contract loss provision.
+  PROJECT_REVENUE: [Plan.Business, Plan.Partner],
+  // Indirect rates, burden, earned value and project budget control (spec 2026-10-09, Q1).
+  GOVERNMENT_CONTRACTING: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;
@@ -47,6 +54,50 @@ export const INTEGRATION_WHITELIST = new Set<IntegrationID>(["email"]);
 
 export function isIntegrationWhitelisted(id: string) {
   return INTEGRATION_WHITELIST.has(id as IntegrationID);
+}
+
+/**
+ * Whether this user sees an `internalOnly` integration as "Coming soon" and
+ * cannot install it. Carbon staff (`isInternalEmail`) can, in any company, and
+ * so can a user with early access (`hasIntegrationEarlyAccess`, `plan.server`).
+ * Only Carbon Cloud gates it: a self-hosted instance configures its own OAuth
+ * app and has no Carbon staff to install it.
+ *
+ * It gates the install only. A company where it was installed keeps it, so
+ * its own admins can open, reconnect and uninstall it.
+ */
+export function isIntegrationComingSoon(
+  integration: { id: string; internalOnly?: boolean },
+  {
+    edition,
+    email,
+    hasEarlyAccess
+  }: {
+    edition: Edition;
+    email: string | null | undefined;
+    hasEarlyAccess: boolean;
+  }
+): boolean {
+  return (
+    integration.internalOnly === true &&
+    edition === Edition.Cloud &&
+    !isInternalEmail(email) &&
+    !hasEarlyAccess
+  );
+}
+
+/**
+ * Whether `userId` is an entry of a comma-separated id list. Spaces and quotes
+ * around an entry are ignored, so a list pasted with them still matches.
+ */
+export function isListedUserId(
+  list: string | null | undefined,
+  userId: string | null | undefined
+): boolean {
+  if (!list || !userId) return false;
+  return list
+    .split(",")
+    .some((entry) => entry.replace(/^[\s"']+|[\s"']+$/g, "") === userId);
 }
 
 export type PlanRequirement = Plan | Plan[];

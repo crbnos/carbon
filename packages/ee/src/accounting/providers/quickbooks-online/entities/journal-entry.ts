@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import {
   buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
@@ -16,6 +17,7 @@ import { resolveMemoJournalPartyFromDatabase } from "../../../core/memo-party";
 import type { PostingSyncDimensionSlot } from "../../../core/models";
 import {
   getPostingSyncSourceTypeSkipReason,
+  getZeroJournalSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
@@ -46,6 +48,8 @@ import {
   loadQboAccountRefsById,
   type QboWriteOmit
 } from "./shared";
+
+const logger = getLogger("ee", "accounting", "quickbooks");
 
 /**
  * QboJournalEntrySyncer — pushes Posted Carbon journals (`journal` +
@@ -574,6 +578,11 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
 
+    // An all-zero journal (an outbound movement at no cost) has nothing to
+    // book, and some providers refuse a journal of zero lines.
+    const zeroJournalSkipReason = getZeroJournalSkipReason(local);
+    if (zeroJournalSkipReason) return zeroJournalSkipReason;
+
     return true;
   }
 
@@ -656,13 +665,10 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
     if (preflight.droppedDimensionValues?.length) {
       // "drop" policy: pushed without these dimensions. The drain has no
       // success-metadata channel yet, so the record lives in the logs.
-      console.warn(
-        "[QboJournalEntrySyncer] dropped unmapped dimension values",
-        {
-          journalId: local.id,
-          droppedDimensionValues: preflight.droppedDimensionValues
-        }
-      );
+      logger.warning("Journal entry push dropped unmapped dimension values", {
+        journalId: local.id,
+        droppedDimensionValues: preflight.droppedDimensionValues
+      });
     }
 
     return mapJournalEntryToQboJournalEntry({
@@ -833,7 +839,7 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error("[QboJournalEntrySyncer] pre-flight failure", {
+        logger.error("Journal entry pre-flight failure", {
           entityId,
           ...err.failure
         });
@@ -845,7 +851,7 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
         };
       }
 
-      console.error("[QboJournalEntrySyncer] push failed", { entityId, err });
+      logger.error("Journal entry push failed", { entityId, error: err });
       return {
         status: "error",
         action: "none",

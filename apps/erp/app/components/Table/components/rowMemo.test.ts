@@ -48,6 +48,15 @@ describe("areRowPropsEqual", () => {
     expect(areRowPropsEqual(props(), props({ row: { index: 3 } }))).toBe(false);
   });
 
+  it("re-renders when a sort moves the row", () => {
+    expect(
+      areRowPropsEqual(
+        props({ "aria-rowindex": 2 }),
+        props({ "aria-rowindex": 7 })
+      )
+    ).toBe(false);
+  });
+
   it("re-renders when the visible columns are rebuilt", () => {
     expect(
       areRowPropsEqual(props(), props({ visibleColumns: [{ id: "name" }] }))

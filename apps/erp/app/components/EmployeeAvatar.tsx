@@ -49,6 +49,7 @@ const EmployeeAvatar = ({
         size={size ?? "xs"}
         path={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
+        decorative={withName}
       />
       {withName && <span>{person.name}</span>}
     </HStack>

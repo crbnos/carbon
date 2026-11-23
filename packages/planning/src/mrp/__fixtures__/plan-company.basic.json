@@ -1,0 +1,2905 @@
+{
+  "companyId": "db47qcsgq0g02bpief00",
+  "userId": "system",
+  "today": "2026-10-10",
+  "periods": [
+    {
+      "id": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "startDate": "2026-10-04",
+      "endDate": "2026-10-10"
+    },
+    {
+      "id": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "startDate": "2026-10-11",
+      "endDate": "2026-10-17"
+    },
+    {
+      "id": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "startDate": "2026-10-18",
+      "endDate": "2026-10-24"
+    },
+    {
+      "id": "per_SWvfCG9xXWCHTKsG3aeqBw",
+      "startDate": "2026-10-25",
+      "endDate": "2026-10-31"
+    },
+    {
+      "id": "per_LARVHWULYfViB6CFeDW9TA",
+      "startDate": "2026-11-01",
+      "endDate": "2026-11-07"
+    },
+    {
+      "id": "per_N3xQUERQ15v22sZPQkxPmd",
+      "startDate": "2026-11-08",
+      "endDate": "2026-11-14"
+    },
+    {
+      "id": "per_SM3tdoB9CgohuDPRHZMZKA",
+      "startDate": "2026-11-15",
+      "endDate": "2026-11-21"
+    },
+    {
+      "id": "per_VVUKYx8Tfx4BNrAZPRuDmb",
+      "startDate": "2026-11-22",
+      "endDate": "2026-11-28"
+    },
+    {
+      "id": "per_6Wh9CitwAcTzbxfBo3SYSv",
+      "startDate": "2026-11-29",
+      "endDate": "2026-12-05"
+    },
+    {
+      "id": "per_QotZyHBhDEeN1HGvmSynGM",
+      "startDate": "2026-12-06",
+      "endDate": "2026-12-12"
+    },
+    {
+      "id": "per_W7WG6CSK6qACrbxLYv8pok",
+      "startDate": "2026-12-13",
+      "endDate": "2026-12-19"
+    },
+    {
+      "id": "per_KGehRqa9UJaL2czwtA23N3",
+      "startDate": "2026-12-20",
+      "endDate": "2026-12-26"
+    },
+    {
+      "id": "per_99pYNk2rFiKvHrr14ZvuuN",
+      "startDate": "2026-12-27",
+      "endDate": "2027-01-02"
+    },
+    {
+      "id": "per_QsvA7DU7REj1Cod1P96fXN",
+      "startDate": "2027-01-03",
+      "endDate": "2027-01-09"
+    },
+    {
+      "id": "per_AfSMhQi76LSmSjvDXGvYVZ",
+      "startDate": "2027-01-10",
+      "endDate": "2027-01-16"
+    },
+    {
+      "id": "per_4asENw6qHMapsBW91h55U9",
+      "startDate": "2027-01-17",
+      "endDate": "2027-01-23"
+    },
+    {
+      "id": "per_8zAQGbRTLp95uzDM5pQTem",
+      "startDate": "2027-01-24",
+      "endDate": "2027-01-30"
+    },
+    {
+      "id": "per_J77sDvN8FZ6Mwk3z2NY5EP",
+      "startDate": "2027-01-31",
+      "endDate": "2027-02-06"
+    },
+    {
+      "id": "per_EVwDGfpP9cZPZiNWjNSCPe",
+      "startDate": "2027-02-07",
+      "endDate": "2027-02-13"
+    },
+    {
+      "id": "per_FkWUdRGCTpuV7p4UPsgVAa",
+      "startDate": "2027-02-14",
+      "endDate": "2027-02-20"
+    },
+    {
+      "id": "per_EGc8w9pBpneykt1kkRS5cc",
+      "startDate": "2027-02-21",
+      "endDate": "2027-02-27"
+    },
+    {
+      "id": "per_FJJbBqBQvEnGwSNZD2HAqx",
+      "startDate": "2027-02-28",
+      "endDate": "2027-03-06"
+    },
+    {
+      "id": "per_98Ve6AZxnayuYRSUGvfGK8",
+      "startDate": "2027-03-07",
+      "endDate": "2027-03-13"
+    },
+    {
+      "id": "per_UM5vuFNm9TYEUacFDae3Zf",
+      "startDate": "2027-03-14",
+      "endDate": "2027-03-20"
+    },
+    {
+      "id": "per_PZeEJFfniEnCuAig7LFt5P",
+      "startDate": "2027-03-21",
+      "endDate": "2027-03-27"
+    },
+    {
+      "id": "per_ALKst3PxhTC6K456D4zuWC",
+      "startDate": "2027-03-28",
+      "endDate": "2027-04-03"
+    },
+    {
+      "id": "per_Rjroea2ebCNms8k9ebuKAR",
+      "startDate": "2027-04-04",
+      "endDate": "2027-04-10"
+    },
+    {
+      "id": "per_2aYvNDPHWTwQybtgwi2gUu",
+      "startDate": "2027-04-11",
+      "endDate": "2027-04-17"
+    },
+    {
+      "id": "per_3Zb928AcY2ETxzAVSzoYAi",
+      "startDate": "2027-04-18",
+      "endDate": "2027-04-24"
+    },
+    {
+      "id": "per_7Cozsw9She1VbELfNkjvcb",
+      "startDate": "2027-04-25",
+      "endDate": "2027-05-01"
+    },
+    {
+      "id": "per_ByHjgLCwnRoQwXt8DogJ3x",
+      "startDate": "2027-05-02",
+      "endDate": "2027-05-08"
+    },
+    {
+      "id": "per_WwReUUCSoe9E4yf19pmo9z",
+      "startDate": "2027-05-09",
+      "endDate": "2027-05-15"
+    },
+    {
+      "id": "per_DFdfPnBJeu3SR8HjdJc5AN",
+      "startDate": "2027-05-16",
+      "endDate": "2027-05-22"
+    },
+    {
+      "id": "per_72vouGFdnuY5RyjnUxYFgR",
+      "startDate": "2027-05-23",
+      "endDate": "2027-05-29"
+    },
+    {
+      "id": "per_94tRHDCL7QgdSHQWH2p6xV",
+      "startDate": "2027-05-30",
+      "endDate": "2027-06-05"
+    },
+    {
+      "id": "per_Q2eWdpVqikQF2ggBp82Eds",
+      "startDate": "2027-06-06",
+      "endDate": "2027-06-12"
+    },
+    {
+      "id": "per_CADpFAoVW7cP8ngLwoYBzs",
+      "startDate": "2027-06-13",
+      "endDate": "2027-06-19"
+    },
+    {
+      "id": "per_3CJbPHZ4S3bg5KYMG36NVp",
+      "startDate": "2027-06-20",
+      "endDate": "2027-06-26"
+    },
+    {
+      "id": "per_4bb711273adeLocFzPb7av",
+      "startDate": "2027-06-27",
+      "endDate": "2027-07-03"
+    },
+    {
+      "id": "per_Vik2FPtCv951qpCZzPpupj",
+      "startDate": "2027-07-04",
+      "endDate": "2027-07-10"
+    },
+    {
+      "id": "per_KxGcc4epwxi5p8tAdueBXV",
+      "startDate": "2027-07-11",
+      "endDate": "2027-07-17"
+    },
+    {
+      "id": "per_QHKymRLGfUx7Mg85MLm8o5",
+      "startDate": "2027-07-18",
+      "endDate": "2027-07-24"
+    },
+    {
+      "id": "per_7wDpe23eGWtqeRY6a7GAcS",
+      "startDate": "2027-07-25",
+      "endDate": "2027-07-31"
+    },
+    {
+      "id": "per_J47YRGatvk8v8VpVRyg4DK",
+      "startDate": "2027-08-01",
+      "endDate": "2027-08-07"
+    },
+    {
+      "id": "per_TRdFjf7a2P7dL3r1bUyhCA",
+      "startDate": "2027-08-08",
+      "endDate": "2027-08-14"
+    },
+    {
+      "id": "per_DYGbGXQZj85qDf6kHcCNp5",
+      "startDate": "2027-08-15",
+      "endDate": "2027-08-21"
+    },
+    {
+      "id": "per_4a98keB3rjZYYc9XtsWJaQ",
+      "startDate": "2027-08-22",
+      "endDate": "2027-08-28"
+    },
+    {
+      "id": "per_3JrsV6otUgWrWCHPnquwJw",
+      "startDate": "2027-08-29",
+      "endDate": "2027-09-04"
+    },
+    {
+      "id": "per_PujJZrpWRjvxcWspMQJi8h",
+      "startDate": "2027-09-05",
+      "endDate": "2027-09-11"
+    },
+    {
+      "id": "per_GK6woTBqztG8rYnhCBp2WM",
+      "startDate": "2027-09-12",
+      "endDate": "2027-09-18"
+    },
+    {
+      "id": "per_PgU22XHvWDQCWpRdR9Tj4E",
+      "startDate": "2027-09-19",
+      "endDate": "2027-09-25"
+    },
+    {
+      "id": "per_2iZ2U9ETfW1Lwphqtr4WMV",
+      "startDate": "2027-09-26",
+      "endDate": "2027-10-02"
+    },
+    {
+      "id": "per_41r8Jux7FWRAqx6gG3mhE1",
+      "startDate": "2027-10-03",
+      "endDate": "2027-10-09"
+    },
+    {
+      "id": "per_7AJRwv1E1jGS4n4MFKL2Yz",
+      "startDate": "2027-10-10",
+      "endDate": "2027-10-16"
+    },
+    {
+      "id": "per_Qm6mzUAy8obsa9TSJdYrKN",
+      "startDate": "2027-10-17",
+      "endDate": "2027-10-23"
+    },
+    {
+      "id": "per_YSGFxiq4g7jj19xPSLMEUz",
+      "startDate": "2027-10-24",
+      "endDate": "2027-10-30"
+    },
+    {
+      "id": "per_Bxm5Yz6uXTifgvGiFbrViS",
+      "startDate": "2027-10-31",
+      "endDate": "2027-11-06"
+    },
+    {
+      "id": "per_7znQLQR8ZZgTbhVJsM62Yq",
+      "startDate": "2027-11-07",
+      "endDate": "2027-11-13"
+    },
+    {
+      "id": "per_9Ea2nSxRYkJNmjkcWfFFSn",
+      "startDate": "2027-11-14",
+      "endDate": "2027-11-20"
+    },
+    {
+      "id": "per_Bg8PKsCZ737fz6AN48LAS8",
+      "startDate": "2027-11-21",
+      "endDate": "2027-11-27"
+    },
+    {
+      "id": "per_C9H2pMgQD63NLX1MYMT2Rk",
+      "startDate": "2027-11-28",
+      "endDate": "2027-12-04"
+    },
+    {
+      "id": "per_Pq4ndnCnvjaWW5Fx8YRT7U",
+      "startDate": "2027-12-05",
+      "endDate": "2027-12-11"
+    },
+    {
+      "id": "per_6RyovvPyiKsGRXoEoh1mBP",
+      "startDate": "2027-12-12",
+      "endDate": "2027-12-18"
+    },
+    {
+      "id": "per_6NR3ftUF8uo83mU9xcHPwu",
+      "startDate": "2027-12-19",
+      "endDate": "2027-12-25"
+    },
+    {
+      "id": "per_2Qh2BBVBnurMto6k6b5khD",
+      "startDate": "2027-12-26",
+      "endDate": "2028-01-01"
+    },
+    {
+      "id": "per_3Y3mQoNW8WQxNthGGChNPj",
+      "startDate": "2028-01-02",
+      "endDate": "2028-01-08"
+    },
+    {
+      "id": "per_9DroCnMXMaMjNBVDd3aV5X",
+      "startDate": "2028-01-09",
+      "endDate": "2028-01-15"
+    },
+    {
+      "id": "per_LAKcauuHJtu7o88SrQWKK1",
+      "startDate": "2028-01-16",
+      "endDate": "2028-01-22"
+    },
+    {
+      "id": "per_ntoTaUees6U542QVhxJPs",
+      "startDate": "2028-01-23",
+      "endDate": "2028-01-29"
+    },
+    {
+      "id": "per_WiPYUxKdJFY7s162PMpRwg",
+      "startDate": "2028-01-30",
+      "endDate": "2028-02-05"
+    },
+    {
+      "id": "per_TFV84eFzoA43zpJo199HiT",
+      "startDate": "2028-02-06",
+      "endDate": "2028-02-12"
+    },
+    {
+      "id": "per_qE4mVnGYA4UDfYT7tdtkB",
+      "startDate": "2028-02-13",
+      "endDate": "2028-02-19"
+    }
+  ],
+  "locationIds": ["loc_24i9Wh2wkTSdCgJxcRXjqg", "loc_MrqmkGkcDaV13WvUxe9tqo"],
+  "consumptionWindow": {
+    "backwardPeriods": 4,
+    "forwardPeriods": 1
+  },
+  "salesOrderLines": [
+    {
+      "id": "DkKF84GVs7JDK6hq3hMpgN",
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": null,
+      "quantityToConsume": 8,
+      "quantityToSend": 8
+    },
+    {
+      "id": "DxscXnK9VDgPD1MiexnVmo",
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": "2026-12-04",
+      "quantityToConsume": 8,
+      "quantityToSend": 8
+    },
+    {
+      "id": "F6vdzENg6jAw3ojkEt3Dfy",
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": null,
+      "quantityToConsume": 4,
+      "quantityToSend": 4
+    },
+    {
+      "id": "Jdz4cdB5d3xM93SncKRSRL",
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": "2026-12-12",
+      "quantityToConsume": 30,
+      "quantityToSend": 30
+    },
+    {
+      "id": "LGXQkWJWDmmPgR9h8dVXpi",
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": "2026-12-04",
+      "quantityToConsume": 4,
+      "quantityToSend": 4
+    },
+    {
+      "id": "QKomMWAdy8Xj2vc5gLjZMJ",
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": "2026-10-31",
+      "quantityToConsume": 30,
+      "quantityToSend": 30
+    },
+    {
+      "id": "TRzbFX9hjRQsjYDB1go7rC",
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "promisedDate": "2026-11-21",
+      "quantityToConsume": 30,
+      "quantityToSend": 30
+    }
+  ],
+  "jobMaterialLines": [
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.25
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 72
+    },
+    {
+      "dueDate": "2026-10-25",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_9ZBAFZ9VKnJuMLDkmr56jM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.5
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 8,
+      "quantityToIssue": 8
+    },
+    {
+      "dueDate": "2026-10-21",
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "jobId": "job_H8RHc75Me4JQEq6eMpvp7s",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.25
+    },
+    {
+      "dueDate": "2026-10-11",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_Bi7SbRm8d27bDEuW7qPby8",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.125
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 12
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.125
+    },
+    {
+      "dueDate": "2026-10-16",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_VQ9cHApuoNRJ56ViTkR7sA",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.75,
+      "quantityToIssue": 1.5
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 12
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2,
+      "quantityToIssue": 2
+    },
+    {
+      "dueDate": "2026-10-21",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_H8RHc75Me4JQEq6eMpvp7s",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-20",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_UrqKj87SjB8CRPdZhZUkBN",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 6
+    },
+    {
+      "dueDate": "2026-10-27",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_QQbPLX79NBnEHc8zaMsozS",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_WNfDFMd8x2u3a2C4rgzwUo",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 12,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-21",
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "jobId": "job_H8RHc75Me4JQEq6eMpvp7s",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4.5,
+      "quantityToIssue": 4.5
+    },
+    {
+      "dueDate": "2026-10-27",
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "jobId": "job_QQbPLX79NBnEHc8zaMsozS",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4.5,
+      "quantityToIssue": 4.5
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 64,
+      "quantityToIssue": 384
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-30",
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "jobId": "job_HiXA28qTK81UG69JsuQF4Y",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2,
+      "quantityToIssue": 2
+    },
+    {
+      "dueDate": "2026-10-11",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_Bi7SbRm8d27bDEuW7qPby8",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.5
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_NvjvXXWjyMwbakW9oFewE3",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 5,
+      "quantityToIssue": 20
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 12,
+      "quantityToIssue": 36
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2,
+      "quantityToIssue": 6
+    },
+    {
+      "dueDate": "2026-10-11",
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "jobId": "job_Bi7SbRm8d27bDEuW7qPby8",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2.5,
+      "quantityToIssue": 5
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "jobId": "job_CboyHKuXikDYZ9hGCDRxhT",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2,
+      "quantityToIssue": 2
+    },
+    {
+      "dueDate": "2026-10-27",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_QQbPLX79NBnEHc8zaMsozS",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-09",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_AvyAjxKasBvTiv17vXuNzB",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.5
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_CboyHKuXikDYZ9hGCDRxhT",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2,
+      "quantityToIssue": 6
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 5,
+      "quantityToIssue": 15
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.75,
+      "quantityToIssue": 4.5
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.75
+    },
+    {
+      "dueDate": "2026-10-20",
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "jobId": "job_UrqKj87SjB8CRPdZhZUkBN",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 1.5
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-14",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_85b1oqXDLBP8ytZBPftRiU",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_WNfDFMd8x2u3a2C4rgzwUo",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 5,
+      "quantityToIssue": 10
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.375
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_CboyHKuXikDYZ9hGCDRxhT",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.5,
+      "quantityToIssue": 1.5
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.75,
+      "quantityToIssue": 1.5
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "jobId": "job_CboyHKuXikDYZ9hGCDRxhT",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 48,
+      "quantityToIssue": 48
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.5
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 12,
+      "quantityToIssue": 12
+    },
+    {
+      "dueDate": "2026-10-30",
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "jobId": "job_HiXA28qTK81UG69JsuQF4Y",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_NvjvXXWjyMwbakW9oFewE3",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 12,
+      "quantityToIssue": 48
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_CboyHKuXikDYZ9hGCDRxhT",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 8,
+      "quantityToIssue": 8
+    },
+    {
+      "dueDate": "2026-10-21",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_H8RHc75Me4JQEq6eMpvp7s",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 4
+    },
+    {
+      "dueDate": "2026-10-16",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_VQ9cHApuoNRJ56ViTkR7sA",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2.5,
+      "quantityToIssue": 5
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.375
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2,
+      "quantityToIssue": 2
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4,
+      "quantityToIssue": 12
+    },
+    {
+      "dueDate": "2026-10-27",
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "jobId": "job_QQbPLX79NBnEHc8zaMsozS",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.25
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.25
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 8,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-25",
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "jobId": "job_9ZBAFZ9VKnJuMLDkmr56jM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.25
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-27",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_QQbPLX79NBnEHc8zaMsozS",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 48,
+      "quantityToIssue": 48
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 1.5
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 5,
+      "quantityToIssue": 5
+    },
+    {
+      "dueDate": "2026-10-30",
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "jobId": "job_HiXA28qTK81UG69JsuQF4Y",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-09",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_AvyAjxKasBvTiv17vXuNzB",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-20",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_UrqKj87SjB8CRPdZhZUkBN",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.75
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.75
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 64,
+      "quantityToIssue": 128
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 2.5,
+      "quantityToIssue": 15
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4.5,
+      "quantityToIssue": 4.5
+    },
+    {
+      "dueDate": "2026-10-25",
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "jobId": "job_9ZBAFZ9VKnJuMLDkmr56jM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 1
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 4.5,
+      "quantityToIssue": 13.5
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.25
+    },
+    {
+      "dueDate": "2026-10-21",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_H8RHc75Me4JQEq6eMpvp7s",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 48,
+      "quantityToIssue": 48
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.25,
+      "quantityToIssue": 0.75
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 16,
+      "quantityToIssue": 16
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.5,
+      "quantityToIssue": 0.5
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 72
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 16,
+      "quantityToIssue": 48
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 48,
+      "quantityToIssue": 144
+    },
+    {
+      "dueDate": "2026-10-30",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "jobId": "job_HiXA28qTK81UG69JsuQF4Y",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 16,
+      "quantityToIssue": 16
+    },
+    {
+      "dueDate": "2026-10-15",
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "jobId": "job_8pnbzJMFLBMU1xrBExwKrk",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 1,
+      "quantityToIssue": 3
+    },
+    {
+      "dueDate": "2026-10-23",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "jobId": "job_H1LPqpTBHNTQKAyiQzGiWM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 24,
+      "quantityToIssue": 24
+    },
+    {
+      "dueDate": "2026-10-25",
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "jobId": "job_9ZBAFZ9VKnJuMLDkmr56jM",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.5,
+      "quantityToIssue": 0.5
+    },
+    {
+      "dueDate": "2026-10-14",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_85b1oqXDLBP8ytZBPftRiU",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.375
+    },
+    {
+      "dueDate": "2026-10-16",
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "jobId": "job_VQ9cHApuoNRJ56ViTkR7sA",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 64,
+      "quantityToIssue": 128
+    },
+    {
+      "dueDate": "2026-10-18",
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "jobId": "job_CboyHKuXikDYZ9hGCDRxhT",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityPerParent": 0.125,
+      "quantityToIssue": 0.125
+    }
+  ],
+  "productionLines": [
+    {
+      "deadlineType": "Soft Deadline",
+      "dueDate": "2026-10-18",
+      "itemId": "item_5DggRiMeuoZUy3xToC9wWB",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityToReceive": 4
+    },
+    {
+      "deadlineType": "Hard Deadline",
+      "dueDate": "2026-10-20",
+      "itemId": "item_VMDHRufZcthENqvQjjxhsR",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityToReceive": 6
+    }
+  ],
+  "purchaseOrderLines": [
+    {
+      "dueDate": null,
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "leadTime": 60,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2025-10-28",
+      "promisedDate": null,
+      "quantityToReceive": 6
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_9xXDLPfRfr55gg2HUDC8ad",
+      "leadTime": 7,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2026-09-30",
+      "promisedDate": null,
+      "quantityToReceive": 2
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "leadTime": 21,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2026-10-01",
+      "promisedDate": null,
+      "quantityToReceive": 25
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "leadTime": 90,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2026-10-08",
+      "promisedDate": null,
+      "quantityToReceive": 2
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "leadTime": 14,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2026-09-18",
+      "promisedDate": null,
+      "quantityToReceive": 250
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "leadTime": 60,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2026-10-01",
+      "promisedDate": null,
+      "quantityToReceive": 25
+    },
+    {
+      "dueDate": null,
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "leadTime": 90,
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "orderDate": "2025-10-28",
+      "promisedDate": null,
+      "quantityToReceive": 4
+    }
+  ],
+  "demandProjections": [
+    {
+      "forecastQuantity": 8,
+      "id": "3gkgpLhEAuM4khjmZCFgbr",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SM3tdoB9CgohuDPRHZMZKA"
+    },
+    {
+      "forecastQuantity": 6,
+      "id": "4GsjtZWVLRUDLToax2af1r",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_LARVHWULYfViB6CFeDW9TA"
+    },
+    {
+      "forecastQuantity": 10,
+      "id": "59GijWjuoq48YxpCh8H3sg",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_LARVHWULYfViB6CFeDW9TA"
+    },
+    {
+      "forecastQuantity": 5,
+      "id": "8gWyi3oU5ufiZ4XvzN2VBt",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SM3tdoB9CgohuDPRHZMZKA"
+    },
+    {
+      "forecastQuantity": 6,
+      "id": "8i4V62RUV8z9Ge2mKvBaum",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY"
+    },
+    {
+      "forecastQuantity": 12,
+      "id": "9HYjobwsSEoe7bhhPXuFy1",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_VVUKYx8Tfx4BNrAZPRuDmb"
+    },
+    {
+      "forecastQuantity": 3,
+      "id": "AgGaMFXHkMJ2FvrDYTjpU6",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SWvfCG9xXWCHTKsG3aeqBw"
+    },
+    {
+      "forecastQuantity": 4,
+      "id": "BnACrwV4Uu8hh1NhxengCW",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_LARVHWULYfViB6CFeDW9TA"
+    },
+    {
+      "forecastQuantity": 1,
+      "id": "GQAK2gHVWf42RGdeodPogF",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_24i9Wh2wkTSdCgJxcRXjqg",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po"
+    },
+    {
+      "forecastQuantity": 4,
+      "id": "HCb4H18r4QB3kLPi9RPunf",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3"
+    },
+    {
+      "forecastQuantity": 6,
+      "id": "HDq8yjyi6XnT9hYs9TdEf6",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_N3xQUERQ15v22sZPQkxPmd"
+    },
+    {
+      "forecastQuantity": 10,
+      "id": "HSAXyXkiqwdtFApNAjAzQR",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_N3xQUERQ15v22sZPQkxPmd"
+    },
+    {
+      "forecastQuantity": 2,
+      "id": "Jaa68EQtcX6TfKD1sFZ7Vi",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY"
+    },
+    {
+      "forecastQuantity": 1,
+      "id": "JLdoy3QUapxshWKpyNTU2B",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_24i9Wh2wkTSdCgJxcRXjqg",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY"
+    },
+    {
+      "forecastQuantity": 5,
+      "id": "KgzRYUjZtuzkuPAq9DR3b6",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SWvfCG9xXWCHTKsG3aeqBw"
+    },
+    {
+      "forecastQuantity": 4,
+      "id": "KPqP2g4WXDBZ47C71yYpnT",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po"
+    },
+    {
+      "forecastQuantity": 12,
+      "id": "KzU67usDNb1BQamyMdnhMz",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SM3tdoB9CgohuDPRHZMZKA"
+    },
+    {
+      "forecastQuantity": 2,
+      "id": "MbiVXaRiMiB8y6n2CJKJRX",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_24i9Wh2wkTSdCgJxcRXjqg",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3"
+    },
+    {
+      "forecastQuantity": 5,
+      "id": "NWYWrtXSccSKEBanWsCbHV",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_VVUKYx8Tfx4BNrAZPRuDmb"
+    },
+    {
+      "forecastQuantity": 3,
+      "id": "NX2phk5kjYLb5U3S9NxysY",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY"
+    },
+    {
+      "forecastQuantity": 4,
+      "id": "PbRvdcPZWT8XUH2WHvmGu9",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_N3xQUERQ15v22sZPQkxPmd"
+    },
+    {
+      "forecastQuantity": 8,
+      "id": "Q3EQtCkt3opPMG9LQyz9q6",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3"
+    },
+    {
+      "forecastQuantity": 8,
+      "id": "QnYKQRM1xaYc4DC6rhGcjm",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_VVUKYx8Tfx4BNrAZPRuDmb"
+    },
+    {
+      "forecastQuantity": 6,
+      "id": "ReUaifZbphL1ZrrzwsUSZV",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po"
+    },
+    {
+      "forecastQuantity": 8,
+      "id": "S7piWvBrgVkYnXtWaA7i77",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SWvfCG9xXWCHTKsG3aeqBw"
+    },
+    {
+      "forecastQuantity": 2,
+      "id": "T9Q8rREiUs3ZrcjQuhmcAw",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "locationId": "loc_24i9Wh2wkTSdCgJxcRXjqg",
+      "periodId": "per_SWvfCG9xXWCHTKsG3aeqBw"
+    },
+    {
+      "forecastQuantity": 3,
+      "id": "TS2mZ4kLtzQTnPmMpobMGF",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3"
+    },
+    {
+      "forecastQuantity": 2,
+      "id": "TzyDkmwyDM9ve3aMGjWXdw",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po"
+    }
+  ],
+  "items": [
+    {
+      "id": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_NSr62E2kNAhKkftLngccvP",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_FnLXUt23hs2rTPPnNxgmen",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_YBmJxXoreBKcp4ToLErCjW",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_5rrw8ADsyPYTXGM4xHAqum",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_7m7SwrRkKo2mLpD4sMqAuR",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_GAvQxpdWZ4z2vXLGCEjXej",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_XhZsnm23vSz5LiZZRAB1N5",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_9aRcttevB6CXNgSmAkYRKC",
+      "replenishmentSystem": "Buy"
+    },
+    {
+      "id": "item_2zAAX1TCBh7vveHHaafpjy",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_VMDHRufZcthENqvQjjxhsR",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_9m4enCGxo7BkjeXJ6U87Wd",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_MKJQxpsDZzybShj3Uzv41P",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_35LHeeFrw8Lqh5s6fbGGS4",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_5DggRiMeuoZUy3xToC9wWB",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_SyZ3hKJ7EbRBy68D4n8Qeq",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_XuudNubmtw6pQpLBAUtMjz",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_8XnS73gHhj3PHnfgf1GNoN",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_FbXkjW3WisCTqkNY1bZvFf",
+      "replenishmentSystem": "Make"
+    },
+    {
+      "id": "item_9xXDLPfRfr55gg2HUDC8ad",
+      "replenishmentSystem": "Make"
+    }
+  ],
+  "replenishments": [
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "leadTime": 60
+    },
+    {
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "leadTime": 21
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "leadTime": 90
+    },
+    {
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "leadTime": 120
+    },
+    {
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "leadTime": 90
+    },
+    {
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "leadTime": 120
+    },
+    {
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "leadTime": 60
+    },
+    {
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "leadTime": 45
+    },
+    {
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "leadTime": 14
+    },
+    {
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "leadTime": 14
+    },
+    {
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "leadTime": 10
+    },
+    {
+      "itemId": "item_YBmJxXoreBKcp4ToLErCjW",
+      "leadTime": 30
+    },
+    {
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "leadTime": 10
+    },
+    {
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "leadTime": 21
+    },
+    {
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "leadTime": 45
+    },
+    {
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "leadTime": 5
+    },
+    {
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "leadTime": 14
+    },
+    {
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_5rrw8ADsyPYTXGM4xHAqum",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_7m7SwrRkKo2mLpD4sMqAuR",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_GAvQxpdWZ4z2vXLGCEjXej",
+      "leadTime": 30
+    },
+    {
+      "itemId": "item_XhZsnm23vSz5LiZZRAB1N5",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_9aRcttevB6CXNgSmAkYRKC",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_9xXDLPfRfr55gg2HUDC8ad",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_VMDHRufZcthENqvQjjxhsR",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_9m4enCGxo7BkjeXJ6U87Wd",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_MKJQxpsDZzybShj3Uzv41P",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_SyZ3hKJ7EbRBy68D4n8Qeq",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_35LHeeFrw8Lqh5s6fbGGS4",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_5DggRiMeuoZUy3xToC9wWB",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_XuudNubmtw6pQpLBAUtMjz",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_8XnS73gHhj3PHnfgf1GNoN",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ",
+      "leadTime": 7
+    },
+    {
+      "itemId": "item_FbXkjW3WisCTqkNY1bZvFf",
+      "leadTime": 7
+    }
+  ],
+  "supersessions": [
+    {
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "supersessionMode": "Consume First",
+      "successorItemId": "item_YBmJxXoreBKcp4ToLErCjW",
+      "successorEffectivityDate": "2026-09-25",
+      "conversionFactor": 1
+    }
+  ],
+  "onHand": [
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 5
+    },
+    {
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 40
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 4
+    },
+    {
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 2
+    },
+    {
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 2
+    },
+    {
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 2
+    },
+    {
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 4
+    },
+    {
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 8
+    },
+    {
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 458
+    },
+    {
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 175
+    },
+    {
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 26
+    },
+    {
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 60
+    },
+    {
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 10
+    },
+    {
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 256
+    },
+    {
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 50
+    },
+    {
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 5
+    },
+    {
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 12
+    },
+    {
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 4
+    },
+    {
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "quantityOnHand": 0
+    },
+    {
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "locationId": "loc_24i9Wh2wkTSdCgJxcRXjqg",
+      "quantityOnHand": 25
+    }
+  ],
+  "activeMethods": [
+    {
+      "id": "make_52nYDd7FMGgKheAmcDaeS9",
+      "itemId": "item_NSr62E2kNAhKkftLngccvP"
+    },
+    {
+      "id": "make_78Cu4YEZe2BvhQNX6hFZEm",
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm"
+    },
+    {
+      "id": "make_7fHE8kx2froUGxiziNM9B3",
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez"
+    },
+    {
+      "id": "make_97ty7Zez3CxSxr5AvgQ47p",
+      "itemId": "item_XhZsnm23vSz5LiZZRAB1N5"
+    },
+    {
+      "id": "make_AjvhuXNEtTKEeLBa7sYyUx",
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP"
+    },
+    {
+      "id": "make_AKNWrePm7HBzvSWdHWZ4z8",
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT"
+    },
+    {
+      "id": "make_ArUPj8BB7ptE3U8MKjP8uy",
+      "itemId": "item_GAvQxpdWZ4z2vXLGCEjXej"
+    },
+    {
+      "id": "make_B5sToWg1YhUe9HmfPu7byE",
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ"
+    },
+    {
+      "id": "make_CExmXcLBYABBpx9NPTSQgm",
+      "itemId": "item_9xXDLPfRfr55gg2HUDC8ad"
+    },
+    {
+      "id": "make_CKg5m8pT9DdWUkmsXRVnD5",
+      "itemId": "item_7m7SwrRkKo2mLpD4sMqAuR"
+    },
+    {
+      "id": "make_CZqVGvkdrwRWV5jy6iXDdQ",
+      "itemId": "item_5DggRiMeuoZUy3xToC9wWB"
+    },
+    {
+      "id": "make_D1HoDCZcvdvaB85UE33TZK",
+      "itemId": "item_9aRcttevB6CXNgSmAkYRKC"
+    },
+    {
+      "id": "make_DZCos2NCJrtpKUifED2xiJ",
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF"
+    },
+    {
+      "id": "make_E4T7NtZNZTuo9DxrUNGShu",
+      "itemId": "item_FbXkjW3WisCTqkNY1bZvFf"
+    },
+    {
+      "id": "make_EhSVQr7RsdrZ57mwCq4Wzo",
+      "itemId": "item_9m4enCGxo7BkjeXJ6U87Wd"
+    },
+    {
+      "id": "make_G8FkuQXKve9tMoLFb6hATw",
+      "itemId": "item_35LHeeFrw8Lqh5s6fbGGS4"
+    },
+    {
+      "id": "make_GWgcZ7999UoEP1xkzqamcA",
+      "itemId": "item_XuudNubmtw6pQpLBAUtMjz"
+    },
+    {
+      "id": "make_HpHmqVFjy8NPERDPe2LW7z",
+      "itemId": "item_YBmJxXoreBKcp4ToLErCjW"
+    },
+    {
+      "id": "make_KeQVg7xhmpT7f14QGHZQir",
+      "itemId": "item_8XnS73gHhj3PHnfgf1GNoN"
+    },
+    {
+      "id": "make_KuQoiYCDnuBrLNRfSzndt7",
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen"
+    },
+    {
+      "id": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm"
+    },
+    {
+      "id": "make_LnVwzdHjjuocNpGhMaFdQT",
+      "itemId": "item_SyZ3hKJ7EbRBy68D4n8Qeq"
+    },
+    {
+      "id": "make_MUDS14jW7xmsTfx1585wCV",
+      "itemId": "item_VMDHRufZcthENqvQjjxhsR"
+    },
+    {
+      "id": "make_NVdMKkd5R3Gn5Qfv9yjPP9",
+      "itemId": "item_5rrw8ADsyPYTXGM4xHAqum"
+    },
+    {
+      "id": "make_Nwi9euFTmL3dymc98habUy",
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs"
+    },
+    {
+      "id": "make_PnCaxJJ91FDWkKA5z3Lne8",
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk"
+    },
+    {
+      "id": "make_PXao8KGB4tSb9y6JLUN4T2",
+      "itemId": "item_MKJQxpsDZzybShj3Uzv41P"
+    },
+    {
+      "id": "make_XqDVBwdEajPYPoXySWoswZ",
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS"
+    },
+    {
+      "id": "make_Y3G1Y3PssSskwFWUgbg9mo",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy"
+    },
+    {
+      "id": "make_Ya7M8yhcgpeC4mcKXRrk1A",
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5"
+    },
+    {
+      "id": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "itemId": "item_NVLK4L4QiXnG3NcQxH1AUQ"
+    }
+  ],
+  "materials": [
+    {
+      "id": "mmat_JSAaYNuTpGzipLtLWTBQuj",
+      "makeMethodId": "make_CExmXcLBYABBpx9NPTSQgm",
+      "materialMakeMethodId": null,
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "quantity": 4.5,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_RDEvkP2PoTBSbertvpa7hc",
+      "makeMethodId": "make_CExmXcLBYABBpx9NPTSQgm",
+      "materialMakeMethodId": null,
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "quantity": 48,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_Kcu9sD1mn3F6SvpNcwT3BL",
+      "makeMethodId": "make_CExmXcLBYABBpx9NPTSQgm",
+      "materialMakeMethodId": null,
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "quantity": 24,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_2q5puoZ6u3QSYazr16kMU8",
+      "makeMethodId": "make_CExmXcLBYABBpx9NPTSQgm",
+      "materialMakeMethodId": null,
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "quantity": 4,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_8USFcKJeHSR5w21DskURLi",
+      "makeMethodId": "make_CExmXcLBYABBpx9NPTSQgm",
+      "materialMakeMethodId": null,
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "quantity": 0.25,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_TDfztYVF4drkr9VmWbzTFE",
+      "makeMethodId": "make_XqDVBwdEajPYPoXySWoswZ",
+      "materialMakeMethodId": null,
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "quantity": 64,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_5D5ja8okD4UyPRkkmR1wqp",
+      "makeMethodId": "make_XqDVBwdEajPYPoXySWoswZ",
+      "materialMakeMethodId": null,
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "quantity": 0.75,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_TJjgdXCkEHMocEmPu5Y4vm",
+      "makeMethodId": "make_XqDVBwdEajPYPoXySWoswZ",
+      "materialMakeMethodId": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "quantity": 2.5,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_25wUWAv76rnRfPnUxGG12u",
+      "makeMethodId": "make_MUDS14jW7xmsTfx1585wCV",
+      "materialMakeMethodId": null,
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_2AHVvKNFw3uuALv284Xnta",
+      "makeMethodId": "make_MUDS14jW7xmsTfx1585wCV",
+      "materialMakeMethodId": null,
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "quantity": 0.25,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_PRgdcjdMuYDEwpWG5pTZV4",
+      "makeMethodId": "make_MUDS14jW7xmsTfx1585wCV",
+      "materialMakeMethodId": null,
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "quantity": 0.125,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_4ZEzWmNABmL6mWsUFWztEP",
+      "makeMethodId": "make_EhSVQr7RsdrZ57mwCq4Wzo",
+      "materialMakeMethodId": null,
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_RT62jREJKw3G7wR8z1tG45",
+      "makeMethodId": "make_EhSVQr7RsdrZ57mwCq4Wzo",
+      "materialMakeMethodId": null,
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "quantity": 0.125,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_UGVXxHyXiMds1SkqwkExqT",
+      "makeMethodId": "make_Y3G1Y3PssSskwFWUgbg9mo",
+      "materialMakeMethodId": "make_XqDVBwdEajPYPoXySWoswZ",
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "quantity": 2,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_5yg9xsKorzTrXD2UUKDXZP",
+      "makeMethodId": "make_Y3G1Y3PssSskwFWUgbg9mo",
+      "materialMakeMethodId": null,
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_CEn63PDKogDLnCAyX377N3",
+      "makeMethodId": "make_Y3G1Y3PssSskwFWUgbg9mo",
+      "materialMakeMethodId": "make_MUDS14jW7xmsTfx1585wCV",
+      "itemId": "item_VMDHRufZcthENqvQjjxhsR",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_9uGcU95DA2ziSvEUzWwwcL",
+      "makeMethodId": "make_Y3G1Y3PssSskwFWUgbg9mo",
+      "materialMakeMethodId": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_EB4C9Q1TBiSr3Z7S4h6Ttv",
+      "makeMethodId": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "materialMakeMethodId": null,
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "quantity": 4,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_WYyizekozQEAk1eB2BBHxs",
+      "makeMethodId": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "materialMakeMethodId": null,
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "quantity": 2,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_8WWrKxJWx1f6DSZzb6S1V4",
+      "makeMethodId": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "materialMakeMethodId": "make_EhSVQr7RsdrZ57mwCq4Wzo",
+      "itemId": "item_9m4enCGxo7BkjeXJ6U87Wd",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_HTP8fkMjXzsbhZLh9oNjCf",
+      "makeMethodId": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "materialMakeMethodId": null,
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "quantity": 8,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_MScdsquqNmgaWFRz3owQpd",
+      "makeMethodId": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "materialMakeMethodId": null,
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "quantity": 24,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_Eicc84EZ5wCDaebkWHUica",
+      "makeMethodId": "make_LnVwzdHjjuocNpGhMaFdQT",
+      "materialMakeMethodId": null,
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "quantity": 0.125,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_CgqLT1d2aTt97FYpPu215d",
+      "makeMethodId": "make_LnVwzdHjjuocNpGhMaFdQT",
+      "materialMakeMethodId": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "quantity": 0.25,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_Jr5EZw6mMfCzHFxEq5G1Wa",
+      "makeMethodId": "make_PXao8KGB4tSb9y6JLUN4T2",
+      "materialMakeMethodId": null,
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_6t97LdvM2nKSbRkmn32Wa3",
+      "makeMethodId": "make_PXao8KGB4tSb9y6JLUN4T2",
+      "materialMakeMethodId": "make_LnVwzdHjjuocNpGhMaFdQT",
+      "itemId": "item_SyZ3hKJ7EbRBy68D4n8Qeq",
+      "quantity": 2,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_YNSoLAr2QqFdEeJfrCkL83",
+      "makeMethodId": "make_PXao8KGB4tSb9y6JLUN4T2",
+      "materialMakeMethodId": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "quantity": 0.5,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_26VnK4bngxVNoS2yTwZNwV",
+      "makeMethodId": "make_G8FkuQXKve9tMoLFb6hATw",
+      "materialMakeMethodId": null,
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "quantity": 2,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_V1qsgEYHm84n3iQAfCRfAS",
+      "makeMethodId": "make_G8FkuQXKve9tMoLFb6hATw",
+      "materialMakeMethodId": null,
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_LPMom7r9SrAPhQxgftBMRF",
+      "makeMethodId": "make_G8FkuQXKve9tMoLFb6hATw",
+      "materialMakeMethodId": null,
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "quantity": 4,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_HBGyRenQzCqNmnWuMfmjCn",
+      "makeMethodId": "make_G8FkuQXKve9tMoLFb6hATw",
+      "materialMakeMethodId": null,
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "quantity": 16,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_PY7pErmaXPm9dUir4jJJiE",
+      "makeMethodId": "make_CZqVGvkdrwRWV5jy6iXDdQ",
+      "materialMakeMethodId": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "quantity": 5,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_48G88s5g25VdKDh1M5jWfW",
+      "makeMethodId": "make_CZqVGvkdrwRWV5jy6iXDdQ",
+      "materialMakeMethodId": null,
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "quantity": 12,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_FoNZRyA1SawRSSHDgM4xhs",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": "make_CExmXcLBYABBpx9NPTSQgm",
+      "itemId": "item_9xXDLPfRfr55gg2HUDC8ad",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_MQ8HQfj1KdkgpMCsWiYkpX",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": "make_Y3G1Y3PssSskwFWUgbg9mo",
+      "itemId": "item_2zAAX1TCBh7vveHHaafpjy",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_NyTKakZN5BSeBN7vmYigCK",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": "make_L5rnZ7M9fRdxsdbPetMrRC",
+      "itemId": "item_LDJxhTyFfK7xpzQtctLsZm",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_WKqVUXmP4Mq5scXvfcMoUL",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": "make_PXao8KGB4tSb9y6JLUN4T2",
+      "itemId": "item_MKJQxpsDZzybShj3Uzv41P",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_7GYc9eVMawxN5ibDKqdjBP",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": "make_G8FkuQXKve9tMoLFb6hATw",
+      "itemId": "item_35LHeeFrw8Lqh5s6fbGGS4",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_XcuxreBVanyN6ge1U2cuD1",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": "make_CZqVGvkdrwRWV5jy6iXDdQ",
+      "itemId": "item_5DggRiMeuoZUy3xToC9wWB",
+      "quantity": 1,
+      "methodType": "Make to Order"
+    },
+    {
+      "id": "mmat_AKDtvNafZpczvmVBhaLRt4",
+      "makeMethodId": "make_YPjf3Dot1aZ1q7SMprKmYF",
+      "materialMakeMethodId": null,
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "quantity": 1,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_LFsDHCuYKmwhC64kRpx6MR",
+      "makeMethodId": "make_E4T7NtZNZTuo9DxrUNGShu",
+      "materialMakeMethodId": null,
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "quantity": 6,
+      "methodType": "Pull from Inventory"
+    },
+    {
+      "id": "mmat_Kzhgfni2VfLMxySwg273Jg",
+      "makeMethodId": "make_E4T7NtZNZTuo9DxrUNGShu",
+      "materialMakeMethodId": null,
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "quantity": 0.25,
+      "methodType": "Pull from Inventory"
+    }
+  ],
+  "existingDemandActuals": [
+    {
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_4hhHJ1FfXsXYki5q2SrvS5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_5aidVC3DUiNsjmA6Xsyvjm",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_7pA9JHJSSK9E77s6NLNsxU",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_7VXGWRiFSNZ9hbouE4LGvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_8C5DzGm2vWA3LqnqZMhoP5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_BiLGA3bks4HDeXvvFFPjGi",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_6Wh9CitwAcTzbxfBo3SYSv",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FnLXUt23hs2rTPPnNxgmen",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_FsLBgBFqfLXSVeBGVmaiQt",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_H4hMjjsfzz7Fxu5FxPfeez",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_Mhbbiif3c8MjMyTR7sANVs",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_6Wh9CitwAcTzbxfBo3SYSv",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_NSr62E2kNAhKkftLngccvP",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_NVAzBMXjaEWn6Ai3hw2Jwk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_QQ9vm2riUrFvyyLzW3VuJ1",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_Rnvz9SqZybjRjH1dX47ZYR",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_QotZyHBhDEeN1HGvmSynGM",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SM3tdoB9CgohuDPRHZMZKA",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_WU1YBhhFPFmXy6vPvxBQQS",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_SWvfCG9xXWCHTKsG3aeqBw",
+      "sourceType": "Sales Order"
+    },
+    {
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_WxkHPs91qjNWtRamd6DLJ5",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_YBmJxXoreBKcp4ToLErCjW",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_BFpPvCuMEXa1Rg1pW9V5Po",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_YBmJxXoreBKcp4ToLErCjW",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Job Material"
+    },
+    {
+      "itemId": "item_YBmJxXoreBKcp4ToLErCjW",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Job Material"
+    }
+  ],
+  "existingSupplyActuals": [
+    {
+      "itemId": "item_4VjKesYQN2rSyEmvd7UFfT",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_5DggRiMeuoZUy3xToC9wWB",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Production Order"
+    },
+    {
+      "itemId": "item_9xXDLPfRfr55gg2HUDC8ad",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_6Wh9CitwAcTzbxfBo3SYSv",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_FCnNYq6gdrQWfR8AEwCfcF",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_Jouzi2m3F3j5WYDN7AWSkk",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_QsvA7DU7REj1Cod1P96fXN",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_MKfeovVsUaqoX1CztWkxzJ",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_TmBfcLx3cPUjHQaD5RyuYY",
+      "sourceType": "Purchase Order"
+    },
+    {
+      "itemId": "item_VMDHRufZcthENqvQjjxhsR",
+      "locationId": "loc_MrqmkGkcDaV13WvUxe9tqo",
+      "periodId": "per_FrvjcXif9ZuW6fjAhrLAP3",
+      "sourceType": "Production Order"
+    }
+  ]
+}

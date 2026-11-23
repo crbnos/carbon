@@ -6,8 +6,10 @@ import { NonRetriableError } from "inngest";
 import { describe, expect, it } from "vitest";
 import {
   emailDeliveryFailure,
+  isRateLimitedResponse,
   isRetryableEmailFailure,
   isRetryableSlackFailure,
+  isSendingLimitResponse,
   slackDeliveryFailure
 } from "./delivery-failure";
 
@@ -16,29 +18,30 @@ const coded = (code: string, message = "boom") =>
 
 describe("email delivery failure", () => {
   // Raised during connect/greet/auth — before a recipient or any DATA is sent,
-  // so the relay provably has nothing and a replay cannot duplicate.
-  it.each([
-    "ECONNECTION",
-    "EDNS",
-    "EAUTH",
-    "ETLS"
-  ])("retries %s — nothing reached the relay", (code) => {
-    const error = emailDeliveryFailure(coded(code));
-    expect(isRetryableEmailFailure(coded(code))).toBe(true);
-    expect(error).not.toBeInstanceOf(NonRetriableError);
-    expect(error.message).toContain(code);
-  });
+  // so the relay provably has nothing and a replay cannot duplicate. ENOTSENT
+  // is the company sender's own: it stopped before calling the vendor.
+  it.each(["ECONNECTION", "EDNS", "EAUTH", "ETLS", "EFETCH", "ENOTSENT"])(
+    "retries %s — nothing reached the relay",
+    (code) => {
+      const error = emailDeliveryFailure(coded(code));
+      expect(isRetryableEmailFailure(coded(code))).toBe(true);
+      expect(error).not.toBeInstanceOf(NonRetriableError);
+      expect(error.message).toContain(code);
+    }
+  );
 
   // The regression this whole PR exists for: nodemailer raises these at ANY
   // phase, so one can mean "relay accepted it, then the connection dropped".
   // Retrying that is how one quote becomes three copies in an inbox.
-  it.each([
-    "ETIMEDOUT",
-    "ESOCKET"
-  ])("does NOT retry %s — delivery is ambiguous", (code) => {
-    expect(isRetryableEmailFailure(coded(code))).toBe(false);
-    expect(emailDeliveryFailure(coded(code))).toBeInstanceOf(NonRetriableError);
-  });
+  it.each(["ETIMEDOUT", "ESOCKET"])(
+    "does NOT retry %s — delivery is ambiguous",
+    (code) => {
+      expect(isRetryableEmailFailure(coded(code))).toBe(false);
+      expect(emailDeliveryFailure(coded(code))).toBeInstanceOf(
+        NonRetriableError
+      );
+    }
+  );
 
   it("does not retry a rejected envelope — deterministic, never succeeds", () => {
     expect(emailDeliveryFailure(coded("EENVELOPE"))).toBeInstanceOf(
@@ -62,16 +65,13 @@ describe("email delivery failure", () => {
     );
   });
 
-  it.each([
-    null,
-    undefined,
-    "a string",
-    42,
-    {}
-  ])("treats a non-Error rejection (%s) as terminal rather than throwing", (thrown) => {
-    expect(isRetryableEmailFailure(thrown)).toBe(false);
-    expect(emailDeliveryFailure(thrown)).toBeInstanceOf(NonRetriableError);
-  });
+  it.each([null, undefined, "a string", 42, {}])(
+    "treats a non-Error rejection (%s) as terminal rather than throwing",
+    (thrown) => {
+      expect(isRetryableEmailFailure(thrown)).toBe(false);
+      expect(emailDeliveryFailure(thrown)).toBeInstanceOf(NonRetriableError);
+    }
+  );
 });
 
 describe("slack delivery failure", () => {
@@ -105,5 +105,74 @@ describe("slack delivery failure", () => {
     expect(
       slackDeliveryFailure(coded("slack_webapi_platform_error", "nope")).message
     ).toBe("Slack error (slack_webapi_platform_error): nope");
+  });
+});
+
+describe("vendor rate limit", () => {
+  const forbidden = (reason: string) => ({
+    status: 403,
+    response: { status: 403, data: { error: { errors: [{ reason }] } } }
+  });
+
+  // googleapis reports the HTTP status on `status`, `code` or `response.status`
+  // depending on the version; Google refused before accepting the message.
+  it.each([
+    { status: 429 },
+    { code: 429 },
+    { code: "429" },
+    { response: { status: 429 } },
+    forbidden("rateLimitExceeded"),
+    forbidden("userRateLimitExceeded"),
+    { code: 403, errors: [{ reason: "userRateLimitExceeded" }] }
+  ])("treats %o as a refused send", (error) => {
+    expect(isRateLimitedResponse(error)).toBe(true);
+  });
+
+  // Google says not to retry the daily limit; other 403s are not rate limits.
+  it.each([
+    forbidden("dailyLimitExceeded"),
+    forbidden("insufficientPermissions"),
+    { status: 403 },
+    { status: 500 },
+    { code: "ETIMEDOUT" },
+    new Error("boom"),
+    null
+  ])("does not treat %o as a refused send", (error) => {
+    expect(isRateLimitedResponse(error)).toBe(false);
+  });
+});
+
+describe("Gmail sending limit", () => {
+  const mailSending = {
+    status: 429,
+    message: "Too many requests: User-rate limit exceeded (Mail sending)"
+  };
+  const daily = {
+    status: 403,
+    response: {
+      status: 403,
+      data: { error: { errors: [{ reason: "dailyLimitExceeded" }] } }
+    }
+  };
+
+  it.each([mailSending, daily])(
+    "recognises %o as the sending limit",
+    (error) => {
+      expect(isSendingLimitResponse(error)).toBe(true);
+    }
+  );
+
+  // The limit lasts up to a day, so it is not a retryable rate limit.
+  it.each([mailSending, daily])("does not retry %o", (error) => {
+    expect(isRateLimitedResponse(error)).toBe(false);
+  });
+
+  it.each([
+    { status: 429, message: "Too many concurrent requests for user" },
+    { status: 403, errors: [{ reason: "userRateLimitExceeded" }] },
+    { status: 500 },
+    null
+  ])("does not treat %o as the sending limit", (error) => {
+    expect(isSendingLimitResponse(error)).toBe(false);
   });
 });

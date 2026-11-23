@@ -2,87 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { trigger } from "@carbon/jobs";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { upsertJobMethod } from "~/modules/production";
-import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production",
-    role: "employee"
-  });
-  const { jobId } = params;
-  if (!jobId) throw new Error("Could not find jobId");
-
-  const configuration = await request.json();
-
-  if (configuration) {
-    const [result, job] = await Promise.all([
-      client
-        .from("job")
-        .update({
-          configuration,
-          updatedAt: new Date().toISOString(),
-          updatedBy: userId
-        })
-        .eq("id", jobId),
-      client.from("job").select("itemId").eq("id", jobId).single()
-    ]);
-
-    if (result.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(jobId),
-        await flash(request, error("Failed to update job"))
-      );
-    }
-
-    if (job.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(jobId),
-        await flash(request, error("Failed to get job"))
-      );
-    }
-
-    const serviceRole = await getCarbonServiceRole();
-    const upsertMethod = await upsertJobMethod(
-      serviceRole,
-      getDatabaseClient(),
-      "itemToJob",
-      {
-        sourceId: job.data.itemId,
-        targetId: jobId,
-        companyId,
-        userId,
-        configuration
-      }
-    );
-
-    if (upsertMethod.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(jobId),
-        await flash(request, error("Failed to update job method"))
-      );
-    }
-
-    await trigger("recalculate", {
-      type: "jobRequirements",
-      id: jobId,
-      companyId,
-      userId
-    });
-  } else {
-    throw new Error("No configuration provided");
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.job(jobId),
-    await flash(request, success("Updated job"))
+// The body is the configuration itself, as JSON; the operation validates it.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["jobId"] });
+  if ("invalid" in input) return input.invalid;
+  const { jobId } = input.params;
+  const configuration = await args.request.json();
+  const api = await carbon(args.request);
+  const result = await api.production.configureJob({ jobId, configuration });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.job(jobId),
+    { message: "Updated job" }
   );
 }

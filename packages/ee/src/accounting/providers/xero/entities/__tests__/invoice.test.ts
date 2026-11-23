@@ -61,11 +61,50 @@ const invoice = (): Accounting.SalesInvoice =>
     updatedAt: "2026-08-04T00:00:00.000Z"
   }) as unknown as Accounting.SalesInvoice;
 
+/** The organisation's tax rates, as GET /TaxRates returns them. */
+const XERO_TAX_RATES: Xero.TaxRate[] = [
+  {
+    TaxType: "OUTPUT",
+    Name: "Sales Tax",
+    EffectiveRate: 10,
+    CanApplyToRevenue: true,
+    CanApplyToExpenses: false
+  },
+  {
+    TaxType: "OUTPUT2",
+    Name: "20% (VAT on Income)",
+    EffectiveRate: 20,
+    CanApplyToRevenue: true,
+    CanApplyToExpenses: false
+  },
+  {
+    TaxType: "INPUT2",
+    Name: "20% (VAT on Expenses)",
+    EffectiveRate: 20,
+    CanApplyToRevenue: false,
+    CanApplyToExpenses: true
+  },
+  { TaxType: "NONE", Name: "No VAT", EffectiveRate: 0 }
+];
+
+/** A tax-code mapping row (`externalIntegrationMapping`, entityType taxCode). */
+const taxMapping = (
+  taxCodeId: string,
+  direction: "sales" | "purchase",
+  externalId: string,
+  externalRate: number
+) => ({
+  entityId: `${taxCodeId}:${direction}`,
+  externalId,
+  metadata: { externalName: externalId, externalRate }
+});
+
 function makeInvoiceDb(config: {
   accountDefault: {
     salesAccount: string | null;
     salesShippingRevenueAccount?: string | null;
   };
+  taxMappings?: ReturnType<typeof taxMapping>[];
   accountMappings: Array<{
     id: string;
     accountId: string;
@@ -86,6 +125,8 @@ function makeInvoiceDb(config: {
       async execute() {
         if (table === "externalIntegrationMapping as m")
           return config.accountMappings;
+        if (table === "externalIntegrationMapping")
+          return config.taxMappings ?? [];
         return [];
       },
       async executeTakeFirst() {
@@ -105,12 +146,17 @@ function makeInvoiceDb(config: {
   return { selectFrom: (t: string) => makeBuilder(t) } as never;
 }
 
-function makeInvoiceSyncer(db: never) {
+function makeInvoiceSyncer(
+  db: never,
+  taxRates: Xero.TaxRate[] = XERO_TAX_RATES
+) {
   const syncer = new SalesInvoiceSyncer({
     database: db,
     companyId: "company-1",
     provider: {
-      id: "xero"
+      id: "xero",
+      listChartOfAccounts: async () => [],
+      listTaxRates: async () => taxRates
     } as never,
     config: { enabled: true, direction: "two-way", owner: "carbon" },
     entityType: "invoice"
@@ -250,6 +296,22 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
+  it("pushes a discounted line's NET amount", async () => {
+    const source = fxInvoice();
+    // 2 × 50 base list, 20% off → 80 base merchandise, 64 EUR at 0.8.
+    const payload = await makeInvoiceSyncer(db()).mapToRemote({
+      ...source,
+      subtotal: 80,
+      totalAmount: 80,
+      balance: 80,
+      lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+    });
+    expect(payload.LineItems[0]?.UnitAmount).toBe(64);
+    expect(payload.LineItems[0]?.LineAmount).toBe(64);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 32 EUR");
+    expect(payload.LineItems[0]).not.toHaveProperty("DiscountRate");
+  });
+
   it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
     // Xero wants EUR per USD, which is what Carbon already stores. Sending the
@@ -340,6 +402,7 @@ describe("Xero native sales components", () => {
         line.TaxType
       ])
     ).toEqual([
+      // A legacy 10% line (no code) takes the one 10% revenue rate.
       ["4000", 80, 8, "OUTPUT"],
       ["4000", 16, 1.6, "OUTPUT"],
       ["4000", 2.4, 0, "NONE"],
@@ -364,6 +427,79 @@ describe("Xero native sales components", () => {
       (syncer as unknown as { ensureDependencySynced: unknown })
         .ensureDependencySynced
     ).not.toHaveBeenCalled();
+  });
+});
+
+describe("Xero service job revenue", () => {
+  const serviceDb = () =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: [
+        ...mappedAccounts,
+        {
+          ...mappedAccounts[0]!,
+          id: "service-map",
+          accountId: "acct_service",
+          metadata: { externalCode: "4300" },
+          accountNumber: "4300",
+          accountName: "Service Revenue"
+        }
+      ]
+    });
+
+  it("codes a service job's lines to Service Revenue and a part line to Sales", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct_service";
+    source.subtotal = 385;
+    source.totalAmount = 385;
+    source.balance = 385;
+    source.lines.push({
+      ...source.lines[0]!,
+      id: "sil-labor",
+      invoiceLineType: "Service",
+      itemId: null,
+      itemCode: null,
+      description: "Labor",
+      quantity: 3,
+      unitPrice: 95,
+      lineAmount: 285,
+      serviceJobId: "sj-1"
+    });
+    const payload = await makeInvoiceSyncer(serviceDb()).mapToRemote(source);
+    expect(
+      payload.LineItems.map((line) => [line.AccountCode, line.LineAmount])
+    ).toEqual([
+      ["4000", 100],
+      ["4300", 285]
+    ]);
+  });
+
+  it("needs no sales account for a service-only invoice", async () => {
+    const source = invoice();
+    source.salesRevenueAccountId = null;
+    source.serviceRevenueAccountId = "acct_service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const payload = await makeInvoiceSyncer(serviceDb()).mapToRemote(source);
+    expect(payload.LineItems.map((line) => line.AccountCode)).toEqual(["4300"]);
+  });
+
+  it("refuses an unmapped Service Revenue account before the customer push", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct_service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const syncer = makeInvoiceSyncer(
+      makeInvoiceDb({
+        accountDefault: { salesAccount: "acct_sales" },
+        accountMappings: mappedAccounts
+      })
+    );
+    await expect(syncer.mapToRemote(source)).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: expect.stringContaining("Service Revenue")
+      }
+    });
+    expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
   });
 });
 
@@ -434,22 +570,25 @@ describe("Xero posted facts and monetary representation", () => {
     source.currencyCode = "EUR";
     expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
   });
-  it.each([
-    false,
-    true
-  ])("opts into supported unit precision at the actual invoice transport (batch=%s)", async (batch) => {
-    const syncer = reviewSyncer();
-    const requests: string[] = [];
-    (syncer as any).provider.request = async (_method: string, url: string) => {
-      requests.push(url);
-      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-    };
-    const payload = await syncer.mapToRemote(invoice());
-    if (batch)
-      await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
-    else await (syncer as any).upsertRemote(payload, "si_1");
-    expect(requests).toEqual(["/Invoices?unitdp=4"]);
-  });
+  it.each([false, true])(
+    "opts into supported unit precision at the actual invoice transport (batch=%s)",
+    async (batch) => {
+      const syncer = reviewSyncer();
+      const requests: string[] = [];
+      (syncer as any).provider.request = async (
+        _method: string,
+        url: string
+      ) => {
+        requests.push(url);
+        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+      };
+      const payload = await syncer.mapToRemote(invoice());
+      if (batch)
+        await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
+      else await (syncer as any).upsertRemote(payload, "si_1");
+      expect(requests).toEqual(["/Invoices?unitdp=4"]);
+    }
+  );
 });
 
 it("preserves an exact extended net when the source unit price has four decimals", async () => {
@@ -505,4 +644,125 @@ it("refuses missing original shipping provenance before provisioning", async () 
     failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
   });
   expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
+});
+
+describe("Xero sales invoice tax rates (mapped TaxType)", () => {
+  /** A £100 line at "UK Standard 20%", plus a non-taxable add-on. */
+  const codedInvoice = (taxCodeId: string | null): Accounting.SalesInvoice => {
+    const source = invoice();
+    return {
+      ...source,
+      currencyCode: "GBP",
+      baseCurrencyCode: "GBP",
+      subtotal: 105,
+      totalTax: 20,
+      totalAmount: 125,
+      balance: 125,
+      lines: [
+        {
+          ...source.lines[0]!,
+          quantity: 1,
+          unitPrice: 100,
+          nonTaxableAddOnCost: 5,
+          taxPercent: 0.2,
+          taxCodeId
+        }
+      ]
+    };
+  };
+  const db = (taxMappings: ReturnType<typeof taxMapping>[]) =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: mappedAccounts,
+      taxMappings
+    });
+
+  it("sends the code's mapped sales TaxType, and NONE on the non-taxable add-on", async () => {
+    const payload = await makeInvoiceSyncer(
+      db([
+        taxMapping("tc_uk20", "sales", "OUTPUT2", 0.2),
+        taxMapping("tc_uk20", "purchase", "INPUT2", 0.2)
+      ])
+    ).mapToRemote(codedInvoice("tc_uk20"));
+    expect(
+      payload.LineItems.map((line) => [
+        line.LineAmount,
+        line.TaxAmount,
+        line.TaxType
+      ])
+    ).toEqual([
+      [100, 20, "OUTPUT2"],
+      [5, 0, "NONE"]
+    ]);
+  });
+
+  it("stops an unmapped code with the UNMAPPED_TAX_CODES Warning before the customer is provisioned", async () => {
+    const syncer = makeInvoiceSyncer(
+      // Only the purchase direction is mapped.
+      db([taxMapping("tc_uk20", "purchase", "INPUT2", 0.2)])
+    );
+    await expect(
+      syncer.mapToRemote(codedInvoice("tc_uk20"))
+    ).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        metadata: expect.objectContaining({
+          taxCodeId: "tc_uk20",
+          direction: "sales"
+        })
+      }
+    });
+    expect(
+      (syncer as unknown as { ensureDependencySynced: unknown })
+        .ensureDependencySynced
+    ).not.toHaveBeenCalled();
+  });
+
+  it("matches a legacy 20% line to the one 20% revenue rate", async () => {
+    const payload = await makeInvoiceSyncer(db([])).mapToRemote(
+      codedInvoice(null)
+    );
+    expect(payload.LineItems[0]?.TaxType).toBe("OUTPUT2");
+  });
+
+  it("refuses a legacy percent that matches two revenue rates", async () => {
+    const syncer = makeInvoiceSyncer(db([]), [
+      ...XERO_TAX_RATES,
+      {
+        TaxType: "TAX002",
+        Name: "Reduced 20%",
+        EffectiveRate: 20,
+        CanApplyToRevenue: true
+      }
+    ]);
+    await expect(syncer.mapToRemote(codedInvoice(null))).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_TAX_CODES", warning: true }
+    });
+  });
+
+  it("does not read the tax rates for an untaxed invoice", async () => {
+    const listTaxRates = vi.fn(async () => XERO_TAX_RATES);
+    const syncer = new SalesInvoiceSyncer({
+      database: db([]),
+      companyId: "company-1",
+      provider: {
+        id: "xero",
+        listChartOfAccounts: async () => [],
+        listTaxRates
+      } as never,
+      config: { enabled: true, direction: "two-way", owner: "carbon" },
+      entityType: "invoice"
+    });
+    const internals = syncer as unknown as Record<string, unknown>;
+    internals.getRemoteId = async () => null;
+    internals.ensureDependencySynced = async () => "customer-remote";
+    const payload = await (
+      syncer as unknown as {
+        mapToRemote(local: Accounting.SalesInvoice): Promise<Xero.Invoice>;
+      }
+    ).mapToRemote(invoice());
+    expect(payload.LineItems[0]?.TaxType).toBe("NONE");
+    expect(listTaxRates).not.toHaveBeenCalled();
+  });
 });

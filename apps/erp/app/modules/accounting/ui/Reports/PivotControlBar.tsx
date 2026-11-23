@@ -17,7 +17,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
-  Switch
+  Switch,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -35,6 +36,7 @@ import {
 import { PeriodSelector } from "~/components";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { AppBarAction } from "~/components/New";
 import { useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type {
@@ -83,7 +85,7 @@ const PivotControlBar = ({
 
   // Transient interaction state only (like modal open/close) — all report
   // state lives in the URL per the pivot param contract.
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const saveModal = useDisclosure();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const dimensionById = useMemo(
@@ -228,9 +230,67 @@ const PivotControlBar = ({
     });
   };
 
+  const viewMenu = (
+    <ActionMenu label={t`Saved view actions`}>
+      <DropdownMenuItem onClick={saveModal.onOpen}>
+        <DropdownMenuIcon icon={<LuBookmarkPlus />} />
+        <Trans>Save view</Trans>
+      </DropdownMenuItem>
+      {activeView && activeView.createdBy === currentUserId && (
+        <DropdownMenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
+          destructive
+          onClick={() => setDeleteModalOpen(true)}
+        >
+          <DropdownMenuIcon icon={<LuTrash2 />} />
+          <Trans>Delete view</Trans>
+        </DropdownMenuItem>
+      )}
+      {savedViews.length > 0 && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={activeViewId ?? ""}
+            onValueChange={onSelectView}
+          >
+            {privateViews.length > 0 && (
+              <>
+                <DropdownMenuLabel>
+                  <Trans>Private</Trans>
+                </DropdownMenuLabel>
+                {privateViews.map((view) => (
+                  <DropdownMenuRadioItem key={view.id} value={view.id}>
+                    {view.name}
+                  </DropdownMenuRadioItem>
+                ))}
+              </>
+            )}
+            {privateViews.length > 0 && companyViews.length > 0 && (
+              <DropdownMenuSeparator />
+            )}
+            {companyViews.length > 0 && (
+              <>
+                <DropdownMenuLabel>
+                  <Trans>Company</Trans>
+                </DropdownMenuLabel>
+                {companyViews.map((view) => (
+                  <DropdownMenuRadioItem key={view.id} value={view.id}>
+                    {view.name}
+                  </DropdownMenuRadioItem>
+                ))}
+              </>
+            )}
+          </DropdownMenuRadioGroup>
+        </>
+      )}
+    </ActionMenu>
+  );
+
   return (
-    <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full">
-      <HStack className="flex-wrap gap-y-2">
+    <div className="flex flex-wrap px-4 py-3 items-center gap-2 justify-between bg-card border-b border-border w-full max-md:gap-1 max-md:px-0 max-md:py-1.5">
+      {/* Phones: the scope controls form one sideways-scrolling
+          chip row; Download and the views menu sit in the app bar. */}
+      <HStack className="flex-wrap gap-y-2 max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:whitespace-nowrap max-md:px-4 max-md:py-1.5 max-md:[&>*]:shrink-0">
         <PeriodSelector variant="range" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -443,78 +503,32 @@ const PivotControlBar = ({
           </Button>
         )}
       </HStack>
-      <HStack className="gap-2">
-        <Button
-          variant="secondary"
-          leftIcon={<LuDownload />}
+      <HStack className="gap-2 max-md:hidden">
+        <AppBarAction
+          icon={<LuDownload />}
+          label={t`Download`}
           onClick={onDownload}
         >
-          {t`Download`}
-        </Button>
-        <ActionMenu>
-          <DropdownMenuItem onClick={() => setSaveModalOpen(true)}>
-            <DropdownMenuIcon icon={<LuBookmarkPlus />} />
-            <Trans>Save view</Trans>
-          </DropdownMenuItem>
-          {activeView && activeView.createdBy === currentUserId && (
-            <DropdownMenuItem
-              shortcut={MENU_ITEM_SHORTCUTS.delete}
-              destructive
-              onClick={() => setDeleteModalOpen(true)}
-            >
-              <DropdownMenuIcon icon={<LuTrash2 />} />
-              <Trans>Delete view</Trans>
-            </DropdownMenuItem>
-          )}
-          {savedViews.length > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={activeViewId ?? ""}
-                onValueChange={onSelectView}
-              >
-                {privateViews.length > 0 && (
-                  <>
-                    <DropdownMenuLabel>
-                      <Trans>Private</Trans>
-                    </DropdownMenuLabel>
-                    {privateViews.map((view) => (
-                      <DropdownMenuRadioItem key={view.id} value={view.id}>
-                        {view.name}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </>
-                )}
-                {privateViews.length > 0 && companyViews.length > 0 && (
-                  <DropdownMenuSeparator />
-                )}
-                {companyViews.length > 0 && (
-                  <>
-                    <DropdownMenuLabel>
-                      <Trans>Company</Trans>
-                    </DropdownMenuLabel>
-                    {companyViews.map((view) => (
-                      <DropdownMenuRadioItem key={view.id} value={view.id}>
-                        {view.name}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </>
-                )}
-              </DropdownMenuRadioGroup>
-            </>
-          )}
-        </ActionMenu>
+          <Button
+            variant="secondary"
+            leftIcon={<LuDownload />}
+            onClick={onDownload}
+          >
+            {t`Download`}
+          </Button>
+        </AppBarAction>
+        <AppBarAction>{viewMenu}</AppBarAction>
       </HStack>
-      {saveModalOpen && (
-        <SaveViewModal
-          reportKey={reportKey}
-          state={state}
-          view={activeView}
-          onClose={() => setSaveModalOpen(false)}
-        />
-      )}
-      {deleteModalOpen && activeView && (
+      <SaveViewModal
+        open={saveModal.isOpen}
+        reportKey={reportKey}
+        state={state}
+        view={activeView}
+        onClose={saveModal.onClose}
+      />
+      {activeView && (
         <ConfirmDelete
+          isOpen={deleteModalOpen}
           action={path.to.deleteReportView(activeView.id)}
           name={activeView.name}
           text={t`Are you sure you want to delete the "${activeView.name}" view? This cannot be undone.`}

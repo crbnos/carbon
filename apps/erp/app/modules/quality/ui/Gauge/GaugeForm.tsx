@@ -49,8 +49,7 @@ import {
   NumberControlled,
   SequenceOrCustomId,
   StorageUnit,
-  Submit,
-  Supplier
+  Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { ListItem } from "~/types";
@@ -394,7 +393,7 @@ function GaugeFormContent({
             value: type.id
           }))}
         />
-        <Supplier name="supplierId" label={t`Manufacturer`} />
+        <Input name="manufacturer" label={t`Manufacturer`} />
         <Input name="modelNumber" label={t`Model Number`} />
         <Input name="serialNumber" label={t`Serial Number`} />
         {/* <Select

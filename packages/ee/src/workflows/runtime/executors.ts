@@ -7,6 +7,7 @@ import { actionExecutor } from "./action";
 import { computeExecutor } from "./compute";
 import { conditionExecutor } from "./condition";
 import { filterExecutor } from "./filter";
+import { integrationExecutor } from "./integration";
 import { lookupExecutor } from "./lookup";
 import type { NodeExecutor } from "./types";
 
@@ -19,6 +20,7 @@ const EXECUTORS: {
   compute: computeExecutor,
   condition: conditionExecutor,
   filter: filterExecutor,
+  integration: integrationExecutor,
   lookup: lookupExecutor
 };
 

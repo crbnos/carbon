@@ -5,24 +5,22 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { cn } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { cn, RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+
 import { usePermissions } from "~/hooks";
 import {
   getCustomer,
   getCustomerContacts,
   getCustomerLocations,
   getCustomerTax
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -33,10 +31,8 @@ export const handle: Handle = {
   module: "sales"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["customerId"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.customer?.name, "Customer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -80,12 +76,15 @@ export default function CustomerRoute() {
     <>
       <CustomerHeader />
       <div
-        className={cn("grid grid-cols-1 h-full w-full gap-4", {
-          "md:grid-cols-[1fr_4fr]": isEmployee
-        })}
+        className={cn(
+          "grid grid-cols-1 h-full w-full gap-4 max-md:h-auto max-md:gap-0",
+          {
+            "md:grid-cols-[1fr_4fr]": isEmployee
+          }
+        )}
       >
         {isEmployee && <CustomerSidebar />}
-        <Outlet />
+        <RecordOutlet />
       </div>
     </>
   );

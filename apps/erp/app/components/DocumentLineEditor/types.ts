@@ -18,11 +18,13 @@ export type ClientDocumentLine = {
    */
   dimensions: JournalLineDimensionValue[];
   /**
-   * The two legacy columns. The EDITOR does not write them — the Ramp sync
-   * does, and posting unions them with `dimensions`. They ride along
-   * read-only so a round-trip through the editor cannot drop what the sync
-   * imported.
+   * The two legacy columns. The Ramp sync writes them, and posting unions
+   * them with `dimensions`. They ride along so a round-trip through the editor
+   * cannot drop what the sync imported. With `showChargeNumber`, the editor's
+   * charge number picker writes `projectId` (with `projectElementId`).
    */
   costCenterId: string | null;
   projectId: string | null;
+  /** The element of the charge number; set only by the charge number picker. */
+  projectElementId: string | null;
 };

@@ -2,18 +2,25 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
+import {
+  CarbonEdition,
+  error,
+  INTEGRATION_EARLY_ACCESS_USER_IDS,
+  STRIPE_BYPASS_COMPANY_IDS
+} from "@carbon/auth";
 import {
   getCompanyPlanId,
   isCarbonOwnedCompany
 } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { flags } from "@carbon/env/flags.server";
 import { Edition, normalizePlanId, Plan, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   defaultUpgradeMessage,
   type GateSpec,
+  isListedUserId,
   planMeetsRequirement,
   resolveRequirement
 } from "./plan";
@@ -23,6 +30,31 @@ function isBypassCompany(companyId: string): boolean {
   return STRIPE_BYPASS_COMPANY_IDS.split(",")
     .map((id) => id.trim())
     .includes(companyId);
+}
+
+/**
+ * Whether this user may install an `internalOnly` integration on Carbon Cloud
+ * without a Carbon email (`isIntegrationComingSoon`): the
+ * `integration-early-access` flag is on for their email in this company, or their id
+ * is listed in `INTEGRATION_EARLY_ACCESS_USER_IDS`. The flag's rules name the
+ * users and their company, because each user also needs access to the app on
+ * the provider's side (the Onshape app, in Onshape). The env list stays as a
+ * fallback until a flags source is live; remove it once the users it lists
+ * have flag rules.
+ */
+export async function hasIntegrationEarlyAccess({
+  companyId,
+  userId,
+  email
+}: {
+  companyId: string;
+  userId: string;
+  email: string;
+}): Promise<boolean> {
+  return (
+    isListedUserId(INTEGRATION_EARLY_ACCESS_USER_IDS, userId) ||
+    flags.bool("integration-early-access", { companyId, email })
+  );
 }
 
 // The plan read is `getCompanyPlanId` (`@carbon/auth`): service role, cached, and

@@ -8,13 +8,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
-import { getDatabaseClient } from "~/services/database.server";
 import {
   getAvailableTrackedEntities,
   getCompanySettings,
   getPickOrder
 } from "~/services/inventory.service";
 import { setPickingListLineTrackedEntity } from "~/services/picking.service";
+import { printTravelersOnStart } from "~/services/printing.server";
 
 const logger = getLogger("mes", "picking-tracked-line");
 
@@ -30,14 +30,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const lineResult = await client
     .from("pickingListLine")
     .select(
-      "id, itemId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
+      "id, itemId, projectId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
     )
     .eq("id", lineId)
     .eq("companyId", companyId)
     .maybeSingle();
 
   if (lineResult.error || !lineResult.data) {
-    logger.warn("Picking line not found for company", {
+    logger.warning("Picking line not found for company", {
       companyId,
       lineId,
       error: lineResult.error
@@ -59,8 +59,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           locationId,
           excludeLineside: true,
+          excludeNonNettable: true,
           excludeAllocated: true,
-          excludeLineId: lineId
+          excludeLineId: lineId,
+          // A pick line draws one stock stripe: list the lots in it.
+          projectIds: [line.projectId ?? null]
         })
       : { data: [] },
     getCompanySettings(client, companyId),
@@ -92,8 +95,11 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 
-  const { lineId } = params;
+  const { lineId, pickingListId } = params;
   if (!lineId) return { success: false, message: "Missing line" };
+  if (!pickingListId) {
+    return { success: false, message: "Missing pickingListId" };
+  }
 
   const formData = await request.formData();
   const trackedEntityId = formData.get("trackedEntityId") as string;
@@ -106,19 +112,15 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing tracked entity" };
   }
 
-  const result = await setPickingListLineTrackedEntity(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      pickingListLineId: lineId,
-      trackedEntityId,
-      fromStorageUnitId,
-      quantity,
-      unpick,
-      userId: effectiveUserId,
-      companyId
-    }
-  );
+  const result = await setPickingListLineTrackedEntity(serviceRole, {
+    pickingListLineId: lineId,
+    trackedEntityId,
+    fromStorageUnitId,
+    quantity,
+    unpick,
+    userId: effectiveUserId,
+    companyId
+  });
 
   if (result.error) {
     logger.error("Failed to pick tracked entity", {
@@ -135,6 +137,15 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
           : (result.error.message ?? "Failed to pick line")
     };
   }
+
+  // The pick can move the list out of Draft (the status trigger), which
+  // starts it. After the pick, so a print failure never blocks it.
+  await printTravelersOnStart({
+    serviceRole,
+    pickingListId,
+    companyId,
+    userId: effectiveUserId
+  });
 
   return { success: true, data: result.data };
 }

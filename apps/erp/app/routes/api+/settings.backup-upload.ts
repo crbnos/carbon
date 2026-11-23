@@ -5,12 +5,15 @@
 import { Readable } from "node:stream";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { internalSupabaseUrl } from "@carbon/env";
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
-import { canManageBackups } from "~/modules/settings/backups.server";
-import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+import {
+  canManageBackups,
+  unpackBackupArchive
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "settings-backup-upload");
 
@@ -75,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // whole archive in memory.
       const signed = await staging.createSignedUrl(path, 60 * 60);
       if (signed.error) throw new Error(signed.error.message);
-      const res = await fetch(signed.data.signedUrl);
+      const res = await fetch(internalSupabaseUrl(signed.data.signedUrl));
       if (!res.ok || !res.body) {
         throw new Error(`Failed to read the uploaded archive (${res.status})`);
       }

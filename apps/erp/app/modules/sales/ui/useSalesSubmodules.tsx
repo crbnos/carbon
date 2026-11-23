@@ -5,9 +5,12 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
+  LuFolderKanban,
   LuGlobe,
+  LuKeyRound,
   LuList,
   LuPercent,
+  LuSection,
   LuShapes,
   LuShieldCheck,
   LuSquareUser,
@@ -30,7 +33,7 @@ export default function useSalesSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
   const salesRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Customers`,
       routes: [
         {
           name: t`Customers`,
@@ -39,17 +42,16 @@ export default function useSalesSubmodules() {
           table: "customer"
         },
         {
-          name: t`RFQs`,
-          to: path.to.salesRfqs,
-          icon: <RiProgress2Line />,
-          table: "salesRfq"
-        },
-        {
-          name: t`Quotes`,
-          to: path.to.quotes,
-          icon: <RiProgress4Line />,
-          table: "quote"
-        },
+          name: t`Portals`,
+          to: path.to.customerPortals,
+          role: "employee",
+          icon: <LuGlobe />
+        }
+      ]
+    },
+    {
+      name: t`Orders`,
+      routes: [
         {
           name: t`Sales Orders`,
           to: path.to.salesOrders,
@@ -65,14 +67,48 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t`Configure`,
+      name: t`Quoting`,
       routes: [
         {
-          name: t`Portals`,
-          to: path.to.customerPortals,
-          role: "employee",
-          icon: <LuGlobe />
+          name: t`RFQs`,
+          to: path.to.salesRfqs,
+          icon: <RiProgress2Line />,
+          table: "salesRfq"
         },
+        {
+          name: t`Quotes`,
+          to: path.to.quotes,
+          icon: <RiProgress4Line />,
+          table: "quote"
+        }
+      ]
+    },
+    {
+      name: t`Agreements`,
+      routes: [
+        {
+          name: t`Service Contracts`,
+          to: path.to.contracts,
+          icon: <LuSection />,
+          table: "customerContract"
+        },
+        {
+          name: t`Project Contracts`,
+          to: path.to.projectContracts,
+          icon: <LuFolderKanban />,
+          table: "customerContract"
+        },
+        {
+          name: t`Rental Agreements`,
+          to: path.to.rentalAgreements,
+          icon: <LuKeyRound />,
+          table: "rentalAgreement"
+        }
+      ]
+    },
+    {
+      name: t`Pricing`,
+      routes: [
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,
@@ -84,7 +120,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesPricingRules,
           role: "employee",
           icon: <LuPercent />
-        },
+        }
+      ]
+    },
+    {
+      name: t`Configure`,
+      routes: [
         {
           name: t`Sales Rules`,
           to: path.to.salesRules,
@@ -103,7 +144,6 @@ export default function useSalesSubmodules() {
           role: "employee",
           icon: <LuUndo2 />
         },
-
         {
           name: t`Statuses`,
           to: path.to.customerStatuses,

@@ -4,8 +4,9 @@
 
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
+import type { StockShortage } from "~/utils/materialStock";
 import type {
-  getJobByOperationId,
+  getJob,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
@@ -45,15 +46,23 @@ export type Location = NonNullable<
   Awaited<ReturnType<typeof getLocationsByCompany>>["data"]
 >[number];
 
-export type Job = NonNullable<
-  Awaited<ReturnType<typeof getJobByOperationId>>["data"]
->;
+export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
+
+/** A bin that holds stock a line or material can draw now. `id` and `name`
+ *  are null for stock in no storage unit. */
+export type LiveStorageUnit = {
+  id: string | null;
+  name: string | null;
+  quantity: number;
+};
 
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
 >["materials"][number] & {
   isKitComponent?: boolean;
   kitParentId?: string;
+  /** Set when the stock the job can draw does not cover what it still needs. */
+  stockShortage?: StockShortage | null;
 };
 
 export type Kanban = Awaited<ReturnType<typeof getKanbanByJobId>>["data"];
@@ -102,7 +111,10 @@ export type StorageItem = FileObject & {
 
 export type TrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getTrackedEntitiesByMakeMethodId>>["data"]
->[number];
+>[number] & {
+  /** Set by `getTrackedEntitiesForOperation`; false = the operation applies to other units. */
+  inOperationScope?: boolean;
+};
 
 export type TrackedInput = NonNullable<
   Awaited<ReturnType<typeof getTrackedInputs>>["data"]

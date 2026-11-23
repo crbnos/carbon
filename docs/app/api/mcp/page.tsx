@@ -83,7 +83,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "Is there a rate limit?",
-    a: "Each key has its own limit and window — 60 requests per minute by default. It's platform-controlled: the Rate Limit column in Settings → API Keys shows the limit in force, but there's no field to change it. Go over it and calls return 429 with X-RateLimit-* and Retry-After headers telling the client when to retry."
+    a: "Each key has its own limit — 20 requests per minute for a new key, shown in the Rate Limit column in Settings → API Keys — and all of a company's keys share 60 requests per minute. Both are platform-controlled, with no field to change them; contact Carbon support to raise them for your company. Go over either and calls return 429 with X-RateLimit-* and Retry-After headers telling the client when to retry."
   },
   {
     q: "I'm getting 401 Unauthorized",

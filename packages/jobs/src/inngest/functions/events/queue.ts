@@ -3,10 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { HandlerType, QueueMessage } from "@carbon/database/event";
+import { getLogger } from "@carbon/logger";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { packBySize } from "./pack";
+
+const logger = getLogger("jobs", "event-queue");
 
 const QUEUE_NAME = "event_system"; // Name of the PGMQ queue
 const BATCH_SIZE = 100; // Number of messages to process per pass
@@ -72,7 +75,8 @@ export const eventQueueFunction = inngest.createFunction(
             SYNC: [],
             SEARCH: [],
             AUDIT: [],
-            EMBEDDING: []
+            EMBEDDING: [],
+            ISSUE_SYNC: []
           };
 
           // Unknown handler types are poison: pushing into a missing bucket
@@ -87,8 +91,9 @@ export const eventQueueFunction = inngest.createFunction(
               bucket.push(job);
               allIds.push(job.msg_id);
             } else {
-              console.error(
-                `event-queue: unknown handlerType "${job.message?.handlerType}" on msg_id ${job.msg_id}; archiving to dead-letter`
+              logger.error(
+                "Unknown event handler type; archiving to dead-letter",
+                { handlerType: job.message?.handlerType, msgId: job.msg_id }
               );
               poisoned.push(job.msg_id);
             }
@@ -225,7 +230,24 @@ export const eventQueueFunction = inngest.createFunction(
         }
       }
 
-      // 9. Delete processed messages from PGMQ (archived poison ids are
+      // 9. Dispatch issue syncs (chunked). The handler fans out per company,
+      // because the Linear and Jira push holds a per-company concurrency key.
+      if (grouped.ISSUE_SYNC.length > 0) {
+        const records = grouped.ISSUE_SYNC.map((job) => ({
+          event: job.message.event,
+          companyId: job.message.companyId
+        }));
+
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
+        for (let i = 0; i < chunks.length; i++) {
+          await step.sendEvent(`dispatch-issue-syncs-${pass}-${i}`, {
+            name: "carbon/event-issue-sync" as const,
+            data: { records: chunks[i] }
+          });
+        }
+      }
+
+      // 10. Delete processed messages from PGMQ (archived poison ids are
       // excluded — archive already dequeued them)
       if (allIds.length > 0) {
         await step.run(`delete-processed-${pass}`, async () => {

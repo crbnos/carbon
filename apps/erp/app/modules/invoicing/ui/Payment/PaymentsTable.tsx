@@ -33,6 +33,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -44,9 +45,11 @@ type PaymentRow = Database["public"]["Tables"]["payment"]["Row"];
 type PaymentsTableProps = {
   data: PaymentRow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
+const PaymentsTable = memo((props: PaymentsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -105,13 +108,14 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
             {row.original.paymentId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "paymentType",
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.paymentType} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -133,6 +137,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
             <SupplierAvatar supplierId={row.original.supplierId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -169,6 +174,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -184,6 +190,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <PaymentStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -207,6 +214,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
   return (
     <>
       <Table<PaymentRow>
+        infinite={infinite}
         count={count}
         columns={columns}
         data={data}
@@ -232,11 +240,9 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           text={t`Are you sure you want to delete ${selectedPayment.paymentId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelectedPayment(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelectedPayment(null);
           }}
         />
       )}

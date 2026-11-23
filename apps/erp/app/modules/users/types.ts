@@ -4,11 +4,13 @@
 
 import type { Database } from "@carbon/database";
 import type {
+  getAccount,
   getCustomers,
   getEmployees,
   getEmployeeTypes,
   getModules,
   getPermissionsByEmployeeType,
+  getPublicAttributes,
   getSuppliers,
   getUsers
 } from "./users.service";
@@ -93,3 +95,14 @@ export type Supplier = NonNullable<
 export type User = NonNullable<
   Awaited<ReturnType<typeof getUsers>>["data"]
 >[number];
+export type Account = NonNullable<
+  Awaited<ReturnType<typeof getAccount>>["data"]
+>;
+
+export type PersonalData = {};
+
+export type PublicAttributes = NonNullable<
+  Awaited<ReturnType<typeof getPublicAttributes>>["data"]
+>[number];
+
+export type PrivateAttributes = PublicAttributes;

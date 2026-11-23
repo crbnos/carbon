@@ -2,26 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { JSONContent } from "@carbon/react";
+import { type JSONContent, RecordOutlet } from "@carbon/react";
 import { getItemReadableId, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { DeferredFiles } from "~/components";
 import {
-  getPurchaseInvoice,
-  getPurchaseInvoiceLine,
   isPurchaseInvoiceLocked,
-  PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
-  upsertPurchaseInvoiceLine
-} from "~/modules/invoicing";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+  purchaseInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
+  getPurchaseInvoice,
+  getPurchaseInvoiceLine
+} from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import { getLineChargeNumber } from "~/modules/projects/projects.service";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -40,10 +47,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
+  const [purchaseInvoiceLine, chargeNumber] = await Promise.all([
+    getPurchaseInvoiceLine(client, lineId),
+    getLineChargeNumber(client, "purchaseInvoiceLine", lineId, companyId)
+  ]);
 
   return {
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
+    chargeNumber: chargeNumber.data ?? null,
     files: getSupplierInteractionLineDocuments(client, companyId, lineId)
   };
 }
@@ -78,10 +89,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
-
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceLineValidator).validate(
     formData
@@ -91,46 +98,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id: _id, taxCodeId, ...d } = validation.data;
 
-  // if (d.invoiceLineType === "G/L Account") {
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else if (d.invoiceLineType === "Fixed Asset") {
-  //   d.accountId = undefined;
-  //   d.itemId = undefined;
-  // } else
-  // if (d.invoiceLineType === "Comment") {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  // }
-
-  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
-    id: lineId,
+  // The operation checks the charge number and the order's funds, and
+  // decides the line's tax.
+  const api = await carbon(request);
+  const result = await api.invoicing.updatePurchaseInvoiceLine({
     ...d,
-    updatedBy: userId,
+    // A posted empty field clears the code; an absent one keeps it.
+    ...(formData.has("taxCodeId") ? { taxCodeId: taxCodeId ?? "" } : {}),
+    id: lineId,
     customFields: setCustomFields(formData)
   });
 
-  if (updatePurchaseInvoiceLine.error) {
-    throw redirect(
-      path.to.purchaseInvoiceLine(invoiceId, lineId),
-      await flash(
-        request,
-        error(
-          updatePurchaseInvoiceLine.error,
-          "Failed to update purchase invoice line"
-        )
-      )
-    );
-  }
-
-  throw redirect(path.to.purchaseInvoiceLine(invoiceId, lineId));
+  return respond(request, result).redirect(
+    path.to.purchaseInvoiceLine(invoiceId, lineId)
+  );
 }
 
 export default function EditPurchaseInvoiceLineRoute() {
@@ -140,7 +123,8 @@ export default function EditPurchaseInvoiceLineRoute() {
   if (!lineId) throw notFound("lineId not found");
 
   const [items] = useItems();
-  const { purchaseInvoiceLine, files } = useLoaderData<typeof loader>();
+  const { purchaseInvoiceLine, chargeNumber, files } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     id: purchaseInvoiceLine?.id ?? undefined,
@@ -163,9 +147,15 @@ export default function EditPurchaseInvoiceLineRoute() {
     conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
     storageUnitId: purchaseInvoiceLine?.storageUnitId ?? "",
     costCenterId: purchaseInvoiceLine?.costCenterId ?? "",
+    taxCodeId: purchaseInvoiceLine?.taxCodeId ?? undefined,
+    projectId: chargeNumber?.projectId ?? "",
+    projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",
+    leaseId: purchaseInvoiceLine?.leaseId ?? "",
+    leasePaymentId: purchaseInvoiceLine?.leasePaymentId ?? "",
+    leaseReadableId: purchaseInvoiceLine?.leaseReadableId ?? "",
     ...getCustomFields(purchaseInvoiceLine?.customFields)
   };
 
@@ -202,7 +192,7 @@ export default function EditPurchaseInvoiceLineRoute() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

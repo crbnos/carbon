@@ -87,6 +87,7 @@ export default function ParameterPanel({
                   <div className="px-2 py-1 overflow-hidden">
                     <input
                       type="text"
+                      aria-label={`${parameter.name}.${prop.key}`}
                       value={prop.value || ""}
                       onChange={(e) =>
                         updateMaterialProperty(
@@ -117,6 +118,7 @@ export default function ParameterPanel({
                 <div className="px-2 py-1 overflow-hidden">
                   {parameter.type === "boolean" ? (
                     <select
+                      aria-label={parameter.name}
                       value={parameter.value as string}
                       onChange={(e) => updateValue(index, e.target.value)}
                       className="w-full h-full px-2 bg-transparent border-0 focus:ring-0 truncate"
@@ -126,6 +128,7 @@ export default function ParameterPanel({
                     </select>
                   ) : parameter.type === "list" && parameter.config?.options ? (
                     <select
+                      aria-label={parameter.name}
                       value={parameter.value as string}
                       onChange={(e) => updateValue(index, e.target.value)}
                       className="w-full h-full px-2 bg-transparent border-0 focus:ring-0 truncate"
@@ -138,6 +141,7 @@ export default function ParameterPanel({
                     </select>
                   ) : (
                     <input
+                      aria-label={parameter.name}
                       type={parameter.type === "numeric" ? "number" : "text"}
                       value={parameter.value as string}
                       onChange={(e) => updateValue(index, e.target.value)}

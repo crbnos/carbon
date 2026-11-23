@@ -11,7 +11,7 @@ const MAX_ATTEMPTS = 10;
 const RETRY_DELAY_MS = 2_000;
 
 // A PUT to our own serve endpoint is Inngest's registration handshake — the
-// same request `ci/src/jobs.ts` curls from CI after a deploy. Doing it here
+// same request `ci/src/post-deploy.ts` curls from CI after a deploy. Doing it here
 // too means a freshly booted task (deploy, ECS reschedule, autoscale-out)
 // re-syncs itself immediately instead of waiting on that external job, which
 // only fires after a "Deploy Apps" success on `main`. `serveHost` (set from
@@ -35,21 +35,18 @@ async function syncInngest() {
         );
         return;
       }
-      log.warn(
+      log.warning(
         "Inngest self-sync got {status} on attempt {attempt}/{maxAttempts}",
         { status: response.status, attempt, maxAttempts: MAX_ATTEMPTS }
       );
     } catch (error) {
       // Expected for the first attempt or two — the HTTP server isn't
       // listening yet when this fires at module load.
-      log.debug(
-        "Inngest self-sync attempt {attempt}/{maxAttempts} failed: {message}",
-        {
-          attempt,
-          maxAttempts: MAX_ATTEMPTS,
-          message: error instanceof Error ? error.message : String(error)
-        }
-      );
+      log.debug("Inngest self-sync attempt {attempt}/{maxAttempts} failed", {
+        attempt,
+        maxAttempts: MAX_ATTEMPTS,
+        error
+      });
     }
     await sleep(RETRY_DELAY_MS);
   }

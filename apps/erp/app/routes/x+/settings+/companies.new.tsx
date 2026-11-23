@@ -2,18 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  success
-} from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { enableAuditLog } from "@carbon/ee/audit.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import {
   Modal,
   ModalBody,
@@ -21,163 +11,22 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
-import { isInternalEmail, redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { insertEmployeeJob } from "~/modules/people";
-import { upsertLocation } from "~/modules/resources";
-import {
-  insertCompany,
-  SubsidiaryCompanyForm,
-  seedCompany,
-  subsidiaryValidator
-} from "~/modules/settings";
-import { getDatabaseClient } from "~/services/database.server";
+import { subsidiaryValidator } from "~/modules/settings/settings.models";
+import { SubsidiaryCompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "settings-companies-new");
-
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyGroupId, userId, email } = await requirePermissions(request, {
-    create: "settings"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(subsidiaryValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.settings.createSubsidiary(input.data);
+  return respond(args.request, result).redirect(path.to.companies, {
+    message: "Created company"
   });
-
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
-    throw redirect(path.to.settings);
-  }
-
-  const formData = await request.formData();
-  const validation = await validator(subsidiaryValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    id: _,
-    parentCompanyId,
-    baseCurrencyCode,
-    ...locationData
-  } = validation.data;
-
-  const client = getCarbonServiceRole();
-
-  // seed-company joins the new company to its parent's group, so a parent id
-  // from another group would place it inside another tenant's group.
-  if (parentCompanyId) {
-    const parent = await client
-      .from("company")
-      .select("id")
-      .eq("id", parentCompanyId)
-      .eq("companyGroupId", companyGroupId)
-      .maybeSingle();
-    if (parent.error || !parent.data) {
-      logger.error("Parent company not found in the caller's company group", {
-        companyGroupId,
-        parentCompanyId,
-        error: parent.error
-      });
-      throw redirect(
-        path.to.companies,
-        await flash(request, error(parent.error, "Parent company not found"))
-      );
-    }
-  }
-
-  const companyInsert = await insertCompany(client, {
-    ...locationData,
-    baseCurrencyCode
-  });
-  if (companyInsert.error) {
-    throw redirect(
-      path.to.companies,
-      await flash(
-        request,
-        error(companyInsert.error, "Failed to create company")
-      )
-    );
-  }
-
-  const companyId = companyInsert.data?.id;
-  if (!companyId) {
-    throw redirect(
-      path.to.companies,
-      await flash(request, error(null, "Failed to get company ID"))
-    );
-  }
-
-  const seed = await seedCompany(
-    client,
-    getDatabaseClient(),
-    companyId,
-    userId,
-    {
-      parentCompanyId
-    }
-  );
-  if (seed.error) {
-    throw redirect(
-      path.to.companies,
-      await flash(request, error(seed.error, "Failed to seed company"))
-    );
-  }
-
-  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
-  // day one — enable it at company creation.
-  if (CONTROLLED_ENVIRONMENT) {
-    await enableAuditLog(client, companyId).catch(() => {});
-  }
-
-  const locationInsert = await upsertLocation(client, {
-    ...locationData,
-    name: "Headquarters",
-    companyId,
-    // timezone comes from locationData — HQ shares the company's timezone.
-    createdBy: userId
-  });
-
-  if (locationInsert.error) {
-    throw redirect(
-      path.to.companies,
-      await flash(
-        request,
-        error(locationInsert.error, "Failed to create headquarters location")
-      )
-    );
-  }
-
-  const locationId = locationInsert.data?.id;
-  if (!locationId) {
-    throw redirect(
-      path.to.companies,
-      await flash(request, error(null, "Failed to get location ID"))
-    );
-  }
-
-  const job = await insertEmployeeJob(client, {
-    id: userId,
-    companyId,
-    locationId
-  });
-
-  if (job.error) {
-    throw redirect(
-      path.to.companies,
-      await flash(
-        request,
-        error(job.error, "Failed to create employee job record")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.companies,
-    await flash(request, success("Created company"))
-  );
 }
 
 export default function NewSubsidiaryRoute() {

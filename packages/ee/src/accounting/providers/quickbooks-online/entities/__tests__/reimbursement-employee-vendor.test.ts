@@ -3,6 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type FakeDatabase,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
 import { AccountingApiError } from "../../../../core/utils";
 import type { Qbo } from "../../models";
@@ -15,33 +19,18 @@ import { QboReimbursementSyncer } from "../reimbursement";
 // unique, so the retry's create fails with fault 6240. Without adoption that
 // reimbursement can never sync again.
 
-const { mappings } = vi.hoisted(() => ({
-  mappings: new Map<string, string>()
-}));
-
-vi.mock("../../../../core/external-mapping", () => ({
-  createMappingService: () => ({
-    getByEntity: async () => null,
-    getExternalId: async (_type: string, id: string) =>
-      mappings.get(id) ?? null,
-    link: async (
-      _type: string,
-      id: string,
-      _provider: string,
-      externalId: string
-    ) => {
-      mappings.set(id, externalId);
-    }
-  })
-}));
-
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    operation: (tx: unknown) => Promise<unknown>
-  ) => operation({})
-}));
+let db: FakeDatabase;
+beforeEach(() => {
+  db = fakeDatabase();
+});
+/** The QBO vendor the employee is mapped to, if any. */
+const employeeVendorMapping = (employeeId: string) =>
+  db
+    .rows("externalIntegrationMapping")
+    .find(
+      (row) =>
+        row.entityType === "employeeVendor" && row.entityId === employeeId
+    )?.externalId;
 
 const reimbursement: ReimbursementSource = {
   id: "reimb_1",
@@ -95,7 +84,7 @@ function duplicateNameFault(): AccountingApiError {
 
 function syncer(provider: object) {
   const instance = new QboReimbursementSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     entityType: "reimbursement",
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
@@ -105,8 +94,6 @@ function syncer(provider: object) {
     resolveEmployeeVendor(local: ReimbursementSource): Promise<string>;
   };
 }
-
-beforeEach(() => mappings.clear());
 
 describe("QBO employee-vendor JIT create", () => {
   it("keys the create on a deterministic requestid so Intuit replays a lost response", async () => {
@@ -121,7 +108,7 @@ describe("QBO employee-vendor JIT create", () => {
       buildQboRequestId("company-1", "employee-vendor", "emp_1")
     );
     // The mapping the next attempt reads instead of creating again.
-    expect(mappings.get("emp_1")).toBe("vend_9");
+    expect(employeeVendorMapping("emp_1")).toBe("vend_9");
   });
 
   it("adopts the existing Vendor on fault 6240 instead of failing forever", async () => {
@@ -144,7 +131,7 @@ describe("QBO employee-vendor JIT create", () => {
     );
     // The adoption is what makes the retry recoverable: the mapping the first
     // attempt failed to write is written now.
-    expect(mappings.get("emp_1")).toBe("vend_orphan");
+    expect(employeeVendorMapping("emp_1")).toBe("vend_orphan");
   });
 
   it("rethrows fault 6240 when the colliding name belongs to no Vendor", async () => {
@@ -158,7 +145,7 @@ describe("QBO employee-vendor JIT create", () => {
     await expect(
       syncer({ createVendor, query }).resolveEmployeeVendor(reimbursement)
     ).rejects.toThrow(/Duplicate Name Exists/);
-    expect(mappings.size).toBe(0);
+    expect(db.rows("externalIntegrationMapping")).toEqual([]);
   });
 
   it("does not swallow a non-duplicate fault", async () => {

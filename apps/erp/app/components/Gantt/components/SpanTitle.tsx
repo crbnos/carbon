@@ -24,7 +24,7 @@ export function SpanTitle(event: SpanTitleProps) {
         eventTextClassName(event)
       )}
     >
-      <span className="truncate">{event.message}</span>{" "}
+      <span className="truncate max-md:max-w-full">{event.message}</span>{" "}
       <SpanAccessory accessory={event.style.accessory} size={event.size} />
     </span>
   );
@@ -55,7 +55,7 @@ function SpanAccessory({
     }
     default: {
       return (
-        <div className={cn("flex gap-1")}>
+        <div className={cn("flex gap-1", "max-md:min-w-0 max-md:truncate")}>
           {accessory.items.map((item, index) => (
             <span key={index} className={cn("inline-flex items-center gap-1")}>
               {item.text}

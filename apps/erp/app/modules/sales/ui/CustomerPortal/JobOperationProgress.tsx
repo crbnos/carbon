@@ -35,7 +35,7 @@ function OperationPill({
   return (
     <Badge
       variant={operationVariant(operation)}
-      className={cn("rounded-full text-[10px] max-w-[140px]", className)}
+      className={cn("rounded-full text-[0.625rem] max-w-[140px]", className)}
       title={operation.description}
     >
       {operation.description}
@@ -82,7 +82,7 @@ export function JobOperationProgress({
                   <Badge
                     variant="gray"
                     aria-hidden="true"
-                    className="-ml-px rounded-none text-[10px] select-none"
+                    className="-ml-px rounded-none text-[0.625rem] select-none"
                   >
                     ···
                   </Badge>
@@ -121,7 +121,7 @@ export function JobOperationProgress({
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                  <span className="text-[0.6875rem] text-muted-foreground tabular-nums">
                     {op.quantityComplete}/{op.operationQuantity}
                   </span>
                   {attachments.length > 0 && (

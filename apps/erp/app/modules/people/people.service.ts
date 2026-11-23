@@ -2,18 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
-import { getDayOfWeek, today } from "@internationalized/date";
+import { datetime, requireAffected, searchFilter } from "@carbon/utils";
+import { getDayOfWeek, parseAbsolute, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { DataType } from "~/modules/shared";
-import type { Employee } from "~/modules/users";
+import type { DataType } from "~/modules/shared/types";
+import type { Employee } from "~/modules/users/types";
 import { getEmployees } from "~/modules/users/users.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   departmentValidator,
@@ -22,54 +23,64 @@ import type {
   shiftValidator
 } from "./people.models";
 
-/** @mcp delete */
 export async function deleteAttribute(
   client: SupabaseClient<Database>,
   attributeId: string
 ) {
-  return client
-    .from("userAttribute")
-    .update({ active: false })
-    .eq("id", attributeId);
+  return requireAffected(
+    client
+      .from("userAttribute")
+      .update({ active: false })
+      .eq("id", attributeId)
+      .select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategoryId: string
 ) {
-  return client
-    .from("userAttributeCategory")
-    .update({ active: false })
-    .eq("id", attributeCategoryId);
+  return requireAffected(
+    client
+      .from("userAttributeCategory")
+      .update({ active: false })
+      .eq("id", attributeCategoryId)
+      .select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteDepartment(
   client: SupabaseClient<Database>,
   departmentId: string
 ) {
-  return client.from("department").delete().eq("id", departmentId);
+  return requireAffected(
+    client.from("department").delete().eq("id", departmentId).select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteHoliday(
   client: SupabaseClient<Database>,
   holidayId: string
 ) {
-  return client.from("holiday").delete().eq("id", holidayId);
+  return requireAffected(
+    client.from("holiday").delete().eq("id", holidayId).select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteShift(
   client: SupabaseClient<Database>,
   shiftId: string
 ) {
   // TODO: Set all employeeShifts to null
-  return client.from("shift").update({ active: false }).eq("id", shiftId);
+  return requireAffected(
+    client
+      .from("shift")
+      .update({ active: false })
+      .eq("id", shiftId)
+      .select("id")
+  );
 }
 
-/** @mcp read */
 export async function getAttribute(
   client: SupabaseClient<Database>,
   attributeId: string
@@ -104,7 +115,10 @@ async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
-/** @mcp read */
+export const ATTRIBUTE_CATEGORIES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getAttributeCategories(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -113,7 +127,7 @@ export async function getAttributeCategories(
   let query = client
     .from("userAttributeCategory")
     .select("*, userAttribute(id, name, attributeDataType(id))", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true)
@@ -124,15 +138,12 @@ export async function getAttributeCategories(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ATTRIBUTE_CATEGORIES_PAGING);
   }
 
   return query;
 }
 
-/** @mcp read */
 export async function getAttributeCategory(
   client: SupabaseClient<Database>,
   id: string
@@ -155,12 +166,10 @@ export async function getAttributeCategory(
     .single();
 }
 
-/** @mcp read */
 export async function getAttributeDataTypes(client: SupabaseClient<Database>) {
   return client.from("attributeDataType").select("*");
 }
 
-/** @mcp read */
 export async function getDepartment(
   client: SupabaseClient<Database>,
   departmentId: string
@@ -168,7 +177,6 @@ export async function getDepartment(
   return client.from("department").select("*").eq("id", departmentId).single();
 }
 
-/** @mcp read */
 export async function getDepartments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -194,7 +202,6 @@ export async function getDepartments(
   return query;
 }
 
-/** @mcp read */
 export async function getDepartmentsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -206,7 +213,6 @@ export async function getDepartmentsList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getDepartmentsTree(
   client: SupabaseClient<Database>,
   companyId: string
@@ -218,7 +224,6 @@ export async function getDepartmentsTree(
     .order("name");
 }
 
-/** @mcp read */
 export async function getEmployeeJob(
   client: SupabaseClient<Database>,
   employeeId: string,
@@ -232,7 +237,6 @@ export async function getEmployeeJob(
     .single();
 }
 
-/** @mcp read */
 export async function getEmployeeSummary(
   client: SupabaseClient<Database>,
   employeeId: string,
@@ -246,7 +250,6 @@ export async function getEmployeeSummary(
     .single();
 }
 
-/** @mcp read */
 export async function getHoliday(
   client: SupabaseClient<Database>,
   holidayId: string
@@ -254,7 +257,10 @@ export async function getHoliday(
   return client.from("holiday").select("*").eq("id", holidayId).single();
 }
 
-/** @mcp read */
+export const HOLIDAYS_PAGING: Paging = {
+  defaultSorts: [{ column: "date", ascending: true }]
+};
+
 export async function getHolidays(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -263,7 +269,7 @@ export async function getHolidays(
   let query = client
     .from("holiday")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -272,15 +278,12 @@ export async function getHolidays(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "date", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, HOLIDAYS_PAGING);
   }
 
   return query;
 }
 
-/** @mcp read */
 export function getHolidayYears(
   client: SupabaseClient<Database>,
   companyId: string
@@ -307,7 +310,6 @@ type Person = Employee & {
   attributes: PersonAttributes;
 };
 
-/** @mcp read */
 export async function getPeople(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -382,7 +384,6 @@ export async function getPeople(
   };
 }
 
-/** @mcp read */
 export async function getContacts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -397,7 +398,7 @@ export async function getContacts(
 
   if (args.search) {
     query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%,email.ilike.%${args.search}%`
+      searchFilter(["firstName", "lastName", "email"], args.search)
     );
   }
 
@@ -415,7 +416,6 @@ export async function getContacts(
     error: null
   };
 }
-/** @mcp read */
 export async function getShift(
   client: SupabaseClient<Database>,
   shiftId: string
@@ -428,7 +428,10 @@ export async function getShift(
     .single();
 }
 
-/** @mcp read */
+export const SHIFTS_PAGING: Paging = {
+  defaultSorts: [{ column: "locationId", ascending: true }]
+};
+
 export async function getShifts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -437,7 +440,7 @@ export async function getShifts(
   let query = client
     .from("shifts")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -446,13 +449,10 @@ export async function getShifts(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "locationId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIFTS_PAGING);
   return query;
 }
 
-/** @mcp read */
 export async function getShiftsList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -471,7 +471,6 @@ export async function getShiftsList(
   return query.order("name");
 }
 
-/** @mcp read */
 export async function getEmployeeShifts(
   client: SupabaseClient<Database>,
   companyId: string
@@ -482,7 +481,6 @@ export async function getEmployeeShifts(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getEmployeeDepartments(
   client: SupabaseClient<Database>,
   companyId: string
@@ -493,7 +491,6 @@ export async function getEmployeeDepartments(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getShiftsWithTimes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -510,7 +507,25 @@ export async function getShiftsWithTimes(
     .order("name");
 }
 
-/** @mcp create */
+/**
+ * Active shifts by id, with their times. A work center can be linked to a
+ * shift of another location, which `getShiftsWithTimes` does not return.
+ */
+export async function getShiftsWithTimesByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shiftIds: string[]
+) {
+  return client
+    .from("shift")
+    .select(
+      "id, name, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+    )
+    .eq("companyId", companyId)
+    .in("id", shiftIds)
+    .eq("active", true);
+}
+
 export async function insertAttribute(
   client: SupabaseClient<Database>,
   attribute: {
@@ -540,7 +555,6 @@ export async function insertAttribute(
     .single();
 }
 
-/** @mcp create */
 export async function insertAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategory: {
@@ -558,7 +572,6 @@ export async function insertAttributeCategory(
     .single();
 }
 
-/** @mcp create */
 export async function insertEmployeeJob(
   client: SupabaseClient<Database>,
   job: {
@@ -570,7 +583,6 @@ export async function insertEmployeeJob(
   return client.from("employeeJob").insert(job).select("*").single();
 }
 
-/** @mcp update */
 export async function updateAttribute(
   client: SupabaseClient<Database>,
   attribute: {
@@ -582,20 +594,22 @@ export async function updateAttribute(
   }
 ) {
   if (!attribute.id) throw new Error("id is required");
-  return client
-    .from("userAttribute")
-    .update(
-      sanitize({
-        name: attribute.name,
-        listOptions: attribute.listOptions,
-        canSelfManage: attribute.canSelfManage,
-        updatedBy: attribute.updatedBy
-      })
-    )
-    .eq("id", attribute.id);
+  return requireAffected(
+    client
+      .from("userAttribute")
+      .update(
+        sanitize({
+          name: attribute.name,
+          listOptions: attribute.listOptions,
+          canSelfManage: attribute.canSelfManage,
+          updatedBy: attribute.updatedBy
+        })
+      )
+      .eq("id", attribute.id)
+      .select("id")
+  );
 }
 
-/** @mcp update */
 export async function updateAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategory: {
@@ -607,13 +621,15 @@ export async function updateAttributeCategory(
   }
 ) {
   const { id, ...update } = attributeCategory;
-  return client
-    .from("userAttributeCategory")
-    .update(sanitize(update))
-    .eq("id", id);
+  return requireAffected(
+    client
+      .from("userAttributeCategory")
+      .update(sanitize(update))
+      .eq("id", id)
+      .select("id")
+  );
 }
 
-/** @mcp update */
 export async function updateAttributeSortOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -628,7 +644,7 @@ export async function updateAttributeSortOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp update destructive */
+/** People's job updates go through `updatePersonJob`, which also reschedules. */
 export async function updateEmployeeJob(
   db: Kysely<KyselyDatabase>,
   employeeId: string,
@@ -641,7 +657,7 @@ export async function updateEmployeeJob(
   // One Kysely transaction: the employeeJob update and the employeeShift
   // sync commit or roll back together. Kysely also bypasses RLS, so the
   // sync no longer silently no-ops for users without people_create/
-  // people_delete — the route's people_update check is the auth gate.
+  // people_delete — `updatePersonJob`'s people update gate is the auth gate.
   try {
     // sanitize() turns any absent field into null, and locationId is NOT NULL,
     // so a caller that omits it (the API/MCP tool leaves it optional) would
@@ -658,6 +674,15 @@ export async function updateEmployeeJob(
       shiftId: sanitized.shiftId,
       departmentId: sanitized.departmentId,
       managerId: sanitized.managerId,
+      laborCategoryId: sanitized.laborCategoryId,
+      flsaStatus: sanitized.flsaStatus,
+      // NOT NULL: a caller that leaves it out keeps the stored flag.
+      ...(typeof sanitized.isOfficer === "boolean"
+        ? { isOfficer: sanitized.isOfficer }
+        : {}),
+      ...(typeof sanitized.timesheetRequired === "boolean"
+        ? { timesheetRequired: sanitized.timesheetRequired }
+        : {}),
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),
@@ -670,7 +695,7 @@ export async function updateEmployeeJob(
       // Kysely bypasses RLS and every id below comes from the caller, so each
       // one is re-read under companyId: the single-column FKs would accept a
       // location, shift, department or manager from any company.
-      const [employee, location, shift, department, manager] =
+      const [employee, location, shift, department, manager, laborCategory] =
         await Promise.all([
           trx
             .selectFrom("employee")
@@ -709,6 +734,14 @@ export async function updateEmployeeJob(
                 .where("id", "=", employeeJob.managerId)
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
+            : null,
+          employeeJob.laborCategoryId
+            ? trx
+                .selectFrom("laborCategory")
+                .select("id")
+                .where("id", "=", employeeJob.laborCategoryId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
             : null
         ]);
       if (!employee) throw new Error("Employee not found");
@@ -721,6 +754,9 @@ export async function updateEmployeeJob(
       }
       if (employeeJob.managerId && !manager) {
         throw new Error("Manager not found");
+      }
+      if (employeeJob.laborCategoryId && !laborCategory) {
+        throw new Error("Labor category not found");
       }
 
       const updated = await trx
@@ -762,7 +798,6 @@ export async function updateEmployeeJob(
   }
 }
 
-/** @mcp upsert */
 export async function upsertDepartment(
   client: SupabaseClient<Database>,
   department:
@@ -786,7 +821,6 @@ export async function upsertDepartment(
   return client.from("department").insert(department).select("*").single();
 }
 
-/** @mcp upsert */
 export async function upsertHoliday(
   client: SupabaseClient<Database>,
   holiday:
@@ -807,7 +841,7 @@ export async function upsertHoliday(
   return client.from("holiday").update(sanitize(holiday)).eq("id", holiday.id);
 }
 
-/** @mcp upsert */
+/** Shifts are saved through `people_createShift` / `people_updateShift`. */
 export async function upsertShift(
   client: SupabaseClient<Database>,
   shift:
@@ -818,6 +852,7 @@ export async function upsertShift(
       })
     | (Omit<z.infer<typeof shiftValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -825,10 +860,19 @@ export async function upsertShift(
   if ("createdBy" in shift) {
     return client.from("shift").insert([shift]).select("*").single();
   }
-  return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
+  const { companyId, ...update } = shift;
+  // No row back means the shift is not this company's or the caller may not
+  // update it: RLS filters an UPDATE silently.
+  return client
+    .from("shift")
+    .update(sanitize(update))
+    .eq("id", shift.id)
+    .eq("companyId", companyId)
+    .select("id")
+    .maybeSingle();
 }
 
-/** @mcp action */
+/** Clocking in goes through `clockInPerson` / `clockInSelf`. */
 export async function clockIn(
   client: SupabaseClient<Database>,
   args: {
@@ -853,7 +897,7 @@ export async function clockIn(
   });
 }
 
-/** @mcp action */
+/** Clocking out goes through `clockOutPerson` / `clockOutSelf`. */
 export async function clockOut(
   client: SupabaseClient<Database>,
   args: {
@@ -868,21 +912,34 @@ export async function clockOut(
   if (!open.data) {
     return { data: null, error: { message: "Not currently clocked in" } };
   }
+  const at = args.clockOut ?? datetime.timestamp();
+  // The table refuses it too (timeCardEntry_clockOut_after_clockIn); say why.
+  if (
+    parseAbsolute(at, "UTC").compare(parseAbsolute(open.data.clockIn, "UTC")) <=
+    0
+  ) {
+    return {
+      data: null,
+      error: { message: "Clock out must be after you clocked in" }
+    };
+  }
 
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockOut: args.clockOut ?? new Date().toISOString(),
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .eq("id", open.data.id);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockOut: at,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", open.data.id)
+      .select("id")
+  );
 }
 
-/** @mcp create */
 export async function createTimeCardEntry(
   client: SupabaseClient<Database>,
   entry: {
@@ -901,15 +958,15 @@ export async function createTimeCardEntry(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteTimeCardEntry(
   client: SupabaseClient<Database>,
   entryId: string
 ) {
-  return client.from("timeCardEntry").delete().eq("id", entryId);
+  return requireAffected(
+    client.from("timeCardEntry").delete().eq("id", entryId).select("id")
+  );
 }
 
-/** @mcp read */
 export async function getClockedInEmployees(
   client: SupabaseClient<Database>,
   companyId: string
@@ -922,7 +979,6 @@ export async function getClockedInEmployees(
     .order("clockIn", { ascending: true });
 }
 
-/** @mcp read */
 export async function getOpenClockEntry(
   client: SupabaseClient<Database>,
   employeeId: string,
@@ -937,33 +993,29 @@ export async function getOpenClockEntry(
     .maybeSingle();
 }
 
-/** @mcp read */
-export async function getRecentTimecards(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("timeCardEntries")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("clockIn", { ascending: false })
-    .limit(100);
-}
-
-/** @mcp read */
 export async function getScheduledEmployeesToday(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  const { data } = await client
-    .from("employeeJob")
-    .select(
-      "id, shiftId, shift:shift(id, name, startTime, endTime, sunday, monday, tuesday, wednesday, thursday, friday, saturday)"
-    )
-    .eq("companyId", companyId)
-    .not("shiftId", "is", null);
+  // Deactivation keeps the employeeJob row (and its shift), so the roster is
+  // narrowed to active employees. employeeJob has no FK to employee to embed.
+  const [{ data }, { data: activeEmployees }] = await Promise.all([
+    client
+      .from("employeeJob")
+      .select(
+        "id, shiftId, shift:shift(id, name, startTime, endTime, sunday, monday, tuesday, wednesday, thursday, friday, saturday)"
+      )
+      .eq("companyId", companyId)
+      .not("shiftId", "is", null),
+    client
+      .from("employee")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("active", true)
+  ]);
 
-  if (!data) return [];
+  if (!data || !activeEmployees) return [];
+  const activeIds = new Set(activeEmployees.map((e) => e.id));
 
   const dayNames = [
     "sunday",
@@ -981,11 +1033,10 @@ export async function getScheduledEmployeesToday(
 
   return data.filter((ej) => {
     const shift = ej.shift as Record<string, unknown> | null;
-    return shift && shift[dayName] === true;
+    return activeIds.has(ej.id) && shift && shift[dayName] === true;
   });
 }
 
-/** @mcp read */
 export async function getTimeCardEntry(
   client: SupabaseClient<Database>,
   entryId: string
@@ -993,7 +1044,6 @@ export async function getTimeCardEntry(
   return client.from("timeCardEntry").select("*").eq("id", entryId).single();
 }
 
-/** @mcp read */
 export async function getTimeCardEntries(
   client: SupabaseClient<Database>,
   args: {
@@ -1020,7 +1070,10 @@ export async function getTimeCardEntries(
   return query;
 }
 
-/** @mcp read */
+export const TIMECARD_ENTRIES_PAGING: Paging = {
+  defaultSorts: [{ column: "clockIn", ascending: false }]
+};
+
 export async function getTimecardEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1028,23 +1081,42 @@ export async function getTimecardEntries(
 ) {
   let query = client
     .from("timeCardEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["firstName", "lastName"], args.search));
   }
 
+  query = setGenericQueryFilters(query, args, TIMECARD_ENTRIES_PAGING);
+
+  return query;
+}
+
+/**
+ * Lists the imported payroll totals: one row per employee and pay period,
+ * newest period first.
+ */
+export async function getPayrollPeriodTotals(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters
+) {
+  let query = client
+    .from("payrollPeriodTotal")
+    .select(
+      "id, employeeId, periodStart, periodEnd, grossWages, hoursPaid, importedAt",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId);
+
   query = setGenericQueryFilters(query, args, [
-    { column: "clockIn", ascending: false }
+    { column: "periodEnd", ascending: false }
   ]);
 
   return query;
 }
 
-/** @mcp read */
 export async function getWeeklyHoursForEmployees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1074,7 +1146,6 @@ export async function getWeeklyHoursForEmployees(
   return weeklyMs;
 }
 
-/** @mcp update */
 export async function updateTimeCardEntry(
   client: SupabaseClient<Database>,
   args: {
@@ -1085,16 +1156,32 @@ export async function updateTimeCardEntry(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockIn: args.clockIn,
-        clockOut: args.clockOut,
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .eq("id", args.entryId);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockIn: args.clockIn,
+          clockOut: args.clockOut,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .eq("id", args.entryId)
+      .select("id")
+  );
+}
+/**
+ * A time card helper's refusal ("Already clocked in") carries no database
+ * code; a database error does.
+ */
+export function timeCardError(
+  ctx: ServiceContext,
+  error: { message: string; code?: string },
+  message: string
+) {
+  return "code" in error
+    ? ctx.error("internal", message, error)
+    : ctx.error("rule", error.message);
 }

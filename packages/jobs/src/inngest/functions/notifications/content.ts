@@ -11,13 +11,22 @@ import {
   WeeklyReminderEmail
 } from "@carbon/documents/email";
 import { ERP_URL } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import {
   type NotificationDetail,
-  NotificationEvent
+  NotificationEvent,
+  type RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
 
+const logger = getLogger("jobs", "notify");
+
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
+/** The approvable document of an Approval* event, or what a Recurring
+ *  invoicing notification lists. */
+type NotificationDocumentType =
+  | ApprovalDocumentType
+  | RecurringInvoicingDocumentType;
 
 // The ERP's /api/link route resolves event + documentId to the right page
 // (switching the user's active company first) — route shapes never leak here.
@@ -25,7 +34,7 @@ export function buildNotificationLink(
   event: NotificationEvent,
   documentId: string,
   companyId: string,
-  documentType?: ApprovalDocumentType
+  documentType?: NotificationDocumentType
 ): string {
   const params = new URLSearchParams({ event, documentId, companyId });
   if (documentType) params.set("documentType", documentType);
@@ -122,7 +131,7 @@ export function buildDetails(
 type EventContentOptions = {
   companyId: string;
   // Which approvable document an Approval* event is about.
-  documentType?: ApprovalDocumentType;
+  documentType?: NotificationDocumentType;
   documentIds?: string[];
   userId?: string;
   // Workflow-authored text, carried on the payload instead of read from a document.
@@ -175,7 +184,7 @@ async function buildEventContent(
         .single();
 
       if (salesRfq.error) {
-        console.error("Failed to get salesRfq", salesRfq.error);
+        logger.error("Failed to get salesRfq", { error: salesRfq.error });
         throw documentLookupError(salesRfq.error);
       }
 
@@ -216,7 +225,7 @@ async function buildEventContent(
         .eq("companyId", opts.companyId)
         .single();
       if (quote.error) {
-        console.error("Failed to get quote", quote.error);
+        logger.error("Failed to get quote", { error: quote.error });
         throw documentLookupError(quote.error);
       }
       return {
@@ -242,7 +251,7 @@ async function buildEventContent(
         .eq("companyId", opts.companyId)
         .single();
       if (expiredQuote.error) {
-        console.error("Failed to get quote", expiredQuote.error);
+        logger.error("Failed to get quote", { error: expiredQuote.error });
         throw documentLookupError(expiredQuote.error);
       }
       return {
@@ -271,7 +280,7 @@ async function buildEventContent(
         .single();
 
       if (salesOrder.error) {
-        console.error("Failed to get salesOrder", salesOrder.error);
+        logger.error("Failed to get salesOrder", { error: salesOrder.error });
         throw documentLookupError(salesOrder.error);
       }
 
@@ -302,10 +311,9 @@ async function buildEventContent(
         .single();
 
       if (maintenanceDispatchCreated.error) {
-        console.error(
-          "Failed to get maintenanceDispatchCreated",
-          maintenanceDispatchCreated.error
-        );
+        logger.error("Failed to get maintenanceDispatchCreated", {
+          error: maintenanceDispatchCreated.error
+        });
         throw documentLookupError(maintenanceDispatchCreated.error);
       }
 
@@ -340,10 +348,9 @@ async function buildEventContent(
         .single();
 
       if (maintenanceDispatch.error) {
-        console.error(
-          "Failed to get maintenanceDispatch",
-          maintenanceDispatch.error
-        );
+        logger.error("Failed to get maintenanceDispatch", {
+          error: maintenanceDispatch.error
+        });
         throw documentLookupError(maintenanceDispatch.error);
       }
 
@@ -371,7 +378,9 @@ async function buildEventContent(
         .single();
 
       if (nonConformance.error) {
-        console.error("Failed to get nonConformance", nonConformance.error);
+        logger.error("Failed to get nonConformance", {
+          error: nonConformance.error
+        });
         throw documentLookupError(nonConformance.error);
       }
 
@@ -393,13 +402,15 @@ async function buildEventContent(
     case NotificationEvent.JobAssignment: {
       const job = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
 
       if (job.error) {
-        console.error("Failed to get job", job.error);
+        logger.error("Failed to get job", { error: job.error });
         throw documentLookupError(job.error);
       }
 
@@ -421,13 +432,15 @@ async function buildEventContent(
     case NotificationEvent.JobCompleted: {
       const completedJob = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
 
       if (completedJob.error) {
-        console.error("Failed to get job", completedJob.error);
+        logger.error("Failed to get job", { error: completedJob.error });
         throw documentLookupError(completedJob.error);
       }
 
@@ -461,7 +474,7 @@ async function buildEventContent(
         .in("id", ids)
         .eq("companyId", opts.companyId);
       if (jobs.error) {
-        console.error("Failed to get jobs", jobs.error);
+        logger.error("Failed to get jobs", { error: jobs.error });
         throw documentLookupError(jobs.error);
       }
       const rows = jobs.data ?? [];
@@ -494,7 +507,9 @@ async function buildEventContent(
         .single();
 
       if (jobOperation.error) {
-        console.error("Failed to get jobOperation", jobOperation.error);
+        logger.error("Failed to get jobOperation", {
+          error: jobOperation.error
+        });
         throw documentLookupError(jobOperation.error);
       }
 
@@ -534,7 +549,7 @@ async function buildEventContent(
         .single();
 
       if (procedure.error) {
-        console.error("Failed to get procedure", procedure.error);
+        logger.error("Failed to get procedure", { error: procedure.error });
         throw documentLookupError(procedure.error);
       }
 
@@ -564,7 +579,9 @@ async function buildEventContent(
         .single();
 
       if (digitalQuote.error) {
-        console.error("Failed to get digital quote", digitalQuote.error);
+        logger.error("Failed to get digital quote", {
+          error: digitalQuote.error
+        });
         throw documentLookupError(digitalQuote.error);
       }
 
@@ -629,7 +646,7 @@ async function buildEventContent(
         .single();
 
       if (gauge.error) {
-        console.error("Failed to get gauge", gauge.error);
+        logger.error("Failed to get gauge", { error: gauge.error });
         throw documentLookupError(gauge.error);
       }
 
@@ -677,7 +694,9 @@ async function buildEventContent(
           .single();
 
         if (salesInvoice.error) {
-          console.error("Failed to get salesInvoice", salesInvoice.error);
+          logger.error("Failed to get salesInvoice", {
+            error: salesInvoice.error
+          });
           throw documentLookupError(salesInvoice.error);
         }
 
@@ -700,7 +719,7 @@ async function buildEventContent(
           .single();
 
         if (salesOrder.error) {
-          console.error("Failed to get salesOrder", salesOrder.error);
+          logger.error("Failed to get salesOrder", { error: salesOrder.error });
           throw documentLookupError(salesOrder.error);
         }
 
@@ -722,7 +741,7 @@ async function buildEventContent(
         .single();
 
       if (quote.error) {
-        console.error("Failed to get quote", quote.error);
+        logger.error("Failed to get quote", { error: quote.error });
         throw documentLookupError(quote.error);
       }
 
@@ -745,7 +764,9 @@ async function buildEventContent(
         .single();
 
       if (stockTransfer.error) {
-        console.error("Failed to get stockTransfer", stockTransfer.error);
+        logger.error("Failed to get stockTransfer", {
+          error: stockTransfer.error
+        });
         throw documentLookupError(stockTransfer.error);
       }
 
@@ -780,7 +801,7 @@ async function buildEventContent(
         .single();
 
       if (pickingList.error) {
-        console.error("Failed to get pickingList", pickingList.error);
+        logger.error("Failed to get pickingList", { error: pickingList.error });
         throw documentLookupError(pickingList.error);
       }
 
@@ -804,10 +825,9 @@ async function buildEventContent(
         .single();
 
       if (trainingAssignment.error) {
-        console.error(
-          "Failed to get trainingAssignment",
-          trainingAssignment.error
-        );
+        logger.error("Failed to get trainingAssignment", {
+          error: trainingAssignment.error
+        });
         throw documentLookupError(trainingAssignment.error);
       }
 
@@ -843,7 +863,9 @@ async function buildEventContent(
         .eq("companyId", opts.companyId);
 
       if (assignments.error) {
-        console.error("Failed to get trainingAssignments", assignments.error);
+        logger.error("Failed to get trainingAssignments", {
+          error: assignments.error
+        });
         throw documentLookupError(assignments.error);
       }
       const rows = assignments.data ?? [];
@@ -865,10 +887,9 @@ async function buildEventContent(
           rpcArgs
         );
         if (status.error) {
-          console.error(
-            "Failed to get training assignment status",
-            status.error
-          );
+          logger.error("Failed to get training assignment status", {
+            error: status.error
+          });
         } else {
           for (const row of status.data ?? []) {
             if (row.employeeId !== opts.userId) continue;
@@ -938,7 +959,7 @@ async function buildEventContent(
         .single();
 
       if (training.error) {
-        console.error("Failed to get training", training.error);
+        logger.error("Failed to get training", { error: training.error });
         throw documentLookupError(training.error);
       }
 
@@ -970,7 +991,9 @@ async function buildEventContent(
         .single();
 
       if (purchaseOrder.error) {
-        console.error("Failed to get purchaseOrder", purchaseOrder.error);
+        logger.error("Failed to get purchaseOrder", {
+          error: purchaseOrder.error
+        });
         throw documentLookupError(purchaseOrder.error);
       }
 
@@ -1001,7 +1024,9 @@ async function buildEventContent(
         .single();
 
       if (purchaseInvoice.error) {
-        console.error("Failed to get purchaseInvoice", purchaseInvoice.error);
+        logger.error("Failed to get purchaseInvoice", {
+          error: purchaseInvoice.error
+        });
         throw documentLookupError(purchaseInvoice.error);
       }
 
@@ -1031,7 +1056,7 @@ async function buildEventContent(
         .single();
 
       if (suggestion.error) {
-        console.error("Failed to get suggestion", suggestion.error);
+        logger.error("Failed to get suggestion", { error: suggestion.error });
         throw documentLookupError(suggestion.error);
       }
 
@@ -1054,7 +1079,7 @@ async function buildEventContent(
         .single();
 
       if (risk.error) {
-        console.error("Failed to get risk", risk.error);
+        logger.error("Failed to get risk", { error: risk.error });
         throw documentLookupError(risk.error);
       }
 
@@ -1090,7 +1115,9 @@ async function buildEventContent(
         .single();
 
       if (purchasingRfq.error) {
-        console.error("Failed to get purchasing RFQ", purchasingRfq.error);
+        logger.error("Failed to get purchasing RFQ", {
+          error: purchasingRfq.error
+        });
         throw documentLookupError(purchasingRfq.error);
       }
 
@@ -1120,10 +1147,9 @@ async function buildEventContent(
         .single();
 
       if (supplierQuoteAssignment.error) {
-        console.error(
-          "Failed to get supplier quote",
-          supplierQuoteAssignment.error
-        );
+        logger.error("Failed to get supplier quote", {
+          error: supplierQuoteAssignment.error
+        });
         throw documentLookupError(supplierQuoteAssignment.error);
       }
 
@@ -1155,7 +1181,9 @@ async function buildEventContent(
         .single();
 
       if (supplierQuote.error) {
-        console.error("Failed to get supplier quote", supplierQuote.error);
+        logger.error("Failed to get supplier quote", {
+          error: supplierQuote.error
+        });
         throw documentLookupError(supplierQuote.error);
       }
 
@@ -1211,9 +1239,9 @@ async function buildEventContent(
           .single();
 
         if (po.error || !po.data) {
-          console.error(
+          logger.error(
             "Failed to retrieve purchase order for approval notification",
-            po.error
+            { error: po.error }
           );
           return {
             description: `Purchase order ${poPhrase}`,
@@ -1241,9 +1269,9 @@ async function buildEventContent(
           .single();
 
         if (qd.error || !qd.data) {
-          console.error(
+          logger.error(
             "Failed to retrieve quality document for approval notification",
-            qd.error
+            { error: qd.error }
           );
           return {
             description: `Quality document ${docPhrase}`,
@@ -1261,6 +1289,165 @@ async function buildEventContent(
               value: qd.data.version != null ? `v${qd.data.version}` : null
             },
             { label: "Status", value: qd.data.status }
+          ])
+        };
+      }
+
+      if (opts.documentType === "documentForceDelete") {
+        // The document id is "<documentType>:<documentId>:<requestId>": the
+        // request outlives the document, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("forceDeleteRequest")
+          .select("documentType, documentReadableId, documentStatus, reason")
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A force delete requires your approval"
+            : `Your force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          logger.error(
+            "Failed to retrieve force delete request for approval notification",
+            { error: request.error }
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const label = {
+          purchaseInvoice: "purchase invoice",
+          salesInvoice: "sales invoice",
+          receipt: "receipt",
+          payment: "payment"
+        }[request.data.documentType];
+        const readableId = request.data.documentReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of ${label} ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of ${label} ${readableId} was approved: it was deleted`
+                : `Force delete of ${label} ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            {
+              label: "Status when requested",
+              value: request.data.documentStatus
+            }
+          ])
+        };
+      }
+
+      if (opts.documentType === "purchaseOrderForceDelete") {
+        // The document id is "<purchaseOrderId>:<requestId>": the request
+        // outlives the order, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("purchaseOrderForceDeleteRequest")
+          .select(
+            "purchaseOrderId, purchaseOrderReadableId, purchaseOrderStatus, reason"
+          )
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A purchase order force delete requires your approval"
+            : `Your purchase order force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          logger.error(
+            "Failed to retrieve force delete request for approval notification",
+            { error: request.error }
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const order = request.data.purchaseOrderId
+          ? await client
+              .from("purchaseOrder")
+              .select("supplier(name)")
+              .eq("id", request.data.purchaseOrderId)
+              .eq("companyId", opts.companyId)
+              .maybeSingle()
+          : null;
+        const readableId = request.data.purchaseOrderReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of purchase order ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of purchase order ${readableId} was approved: the order was deleted`
+                : `Force delete of purchase order ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            { label: "Supplier", value: order?.data?.supplier?.name },
+            {
+              label: "Status when requested",
+              value: request.data.purchaseOrderStatus
+            }
+          ])
+        };
+      }
+
+      if (opts.documentType === "projectChangeRequest") {
+        // The document id is "<projectId>:<changeRequestId>", so the link can
+        // open the page; a bare change request id reads too.
+        const changeRequestId = documentId.split(":").pop() ?? documentId;
+        const cr = await client
+          .from("projectChangeRequest")
+          .select("readableId, title, status")
+          .eq("id", changeRequestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (cr.error || !cr.data) {
+          logger.error(
+            "Failed to retrieve change request for approval notification",
+            { error: cr.error }
+          );
+          return {
+            description: `Project change request ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `${cr.data.readableId}: ${cr.data.title} ${docPhrase}`,
+          reference: cr.data.readableId,
+          details: buildDetails([{ label: "Status", value: cr.data.status }])
+        };
+      }
+
+      if (opts.documentType === "changeOrder") {
+        const co = await client
+          .from("changeOrder")
+          .select("changeOrderId, name, status")
+          .eq("id", documentId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (co.error || !co.data) {
+          logger.error(
+            "Failed to retrieve change notice for approval notification",
+            { error: co.error }
+          );
+          return {
+            description: `Change notice ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `Change notice ${co.data.changeOrderId} ${docPhrase}`,
+          reference: co.data.changeOrderId ?? undefined,
+          details: buildDetails([
+            { label: "Name", value: co.data.name },
+            { label: "Status", value: co.data.status }
           ])
         };
       }
@@ -1290,7 +1477,7 @@ async function buildEventContent(
         .eq("companyId", companyId)
         .maybeSingle();
       if (rowLookup.error) {
-        console.error("Failed to get changeOrder", rowLookup.error);
+        logger.error("Failed to get changeOrder", { error: rowLookup.error });
         throw documentLookupError(rowLookup.error);
       }
 
@@ -1303,7 +1490,9 @@ async function buildEventContent(
           .eq("companyId", companyId)
           .maybeSingle();
         if (readableIdLookup.error) {
-          console.error("Failed to get changeOrder", readableIdLookup.error);
+          logger.error("Failed to get changeOrder", {
+            error: readableIdLookup.error
+          });
           throw documentLookupError(readableIdLookup.error);
         }
         changeNoticeData = readableIdLookup.data;
@@ -1326,7 +1515,9 @@ async function buildEventContent(
           .eq("id", changeNoticeData.assignee)
           .maybeSingle();
         if (assignee.error) {
-          console.error("Failed to get change notice assignee", assignee.error);
+          logger.error("Failed to get change notice assignee", {
+            error: assignee.error
+          });
         }
         assigneeName = assignee.data?.fullName ?? null;
       }
@@ -1359,6 +1550,94 @@ async function buildEventContent(
       return {
         description: opts?.title ?? "Accounting sync needs attention",
         details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like IntegrationSync: the table-export job writes the
+    // outcome as `title` and the row count as `body`; documentId is the export
+    // id, not a record, so there is nothing to look up.
+    case NotificationEvent.TableExport: {
+      return {
+        description: opts?.title ?? "Your export is ready",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like TableExport: the bulk-action job writes the outcome
+    // and the counts as `title`; documentId is the run id, not a record.
+    case NotificationEvent.TableBulkAction: {
+      return {
+        description: opts?.title ?? "Your bulk action is done",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // The recurring-billing job says which date is coming up in `body`
+    // ("notice must be given by Jun 30, 2027"); the lease names the rest.
+    case NotificationEvent.LeaseCriticalDate: {
+      const lease = await client
+        .from("lease")
+        .select("leaseId, name, noticeDate, endDate, supplier(name)")
+        .eq("id", documentId)
+        .eq("companyId", opts.companyId)
+        .single();
+      if (lease.error) {
+        logger.error("Failed to get lease", { error: lease.error });
+        throw documentLookupError(lease.error);
+      }
+      return {
+        description: opts?.body
+          ? `Lease ${lease.data.leaseId}: ${opts.body}`
+          : `Lease ${lease.data.leaseId} has a date coming up`,
+        reference: lease.data.leaseId ?? undefined,
+        details: buildDetails([
+          { label: "Lease", value: lease.data.name },
+          { label: "Supplier", value: lease.data.supplier?.name },
+          {
+            label: "Notice by",
+            value: formatDetailDate(lease.data.noticeDate)
+          },
+          { label: "Ends", value: formatDetailDate(lease.data.endDate) }
+        ])
+      };
+    }
+
+    // Payload-carried digest: the recurring-billing job sends the counts as
+    // `body`; documentIds are the invoices it touched, but nothing is read.
+    case NotificationEvent.RecurringInvoicing: {
+      return {
+        description: opts?.body
+          ? `Recurring invoicing: ${opts.body}`
+          : "Recurring invoicing",
+        details: []
+      };
+    }
+
+    // Payload-carried: the recurring-billing job sends the notice as `title`
+    // and the funding figures as `body`; documentId is the contract.
+    case NotificationEvent.ContractFundingThreshold: {
+      return {
+        description: opts?.title ?? "Contract funding notice",
+        details: opts?.body ? [{ label: "Funding", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried: the daily missing-time check sends the text as `body`;
+    // documentId is the missed date, so there is nothing to read.
+    case NotificationEvent.TimesheetMissing: {
+      return {
+        description: opts?.body ?? "No time entered",
+        details: []
+      };
+    }
+
+    // Payload-carried: the timesheet budget check sends "Budget exceeded on
+    // <project>" as `title` and the overruns as `body`; documentId is the
+    // project.
+    case NotificationEvent.ProjectBudgetExceeded: {
+      return {
+        description: opts?.title ?? "Budget exceeded",
+        details: opts?.body ? [{ label: "Overrun", value: opts.body }] : []
       };
     }
 

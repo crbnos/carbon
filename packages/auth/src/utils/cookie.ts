@@ -2,6 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { AUTH_COOKIE_SUFFIX } from "../config/env";
+
+/**
+ * Auth cookies are set on DOMAIN so the ERP and MES share them. US and EU both
+ * use carbon.ms, so EU suffixes its names: with the same name, each region
+ * overwrote the other's cookie and failed its signature, signing the user out.
+ */
+export function authCookieName(name: string, suffix = AUTH_COOKIE_SUFFIX) {
+  return suffix ? `${name}-${suffix}` : name;
+}
+
 export function getCookieDomain(
   domain: string | null | undefined
 ): string | undefined {

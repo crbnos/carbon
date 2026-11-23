@@ -2,53 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { datetime, redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { createInventoryReconciliationJournal } from "~/modules/inventory";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
 import { path } from "~/utils/path";
+
+const reconcileForm = z.object({ asOfDate: z.string().min(1) });
 
 // Tie-out Reconcile action: drafts an adjusting journal that brings the GL
 // inventory accounts to the subledger valuation. The journal is Draft — the
 // accountant reviews and posts it from the Journals screen.
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(reconcileForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.createInventoryReconciliationJournal(
+    input.data
+  );
+  // An error is toasted on the workbench.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(path.to.accountingJournals, {
+    message: "Draft reconciliation journal created — review and post it"
   });
-
-  const formData = await request.formData();
-  const asOfDate =
-    (formData.get("asOfDate") as string | null) ||
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-
-  const result = await createInventoryReconciliationJournal(
-    client,
-    getDatabaseClient(),
-    companyId,
-    { asOfDate, userId }
-  );
-
-  if (result.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(result.error, "Failed to create reconciliation journal")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.accountingJournals,
-    await flash(
-      request,
-      success("Draft reconciliation journal created — review and post it")
-    )
-  );
 }

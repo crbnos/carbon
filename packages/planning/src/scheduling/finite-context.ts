@@ -16,7 +16,8 @@ import {
   buildPeopleBudgets,
   buildPeopleByWorkCenter,
   extendWindowsByOvertime,
-  subtractAbsences
+  subtractAbsences,
+  withHolidays
 } from "./people-utils.ts";
 import type { ResourceCapacityData } from "./slot-allocator.ts";
 import type { JobOperationDependency, ScheduledOperation } from "./types.ts";
@@ -146,13 +147,15 @@ export async function buildFiniteContext(args: {
     processRequirements,
     peopleRows,
     absenceRows,
-    operationsWithEvents
+    operationsWithEvents,
+    holidayDates
   ] = await Promise.all([
     provider.getLiveReservations(now, excludeJobIds),
     provider.getProcessRequirements(processIds),
     provider.getPeopleAssignments(rangeStart, rangeEnd, timeZone),
     provider.getPeopleAbsences(rangeStart, rangeEnd, timeZone),
-    provider.getOperationsWithEvents(operationIds)
+    provider.getOperationsWithEvents(operationIds),
+    provider.getHolidayDates(rangeStart, rangeEnd)
   ]);
 
   const abilityIds = Array.from(
@@ -246,7 +249,11 @@ export async function buildFiniteContext(args: {
 
   // Absences subtract the person's availability on those dates everywhere —
   // people-preferred and qualified-fallback paths alike
-  const absentByEmployee = buildAbsencesByEmployee(absenceRows);
+  const absentByEmployee = withHolidays(
+    buildAbsencesByEmployee(absenceRows),
+    employeeIds,
+    holidayDates
+  );
   for (const [employeeId, absentDates] of absentByEmployee) {
     const windows = windowsByEmployee.get(employeeId);
     if (windows) {

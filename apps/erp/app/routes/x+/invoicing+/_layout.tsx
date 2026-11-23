@@ -3,25 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+
 import { GroupedContentSidebar } from "~/components/Layout";
 import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Invoicing" }];
-};
+export const meta = moduleMeta("Invoicing");
 
 function InvoicingSidebar() {
   const { groups } = useInvoicingSubmodules();
@@ -35,9 +29,6 @@ export const handle: Handle = {
   sidebar: InvoicingSidebar
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
-
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
     view: "invoicing"
@@ -49,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function InvoicingRoute() {
   return (
     <VStack spacing={0} className="h-full">
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -3,25 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { CommandEmpty } from "cmdk";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useMemo, useRef, useState } from "react";
-import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
-import { LuCirclePlus, LuSettings2 } from "react-icons/lu";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandTrigger
-} from "./Command";
+import { forwardRef, useMemo, useState } from "react";
+import { CommandTrigger } from "./Command";
+import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
-import { IconButton } from "./IconButton";
+import { InlineTrigger } from "./InlineTrigger";
+import type { PickerListOption } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { optionLabelText } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type CreatableMultiSelectProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -30,9 +24,11 @@ export type CreatableMultiSelectProps = Omit<
   size?: "sm" | "md" | "lg";
   value: string[];
   options: {
-    label: string;
+    label: string | JSX.Element;
     value: string;
     helper?: string;
+    /** Extra search text, matched but never rendered. */
+    keywords?: string;
   }[];
   selected?: string[];
   isReadOnly?: boolean;
@@ -45,10 +41,13 @@ export type CreatableMultiSelectProps = Omit<
   showCreateOptionOnEmpty?: boolean;
   inline?: (
     value: string[],
-    options: { value: string; label: string; helper?: string }[],
+    options: { value: string; label: string | JSX.Element; helper?: string }[],
     maxPreview?: number
   ) => React.ReactNode;
+  /** Inline mode: shown before the empty field's placeholder. */
   inlineIcon?: React.ReactElement;
+  /** Inline mode: what the empty field reads, "Add labels". */
+  inlinePlaceholder?: ReactNode;
   onChange: (selected: string[]) => void;
   onCreateOption?: (inputValue: string) => void;
 };
@@ -75,6 +74,7 @@ const CreatableMultiSelect = forwardRef<
       showCreateOptionOnEmpty = true,
       inline,
       inlineIcon,
+      inlinePlaceholder,
       onChange,
       onCreateOption,
       ...props
@@ -87,20 +87,23 @@ const CreatableMultiSelect = forwardRef<
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
-
-    const id = useId();
+    const openAutoFocus = usePhoneOpenAutoFocus();
 
     const hasSelections = value.length > 0;
+    const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
-      .map((item) => options.find((option) => option.value === item)?.label)
-      .filter((label): label is string => Boolean(label));
+      .map((item) => options.find((option) => option.value === item))
+      .filter((option) => option !== undefined)
+      .map(optionLabelText)
+      .filter(Boolean);
     const selectedLabelText = selectedLabels.join(", ");
     // Real-text sizer instead of a ch estimate — see Combobox.tsx.
     const longestOptionText = useMemo(() => {
       return options.reduce((longest, option) => {
-        const combined = [option.label, option.helper]
+        const combined = [optionLabelText(option), option.helper]
           .filter(Boolean)
           .join(" ");
 
@@ -113,47 +116,36 @@ const CreatableMultiSelect = forwardRef<
         className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
         spacing={1}
       >
-        {isInlinePreview && Array.isArray(value) && value.length > 0 && (
-          <span
-            className={cn(
-              "flex flex-grow line-clamp-1 items-center cursor-pointer",
-              isReadOnly && "cursor-default opacity-50"
-            )}
-            onClick={isReadOnly ? undefined : () => setOpen(true)}
-          >
-            {inline(value, options, maxPreview)}
-          </span>
-        )}
-
         <Popover
           open={open}
           onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
         >
           <PopoverTrigger asChild>
             {inline ? (
-              <IconButton
-                size={size ?? "sm"}
-                variant="secondary"
-                aria-label={hasSelections ? "Edit" : "Add"}
-                icon={
-                  inlineIcon ? (
-                    inlineIcon
-                  ) : hasSelections ? (
-                    <LuSettings2 />
-                  ) : (
-                    <LuCirclePlus />
-                  )
+              <InlineTrigger
+                // The field and its values: "Edit Tags: Urgent, Export".
+                aria-label={
+                  hasSelections && selectedLabelText
+                    ? `${inlineTriggerLabel}: ${selectedLabelText}`
+                    : inlineTriggerLabel
                 }
                 ref={ref}
+                isEmpty={!hasSelections}
+                placeholder={
+                  <span className="flex items-center gap-2">
+                    {inlineIcon}
+                    {inlinePlaceholder ?? t`Add`}
+                  </span>
+                }
                 isDisabled={isReadOnly}
                 onClick={() => {
                   if (!isReadOnly) setOpen(true);
                 }}
-              />
+              >
+                {hasSelections ? inline(value, options, maxPreview) : null}
+              </InlineTrigger>
             ) : (
               <CommandTrigger
-                aria-controls={id}
-                aria-expanded={open}
                 role="combobox"
                 size={size}
                 className={cn("min-w-[160px]", className)}
@@ -179,9 +171,11 @@ const CreatableMultiSelect = forwardRef<
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
+            onOpenAutoFocus={openAutoFocus}
             className="w-auto min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
             {/* Zero-height sizer: the widest option, so the auto width fits it
@@ -195,18 +189,33 @@ const CreatableMultiSelect = forwardRef<
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
-              <VirtualizedCommand
+              <PickerList
+                label={pickerLabel}
                 options={options}
-                selected={value}
-                onChange={onChange}
-                onCreateOption={onCreateOption}
+                filter={filterCreatableMultiSelectOptions}
+                selectionMode="multiple"
                 itemHeight={itemHeight}
-                setOpen={setOpen}
-                label={label}
-                createLabel={createLabel}
                 search={search}
-                setSearch={setSearch}
+                onSearchChange={setSearch}
+                creatable
+                createLabel={createLabel ?? label}
                 showCreateOptionOnEmpty={showCreateOptionOnEmpty}
+                getItemValue={getCreatableMultiSelectItemValue}
+                isChecked={(item) => value.includes(item.value)}
+                emptyMessage={t`No matches. Type to create one.`}
+                onSelect={(item, { isCreateOption }) => {
+                  if (isCreateOption) {
+                    onCreateOption?.(search);
+                    setSearch("");
+                  } else {
+                    onChange(
+                      value.includes(item.value)
+                        ? value.filter((current) => current !== item.value)
+                        : [...value, item.value]
+                    );
+                  }
+                  setOpen(true);
+                }}
               />
             )}
           </PopoverContent>
@@ -219,183 +228,22 @@ CreatableMultiSelect.displayName = "CreatableMultiSelect";
 
 export { CreatableMultiSelect };
 
-type VirtualizedCommandProps = {
-  options: CreatableMultiSelectProps["options"];
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  onCreateOption?: (inputValue: string) => void;
-  itemHeight: number;
-  setOpen: (open: boolean) => void;
-  label?: string;
-  createLabel?: string;
-  search: string;
-  setSearch: (search: string) => void;
-  showCreateOptionOnEmpty?: boolean;
-};
+const filterCreatableMultiSelectOptions = (
+  options: PickerListOption[],
+  search: string
+) =>
+  search
+    ? options.filter((option) => {
+        const value = [optionLabelText(option), option.helper, option.keywords]
+          .filter(Boolean)
+          .join(" ");
 
-function VirtualizedCommand({
-  options,
-  selected,
-  onChange,
-  onCreateOption,
-  itemHeight,
-  setOpen,
-  label,
-  createLabel,
-  search,
-  setSearch,
-  showCreateOptionOnEmpty = false
-}: VirtualizedCommandProps) {
-  const { t } = useLingui();
-  const parentRef = useRef<HTMLDivElement>(null);
+        return value.toLowerCase().includes(search.toLowerCase());
+      })
+    : options;
 
-  const filteredOptions = useMemo(() => {
-    const filtered = search
-      ? options.filter((option) => {
-          const value =
-            typeof option.label === "string"
-              ? `${option.label} ${option.helper}`
-              : reactNodeToString(option.label);
-
-          return value.toLowerCase().includes(search.toLowerCase());
-        })
-      : options;
-
-    const isExactMatch = options.some((option) =>
-      [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
-        search.toLowerCase()
-      )
-    );
-
-    const trimmedSearch = search.trim();
-    if (isExactMatch || (trimmedSearch === "" && !showCreateOptionOnEmpty)) {
-      return filtered;
-    }
-
-    return [
-      ...filtered,
-      {
-        label: t`New`,
-        value: "create"
-      }
-    ];
-  }, [options, search, showCreateOptionOnEmpty, t]);
-
-  const virtualizer = useVirtualizer({
-    count: filteredOptions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: 12
-  });
-
-  const items = virtualizer.getVirtualItems();
-
-  return (
-    <Command shouldFilter={false}>
-      <CommandInput
-        value={search}
-        onValueChange={setSearch}
-        placeholder={t`Search...`}
-        className="h-9"
-      />
-      <div
-        ref={parentRef}
-        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
-        style={{
-          height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
-        }}
-      >
-        <CommandEmpty>{t`No matches. Type to create one.`}</CommandEmpty>
-        <CommandGroup
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative"
-          }}
-        >
-          {items.map((virtualRow) => {
-            const item = filteredOptions[virtualRow.index]!;
-            const isSelected = selected.includes(item.value);
-            const isCreateOption = item.value === "create";
-            const itemHoverText = [item.label, item.helper]
-              .filter(Boolean)
-              .join(" - ");
-
-            return (
-              <CommandItem
-                key={item.value}
-                value={
-                  typeof item.label === "string"
-                    ? item.label.replace(/"/g, '\\"') +
-                      item.helper?.replace(/"/g, '\\"')
-                    : undefined
-                }
-                onSelect={() => {
-                  if (isCreateOption) {
-                    onCreateOption?.(search);
-                    setSearch("");
-                  } else {
-                    onChange(
-                      isSelected
-                        ? selected.filter((value) => value !== item.value)
-                        : [...selected, item.value]
-                    );
-                  }
-                  setOpen(true);
-                }}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${itemHeight}px`,
-                  transform: `translateY(${virtualRow.start}px)`
-                }}
-              >
-                <div className="flex justify-start items-center gap-1 px-2 min-w-0 flex-1">
-                  {isCreateOption ? (
-                    <>
-                      <LuCirclePlus className="mr-1.5 flex-shrink-0" />
-                      <span>{t`Create ${search.trim() === "" ? (createLabel ?? label) : search}`}</span>
-                    </>
-                  ) : (
-                    <>
-                      {isSelected ? (
-                        <FaSquareCheck className="mr-1.5 text-primary flex-shrink-0" />
-                      ) : (
-                        <FaRegSquare className="mr-1.5 text-muted-foreground flex-shrink-0" />
-                      )}
-                      {item.helper ? (
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <TruncatedTooltipText
-                            className="block w-full truncate"
-                            tooltip={itemHoverText}
-                          >
-                            {item.label}
-                          </TruncatedTooltipText>
-                          <TruncatedTooltipText
-                            className="text-xs text-muted-foreground truncate"
-                            tooltip={itemHoverText}
-                          >
-                            {item.helper}
-                          </TruncatedTooltipText>
-                        </div>
-                      ) : (
-                        <TruncatedTooltipText
-                          className="truncate flex-1"
-                          tooltip={itemHoverText}
-                        >
-                          {item.label}
-                        </TruncatedTooltipText>
-                      )}
-                    </>
-                  )}
-                </div>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-      </div>
-    </Command>
-  );
-}
+const getCreatableMultiSelectItemValue = (item: PickerListOption) =>
+  typeof item.label === "string"
+    ? item.label.replace(/"/g, '\\"') +
+      (item.helper?.replace(/"/g, '\\"') ?? "")
+    : undefined;

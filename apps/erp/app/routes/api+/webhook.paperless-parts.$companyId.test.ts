@@ -8,22 +8,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const SECRET = "00112233445566778899aabbccddeeff";
 const TIMESTAMP = 1_726_070_400;
 
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({})
-}));
-vi.mock("@carbon/ee", () => ({
+// The installed integration row getIntegration reads; its secrets come from the vault stub.
+const integrationRow = { metadata: {}, secretRef: "secret-ref" };
+vi.mock("@carbon/auth/client.server", () => {
+  const query = {
+    select: () => query,
+    eq: () => query,
+    maybeSingle: async () => ({ data: integrationRow, error: null })
+  };
+  return { getCarbonServiceRole: () => ({ from: () => query }) };
+});
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   resolveIntegrationSecrets: () => ({ apiKey: "api-key", secretKey: SECRET })
 }));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn(), warning: vi.fn() })
-}));
-vi.mock("~/modules/settings/settings.service", () => ({
-  getIntegration: () => ({
-    data: { metadata: {}, secretRef: "secret-ref" },
-    error: null
-  })
-}));
 
 import { trigger } from "@carbon/jobs";
 import { action } from "./webhook.paperless-parts.$companyId";

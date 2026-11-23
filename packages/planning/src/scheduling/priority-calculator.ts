@@ -21,6 +21,22 @@ const DEADLINE_PRIORITY: Record<string, number> = {
 };
 
 /**
+ * The date a job is promised for, or null. Only a Hard or Soft Deadline holds
+ * one: the job form hides the due date of an ASAP or No Deadline job, so a
+ * date left on one is a promise nobody can see. Need-by targets, lateness
+ * conflicts and newly-late notices all read this.
+ */
+export function committedDueDate(job: {
+  deadlineType?: DeadlineType | string | null;
+  dueDate?: string | null;
+}): string | null {
+  return job.deadlineType === "Hard Deadline" ||
+    job.deadlineType === "Soft Deadline"
+    ? (job.dueDate ?? null)
+    : null;
+}
+
+/**
  * Get deadline priority value (for sorting)
  */
 function getDeadlinePriority(

@@ -24,7 +24,7 @@ import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { usePermissions } from "~/hooks";
-import { supplierLocationValidator } from "~/modules/purchasing";
+import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 
 type SupplierLocationFormProps = {
@@ -45,7 +45,7 @@ const SupplierLocationForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -55,7 +55,7 @@ const SupplierLocationForm = ({
         `Failed to create supplier location: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type]);
+  }, [fetcher.data, fetcher.state, onClose, open, type]);
 
   const { t } = useLingui();
   const permissions = usePermissions();

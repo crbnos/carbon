@@ -192,7 +192,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 2 at AQL 1.0 / level II → code letter A, n = 2.
 const BARE_BOARD_PLAN = {
-  drawingNumber: "PCB-BARE-REV3 Fab Dwg Rev C",
+  name: "PCB-BARE-REV3 Fab Dwg Rev C",
   aql: 1.0,
   features: [
     {
@@ -220,7 +220,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:tank",
     receipt: "receipt:short",
     item: "TANK-TI-4L",
-    drawingNumber: "PT-4L-100 Rev C",
+    name: "PT-4L-100 Rev C",
     aql: 1.0,
     features: [
       {
@@ -325,6 +325,27 @@ export const INSPECTIONS: InspectionSpec[] = [
         ]
       }
     ]
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-BAT-2609"],
+    workCenter: "QC Bench",
+    assignee: "self",
+    notes:
+      "Cell-level capacity re-test of the held battery lot before teardown.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-BAT-2609"],
+    workCenter: "QC Bench",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
+    samples: []
   }
 ];
 
@@ -381,6 +402,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "gauge-blocks",
     gaugeType: "Gauge Block",
     description: "Grade K steel gauge block set, 81 pc — metrology lab master",
+    manufacturer: "Mitutoyo",
     modelNumber: "GBS-81K",
     serialNumber: "MB-22-0144",
     role: "Master",
@@ -408,6 +430,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "caliper",
     gaugeType: "Caliper - Outside",
     description: "150 mm digital caliper — new unit for the integration cell",
+    manufacturer: "Mitutoyo",
     modelNumber: "DC-150",
     serialNumber: "C24-88213",
     role: "Standard",
@@ -421,6 +444,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Micrometer - Outside",
     description:
       "0–25 mm outside micrometer — retired after failed calibration",
+    manufacturer: "Starrett",
     modelNumber: "OM-25",
     serialNumber: "M19-40522",
     role: "Standard",

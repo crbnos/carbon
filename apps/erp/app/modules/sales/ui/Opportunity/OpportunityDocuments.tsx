@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -13,9 +18,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   File,
   HStack,
@@ -27,13 +37,18 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
-import { useDndContext, useDraggable } from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type { ChangeEvent } from "react";
-import { useCallback } from "react";
+import type {
+  ChangeEvent,
+  KeyboardEventHandler,
+  PointerEventHandler
+} from "react";
+import { createContext, useCallback, useContext } from "react";
 import {
   LuEllipsisVertical,
   LuGripVertical,
@@ -45,13 +60,29 @@ import { Outlet, useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { Opportunity } from "../../types";
 import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag";
 
 const logger = getLogger("erp", "opportunitydocuments");
+
+/**
+ * Where a page's line list takes an opportunity file (the quote and sales
+ * RFQ explorers). Dragging a file there is the pointer path; the file's ⋯
+ * menu offers the same drops, so attaching a file never needs a drag.
+ */
+type DocumentDropTargets = {
+  /** The list itself: dropping here makes a new line from the file. */
+  listTargetId: string;
+  lines: { targetId: string; label: string }[];
+  onDrop: (document: FileObject & { path: string }, targetId: string) => void;
+};
+
+const DocumentDropTargetsContext = createContext<DocumentDropTargets | null>(
+  null
+);
+export const DocumentDropTargetsProvider = DocumentDropTargetsContext.Provider;
 
 type OpportunityDocumentsProps = {
   attachments: FileObject[];
@@ -68,6 +99,7 @@ const OpportunityDocuments = ({
   type,
   isReadOnly: isReadOnlyProp
 }: OpportunityDocumentsProps) => {
+  const { t } = useLingui();
   const { canDelete, download, deleteAttachment, getPath, upload } =
     useOpportunityDocuments({
       opportunityId: opportunity.id,
@@ -75,6 +107,7 @@ const OpportunityDocuments = ({
       type
     });
   const effectiveCanDelete = isReadOnlyProp ? false : canDelete;
+  const dropTargets = useContext(DocumentDropTargetsContext);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -108,7 +141,7 @@ const OpportunityDocuments = ({
               <Trans>Files</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>
+          <CardAction className="max-md:hidden">
             {!isReadOnlyProp && (
               <OpportunityDocumentForm
                 opportunityId={opportunity.id}
@@ -120,7 +153,11 @@ const OpportunityDocuments = ({
         </HStack>
         <CardContent>
           <Table>
-            <Thead>
+            <Thead
+              className={cn(
+                attachmentsToRender.length === 0 && "max-md:hidden"
+              )}
+            >
               <Tr>
                 <Th>
                   <Trans>Name</Trans>
@@ -140,6 +177,7 @@ const OpportunityDocuments = ({
                   <Tr key={attachment.id}>
                     <DraggableCell
                       attachment={attachment}
+                      canDrag={!!dropTargets}
                       opportunity={opportunity}
                       download={download}
                       getPath={getPath}
@@ -164,7 +202,7 @@ const OpportunityDocuments = ({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <IconButton
-                              aria-label="More"
+                              aria-label={t`More`}
                               icon={<LuEllipsisVertical />}
                               variant="secondary"
                             />
@@ -176,6 +214,50 @@ const OpportunityDocuments = ({
                             >
                               <Trans>Download</Trans>
                             </DropdownMenuItem>
+                            {dropTargets && !isReadOnlyProp && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    dropTargets.onDrop(
+                                      {
+                                        ...attachment,
+                                        path: getPath(attachment)
+                                      },
+                                      dropTargets.listTargetId
+                                    )
+                                  }
+                                >
+                                  <Trans>Create line from file</Trans>
+                                </DropdownMenuItem>
+                                {dropTargets.lines.length > 0 && (
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <Trans>Attach to line</Trans>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      {dropTargets.lines.map((line) => (
+                                        <DropdownMenuItem
+                                          key={line.targetId}
+                                          onClick={() =>
+                                            dropTargets.onDrop(
+                                              {
+                                                ...attachment,
+                                                path: getPath(attachment)
+                                              },
+                                              line.targetId
+                                            )
+                                          }
+                                        >
+                                          {line.label}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                )}
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem
                               destructive
                               disabled={!effectiveCanDelete}
@@ -212,18 +294,23 @@ const OpportunityDocuments = ({
 
 const DraggableCell = ({
   attachment,
+  canDrag,
   opportunity,
   download,
   getPath
 }: {
   attachment: FileObject;
+  /** The page offers drop targets the user may drop on. */
+  canDrag: boolean;
   opportunity: Opportunity;
   download: (attachment: FileObject) => void;
   getPath: (attachment: FileObject) => string;
 }) => {
-  const context = useDndContext();
+  const { t } = useLingui();
+  const fileName = attachment.name;
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: attachment.id ?? attachment.name,
+    disabled: !canDrag,
     data: {
       id: attachment.id,
       name: attachment.name,
@@ -244,25 +331,50 @@ const DraggableCell = ({
     getDocumentType(attachment.name)
   );
 
+  const openFile = () => {
+    if (isPreviewable) {
+      window.open(
+        path.to.file.previewFile(`private/${getPath(attachment)}`),
+        "_blank"
+      );
+    } else {
+      download(attachment);
+    }
+  };
   return (
-    <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    // The pointer drags from anywhere in the cell; the keyboard drags from
+    // the grip, which is the one control that carries the drag role, so the
+    // file name stays a button of its own.
+    <Td
+      ref={setNodeRef}
+      style={style}
+      onPointerDown={
+        listeners?.onPointerDown as
+          | PointerEventHandler<HTMLTableCellElement>
+          | undefined
+      }
+    >
       <HStack>
-        {context.droppableContainers.size > 0 && (
-          <LuGripVertical className="w-4 h-4 flex-shrink-0" />
+        {canDrag && (
+          <button
+            type="button"
+            {...attributes}
+            onKeyDown={
+              listeners?.onKeyDown as
+                | KeyboardEventHandler<HTMLButtonElement>
+                | undefined
+            }
+            aria-label={t`Drag ${fileName} to a line`}
+            className="flex-shrink-0 rounded-sm cursor-grab outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LuGripVertical aria-hidden className="w-4 h-4" />
+          </button>
         )}
         <DocumentIcon type={getDocumentType(attachment.name)} />
-        <span
-          className="font-medium cursor-pointer"
-          onClick={() => {
-            if (isPreviewable) {
-              window.open(
-                path.to.file.previewFile(`private/${getPath(attachment)}`),
-                "_blank"
-              );
-            } else {
-              download(attachment);
-            }
-          }}
+        <button
+          type="button"
+          className="font-medium cursor-pointer text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={openFile}
         >
           {isPreviewable ? (
             <DocumentPreview
@@ -276,7 +388,7 @@ const DraggableCell = ({
           ) : (
             attachment.name
           )}
-        </span>
+        </button>
         {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
           <Badge variant="secondary">
             <LuShoppingCart />
@@ -334,7 +446,7 @@ export const useOpportunityDocuments = ({
         .remove([getPath(attachment)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -350,7 +462,7 @@ export const useOpportunityDocuments = ({
       try {
         await downloadUrl(url, attachment.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

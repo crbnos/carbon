@@ -53,6 +53,7 @@ export function SearchLandingPage({
           </div>
           <div className="flex flex-col items-center gap-1.5 text-center">
             <Heading
+              as="h1"
               size="h1"
               className="tracking-tight text-balance font-semibold"
             >
@@ -69,7 +70,7 @@ export function SearchLandingPage({
         <div className="mt-2 w-full">{children}</div>
 
         {footerTip && (
-          <p className="text-[11px] text-muted-foreground/70 tabular-nums">
+          <p className="text-[0.6875rem] text-muted-foreground/70 tabular-nums">
             {footerTip}
           </p>
         )}

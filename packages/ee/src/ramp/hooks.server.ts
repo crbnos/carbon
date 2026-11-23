@@ -4,6 +4,8 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { SpendProviderID } from "../accounting/core/models";
 import { ensureProviderSubscriptions } from "../accounting/core/subscriptions";
 import { resolveCapabilities } from "../sync/capabilities";
@@ -15,6 +17,7 @@ import {
   linkedConnections,
   resolveConnectedProviderName
 } from "./lib/connection-status";
+import { extractEntityIds, planRampConvergence } from "./lib/convergence";
 import { rampOwnsCodingSurface, resolveRampModeProfile } from "./lib/modes";
 import {
   clearRampConnectionMetadata,
@@ -26,6 +29,8 @@ import {
   pushProjects
 } from "./lib/service";
 import { patchRampAccountingConnectionProvider } from "./lib/state";
+
+const logger = getLogger("ee", "ramp");
 
 /**
  * Ramp integration lifecycle hooks (server-only). Registered in
@@ -60,7 +65,7 @@ async function convergeRamp(
     );
   }
 
-  const ownsCodingSurface = rampOwnsCodingSurface(metadata);
+  const plan = planRampConvergence(metadata);
 
   // Connecting a platform that cannot create a vendor without a reachable
   // contact AND an identifiable location is what makes both mandatory, so
@@ -77,21 +82,22 @@ async function convergeRamp(
       resolveCapabilities(resolveRampModeProfile(metadata).capabilities)
     );
     if (enabled.length > 0) {
-      console.log(
-        `[ramp] enabled ${enabled.join(", ")} for company ${companyId} — Ramp cannot create a vendor without a contact email and a country`
+      logger.info(
+        "Enabled party-contact requirements; Ramp cannot create a vendor without a contact email and a country",
+        { companyId, enabled }
       );
     }
   } catch (err) {
-    console.error(
-      `[ramp] could not enable party-contact requirements for company ${companyId}:`,
-      (err as Error).message
-    );
+    logger.error("Could not enable Ramp party-contact requirements", {
+      companyId,
+      error: err
+    });
   }
 
   // Only the seat-holder may create the accounting connection. In push-only
   // another system holds it, and claiming it is precisely what this mode exists
   // to avoid.
-  if (ownsCodingSurface) {
+  if (plan.claimConnection) {
     await ensureRampConnection(serviceRole, companyId);
   }
 
@@ -107,7 +113,7 @@ async function convergeRamp(
   // transient Ramp outage. Confirmed 2026-09-26 that a push-only token (no
   // `accounting:write`) may call this endpoint, so a refusal here is unexpected
   // rather than routine.
-  if (!ownsCodingSurface) {
+  if (plan.refreshConnectionOwner) {
     try {
       await patchRampAccountingConnectionProvider(
         serviceRole,
@@ -115,9 +121,9 @@ async function convergeRamp(
         resolveConnectedProviderName(await client.getAccountingConnections())
       );
     } catch (err) {
-      console.warn(
-        `[ramp] could not refresh the accounting connection owner for company ${companyId}; leaving the stored value`,
-        err
+      logger.warning(
+        "Could not refresh the Ramp accounting connection owner; leaving the stored value",
+        { companyId, error: err }
       );
     }
   }
@@ -137,9 +143,9 @@ async function convergeRamp(
   try {
     await ensureRampWebhook(serviceRole, companyId, getAppUrl());
   } catch (err) {
-    console.warn(
-      `[ramp] webhook registration failed for company ${companyId}; continuing install (hourly sweep covers correctness)`,
-      err
+    logger.warning(
+      "Ramp webhook registration failed; continuing install (hourly sweep covers correctness)",
+      { companyId, error: err }
     );
   }
 
@@ -156,23 +162,26 @@ async function convergeRamp(
   // does not even offer the field. Returning here would have skipped the sync
   // enqueue below, so push-only would have pushed nothing until the next hourly
   // sweep.
-  if (ownsCodingSurface && !metadata.cardLiabilityAccountId) {
+  if (!plan.launchSync) {
     return;
   }
 
-  if (metadata.entityId) {
+  if (plan.validateEntityId) {
     let response: unknown;
     try {
       response = await client.getEntities();
     } catch (error) {
-      throw new Error(`Could not validate Ramp entity ${metadata.entityId}`, {
-        cause: error
-      });
+      throw new Error(
+        `Could not validate Ramp entity ${plan.validateEntityId}`,
+        {
+          cause: error
+        }
+      );
     }
 
-    if (!extractEntityIds(response).has(metadata.entityId)) {
+    if (!extractEntityIds(response).has(plan.validateEntityId)) {
       throw new Error(
-        `Ramp entity ${metadata.entityId} is not available to this connection`
+        `Ramp entity ${plan.validateEntityId} is not available to this connection`
       );
     }
   }
@@ -184,7 +193,7 @@ async function convergeRamp(
   //
   // The sync still launches below: push-only has plenty to do (purchase orders,
   // receipts, provisional bills, and pulling bill payments back).
-  if (ownsCodingSurface) {
+  if (plan.pushCodingMasters) {
     await pushChartOfAccounts(serviceRole, companyId);
     // Converge the cost-center ("project") field + its options. It re-runs on
     // every ramp-sync too, so a Ramp-side rejection here must not abort a valid
@@ -192,47 +201,37 @@ async function convergeRamp(
     try {
       await pushCostCenters(serviceRole, companyId);
     } catch (err) {
-      console.warn(
-        `[ramp] cost-center push failed for company ${companyId}; continuing convergence`,
-        err
-      );
+      logger.warning("Ramp cost-center push failed; continuing convergence", {
+        companyId,
+        error: err
+      });
     }
     // Converge the Project field + its options — a second custom field, kept
     // independent of the cost-center one. Same fail-soft stance: the sweep retries.
     try {
       await pushProjects(serviceRole, companyId);
     } catch (err) {
-      console.warn(
-        `[ramp] project push failed for company ${companyId}; continuing convergence`,
-        err
-      );
+      logger.warning("Ramp project push failed; continuing convergence", {
+        companyId,
+        error: err
+      });
     }
   }
 
-  // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
-  // never the reverse), so the `ramp-sync` task — registered in
-  // packages/jobs/src/inngest/index.ts + packages/lib/src/trigger.ts — is
-  // reached via a lazy runtime import resolved through the app that owns both
-  // packages. The non-literal specifier keeps TS from resolving/type-checking a
-  // module ee cannot see.
+  // Queued through @carbon/lib's trigger, as the Slack service does: ee cannot
+  // depend on @carbon/jobs (jobs depends on ee), and importing jobs at runtime
+  // fails in the built server, which runs its TypeScript source.
   // A failure to enqueue the initial sync must not fail the connect — the
   // hourly `ramp-sweep` fires `ramp-sync` for every active company regardless.
   try {
-    const jobsModule = "@carbon/jobs";
-    const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
-      trigger: (
-        task: string,
-        payload: { companyId: string; reason: string }
-      ) => Promise<unknown>;
-    };
-    await jobs.trigger("ramp-sync", {
+    await trigger("ramp-sync", {
       companyId,
       reason: opts.syncReason
     });
   } catch (err) {
-    console.warn(
-      `[ramp] initial sync enqueue failed for company ${companyId}; the hourly sweep will cover it`,
-      err
+    logger.warning(
+      "Ramp initial sync enqueue failed; the hourly sweep will cover it",
+      { companyId, error: err }
     );
   }
 }
@@ -266,11 +265,10 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
         await client.deleteWebhook(metadata.webhookId);
       } catch (err) {
         // Tolerate a missing webhook (already deleted).
-        console.error(
-          `[ramp] failed to delete webhook on uninstall (company ${companyId}): ${
-            (err as Error).message
-          }`
-        );
+        logger.error("Failed to delete Ramp webhook on uninstall", {
+          companyId,
+          error: err
+        });
       }
     }
 
@@ -299,20 +297,21 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
         if (live.some(isCarbonConnection)) {
           await client.deleteAccountingConnection();
         } else if (foreign) {
-          console.warn(
-            `[ramp] leaving the accounting connection in place for company ${companyId}: it is held by ${
-              foreign.remote_provider_name ?? "another system"
-            }, not Carbon`
+          logger.warning(
+            "Leaving the Ramp accounting connection in place: it is held by another system, not Carbon",
+            {
+              companyId,
+              holder: foreign.remote_provider_name ?? "another system"
+            }
           );
         }
       }
     } catch (err) {
       // Tolerate — the connection may already be gone.
-      console.error(
-        `[ramp] failed to delete accounting connection on uninstall (company ${companyId}): ${
-          (err as Error).message
-        }`
-      );
+      logger.error("Failed to delete Ramp accounting connection on uninstall", {
+        companyId,
+        error: err
+      });
     }
   }
 
@@ -324,34 +323,11 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
   try {
     await clearRampConnectionMetadata(serviceRole, companyId);
   } catch (err) {
-    console.error(
-      `[ramp] failed to clear stored webhook/connection metadata on uninstall (company ${companyId}): ${
-        (err as Error).message
-      }`
+    logger.error(
+      "Failed to clear stored Ramp webhook/connection metadata on uninstall",
+      { companyId, error: err }
     );
   }
-}
-
-/** Extract entity ids from Ramp's `{ data }`, `{ entities }`, or bare-array shape. */
-function extractEntityIds(response: unknown): Set<string> {
-  let rows: unknown[] = [];
-  if (Array.isArray(response)) {
-    rows = response;
-  } else if (response && typeof response === "object") {
-    const value = response as { data?: unknown; entities?: unknown };
-    if (Array.isArray(value.data)) rows = value.data;
-    else if (Array.isArray(value.entities)) rows = value.entities;
-  }
-
-  return new Set(
-    rows.flatMap((row) =>
-      row &&
-      typeof row === "object" &&
-      typeof (row as { id?: unknown }).id === "string"
-        ? [(row as { id: string }).id]
-        : []
-    )
-  );
 }
 
 export async function rampHealthcheck(

@@ -8,6 +8,10 @@ import { validator } from "@carbon/form";
 import { createHash } from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
+import {
+  ACCESS_TOKEN_TTL_MS,
+  isRefreshTokenIdle
+} from "~/services/oauth.server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -209,8 +213,9 @@ export async function action({ request }: ActionFunctionArgs) {
       clientId: client_id,
       userId: codeData.userId,
       companyId: codeData.companyId,
+      scope: codeData.scope,
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+      expiresAt: new Date(Date.now() + ACCESS_TOKEN_TTL_MS).toISOString()
     };
 
     const tokenResult = await client.from("oauthToken").insert([tokenInsert]);
@@ -225,7 +230,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return jsonResponse({
       access_token: rawAccessToken,
       token_type: "Bearer",
-      expires_in: 3600,
+      expires_in: ACCESS_TOKEN_TTL_MS / 1000,
       refresh_token: rawRefreshToken,
       scope: codeData.scope || undefined
     });
@@ -266,16 +271,30 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Generate new access token
+    if (isRefreshTokenIdle(refreshTokenData.expiresAt, Date.now())) {
+      await client.from("oauthToken").delete().eq("id", refreshTokenData.id);
+      return jsonResponse(
+        { error: "invalid_grant", error_description: "Refresh token expired" },
+        400
+      );
+    }
+
+    // Rotate: the refresh token is single-use, so a leaked one is only good
+    // until its owner's next refresh. The match on the OLD hash makes this
+    // atomic — of two concurrent refreshes with one token, only one wins.
     const rawNewAccessToken = crypto.randomUUID();
+    const rawNewRefreshToken = crypto.randomUUID();
 
     const updateResult = await client
       .from("oauthToken")
       .update({
         accessToken: hashOAuthSecret(rawNewAccessToken),
-        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+        refreshToken: hashOAuthSecret(rawNewRefreshToken),
+        expiresAt: new Date(Date.now() + ACCESS_TOKEN_TTL_MS).toISOString()
       })
-      .eq("refreshToken", hashOAuthSecret(refresh_token));
+      .eq("id", refreshTokenData.id)
+      .eq("refreshToken", hashOAuthSecret(refresh_token))
+      .select("id");
 
     if (updateResult.error) {
       return jsonResponse(
@@ -284,10 +303,18 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
+    if (!updateResult.data?.length) {
+      return jsonResponse(
+        { error: "invalid_grant", error_description: "Invalid refresh token" },
+        400
+      );
+    }
+
     return jsonResponse({
       access_token: rawNewAccessToken,
       token_type: "Bearer",
-      expires_in: 3600,
+      expires_in: ACCESS_TOKEN_TTL_MS / 1000,
+      refresh_token: rawNewRefreshToken,
       scope: refreshTokenData.scope || undefined
     });
   }

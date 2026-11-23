@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -17,8 +18,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -48,16 +47,13 @@ const MoveAccountForm = ({
 }: MoveAccountFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher();
-
-  useEffect(() => {
-    if (fetcher.state === "loading" && fetcher.data?.data) {
-      onClose?.();
+  // A refusal is toasted by useAction.
+  const fetcher = useAction({
+    onSuccess: () => {
       toast.success(t`Moved account`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(t`Failed to move account: ${fetcher.data.error.message}`);
+      onClose();
     }
-  }, [fetcher.data, fetcher.state, onClose, t]);
+  });
 
   const isDisabled = !permissions.can("update", "accounting");
 

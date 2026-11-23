@@ -15,6 +15,7 @@ import { loadJournalLineDimensions } from "./dimension-mapping";
 import {
   JournalEntrySyncError,
   type JournalLineDimensionRef,
+  noPostedJournalMessage,
   toDebitSignedAmount,
   toPostingDateString
 } from "./posting";
@@ -26,7 +27,8 @@ type Db = Kysely<KyselyDatabase> | KyselyTx;
  *
  * Every AP bill Carbon pushes to a provider reproduces the accounts its
  * posted "Purchase Invoice" journal computed (GR/IR clearing, price
- * variance, tax folded into cost) — NOT the item's account. The item is a
+ * variance, non-recoverable tax folded into cost, recoverable tax on Tax
+ * Paid legs) — NOT the item's account. The item is a
  * description label only. This module extracts the journal read + AP-control
  * filter that Rillet pioneered so QBO and Xero can share it.
  *
@@ -64,6 +66,34 @@ export type CostingLine = {
   sourceItem?: CostingLineSourceItem;
   /** journalLineDimension rows carried onto provider dimension refs. */
   dimensions?: JournalLineDimensionRef[];
+  /** A recoverable-tax leg the posting debited to Tax Paid. A provider that
+   *  sends tax natively books it from the lines' tax (`planBillTaxLines`); one
+   *  that does not books it to that account like any other line. */
+  taxLeg?: boolean;
+  /** The credit for tax self-assessed on a Reverse Charge code. A bill that
+   *  has one goes out tax-neutral (`billSendsTax`). */
+  reverseChargeLeg?: boolean;
+  /** The tax of the invoice line(s) this leg came from; null when the leg
+   *  cannot be tied to one tax (`resolveCostingLineTax`). Absent on charges. */
+  tax?: CostingLineTax | null;
+};
+
+/** The tax a costing leg's invoice line carries. */
+export type CostingLineTax = {
+  taxCodeId: string | null;
+  /** The line's rate, 0..1. */
+  taxPercent: number;
+};
+
+/** A tax-ledger row of the bill's posting, base currency. */
+export type BillTaxLedgerRow = {
+  documentLineId: string | null;
+  taxCodeId: string | null;
+  taxCodeComponentId: string | null;
+  taxPercent: number;
+  taxableAmount: number;
+  taxAmount: number;
+  recoverableAmount: number;
 };
 
 export type BillCostingResult = {
@@ -80,6 +110,9 @@ export type BillCostingResult = {
   decimalPlaces: number;
   baseCurrencyCode: string;
   postingDate: string;
+  /** The tax-ledger rows the posting wrote; empty for a bill posted before
+   *  the tax ledger existed. */
+  taxLedger?: BillTaxLedgerRow[];
 };
 
 /**
@@ -141,6 +174,11 @@ export async function loadBillCostingLines(
     db
       .selectFrom("purchaseInvoiceLine")
       .select([
+        "id",
+        "purchaseOrderLineId",
+        "accountId",
+        "taxCodeId",
+        "taxPercent",
         "quantity",
         "supplierUnitPrice",
         "supplierShippingCost",
@@ -181,6 +219,7 @@ export async function loadBillCostingLines(
     .leftJoin("account", "account.id", "journalLine.accountId")
     .select([
       "journalLine.id",
+      "journalLine.journalId",
       "journalLine.accountId",
       "journalLine.amount",
       "journalLine.description",
@@ -208,7 +247,11 @@ export async function loadBillCostingLines(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message: !rows.length
-        ? "Cannot sync bill: no posted Purchase Invoice journal found. Post the invoice with accounting enabled, then retry."
+        ? noPostedJournalMessage({
+            subject: "bill",
+            journal: "Purchase Invoice",
+            document: "invoice"
+          })
         : "Cannot sync bill: its original posted payables control account is missing. Correct the posting, then retry.",
       metadata: {
         billId: args.billId,
@@ -273,12 +316,51 @@ export async function loadBillCostingLines(
     }
   }
 
+  // The posting's tax ledger, for the journal these lines came from.
+  const journalIds = [...new Set(rows.map((row) => row.journalId))];
+  const taxLedger: BillTaxLedgerRow[] = (
+    await db
+      .selectFrom("taxLedger")
+      .select([
+        "documentLineId",
+        "taxCodeId",
+        "taxCodeComponentId",
+        "taxPercent",
+        "taxableAmount",
+        "taxAmount",
+        "recoverableAmount"
+      ])
+      .where("companyId", "=", args.companyId)
+      .where("documentId", "=", args.billId)
+      .where("source", "=", "Purchase")
+      .where("journalId", "in", journalIds)
+      .execute()
+  ).map((row) => ({
+    documentLineId: row.documentLineId,
+    taxCodeId: row.taxCodeId,
+    taxCodeComponentId: row.taxCodeComponentId,
+    taxPercent: Number(row.taxPercent),
+    taxableAmount: Number(row.taxableAmount),
+    taxAmount: Number(row.taxAmount),
+    recoverableAmount: Number(row.recoverableAmount)
+  }));
+  const taxOf = resolveCostingLineTax(
+    invoiceLines.map((line) => ({
+      id: line.id,
+      purchaseOrderLineId: line.purchaseOrderLineId,
+      accountId: line.accountId,
+      taxCodeId: line.taxCodeId,
+      taxPercent: Number(line.taxPercent ?? 0)
+    }))
+  );
+
   const lines: CostingLine[] = costingRows.map((row) => {
     const dimensions = dimensionsByLine.get(row.id);
     const poLineId = parsePurchaseInvoiceLineReference(
       row.documentLineReference
     );
     const sourceItem = poLineId ? sourceItemByPoLine.get(poLineId) : undefined;
+    const role = classifyAccountingPostingRole(row.description);
 
     return {
       id: row.id,
@@ -286,7 +368,17 @@ export async function loadBillCostingLines(
       amount: toDebitSignedAmount(row.accountClass, Number(row.amount)),
       description: row.description ?? null,
       ...(sourceItem ? { sourceItem } : {}),
-      ...(dimensions ? { dimensions } : {})
+      ...(dimensions ? { dimensions } : {}),
+      ...(role === "TaxPaid"
+        ? { taxLeg: true, tax: null }
+        : role === "ReverseChargeTax"
+          ? { reverseChargeLeg: true, tax: null }
+          : {
+              tax: taxOf({
+                purchaseOrderLineId: poLineId,
+                accountId: row.accountId ?? null
+              })
+            })
     };
   });
 
@@ -298,8 +390,79 @@ export async function loadBillCostingLines(
     documentTotal,
     decimalPlaces,
     baseCurrencyCode,
-    postingDate: toPostingDateString(invoice.postingDate)
+    postingDate: toPostingDateString(invoice.postingDate),
+    taxLedger
   };
+}
+
+type TaxSourceLine = {
+  id: string;
+  purchaseOrderLineId: string | null;
+  accountId: string | null;
+  taxCodeId: string | null;
+  taxPercent: number;
+};
+
+/**
+ * Ties a costing leg to the tax of the invoice line it came from. The
+ * journal names no invoice line: a PO-backed leg names its purchase-order
+ * line, and a direct leg names nothing. So a leg resolves through:
+ * - the one tax every line of the bill shares, when there is one;
+ * - else its purchase-order line's invoice lines;
+ * - else the direct (no PO) lines on the leg's account.
+ * When those lines disagree, or there are none, the leg's tax is null; a
+ * provider that sends tax refuses the bill rather than guess.
+ */
+export function resolveCostingLineTax(
+  invoiceLines: TaxSourceLine[]
+): (leg: {
+  purchaseOrderLineId: string | null;
+  accountId: string | null;
+}) => CostingLineTax | null {
+  const signature = (line: TaxSourceLine) =>
+    `${line.taxCodeId ?? ""}:${round(line.taxPercent)}`;
+  const taxOfLines = (lines: TaxSourceLine[]): CostingLineTax | null => {
+    if (lines.length === 0) return null;
+    if (new Set(lines.map(signature)).size !== 1) return null;
+    return {
+      taxCodeId: lines[0]!.taxCodeId,
+      taxPercent: round(lines[0]!.taxPercent)
+    };
+  };
+
+  const shared = taxOfLines(invoiceLines);
+  return (leg) => {
+    if (shared) return shared;
+    if (leg.purchaseOrderLineId) {
+      return taxOfLines(
+        invoiceLines.filter(
+          (line) => line.purchaseOrderLineId === leg.purchaseOrderLineId
+        )
+      );
+    }
+    return taxOfLines(
+      invoiceLines.filter(
+        (line) =>
+          !line.purchaseOrderLineId &&
+          line.accountId !== null &&
+          line.accountId === leg.accountId
+      )
+    );
+  };
+}
+
+/** The Tax Paid legs in the document's currency, converted once as a total
+ *  (`toTransactionCurrencyLines` reconciles the other lines against it). */
+export function toDocumentTaxTotal(
+  taxLegs: readonly CostingLine[],
+  exchangeRate: number,
+  decimalPlaces: number
+): number {
+  return toDocumentAmount(
+    taxLegs.reduce((sum, leg) => sum + leg.amount, 0),
+    exchangeRate,
+    decimalPlaces
+  );
 }
 
 export type ChargeCostingResult = BillCostingResult & {
@@ -413,8 +576,11 @@ export async function loadChargeCostingLines(
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message:
-        "Cannot sync card charge: no posted Charge journal found. Post the charge with accounting enabled, then retry.",
+      message: noPostedJournalMessage({
+        subject: "card charge",
+        journal: "Charge",
+        document: "charge"
+      }),
       metadata: { chargeId: args.chargeId }
     });
   }
@@ -498,9 +664,19 @@ function parsePurchaseInvoiceLineReference(
 /** Convert posted base costs once, reconciling only differences explained by rounding. */
 export function toTransactionCurrencyLines(
   lines: CostingLine[],
-  args: { exchangeRate: number; documentTotal: number; decimalPlaces: number }
+  args: {
+    exchangeRate: number;
+    documentTotal: number;
+    decimalPlaces: number;
+    /** Tax Paid legs left out of `lines` (`planBillTaxLines`). They take
+     *  part in the check against the document total; the lines then sum to
+     *  the total less their converted amount (`toDocumentTaxTotal`). */
+    taxLegs?: CostingLine[];
+  }
 ): CostingLine[] {
-  const { exchangeRate, documentTotal, decimalPlaces } = args;
+  const { exchangeRate, decimalPlaces } = args;
+  const taxLegs = args.taxLegs ?? [];
+  const documentTotal = args.documentTotal;
   if (
     !Number.isInteger(decimalPlaces) ||
     decimalPlaces < 0 ||
@@ -510,7 +686,7 @@ export function toTransactionCurrencyLines(
   toDocumentAmount(documentTotal, exchangeRate, decimalPlaces);
   if (round(documentTotal, decimalPlaces) !== documentTotal)
     throw new Error("Bill document total exceeds currency precision");
-  const unroundedTotal = lines.reduce((sum, line) => {
+  const unroundedTotal = [...lines, ...taxLegs].reduce((sum, line) => {
     if (!Number.isFinite(line.amount))
       throw new Error("Costing line amount must be finite");
     return sum + line.amount * exchangeRate;
@@ -518,7 +694,7 @@ export function toTransactionCurrencyLines(
   // Each posted source is stored at SCALE; the authoritative document
   // is rounded once at its own boundary. This envelope cannot conceal a cost gap.
   const envelope =
-    lines.length * (0.5 / 10 ** SCALE) * exchangeRate +
+    (lines.length + taxLegs.length) * (0.5 / 10 ** SCALE) * exchangeRate +
     0.5 * 10 ** -decimalPlaces;
   if (
     Math.abs(unroundedTotal - documentTotal) >
@@ -532,8 +708,11 @@ export function toTransactionCurrencyLines(
     ...line,
     amount: toDocumentAmount(line.amount, exchangeRate, decimalPlaces)
   }));
+  const convertedTax = toDocumentTaxTotal(taxLegs, exchangeRate, decimalPlaces);
   const residual = round(
-    documentTotal - converted.reduce((sum, line) => sum + line.amount, 0),
+    documentTotal -
+      convertedTax -
+      converted.reduce((sum, line) => sum + line.amount, 0),
     decimalPlaces
   );
   if (residual !== 0) {

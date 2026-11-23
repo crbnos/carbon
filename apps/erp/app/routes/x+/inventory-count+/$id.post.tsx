@@ -2,60 +2,76 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { getInventoryCount } from "~/modules/inventory";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
-// Post (Pending -> Posted): atomically posts the variance as inventory
-// adjustments.
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+// The flash shares the session cookie, so a long list of parts would make the
+// cookie too large to set: name the first few and count the rest.
+const NAMED_PARTS = 5;
+
+function shortfall(row: {
+  part: string;
+  unit: string | null;
+  onHand: number | null;
+  held: number | null;
+}) {
+  if (row.onHand === null || row.held === null) return row;
+  const place = row.unit ? `${row.unit}: ` : "";
+  return {
+    part: row.part,
+    unit: `${place}${row.onHand} there, ${row.held} held`
+  };
+}
+
+function partList(rows: Array<{ part: string; unit: string | null }>) {
+  const names = rows.map((row) =>
+    row.unit ? `${row.part} (${row.unit})` : row.part
+  );
+  const shown = names.slice(0, NAMED_PARTS).join(", ");
+  const more = names.length - NAMED_PARTS;
+  return more > 0 ? `${shown} and ${more} more` : shown;
+}
+
+// Post (Pending -> Posted): the variances become inventory adjustments.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.postInventoryCount({
+    inventoryCountId: id
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const header = await getInventoryCount(client, id, companyId);
-  if (header.data?.status !== "Pending") {
-    // Fetcher submit — return data so the component toasts it (see below).
-    return data(
-      {
-        success: false,
-        message: "Only a confirmed (pending) count can be made effective"
-      },
-      { status: 400 }
+  // An error is toasted by the Post button's fetcher.
+  if (!result.data) return result;
+  // Lines that cannot post: the page toasts the reason and marks them.
+  if ("invalidLineIds" in result.data) return result.data;
+  const warnings = result.data.heldStockWarnings ?? [];
+  const awaiting = warnings.filter((row) => row.awaitingInspection);
+  const short = warnings.filter(
+    (row) => !row.awaitingInspection && row.countedShort
+  );
+  const movable = warnings.filter(
+    (row) => !row.awaitingInspection && !row.countedShort
+  );
+  const message = ["Inventory count posted."];
+  if (short.length > 0) {
+    message.push(
+      `${partList(short.map(shortfall))} ${short.length === 1 ? "was" : "were"} counted short in ${short.length === 1 ? "its" : "their"} inspection unit: its inspection lots hold more than is there. A Reject or an NCR's Scrap writes off only what is there.`
     );
   }
-
-  const post = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("post-inventory-count", { inventoryCountId: id });
-
-  if (post.error) {
-    // The Post button submits via a fetcher, so a redirect+flash toast is not
-    // reliably surfaced. Return the error as fetcher data (with the real message
-    // and, for line-level validation errors like snapshot drift or serial-qty,
-    // the `invalidLineIds`) so the component can toast it and highlight the
-    // offending rows; the fetcher still revalidates, so the count stays Pending
-    // and re-renders.
-    const message = post.error.message || "Failed to post inventory count";
-    const invalidLineIds = Array.isArray(post.error.body.invalidLineIds)
-      ? (post.error.body.invalidLineIds as string[])
-      : undefined;
-    return data({ success: false, message, invalidLineIds }, { status: 400 });
+  if (movable.length > 0) {
+    message.push(
+      `Stock held for inspection was counted outside its inspection unit: ${partList(movable)}. Move it back.`
+    );
   }
-
-  throw redirect(
-    path.to.inventoryCount(id),
-    await flash(request, success("Inventory count posted"))
-  );
+  if (awaiting.length > 0) {
+    message.push(
+      `Units under inspection were counted outside their inspection unit: ${partList(awaiting)}. Quality must decide their inspection lots before they can move.`
+    );
+  }
+  return respond(args.request, result).redirect(path.to.inventoryCount(id), {
+    message: warnings.length > 0 ? message.join(" ") : "Inventory count posted"
+  });
 }

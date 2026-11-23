@@ -5,8 +5,6 @@
 import { resolveBatchRules } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
-// Import the logic module directly — the ERP barrels drag lingui macros vitest
-// does not transform (see batching-migration-guards.test.ts).
 import {
   batchPlanBreakdown,
   candidateValueSets,

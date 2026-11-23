@@ -37,6 +37,8 @@ pnpm --filter @carbon/tiptap lint
 
 **Utils**: `getPrevText`, `getAllContent`, `isValidUrl`, `getUrlFromString`
 
+Converting a document to or from text (Markdown, plain text) is not here: it is `TiptapText` in `@carbon/files/markdown`, which runs with no DOM.
+
 ## Cross-References
 
 - `@carbon/react` — wraps TipTap in `Editor/` and `RichText/` sub-exports

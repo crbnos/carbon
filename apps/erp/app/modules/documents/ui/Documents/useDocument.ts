@@ -5,14 +5,14 @@
 import { useCarbon } from "@carbon/auth";
 import { downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
   DocumentTransactionType,
   Document as DocumentType
-} from "~/modules/documents";
+} from "~/modules/documents/types";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "usedocument");
@@ -82,7 +82,7 @@ export const useDocument = () => {
       try {
         await downloadUrl(url, doc.name ?? "File");
       } catch (error) {
-        toast.error("Error downloading file");
+        toastError("Error downloading file", error);
         logger.error("Error", { error: error });
       }
 
@@ -169,7 +169,7 @@ export const useDocument = () => {
         .download(doc.path);
 
       if (!data) {
-        toast.error(error?.message || "Error previewing file");
+        toastError("Error previewing file", error);
         return null;
       }
 

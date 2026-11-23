@@ -57,7 +57,7 @@ Create a [shipment](/guides/order-to-cash) against the <Term id="sales-order">sa
 
 After the final unit ships, the sales order moves to **"To Invoice"** until that unit is invoiced; it then becomes **"Completed"**.
 
-Posting submits the invoice. When accounting is enabled and the invoice produces journal lines, Carbon also creates a posted sales-invoice journal. Payment remains separate: applying a posted payment or credit creates settlements and moves the invoice to **"Partially Paid"** or **"Paid"**.
+Posting submits the invoice. When the invoice produces journal lines, Carbon also creates a sales-invoice journal: Provisional before the company sets up accounting, Posted after. Payment remains separate: applying a posted payment or credit creates settlements and moves the invoice to **"Partially Paid"** or **"Paid"**.
 
 <Screenshot src="/screens/ship-partial-shipment.png" label="Partial shipment" caption="Shipping part of the order — SHP000001 sends 2 of the 3 ordered, leaving 1 outstanding, so the order stays open." ratio="wide" />
 

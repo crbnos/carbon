@@ -8,12 +8,15 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Combobox, Heading } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuMonitor, LuWrench } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { userContext } from "~/context";
 import { getWorkCentersForDisplayPicker } from "~/services/display.service";
 import { getLocationsByCompany } from "~/services/operations.service";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta: MetaFunction = () => pageMeta("Work Center Displays");
 
 /**
  * Picker for the wall displays. Not itself a display — this is the page you
@@ -60,9 +63,9 @@ export default function DisplayIndexRoute() {
   const [, setSearchParams] = useSearchParams();
 
   return (
-    <div className="min-h-dvh w-full bg-background p-8">
+    <main className="min-h-dvh w-full bg-background p-8">
       <div className="mx-auto max-w-4xl">
-        <Heading size="h2">
+        <Heading as="h1" size="h2">
           <Trans>Work Center Displays</Trans>
         </Heading>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -82,6 +85,7 @@ export default function DisplayIndexRoute() {
                 value: location.id
               }))}
               placeholder={t`Filter by location`}
+              aria-label={t`Location`}
               onChange={(value) =>
                 setSearchParams(
                   (prev) => {
@@ -118,11 +122,13 @@ export default function DisplayIndexRoute() {
                     to={path.to.maintenanceDisplay(workCenter.id!)}
                     icon={<LuWrench />}
                     label={<Trans>Maintenance</Trans>}
+                    ariaLabel={t`${workCenter.name} maintenance display`}
                   />
                   <DisplayLink
                     to={path.to.workDisplay(workCenter.id!)}
                     icon={<LuMonitor />}
                     label={<Trans>Current work</Trans>}
+                    ariaLabel={t`${workCenter.name} current work display`}
                   />
                 </div>
               </li>
@@ -130,22 +136,25 @@ export default function DisplayIndexRoute() {
           </ul>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
 function DisplayLink({
   to,
   icon,
-  label
+  label,
+  ariaLabel
 }: {
   to: string;
   icon: React.ReactNode;
   label: React.ReactNode;
+  ariaLabel: string;
 }) {
   return (
     <Link
       to={to}
+      aria-label={ariaLabel}
       className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-accent"
     >
       {icon}

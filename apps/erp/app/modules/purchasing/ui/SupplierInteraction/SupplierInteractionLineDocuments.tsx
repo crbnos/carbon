@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -26,7 +31,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -37,9 +43,8 @@ import { useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { ItemFile } from "~/modules/items";
-import type { OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { ItemFile } from "~/modules/items/types";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -92,7 +97,7 @@ const useSupplierInteractionLineDocuments = ({
         .remove([getPath(file)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -108,7 +113,7 @@ const useSupplierInteractionLineDocuments = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },
@@ -252,6 +257,16 @@ const SupplierInteractionLineDocuments = ({
                       <HStack>
                         <DocumentIcon type={type} />
                         <span
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLSpanElement>
+                          ) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
                           className="font-medium"
                           onClick={() => {
                             if (["PDF", "Image"].includes(type)) {

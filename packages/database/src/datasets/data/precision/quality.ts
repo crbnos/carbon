@@ -199,7 +199,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 10 at AQL 1.0 / level II → code letter B, n = 3.
 const NEEDLE_PLAN = {
-  drawingNumber: "MW-HK1512 Rev B",
+  name: "MW-HK1512 Rev B",
   aql: 1.0,
   features: [
     {
@@ -265,7 +265,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:ptfe-bushings",
     receipt: "receipt:midway-restock",
     item: "BSH-PTFE-2012",
-    drawingNumber: "MW-PTFE-2012 Rev A",
+    name: "MW-PTFE-2012 Rev A",
     aql: 1.0,
     features: [
       {
@@ -346,6 +346,26 @@ export const INSPECTIONS: InspectionSpec[] = [
     job: "floor-shaft",
     status: "Pending",
     samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-BRG-2613"],
+    workCenter: "CMM Lab",
+    assignee: "self",
+    notes: "Spin-torque and seal check of the held bearing lot.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-BRG-2613"],
+    workCenter: "CMM Lab",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
+    samples: []
   }
 ];
 
@@ -408,9 +428,9 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Ring Gauge",
     description:
       "52 mm class XX master setting ring — zero reference for the bearing-bore gauges",
+    manufacturer: "Mahr",
     modelNumber: "SR-52XX",
     serialNumber: "RG-21-3307",
-    supplier: "Precision Gauge Services",
     role: "Master",
     status: "Active",
     calibrationIntervalInMonths: 12,
@@ -436,6 +456,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "bore-gauge",
     gaugeType: "Bore Gauge",
     description: "35–60 mm dial bore gauge — new unit for VMC Cell 2",
+    manufacturer: "Mahr",
     modelNumber: "DBG-3560",
     serialNumber: "BG24-10582",
     role: "Standard",
@@ -449,6 +470,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Thread Gauge",
     description:
       "M6 x 1.0 6H GO/NO-GO thread plug — retired after failed calibration",
+    manufacturer: "Vermont Gage",
     modelNumber: "TPG-M6-6H",
     serialNumber: "TP19-00871",
     role: "Standard",

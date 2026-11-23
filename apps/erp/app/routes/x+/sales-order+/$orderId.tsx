@@ -6,14 +6,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getCustomer,
@@ -25,18 +22,25 @@ import {
   getSalesOrderInvoicePaymentsByIds,
   getSalesOrderInvoicesByIds,
   getSalesOrderLines,
-  getSalesOrderRelatedItems
-} from "~/modules/sales";
+  getSalesOrderRelatedItems,
+  resolveSalesDocumentTaxes
+} from "~/modules/sales/sales.service";
+import {
+  type SalesOrderInvoiceSummary,
+  summarizeSalesOrderInvoices
+} from "~/modules/sales/sales.utils";
 import {
   SalesOrderExplorer,
   SalesOrderHeader,
   SalesOrderProperties
 } from "~/modules/sales/ui/SalesOrder";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Sales Order`,
   realtime: [
     { table: "salesOrder", column: "id", param: "orderId" },
     { table: "salesOrderLine", column: "salesOrderId", param: "orderId" },
@@ -66,10 +70,8 @@ export const handle: Handle = {
   module: "sales"
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["orderId"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.salesOrder?.salesOrderId, "Sales Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -108,7 +110,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ) as string[];
 
-  const [opportunity, customer, invoices, payments] = await Promise.all([
+  const [opportunity, customer, invoices, payments, tax] = await Promise.all([
     getOpportunity(client, salesOrder.data?.opportunityId ?? null),
     salesOrder.data?.customerId
       ? getCustomer(client, salesOrder.data.customerId)
@@ -118,7 +120,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     invoiceIds.length > 0
       ? getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
-      : null
+      : null,
+    resolveSalesDocumentTaxes(client, companyId, {
+      document: "salesOrder",
+      documentId: orderId
+    })
   ]);
 
   if (opportunity.error) {
@@ -155,9 +161,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getQuote(client, opportunity.data.quotes[0].id)
     : null;
 
-  let invoicedAmount = 0;
-  let paidAmount = 0;
-  let currencyMismatchCount = 0;
+  let invoiceSummary: SalesOrderInvoiceSummary = {
+    invoicedAmount: 0,
+    paidAmount: 0,
+    currencyMismatchCount: 0
+  };
 
   if (invoices && payments) {
     if (invoices.error) {
@@ -180,45 +188,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    const paidBaseByInvoiceId = new Map<string, number>();
-    for (const payment of payments.data ?? []) {
-      if (!payment.targetSalesInvoiceId) continue;
-      paidBaseByInvoiceId.set(
-        payment.targetSalesInvoiceId,
-        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
-          payment.appliedAmount
-      );
-    }
-
-    const orderCurrency = salesOrder.data?.currencyCode;
-
-    for (const invoice of invoices.data ?? []) {
-      // A voided invoice was never billed — it must not inflate the invoiced
-      // total, nor contribute any payments to the paid total.
-      if (invoice.status === "Voided") {
-        continue;
-      }
-
-      const invoiceTotal = invoice.invoiceTotal ?? 0;
-      const invoiceCurrency = invoice.currencyCode;
-
-      // Avoid mixing currencies in the same displayed number.
-      if (
-        orderCurrency &&
-        invoiceCurrency &&
-        invoiceCurrency !== orderCurrency
-      ) {
-        currencyMismatchCount += 1;
-        continue;
-      }
-
-      invoicedAmount += invoiceTotal * (invoice.exchangeRate ?? 1);
-      if (invoice.id) {
-        paidAmount +=
-          (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
-          (invoice.exchangeRate ?? 1);
-      }
-    }
+    invoiceSummary = summarizeSalesOrderInvoices(
+      salesOrder.data?.currencyCode,
+      invoices.data ?? [],
+      payments.data ?? []
+    );
   }
 
   const defaultCc = customer?.data?.defaultCc?.length
@@ -237,13 +211,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,
-    invoiceSummary: {
-      invoicedAmount,
-      paidAmount,
-      currencyMismatchCount
-    },
+    invoiceSummary,
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,
-    defaultCc
+    defaultCc,
+    // The tax a new line opens with (customer, ship-to, no item).
+    resolvedTax: tax.data
+      ? {
+          taxCodeId: tax.data.document.taxCodeId,
+          taxPercent: tax.data.document.taxPercent
+        }
+      : null,
+    // The date the line forms read a picked code's rate on.
+    taxDate: tax.data?.date ?? null
   };
 }
 
@@ -263,7 +242,7 @@ export default function SalesOrderRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

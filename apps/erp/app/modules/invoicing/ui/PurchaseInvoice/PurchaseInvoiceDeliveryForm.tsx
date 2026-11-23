@@ -26,12 +26,12 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
   isPurchaseInvoiceLocked,
   purchaseInvoiceDeliveryValidator
-} from "~/modules/invoicing";
-import { incoterms } from "~/modules/shared";
+} from "~/modules/invoicing/invoicing.models";
+import type { PurchaseInvoice } from "~/modules/invoicing/types";
+import { incoterms } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.delivery";
 import { path } from "~/utils/path";
 

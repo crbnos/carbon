@@ -4,7 +4,7 @@
 
 import type { JSONContent } from "@carbon/react";
 import { tiptapToHTML } from "@carbon/utils";
-import { Section, Text } from "@react-email/components";
+import { Section, Text } from "react-email";
 import { getEmailInlineStyles, getEmailThemeClasses } from "./Theme";
 
 /**

@@ -2,8 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import type { KeyboardEvent } from "react";
 import { isTextEntryTarget } from "./keyboard";
+
+const logger = getLogger("react", "menu-shortcut");
 
 type KeyLike = Pick<
   globalThis.KeyboardEvent,
@@ -47,9 +50,12 @@ export function handleMenuShortcutKeyDown(event: KeyboardEvent<HTMLElement>) {
   const [item] = matches;
   if (!item) return;
   if (matches.length > 1) {
-    // biome-ignore lint/suspicious/noConsole: duplicate menu keys are a bug at the caller
-    console.warn(
-      `Menu shortcut "${key}" is set on ${matches.length} items in one menu — only the first runs.`
+    logger.warning(
+      "A menu shortcut is set on several items; only the first runs",
+      {
+        key,
+        items: matches.length
+      }
     );
   }
 

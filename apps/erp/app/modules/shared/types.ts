@@ -50,7 +50,8 @@ export enum DataType {
   User = 6,
   Customer = 7,
   Supplier = 8,
-  File = 9
+  File = 9,
+  Link = 10
 }
 
 export type MethodItemType = (typeof methodItemType)[number];
@@ -88,11 +89,9 @@ export type OperationTool = z.infer<typeof operationToolValidator> & {
   createdAt: string;
   updatedBy: string | null;
   updatedAt: string | null;
-  // Phase 2 (tool ↔ step, many-to-many): the step ids this tool is scoped to. Empty = the
-  // whole operation. Not part of the tier-agnostic validator; populated by the loader from
-  // the methodOperationToolStep / jobOperationToolStep join rows.
-  methodOperationStepIds?: string[];
-  jobOperationStepIds?: string[];
+  // The steps this tool is linked to, embedded by the loader. None = every step.
+  methodOperationToolStep?: { methodOperationStepId: string }[];
+  jobOperationToolStep?: { jobOperationStepId: string }[];
 };
 
 export type OperationParameter = z.infer<typeof operationParameterValidator> & {
@@ -127,3 +126,12 @@ export type SavedView = {
 };
 
 export type StandardFactor = (typeof standardFactorType)[number];
+
+/** The rows a BOM, Operations or Parts with Methods import added, by kind. */
+export type MethodRowsAdded = {
+  materials: number;
+  operations: number;
+  steps: number;
+  tools: number;
+  parameters: number;
+};

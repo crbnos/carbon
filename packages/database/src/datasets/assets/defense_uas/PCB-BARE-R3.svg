@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="mask" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#0f3b30"/>
+      <stop offset="0.25" stop-color="#1d5f4c"/>
+      <stop offset="0.5" stop-color="#27775f"/>
+      <stop offset="0.75" stop-color="#174e3f"/>
+      <stop offset="1" stop-color="#0c3028"/>
+    </linearGradient>
+    <linearGradient id="maskEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0c3028"/>
+      <stop offset="0.35" stop-color="#2a6e59"/>
+      <stop offset="0.7" stop-color="#164a3c"/>
+      <stop offset="1" stop-color="#0a2620"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.35" stop-color="#c9903a"/>
+      <stop offset="0.7" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8cd7c"/>
+      <stop offset="0.4" stop-color="#c9a445"/>
+      <stop offset="0.75" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#7a5d19"/>
+    </linearGradient>
+    <linearGradient id="goldFinger" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8cd7c"/>
+      <stop offset="0.55" stop-color="#c9a445"/>
+      <stop offset="1" stop-color="#8a6c22"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="boardClip">
+      <rect x="180" y="175" width="664" height="660" rx="10"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="845" rx="420" ry="92" fill="url(#shadow)"/>
+
+  <!-- top edge and right edge: milled laminate core with a bevel -->
+  <path d="M180 175 L844 175 L854 168 L190 168 Z" fill="url(#core)" stroke="#5f3f0c" stroke-width="2"/>
+  <path d="M844 175 L854 168 L854 828 L844 835 Z" fill="url(#core)" stroke="#5f3f0c" stroke-width="2"/>
+
+  <!-- board face -->
+  <rect x="180" y="175" width="664" height="660" rx="10" fill="url(#mask)" stroke="#0a2620" stroke-width="3"/>
+
+  <g clip-path="url(#boardClip)">
+    <!-- inner copper routing faintly under the mask -->
+    <g stroke="#3f9c7d" stroke-opacity="0.30" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M200 250 L360 250 L410 300 L410 380"/>
+      <path d="M200 282 L340 282 L398 340 L398 470"/>
+      <path d="M200 314 L318 314 L376 372 L376 520 L440 584"/>
+      <path d="M824 250 L664 250 L614 300 L614 380"/>
+      <path d="M824 282 L684 282 L626 340 L626 470"/>
+      <path d="M824 314 L706 314 L648 372 L648 520 L584 584"/>
+      <path d="M456 300 L456 232 L560 232 L560 300"/>
+      <path d="M492 300 L492 250 L528 250 L528 300"/>
+      <path d="M420 540 L420 620 L300 620 L300 720"/>
+      <path d="M604 540 L604 620 L724 620 L724 720"/>
+      <path d="M462 520 L462 700"/>
+      <path d="M498 520 L498 700"/>
+      <path d="M534 520 L534 700"/>
+      <path d="M570 520 L570 700"/>
+      <path d="M232 380 L232 700"/>
+      <path d="M264 400 L264 700"/>
+      <path d="M792 380 L792 700"/>
+      <path d="M760 400 L760 700"/>
+      <path d="M210 440 L340 440 L340 700"/>
+      <path d="M814 440 L684 440 L684 700"/>
+    </g>
+    <g stroke="#7fd0b3" stroke-opacity="0.14" stroke-width="2" fill="none">
+      <path d="M204 254 L364 254 L414 304 L414 380"/>
+      <path d="M820 254 L660 254 L610 304 L610 380"/>
+      <path d="M466 524 L466 700"/>
+      <path d="M538 524 L538 700"/>
+    </g>
+
+    <!-- dense grid of plated through-holes -->
+    <g>
+      <g fill="#c9a445" opacity="0.9">
+        <circle cx="236" cy="470" r="7"/><circle cx="272" cy="470" r="7"/><circle cx="308" cy="470" r="7"/>
+        <circle cx="236" cy="506" r="7"/><circle cx="272" cy="506" r="7"/><circle cx="308" cy="506" r="7"/>
+        <circle cx="236" cy="542" r="7"/><circle cx="272" cy="542" r="7"/><circle cx="308" cy="542" r="7"/>
+        <circle cx="236" cy="578" r="7"/><circle cx="272" cy="578" r="7"/><circle cx="308" cy="578" r="7"/>
+        <circle cx="716" cy="470" r="7"/><circle cx="752" cy="470" r="7"/><circle cx="788" cy="470" r="7"/>
+        <circle cx="716" cy="506" r="7"/><circle cx="752" cy="506" r="7"/><circle cx="788" cy="506" r="7"/>
+        <circle cx="716" cy="542" r="7"/><circle cx="752" cy="542" r="7"/><circle cx="788" cy="542" r="7"/>
+        <circle cx="716" cy="578" r="7"/><circle cx="752" cy="578" r="7"/><circle cx="788" cy="578" r="7"/>
+        <circle cx="384" cy="640" r="7"/><circle cx="420" cy="640" r="7"/><circle cx="456" cy="640" r="7"/>
+        <circle cx="492" cy="640" r="7"/><circle cx="528" cy="640" r="7"/><circle cx="564" cy="640" r="7"/>
+        <circle cx="600" cy="640" r="7"/><circle cx="636" cy="640" r="7"/>
+        <circle cx="384" cy="676" r="7"/><circle cx="420" cy="676" r="7"/><circle cx="456" cy="676" r="7"/>
+        <circle cx="492" cy="676" r="7"/><circle cx="528" cy="676" r="7"/><circle cx="564" cy="676" r="7"/>
+        <circle cx="600" cy="676" r="7"/><circle cx="636" cy="676" r="7"/>
+        <circle cx="236" cy="700" r="7"/><circle cx="272" cy="700" r="7"/><circle cx="308" cy="700" r="7"/>
+        <circle cx="716" cy="700" r="7"/><circle cx="752" cy="700" r="7"/><circle cx="788" cy="700" r="7"/>
+        <circle cx="236" cy="230" r="7"/><circle cx="272" cy="230" r="7"/>
+        <circle cx="752" cy="230" r="7"/><circle cx="788" cy="230" r="7"/>
+      </g>
+      <g fill="#123a30">
+        <circle cx="236" cy="470" r="3"/><circle cx="272" cy="470" r="3"/><circle cx="308" cy="470" r="3"/>
+        <circle cx="236" cy="506" r="3"/><circle cx="272" cy="506" r="3"/><circle cx="308" cy="506" r="3"/>
+        <circle cx="236" cy="542" r="3"/><circle cx="272" cy="542" r="3"/><circle cx="308" cy="542" r="3"/>
+        <circle cx="236" cy="578" r="3"/><circle cx="272" cy="578" r="3"/><circle cx="308" cy="578" r="3"/>
+        <circle cx="716" cy="470" r="3"/><circle cx="752" cy="470" r="3"/><circle cx="788" cy="470" r="3"/>
+        <circle cx="716" cy="506" r="3"/><circle cx="752" cy="506" r="3"/><circle cx="788" cy="506" r="3"/>
+        <circle cx="716" cy="542" r="3"/><circle cx="752" cy="542" r="3"/><circle cx="788" cy="542" r="3"/>
+        <circle cx="716" cy="578" r="3"/><circle cx="752" cy="578" r="3"/><circle cx="788" cy="578" r="3"/>
+        <circle cx="384" cy="640" r="3"/><circle cx="420" cy="640" r="3"/><circle cx="456" cy="640" r="3"/>
+        <circle cx="492" cy="640" r="3"/><circle cx="528" cy="640" r="3"/><circle cx="564" cy="640" r="3"/>
+        <circle cx="600" cy="640" r="3"/><circle cx="636" cy="640" r="3"/>
+        <circle cx="384" cy="676" r="3"/><circle cx="420" cy="676" r="3"/><circle cx="456" cy="676" r="3"/>
+        <circle cx="492" cy="676" r="3"/><circle cx="528" cy="676" r="3"/><circle cx="564" cy="676" r="3"/>
+        <circle cx="600" cy="676" r="3"/><circle cx="636" cy="676" r="3"/>
+        <circle cx="236" cy="700" r="3"/><circle cx="272" cy="700" r="3"/><circle cx="308" cy="700" r="3"/>
+        <circle cx="716" cy="700" r="3"/><circle cx="752" cy="700" r="3"/><circle cx="788" cy="700" r="3"/>
+        <circle cx="236" cy="230" r="3"/><circle cx="272" cy="230" r="3"/>
+        <circle cx="752" cy="230" r="3"/><circle cx="788" cy="230" r="3"/>
+      </g>
+    </g>
+
+    <!-- central QFP land pattern, unpopulated -->
+    <g fill="url(#gold)">
+      <rect x="428" y="320" width="9" height="24" rx="3"/><rect x="450" y="320" width="9" height="24" rx="3"/>
+      <rect x="472" y="320" width="9" height="24" rx="3"/><rect x="494" y="320" width="9" height="24" rx="3"/>
+      <rect x="516" y="320" width="9" height="24" rx="3"/><rect x="538" y="320" width="9" height="24" rx="3"/>
+      <rect x="560" y="320" width="9" height="24" rx="3"/><rect x="582" y="320" width="9" height="24" rx="3"/>
+      <rect x="428" y="484" width="9" height="24" rx="3"/><rect x="450" y="484" width="9" height="24" rx="3"/>
+      <rect x="472" y="484" width="9" height="24" rx="3"/><rect x="494" y="484" width="9" height="24" rx="3"/>
+      <rect x="516" y="484" width="9" height="24" rx="3"/><rect x="538" y="484" width="9" height="24" rx="3"/>
+      <rect x="560" y="484" width="9" height="24" rx="3"/><rect x="582" y="484" width="9" height="24" rx="3"/>
+      <rect x="404" y="356" width="24" height="9" rx="3"/><rect x="404" y="378" width="24" height="9" rx="3"/>
+      <rect x="404" y="400" width="24" height="9" rx="3"/><rect x="404" y="422" width="24" height="9" rx="3"/>
+      <rect x="404" y="444" width="24" height="9" rx="3"/><rect x="404" y="466" width="24" height="9" rx="3"/>
+      <rect x="592" y="356" width="24" height="9" rx="3"/><rect x="592" y="378" width="24" height="9" rx="3"/>
+      <rect x="592" y="400" width="24" height="9" rx="3"/><rect x="592" y="422" width="24" height="9" rx="3"/>
+      <rect x="592" y="444" width="24" height="9" rx="3"/><rect x="592" y="466" width="24" height="9" rx="3"/>
+      <rect x="452" y="368" width="116" height="92" rx="6"/>
+    </g>
+    <rect x="452" y="368" width="116" height="92" rx="6" fill="#0f3b30" opacity="0.25"/>
+    <g fill="#123a30" opacity="0.8">
+      <circle cx="478" cy="392" r="5"/><circle cx="510" cy="392" r="5"/><circle cx="542" cy="392" r="5"/>
+      <circle cx="478" cy="414" r="5"/><circle cx="510" cy="414" r="5"/><circle cx="542" cy="414" r="5"/>
+      <circle cx="478" cy="436" r="5"/><circle cx="510" cy="436" r="5"/><circle cx="542" cy="436" r="5"/>
+    </g>
+
+    <!-- two small outline land patterns -->
+    <g fill="url(#gold)">
+      <rect x="222" y="300" width="30" height="11" rx="3"/><rect x="222" y="322" width="30" height="11" rx="3"/>
+      <rect x="222" y="344" width="30" height="11" rx="3"/><rect x="222" y="366" width="30" height="11" rx="3"/>
+      <rect x="306" y="300" width="30" height="11" rx="3"/><rect x="306" y="322" width="30" height="11" rx="3"/>
+      <rect x="306" y="344" width="30" height="11" rx="3"/><rect x="306" y="366" width="30" height="11" rx="3"/>
+      <rect x="688" y="300" width="30" height="11" rx="3"/><rect x="688" y="322" width="30" height="11" rx="3"/>
+      <rect x="688" y="344" width="30" height="11" rx="3"/><rect x="688" y="366" width="30" height="11" rx="3"/>
+      <rect x="772" y="300" width="30" height="11" rx="3"/><rect x="772" y="322" width="30" height="11" rx="3"/>
+      <rect x="772" y="344" width="30" height="11" rx="3"/><rect x="772" y="366" width="30" height="11" rx="3"/>
+    </g>
+
+    <!-- header land row along the upper edge -->
+    <g>
+      <g fill="url(#gold)">
+        <rect x="352" y="216" width="16" height="34" rx="6"/><rect x="380" y="216" width="16" height="34" rx="6"/>
+        <rect x="408" y="216" width="16" height="34" rx="6"/><rect x="436" y="216" width="16" height="34" rx="6"/>
+        <rect x="464" y="216" width="16" height="34" rx="6"/><rect x="492" y="216" width="16" height="34" rx="6"/>
+        <rect x="520" y="216" width="16" height="34" rx="6"/><rect x="548" y="216" width="16" height="34" rx="6"/>
+        <rect x="576" y="216" width="16" height="34" rx="6"/><rect x="604" y="216" width="16" height="34" rx="6"/>
+        <rect x="632" y="216" width="16" height="34" rx="6"/><rect x="660" y="216" width="16" height="34" rx="6"/>
+      </g>
+      <g fill="#123a30">
+        <circle cx="360" cy="233" r="5"/><circle cx="388" cy="233" r="5"/><circle cx="416" cy="233" r="5"/>
+        <circle cx="444" cy="233" r="5"/><circle cx="472" cy="233" r="5"/><circle cx="500" cy="233" r="5"/>
+        <circle cx="528" cy="233" r="5"/><circle cx="556" cy="233" r="5"/><circle cx="584" cy="233" r="5"/>
+        <circle cx="612" cy="233" r="5"/><circle cx="640" cy="233" r="5"/><circle cx="668" cy="233" r="5"/>
+      </g>
+    </g>
+
+    <!-- card-edge gold finger contacts along the lower edge -->
+    <g fill="url(#goldFinger)">
+      <rect x="300" y="752" width="12" height="83" rx="3"/><rect x="319" y="752" width="12" height="83" rx="3"/>
+      <rect x="338" y="752" width="12" height="83" rx="3"/><rect x="357" y="752" width="12" height="83" rx="3"/>
+      <rect x="376" y="752" width="12" height="83" rx="3"/><rect x="395" y="752" width="12" height="83" rx="3"/>
+      <rect x="414" y="752" width="12" height="83" rx="3"/><rect x="433" y="752" width="12" height="83" rx="3"/>
+      <rect x="452" y="752" width="12" height="83" rx="3"/><rect x="471" y="752" width="12" height="83" rx="3"/>
+      <rect x="490" y="752" width="12" height="83" rx="3"/><rect x="509" y="752" width="12" height="83" rx="3"/>
+      <rect x="528" y="752" width="12" height="83" rx="3"/><rect x="547" y="752" width="12" height="83" rx="3"/>
+      <rect x="566" y="752" width="12" height="83" rx="3"/><rect x="585" y="752" width="12" height="83" rx="3"/>
+      <rect x="604" y="752" width="12" height="83" rx="3"/><rect x="623" y="752" width="12" height="83" rx="3"/>
+      <rect x="642" y="752" width="12" height="83" rx="3"/><rect x="661" y="752" width="12" height="83" rx="3"/>
+      <rect x="680" y="752" width="12" height="83" rx="3"/><rect x="699" y="752" width="12" height="83" rx="3"/>
+    </g>
+    <path d="M294 812 L718 812" stroke="#7a5d19" stroke-width="3" opacity="0.5" fill="none"/>
+
+    <!-- corner mounting holes with exposed gold annular rings -->
+    <g>
+      <circle cx="240" cy="238" r="36" fill="url(#gold)"/><circle cx="240" cy="238" r="23" fill="#0a2620"/>
+      <circle cx="240" cy="234" r="23" fill="#164a3c" opacity="0.65"/>
+      <circle cx="784" cy="238" r="36" fill="url(#gold)"/><circle cx="784" cy="238" r="23" fill="#0a2620"/>
+      <circle cx="784" cy="234" r="23" fill="#164a3c" opacity="0.65"/>
+      <circle cx="240" cy="772" r="36" fill="url(#gold)"/><circle cx="240" cy="772" r="23" fill="#0a2620"/>
+      <circle cx="240" cy="768" r="23" fill="#164a3c" opacity="0.65"/>
+      <circle cx="784" cy="772" r="36" fill="url(#gold)"/><circle cx="784" cy="772" r="23" fill="#0a2620"/>
+      <circle cx="784" cy="768" r="23" fill="#164a3c" opacity="0.65"/>
+    </g>
+
+    <!-- milled edge bevel -->
+    <rect x="190" y="185" width="644" height="640" rx="8" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+    <rect x="197" y="192" width="630" height="626" rx="6" fill="none" stroke="#08201b" stroke-opacity="0.5" stroke-width="2"/>
+
+    <!-- glossy sheen across the flat surface -->
+    <path d="M180 175 L560 175 L180 620 Z" fill="url(#sheen)"/>
+    <path d="M844 835 L844 520 L600 835 Z" fill="#ffffff" opacity="0.04"/>
+  </g>
+
+  <rect x="180" y="175" width="664" height="660" rx="10" fill="none" stroke="#08201b" stroke-width="3"/>
+</svg>

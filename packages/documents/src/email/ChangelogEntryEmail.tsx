@@ -4,7 +4,6 @@
 
 import {
   Body,
-  Button,
   Container,
   Heading,
   Hr,
@@ -12,10 +11,15 @@ import {
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { notificationStyles } from "./components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 interface Props {
   title: string;
@@ -40,7 +44,7 @@ export const ChangelogEntryEmail = ({
   return (
     <EmailThemeProvider
       preview={<Preview>{description ?? title}</Preview>}
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
@@ -79,26 +83,7 @@ export const ChangelogEntryEmail = ({
           )}
 
           <Section className="text-center mb-[24px]">
-            <Button
-              href={readUrl}
-              className="nf-cta"
-              style={{
-                backgroundColor: "#0e0e0e",
-                borderColor: "#0e0e0e",
-                borderRadius: 10,
-                borderStyle: "solid",
-                borderWidth: 1,
-                color: "#ffffff",
-                display: "inline-block",
-                fontSize: 14,
-                fontWeight: 500,
-                padding: "13px 24px",
-                textAlign: "center",
-                textDecoration: "none"
-              }}
-            >
-              <span style={{ verticalAlign: "middle" }}>Changelog</span>
-            </Button>
+            <Button href={readUrl}>Changelog</Button>
           </Section>
 
           <Text

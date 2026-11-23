@@ -7,14 +7,14 @@ import {
   POSTHOG_API_HOST,
   POSTHOG_PROJECT_PUBLIC_KEY
 } from "@carbon/auth";
-import { ensureLoggingConfigured } from "@carbon/logger/config.client";
+import { getLogger } from "@carbon/logger";
 import posthog from "posthog-js";
 import { startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 import { preloadCatalog } from "~/services/lingui";
 
-ensureLoggingConfigured();
+const logger = getLogger("mes", "service-worker");
 
 // Initialized at module scope, before hydration, rather than from an effect:
 // the authenticated layout calls identify()/register()/group() from its own
@@ -31,15 +31,18 @@ ensureLoggingConfigured();
 //
 // The key must be a real PostHog project key (`phc_…`), not just non-empty: a
 // placeholder value (e.g. a masked "****" in a local .env) passes a truthiness
-// check, and initializing with it makes posthog-js inject its remote-config
-// <script> into the document before hydrateRoot(document) runs — an extra DOM
-// node React can't match, so the ENTIRE document fails hydration.
+// check and would start analytics with a key PostHog does not know.
 if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
     api_host: POSTHOG_API_HOST,
     // LCP, INP and CLS from real sessions: the only way to know which pages are
     // slow for the people using them.
-    capture_performance: { web_vitals: true }
+    capture_performance: { web_vitals: true },
+    // Remote config, web vitals and the recorder load as <script> tags. The
+    // default puts them in <body> ahead of React Router's scripts, a node the
+    // server never sent, and the whole document fails hydration (#418/#423).
+    // React 18 ignores extra nodes at the end of <head>.
+    external_scripts_inject_target: "head"
   });
 }
 
@@ -50,6 +53,22 @@ if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
   throw new Error(
     "Analytics initialized in a controlled environment — refusing to boot"
   );
+}
+
+// Caches the build files and shows an offline page when a tablet loses the
+// network (public/service-worker.js). Also in dev: the dev server serves no
+// /assets/ URL, so its modules never reach the cache. After the page has
+// loaded, so the worker's own download does not compete with the page's; this
+// module can run after "load" has fired (the dev server imports it late), so
+// check first.
+if ("serviceWorker" in navigator) {
+  const register = () => {
+    navigator.serviceWorker
+      .register("/service-worker.js", { scope: "/" })
+      .catch((error) => logger.warning("not registered", { error }));
+  };
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register, { once: true });
 }
 
 // The catalog is no longer in loader data, so fetch the active language's

@@ -15,7 +15,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import type { Webhook } from "~/modules/settings";
+import type { Webhook } from "~/modules/settings/types";
 import WebhooksTable from "./WebhooksTable";
 
 const mockWebhooks: Webhook[] = [
@@ -101,7 +101,11 @@ export default function WebhooksUpgradeOverlay() {
   return (
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
-        <WebhooksTable data={mockWebhooks} count={mockWebhooks.length} />
+        <WebhooksTable
+          data={mockWebhooks}
+          count={mockWebhooks.length}
+          infinite={{ dataKey: "data", nextCursor: null }}
+        />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>
         <UpgradeOverlayIcon>

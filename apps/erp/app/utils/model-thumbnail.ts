@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { serviceErrorMessage } from "@carbon/query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Model towards camera, in the model's own axes (Z up). */
@@ -51,6 +52,8 @@ export async function regenerateModelThumbnail({
     body
   });
   if (!response.ok) throw new Error(`thumbnail ${response.status}`);
+  const refused = serviceErrorMessage(await response.json());
+  if (refused) throw new Error(refused);
 
   const deadline = Date.now() + 90_000;
   while (isActive() && Date.now() < deadline) {

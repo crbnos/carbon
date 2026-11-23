@@ -2,74 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { formatDate, isEoriCountry } from "@carbon/utils";
+import { isEoriCountry } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
-import { AddressBlock } from "../../components";
+import {
+  type DocumentBlock,
+  makeText,
+  purchaseOrderTexts
+} from "../../../template";
+import { AddressRows, useTextRows } from "../textRows";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
 
-export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
+export function PartiesBlock({
+  block,
+  data
+}: {
+  block: DocumentBlock;
+  data: PurchaseOrderData;
+}) {
   const tw = useTw();
-  const {
-    purchaseOrder,
-    purchaseOrderLocations,
-    paymentTerms,
-    company,
-    accountsPayableBillingAddress,
-    currencyCode,
-    locale
-  } = data;
-  const {
-    supplierName,
-    supplierAddressLine1,
-    supplierAddressLine2,
-    supplierCity,
-    supplierStateProvince,
-    supplierPostalCode,
-    supplierCountryCode,
-    supplierCountryName,
-    deliveryName,
-    deliveryAddressLine1,
-    deliveryAddressLine2,
-    deliveryCity,
-    deliveryStateProvince,
-    deliveryPostalCode,
-    deliveryCountryCode,
-    deliveryCountryName,
-    dropShipment,
-    customerName,
-    customerAddressLine1,
-    customerAddressLine2,
-    customerCity,
-    customerStateProvince,
-    customerPostalCode,
-    customerCountryCode,
-    customerCountryName
-  } = purchaseOrderLocations;
-
-  const paymentTerm = paymentTerms?.find(
-    (term) => term.id === purchaseOrder?.paymentTermId
-  );
-
-  const shipAddress = dropShipment
-    ? {
-        name: customerName,
-        addressLine1: customerAddressLine1,
-        addressLine2: customerAddressLine2,
-        city: customerCity,
-        stateProvince: customerStateProvince,
-        postalCode: customerPostalCode,
-        country: customerCountryName ?? customerCountryCode
-      }
-    : {
-        name: deliveryName,
-        addressLine1: deliveryAddressLine1,
-        addressLine2: deliveryAddressLine2,
-        city: deliveryCity,
-        stateProvince: deliveryStateProvince,
-        postalCode: deliveryPostalCode,
-        country: deliveryCountryName ?? deliveryCountryCode
-      };
+  const t = makeText(purchaseOrderTexts.parties, block, data.vars);
+  const { purchaseOrderLocations } = data;
+  const { row } = useTextRows(t);
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
@@ -77,34 +31,17 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
         {/* LEFT — Supplier */}
         <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Supplier
+            {t("supplier")}
           </Text>
           <View style={tw("text-[9px] text-gray-800")}>
-            <AddressBlock
-              name={supplierName}
-              addressLine1={supplierAddressLine1}
-              addressLine2={supplierAddressLine2}
-              city={supplierCity}
-              stateProvince={supplierStateProvince}
-              postalCode={supplierPostalCode}
-              country={supplierCountryName ?? supplierCountryCode}
-            />
-            {purchaseOrderLocations.supplierTaxId &&
-            !isEoriCountry(supplierCountryCode) ? (
-              <Text>Tax ID: {purchaseOrderLocations.supplierTaxId}</Text>
-            ) : null}
-            {purchaseOrderLocations.supplierVatNumber ? (
-              <Text>VAT: {purchaseOrderLocations.supplierVatNumber}</Text>
-            ) : null}
-            {purchaseOrderLocations.supplierEori ? (
-              <Text>EORI: {purchaseOrderLocations.supplierEori}</Text>
-            ) : null}
-            {purchaseOrderLocations.supplierContactName ? (
-              <Text>Contact: {purchaseOrderLocations.supplierContactName}</Text>
-            ) : null}
-            {purchaseOrderLocations.supplierContactEmail ? (
-              <Text>Email: {purchaseOrderLocations.supplierContactEmail}</Text>
-            ) : null}
+            <AddressRows t={t} prefix="supplier" />
+            {isEoriCountry(purchaseOrderLocations.supplierCountryCode)
+              ? null
+              : row("supplierTaxId")}
+            {row("supplierVat")}
+            {row("supplierEori")}
+            {row("supplierContact")}
+            {row("supplierEmail")}
           </View>
         </View>
 
@@ -114,86 +51,31 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Order Info
+              {t("orderInfo")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {purchaseOrder?.purchaseOrderId ? (
-                <Text>PO Number: {purchaseOrder.purchaseOrderId}</Text>
-              ) : null}
-              {purchaseOrder?.orderDate ? (
-                <Text>
-                  Date: {formatDate(purchaseOrder.orderDate, undefined, locale)}
-                </Text>
-              ) : null}
-              <Text>Currency: {currencyCode}</Text>
-              {purchaseOrder?.supplierReference ? (
-                <Text>Reference: {purchaseOrder.supplierReference}</Text>
-              ) : null}
-              {purchaseOrder?.receiptRequestedDate ? (
-                <Text>
-                  Requested:{" "}
-                  {formatDate(
-                    purchaseOrder.receiptRequestedDate,
-                    undefined,
-                    locale
-                  )}
-                </Text>
-              ) : null}
-              {purchaseOrder?.receiptPromisedDate ? (
-                <Text>
-                  Promised:{" "}
-                  {formatDate(
-                    purchaseOrder.receiptPromisedDate,
-                    undefined,
-                    locale
-                  )}
-                </Text>
-              ) : null}
-              {paymentTerm ? (
-                <Text>Payment Terms: {paymentTerm.name}</Text>
-              ) : null}
-              {purchaseOrder?.incoterm ? (
-                <Text>
-                  Incoterm: {purchaseOrder.incoterm}
-                  {purchaseOrder.incotermLocation
-                    ? ` — ${purchaseOrder.incotermLocation}`
-                    : ""}
-                </Text>
-              ) : null}
+              {row("poNumber")}
+              {row("date")}
+              {row("currency")}
+              {row("reference")}
+              {row("requested")}
+              {row("promised")}
+              {row("paymentTerms")}
+              {row("incoterm")}
             </View>
             <View style={tw("h-[1px] bg-gray-200 my-2")} />
             <View style={tw("text-[9px] text-gray-800")}>
-              {company.vatNumber ? <Text>VAT: {company.vatNumber}</Text> : null}
-              {company.eori ? <Text>EORI: {company.eori}</Text> : null}
-              {(() => {
-                const name =
-                  purchaseOrder.assigneeFullName ??
-                  purchaseOrder.accountManagerFullName ??
-                  purchaseOrder.createdByFullName;
-                const email =
-                  purchaseOrder.assigneeEmail ??
-                  purchaseOrder.accountManagerEmail ??
-                  purchaseOrder.createdByEmail;
-                const phone =
-                  purchaseOrder.assigneePhone ??
-                  purchaseOrder.accountManagerPhone ??
-                  purchaseOrder.createdByPhone;
-                return (
-                  <>
-                    {name ? <Text>Contact: {name}</Text> : null}
-                    {email ? <Text>Email: {email}</Text> : null}
-                    {phone ? <Text>Phone: {phone}</Text> : null}
-                  </>
-                );
-              })()}
-              {accountsPayableBillingAddress?.email ? (
+              {row("companyVat")}
+              {row("companyEori")}
+              {row("buyerContact")}
+              {row("buyerEmail")}
+              {row("buyerPhone")}
+              {t.prints("billingEmail") ? (
                 <>
                   <Text style={tw("font-bold mt-1")}>
-                    Billing documents and enquiries:
+                    {t("billingEnquiries")}
                   </Text>
-                  <Text style={tw("font-bold")}>
-                    {accountsPayableBillingAddress.email}
-                  </Text>
+                  <Text style={tw("font-bold")}>{t("billingEmail")}</Text>
                 </>
               ) : null}
             </View>
@@ -203,10 +85,10 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Deliver To
+              {t("deliverTo")}
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              <AddressBlock {...shipAddress} />
+              <AddressRows t={t} prefix="deliverTo" />
             </View>
           </View>
         </View>

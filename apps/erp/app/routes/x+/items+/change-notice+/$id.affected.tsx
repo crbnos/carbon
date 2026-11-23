@@ -9,11 +9,13 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  addChangeNoticeAffectedItem,
   changeNoticeAffectedItemValidator,
   changeNoticeNewPartValidator
-} from "~/modules/items";
-import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
+} from "~/modules/items/items.models";
+import {
+  addChangeNoticeAffectedItem,
+  requireEditableChangeNoticeRoute
+} from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -75,10 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (add.error || !add.data) {
       return data(
         { success: false },
-        await flash(
-          request,
-          error(add.error, add.error?.message ?? "Failed to add new part")
-        )
+        await flash(request, error(add.error, "Failed to add new part"))
       );
     }
     return { success: true, id: add.data.id };
@@ -114,10 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (add.error || !add.data) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(add.error, add.error?.message ?? "Failed to add affected item")
-      )
+      await flash(request, error(add.error, "Failed to add affected item"))
     );
   }
 

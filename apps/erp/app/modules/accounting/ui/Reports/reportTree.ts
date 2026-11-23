@@ -14,7 +14,7 @@ export type ReportAccountNode = {
   isGroup: boolean | null;
 };
 
-// Shared by TrialBalanceTree and MultiPeriodStatementTree: build the flat tree
+// Shared by the statement trees and their CSV exports: build the flat tree
 // in display order — groups sort before leaves, the computed Net Income line
 // always sorts to the end of its group, everything else alphabetically.
 export function accountsToFlatTree<T extends ReportAccountNode>(
@@ -86,33 +86,4 @@ export function filterAccounts<T extends ReportAccountNode>(
   }
 
   return accounts.filter((a) => matched.has(a.id));
-}
-
-/** Normal-debit accounts: positive balance = debit */
-export function isNormalDebit(
-  accountClass: string | null | undefined
-): boolean {
-  return accountClass === "Asset" || accountClass === "Expense";
-}
-
-/**
- * Split net change into debit and credit based on account class.
- * Normal-debit accounts (Asset, Expense): positive netChange = debit
- * Normal-credit accounts (Liability, Equity, Revenue): positive netChange = credit
- */
-export function getDebitCredit(
-  netChange: number,
-  accountClass: string | null | undefined
-): { debit: number; credit: number } {
-  if (netChange === 0) return { debit: 0, credit: 0 };
-
-  if (isNormalDebit(accountClass)) {
-    return netChange > 0
-      ? { debit: netChange, credit: 0 }
-      : { debit: 0, credit: Math.abs(netChange) };
-  }
-  // Normal credit accounts
-  return netChange > 0
-    ? { debit: 0, credit: netChange }
-    : { debit: Math.abs(netChange), credit: 0 };
 }

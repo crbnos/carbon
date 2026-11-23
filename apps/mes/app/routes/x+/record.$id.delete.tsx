@@ -8,7 +8,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteAttributeRecord } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  deleteAttributeRecord
+} from "~/services/operations.service";
 
 export async function action({ params, request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -20,6 +23,24 @@ export async function action({ params, request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
+
+  const record = await serviceRole
+    .from("jobOperationStepRecord")
+    .select("jobOperationStep(operationId)")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const operationId = record.data?.jobOperationStep?.operationId;
+  const refusal = operationId
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({ success: false }, await flash(request, error(null, refusal)));
+  }
 
   const attributeDelete = await deleteAttributeRecord(serviceRole, {
     id,

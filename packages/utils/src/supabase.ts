@@ -17,3 +17,29 @@ export function sanitize<T extends Record<string, any>>(
   });
   return output;
 }
+
+/**
+ * A PostgREST `.or()` filter matching `term`, as typed, anywhere in any of
+ * `columns`. Two layers of escaping: `\`, `%` and `_` for ILIKE, so they
+ * match themselves, then the value is quoted for PostgREST, so a comma, dot
+ * or parenthesis is text, not filter syntax. Interpolated bare, "a,b" ended
+ * the filter early and the request failed.
+ */
+export function searchFilter(columns: string[], term: string): string {
+  const quoted = quoteFilterValue(`%${escapeLike(term)}%`);
+  return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
+}
+
+/**
+ * A value quoted for a PostgREST logic tree (`or=(...)`, `and(...)`): the
+ * quotes keep `,`, `(`, `)`, `.` and `:` from changing the filter's shape,
+ * and a `"` or `\` inside is escaped.
+ */
+export function quoteFilterValue(value: string): string {
+  return `"${value.replace(/["\\]/g, (char) => `\\${char}`)}"`;
+}
+
+/** `term` for a LIKE / ILIKE pattern: `\\`, `%` and `_` match themselves. */
+export function escapeLike(term: string): string {
+  return term.replace(/[\\%_]/g, (char) => `\\${char}`);
+}

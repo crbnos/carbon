@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { forwardRef, useRef } from "react";
 import * as ReactAria from "react-aria-components";
+import { useOptionalFormControlContext } from "./Form/FormControl";
 import type { InputProps } from "./Input";
 import { Input } from "./Input";
 import { cn } from "./utils/cn";
@@ -48,10 +50,20 @@ const NumberField = ({
   formatOptions,
   ...props
 }: ReactAria.NumberFieldProps) => {
+  const { t } = useLingui();
   const stableFormatOptions = useStableFormatOptions(formatOptions);
+  // The label is drawn by the FormControl, so react-aria would name the
+  // steppers only "Increase" / "Decrease". Give them the field's label.
+  const field = useOptionalFormControlContext();
+  const fieldLabel =
+    props["aria-label"] || props["aria-labelledby"]
+      ? undefined
+      : field?.labelText;
   return (
     <ReactAria.NumberField
       className={cn("w-full", className)}
+      incrementAriaLabel={fieldLabel ? t`Increase ${fieldLabel}` : undefined}
+      decrementAriaLabel={fieldLabel ? t`Decrease ${fieldLabel}` : undefined}
       {...props}
       formatOptions={stableFormatOptions}
     />
@@ -60,13 +72,15 @@ const NumberField = ({
 
 // `relative` anchors the absolutely positioned NumberInputStepper to the input;
 // without it the arrows attach to the nearest positioned ancestor (e.g. a modal).
+// `isolate` keeps the stepper's z-10 inside the group, so it cannot paint over a
+// sticky header the field scrolls under.
 const NumberInputGroup = ({ className, ...props }: ReactAria.GroupProps) => {
   return (
     <ReactAria.Group
       className={
         typeof className === "function"
-          ? (values) => cn("relative", className(values))
-          : cn("relative", className)
+          ? (values) => cn("relative isolate", className(values))
+          : cn("relative isolate", className)
       }
       {...props}
     />
@@ -79,8 +93,11 @@ const NumberInputStepper = ({
 }: React.HTMLAttributes<HTMLElement>) => {
   return (
     <div
+      data-number-stepper
       className={cn(
         "absolute right-0 top-0 z-10 m-px flex h-[calc(100%-2px)] w-6 flex-col",
+        // Phones: − and + side by side, each a 44pt target.
+        "max-md:w-[88px] max-md:flex-row-reverse",
         className
       )}
       {...props}
@@ -95,7 +112,10 @@ const NumberInput = forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         isReadOnly={isDisabled || isReadOnly}
         isDisabled={isDisabled}
-        className={cn("pr-6", className)}
+        className={cn(
+          "pr-6 max-md:[&:has(~[data-number-stepper])]:pr-[92px]",
+          className
+        )}
         onFocus={(e) => {
           (e.target as HTMLInputElement).select();
           onFocus?.(e);
@@ -117,7 +137,7 @@ const NumberIncrementStepper = ({
       slot="increment"
       className={cn(
         [
-          "flex flex-1 select-none items-center justify-center rounded-tr-md border-l border-border leading-none text-foreground transition-colors duration-100",
+          "flex flex-1 select-none items-center justify-center rounded-tr-md border-l border-border leading-none text-foreground transition-colors duration-100 max-md:rounded-none max-md:rounded-r-md max-md:hit-area",
           // Pressed
           "pressed:bg-slate-100 dark:pressed:bg-slate-700",
           // Disabled
@@ -139,7 +159,7 @@ const NumberDecrementStepper = ({
       slot="decrement"
       className={cn(
         [
-          "flex flex-1 select-none items-center justify-center rounded-br-md border-l border-t border-border leading-none text-foreground transition-colors duration-100",
+          "flex flex-1 select-none items-center justify-center rounded-br-md border-l border-t border-border leading-none text-foreground transition-colors duration-100 max-md:rounded-none max-md:border-t-0 max-md:hit-area",
           // Pressed
           "pressed:bg-slate-100 dark:pressed:bg-slate-700",
           // Disabled

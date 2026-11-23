@@ -6,11 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { materialGradeValidator, upsertMaterialGrade } from "~/modules/items";
+import { materialGradeValidator } from "~/modules/items/items.models";
+import { upsertMaterialGrade } from "~/modules/items/items.service";
 import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
 import { getParams, path } from "~/utils/path";
 
@@ -58,10 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!materialGradeId) {
     return data(
       {},
-      await flash(
-        request,
-        error(insertMaterialGrade, "Failed to insert material grade")
-      )
+      await flash(request, error(null, "Failed to insert material grade"))
     );
   }
 
@@ -74,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMaterialGradesRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     materialSubstanceId: ""
@@ -82,7 +80,8 @@ export default function NewMaterialGradesRoute() {
 
   return (
     <MaterialGradeForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

@@ -23,6 +23,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { FixedAssetClassListItem } from "../../types";
@@ -30,6 +31,7 @@ import type { FixedAssetClassListItem } from "../../types";
 type AssetClassesTableProps = {
   data: FixedAssetClassListItem[];
   count: number;
+  infinite: InfiniteOptions;
   taxDepreciationEnabled: boolean;
   primaryAction?: ReactNode;
 };
@@ -39,7 +41,8 @@ const AssetClassesTable = memo(
     data,
     count,
     taxDepreciationEnabled,
-    primaryAction
+    primaryAction,
+    infinite
   }: AssetClassesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -90,6 +93,7 @@ const AssetClassesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -98,6 +102,7 @@ const AssetClassesTable = memo(
           header: t`Book Depreciation`,
           cell: ({ row }) => formatBookDepreciation(row.original),
           meta: {
+            mobile: "P3",
             icon: <LuCalendar />
           }
         }
@@ -148,6 +153,7 @@ const AssetClassesTable = memo(
     return (
       <>
         <Table<FixedAssetClassListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}
@@ -163,11 +169,9 @@ const AssetClassesTable = memo(
             text={t`Are you sure you want to delete the asset class: ${selectedClass.name}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedClass(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedClass(null);
             }}
           />
         )}

@@ -4,6 +4,7 @@
 
 export * from "./core/account-mapping";
 export * from "./core/account-mapping-ai";
+export * from "./core/bill-tax-plan";
 export * from "./core/counterpart";
 export * from "./core/counterpart-types";
 export * from "./core/credit-reason-item";
@@ -18,11 +19,15 @@ export * from "./core/payment-application";
 export * from "./core/payment-syncer";
 export * from "./core/payment-tombstone";
 export * from "./core/posting";
+export * from "./core/provider-tax";
 export * from "./core/reimbursement-source";
 export * from "./core/remote-journal";
+export * from "./core/remote-trial-balance";
 export * from "./core/service";
 export * from "./core/subscriptions";
 export * from "./core/sync";
+export * from "./core/tax-mapping";
+export * from "./core/trial-balance";
 export * from "./core/types";
 export * from "./core/utils";
 export * from "./providers";

@@ -26,10 +26,19 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  DateTime,
+  EmployeeAvatar,
+  Highlight,
+  Hyperlink,
+  New,
+  searchMatches,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useRealtime } from "~/hooks/useRealtime";
 import { useItems } from "~/stores/items";
@@ -50,6 +59,7 @@ type ChangeNoticesTableProps = {
   data: ChangeNoticeListItem[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 // One entry of the changeOrders view's `affectedItems` jsonb rollup — enough to
@@ -63,9 +73,11 @@ type AffectedItemSummary = {
 };
 
 const ChangeNoticesTable = memo(
-  ({ data, types, count }: ChangeNoticesTableProps) => {
+  ({ data, types, count, infinite }: ChangeNoticesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
+    const [params] = useUrlParams();
+    const search = params.get("search");
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
     const [selectedChangeNotice, setSelectedChangeNotice] =
@@ -95,15 +107,22 @@ const ChangeNoticesTable = memo(
             <Hyperlink to={path.to.changeNotice(row.original.id!)}>
               <div className="flex flex-col gap-0">
                 <span className="text-sm font-medium">
-                  {row.original.changeOrderId}
+                  <Highlight
+                    text={row.original.changeOrderId}
+                    ranges={searchMatches(row.original.changeOrderId, search)}
+                  />
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {row.original.name}
+                  <Highlight
+                    text={row.original.name}
+                    ranges={searchMatches(row.original.name, search)}
+                  />
                 </span>
               </div>
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -114,6 +133,7 @@ const ChangeNoticesTable = memo(
             <ChangeNoticeStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCircleGauge />,
             filter: {
               type: "static",
@@ -205,6 +225,7 @@ const ChangeNoticesTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             filter: {
               type: "static",
@@ -230,7 +251,7 @@ const ChangeNoticesTable = memo(
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, people, items, resolveItemId, types, t]);
+    }, [customColumns, people, items, resolveItemId, search, types, t]);
 
     const canExpandRow = useCallback(
       (row: ChangeNoticeListItem) => (row.itemIds?.length ?? 0) > 0,
@@ -250,6 +271,7 @@ const ChangeNoticesTable = memo(
               // successor worth arrowing to.
               const hasDistinctSuccessor =
                 !!affected.newItemId && affected.newItemId !== affected.itemId;
+              const readableId = resolveItemId(affected.itemId);
               const newReadableId = hasDistinctSuccessor
                 ? resolveItemId(affected.newItemId)
                 : null;
@@ -261,12 +283,20 @@ const ChangeNoticesTable = memo(
                   />
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      {resolveItemId(affected.itemId)}
+                      <Highlight
+                        text={readableId}
+                        ranges={searchMatches(readableId, search)}
+                      />
                     </span>
                     {newReadableId && (
                       <span className="flex items-center gap-1 text-muted-foreground">
                         <LuArrowRight className="size-3.5 shrink-0" />
-                        <span>{newReadableId}</span>
+                        <span>
+                          <Highlight
+                            text={newReadableId}
+                            ranges={searchMatches(newReadableId, search)}
+                          />
+                        </span>
                       </span>
                     )}
                     <ChangeTypeBadge changeType={affected.changeType} />
@@ -277,7 +307,7 @@ const ChangeNoticesTable = memo(
           </div>
         );
       },
-      [resolveItemId]
+      [resolveItemId, search]
     );
 
     const renderContextMenu = useCallback(
@@ -318,6 +348,7 @@ const ChangeNoticesTable = memo(
       <>
         <Table<ChangeNoticeListItem>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={
@@ -328,23 +359,18 @@ const ChangeNoticesTable = memo(
           renderContextMenu={renderContextMenu}
           renderExpandedRow={renderExpandedRow}
           canExpandRow={canExpandRow}
+          expandRowsFor={search}
           defaultColumnVisibility={{ itemIds: false }}
           title={t`Change Notices`}
           table="changeOrder"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedChangeNotice && (
+        {selectedChangeNotice && (
           <ConfirmDelete
             action={path.to.deleteChangeNotice(selectedChangeNotice.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedChangeNotice(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedChangeNotice(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedChangeNotice.name ?? "change notice"}
             text={t`Are you sure you want to delete this change notice?`}
           />

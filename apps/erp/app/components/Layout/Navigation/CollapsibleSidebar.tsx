@@ -4,29 +4,37 @@
 
 import {
   cn,
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
   IconButton,
-  useIsMobile
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useMode,
+  useRouteData,
+  useShellThemeStyle,
+  useSlidingHoverCard,
+  useViewport
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
-import type { ComponentProps, PropsWithChildren } from "react";
+import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
 import {
   createContext,
   forwardRef,
   useContext,
-  useEffect,
   useMemo,
-  useRef
+  useSyncExternalStore
 } from "react";
 import { LuPanelLeft } from "react-icons/lu";
 import type { Location } from "react-router";
 import { useLocation, useMatches, useNavigation } from "react-router";
-import { useOptimisticLocation } from "~/hooks";
 import { useUIStore } from "~/stores/ui";
 import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+import {
+  boardSidebarCookie,
+  isBoardSidebarShown,
+  resolveModuleSidebar
+} from "./moduleSidebar";
 
 interface CollapsibleSidebarContextValue {
   hasSidebar: boolean;
@@ -51,29 +59,8 @@ function CollapsibleSidebarProvider({
   hasSidebar,
   children
 }: PropsWithChildren<{ hasSidebar: boolean }>) {
-  const isMobile = useIsMobile();
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
-  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
-  const setHasContentSidebar = useUIStore(
-    (state) => state.setHasContentSidebar
-  );
-
-  // Only a change of breakpoint moves it: opening on mount would undo the
-  // user's collapse, and on a phone open the drawer for a frame.
-  const wasMobile = useRef(false);
-  useEffect(() => {
-    if (isMobile) setSidebarOpen(false);
-    else if (wasMobile.current) setSidebarOpen(true);
-    wasMobile.current = isMobile;
-  }, [isMobile, setSidebarOpen]);
-
-  // Tell the (global) Topbar that this route has a content sub-nav, so it can
-  // surface a mobile "Sections" trigger.
-  useEffect(() => {
-    setHasContentSidebar(hasSidebar);
-    return () => setHasContentSidebar(false);
-  }, [hasSidebar, setHasContentSidebar]);
 
   return (
     <CollapsibleSidebarContext.Provider
@@ -115,6 +102,16 @@ CollapsibleSidebarTrigger.displayName = "CollapsibleSidebarTrigger";
 const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
 
 /**
+ * How a docked panel slides in and out: this module sidebar, and a record's
+ * properties panel (`ResizablePanels`).
+ */
+export const dockedPanelTransition = {
+  duration: 0.2,
+  ease: easeOutQuart,
+  opacity: { duration: 0.15 }
+} as const;
+
+/**
  * The location a module sidebar highlights against: the pending one while it
  * is still inside this sidebar, otherwise the one on screen. A sidebar about
  * to be replaced keeps its highlight instead of going blank for the length of
@@ -134,56 +131,107 @@ export function useSidebarLocation(isInside: (pathname: string) => boolean) {
  * background. A link opts in with `data-nav-item`.
  */
 export function SidebarLinks({ children }: PropsWithChildren) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const hoverCardRef = useRef<HTMLSpanElement>(null);
-
-  // Written straight to the element: a hover must not re-render the list.
-  const moveHoverCard = (item: HTMLElement | null) => {
-    const card = hoverCardRef.current;
-    const list = listRef.current;
-    if (!card || !list) return;
-    if (!item) {
-      card.style.opacity = "0";
-      return;
-    }
-    const itemRect = item.getBoundingClientRect();
-    const listRect = list.getBoundingClientRect();
-    const left = itemRect.left - listRect.left + list.scrollLeft;
-    const top = itemRect.top - listRect.top + list.scrollTop;
-    // Entering the list: appear on the link rather than slide in from
-    // wherever the card was last.
-    card.style.transitionProperty = card.style.opacity === "1" ? "" : "opacity";
-    card.style.transform = `translate(${left}px, ${top}px)`;
-    card.style.width = `${itemRect.width}px`;
-    card.style.height = `${itemRect.height}px`;
-    card.style.opacity = "1";
-  };
+  const { t } = useLingui();
+  const { containerRef, cardRef, handlers } =
+    useSlidingHoverCard<HTMLElement>();
 
   return (
-    <div
-      ref={listRef}
+    <nav
+      ref={containerRef}
+      aria-label={t`Module`}
       className="relative overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8"
-      // The gaps between links are not links: the card stays where it is
-      // while the pointer crosses one, and only leaves with the pointer.
-      onPointerOver={(event) => {
-        if (event.pointerType !== "mouse") return;
-        const item = (event.target as HTMLElement).closest<HTMLElement>(
-          "[data-nav-item]"
-        );
-        if (item) moveHoverCard(item);
-      }}
-      // A press navigates, expands a link's views or starts a reorder: the
-      // row under the card is about to change or move.
-      onPointerDown={() => moveHoverCard(null)}
-      onPointerLeave={() => moveHoverCard(null)}
+      {...handlers}
     >
       <span
-        ref={hoverCardRef}
+        ref={cardRef}
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none"
       />
       {children}
-    </div>
+    </nav>
+  );
+}
+
+const boardSidebarListeners = new Set<() => void>();
+
+function subscribeBoardSidebar(onChange: () => void) {
+  boardSidebarListeners.add(onChange);
+  return () => {
+    boardSidebarListeners.delete(onChange);
+  };
+}
+
+const readBoardSidebar = () => isBoardSidebarShown(document.cookie);
+
+/**
+ * Whether the person shows the module sidebar on boards (`handle.boardSidebar`).
+ * The cookie is the store; the server render reads it in the shell loader.
+ */
+function useBoardSidebarShown() {
+  const serverShown =
+    useRouteData<{ boardSidebarShown?: boolean }>(path.to.authenticatedRoot)
+      ?.boardSidebarShown ?? false;
+  return useSyncExternalStore(
+    subscribeBoardSidebar,
+    readBoardSidebar,
+    () => serverShown
+  );
+}
+
+function setBoardSidebarShown(shown: boolean) {
+  document.cookie = boardSidebarCookie(shown);
+  for (const listener of boardSidebarListeners) listener();
+}
+
+function useResolvedModuleSidebar() {
+  const matches = useMatches();
+  const shown = useBoardSidebarShown();
+  return resolveModuleSidebar(
+    matches.map((match) => match.handle as Handle | undefined),
+    shown
+  );
+}
+
+/** The current module's desktop sub-navigation, or undefined. */
+export function useModuleSidebar() {
+  return useResolvedModuleSidebar().desktop;
+}
+
+/** Phones: the module sidebar, or a route's phone-only section switcher. */
+export function useCompactModuleSidebar() {
+  return useResolvedModuleSidebar().compact;
+}
+
+/**
+ * Boards only: the button before the breadcrumbs that shows or hides the
+ * module sidebar. The choice is remembered for every board.
+ */
+export function BoardSidebarToggle() {
+  const { t } = useLingui();
+  const { isBoard } = useResolvedModuleSidebar();
+  const shown = useBoardSidebarShown();
+  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
+
+  if (!isBoard) return null;
+
+  const label = shown ? t`Hide menu` : t`Show menu`;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          variant={shown ? "active" : "ghost"}
+          aria-label={label}
+          aria-pressed={shown}
+          icon={<LuPanelLeft />}
+          onClick={() => {
+            // A sidebar collapsed on a list page would open at zero width.
+            if (!shown) setSidebarOpen(true);
+            setBoardSidebarShown(!shown);
+          }}
+        />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -195,11 +243,7 @@ export function SidebarLinks({ children }: PropsWithChildren) {
  * outside a module (detail pages) have none and get the full width.
  */
 export function ModuleSidebarLayout({ children }: PropsWithChildren) {
-  const matches = useMatches();
-  const handles = matches.map((match) => match.handle as Handle | undefined);
-  const Sidebar = handles.some((handle) => handle?.hideModuleSidebar)
-    ? undefined
-    : handles.find((handle) => handle?.sidebar)?.sidebar;
+  const Sidebar = useModuleSidebar();
 
   return (
     <CollapsibleSidebarProvider hasSidebar={Boolean(Sidebar)}>
@@ -229,9 +273,9 @@ const CollapsibleSidebar = ({
 }: PropsWithChildren<{ width?: number }>) => {
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
-  const isMobile = useIsMobile();
-  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
-  const location = useOptimisticLocation();
+  const { isPhone } = useViewport();
+  const mode = useMode();
+  const panel = useShellThemeStyle()?.panel[mode];
 
   const variants = useMemo(() => {
     return {
@@ -246,38 +290,9 @@ const CollapsibleSidebar = ({
     };
   }, [width]);
 
-  // On mobile the sub-nav is an overlay drawer; close it once the user picks a
-  // section (the pathname changes) so it doesn't sit over the destination.
-  useEffect(() => {
-    if (isMobile) setSidebarOpen(false);
-  }, [location.pathname, isMobile, setSidebarOpen]);
-
-  if (isMobile) {
-    return (
-      <>
-        {/* The sub-nav is a portaled overlay on mobile, but the module layout
-            grid (`grid-cols-[auto_minmax(0,1fr)]`) still expects a node in its
-            first (`auto`) track. Without this zero-width occupant the content
-            slides into the `auto` track and the `1fr` track becomes an empty
-            gutter on the right. */}
-        <div aria-hidden className="w-0" />
-        <Drawer open={isOpen} onOpenChange={setSidebarOpen}>
-          <DrawerContent
-            position="left"
-            size="content"
-            className="w-[17rem] max-w-[85vw] p-0"
-          >
-            <DrawerTitle className="px-4 py-3">
-              <Trans>Submodules</Trans>
-            </DrawerTitle>
-            <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-              {children}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </>
-    );
-  }
+  // Compact: the app bar title opens the section switcher sheet instead.
+  // Keep the zero-width occupant of the layout grid's first track.
+  if (isPhone) return <div aria-hidden className="w-0" />;
 
   return (
     <motion.div
@@ -285,19 +300,14 @@ const CollapsibleSidebar = ({
       // No enter animation: arriving from a page without a sidebar must not
       // replay the collapse.
       initial={false}
-      transition={
-        shouldReduceMotion
-          ? { duration: 0 }
-          : {
-              duration: 0.2,
-              ease: easeOutQuart,
-              opacity: { duration: 0.15 }
-            }
-      }
+      transition={shouldReduceMotion ? { duration: 0 } : dockedPanelTransition}
       variants={variants}
       className="relative flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >
-      <div className="h-full w-full overflow-hidden bg-card border-r border-border">
+      <div
+        className="h-full w-full overflow-hidden bg-card text-foreground border-r border-border"
+        style={panel as CSSProperties | undefined}
+      >
         {isOpen ? children : null}
       </div>
     </motion.div>

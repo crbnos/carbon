@@ -2,40 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { nanoid } from "nanoid";
 import { create } from "zustand";
 
-// Stock Transfer Wizard Store
+// New Stock Transfer page store. A line is keyed by its own id, not by
+// (item, from, to): its To is edited after the line exists.
 export type StockTransferWizardLine = {
+  key: string;
   itemId: string;
   itemReadableId: string;
   description: string;
   thumbnailPath: string;
+  unitOfMeasureCode: string | null;
   // Nullable: ledger rows can record stock against the location rather than a
-  // bin, and the server validator accepts `nullish()` for both.
+  // bin ("No storage unit"), and the server accepts that for both ends.
   fromStorageUnitId: string | null;
   fromStorageUnitName: string | null;
+  // A line raised from a bin that needs stock has its To fixed and no source
+  // yet: `fromStorageUnitId` null means nothing until this is false.
+  needsSource: boolean;
   toStorageUnitId: string | null;
   toStorageUnitName: string | null;
+  // On hand at the source when the line was added.
   quantityAvailable: number;
-  quantity?: number;
+  quantity: number;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
 };
 
-export type StockTransferDestination = {
-  itemId: string;
-  storageUnitId: string | null;
-};
-
 export type StockTransferWizardState = {
-  // The destination row (item + bin) stock is being pulled into. Focus only —
-  // changing it never mutates lines, so lines accumulate across destinations.
-  activeDestination: StockTransferDestination | null;
   lines: StockTransferWizardLine[];
 };
 
 const useWizardStore = create<StockTransferWizardState>()(() => ({
-  activeDestination: null,
   lines: []
 }));
 
@@ -47,114 +46,66 @@ const $wizardStore = {
 
 export const useStockTransferWizard = () =>
   [useWizardStore(), $wizardStore.set] as const;
-export const useStockTransferWizardLinesCount = () =>
-  useWizardStore(
-    (wizard) => wizard.lines.filter((line) => (line.quantity ?? 0) > 0).length
-  );
-export const useStockTransferWizardTotalQuantity = () =>
-  useWizardStore((wizard) =>
-    wizard.lines.reduce((sum, line) => sum + (line.quantity ?? 0), 0)
-  );
 
-// Stock Transfer Wizard actions
+// New Stock Transfer actions
 
-// Focus a destination (item + bin) to pull stock into. Clicking the active one
-// again clears focus. Lines are never touched — removal is always explicit.
-export const setActiveDestination = (
-  destination: StockTransferDestination | null
+export const addTransferLine = (line: Omit<StockTransferWizardLine, "key">) => {
+  const key = nanoid();
+  const { lines } = $wizardStore.get();
+  $wizardStore.set({ lines: [...lines, { ...line, key }] });
+  return key;
+};
+
+export const addTransferLines = (
+  newLines: Omit<StockTransferWizardLine, "key">[]
 ) => {
-  const currentWizard = $wizardStore.get();
-  $wizardStore.set({ ...currentWizard, activeDestination: destination });
-};
-
-export const isActiveDestination = (
-  itemId: string,
-  storageUnitId: string | null
-) => {
-  const { activeDestination } = $wizardStore.get();
-  return (
-    activeDestination?.itemId === itemId &&
-    activeDestination?.storageUnitId === storageUnitId
-  );
-};
-
-export const addTransferLine = (line: StockTransferWizardLine) => {
-  const currentWizard = $wizardStore.get();
-
-  // Check if a line with same itemId, fromStorageUnitId and toStorageUnitId already exists
-  const existingLineIndex = currentWizard.lines.findIndex(
-    (l) =>
-      l.itemId === line.itemId &&
-      l.fromStorageUnitId === line.fromStorageUnitId &&
-      l.toStorageUnitId === line.toStorageUnitId
-  );
-
-  if (existingLineIndex >= 0) {
-    // Update existing line
-    const updatedLines = [...currentWizard.lines];
-    updatedLines[existingLineIndex] = {
-      ...updatedLines[existingLineIndex],
-      ...line
-    };
-    $wizardStore.set({ ...currentWizard, lines: updatedLines });
-  } else {
-    // Add new line
-    $wizardStore.set({
-      ...currentWizard,
-      lines: [...currentWizard.lines, line]
-    });
-  }
-};
-
-export const removeTransferLine = (
-  itemId: string,
-  fromStorageUnitId: string | null,
-  toStorageUnitId: string | null
-) => {
-  const currentWizard = $wizardStore.get();
-  const updatedLines = currentWizard.lines.filter(
-    (line) =>
-      !(
-        line.itemId === itemId &&
-        line.fromStorageUnitId === fromStorageUnitId &&
-        line.toStorageUnitId === toStorageUnitId
-      )
-  );
-  $wizardStore.set({ ...currentWizard, lines: updatedLines });
-};
-
-export const updateTransferLineQuantity = (
-  itemId: string,
-  fromStorageUnitId: string | null,
-  toStorageUnitId: string | null,
-  quantity: number
-) => {
-  const currentWizard = $wizardStore.get();
-  const lineIndex = currentWizard.lines.findIndex(
-    (line) =>
-      line.itemId === itemId &&
-      line.fromStorageUnitId === fromStorageUnitId &&
-      line.toStorageUnitId === toStorageUnitId
-  );
-
-  if (lineIndex >= 0) {
-    const updatedLines = [...currentWizard.lines];
-    updatedLines[lineIndex] = {
-      ...updatedLines[lineIndex],
-      quantity
-    };
-    $wizardStore.set({ ...currentWizard, lines: updatedLines });
-  }
-};
-
-export const clearStockTransferWizard = () => {
+  const { lines } = $wizardStore.get();
   $wizardStore.set({
-    activeDestination: null,
-    lines: []
+    lines: [...lines, ...newLines.map((line) => ({ ...line, key: nanoid() }))]
   });
 };
 
-export const clearTransferLines = () => {
-  const currentWizard = $wizardStore.get();
-  $wizardStore.set({ ...currentWizard, lines: [] });
+export const updateTransferLine = (
+  key: string,
+  patch: Partial<Omit<StockTransferWizardLine, "key">>
+) => {
+  const { lines } = $wizardStore.get();
+  $wizardStore.set({
+    lines: lines.map((line) =>
+      line.key === key ? { ...line, ...patch } : line
+    )
+  });
+};
+
+export const removeTransferLine = (key: string) => {
+  const { lines } = $wizardStore.get();
+  $wizardStore.set({ lines: lines.filter((line) => line.key !== key) });
+};
+
+// "Send all to": every line except a Fill line (its To is the bin that needs
+// the stock) and one whose source is that bin. Returns how many it set.
+export const setTransferLinesDestination = (
+  storageUnitId: string,
+  storageUnitName: string
+) => {
+  const { lines } = $wizardStore.get();
+  let changed = 0;
+  $wizardStore.set({
+    lines: lines.map((line) => {
+      if (line.needsSource || line.fromStorageUnitId === storageUnitId) {
+        return line;
+      }
+      changed += 1;
+      return {
+        ...line,
+        toStorageUnitId: storageUnitId,
+        toStorageUnitName: storageUnitName
+      };
+    })
+  });
+  return changed;
+};
+
+export const clearStockTransferWizard = () => {
+  $wizardStore.set({ lines: [] });
 };

@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { runIntercompanyMatching } from "~/modules/accounting";
+import { runIntercompanyMatching } from "~/modules/accounting/accounting.service";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

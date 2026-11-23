@@ -2,9 +2,10 @@
 paths:
   - "packages/database/supabase/migrations/*tracked*.sql"
   - "packages/utils/src/{batch-split,batch-merge,entity-drain,pick-guards}.ts"
-  - "apps/erp/app/modules/inventory/{lineage.server,inventory.service,types}.ts"
+  - "apps/erp/app/modules/inventory/{inventory.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
+  - "apps/erp/app/modules/projects/projects.service.ts"
 ---
 
 # Traceability / Genealogy Model
@@ -34,7 +35,7 @@ avoid an entity appearing as its own ancestor/descendant within a single activit
 | `readableId` TEXT | the serial OR batch number (promoted out of `attributes` in `20251220013724`/`20251220021403`) |
 | `itemId` TEXT | **FK to `item(id)` `ON DELETE RESTRICT`** (`20260426000000`). Nullable today; an item with any tracked entity (even `Consumed`) cannot be hard-deleted — deactivate instead |
 | `expirationDate` DATE | first-class column (`20260426020000`), drives FEFO + near-expiry reports. NOT stored in `attributes` |
-| `attributes` JSONB | descriptive only: `Receipt Line`, `Receipt`, `Supplier`, `Job`, `Job Make Method`, `Job Material`, etc. (GIN-indexed) |
+| `attributes` JSONB | descriptive only: `Receipt Line`, `Receipt`, `Supplier`, `Job`, `Job Make Method`, `Job Material`, etc. (GIN-indexed; a GIN index cannot serve `->>` equality, so `Receipt Line` and `Job Make Method` also have partial expression indexes on `("companyId", attributes->>'…')`: `trackedEntity_companyId_receiptLine_idx`, `trackedEntity_companyId_jobMakeMethod_idx`) |
 | `companyId`, `createdAt`, `createdBy` | standard |
 
 `trackedActivity`: `id`, `type` TEXT (e.g. `'Picking'`, production, receipt…),
@@ -63,7 +64,7 @@ RLS: SELECT/INSERT gated on `get_companies_with_employee_role()`; UPDATE/DELETE 
 
 ## How genealogy edges are written
 
-Edges are created in **server functions** (`packages/server-functions/src/`)
+Edges are created in **postings** (the ERP modules' service files)
 and MES services — NOT a single `post-production`:
 
 - `post-picking`, `post-receipt`, `post-shipment`, `post-stock-transfer`, `issue`,
@@ -72,9 +73,13 @@ and MES services — NOT a single `post-production`:
   `trackedActivity` and a `trackedActivityOutput` for the production event.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
-  entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
-  path as `jobOperationSerialComplete`) and reopens the make method's Done ops
-  (`issue/scrap-replacement.ts`) so the replacement runs the full routing. `issue`
+  entity → `Scrapped` (an unsplit seed is first cut to one unit, so only one unit
+  is scrapped), then **spawns a replacement unit**, numbered by
+  `getSpawnSerialNumber` like `jobOperationSerialComplete`'s next unit (left
+  unnumbered under the `production` serial number timing; the replacement of
+  an unsplit seed carries the seed's other units and stays unnumbered; a unit
+  already received to stock is refused), and reopens the make method's Done ops
+  (`applyScrapReplacement`, `inventory.service.ts`) so the replacement runs the full routing. `issue`
   case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
   an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
   on-hand bin (`quantityIssued` untouched); a `Consumed` part posts Dr scrap /
@@ -92,18 +97,48 @@ Pattern: insert `trackedActivity`, then `trackedActivityInput` for each consumed
 
 ## How lineage is queried
 
-Per-entity strict RPCs (`20251231172218`, returns `readableId`):
-`get_direct_ancestors_of_tracked_entity_strict(p_tracked_entity_id)` (backward / "where from") and
-`get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id)` (forward / "where to").
+Per-entity strict RPCs (`20251231172218`, returns `readableId`). **The names read the
+other way round from what they return** — check the joins, not the name:
+
+- `get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id)` joins the activities
+  that OUTPUT the entity and returns their INPUTS: what it was made from (upstream /
+  "where from"). For an assembly, these are the consumed components.
+- `get_direct_ancestors_of_tracked_entity_strict(p_tracked_entity_id)` joins the activities
+  that took the entity as an INPUT and returns their OUTPUTS: where it went (downstream /
+  "where used").
+
 Non-strict variants exist but include same-activity siblings — prefer strict.
 
-**Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column):
+An `Unconsume` activity (the `issue` posting) has the assembly as its input and the
+returned components as its outputs, so a component given back shows up on the assembly's
+"ancestors" side. To list what an assembly still contains, net each component's `Consume`
+rows (descendants RPC) against its `Unconsume` rows (ancestors RPC), as MES
+`getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.service.ts`, Build from
+part) do. Neither RPC returns `itemId`; read it from `trackedEntity`.
+
+**`get_traveler_target(p_tracked_entity_id, p_company_id)`** (`20261112180115_get-traveler-target.sql`)
+finds the unit a scanned traveler label travels with now. It starts at the scanned unit and walks
+up the `Consume` edges (input = the unit, output = the parent) while the unit is `Consumed`:
+
+1. At each step, take the newest `Consume` edge that no later `Unconsume` reverses. A reversing
+   `Unconsume` has input = the parent and output = the unit.
+2. Stop at a unit that is not `Consumed`, at a unit with no such edge, or after 20 steps.
+3. Return that unit: `trackedEntityId`, `status`, `jobId`, `jobMakeMethodId`, `itemId` and `depth`
+   (the number of steps). `jobId` and `jobMakeMethodId` come from its `attributes`.
+
+It returns no row when the scanned unit is not in the company. It is `SECURITY INVOKER`, so the
+caller's RLS applies. The MES calls it through `getTravelerTarget` (`apps/mes/app/services/traveler.server.ts`).
+Pinned by `supabase/tests/traveler-target.test.sql`.
+
+**Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column;
+`20260929152451` adds `p_company_id`):
 `get_direct_ancestors_of_tracked_entities_strict` / `get_direct_descendants_of_tracked_entities_strict`
-— one round-trip per BFS frontier instead of per node. The ERP graph view uses these.
+— the same directions as above, one round-trip per BFS frontier instead of per node. The ERP
+graph view uses these, and so does projects Build from part (one call per level).
 
 - Graph route: `apps/erp/app/routes/x+/traceability+/graph.tsx` → calls
   `fetchLineageSubgraph` / `fetchJobScopedLineage` in
-  `apps/erp/app/modules/inventory/lineage.server.ts` (BFS over the batch RPCs).
+  `apps/erp/app/modules/inventory/inventory.service.ts` (BFS over the batch RPCs).
 - Graph types `GraphNode` / `GraphLink` / `GraphData` live in
   `apps/erp/app/modules/inventory/types.ts` (link `type` is `"input" | "output"`).
 - ERP service `inventory.service.ts`: `getTrackedEntities`, `getTrackedEntity`,
@@ -129,7 +164,7 @@ members' quantities summed. Members are reached only through the sidebar's list 
 cluster nodes carry no expand toggles, since expanding a 50-member group would
 fetch 50 lineages. Clusters travel from the graph to the sidebar (its sibling in
 the route) through `ui/Traceability/store.ts`. Because clustering absorbs serial
-fans, `MAX_ENTITIES` in `lineage.server.ts` is **500**; the BFS must stay complete
+fans, `MAX_ENTITIES` in `inventory.service.ts` is **500**; the BFS must stay complete
 up to it, since a truncated frontier would split a group in two.
 
 ## Picking / availability (shelf → storageUnit rename)
@@ -158,7 +193,7 @@ shared record builder is `@carbon/utils` `batch-split.ts` (`buildBatchSplitRecor
 `buildMergeRecords`), used by every writer: `post-picking` (batch), `issue`
 (`trackedEntitiesToOperation` + `maintenanceDispatchTrackedEntities`), `post-stock-transfer`
 (batch), `post-shipment` (SO + PO — PO posts genealogy only, no ledger), and ERP
-`quality-disposition.subdivideBatchEntity`. Serial paths never split. Exception: the
+`subdivideBatchEntity` (`quality.service.ts`). Serial paths never split. Exception: the
 PO-sourced `post-shipment` split posts no `itemLedger` (matches pre-flip behavior).
 
 **Lot merge (the deliberate inverse; spec `.ai/specs/2026-09-16-batch-materials-and-output-lots.md`):**
@@ -185,9 +220,20 @@ parent ids server-side from the batch's membership (see `mes-job-operation-ui.md
 `trackedEntitiesToOperation`) posts a negative Consumption row and, on partial use, **splits**
 the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'`), the survivor
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
-bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
+bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. Before it consumes, `trackedEntitiesToOperation` (and each batch member of
+`trackedEntitiesToBatch`) refuses a serial unit that its own job is still building
+(`assertUnitsNotInProduction`, `inventory.service.ts`): an operation of the unit's
+`Job Make Method` that is not Done or Canceled, applies to the unit (an operation with
+`jobOperationTrackedEntity` rows applies only to those units) and has no `Operation <id>`
+marker on it ("<serial> is still being built on its own job"). With `travelerScan` (sent by
+the MES traveler scan) it also locks the `jobMaterial` `FOR UPDATE` and refuses when the
+requirement is already filled (`assertTravelerRequirementOpen`): for a serial parent, the
+material's per-unit quantity less what is consumed into that parent for the material; for
+any other parent, `estimatedQuantity` (else `quantity`) less `quantityIssued`. The Issue dialog
+gets the same lock and refusal for a planned material; the refusal carries `overIssue: true`, and
+the dialog's "Issue anyway" sends the issue again with `allowOverIssue`. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
-policies) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
+policies — and at job cancel, with `cancelling: true`, before the status flips) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
 that operation completed the job, otherwise only when
 `companySettings.returnPickedMaterialTiming = 'operation'`): the tracked path walks the picked
 entity's split lineage and, for each lineage entity with lineside on-hand, **merges** it back
@@ -200,6 +246,23 @@ per jobMaterial:
 `max(0, Σ(picked − returned) − max(quantityIssued, owed))`, newest-line-first — never a bin
 sweep (the lineside bin is shared per work center). Spec:
 `.ai/specs/2026-08-04-picked-material-return-timing.md`.
+
+## Project stock stripes and lots
+
+Projects Phase 2a stripes stock by owner on `itemLedger.projectId` (NULL = unassigned stock; see
+`inventory-system.md` → *Project stock*). `trackedEntity` has **no** `projectId`: a partial
+transfer can leave one lot in two stripes. A lot's stripe is the stripe of its ledger rows
+with the most net on-hand (`trackedEntityStripe`, `packages/api/src/stock-stripes.ts`;
+`loadTrackedEntityStripe(s)` read it).
+
+- Every split, consumption, scrap, unconsume and convert row of a lot carries the lot's
+  stripe; a batch split child keeps its parent's stripe.
+- `issue`'s `mergeTrackedEntities` refuses lots of different stripes; the merged lot keeps
+  the one stripe.
+- A pick, a consumption or a Project Issue refuses a lot outside the demand's stripes
+  (`assertEntitiesInStripes`: "LOT-1 is in the stock of project TP. Transfer it first."). A
+  customer shipment refuses a lot in project stock (`assertEntitiesInCommonStock`).
+- Quality disposition's batch split writes the source lot's stripe.
 
 ## Quantity integrity — the four invariants
 
@@ -215,8 +278,11 @@ at internal scale (`round` from `@carbon/utils`). The whole settle is
 `entity-drain.ts` — round, refuse a negative result, then apply
 rule 2 — and it takes the SETTLED figure, not a delta, so one signature serves
 the count path (snapshot delta) and the adjustment/unpick paths alike.
-`resolveCountedEntity` (post-inventory-count) is a thin wrapper that supplies
-its own recount message. Callers: `post-inventory-adjustment` (three drain
+`resolveCountedEntity` (post-inventory-count) settles on the unit's quantity
+plus the count's delta; when that is negative (the unit drifted below its
+ledger) it settles on the ledger's total after the count instead, and returns
+null (recount, on the line) only when that total is negative too. A Consumed
+unit always settles on the ledger total: above 0 it comes back Available. Callers: `post-inventory-adjustment` (three drain
 paths), `post-inventory-count`, `create` (receipt split), `post-picking`
 (unpick child).
 
@@ -248,16 +314,17 @@ with the lot it just emptied.
 `@carbon/utils` `pick-guards.ts` returns the NEW running total (never a
 replacement) or throws a typed `PickGuardError` — `already-picked`,
 `over-pick`, or `empty-pick` (a quantity that rounds to zero). Its `status = 400`
-survives `defineServerFn`'s error mapping, so the caller gets a **400**, never a
-500, and both apps show its message with `getErrorMessage(error, fallback)`
-(`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
+survives the postings' error mapping (`toServerFnError`, `@carbon/api/errors`), so the caller gets a **400**, never a
+500. In the ERP, the pick operations turn it into a refusal with `pickRefusal`
+(`inventory.service.ts`), and the page's `useAction` fetcher toasts its message;
+the MES shows it with `getErrorMessage(error, fallback)` (`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
 the `pickingListLine` in every handler and the source lot in the batch pick,
 `post-stock-transfer` locks the line plus the entity (and, in the serial case,
 the entity BEFORE its repeat-scan guard — two concurrent scans would otherwise
 both read "not on this transfer" and both post a Transfer pair).
 `resolveStockTransferPickForward` (`inventory.models.ts`) is the route-side
 pre-check that mirrors the same rounding so the two cannot disagree; the lock
-is what makes the server function authoritative.
+is what makes the posting authoritative.
 
 **The drain rule is not only a TypeScript concern.** `update_receipt_line_batch_tracking`
 upserted a receipt lot with `ON CONFLICT … DO UPDATE SET "quantity" = EXCLUDED."quantity"`

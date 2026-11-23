@@ -4,7 +4,6 @@
 
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
-  BarProgress,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -37,7 +36,9 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -49,9 +50,10 @@ import QuoteStatus from "./QuoteStatus";
 type QuotesTableProps = {
   data: QuotationListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
+const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -91,6 +93,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -98,9 +101,26 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         id: "customerId",
         header: t`Customer`,
         cell: ({ row }) => (
-          <CustomerAvatar customerId={row.original.customerId} />
+          // Phones: the expiry date follows the customer on line 2.
+          <div className="contents max-md:flex max-md:min-w-0 max-md:items-center max-md:gap-1">
+            <CustomerAvatar customerId={row.original.customerId} />
+            {row.original.expirationDate ? (
+              <span className="shrink-0 whitespace-nowrap md:hidden">
+                ·{" "}
+                <Trans>
+                  Exp.{" "}
+                  <DateTime
+                    value={row.original.expirationDate}
+                    variant="date"
+                    dateOptions={{ month: "short", day: "numeric" }}
+                  />
+                </Trans>
+              </span>
+            ) : null}
+          </div>
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -115,20 +135,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       {
         accessorKey: "status",
         header: t`Status`,
-        cell: ({ row }) => {
-          const status = row.original.status;
-          const lines = row.original.lines ?? 0;
-          const completedLines = row.original.completedLines ?? 0;
-          return status === "Draft" ? (
-            <BarProgress
-              gradient
-              progress={lines === 0 ? 0 : (completedLines / lines) * 100}
-            />
-          ) : (
-            <QuoteStatus status={status} />
-          );
-        },
+        cell: ({ row }) => <QuoteStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: quoteStatusType.map((status) => ({
@@ -318,12 +327,17 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     );
   }, [deleteQuotationModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<QuotationListItem>("quotes");
+
   return (
     <>
       <Table<QuotationListItem>
+        getRowLabel={(row) => row.quoteId ?? undefined}
         count={count}
+        infinite={infinite}
         columns={columns}
         data={data}
+        {...lineItemRows}
         defaultColumnPinning={{
           left: ["quoteId"]
         }}
@@ -367,11 +381,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           )}? This cannot be undone.`}
           onCancel={() => {
             deleteQuotationModal.onClose();
-            setSelectedQuotation(null);
           }}
           onSubmit={() => {
             deleteQuotationModal.onClose();
-            setSelectedQuotation(null);
           }}
         />
       )}

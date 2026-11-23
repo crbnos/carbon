@@ -6,7 +6,7 @@ import type { SelectProps } from "@carbon/form";
 import { Select } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import type { getShiftsList } from "~/modules/people";
+import type { getShiftsList } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

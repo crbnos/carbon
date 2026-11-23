@@ -5,7 +5,7 @@
 import { Status } from "@carbon/react";
 import { STOCK_TRANSFER_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import type { stockTransferStatusType } from "~/modules/inventory";
+import type { stockTransferStatusType } from "~/modules/inventory/inventory.models";
 
 type StockTransferStatusProps = {
   status?: (typeof stockTransferStatusType)[number] | null;

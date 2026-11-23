@@ -150,12 +150,18 @@ function ItarCheckbox({ name, children }: { name: string; children: string }) {
   );
 }
 
+// The ERP answers with an operation's result (`{ data, error }`), the MES with
+// `{ success, message }`: a refusal in either shape is toasted.
 function useAcknowledgeFetcher() {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const fetcher = useFetcher<
+    | { success: boolean; message: string }
+    | { error: { message: string } | null }
+  >();
   useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(fetcher.data?.message);
-    }
+    const data = fetcher.data;
+    if (!data) return;
+    if ("success" in data && data.success === false) toast.error(data.message);
+    if ("error" in data && data.error) toast.error(data.error.message);
   }, [fetcher.data]);
   return fetcher;
 }

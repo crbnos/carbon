@@ -7,25 +7,36 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
+  LuCalendar,
   LuCalendarClock,
   LuCalendarCog,
   LuCheck,
   LuFile,
   LuHash,
+  LuList,
   LuNetwork,
   LuQrCode,
   LuRotateCcw,
+  LuText,
+  LuToggleRight,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, usePermissions } from "~/hooks";
-import type { TrackedEntity } from "~/modules/inventory";
-import { trackedEntityStatus } from "~/modules/inventory";
+import type { InfiniteOptions } from "~/components/Table";
+import type { ColumnFilterData } from "~/components/Table/components/Filter/types";
+import { useDateFormatter, useDrawerItem, usePermissions } from "~/hooks";
+import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
+import {
+  type BatchPropertyColumn,
+  batchPropertyExportValue,
+  batchPropertyValue
+} from "~/modules/inventory/inventory.utils";
+import type { TrackedEntity } from "~/modules/inventory/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Item } from "~/stores/items";
 import { useItems } from "~/stores/items";
@@ -41,19 +52,27 @@ type ShelfLifePolicy = {
   calculateFromBom?: boolean | null;
 };
 
+// A row of the list, with its item's shelf-life policy (from the loader), so
+// the Expiry trace popover can show the Policy step.
+type TrackedEntityRow = TrackedEntity & {
+  shelfLifePolicy: ShelfLifePolicy | null;
+};
+
 type TrackedEntitiesTableProps = {
-  data: TrackedEntity[];
+  data: TrackedEntityRow[];
   count: number;
+  infinite: InfiniteOptions;
   nearExpiryWarningDays: number | null;
-  shelfLifePolicies?: Record<string, ShelfLifePolicy>;
+  batchPropertyColumns: BatchPropertyColumn[];
 };
 
 const TrackedEntitiesTable = memo(
   ({
     data,
     count,
+    infinite,
     nearExpiryWarningDays,
-    shelfLifePolicies
+    batchPropertyColumns
   }: TrackedEntitiesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -65,10 +84,13 @@ const TrackedEntitiesTable = memo(
     // Edit-expiry modal state. Holds the entity being edited so the modal
     // can pre-fill its form. Lives at table level so the row context-menu
     // action can open it.
-    const [unscrapping, setUnscrapping] = useState<TrackedEntity | null>(null);
-    const [editingExpiry, setEditingExpiry] = useState<TrackedEntity | null>(
-      null
-    );
+    const unscrap = useDrawerItem<TrackedEntity>();
+    const unscrapping = unscrap.item;
+
+    const editExpiry = useDrawerItem<TrackedEntity>();
+    const editingExpiry = editExpiry.item;
+
+    const yesNo = useMemo(() => ({ yes: t`Yes`, no: t`No` }), [t]);
 
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(
       () => [
@@ -88,6 +110,7 @@ const TrackedEntitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
 
             filter: {
@@ -110,6 +133,7 @@ const TrackedEntitiesTable = memo(
               </Badge>
             ) : null,
           meta: {
+            mobile: "P3",
             icon: <LuHash />
           }
         },
@@ -120,6 +144,7 @@ const TrackedEntitiesTable = memo(
             <span>{numberFormatter.format(row.original.quantity)}</span>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuHash />,
             renderTotal: true
           }
@@ -131,6 +156,7 @@ const TrackedEntitiesTable = memo(
             <TrackedEntityStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",
@@ -179,8 +205,7 @@ const TrackedEntitiesTable = memo(
                   {formatted}
                 </span>
               );
-            const itemId = (row.original as { itemId?: string | null }).itemId;
-            const policy = itemId ? shelfLifePolicies?.[itemId] : undefined;
+            const policy = row.original.shelfLifePolicy;
             return (
               <ExpiryTracePopover
                 entity={row.original}
@@ -217,16 +242,46 @@ const TrackedEntitiesTable = memo(
           meta: {
             icon: <LuFile />
           }
-        }
+        },
+        // One column per batch property label, across items. Hidden until
+        // shown; its filter is always in the filter menu.
+        ...batchPropertyColumns.map(
+          (column): ColumnDef<(typeof data)[number]> => ({
+            id: column.key,
+            header: column.label,
+            enableSorting: false,
+            cell: ({ row }) =>
+              formatPropertyValue(
+                column,
+                batchPropertyValue(column, row.original),
+                formatDate,
+                yesNo
+              ),
+            meta: {
+              icon: <PropertyIcon dataType={column.dataType} />,
+              exportValue: (row) => batchPropertyExportValue(column, row),
+              filter: propertyFilter(column, yesNo)
+            }
+          })
+        )
       ],
       [
         numberFormatter,
         items,
         t,
         nearExpiryWarningDays,
-        shelfLifePolicies,
-        formatDate
+        formatDate,
+        batchPropertyColumns,
+        yesNo
       ]
+    );
+
+    const defaultColumnVisibility = useMemo(
+      () =>
+        Object.fromEntries(
+          batchPropertyColumns.map((column) => [column.key, false])
+        ),
+      [batchPropertyColumns]
     );
 
     const renderContextMenu = useCallback(
@@ -251,7 +306,7 @@ const TrackedEntitiesTable = memo(
                 !permissions.can("update", "inventory") ||
                 row.status === "Consumed"
               }
-              onClick={() => setEditingExpiry(row)}
+              onClick={() => editExpiry.open(row)}
             >
               <MenuIcon icon={<LuCalendarCog />} />
               <Trans>Edit Expiry</Trans>
@@ -261,7 +316,7 @@ const TrackedEntitiesTable = memo(
                 disabled={
                   !permissions.can("update", "inventory") || !row.itemId
                 }
-                onClick={() => setUnscrapping(row)}
+                onClick={() => unscrap.open(row)}
               >
                 <MenuIcon icon={<LuRotateCcw />} />
                 <Trans>Unscrap</Trans>
@@ -270,22 +325,24 @@ const TrackedEntitiesTable = memo(
           </>
         );
       },
-      [navigate, permissions]
+      [navigate, permissions, editExpiry.open, unscrap.open]
     );
 
     return (
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           renderContextMenu={renderContextMenu}
+          defaultColumnVisibility={defaultColumnVisibility}
           title={t`Tracked Entities`}
         />
         {editingExpiry && editingExpiry.status !== "Consumed" && (
           <EditExpiryModal
-            open={!!editingExpiry}
-            onClose={() => setEditingExpiry(null)}
+            open={editExpiry.isOpen}
+            onClose={editExpiry.close}
             trackedEntityId={editingExpiry.id}
             expirationDate={editingExpiry.expirationDate ?? null}
             label={editingExpiry.sourceDocumentReadableId ?? editingExpiry.id}
@@ -296,8 +353,8 @@ const TrackedEntitiesTable = memo(
           Number.isFinite(Number(unscrapping.quantity)) &&
           Number(unscrapping.quantity) > 0 && (
             <UnscrapModal
-              open={!!unscrapping}
-              onClose={() => setUnscrapping(null)}
+              open={unscrap.isOpen}
+              onClose={unscrap.close}
               itemId={unscrapping.itemId}
               trackedEntityId={unscrapping.id}
               quantity={Number(unscrapping.quantity)}
@@ -332,6 +389,77 @@ function SourceDocumentLink({
       );
     default:
       return <Enumerable value={data.sourceDocument} />;
+  }
+}
+
+type YesNo = { yes: string; no: string };
+
+function propertyFilter(
+  column: BatchPropertyColumn,
+  yesNo: YesNo
+): ColumnFilterData {
+  switch (column.dataType) {
+    case "boolean":
+      return {
+        type: "static",
+        options: [
+          { value: "true", label: yesNo.yes },
+          { value: "false", label: yesNo.no }
+        ]
+      };
+    case "list":
+      return {
+        type: "static",
+        options: column.listOptions.map((option) => ({
+          value: option,
+          label: <Enumerable value={option} />
+        }))
+      };
+    case "date":
+      return { type: "dateRange" };
+    default:
+      return {
+        type: "fetcher",
+        endpoint: path.to.api.batchPropertyValues(column.key)
+      };
+  }
+}
+
+function formatPropertyValue(
+  column: BatchPropertyColumn,
+  value: unknown,
+  formatDate: (date: string) => string,
+  yesNo: YesNo
+) {
+  if (value === undefined || value === null || value === "") return null;
+  switch (column.dataType) {
+    case "boolean":
+      return value === true || value === "true" ? yesNo.yes : yesNo.no;
+    case "date":
+      return typeof value === "string" ? formatDate(value) : String(value);
+    case "list":
+      return <Enumerable value={String(value)} />;
+    default:
+      return String(value);
+  }
+}
+
+function PropertyIcon({
+  dataType
+}: {
+  dataType: BatchPropertyColumn["dataType"];
+}) {
+  switch (dataType) {
+    case "boolean":
+      return <LuToggleRight />;
+    case "date":
+      return <LuCalendar />;
+    case "list":
+      return <LuList />;
+    case "numeric":
+      return <LuHash />;
+    default:
+      return <LuText />;
   }
 }
 

@@ -37,7 +37,7 @@ export {
   QuotePaymentForm,
   QuoteProperties,
   QuoteShipmentForm,
-  QuotesTable,
   QuoteSummary,
+  QuotesTable,
   useLineCosts
 };

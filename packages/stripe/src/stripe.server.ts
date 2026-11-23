@@ -136,7 +136,6 @@ export async function getStripeCustomerByCompanyId(
     return null;
   }
 
-  // Check if this company is in the bypass list
   if (STRIPE_BYPASS_COMPANY_IDS) {
     const bypassList = STRIPE_BYPASS_COMPANY_IDS.split(",").map((id: string) =>
       id.trim()
@@ -258,6 +257,26 @@ function getStripeWebhookEvent({
   }
 }
 
+// A company gets one free trial: any earlier subscription means it was used.
+export async function hasUsedFreeTrial(companyId: string) {
+  if (CarbonEdition !== Edition.Cloud || !stripe) {
+    return false;
+  }
+
+  const customerId = await getStripeCustomerId(companyId);
+  if (!customerId) {
+    return false;
+  }
+
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 1
+  });
+
+  return subscriptions.data.length > 0;
+}
+
 export async function getCheckoutUrl({
   planId,
   userId,
@@ -290,7 +309,13 @@ export async function getCheckoutUrl({
   }
 
   const serviceRole = getCarbonServiceRole();
-  const plan = await getPlanById(serviceRole, planId);
+  const [plan, usedFreeTrial] = await Promise.all([
+    getPlanById(serviceRole, planId),
+    hasUsedFreeTrial(companyId)
+  ]);
+  const trialPeriodDays = usedFreeTrial
+    ? 0
+    : (plan.data?.stripeTrialPeriodDays ?? 0);
   const checkoutSession = await stripe!.checkout.sessions.create({
     customer: stripeCustomerId,
     line_items: [
@@ -307,12 +332,9 @@ export async function getCheckoutUrl({
     automatic_tax: { enabled: true },
     tax_id_collection: { enabled: true, required: "never" },
     customer_update: { name: "auto", address: "auto" },
-    ...(plan.data?.stripeTrialPeriodDays &&
-      plan.data.stripeTrialPeriodDays > 0 && {
-        subscription_data: {
-          trial_period_days: plan.data?.stripeTrialPeriodDays ?? 0
-        }
-      }),
+    ...(trialPeriodDays > 0 && {
+      subscription_data: { trial_period_days: trialPeriodDays }
+    }),
     metadata: {
       userId,
       companyId
@@ -394,7 +416,8 @@ export async function processStripeEvent({
 
   if (!isAllowedEventType(event)) {
     log.warning(
-      `Received untracked event: ${event.type}. Configure webhook event types in your Stripe dashboard.`
+      "Received an untracked event. Configure webhook event types in your Stripe dashboard.",
+      { type: event.type }
     );
     return;
   }

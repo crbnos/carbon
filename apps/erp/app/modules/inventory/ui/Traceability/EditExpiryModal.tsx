@@ -20,7 +20,7 @@ import {
   ModalTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { trackedEntityExpiryValidator } from "~/modules/inventory";
+import { trackedEntityExpiryValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type EditExpiryModalProps = {

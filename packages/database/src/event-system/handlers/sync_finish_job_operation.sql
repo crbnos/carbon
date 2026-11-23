@@ -60,12 +60,39 @@ BEGIN
     FROM "job"
     WHERE id = p_new->>'jobId';
 
+    -- The units out of the routing's final operations. Two kinds of final
+    -- operation report differently:
+    --   * the routing's own (parallel "With Previous" operations at the end)
+    --     each see EVERY unit, so a unit is finished once it has come through
+    --     all of them: the smallest count. Summing them completed a 3-unit job
+    --     at 6, which a serial job then refused for want of units. One closed
+    --     with Finish and no quantity reports nothing, so it is left out.
+    --   * a rework branch triggered at the final operation (trigger-rework)
+    --     carries only the reworked units, which the operation it came from
+    --     reports as reworked, not complete: those add on top.
+    -- This runs BEFORE the update is written, so the table still holds the
+    -- finishing operation's old row: its quantity comes from p_new. An outside
+    -- processing receipt sets Done and quantityComplete in one update.
     v_quantity_complete := (
-      SELECT COALESCE(SUM(terminal_jo."quantityComplete"), 0)
-      FROM "jobOperation" terminal_jo
+      SELECT COALESCE(MIN(terminal_jo."quantityComplete") FILTER (
+               WHERE terminal_jo."reworkId" IS NULL AND terminal_jo."quantityComplete" > 0
+             ), 0)
+           + COALESCE(SUM(terminal_jo."quantityComplete") FILTER (
+               WHERE terminal_jo."reworkId" IS NOT NULL
+             ), 0)
+      FROM (
+        SELECT jo.id, jo."jobId", jo."jobMakeMethodId", jo."reworkId", jo.status,
+               CASE WHEN jo.id = p_new->>'id'
+                 THEN COALESCE((p_new->>'quantityComplete')::NUMERIC, 0)
+                 ELSE jo."quantityComplete"
+               END AS "quantityComplete"
+        FROM "jobOperation" jo
+        WHERE jo."jobId" = p_new->>'jobId'
+      ) terminal_jo
       INNER JOIN "jobMakeMethod" terminal_jmm ON terminal_jmm.id = terminal_jo."jobMakeMethodId"
       WHERE terminal_jo."jobId" = p_new->>'jobId'
         AND terminal_jmm."parentMaterialId" IS NULL
+        AND terminal_jo.status <> 'Canceled'
         AND NOT EXISTS (
           SELECT 1
           FROM "jobOperationDependency" dep

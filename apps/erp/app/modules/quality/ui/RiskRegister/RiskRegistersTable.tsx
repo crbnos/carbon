@@ -35,6 +35,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
   riskRegisterType,
@@ -51,6 +52,7 @@ import RiskType from "./RiskType";
 type RiskRegistersTableProps = {
   data: Risk[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -60,7 +62,8 @@ const defaultColumnVisibility = {
   updatedAt: false
 };
 
-const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
+const RiskRegistersTable = memo((props: RiskRegistersTableProps) => {
+  const { data, count, infinite } = props;
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const workCenters = useWorkCenters({});
@@ -81,7 +84,6 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
   );
 
   const onCancel = useCallback(() => {
-    setSelectedRisk(null);
     deleteModal.onClose();
   }, [deleteModal]);
 
@@ -101,7 +103,8 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
               )}
             </div>
           </Hyperlink>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "type",
@@ -110,6 +113,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
           return <RiskType type={row.original.type} />;
         },
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -149,6 +153,13 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Source`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P3",
+          // Phones: line 2 is muted context, not a second row of pills.
+          mobileCell: (item) => (
+            <span className="text-muted-foreground">
+              {item.getValue<string>()}
+            </span>
+          ),
           icon: <LuDna />,
           filter: {
             type: "static",
@@ -164,6 +175,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <RiskStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuStar />,
           filter: {
             type: "static",
@@ -274,6 +286,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
     <>
       <Table<Risk>
         data={data}
+        infinite={infinite}
         defaultColumnVisibility={defaultColumnVisibility}
         columns={columns}
         count={count ?? 0}

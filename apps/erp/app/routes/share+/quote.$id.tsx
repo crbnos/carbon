@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
+import { downloadUrl } from "@carbon/files";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -19,6 +20,8 @@ import {
   generateHTML,
   Heading,
   HStack,
+  IconButton,
+  isRichTextEmpty,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,12 +32,16 @@ import {
   ModalTitle,
   RadioGroup,
   RadioGroupItem,
+  RichTextView,
   Separator,
   Table,
   Tbody,
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   TruncatedTooltipText,
   toast,
@@ -46,7 +53,7 @@ import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -54,6 +61,7 @@ import {
   LuChevronRight,
   LuCircleX,
   LuCreditCard,
+  LuDownload,
   LuImage,
   LuTruck,
   LuUpload
@@ -68,24 +76,34 @@ import {
   useCurrencyFormatter,
   usePercentFormatter
 } from "~/hooks";
-import { getCurrenciesList, getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
-import type { SalesOrderLine } from "~/modules/sales";
 import {
-  externalQuoteValidator,
+  getCurrenciesList,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service";
+import { externalQuoteValidator } from "~/modules/sales/sales.models";
+import {
+  getFinalizedQuotePdf,
   getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
-  getSalesTerms
-} from "~/modules/sales";
+  getSalesTerms,
+  isExternalQuoteExpired
+} from "~/modules/sales/sales.service";
+import {
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines
+} from "~/modules/sales/sales.utils";
+import type { SalesOrderLine } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
 import { path } from "~/utils/path";
 
@@ -118,11 +136,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  if (
-    quote.data.expirationDate &&
-    new Date(quote.data.expirationDate) < new Date() &&
-    quote.data.status === "Sent"
-  ) {
+  if (isExternalQuoteExpired(quote.data)) {
     return {
       state: QuoteState.Expired,
       data: null
@@ -140,7 +154,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     paymentTerms,
     terms,
     shippingMethods,
-    opportunity
+    opportunity,
+    finalizedPdf
   ] = await Promise.all([
     getCompany(serviceRole, quote.data.companyId),
     getCompanySettings(serviceRole, quote.data.companyId),
@@ -152,7 +167,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getPaymentTermsList(serviceRole, quote.data.companyId),
     getSalesTerms(serviceRole, quote.data.companyId),
     getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunity(serviceRole, quote.data.opportunityId)
+    getOpportunity(serviceRole, quote.data.opportunityId),
+    getFinalizedQuotePdf(serviceRole, quote.data)
   ]);
 
   // A No Quote line is the company's own decision not to bid — the customer
@@ -261,6 +277,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             leadTime: price.leadTime
           })) ?? null,
       customerDetails: customerDetails.data,
+      hasFinalizedPdf: finalizedPdf !== null,
       quotePayment: quotePayment.data,
       quoteShipment: quoteShipment.data,
       paymentTerm: paymentTerms.data?.find(
@@ -279,25 +296,64 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   };
 }
 
+const DownloadPdfButton = ({
+  url,
+  fileName
+}: {
+  url: string;
+  fileName: string;
+}) => {
+  const { t } = useLingui();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          aria-label={t`Download PDF`}
+          icon={<LuDownload />}
+          variant="ghost"
+          onClick={() =>
+            downloadUrl(url, fileName).catch(() =>
+              toast.error(t`Error downloading file`)
+            )
+          }
+        />
+      </TooltipTrigger>
+      <TooltipContent>
+        <Trans>Download PDF</Trans>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 const Header = ({
   company,
   quote,
   customer,
-  locale
+  locale,
+  pdfUrl
 }: {
   company: QuoteData["company"];
   quote: QuoteData["quote"];
   customer: QuoteData["customerDetails"];
   locale: string;
+  pdfUrl: string | null;
 }) => (
   <div className="flex justify-between">
     <div className="flex items-center space-x-4 tracking-tight">
       <div>
         <CardTitle className="text-3xl">{company?.name ?? ""}</CardTitle>
         {quote?.quoteId && (
-          <p className="text-lg text-muted-foreground">
-            {getQuoteDisplayId(quote)}
-          </p>
+          <HStack spacing={1}>
+            <p className="text-lg text-muted-foreground">
+              {getQuoteDisplayId(quote)}
+            </p>
+            {pdfUrl && (
+              <DownloadPdfButton
+                url={pdfUrl}
+                fileName={`${getQuoteDisplayId(quote)}.pdf`}
+              />
+            )}
+          </HStack>
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
@@ -388,6 +444,7 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
+  const { t } = useLingui();
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
@@ -444,14 +501,10 @@ const LineItems = ({
           return null;
         }
 
+        const lineName = line.itemReadableId ?? "";
+
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id!] ? (
                 <img
@@ -470,9 +523,13 @@ const LineItems = ({
                   thumbnail beside it, pushing the description and price
                   past the card edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  onClick={() => toggleOpen(line.id!)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
@@ -496,6 +553,7 @@ const LineItems = ({
                     </div>
                     <HStack spacing={4} className="shrink-0">
                       <MotionMoney
+                        className="font-semibold text-xl whitespace-nowrap"
                         value={
                           (selectedLines[line.id!]?.convertedNetUnitPrice ??
                             0) *
@@ -515,14 +573,28 @@ const LineItems = ({
                         currency={currencyCode}
                         decimalPlaces={currencyDecimals}
                       />
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id)}
+                        aria-controls={
+                          openItems.includes(line.id)
+                            ? `quote-line-details-${line.id}`
+                            : undefined
+                        }
+                        aria-label={
+                          openItems.includes(line.id)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
                         }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                      </motion.div>
+                        <LuChevronRight size={24} aria-hidden />
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText
@@ -531,41 +603,43 @@ const LineItems = ({
                   >
                     {line.description}
                   </TruncatedTooltipText>
-                  {Object.keys(line.externalNotes ?? {}).length > 0 && (
-                    <div
-                      className="prose dark:prose-invert mt-2 text-muted-foreground"
-                      dangerouslySetInnerHTML={{
-                        __html: generateHTML(line.externalNotes as JSONContent)
-                      }}
+                  {!isRichTextEmpty(line.externalNotes as JSONContent) && (
+                    <RichTextView
+                      content={line.externalNotes as JSONContent}
+                      empty={null}
+                      className="mt-2 text-muted-foreground"
                     />
                   )}
                 </div>
               </VStack>
             </HStack>
 
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
-            >
-              <LinePricingOptions
-                formatter={formatter}
-                line={line}
-                options={pricingByLine[line.id!]}
-                quoteCurrency={quote.currencyCode ?? "USD"}
-                quoteExchangeRate={quote.exchangeRate ?? 1}
-                shouldConvertCurrency={shouldConvertCurrency}
-                locale={locale}
-                selectedLine={selectedLines[line.id!]}
-                setSelectedLines={setSelectedLines}
-              />
-            </motion.div>
-          </motion.div>
+            <AnimatePresence initial={false}>
+              {openItems.includes(line.id) ? (
+                <motion.div
+                  id={`quote-line-details-${line.id}`}
+                  key="panel"
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full overflow-hidden"
+                >
+                  <LinePricingOptions
+                    formatter={formatter}
+                    line={line}
+                    options={pricingByLine[line.id!]}
+                    quoteCurrency={quote.currencyCode ?? "USD"}
+                    quoteExchangeRate={quote.exchangeRate ?? 1}
+                    shouldConvertCurrency={shouldConvertCurrency}
+                    locale={locale}
+                    selectedLine={selectedLines[line.id!]}
+                    setSelectedLines={setSelectedLines}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         );
       })}
     </VStack>
@@ -967,7 +1041,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
 
-              <Tr key="total" className="font-bold">
+              <Tr key="total" className="font-semibold">
                 <Td>
                   <Trans>Total</Trans>
                 </Td>
@@ -1024,6 +1098,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
     company,
     companySettings,
     customerDetails,
+    hasFinalizedPdf,
     paymentTerm,
     quote,
     quoteLines,
@@ -1262,6 +1337,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
             quote={quote}
             customer={customerDetails}
             locale={locale}
+            pdfUrl={hasFinalizedPdf ? path.to.externalQuotePdf(id) : null}
           />
         </CardHeader>
         <CardContent>
@@ -1273,16 +1349,15 @@ const Quote = ({ data }: { data: QuoteData }) => {
             setSelectedLines={setSelectedLines}
           />
 
-          {Object.keys(quote?.externalNotes ?? {}).length > 0 && (
+          {!isRichTextEmpty(quote?.externalNotes as JSONContent) && (
             <div className="mt-6 mb-2">
               <Heading size="h4" className="mb-2">
                 <Trans>Notes</Trans>
               </Heading>
-              <div
-                className="prose dark:prose-invert text-muted-foreground"
-                dangerouslySetInnerHTML={{
-                  __html: generateHTML(quote.externalNotes as JSONContent)
-                }}
+              <RichTextView
+                content={quote.externalNotes as JSONContent}
+                empty={null}
+                className="text-muted-foreground"
               />
             </div>
           )}
@@ -1296,7 +1371,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     <Trans>Shipping Method</Trans>:
                   </span>
                 </HStack>
-                <span className="text-foreground font-bold">
+                <span className="text-foreground font-semibold">
                   {shippingMethod}
                 </span>
               </HStack>
@@ -1309,7 +1384,9 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     <Trans>Payment Term</Trans>:
                   </span>
                 </HStack>
-                <span className="text-foreground font-bold">{paymentTerm}</span>
+                <span className="text-foreground font-semibold">
+                  {paymentTerm}
+                </span>
               </HStack>
             )}
             {(shippingMethod || paymentTerm) && <Separator />}
@@ -1359,7 +1436,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </HStack>
             )}
             <Separator className="my-2" />
-            <HStack className="justify-between text-xl font-bold w-full">
+            <HStack className="justify-between text-xl font-semibold w-full">
               <span>
                 <Trans>Total</Trans>:
               </span>
@@ -1370,38 +1447,36 @@ const Quote = ({ data }: { data: QuoteData }) => {
               />
             </HStack>
           </VStack>
-          <div className="flex flex-col gap-2">
-            {companySettings?.digitalQuoteEnabled &&
-              quote?.status === "Sent" && (
-                <>
-                  <DisabledReason
-                    className="w-full mt-8"
-                    reason={
-                      hasSelectedItem
-                        ? undefined
-                        : t`Select at least one item to accept the quote`
-                    }
-                  >
-                    <Button
-                      onClick={confirmQuoteModal.onOpen}
-                      size="lg"
-                      variant="primary"
-                      isDisabled={!hasSelectedItem}
-                      className="w-full text-lg"
-                    >
-                      <Trans>Accept Quote</Trans>
-                    </Button>
-                  </DisabledReason>
-                  <Button
-                    onClick={rejectQuoteModal.onOpen}
-                    size="lg"
-                    variant="link"
-                  >
-                    <Trans>Reject Quote</Trans>
-                  </Button>
-                </>
-              )}
-          </div>
+          {companySettings?.digitalQuoteEnabled && quote?.status === "Sent" && (
+            <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                onClick={rejectQuoteModal.onOpen}
+                size="lg"
+                variant="secondary"
+                className="w-full sm:w-auto"
+              >
+                <Trans>Reject Quote</Trans>
+              </Button>
+              <DisabledReason
+                className="w-full sm:w-auto"
+                reason={
+                  hasSelectedItem
+                    ? undefined
+                    : t`Select at least one item to accept the quote`
+                }
+              >
+                <Button
+                  onClick={confirmQuoteModal.onOpen}
+                  size="lg"
+                  variant="primary"
+                  isDisabled={!hasSelectedItem}
+                  className="w-full sm:w-auto"
+                >
+                  <Trans>Accept Quote</Trans>
+                </Button>
+              </DisabledReason>
+            </div>
+          )}
         </CardContent>
       </Card>
       {/* generateHTML returns nothing on the server, so the server never
@@ -1418,165 +1493,161 @@ const Quote = ({ data }: { data: QuoteData }) => {
           ) : null
         }
       </ClientOnly>
-      {confirmQuoteModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) confirmQuoteModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              action={path.to.api.digitalQuote(id)}
-              validator={externalQuoteValidator}
-              method="post"
-              fetcher={fetcher}
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-              encType="multipart/form-data"
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Accept Quote</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>
-                    Are you sure you want to accept quote{" "}
-                    {getQuoteDisplayId(quote)} for {formatter.format(total)}?
-                  </Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                {!companySettings?.digitalQuoteIncludesPurchaseOrders && (
-                  <input type="hidden" name="file" />
-                )}
-                <input type="hidden" name="type" value="accept" />
-                <div className="space-y-4 py-4">
-                  <Input
-                    name="digitalQuoteAcceptedBy"
-                    label={t`Please enter your name`}
-                  />
-                  <Input
-                    name="digitalQuoteAcceptedByEmail"
-                    label={t`Please enter your email address`}
-                  />
-                  {companySettings?.digitalQuoteIncludesPurchaseOrders && (
-                    <div
-                      {...getRootProps()}
-                      className={cn(
-                        "w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer",
-                        isDragActive ? "border-primary" : "border-muted"
-                      )}
-                    >
-                      <input name="file" {...getInputProps()} />
-                      {file ? (
-                        <>
-                          <p>{file.name}</p>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setFile(null)}
-                          >
-                            <Trans>Change</Trans>
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <p>
-                            <Trans>
-                              Drag and drop a Purchase Order PDF here, or click
-                              to select a file
-                            </Trans>
-                          </p>
-                          <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={confirmQuoteModal.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <input
-                  type="hidden"
-                  name="selectedLines"
-                  value={JSON.stringify(selectedLines)}
+      <Modal
+        open={confirmQuoteModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) confirmQuoteModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            action={path.to.api.digitalQuote(id)}
+            validator={externalQuoteValidator}
+            method="post"
+            fetcher={fetcher}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
+            encType="multipart/form-data"
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Accept Quote</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Are you sure you want to accept quote{" "}
+                  {getQuoteDisplayId(quote)} for {formatter.format(total)}?
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              {!companySettings?.digitalQuoteIncludesPurchaseOrders && (
+                <input type="hidden" name="file" />
+              )}
+              <input type="hidden" name="type" value="accept" />
+              <div className="space-y-4 py-4">
+                <Input
+                  name="digitalQuoteAcceptedBy"
+                  label={t`Please enter your name`}
                 />
+                <Input
+                  name="digitalQuoteAcceptedByEmail"
+                  label={t`Please enter your email address`}
+                />
+                {companySettings?.digitalQuoteIncludesPurchaseOrders && (
+                  <div
+                    {...getRootProps()}
+                    className={cn(
+                      "w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer",
+                      isDragActive ? "border-primary" : "border-muted"
+                    )}
+                  >
+                    <input name="file" {...getInputProps()} />
+                    {file ? (
+                      <>
+                        <p>{file.name}</p>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setFile(null)}
+                        >
+                          <Trans>Change</Trans>
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          <Trans>
+                            Drag and drop a Purchase Order PDF here, or click to
+                            select a file
+                          </Trans>
+                        </p>
+                        <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={confirmQuoteModal.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <input
+                type="hidden"
+                name="selectedLines"
+                value={JSON.stringify(selectedLines)}
+              />
 
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  type="submit"
-                >
-                  <Trans>Yes, Accept</Trans>
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                type="submit"
+              >
+                <Trans>Yes, Accept</Trans>
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
 
-      {rejectQuoteModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) rejectQuoteModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              action={path.to.api.digitalQuote(id)}
-              validator={externalQuoteValidator}
-              method="post"
-              fetcher={fetcher}
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Reject Quote</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>Are you sure you want to reject this quote?</Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <input type="hidden" name="type" value="reject" />
-                <div className="space-y-4 py-4">
-                  <Input
-                    name="digitalQuoteRejectedBy"
-                    label={t`Please enter your name`}
-                  />
-                  <Input
-                    name="digitalQuoteRejectedByEmail"
-                    label={t`Please enter your email address`}
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={rejectQuoteModal.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
+      <Modal
+        open={rejectQuoteModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) rejectQuoteModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            action={path.to.api.digitalQuote(id)}
+            validator={externalQuoteValidator}
+            method="post"
+            fetcher={fetcher}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Reject Quote</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>Are you sure you want to reject this quote?</Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <input type="hidden" name="type" value="reject" />
+              <div className="space-y-4 py-4">
+                <Input
+                  name="digitalQuoteRejectedBy"
+                  label={t`Please enter your name`}
+                />
+                <Input
+                  name="digitalQuoteRejectedByEmail"
+                  label={t`Please enter your email address`}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={rejectQuoteModal.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
 
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  variant="destructive"
-                  type="submit"
-                >
-                  <Trans>Yes, Reject</Trans>
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                variant="destructive"
+                type="submit"
+              >
+                <Trans>Yes, Reject</Trans>
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };
@@ -1624,6 +1695,7 @@ export const ErrorMessage = ({
           variants={itemVariants}
         >
           <svg
+            aria-hidden="true"
             className="absolute inset-0"
             viewBox="0 0 100 100"
             fill="none"
@@ -1663,11 +1735,13 @@ export const ErrorMessage = ({
               damping: 10
             }}
           >
-            <span className="text-2xl font-bold text-muted-foreground">!</span>
+            <span className="text-2xl font-semibold text-muted-foreground">
+              !
+            </span>
           </motion.div>
         </motion.div>
         <motion.h1
-          className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+          className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
           variants={itemVariants}
         >
           {title}

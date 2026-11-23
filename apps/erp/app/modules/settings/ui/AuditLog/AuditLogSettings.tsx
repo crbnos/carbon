@@ -15,7 +15,7 @@ import {
   Switch,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useCallback } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -38,6 +38,7 @@ function formatBytes(bytes: number): string {
 
 const AuditLogSettings = memo(
   ({ enabled, archives, controlled }: AuditLogSettingsProps) => {
+    const { t } = useLingui();
     const fetcher = useFetcher();
 
     const isToggling = fetcher.state !== "idle";
@@ -101,6 +102,7 @@ const AuditLogSettings = memo(
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Audit logging`}
                 checked={enabled}
                 onCheckedChange={handleToggle}
                 disabled={isToggling || controlled}

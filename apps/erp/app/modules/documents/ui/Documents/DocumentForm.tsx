@@ -12,14 +12,14 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { Hidden, Input, Submit, TextArea, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { documentValidator } from "~/modules/documents";
+import { documentValidator } from "~/modules/documents/documents.models";
 import { path } from "~/utils/path";
 
 type DocumentFormProps = {
@@ -30,14 +30,14 @@ type DocumentFormProps = {
 const DocumentForm = ({ initialValues, ownerId }: DocumentFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const isDisabled = !permissions.can("update", "documents");
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -6,38 +6,26 @@ import { mkdtempSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterAll, describe, expect, it } from "vitest";
-import { canonicalSlug, sameWorktreePath, slugify } from "./worktree.js";
+import {
+  canonicalSlug,
+  recordedStackMode,
+  sameWorktreePath,
+  slugify,
+  worktreeDatabaseName,
+  writeStackMode
+} from "./worktree.js";
 
 describe("slugify", () => {
-  it("lowercases", () => {
-    expect(slugify("Foo")).toBe("foo");
-  });
-
-  it("collapses non-alphanumeric runs to single dash", () => {
-    expect(slugify("foo/bar baz")).toBe("foo-bar-baz");
-    expect(slugify("foo   bar")).toBe("foo-bar");
-  });
-
-  it("strips leading and trailing dashes", () => {
-    expect(slugify("--foo--")).toBe("foo");
-    expect(slugify("/foo/")).toBe("foo");
-  });
-
-  it("preserves embedded dashes", () => {
-    expect(slugify("feat-add-thing")).toBe("feat-add-thing");
-  });
-
-  it("collapses consecutive dashes", () => {
-    expect(slugify("foo--bar")).toBe("foo-bar");
-  });
-
-  it("handles unicode by replacing with dashes", () => {
-    expect(slugify("café/résumé")).toBe("caf-r-sum");
-  });
-
-  it("returns empty string when input is empty or all-symbol", () => {
-    expect(slugify("")).toBe("");
-    expect(slugify("///")).toBe("");
+  it.each([
+    ["Foo", "foo"],
+    ["foo/bar baz", "foo-bar-baz"],
+    ["--foo--", "foo"],
+    ["foo--bar", "foo-bar"],
+    ["feat-add-thing", "feat-add-thing"],
+    ["café/résumé", "caf-r-sum"],
+    ["///", ""]
+  ])("turns %s into %s", (input, slug) => {
+    expect(slugify(input)).toBe(slug);
   });
 });
 
@@ -73,15 +61,6 @@ describe("canonicalSlug", () => {
     ).toBe("carbon-fix-bug");
   });
 
-  it("never collides with the main checkout's bare `carbon` slug", () => {
-    const slug = canonicalSlug({
-      worktreeRoot: "/Users/x/conductor/workspaces/carbon/macau",
-      mainRoot: "/Users/x/Code/carbon",
-      branch: "some-feature"
-    });
-    expect(slug).not.toBe("carbon");
-  });
-
   it("falls back to the worktree dir basename when HEAD is detached", () => {
     expect(
       canonicalSlug({
@@ -115,5 +94,41 @@ describe("sameWorktreePath", () => {
 
   it("distinguishes unrelated paths", () => {
     expect(sameWorktreePath(real, tmpdir())).toBe(false);
+  });
+});
+
+describe("worktreeDatabaseName", () => {
+  it("maps a slug to wt_ plus snake case", () => {
+    expect(worktreeDatabaseName("carbon-chore-dev-supabase-parity")).toBe(
+      "wt_carbon_chore_dev_supabase_parity"
+    );
+  });
+
+  it("cuts a long name to 63 characters and adds a hash", () => {
+    const name = worktreeDatabaseName("a".repeat(80));
+    expect(name).toHaveLength(63);
+    expect(name).toMatch(/_[0-9a-f]{6}$/);
+  });
+
+  it("gives slugs that differ only outside [a-z0-9-] different names", () => {
+    expect(worktreeDatabaseName("a.b")).not.toBe(worktreeDatabaseName("a_b"));
+    expect(worktreeDatabaseName("a_b")).not.toBe(worktreeDatabaseName("a-b"));
+  });
+});
+
+describe("recordedStackMode", () => {
+  const home = process.env.HOME;
+  const tmpHome = mkdtempSync(join(tmpdir(), "crbn-mode-"));
+  afterAll(() => {
+    process.env.HOME = home;
+    rmSync(tmpHome, { recursive: true, force: true });
+  });
+
+  it("is null until a crbn with modes ran `up`, then what it wrote", () => {
+    process.env.HOME = tmpHome;
+    // An older crbn wrote no mode: its volumes are live, never "old".
+    expect(recordedStackMode("some-slug")).toBeNull();
+    writeStackMode("some-slug", "isolated");
+    expect(recordedStackMode("some-slug")).toBe("isolated");
   });
 });

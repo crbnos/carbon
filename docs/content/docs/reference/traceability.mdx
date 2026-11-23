@@ -30,6 +30,8 @@ The inverse is a **merge**, which combines lots of one item into a single lot ca
 
 <Screenshot label="The genealogy graph at Inventory → Traceability → Graph: circular entity nodes colored by status (Available, Consumed, Reserved, On Hold, Rejected), diamond activity nodes between them, a stacked node for a serial group, and the legend popover open" caption="The graph is walked from any unit outward — upstream to its ancestry, downstream to everything it ended up in." />
 
+On a desktop screen, **Inventory → Traceability** opens full width, with the Inventory module menu hidden. The panel button before the breadcrumb (**"Show menu"** / **"Hide menu"**) brings it back, and your browser remembers the choice for every board page.
+
 <Callout type="note">
 There are no separate serial-number or batch-number tables — one tracked-entity model represents both, and the number itself is an attribute. Genealogy isn't a stored parent pointer; it's reconstructed by walking the activity graph from a unit outward.
 </Callout>

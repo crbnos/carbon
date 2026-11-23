@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -24,10 +23,10 @@ import {
   MenuSub,
   MenuSubContent,
   MenuSubTrigger,
-  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -73,11 +72,12 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions } from "~/hooks";
+import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { methodType } from "~/modules/shared";
-import type { action } from "~/routes/x+/items+/update";
+import { methodType } from "~/modules/shared/shared.models";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
@@ -87,9 +87,11 @@ type MaterialsTableProps = {
   data: MaterialListItem[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
+const MaterialsTable = memo((props: MaterialsTableProps) => {
+  const { data, tags, count, infinite } = props;
   const { t } = useLingui();
   const translateMethodType = useCallback(
     (v: string) =>
@@ -148,14 +150,20 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             <Hyperlink to={path.to.material(row.original.id!)}>
               <VStack spacing={0}>
                 {row.original.readableId}
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.name}
-                </div>
+                {distinctItemText(
+                  row.original.readableId,
+                  row.original.name
+                ) && (
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.name}
+                  </div>
+                )}
               </VStack>
             </Hyperlink>
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />,
           // The accessor is the raw item id — export the readable id
           // the cell shows instead of a UUID.
@@ -176,6 +184,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuAlignJustify />
         }
       },
@@ -186,6 +195,8 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           <Enumerable value={row.original.materialSubstance} />
         ),
         meta: {
+          mobile: "P2",
+          mobilePill: true,
           filter: {
             type: "fetcher",
             endpoint: path.to.api.materialSubstances,
@@ -475,7 +486,15 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       {
         accessorKey: "active",
         header: t`Active`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const itemId = item.row.original.readableIdWithRevision;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Active: ${itemId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -559,14 +578,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
     translateTrackingType
   ]);
 
-  const fetcher = useAction<typeof action>({
-    onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
-    }
-  });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  const { submit: submitBulk } = useBulkFormAction();
   const onBulkUpdate = useCallback(
     (
       selectedRows: typeof data,
@@ -576,25 +588,20 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         | "defaultMethodType"
         | "itemTrackingType"
         | "itemPostingGroupId",
-      value: string
+      value: string,
+      scope?: BulkActionScope
     ) => {
-      const formData = new FormData();
-      selectedRows.forEach((row) => {
-        if (row.id) formData.append("items", row.id);
-      });
-      formData.append("field", field);
-      formData.append("value", value);
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateItems
-      });
+      submitBulk(
+        path.to.bulkUpdateItems,
+        { scope, idsField: "items", ids: selectedRows.map((row) => row.id) },
+        { field, value }
+      );
     },
-
-    [materialSubstanceId, materialFormId]
+    [submitBulk]
   );
 
   const renderActions = useCallback(
-    (selectedRows: typeof data) => {
+    (selectedRows: typeof data, scope?: BulkActionScope) => {
       return (
         <DropdownMenuContent align="end" className="min-w-[200px]">
           <DropdownMenuLabel>
@@ -615,7 +622,8 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
                         onBulkUpdate(
                           selectedRows,
                           "itemPostingGroupId",
-                          group.value
+                          group.value,
+                          scope
                         )
                       }
                     >
@@ -635,7 +643,12 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
                     <DropdownMenuItem
                       key={type}
                       onClick={() =>
-                        onBulkUpdate(selectedRows, "defaultMethodType", type)
+                        onBulkUpdate(
+                          selectedRows,
+                          "defaultMethodType",
+                          type,
+                          scope
+                        )
                       }
                     >
                       <DropdownMenuIcon icon={<MethodIcon type={type} />} />
@@ -655,7 +668,12 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
                     <DropdownMenuItem
                       key={type}
                       onClick={() =>
-                        onBulkUpdate(selectedRows, "itemTrackingType", type)
+                        onBulkUpdate(
+                          selectedRows,
+                          "itemTrackingType",
+                          type,
+                          scope
+                        )
                       }
                     >
                       <DropdownMenuIcon
@@ -737,6 +755,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         count={count}
         columns={columns}
         data={data}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["id"]
         }}
@@ -757,7 +776,12 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuGroup />}
+                className="max-md:hidden"
+                asChild
+              >
                 <Link to={path.to.itemPostingGroups}>
                   <Trans>Item Groups</Trans>
                 </Link>
@@ -781,11 +805,9 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           text={t`Are you sure you want to delete ${selectedItem.readableIdWithRevision!}? This cannot be undone.`}
           onCancel={() => {
             deleteItemModal.onClose();
-            setSelectedItem(null);
           }}
           onSubmit={() => {
             deleteItemModal.onClose();
-            setSelectedItem(null);
           }}
         />
       )}

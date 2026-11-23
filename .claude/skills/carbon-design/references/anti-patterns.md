@@ -22,6 +22,17 @@ Three kinds:
   Properties panel.
 - Line items as a big editable spreadsheet in the content pane. → Explorer + Summary.
 - Wide-screen layouts that stretch forever. → capped `max-w-*`.
+- Everything on the first screen: a tab strip of 8 views, two header rows, a toolbar per
+  concern, every control visible. → open in layers: the module sidebar, the list, the record
+  (sidebar links + a one-line header), the page (one toolbar row), then menus and folded
+  sections (projects rebuild, `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
+- A panel inside a panel (a record's detail opening as a right panel inside another
+  workspace). → its own full-screen page with a breadcrumb back (the project element page).
+- A `Subheading` on every section of a page. → a plain `text-sm font-medium` heading; keep
+  `Subheading` for the Properties title and reports.
+- Collapsible groups in a module sidebar. → plain, always-open groups (Brad, 2026-10-12).
+- Striped or decorative progress bars. → `Progress` (`h-1.5`, neutral fill, red only when
+  over).
 - Nested scroll regions inside cards. → the page scrolls.
 - Center-aligned content blocks / marketing-style sections in app pages.
 
@@ -33,7 +44,8 @@ Three kinds:
 - Bold (`font-bold`/`semibold`) body text for emphasis; `text-lg`+ for card titles.
 - Arbitrary sizes (`text-[13px]`, `h-[37px]`), raw grays (`text-gray-500`), hex colors.
 - Icons from other sets, colored decorative icons, icon-only buttons for actions that need a word.
-- Illustrations or large emoji in empty states; confetti; "🎉" toasts.
+- Illustrations other than the shared `Empty` cabinet, large emoji in empty states, dashed
+  empty boxes; confetti; "🎉" toasts.
 - Right-aligned numeric columns in list tables; bold totals.
 
 ### Interaction

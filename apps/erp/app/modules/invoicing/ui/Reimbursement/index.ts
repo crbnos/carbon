@@ -10,7 +10,9 @@ export type {
   JournalLineDimensionValue
 } from "~/modules/accounting/ui/JournalEntries/types";
 export { default as PayExpenseModal } from "./PayExpenseModal";
+export { default as ReimbursementDocuments } from "./ReimbursementDocuments";
 export { default as ReimbursementEditForm } from "./ReimbursementEditForm";
+export { default as ReimbursementHeader } from "./ReimbursementHeader";
 export { default as ReimbursementStatus } from "./ReimbursementStatus";
 export { default as ReimbursementSummary } from "./ReimbursementSummary";
 export { default as ReimbursementsTable } from "./ReimbursementsTable";

@@ -14,18 +14,13 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
   useMount,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -43,8 +38,8 @@ import {
 } from "~/components/LineReorder";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -54,6 +49,7 @@ import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
 import SupplierQuoteLineForm from "./SupplierQuoteLineForm";
 
 export default function SupplierQuoteExplorer() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const routeData = useRouteData<{
@@ -87,20 +83,8 @@ export default function SupplierQuoteExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const lines = routeData?.lines ?? [];
   const canReorder =
@@ -167,36 +151,19 @@ export default function SupplierQuoteExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newSupplierQuoteLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newSupplierQuoteLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -207,15 +174,18 @@ export default function SupplierQuoteExplorer() {
           )}
         </div>
       </VStack>
-      {newSupplierQuoteLineDisclosure.isOpen && (
+      {newSupplierQuoteLineDisclosure.openCount > 0 && (
         <SupplierQuoteLineForm
+          key={newSupplierQuoteLineDisclosure.openCount}
+          open={newSupplierQuoteLineDisclosure.isOpen}
           initialValues={supplierQuoteLineInitialValues}
           type="modal"
           onClose={newSupplierQuoteLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && deleteLine?.id && (
+      {deleteLine?.id && (
         <DeleteSupplierQuoteLine
+          isOpen={deleteLineDisclosure.isOpen}
           line={{
             itemId: deleteLine?.itemId ?? "",
             id: deleteLine.id
@@ -237,6 +207,13 @@ function SupplierQuoteLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const subtitle =
+    line.supplierQuoteLineType === "G/L Account"
+      ? "G/L Account"
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -247,11 +224,11 @@ function SupplierQuoteLineBody({
               ? line.description || "Indirect Expense"
               : getItemReadableId(items, line.itemId)}
           </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.supplierQuoteLineType === "G/L Account"
-              ? "G/L Account"
-              : line.description}
-          </span>
+          {subtitle && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {subtitle}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -287,17 +264,30 @@ function SupplierQuoteLineItem({
   const isSelected =
     location.pathname === path.to.supplierQuoteLine(id, line.id!);
 
+  const subtitle =
+    line.supplierQuoteLineType === "G/L Account"
+      ? "G/L Account"
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
+
+  const lineName =
+    line.supplierQuoteLineType === "G/L Account"
+      ? line.description || "Indirect Expense"
+      : getItemReadableId(items, line.itemId);
+
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.supplierQuoteLine(id, line.id!)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        <PrefetchLink
+          to={path.to.supplierQuoteLine(id, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail
@@ -306,72 +296,65 @@ function SupplierQuoteLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.supplierQuoteLineType === "G/L Account"
-                  ? line.description || "Indirect Expense"
-                  : getItemReadableId(items, line.itemId)}
-              </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.supplierQuoteLineType === "G/L Account"
-                  ? "G/L Account"
-                  : line.description}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
+              {subtitle && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {subtitle}
+                </span>
+              )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More`}
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
-                </DropdownMenuItem>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={isDisabled || !permissions.can("update", "sales")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
 
-                {lineItemType &&
-                  itemType.includes(lineItemType as ItemType) && (
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.view}
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link
-                        to={getLinkToItemDetails(
-                          lineItemType as ItemType,
-                          line.itemId!
-                        )}
-                      >
-                        <DropdownMenuIcon
-                          icon={
-                            <MethodItemTypeIcon
-                              type={lineItemType as ItemType}
-                            />
-                          }
-                        />
-                        <Trans>View Item Master</Trans>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+              {lineItemType && itemType.includes(lineItemType as ItemType) && (
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Link
+                    to={getLinkToItemDetails(
+                      lineItemType as ItemType,
+                      line.itemId!
+                    )}
+                  >
+                    <DropdownMenuIcon
+                      icon={
+                        <MethodItemTypeIcon type={lineItemType as ItemType} />
+                      }
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

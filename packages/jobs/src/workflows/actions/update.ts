@@ -13,15 +13,8 @@ import {
 } from "@carbon/ee/workflows";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { COMPANY_MEMBERSHIP } from "../company-scope";
 import { toPlainValue } from "./values";
-
-/** `user` carries no companyId — membership lives on `userToCompany`. */
-const MEMBERSHIP: Record<
-  string,
-  { table: string; column: string } | undefined
-> = {
-  user: { table: "userToCompany", column: "userId" }
-};
 
 /** Reads through the owner's client, so RLS-refused and absent are one answer. */
 async function existsInCompany(params: {
@@ -32,7 +25,7 @@ async function existsInCompany(params: {
 }): Promise<boolean> {
   const { client, id, companyId } = params;
 
-  const membership = MEMBERSHIP[params.table];
+  const membership = COMPANY_MEMBERSHIP[params.table];
   const table = membership?.table ?? params.table;
   const column = membership?.column ?? "id";
 

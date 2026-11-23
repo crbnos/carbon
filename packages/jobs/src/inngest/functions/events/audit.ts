@@ -68,7 +68,9 @@ export const auditFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const payload = AuditPayloadSchema.parse(event.data);
 
-    logger.info(`Processing ${payload.records.length} audit log events`);
+    logger.info("Processing audit log events", {
+      count: payload.records.length
+    });
 
     const results = {
       inserted: 0,
@@ -86,7 +88,9 @@ export const auditFunction = inngest.createFunction(
       AuditRecord[]
     ][]) {
       if (!companyId || companyId === "undefined") {
-        logger.info(`Skipping ${records.length} records: missing companyId`);
+        logger.info("Skipping records with no companyId", {
+          count: records.length
+        });
         results.skipped += records.length;
         continue;
       }
@@ -94,7 +98,6 @@ export const auditFunction = inngest.createFunction(
       const companyResult = await step.run(`audit-${companyId}`, async () => {
         const stepResults = { inserted: 0, skipped: 0, failed: 0 };
 
-        // Check if company has audit logs enabled
         const { data: company } = await client
           .from("company")
           .select("auditLogEnabled")
@@ -104,9 +107,10 @@ export const auditFunction = inngest.createFunction(
         if (
           !(company as { auditLogEnabled: boolean } | null)?.auditLogEnabled
         ) {
-          logger.info(
-            `Skipping ${records.length} records: audit logging disabled for company ${companyId}`
-          );
+          logger.info("Skipping records: audit logging is disabled", {
+            count: records.length,
+            companyId
+          });
           stepResults.skipped += records.length;
           return stepResults;
         }
@@ -117,15 +121,17 @@ export const auditFunction = inngest.createFunction(
           const tableName = record.event.table;
 
           if (!isAuditableTable(tableName)) {
-            logger.info(`Skipping: table "${tableName}" is not auditable`);
+            logger.info("Skipping a table that is not auditable", {
+              tableName
+            });
             stepResults.skipped++;
             continue;
           }
 
           if (record.event.operation === "TRUNCATE") {
-            logger.info(
-              `Skipping: TRUNCATE on "${tableName}" is not meaningful`
-            );
+            logger.info("Skipping a TRUNCATE, which is not meaningful", {
+              tableName
+            });
             stepResults.skipped++;
             continue;
           }
@@ -150,9 +156,11 @@ export const auditFunction = inngest.createFunction(
               );
 
               if (!diff) {
-                logger.info(
-                  `Skipping: no meaningful diff for UPDATE on "${tableName}" record ${record.event.recordId}`
-                );
+                logger.info("Skipping an UPDATE with no meaningful diff", {
+                  tableName,
+                  recordId: record.event.recordId,
+                  companyId
+                });
                 stepResults.skipped++;
                 continue;
               }
@@ -166,9 +174,9 @@ export const auditFunction = inngest.createFunction(
             const entityConfigs = getEntityConfigsForTable(tableName);
 
             if (entityConfigs.length === 0) {
-              logger.info(
-                `Skipping: no entity config found for table "${tableName}"`
-              );
+              logger.info("Skipping a table with no entity config", {
+                tableName
+              });
               stepResults.skipped++;
               continue;
             }
@@ -178,13 +186,17 @@ export const auditFunction = inngest.createFunction(
             for (const entityEntry of entityConfigs) {
               const { entityType, tableConfig } = entityEntry;
 
+              // An extension row is created with its parent (1:1), so its
+              // INSERT would only repeat the parent's "Created". Every other
+              // INSERT is logged: adding a line is part of a document's history.
               if (
                 record.event.operation === "INSERT" &&
-                !isRootTable(tableConfig)
+                isExtensionTable(tableConfig)
               ) {
-                logger.info(
-                  `Skipping: INSERT on non-root table "${tableName}" for entity "${entityType}"`
-                );
+                logger.info("Skipping an INSERT on an extension table", {
+                  tableName,
+                  entityType
+                });
                 continue;
               }
 
@@ -224,27 +236,48 @@ export const auditFunction = inngest.createFunction(
                 entriesCreatedForRecord++;
               } else if (isChildTable(tableConfig)) {
                 const recordData = record.event.new ?? record.event.old;
-                const entityId = recordData?.[tableConfig.entityIdColumn];
+                const columns = (
+                  Array.isArray(tableConfig.entityIdColumn)
+                    ? tableConfig.entityIdColumn
+                    : [tableConfig.entityIdColumn]
+                ) as readonly string[];
+                // One entry per distinct parent the row names.
+                const entityIds = [
+                  ...new Set(
+                    columns
+                      .map((column) => recordData?.[column])
+                      .filter((value) => value !== null && value !== undefined)
+                      .map(String)
+                  )
+                ];
 
-                if (!entityId) {
-                  logger.info(
-                    `Skipping: could not resolve entity ID from column "${tableConfig.entityIdColumn}" for "${tableName}" record ${record.event.recordId}`
+                if (entityIds.length === 0) {
+                  logger.warn(
+                    "Skipping a record: could not resolve its entity ID",
+                    {
+                      columns,
+                      tableName,
+                      recordId: record.event.recordId,
+                      companyId
+                    }
                   );
                   continue;
                 }
 
-                entries.push({
-                  tableName,
-                  entityType,
-                  entityId: String(entityId),
-                  recordId: record.event.recordId,
-                  operation,
-                  actorId: entryActorId,
-                  diff: effectiveDiff,
-                  metadata: entryMetadata,
-                  createdAt: record.event.timestamp
-                });
-                entriesCreatedForRecord++;
+                for (const entityId of entityIds) {
+                  entries.push({
+                    tableName,
+                    entityType,
+                    entityId,
+                    recordId: record.event.recordId,
+                    operation,
+                    actorId: entryActorId,
+                    diff: effectiveDiff,
+                    metadata: entryMetadata,
+                    createdAt: record.event.timestamp
+                  });
+                  entriesCreatedForRecord++;
+                }
               } else if (isIndirectTable(tableConfig)) {
                 const { junction, fk, entityIdColumn } = tableConfig.resolve;
 
@@ -273,16 +306,25 @@ export const auditFunction = inngest.createFunction(
                   entriesCreatedForRecord++;
                 } else {
                   logger.info(
-                    `Skipping: no parent entity found via junction "${junction}" for "${tableName}" record ${record.event.recordId} (entity: ${entityType})`
+                    "Skipping a record: no parent entity found via the junction",
+                    {
+                      junction,
+                      tableName,
+                      recordId: record.event.recordId,
+                      entityType,
+                      companyId
+                    }
                   );
                 }
               }
             }
 
             if (entriesCreatedForRecord === 0) {
-              logger.info(
-                `Skipping: could not resolve any entity for "${tableName}" record ${record.event.recordId}`
-              );
+              logger.warn("Skipping a record: could not resolve any entity", {
+                tableName,
+                recordId: record.event.recordId,
+                companyId
+              });
               stepResults.skipped++;
             }
           } catch (error) {

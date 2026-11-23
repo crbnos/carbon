@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { createHash } from "node:crypto";
+import { getLogger } from "@carbon/logger";
 import { z } from "zod";
 import { RAMP_SCOPES } from "../scopes";
 import type { RampCredentials } from "./models";
@@ -16,17 +17,14 @@ import {
   RampVendorSchema
 } from "./models";
 
-export const RAMP_PRODUCTION_HOST = "https://api.ramp.com";
-export const RAMP_SANDBOX_HOST = "https://demo-api.ramp.com";
+const logger = getLogger("ee", "ramp");
+
+export const RAMP_HOST = "https://api.ramp.com";
 
 // The canonical scope lists live in the browser-safe `../scopes` module so the
 // client-bundled `config.tsx` can share them without importing this file (which
 // pulls `node:crypto`). Re-exported here to preserve the public contract.
 export { RAMP_OAUTH_SCOPES, RAMP_SCOPES } from "../scopes";
-
-/** Ramp OAuth authorize endpoints (production / sandbox). */
-export const RAMP_PRODUCTION_AUTHORIZE_URL = `${RAMP_PRODUCTION_HOST}/v1/authorize`;
-export const RAMP_SANDBOX_AUTHORIZE_URL = `${RAMP_SANDBOX_HOST}/v1/authorize`;
 
 /** Re-mint a client-credentials token when fewer than this many ms remain. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
@@ -116,10 +114,7 @@ export class RampClient {
     private readonly credentials: RampCredentials,
     private readonly options: RampClientOptions = {}
   ) {
-    this.host =
-      credentials.environment === "sandbox"
-        ? RAMP_SANDBOX_HOST
-        : RAMP_PRODUCTION_HOST;
+    this.host = RAMP_HOST;
     if (credentials.type === "oauth2") {
       this.oauthAccessToken = credentials.accessToken;
       this.oauthExpiresAt = credentials.expiresAt
@@ -351,11 +346,11 @@ export class RampClient {
             row && typeof row === "object" && "id" in row
               ? (row as { id?: unknown }).id
               : undefined;
-          console.warn(
-            `Ramp listPaginated: skipping malformed row from ${path}` +
-              (rowId !== undefined ? ` (id=${String(rowId)})` : ""),
-            parsed.error.issues
-          );
+          logger.warning("Ramp listPaginated skipping a malformed row", {
+            path,
+            rowId: rowId !== undefined ? String(rowId) : undefined,
+            issues: parsed.error.issues
+          });
         }
       }
       yield rows;

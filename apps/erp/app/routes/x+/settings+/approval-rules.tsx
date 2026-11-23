@@ -7,15 +7,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getApprovalRules } from "@carbon/ee/approvals.server";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { ApprovalRules, ApprovalRulesUpgradeOverlay } from "~/modules/settings";
+import {
+  ApprovalRules,
+  ApprovalRulesUpgradeOverlay
+} from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -23,9 +24,6 @@ export const handle: Handle = {
   breadcrumb: msg`Approval Rules`,
   to: path.to.approvalRules
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -79,15 +77,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (r) => r.documentType === "supplier"
   );
 
+  const changeOrderRules = enrichedRules.filter(
+    (r) => r.documentType === "changeOrder"
+  );
+
+  const changeRequestRules = enrichedRules.filter(
+    (r) => r.documentType === "projectChangeRequest"
+  );
+
   return {
     poRules,
     qdRules,
-    supplierRules
+    supplierRules,
+    changeOrderRules,
+    changeRequestRules
   };
 }
 
 export default function ApprovalSettingsRoute() {
-  const { poRules, qdRules, supplierRules } = useLoaderData<typeof loader>();
+  const {
+    poRules,
+    qdRules,
+    supplierRules,
+    changeOrderRules,
+    changeRequestRules
+  } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "APPROVAL_RULES" });
 
   if (isGated) {
@@ -100,8 +114,10 @@ export default function ApprovalSettingsRoute() {
         poRules={poRules}
         qdRules={qdRules}
         supplierRules={supplierRules}
+        changeOrderRules={changeOrderRules}
+        changeRequestRules={changeRequestRules}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

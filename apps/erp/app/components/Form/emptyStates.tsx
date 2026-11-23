@@ -31,11 +31,13 @@ export type EntityKey =
   | "workCenter"
   | "employee"
   | "paymentTerm"
+  | "taxCode"
   | "shippingMethod"
   | "ability"
   | "assetClass"
   | "customerType"
   | "customerStatus"
+  | "supplierStage"
   | "supplierType"
   | "itemPostingGroup"
   | "materialType"
@@ -155,6 +157,15 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
         pluralNoun: t`payment terms`,
         moduleLabel: t`accounting`
       };
+    case "taxCode":
+      return {
+        module: "accounting",
+        action: "create",
+        route: path.to.newTaxCode,
+        noun: t`tax code`,
+        pluralNoun: t`tax codes`,
+        moduleLabel: t`accounting`
+      };
     case "shippingMethod":
       return {
         module: "inventory",
@@ -199,6 +210,15 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
         noun: t`customer status`,
         pluralNoun: t`customer statuses`,
         moduleLabel: t`sales`
+      };
+    case "supplierStage":
+      return {
+        module: "purchasing",
+        action: "create",
+        route: path.to.newSupplierStage,
+        noun: t`supplier stage`,
+        pluralNoun: t`supplier stages`,
+        moduleLabel: t`purchasing`
       };
     case "supplierType":
       return {

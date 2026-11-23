@@ -30,6 +30,7 @@ import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { webhookValidator } from "../../settings.models";
 import type { getWebhookTables } from "../../settings.service";
+import WebhookSigningSecret from "./WebhookSigningSecret";
 
 type WebhookFormProps = {
   initialValues: z.infer<typeof webhookValidator>;
@@ -128,6 +129,13 @@ const WebhookForm = ({
                 label={t`Webhook URL`}
                 helperText={t`The endpoint that receives a POST request with the updated data when the table is updated`}
               />
+
+              {isEditing && (
+                <WebhookSigningSecret
+                  webhookId={initialValues.id!}
+                  isDisabled={!permissions.can("update", "settings")}
+                />
+              )}
 
               <Separator />
 

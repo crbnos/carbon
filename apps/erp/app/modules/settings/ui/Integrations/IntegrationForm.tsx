@@ -58,13 +58,32 @@ import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
+import { InstallButton } from "./InstallButton";
+import { useInstallGate } from "./useInstallGate";
+
+/**
+ * Live state an installed integration supplies for one of its actions. With it
+ * the button follows the run on the server — running until the run ends, then
+ * Run again — instead of the click-local "Started", and `detail` shows the
+ * last run's outcome under the action.
+ */
+export type IntegrationActionState = {
+  running?: boolean;
+  /** Button text while running. */
+  runningLabel?: ReactNode;
+  detail?: ReactNode;
+};
 
 function IntegrationActionButton({
   action,
-  isDisabled
+  isDisabled,
+  state,
+  onStarted
 }: {
   action: IntegrationAction;
   isDisabled: boolean;
+  state?: IntegrationActionState;
+  onStarted?: (actionId: string, response: Record<string, unknown>) => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "running" | "completed">(
@@ -89,7 +108,12 @@ function IntegrationActionButton({
 
       if (data?.success) {
         toast.success(`${action.label} started`);
-        setStatus("completed");
+        if (state) {
+          setStatus("idle");
+          onStarted?.(action.id, data);
+        } else {
+          setStatus("completed");
+        }
       } else {
         setStatus("idle");
         toast.error(data?.error || `Failed to start ${action.label}`);
@@ -100,25 +124,38 @@ function IntegrationActionButton({
     } finally {
       setIsLoading(false);
     }
-  }, [action]);
+  }, [action, state, onStarted]);
+
+  const running = state?.running === true;
 
   return (
-    <div className="flex items-center justify-between gap-4 p-3 border rounded-lg w-full">
-      <div className="flex flex-col flex-1 min-w-0">
-        <p className="text-sm font-medium">{action.label}</p>
-        <p className="text-xs text-muted-foreground">{action.description}</p>
+    <div className="flex flex-col gap-2 p-3 border rounded-lg w-full">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col flex-1 min-w-0">
+          <p className="text-sm font-medium">{action.label}</p>
+          {action.description && (
+            <p className="text-xs text-muted-foreground">
+              {action.description}
+            </p>
+          )}
+        </div>
+        <div className="shrink-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleClick}
+            isLoading={isLoading || running}
+            isDisabled={isDisabled || status === "running" || running}
+          >
+            {running
+              ? (state?.runningLabel ?? "Running")
+              : status === "completed"
+                ? "Started"
+                : "Run"}
+          </Button>
+        </div>
       </div>
-      <div className="shrink-0">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleClick}
-          isLoading={isLoading}
-          isDisabled={isDisabled || status === "running"}
-        >
-          {status === "completed" ? "Started" : "Run"}
-        </Button>
-      </div>
+      {state?.detail}
     </div>
   );
 }
@@ -126,16 +163,14 @@ function IntegrationActionButton({
 // Wraps an action gated by a boolean setting (`enabledWhenSetting`), reading the
 // LIVE form value so it appears/disappears as the toggle changes — not only after
 // save. Renders nothing when the setting is off.
-function GatedIntegrationActionButton({
-  action,
-  isDisabled
-}: {
-  action: IntegrationAction;
-  isDisabled: boolean;
-}) {
-  const [value] = useControlField<boolean>(action.enabledWhenSetting as string);
+function GatedIntegrationActionButton(
+  props: Parameters<typeof IntegrationActionButton>[0]
+) {
+  const [value] = useControlField<boolean>(
+    props.action.enabledWhenSetting as string
+  );
   if (value !== true) return null;
-  return <IntegrationActionButton action={action} isDisabled={isDisabled} />;
+  return <IntegrationActionButton {...props} />;
 }
 
 /**
@@ -576,6 +611,7 @@ interface IntegrationFormProps {
   installed: boolean;
   collapseSettings?: boolean;
   settingsLabel?: ReactNode;
+  open?: boolean;
   onClose: () => void;
   /** Dynamic options to merge into settings (e.g., fetched from external APIs) */
   dynamicOptions?: Record<
@@ -590,6 +626,15 @@ interface IntegrationFormProps {
   /** Rendered in the header under the connection details of an installed
    * integration (e.g. an accounting integration's sync switch). */
   headerExtra?: ReactNode;
+  /** Live state per action id; an action without an entry keeps the plain
+   * Run → Started button. */
+  actionStates?: Record<string, IntegrationActionState>;
+  /** Called with the action route's response when an action with a state
+   * entry has started. */
+  onActionStarted?: (
+    actionId: string,
+    response: Record<string, unknown>
+  ) => void;
 }
 
 export function IntegrationForm({
@@ -597,11 +642,14 @@ export function IntegrationForm({
   metadata,
   collapseSettings = false,
   settingsLabel,
+  open = true,
   onClose,
   dynamicOptions = {},
   tabs = [],
   defaultTab,
-  headerExtra
+  headerExtra,
+  actionStates,
+  onActionStarted
 }: IntegrationFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -627,6 +675,7 @@ export function IntegrationForm({
   const integration = integrationId
     ? availableIntegrations.find((i) => i.id === integrationId)
     : undefined;
+  const installGate = useInstallGate(integration, installed);
 
   // Extract connected organisation name from metadata (e.g. Xero tenant
   // name). New credentials keep provider fields under providerMetadata;
@@ -768,6 +817,18 @@ export function IntegrationForm({
   const integrationActions =
     (integration as { actions?: IntegrationAction[] })?.actions ?? [];
 
+  // An integration with no settings has no form to submit, so Install is a button rather
+  // than a Submit — the same one the card offers, so the drawer is never a dead end when
+  // it is opened by URL on something that isn't installed yet. The card's checks
+  // hold here too: a withheld install, a role another integration holds, and a
+  // mode to choose (the card asks it) are installed from the card or not at all.
+  const canInstallHere =
+    !installed &&
+    integration?.settings.length === 0 &&
+    !installGate.comingSoon &&
+    !installGate.conflictsWith &&
+    !installGate.needsModeChoice;
+
   if (!integrationId) {
     throw new Error("Integration ID is required");
   }
@@ -865,12 +926,16 @@ export function IntegrationForm({
               key={action.id}
               action={action}
               isDisabled={isDisabled}
+              state={actionStates?.[action.id]}
+              onStarted={onActionStarted}
             />
           ) : (
             <IntegrationActionButton
               key={action.id}
               action={action}
               isDisabled={isDisabled}
+              state={actionStates?.[action.id]}
+              onStarted={onActionStarted}
             />
           )
         )}
@@ -911,7 +976,7 @@ export function IntegrationForm({
         </div>
       )}
       {installed && installMode && (
-        <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+        <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-3 py-2 max-md:border-0 max-md:p-0 max-md:rounded-none max-md:bg-transparent">
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{installMode.label}</Badge>
             {installMode.detail && (
@@ -982,6 +1047,20 @@ export function IntegrationForm({
                 integration.description}
             </p>
 
+            {canInstallHere && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  {integration.name} isn't installed yet. There's nothing to
+                  configure — install it to connect an account.
+                </Trans>
+              </p>
+            )}
+            {!installed && installGate.conflictsWith && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>Uninstall {installGate.conflictsWith} first</Trans>
+              </p>
+            )}
+
             {!collapseSettings && setupInstructions}
 
             {collapseSettings && actionsSection}
@@ -1013,10 +1092,19 @@ export function IntegrationForm({
                 <Trans>Update</Trans>
               </Submit>
             ) : (
-              <Submit isDisabled={isDisabled}>
+              <Submit
+                isDisabled={
+                  isDisabled ||
+                  installGate.comingSoon ||
+                  !!installGate.conflictsWith ||
+                  installGate.needsModeChoice
+                }
+              >
                 <Trans>Install</Trans>
               </Submit>
             )
+          ) : canInstallHere ? (
+            <InstallButton integration={integration} isDisabled={isDisabled} />
           ) : null}
 
           <Button variant="solid" onClick={onClose}>
@@ -1029,7 +1117,7 @@ export function IntegrationForm({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

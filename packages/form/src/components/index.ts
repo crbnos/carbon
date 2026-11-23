@@ -40,6 +40,15 @@ import TextAreaControlled from "./TextareaControlled";
 import TimePicker from "./TimePicker";
 import Timezone from "./Timezone";
 
+export type {
+  ChoiceCardOption,
+  ComboboxProps,
+  CreatableComboboxProps,
+  CreatableMultiSelectProps,
+  FieldEmptyStateProps,
+  MultiSelectProps,
+  SelectProps
+};
 export {
   Array,
   ArrayNumeric,
@@ -71,14 +80,4 @@ export {
   TextAreaControlled,
   TimePicker,
   Timezone
-};
-
-export type {
-  ChoiceCardOption,
-  ComboboxProps,
-  CreatableComboboxProps,
-  CreatableMultiSelectProps,
-  FieldEmptyStateProps,
-  MultiSelectProps,
-  SelectProps
 };

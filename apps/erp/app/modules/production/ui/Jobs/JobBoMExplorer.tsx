@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { HStack, Spinner, VStack } from "@carbon/react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useFetchers, useParams, useSearchParams } from "react-router";
@@ -18,7 +19,7 @@ import {
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
 import { path } from "~/utils/path";
-import type { JobMethod } from "../../production.service";
+import type { JobMethod } from "../../production.utils";
 import type { ItemOrderStatus } from "../../types";
 import { JobOrderStatusBadge } from "./JobOrderStatus";
 
@@ -26,6 +27,8 @@ import { JobOrderStatusBadge } from "./JobOrderStatus";
 export type JobOrderStatusData = Record<string, ItemOrderStatus>;
 
 const OrderStatusContext = createContext<JobOrderStatusData>({});
+
+const logger = getLogger("erp", "production", "job-bom-explorer");
 
 type JobBoMExplorerProps = {
   method: FlatTree<JobMethod>;
@@ -45,8 +48,9 @@ const JobBoMExplorer = ({ method, orderStatus }: JobBoMExplorerProps) => {
       try {
         const data = await promise;
         if (active) setOrderStatusData(data);
-      } catch {
-        // Ignore — purchased items simply render without an order badge.
+      } catch (error) {
+        // Purchased items simply render without an order badge.
+        logger.warning("Failed to load the job order status", { error });
       }
     }
     resolveOrderStatus();

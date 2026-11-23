@@ -94,6 +94,11 @@ export function getTimezoneAbbreviations(zone: string): string[] {
   try {
     for (const month of [0, 6]) {
       const short = timeZoneNameOf(zone, "short", month);
+      // Some ICU versions spell Greenwich Mean Time as a zero offset.
+      if (/^GMT\+0{1,2}(?::?0{2})?$/.test(short)) {
+        add("GMT");
+        continue;
+      }
       if (ABBREVIATION.test(short)) {
         add(short);
         continue;

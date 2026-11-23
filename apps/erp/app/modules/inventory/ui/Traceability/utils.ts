@@ -8,12 +8,14 @@ import type {
   Activity,
   ActivityInput,
   ActivityOutput,
+  IssueContainment,
+  StepRecord,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import type { ClusterResult, EntityCluster } from "./cluster";
 import { clusterEntities, DEFAULT_CLUSTER_THRESHOLD, edgeKey } from "./cluster";
 import { NODE_SIZE } from "./constants";
-import { isMovementActivity } from "./metadata";
+import { isInspectActivity, isMovementActivity } from "./metadata";
 
 export type EntityNodeData = {
   kind: "entity";
@@ -73,37 +75,11 @@ export type LineageEdgeData = {
 
 export type LineageEdge = Edge<LineageEdgeData>;
 
-export type StepRecord = {
-  id: string;
-  jobOperationStepId: string;
-  index: number;
-  type: string;
-  name: string;
-  value: string | null;
-  numericValue: number | null;
-  booleanValue: boolean | null;
-  userValue: string | null;
-  unitOfMeasureCode: string | null;
-  minValue: number | null;
-  maxValue: number | null;
-  operationId: string;
-  operationDescription: string | null;
-  itemId: string | null;
-  itemReadableId: string | null;
-  createdAt: string;
-  createdBy: string | null;
-};
-
-export type IssueContainmentStatus = "Contained" | "Uncontained";
-
-export type IssueContainment = {
-  id: string;
-  readableId: string | null;
-  containmentStatus: IssueContainmentStatus;
-  status: string;
-  priority: string | null;
-  trackedEntityId: string;
-};
+export type {
+  IssueContainment,
+  IssueContainmentStatus,
+  StepRecord
+} from "~/modules/inventory/types";
 
 export type LineagePayload = {
   entities: TrackedEntity[];
@@ -113,6 +89,41 @@ export type LineagePayload = {
   stepRecords?: StepRecord[];
   containments?: IssueContainment[];
 };
+
+/**
+ * Older inspections linked each unit as a zero-quantity input AND output. Read
+ * them as an inspection is written now: the unit as one input, at its quantity.
+ */
+export function normalizeInspectionLinks<T extends LineagePayload>(
+  payload: T
+): T {
+  const inspectionIds = new Set(
+    payload.activities.filter((a) => isInspectActivity(a.type)).map((a) => a.id)
+  );
+  if (inspectionIds.size === 0) return payload;
+  const quantityById = new Map(
+    payload.entities.map((e) => [e.id, Number(e.quantity)])
+  );
+  return {
+    ...payload,
+    inputs: payload.inputs.map((input) =>
+      inspectionIds.has(input.trackedActivityId) &&
+      !(Number(input.quantity) > 0)
+        ? { ...input, quantity: quantityById.get(input.trackedEntityId) ?? 0 }
+        : input
+    ),
+    outputs: payload.outputs.filter(
+      (output) => !inspectionIds.has(output.trackedActivityId)
+    )
+  };
+}
+
+/** A move or an inspection passes the unit through; anything else consumes it. */
+function inputEdgeKind(type: string | null | undefined): "movement" | "input" {
+  return isMovementActivity(type) || isInspectActivity(type)
+    ? "movement"
+    : "input";
+}
 
 // Delimiter between an entity id and its state index in node ids. Entity ids
 // are nanoids (A-Za-z0-9_-), so "::s" can never occur inside one.
@@ -136,6 +147,7 @@ type LotEvent = {
   activityId: string;
   type: string | null;
   movement: boolean;
+  inspection: boolean;
   createdAt: string;
   inQty: number | null;
   outQty: number | null;
@@ -147,6 +159,7 @@ type LotEvent = {
 type LotEventWiring = {
   activityId: string;
   movement: boolean;
+  inspection: boolean;
   fromBin: string | null;
   toBin: string | null;
   /** State feeding the activity (input side); null for creation events. */
@@ -174,6 +187,7 @@ type LotTimeline = {
  * - output only, first event: creation — after = output qty, no before state
  * - output only, later (e.g. merge gain): after = before + output qty
  * - input only, movement: after = before (relocation, quantity carried)
+ * - input only, inspection: the entity stays in its state (no after state)
  * - input only, Split/Merge draw: after = before − input qty
  * - input only, otherwise (consume/ship): terminal — the state ends here
  */
@@ -207,7 +221,7 @@ function buildLotTimeline(
         cur = before[i]!;
       }
     } else if (ev.inQty !== null) {
-      if (ev.movement) {
+      if (ev.movement || ev.inspection) {
         after[i] = cur;
         before[i] = cur;
       } else if (ev.type === "Split" || ev.type === "Merge") {
@@ -250,19 +264,20 @@ function buildLotTimeline(
       beforeState = stateQuantities.length - 1;
     }
     let afterState: number | null = null;
-    if (after[i] !== null) {
+    if (after[i] !== null && !ev.inspection) {
       stateQuantities.push(after[i]!);
       afterState = stateQuantities.length - 1;
     }
     wiring.push({
       activityId: ev.activityId,
       movement: ev.movement,
+      inspection: ev.inspection,
       fromBin: ev.fromBin,
       toBin: ev.toBin,
       beforeState,
       beforeQty: before[i],
       afterState,
-      afterQty: after[i]
+      afterQty: afterState === null ? null : after[i]
     });
   }
   if (stateQuantities.length === 0) return null;
@@ -270,10 +285,11 @@ function buildLotTimeline(
 }
 
 export function payloadToFlow(
-  payload: LineagePayload,
+  rawPayload: LineagePayload,
   positions: Map<string, { x: number; y: number }> = new Map(),
   opts: { clusterThreshold?: number; rootIds?: string[] } = {}
 ): { nodes: LineageNode[]; edges: LineageEdge[] } & ClusterResult {
+  const payload = normalizeInspectionLinks(rawPayload);
   const activityById = new Map(payload.activities.map((a) => [a.id, a]));
 
   // Gather each entity's events from the junction rows.
@@ -292,6 +308,7 @@ export function payloadToFlow(
         activityId,
         type: activity?.type ?? null,
         movement: isMovementActivity(activity?.type),
+        inspection: isInspectActivity(activity?.type),
         createdAt: (activity?.createdAt as string | undefined) ?? "",
         inQty: null,
         outQty: null,
@@ -463,7 +480,7 @@ export function payloadToFlow(
           `in:${w.activityId}:${entityId}@${w.beforeState}`,
           stateNodeId(entityId, w.beforeState),
           w.activityId,
-          w.movement ? "movement" : "input",
+          w.movement || w.inspection ? "movement" : "input",
           w.beforeQty,
           w.movement ? (w.fromBin ?? undefined) : undefined
         );
@@ -488,16 +505,11 @@ export function payloadToFlow(
   for (const input of payload.inputs) {
     if (timelines.has(input.trackedEntityId)) continue;
     if (memberToCluster[input.trackedEntityId]) continue;
-    const kind = isMovementActivity(
-      activityTypeById.get(input.trackedActivityId)
-    )
-      ? "movement"
-      : "input";
     pushEdge(
       `in:${input.trackedActivityId}:${input.trackedEntityId}`,
       input.trackedEntityId,
       input.trackedActivityId,
-      kind,
+      inputEdgeKind(activityTypeById.get(input.trackedActivityId)),
       input.quantity
     );
   }
@@ -524,9 +536,7 @@ export function payloadToFlow(
           `in:${entry.activityId}:${cluster.id}`,
           cluster.id,
           entry.activityId,
-          isMovementActivity(activityTypeById.get(entry.activityId))
-            ? "movement"
-            : "input",
+          inputEdgeKind(activityTypeById.get(entry.activityId)),
           quantity
         );
       } else {
@@ -756,6 +766,8 @@ export function sourceLinkHref(
       return `/x/picking-list/${id}`;
     case "Stock Transfer":
       return `/x/stock-transfer/${id}`;
+    case "Rental Agreement":
+      return `/x/rental-agreement/${id}/details`;
     default:
       return null;
   }
@@ -1061,4 +1073,21 @@ export function formatQuantity(q: number): string {
   if (q >= 1000) return `${(q / 1000).toFixed(1)}k`;
   if (Number.isInteger(q)) return String(q);
   return q.toFixed(1);
+}
+
+export type ActivityOrder = "newest" | "oldest";
+
+/**
+ * Compares two activity dates (ISO timestamps, which compare as strings) for
+ * the traceability table. An activity with no date goes last either way.
+ */
+export function compareActivityDates(
+  a: string | null | undefined,
+  b: string | null | undefined,
+  order: ActivityOrder
+): number {
+  if (!a || !b) return a ? -1 : b ? 1 : 0;
+  if (a === b) return 0;
+  const ascending = a < b ? -1 : 1;
+  return order === "newest" ? -ascending : ascending;
 }

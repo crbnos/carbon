@@ -141,7 +141,7 @@ const PickMethodForm = ({
         validator={pickMethodWithShelfLifeValidator}
         defaultValues={initialValues}
       >
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:flex-wrap max-md:gap-y-0 max-md:items-center">
           <CardHeader>
             <CardTitle>
               <Trans>Inventory</Trans>
@@ -151,6 +151,7 @@ const PickMethodForm = ({
           <CardAction>
             <HStack spacing={2}>
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={initialValues.locationId}

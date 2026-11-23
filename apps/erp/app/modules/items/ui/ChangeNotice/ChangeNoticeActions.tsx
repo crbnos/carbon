@@ -18,7 +18,6 @@ import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
 import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
 import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
-import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
 import { useImageUpload, usePermissions, useRouteData, useUser } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { ListItem } from "~/types";
@@ -113,31 +112,12 @@ function ActionItem({
 
   const onUploadImage = useImageUpload("parts");
 
-  const hasLinearLink = !!action.linearIssue;
-  const hasJiraLink = !!action.jiraIssue;
-
   const onUpdateContent = useDebounce(
     async (value: JSONContent) => {
       await carbon
         ?.from("changeOrderActionTask")
         .update({ notes: value, updatedBy: userId })
         .eq("id", action.id);
-
-      if (hasLinearLink) {
-        await syncActionTaskNotes("Linear", {
-          actionId: action.id,
-          entityType: "changeOrderActionTask",
-          notes: value
-        });
-      }
-
-      if (hasJiraLink) {
-        await syncActionTaskNotes("Jira", {
-          actionId: action.id,
-          entityType: "changeOrderActionTask",
-          notes: value
-        });
-      }
     },
     2500,
     true

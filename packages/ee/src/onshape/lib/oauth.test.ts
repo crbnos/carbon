@@ -2,21 +2,58 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// The sync app and the panel app, each set or unset per test.
+const env = vi.hoisted(() => {
+  const configured = {
+    ONSHAPE_CLIENT_ID: "public-client",
+    ONSHAPE_CLIENT_SECRET: "public-secret",
+    ONSHAPE_OAUTH_REDIRECT_URL:
+      "https://app.carbon.ms/api/integrations/onshape/oauth",
+    ONSHAPE_V2_CLIENT_ID: "panel-client",
+    ONSHAPE_V2_CLIENT_SECRET: "panel-secret",
+    ONSHAPE_V2_OAUTH_REDIRECT_URL:
+      "https://app.carbon.ms/api/integrations/onshape-v2/oauth"
+  };
+  return {
+    configured,
+    current: { ...configured } as Partial<typeof configured>
+  };
+});
 
 vi.mock("@carbon/env", () => ({
   getAppUrl: () => "https://itar.carbon.ms",
-  ONSHAPE_CLIENT_ID: "public-client",
-  ONSHAPE_CLIENT_SECRET: "public-secret",
-  ONSHAPE_OAUTH_REDIRECT_URL:
-    "https://app.carbon.ms/api/integrations/onshape/oauth"
+  get ONSHAPE_CLIENT_ID() {
+    return env.current.ONSHAPE_CLIENT_ID;
+  },
+  get ONSHAPE_CLIENT_SECRET() {
+    return env.current.ONSHAPE_CLIENT_SECRET;
+  },
+  get ONSHAPE_OAUTH_REDIRECT_URL() {
+    return env.current.ONSHAPE_OAUTH_REDIRECT_URL;
+  },
+  get ONSHAPE_V2_CLIENT_ID() {
+    return env.current.ONSHAPE_V2_CLIENT_ID;
+  },
+  get ONSHAPE_V2_CLIENT_SECRET() {
+    return env.current.ONSHAPE_V2_CLIENT_SECRET;
+  },
+  get ONSHAPE_V2_OAUTH_REDIRECT_URL() {
+    return env.current.ONSHAPE_V2_OAUTH_REDIRECT_URL;
+  }
 }));
 
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  getConflictingOnshapeConnection,
   hasOnshapeIntegration,
+  isOnshapeCustomerAppIntegrationId,
   isOnshapeIntegrationId,
   normalizeOnshapeUrl
 } from "./connection";
+import { isOnshapePanelIntegrationId } from "./integration-id";
 import { getOnshapeAuthorizeUrl, getOnshapeOAuthConfig } from "./oauth";
 
 const government = {
@@ -43,6 +80,10 @@ describe("normalizeOnshapeUrl", () => {
 });
 
 describe("getOnshapeOAuthConfig", () => {
+  afterEach(() => {
+    env.current = { ...env.configured };
+  });
+
   it("uses this instance's public app for the standard integration", () => {
     expect(getOnshapeOAuthConfig("onshape", {})).toEqual({
       clientId: "public-client",
@@ -52,6 +93,45 @@ describe("getOnshapeOAuthConfig", () => {
       authorizeUrl: "https://oauth.onshape.com/oauth/authorize",
       tokenUrl: "https://oauth.onshape.com/oauth/token"
     });
+  });
+
+  it("uses the panel's own app for Onshape V2", () => {
+    expect(getOnshapeOAuthConfig("onshape-v2", {})).toEqual({
+      clientId: "panel-client",
+      clientSecret: "panel-secret",
+      redirectUri: "https://app.carbon.ms/api/integrations/onshape-v2/oauth",
+      baseUrl: "https://cad.onshape.com",
+      authorizeUrl: "https://oauth.onshape.com/oauth/authorize",
+      tokenUrl: "https://oauth.onshape.com/oauth/token"
+    });
+  });
+
+  it("never lends the sync app's client to the panel", () => {
+    env.current = {
+      ONSHAPE_CLIENT_ID: env.configured.ONSHAPE_CLIENT_ID,
+      ONSHAPE_CLIENT_SECRET: env.configured.ONSHAPE_CLIENT_SECRET,
+      ONSHAPE_OAUTH_REDIRECT_URL: env.configured.ONSHAPE_OAUTH_REDIRECT_URL,
+      ONSHAPE_V2_OAUTH_REDIRECT_URL:
+        env.configured.ONSHAPE_V2_OAUTH_REDIRECT_URL
+    };
+    expect(getOnshapeOAuthConfig("onshape-v2", {})).toBeNull();
+    expect(getOnshapeOAuthConfig("onshape", {})?.clientId).toBe(
+      "public-client"
+    );
+  });
+
+  it("never lends the panel's client to the sync integration", () => {
+    env.current = {
+      ONSHAPE_OAUTH_REDIRECT_URL: env.configured.ONSHAPE_OAUTH_REDIRECT_URL,
+      ONSHAPE_V2_CLIENT_ID: env.configured.ONSHAPE_V2_CLIENT_ID,
+      ONSHAPE_V2_CLIENT_SECRET: env.configured.ONSHAPE_V2_CLIENT_SECRET,
+      ONSHAPE_V2_OAUTH_REDIRECT_URL:
+        env.configured.ONSHAPE_V2_OAUTH_REDIRECT_URL
+    };
+    expect(getOnshapeOAuthConfig("onshape", {})).toBeNull();
+    expect(getOnshapeOAuthConfig("onshape-v2", {})?.clientId).toBe(
+      "panel-client"
+    );
   });
 
   it("uses the customer's private app and tenant for Government", () => {
@@ -64,6 +144,22 @@ describe("getOnshapeOAuthConfig", () => {
       authorizeUrl: "https://acme.onshape.example/oauth/authorize",
       tokenUrl: "https://acme.onshape.example/oauth/token"
     });
+  });
+
+  it("gives the Government panel its own private app and callback", () => {
+    expect(getOnshapeOAuthConfig("onshape-v2-government", government)).toEqual({
+      clientId: "gov-client",
+      clientSecret: "gov-secret",
+      redirectUri:
+        "https://itar.carbon.ms/api/integrations/onshape-v2-government/oauth",
+      baseUrl: "https://acme.onshape.example",
+      authorizeUrl: "https://acme.onshape.example/oauth/authorize",
+      tokenUrl: "https://acme.onshape.example/oauth/token"
+    });
+  });
+
+  it("never lends the panel's environment client to the Government panel", () => {
+    expect(getOnshapeOAuthConfig("onshape-v2-government", {})).toBeNull();
   });
 
   it("is unconfigured until every Government field is present", () => {
@@ -99,4 +195,66 @@ describe("integration identity", () => {
     expect(hasOnshapeIntegration(new Set(["onshape-government"]))).toBe(true);
     expect(hasOnshapeIntegration(new Set(["jira"]))).toBe(false);
   });
+
+  it("keeps the panel grants out of the sync connections", () => {
+    expect(isOnshapeIntegrationId("onshape-v2")).toBe(false);
+    expect(isOnshapeIntegrationId("onshape-v2-government")).toBe(false);
+    expect(isOnshapePanelIntegrationId("onshape-v2")).toBe(true);
+    expect(isOnshapePanelIntegrationId("onshape-v2-government")).toBe(true);
+    expect(isOnshapePanelIntegrationId("onshape-government")).toBe(false);
+  });
+
+  it("treats only the Government ids as customer-owned apps", () => {
+    expect(isOnshapeCustomerAppIntegrationId("onshape-government")).toBe(true);
+    expect(isOnshapeCustomerAppIntegrationId("onshape-v2-government")).toBe(
+      true
+    );
+    expect(isOnshapeCustomerAppIntegrationId("onshape")).toBe(false);
+    expect(isOnshapeCustomerAppIntegrationId("onshape-v2")).toBe(false);
+  });
+});
+
+// Answers every companyIntegration read with `result`.
+function readingClient(result: {
+  data: { id: string } | null;
+  error: { message: string } | null;
+}) {
+  const query: Record<string, unknown> = {};
+  for (const method of ["from", "select", "in", "eq", "limit"]) {
+    query[method] = () => query;
+  }
+  query.maybeSingle = async () => result;
+  return query as unknown as SupabaseClient<Database>;
+}
+
+describe("getConflictingOnshapeConnection", () => {
+  it("names the other active connection of the same pair", async () => {
+    await expect(
+      getConflictingOnshapeConnection(
+        readingClient({ data: { id: "onshape-v2" }, error: null }),
+        "company",
+        "onshape-v2-government"
+      )
+    ).resolves.toBe("onshape-v2");
+    await expect(
+      getConflictingOnshapeConnection(
+        readingClient({ data: null, error: null }),
+        "company",
+        "onshape-government"
+      )
+    ).resolves.toBeNull();
+  });
+
+  it.each(["onshape-government", "onshape-v2-government"] as const)(
+    "refuses to read a failed lookup as no conflict (%s)",
+    async (integrationId) => {
+      await expect(
+        getConflictingOnshapeConnection(
+          readingClient({ data: null, error: { message: "timeout" } }),
+          "company",
+          integrationId
+        )
+      ).rejects.toThrow("timeout");
+    }
+  );
 });

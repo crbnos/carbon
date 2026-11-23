@@ -87,6 +87,7 @@ fn main() {
 
     cxx_build::bridge("src/lib.rs")
         .file("src/occt.cc")
+        .file("src/pmi.cc")
         .std("c++17")
         .include(&include_dir)
         .warnings(false)
@@ -121,6 +122,8 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/occt.cc");
     println!("cargo:rerun-if-changed=src/occt.h");
+    println!("cargo:rerun-if-changed=src/occt_doc.h");
+    println!("cargo:rerun-if-changed=src/pmi.cc");
     println!("cargo:rerun-if-env-changed=OCCT_PREFIX");
     println!("cargo:rerun-if-env-changed=OCCT_LINK");
 }

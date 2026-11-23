@@ -8,7 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { createTimeCardEntry, timecardValidator } from "~/modules/people";
+import { timecardValidator } from "~/modules/people/people.models";
+import { createTimeCardEntry } from "~/modules/people/people.service";
 import { TimecardForm } from "~/modules/people/ui/Timecards";
 import { path } from "~/utils/path";
 

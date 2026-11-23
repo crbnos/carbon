@@ -1,0 +1,119 @@
+---
+title: Connect Jira
+plan: Business
+description: Connect your Jira site to Carbon in three steps, plus an optional webhook for live updates.
+---
+
+Connect Jira to link action tasks on Carbon's quality issues and change notices to
+Jira issues, so status, assignee and notes can sync.
+
+**You need:** permission to change Settings in Carbon, and a login to the Jira
+Cloud site you want to connect. A Jira admin is needed only for the optional
+webhook.
+
+<Diagram name="connect" />
+
+## Connect Jira
+
+<Steps>
+  <Step>
+  ### Press Install in Carbon
+
+  Go to **Settings → Integrations** and press **Install** on the **Jira** card.
+
+    <Screenshot src="/screens/setup-jira-install-card.png" label="Carbon Settings → Integrations, the Jira card with its Install button" />
+  </Step>
+  <Step>
+  ### Allow Carbon in Jira
+
+  Pick **one** Jira site and accept. Carbon links the first site in Atlassian's
+  list. If your login approved Carbon for other sites before, that list can start
+  with one of them, so connect with a login that only has the site you want.
+
+  {/* Replace with /screens/setup-jira-consent.png */}
+  <Screenshot label="Atlassian's consent screen for Carbon, with the site picker and the Accept button" ratio="tall" />
+  </Step>
+  <Step>
+  ### You're connected
+
+  You land back in Carbon, and the Jira card says **Installed**.
+  </Step>
+</Steps>
+
+## Recommended: updates from Jira
+
+Without a webhook, changes made in Jira don't come back to Carbon. Add one so they do.
+
+<Steps>
+  <Step>
+  ### Create a webhook in Jira
+
+  A Jira admin goes to **System → WebHooks** and creates a webhook with the URL shown
+  in Carbon's Jira setup instructions. Tick **Issue updated**, and type a secret
+  into the **Secret** field.
+
+  {/* Replace with /screens/setup-jira-webhook.png */}
+  <Screenshot label="Jira System → WebHooks, a new webhook with the Carbon URL, a secret, and Issue updated ticked" />
+  </Step>
+  <Step>
+  ### Paste the same secret into Carbon
+
+  Open the Jira integration in Carbon and paste the secret into **Webhook Secret**.
+  Carbon then rejects any webhook call not signed with that secret.
+  </Step>
+</Steps>
+
+## What Carbon can do in Jira
+
+When you accept, Jira lets Carbon:
+
+- see Jira users, to match assignees
+- see, create and update issues
+
+<details>
+<summary>The exact Jira scopes, for your Jira admin</summary>
+
+```
+read:jira-user
+read:jira-work
+write:jira-work
+offline_access
+```
+
+</details>
+
+## Something went wrong?
+
+| What you see | What to do |
+| --- | --- |
+| *No Jira Cloud sites found* | Your Atlassian login has no Jira Cloud site, or Atlassian didn't answer. Try again, with a login that has a Jira site. |
+| *Invalid state parameter* | Carbon couldn't match this sign-in to one you started: it took over an hour, or finished in another browser or Carbon account. Start again from **Settings → Integrations**. |
+
+## Running Carbon on your own servers?
+
+Skip this on Carbon Cloud. The Jira app is already set up.
+
+On your own servers, you create the Atlassian app once:
+
+1. Create an OAuth 2.0 integration in the
+   [Atlassian developer console](https://developer.atlassian.com/console/myapps/).
+   If someone other than its creator will connect it, turn on sharing under
+   **Distribution**.
+2. Add the Jira API with `read:jira-user`, `read:jira-work` and `write:jira-work`.
+3. Set the callback URL to `https://<your Carbon address>/api/integrations/jira/oauth`.
+4. Set `JIRA_CLIENT_ID` and `JIRA_CLIENT_SECRET` in Carbon's environment, then
+   restart Carbon. Until `JIRA_CLIENT_ID` is set, the Jira card says **Not Configured**.
+
+{/* Replace with /screens/setup-jira-app.png */}
+<Screenshot label="Atlassian developer console, the Carbon app's Jira API scopes and callback URL" />
+
+## Related
+
+<Cards>
+  <Card title="Project management" href="/docs/integrations/project-management">
+    What Carbon syncs with Jira.
+  </Card>
+  <Card title="Setup guides" href="/docs/integrations/setup">
+    Connect your other apps.
+  </Card>
+</Cards>

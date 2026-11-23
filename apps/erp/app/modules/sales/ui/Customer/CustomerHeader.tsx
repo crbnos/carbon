@@ -26,6 +26,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { asColor } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
@@ -36,6 +37,10 @@ import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
+import {
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/settings+/tags";
@@ -72,9 +77,10 @@ const CustomerHeader = () => {
   const sharedCustomerData = useRouteData<{
     customerStatuses: CustomerStatus[];
   }>(path.to.customerRoot);
-  const customerStatus = sharedCustomerData?.customerStatuses?.find(
+  const status = sharedCustomerData?.customerStatuses?.find(
     (status) => status.id === routeData?.customer?.customerStatusId
-  )?.name;
+  );
+  const customerStatus = status?.name;
 
   const onUpdateTags = useCallback(
     (value: string[]) => {
@@ -96,14 +102,37 @@ const CustomerHeader = () => {
     [customerId, fetcher.submit]
   );
 
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={!permissions.can("delete", "sales")}
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Customer</Trans>
+      </DropdownMenuItem>
+    </>
+  );
   return (
     <>
+      {/* The app bar titles the record with its name, so no hero. */}
+      {/* No hero; it still zeroes --header-height on phones. */}
+      <RecordHero />
+      <RecordPhoneChrome menu={menuItems} copyValue={customerId} />
       <VStack>
         <Card>
-          <HStack className="justify-between items-start">
+          <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>{routeData?.customer?.name}</span>
+              {/* The title row holds the ⋯ menu and Copy too: only the name is
+                  the page's heading, or its name would include theirs. */}
+              <CardTitle role="none" className="flex items-center gap-2">
+                <span role="heading" aria-level={1}>
+                  {routeData?.customer?.name}
+                </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton
@@ -113,19 +142,7 @@ const CustomerHeader = () => {
                       size="sm"
                     />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {auditLogTrigger}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.delete}
-                      disabled={!permissions.can("delete", "sales")}
-                      destructive
-                      onClick={deleteModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTrash />} />
-                      <Trans>Delete Customer</Trans>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <DropdownMenuContent>{menuItems}</DropdownMenuContent>
                 </DropdownMenu>
                 <Copy
                   text={customerId}
@@ -142,7 +159,14 @@ const CustomerHeader = () => {
                   <Trans>Status</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
-                  {customerStatus ? <Enumerable value={customerStatus} /> : "-"}
+                  {customerStatus ? (
+                    <Enumerable
+                      value={customerStatus}
+                      color={asColor(status?.color)}
+                    />
+                  ) : (
+                    "-"
+                  )}
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>
@@ -218,16 +242,14 @@ const CustomerHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteCustomer(customerId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.customer?.name!}
-          text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteCustomer(customerId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.customer?.name!}
+        text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
       {auditLogDrawer}
     </>
   );

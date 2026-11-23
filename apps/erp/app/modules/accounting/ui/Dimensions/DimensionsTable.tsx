@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { dimensionEntityTypes } from "../../accounting.models";
@@ -24,9 +25,11 @@ import type { Dimension } from "../../types";
 type DimensionsTableProps = {
   data: Dimension[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
+const DimensionsTable = memo((props: DimensionsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -43,6 +46,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -51,6 +55,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
         header: t`Entity Type`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: dimensionEntityTypes.map((v) => ({
@@ -87,6 +92,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuShapes />
         }
       }
@@ -128,6 +134,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
 
   return (
     <Table<Dimension>
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

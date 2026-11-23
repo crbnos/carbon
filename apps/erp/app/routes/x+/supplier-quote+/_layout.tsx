@@ -3,31 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Supplier Quote" }];
-};
+export const meta = moduleMeta("Supplier Quote");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
   to: path.to.purchasing,
   module: "purchasing"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -38,5 +30,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SupplierQuoteRoute() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

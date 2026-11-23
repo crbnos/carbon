@@ -11,8 +11,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  generateHTML,
   HStack,
+  RichTextView,
   Tabs,
   TabsContent,
   TabsList,
@@ -45,7 +45,10 @@ const OpportunityNotes = ({
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");
   const { t } = useLingui();
-  const canEdit = !isReadOnlyProp && permissions.can("update", "sales");
+  // Invoice rows are written under invoicing's RLS, not sales'.
+  const canEdit =
+    !isReadOnlyProp &&
+    permissions.can("update", table === "salesInvoice" ? "invoicing" : "sales");
   const [tab, setTab] = useState(isEmployee ? "internal" : "external");
   const [internalNotes, setInternalNotes] = useState(
     initialInternalNotes ?? {}
@@ -116,6 +119,7 @@ const OpportunityNotes = ({
             <TabsContent value="internal">
               {canEdit ? (
                 <Editor
+                  label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -124,17 +128,16 @@ const OpportunityNotes = ({
                   }}
                 />
               ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(internalNotes as JSONContent)
-                  }}
+                <RichTextView
+                  content={internalNotes as JSONContent}
+                  empty={<Trans>No internal notes</Trans>}
                 />
               )}
             </TabsContent>
             <TabsContent value="external">
               {canEdit ? (
                 <Editor
+                  label={t`External notes`}
                   initialValue={(externalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -143,11 +146,9 @@ const OpportunityNotes = ({
                   }}
                 />
               ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(externalNotes as JSONContent)
-                  }}
+                <RichTextView
+                  content={externalNotes as JSONContent}
+                  empty={<Trans>No external notes</Trans>}
                 />
               )}
             </TabsContent>

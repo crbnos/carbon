@@ -10,6 +10,7 @@ import SupplierForm from "./SupplierForm";
 import SupplierHeader from "./SupplierHeader";
 import SupplierLocationForm from "./SupplierLocationForm";
 import SupplierLocations from "./SupplierLocations";
+import SupplierParts from "./SupplierParts";
 import SupplierPaymentForm from "./SupplierPaymentForm";
 import SupplierProcesses from "./SupplierProcesses";
 import SupplierProcessForm from "./SupplierProcessForm";
@@ -17,6 +18,7 @@ import SupplierShippingForm from "./SupplierShippingForm";
 import SupplierSidebar from "./SupplierSidebar";
 import SuppliersTable from "./SuppliersTable";
 import SupplierTaxForm from "./SupplierTaxForm";
+
 export {
   SupplierBankAccountForm,
   SupplierBankAccounts,
@@ -26,11 +28,12 @@ export {
   SupplierHeader,
   SupplierLocationForm,
   SupplierLocations,
+  SupplierParts,
   SupplierPaymentForm,
-  SupplierProcessForm,
   SupplierProcesses,
+  SupplierProcessForm,
   SupplierShippingForm,
   SupplierSidebar,
-  SupplierTaxForm,
-  SuppliersTable
+  SuppliersTable,
+  SupplierTaxForm
 };

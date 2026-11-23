@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
+import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { months } from "~/modules/shared";
+import { months } from "~/modules/shared/shared.models";
 import {
   itemLedgerDocumentTypes,
   itemLedgerTypes
@@ -12,6 +14,23 @@ import {
 import { macrsConventions, macrsPropertyClasses } from "./accounting.utils";
 
 export { macrsConventions, macrsPropertyClasses };
+
+/** Government Contracting 5a: FAR 31.201-6 allowability of an account. */
+export const accountAllowabilities = [
+  "Allowable",
+  "Expressly Unallowable",
+  "Mutually Agreed Unallowable",
+  "Directly Associated Unallowable"
+] as const satisfies readonly Database["public"]["Enums"]["accountAllowability"][];
+
+/** Government Contracting 5a: the element of cost an account reports in. */
+export const elementsOfCost = [
+  "Labor",
+  "Material",
+  "Subcontract",
+  "Other Direct",
+  "Travel"
+] as const satisfies readonly Database["public"]["Enums"]["elementOfCost"][];
 
 export const accountTypes = [
   "Bank",
@@ -24,6 +43,7 @@ export const accountTypes = [
   "Other Current Asset",
   "Other Asset",
   "Other Current Liability",
+  "Credit Card",
   "Long Term Liability",
   "Equity - No Close",
   "Equity - Close",
@@ -325,6 +345,20 @@ export const moveAccountValidator = z.object({
   parentId: zfd.text(z.string().optional())
 });
 
+/** Asset, Liability and Equity are Balance Sheet accounts; Revenue and
+ *  Expense are Income Statement accounts. */
+export function accountClassMatchesIncomeBalance(account: {
+  class: string;
+  incomeBalance: string;
+}) {
+  return (
+    account.incomeBalance ===
+    (["Revenue", "Expense"].includes(account.class)
+      ? "Income Statement"
+      : "Balance Sheet")
+  );
+}
+
 export const accountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -343,7 +377,12 @@ export const accountValidator = z
     class: z.enum(accountClassTypes, {
       error: "Class is required"
     }),
-    consolidatedRate: z.enum(consolidatedRateTypes)
+    consolidatedRate: z.enum(consolidatedRateTypes),
+    // Empty keeps the stored value; a new account takes the column default,
+    // Allowable.
+    allowability: zfd.text(z.enum(accountAllowabilities).optional()),
+    unallowableReason: zfd.text(z.string().trim().optional()),
+    elementOfCost: zfd.text(z.enum(elementsOfCost).optional())
   })
   .refine(
     (data) => {
@@ -410,6 +449,18 @@ export const currencyValidator = z.object({
   )
 });
 
+// The currency drawer saves its config and its exchange rate with one button.
+// The rate is pinned as an override only when it differs from the rate in
+// effect, so saving the config never freezes the market rate.
+export const currencyFormValidator = currencyValidator.extend({
+  rate: zfd.numeric(
+    z.number().positive({ message: "Rate must be positive" }).optional()
+  ),
+  // The rate the drawer opened with. A submitted rate equal to it was not
+  // edited, so it is never pinned — even if the market moved meanwhile.
+  displayedRate: zfd.numeric(z.number().optional())
+});
+
 export const exchangeRateOverrideValidator = z.object({
   currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
   rate: zfd.numeric(z.number().positive({ message: "Rate must be positive" }))
@@ -428,6 +479,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   workInProgressAccount: z.string().min(1, {
     message: "Work in progress account is required"
   }),
+  // Optional: a project with no account of its own and no default refuses
+  // its charges with a message that names this field.
+  projectWorkInProgressAccount: z.string().optional(),
   receivablesAccount: z.string().min(1, {
     message: "Receivables account is required"
   }),
@@ -465,11 +519,11 @@ export const defaultBalanceSheetAccountValidator = z.object({
   // `payablesAccount`, and a required field would break saves on every company
   // whose chart has no Employee Reimbursements Payable account.
   employeeReimbursementsPayableAccount: z.string().optional(),
-  salesTaxPayableAccount: z.string().min(1, {
-    message: "Sales tax payable account is required"
+  taxReceivedAccount: z.string().min(1, {
+    message: "Tax Received account is required"
   }),
-  purchaseTaxPayableAccount: z.string().min(1, {
-    message: "Purchase tax payable account is required"
+  taxPaidAccount: z.string().min(1, {
+    message: "Tax Paid account is required"
   }),
   reverseChargeSalesTaxPayableAccount: z.string().min(1, {
     message: "Reverse charge sales tax payable account is required"
@@ -482,7 +536,17 @@ export const defaultBalanceSheetAccountValidator = z.object({
   }),
   deferredTaxLiabilityAccountId: z.string().min(1, {
     message: "Deferred tax liability account is required"
-  })
+  }),
+  // Optional here: a company may not have the account yet. The accounting
+  // enable wizard's readiness step requires it.
+  migrationClearingAccount: z.string().optional(),
+  deferredRevenueAccount: z.string().optional(),
+  contractLossProvisionAccount: z.string().optional(),
+  contractAssetAccount: z.string().optional(),
+  netInvestmentInLeasesAccount: z.string().optional(),
+  rightOfUseAssetAccount: z.string().optional(),
+  accumulatedRightOfUseAmortizationAccount: z.string().optional(),
+  leaseLiabilityAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({
@@ -531,6 +595,12 @@ export const defaultIncomeAcountValidator = z.object({
   maintenanceAccount: z.string().min(1, {
     message: "Maintenance account is required"
   }),
+  projectExpenseAccount: z.string().optional(),
+  warrantyExpenseAccount: z.string().min(1, {
+    message: "Warranty expense account is required"
+  }),
+  costOfServiceAccount: z.string().optional(),
+  serviceRevenueAccount: z.string().optional(),
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),
@@ -569,7 +639,14 @@ export const defaultIncomeAcountValidator = z.object({
   }),
   deferredTaxExpenseAccountId: z.string().min(1, {
     message: "Deferred tax expense account is required"
-  })
+  }),
+  rentalIncomeAccount: z.string().optional(),
+  leaseRevenueAccount: z.string().optional(),
+  leaseInterestIncomeAccount: z.string().optional(),
+  operatingLeaseExpenseAccount: z.string().optional(),
+  variableLeaseExpenseAccount: z.string().optional(),
+  rightOfUseAmortizationExpenseAccount: z.string().optional(),
+  leaseInterestExpenseAccount: z.string().optional()
 });
 
 export const defaultAccountValidator =
@@ -629,12 +706,6 @@ export const costCenterValidator = z.object({
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
 
-export const projectValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().trim().optional())
-});
-
 export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
@@ -684,60 +755,6 @@ export const intercompanyTransactionValidator = z
     }
   );
 
-export const openingBalanceValidator = z.object({
-  postingDate: z.string().min(1, { message: "Posting date is required" }),
-  // JSON-encoded array of { accountId, amount } produced by the form's hidden
-  // input. `amount` is the signed base-currency figure the user typed against
-  // the account, positive = the account's natural balance side (debit for
-  // Asset/Expense, credit for Liability/Equity/Revenue). The service converts
-  // each amount → {debit, credit} per class and appends the Retained Earnings
-  // plug before posting. Zero-amount rows are dropped.
-  lines: z
-    .string()
-    .min(1, { message: "At least one balance is required" })
-    .transform((val, ctx) => {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(val);
-      } catch {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
-        return z.NEVER;
-      }
-      if (!Array.isArray(parsed)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
-        return z.NEVER;
-      }
-
-      // Reject structurally-invalid rows rather than silently dropping them, so
-      // a malformed payload fails loudly instead of posting a partial entry. A
-      // zero amount is a legitimately-empty input and is the only thing skipped.
-      const result: Array<{ accountId: string; amount: number }> = [];
-      for (const row of parsed) {
-        const accountId = (row as { accountId?: unknown }).accountId;
-        const amount = (row as { amount?: unknown }).amount;
-        if (typeof accountId !== "string" || accountId.length === 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "An opening balance row is missing its account"
-          });
-          return z.NEVER;
-        }
-        if (typeof amount !== "number" || !Number.isFinite(amount)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "An opening balance row has an invalid amount"
-          });
-          return z.NEVER;
-        }
-        if (amount !== 0) result.push({ accountId, amount });
-      }
-      return result;
-    })
-    .refine((lines) => lines.length > 0, {
-      message: "At least one balance is required"
-    })
-});
-
 export const journalEntrySourceTypes = [
   "Manual",
   "Opening Balance",
@@ -758,20 +775,45 @@ export const journalEntrySourceTypes = [
   "Production Event",
   "Job Close",
   "Maintenance Event",
+  "Timesheet",
+  "Project Issue",
+  "Project Expense",
+  "Project Transfer",
+  "Burden",
+  "Project Close",
+  "Service Order",
+  "Service Job",
   "Asset Depreciation",
   "Asset Disposal",
+  "Asset Transfer",
   "Payment",
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
   "Inbound Inspection",
   "Charge",
-  "Reimbursement"
+  "Reimbursement",
+  "Revenue Recognition",
+  "Lease",
+  "Lease Run"
 ] as const;
 
-export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
+// Provisional: written before the accounting cutover, counts nowhere.
+// Superseded: a Provisional journal dated before the cutover.
+export const journalEntryStatuses = Constants.public.Enums.journalEntryStatus;
 
 export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
+
+export const revenueScheduleTypes = [
+  "Deferral",
+  "Accrual",
+  "Interest",
+  "Cost Relief",
+  "Loss Provision",
+  "Amortization"
+] as const;
+
+export const revenueScheduleStatuses = ["Planned", "Posted"] as const;
 
 export const accountingPeriodTransitionValidator = z.object({
   intent: z.enum(["lock", "unlock", "close", "reopen"]),
@@ -870,6 +912,7 @@ export const dimensionEntityTypes = [
   "Location",
   "Process",
   "Project",
+  "ProjectElement",
   "ScrapReason",
   "Supplier",
   "SupplierType",
@@ -889,12 +932,44 @@ export const dimensionValidator = z.object({
 
 // -- Fixed Asset Models --
 
+/**
+ * Construction in progress (a CIP asset class, Attach Job, Capitalize, Complete
+ * To → Asset Under Construction) is built but hidden until it returns with
+ * projects. Off: no CIP class is listed or offered, so no asset can reach
+ * Under Construction from the app, and the actions and filters for it are not
+ * shown. The engines and schema are untouched.
+ */
+export const CONSTRUCTION_IN_PROGRESS_ENABLED = false;
+
 export const fixedAssetStatuses = [
   "Draft",
   "Active",
   "Fully Depreciated",
-  "Disposed"
+  "Disposed",
+  "Under Construction"
 ] as const;
+
+/** The statuses a filter offers; Under Construction only with CIP shown. */
+export const visibleFixedAssetStatuses = fixedAssetStatuses.filter(
+  (status) =>
+    CONSTRUCTION_IN_PROGRESS_ENABLED || status !== "Under Construction"
+);
+
+export const fleetStatuses = [
+  "Available",
+  "Reserved",
+  "On Rent",
+  "In Maintenance",
+  "Under Construction",
+  "Sold",
+  "Returned to Stock"
+] as const;
+
+/** The fleet statuses a filter offers; Under Construction only with CIP shown. */
+export const visibleFleetStatuses = fleetStatuses.filter(
+  (status) =>
+    CONSTRUCTION_IN_PROGRESS_ENABLED || status !== "Under Construction"
+);
 
 export const depreciationMethods = [
   "Straight Line",
@@ -982,6 +1057,7 @@ export const fixedAssetValidator = z.object({
   ),
   assetLifetimeUsage: zfd.numeric(z.number().positive().optional()),
   locationId: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional()),
   taxDepreciationMethod: z.preprocess(
     (val) => (val === "" ? null : val),
     z.enum(taxDepreciationMethods).nullable().optional()
@@ -1024,6 +1100,10 @@ export const depreciationRunValidator = z.object({
   periodEnd: z.string().min(1, { message: "Period end date is required" })
 });
 
+export const revenueRecognitionRunValidator = z.object({
+  periodEnd: z.string().min(1, { message: "Period end is required" })
+});
+
 export const fixedAssetUsageLogValidator = z.object({
   fixedAssetId: z.string().min(1, { message: "Asset is required" }),
   periodStart: z.string().min(1, { message: "Period start is required" }),
@@ -1036,3 +1116,374 @@ export const fixedAssetUsageLogValidator = z.object({
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
 });
+
+export const fixedAssetCapitalizeValidator = z.object({
+  fixedAssetClassId: z.string().min(1, { message: "Asset class is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  trackedEntityId: z.string().min(1, { message: "Tracked entity is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional()),
+  transferDate: z.string().min(1, { message: "Transfer date is required" }),
+  name: zfd.text(z.string().optional()),
+  // Only for a unit inventory carries at nothing: what it cost, and the
+  // account that value was booked to when it was spent.
+  cost: zfd.numeric(
+    z.number().positive({ message: "Cost must be more than zero" }).optional()
+  ),
+  offsetAccountId: zfd.text(z.string().optional())
+});
+
+export const fixedAssetAdjustCostValidator = z.object({
+  amount: zfd.numeric(
+    z.number().positive({ message: "The increase must be more than zero" })
+  ),
+  offsetAccountId: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  transferDate: z.string().min(1, { message: "Transfer date is required" })
+});
+
+export const fixedAssetReturnToInventoryValidator = z.object({
+  transferDate: z.string().min(1, { message: "Transfer date is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional())
+});
+
+export const fixedAssetAttachJobValidator = z.object({
+  jobId: z.string().min(1, { message: "Job is required" })
+});
+
+export const fixedAssetCapitalizeCipValidator = z.object({
+  toClassId: z.string().min(1, { message: "Asset class is required" }),
+  inServiceDate: z.string().min(1, { message: "In-service date is required" })
+});
+
+export const fixedAssetOutOfServiceValidator = z.object({
+  reason: z.string().trim().min(1, { message: "Reason is required" })
+});
+
+const cutoverDateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Cutover date is required" });
+
+/** The accounting cutover date the enable wizard works against. */
+export const activationCutoverValidator = z.object({
+  cutoverDate: cutoverDateField
+});
+
+/** The prior system's trial balance as of the day before the cutover. `lines`
+ *  is a JSON array of `{ accountId, debit, credit }` from the form's hidden
+ *  input; rows with neither a debit nor a credit are dropped. */
+export const openingTrialBalanceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  lines: z.string().transform((val, ctx) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(val);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+      return z.NEVER;
+    }
+    if (!Array.isArray(parsed)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+      return z.NEVER;
+    }
+    const result: Array<{ accountId: string; debit: number; credit: number }> =
+      [];
+    for (const row of parsed) {
+      const { accountId, debit, credit } = (row ?? {}) as {
+        accountId?: unknown;
+        debit?: unknown;
+        credit?: unknown;
+      };
+      if (typeof accountId !== "string" || accountId.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A trial balance row is missing its account"
+        });
+        return z.NEVER;
+      }
+      const amounts = [debit ?? 0, credit ?? 0];
+      if (
+        amounts.some(
+          (amount) =>
+            typeof amount !== "number" || !Number.isFinite(amount) || amount < 0
+        )
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A trial balance row has an invalid debit or credit"
+        });
+        return z.NEVER;
+      }
+      const [rowDebit, rowCredit] = amounts as [number, number];
+      if (rowDebit !== 0 || rowCredit !== 0) {
+        result.push({ accountId, debit: rowDebit, credit: rowCredit });
+      }
+    }
+    return result;
+  })
+});
+
+/** The prior system's trial balance as a CSV (`accountNumber, debit, credit`),
+ *  uploaded in the wizard. The route action parses it and maps the account
+ *  numbers to accounts. */
+export const openingTrialBalanceImportValidator = z.object({
+  cutoverDate: cutoverDateField,
+  csv: z.string().min(1, { message: "The CSV file is empty" })
+});
+
+/** Ignore an invoice on Migration Clearing, or stop ignoring it. */
+export const cutoverIgnoredInvoiceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  invoiceId: z.string().min(1, { message: "Invoice is required" }),
+  ignored: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+/** A trial balance step action that needs only the cutover date: apply
+ *  Carbon's totals, or pull the provider's trial balance. */
+export const cutoverStepValidator = z.object({
+  cutoverDate: cutoverDateField
+});
+
+/** The enable: the cutover date and the company name typed to confirm. */
+export const activateAccountingValidator = z.object({
+  cutoverDate: cutoverDateField,
+  confirmation: z
+    .string()
+    .trim()
+    .min(1, { message: "Type the company name to confirm" })
+});
+
+/** An asset's accumulated depreciation at the cutover, set in the wizard. */
+export const cutoverAccumulatedDepreciationValidator = z.object({
+  fixedAssetId: z.string().min(1, { message: "Asset is required" }),
+  accumulatedDepreciation: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Accumulated depreciation must be zero or more" })
+  )
+});
+
+/** Journal source types that only their period run may reverse: a plain
+ *  reversal would leave the revenue schedule or the assets behind. */
+/** Business refusal threshold for a journal's debits-vs-credits drift — looser
+ *  than EPSILON because multi-currency entries carry real cross-rate residuals.
+ *  Shared by the manual-JE validator, the period-close checklist and the
+ *  journal entry form, so none of them disagrees about which journals are
+ *  unbalanced. */
+export const JOURNAL_BALANCE_TOLERANCE = 0.001;
+
+export const RUN_JOURNAL_SOURCES: Record<string, string> = {
+  "Revenue Recognition": "revenue recognition",
+  "Lease Run": "lease",
+  "Asset Depreciation": "depreciation"
+};
+
+// -- Tax Models --
+// See .ai/specs/2026-10-16-multi-jurisdiction-tax.md. Every rate is a 0..1
+// fraction, as `taxPercent` is on document lines.
+
+export const taxCalculationTypes = Constants.public.Enums.taxCalculationType;
+
+export const taxReportingCategories =
+  Constants.public.Enums.taxReportingCategory;
+
+const fraction = (label: string) =>
+  z
+    .number()
+    .min(0, { message: `${label} must be at least 0` })
+    .max(1, { message: `${label} must be at most 100%` });
+
+/** An optional date range is in order: no end, no start, or end ≥ start. */
+export function endOnOrAfterStart(
+  start: string | null | undefined,
+  end: string | null | undefined
+): boolean {
+  return !start || !end || end >= start;
+}
+
+type ComponentRange = {
+  name: string;
+  taxAuthorityId?: string | null;
+  effectiveDate?: string | null;
+  expirationDate?: string | null;
+};
+
+/**
+ * The index of the first component whose dates overlap an earlier one with
+ * the same name and authority, else -1. Both ends are inclusive, as
+ * `effectiveComponents` reads them: a rate change expires the old component
+ * the day before the new one takes effect.
+ */
+export function overlappingComponentIndex(
+  components: ReadonlyArray<ComponentRange>
+): number {
+  const key = (c: ComponentRange) =>
+    `${c.name.trim().toLowerCase()}\u0000${c.taxAuthorityId || ""}`;
+  return components.findIndex((c, index) =>
+    components
+      .slice(0, index)
+      .some(
+        (other) =>
+          key(other) === key(c) &&
+          (!c.expirationDate ||
+            !other.effectiveDate ||
+            other.effectiveDate <= c.expirationDate) &&
+          (!other.expirationDate ||
+            !c.effectiveDate ||
+            c.effectiveDate <= other.expirationDate)
+      )
+  );
+}
+
+const componentDatesInOrder = {
+  message: "The expiry date must be on or after the effective date",
+  path: ["expirationDate"]
+};
+
+// The issue lands on the later row's name, which is always on screen.
+const componentsDoNotOverlap = (
+  components: ReadonlyArray<ComponentRange>,
+  ctx: z.RefinementCtx
+) => {
+  const index = overlappingComponentIndex(components);
+  if (index === -1) return;
+  ctx.addIssue({
+    code: "custom",
+    message:
+      "Another component with this name and authority is in force on the same day. Expire the old one the day before this one takes effect.",
+    path: [index, "name"]
+  });
+};
+
+const registrationDatesInOrder = {
+  message: "The end date must be on or after the effective date",
+  path: ["endDate"]
+};
+
+// Plain-zod fields, read by the service functions (and MCP) as they are; the
+// form validators below wrap the same fields with `zfd` preprocessors.
+export const taxCodeComponentFields = {
+  id: z
+    .string()
+    .describe("A component of this code keeps its id; omit to add one.")
+    .optional(),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  taxAuthorityId: z.string().optional(),
+  taxPercent: fraction("Rate"),
+  recoverablePercent: fraction("Recoverable percent"),
+  sequence: z.number().int().min(1),
+  isCompound: z.boolean(),
+  taxReceivedAccountId: z.string().optional(),
+  taxPaidAccountId: z.string().optional(),
+  effectiveDate: z.string().optional(),
+  expirationDate: z.string().optional()
+};
+
+export const taxCodeComponentInput = z
+  .object(taxCodeComponentFields)
+  .refine(
+    (c) => endOnOrAfterStart(c.effectiveDate, c.expirationDate),
+    componentDatesInOrder
+  );
+
+export const taxCodeFields = {
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  description: z.string().optional(),
+  calculationType: z.enum(taxCalculationTypes, {
+    error: "Calculation type is required"
+  }),
+  reportingCategory: z.enum(taxReportingCategories, {
+    error: "Reporting category is required"
+  }),
+  taxesShipping: z.boolean(),
+  invoiceMessage: z.string().optional(),
+  countryCode: z.string().optional(),
+  state: z.string().optional(),
+  active: z.boolean(),
+  components: z
+    .array(taxCodeComponentInput)
+    .min(1, { message: "Add at least one component" })
+    .superRefine(componentsDoNotOverlap)
+};
+
+export const taxAuthorityFields = {
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  supplierId: z.string().optional()
+};
+
+export const taxRegistrationFields = {
+  countryCode: z.string().min(1, { message: "Country is required" }),
+  state: z.string().optional(),
+  registrationNumber: z
+    .string()
+    .trim()
+    .min(1, { message: "Registration number is required" }),
+  effectiveDate: z.string().optional(),
+  endDate: z.string().optional()
+};
+
+/** A tax registration's input; update adds `id` with `safeExtend`. */
+export const taxRegistrationInput = z
+  .object(taxRegistrationFields)
+  .refine(
+    (r) => endOnOrAfterStart(r.effectiveDate, r.endDate),
+    registrationDatesInOrder
+  );
+
+const formId = zfd.text(z.string().optional());
+
+export const taxCodeComponentValidator = z
+  .object({
+    ...taxCodeComponentFields,
+    id: formId,
+    taxAuthorityId: zfd.text(taxCodeComponentFields.taxAuthorityId),
+    taxPercent: zfd.numeric(taxCodeComponentFields.taxPercent),
+    recoverablePercent: zfd.numeric(taxCodeComponentFields.recoverablePercent),
+    sequence: zfd.numeric(taxCodeComponentFields.sequence),
+    isCompound: zfd.checkbox(),
+    taxReceivedAccountId: zfd.text(taxCodeComponentFields.taxReceivedAccountId),
+    taxPaidAccountId: zfd.text(taxCodeComponentFields.taxPaidAccountId),
+    effectiveDate: zfd.text(taxCodeComponentFields.effectiveDate),
+    expirationDate: zfd.text(taxCodeComponentFields.expirationDate)
+  })
+  .refine(
+    (c) => endOnOrAfterStart(c.effectiveDate, c.expirationDate),
+    componentDatesInOrder
+  );
+
+export const taxCodeValidator = z.object({
+  ...taxCodeFields,
+  id: formId,
+  description: zfd.text(taxCodeFields.description),
+  taxesShipping: zfd.checkbox(),
+  invoiceMessage: zfd.text(taxCodeFields.invoiceMessage),
+  countryCode: zfd.text(taxCodeFields.countryCode),
+  state: zfd.text(taxCodeFields.state),
+  active: zfd.checkbox(),
+  components: zfd
+    .repeatableOfType(taxCodeComponentValidator)
+    .refine((components) => components.length > 0, {
+      message: "Add at least one component"
+    })
+    .superRefine(componentsDoNotOverlap)
+});
+
+export const taxAuthorityValidator = z.object({
+  ...taxAuthorityFields,
+  id: formId,
+  supplierId: zfd.text(taxAuthorityFields.supplierId)
+});
+
+export const taxRegistrationValidator = z
+  .object({
+    ...taxRegistrationFields,
+    id: formId,
+    state: zfd.text(taxRegistrationFields.state),
+    effectiveDate: zfd.text(taxRegistrationFields.effectiveDate),
+    endDate: zfd.text(taxRegistrationFields.endDate)
+  })
+  .refine(
+    (r) => endOnOrAfterStart(r.effectiveDate, r.endDate),
+    registrationDatesInOrder
+  );

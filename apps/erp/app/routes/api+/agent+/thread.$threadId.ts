@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { getDisplayMessages, getThread } from "~/modules/agent";
+import { getDisplayMessages, getThread } from "~/modules/agent/agent.service";
 
 const logger = getLogger("erp", "agent-thread");
 

@@ -3,9 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Pure logic behind the batch builder: signatures, per-candidate value sets,
-// duration math, and suggestion scoring. No JSX and no lingui, so vitest can
-// import it directly (the ERP barrels drag lingui macros vitest cannot
-// transform — see apps/erp/test/batching-migration-guards.test.ts).
+// duration math, and suggestion scoring. No JSX and no lingui.
 
 import {
   batchPlanBreakdown as aggregateBatchPlan,

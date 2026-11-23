@@ -6,11 +6,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { upsertInspectionDocument } from "~/modules/quality";
 import { inspectionDocumentValidator } from "~/modules/quality/quality.models";
+import { upsertInspectionDocument } from "~/modules/quality/quality.service";
 import { InspectionDocumentForm } from "~/modules/quality/ui/InspectionDocument";
 import { path } from "~/utils/path";
 
@@ -57,12 +57,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BalloonNewRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <InspectionDocumentForm
-      initialValues={{ name: "", partId: "", drawingNumber: "" }}
-      onClose={() => closeRoute()}
+      initialValues={{ name: "", partId: "" }}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

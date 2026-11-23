@@ -6,18 +6,25 @@ import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+// The approve / reject form every approval document type posts.
 export const approvalDecisionValidator = z.object({
-  id: zfd.text(z.string().optional()),
+  approvalRequestId: z
+    .string()
+    .min(1, { message: "Approval request is required" }),
   decision: z.enum(["Approved", "Rejected"], {
     error: "Decision is required"
   }),
-  decisionNotes: zfd.text(z.string().optional())
+  notes: zfd.text(z.string().optional())
 });
 
 export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
-  "supplier"
+  "supplier",
+  "projectChangeRequest",
+  "changeOrder",
+  "purchaseOrderForceDelete",
+  "documentForceDelete"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -26,8 +33,21 @@ export type ApprovalDocumentType =
 export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
-  supplier: "Supplier"
+  supplier: "Supplier",
+  projectChangeRequest: "Project change request",
+  changeOrder: "Change Notice",
+  purchaseOrderForceDelete: "Purchase Order Force Delete",
+  documentForceDelete: "Force Delete"
 };
+
+/**
+ * Document types approved by the company's Admins (other than the one who
+ * asked) instead of an approval rule's groups. No rule is configured for them.
+ */
+export const adminApprovedDocumentTypes: ApprovalDocumentType[] = [
+  "purchaseOrderForceDelete",
+  "documentForceDelete"
+];
 
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
   "purchaseOrder"

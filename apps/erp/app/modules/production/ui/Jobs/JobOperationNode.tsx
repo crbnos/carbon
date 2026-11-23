@@ -46,7 +46,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
         )}
       >
         {d.itemId && (
-          <div className="truncate text-[11px] text-muted-foreground leading-tight">
+          <div className="truncate text-[0.6875rem] text-muted-foreground leading-tight">
             {d.itemId}
           </div>
         )}
@@ -65,7 +65,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
           className="mt-1"
         />
         {d.quantityScrapped > 0 && (
-          <div className="mt-0.5 text-right text-[11px] text-red-500">
+          <div className="mt-0.5 text-right text-[0.6875rem] text-red-500">
             {d.quantityScrapped} scrapped
           </div>
         )}

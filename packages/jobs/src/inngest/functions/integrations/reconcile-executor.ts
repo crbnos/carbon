@@ -34,6 +34,7 @@ import {
   applyLedgerDelegation,
   type IntegrationTopology
 } from "@carbon/ee/sync";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -54,6 +55,8 @@ import {
   type ReconcileLatestOperation,
   type ReconcileRef
 } from "./reconcile";
+
+const logger = getLogger("jobs", "reconcile-executor");
 
 const SNAPSHOT_TABLES: Record<
   ReconcileEntityType,
@@ -101,8 +104,22 @@ const NATIVE_VOID_PROVIDERS_BY_ENTITY: Partial<
   supplierCredit: MEMO_NATIVE_VOID_PROVIDERS
 };
 
-/** Invoices and bills: Rillet is the only native document void today. */
-const DEFAULT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set(["rillet"]);
+/** Invoices and bills: Rillet deletes, Xero voids (`xero/entities/void.ts`). */
+const DEFAULT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set([
+  "rillet",
+  "xero"
+]);
+
+/** Whether the provider can void this document type natively. */
+export function providerSupportsNativeVoid(
+  entityType: ReconcileEntityType,
+  providerId: string
+): boolean {
+  return (
+    NATIVE_VOID_PROVIDERS_BY_ENTITY[entityType]?.has(providerId) ??
+    DEFAULT_NATIVE_VOID_PROVIDERS.has(providerId)
+  );
+}
 
 /** Entity types whose decision consults the push mapping. */
 const MAPPED_TYPES: ReadonlySet<ReconcileEntityType> = new Set([
@@ -209,19 +226,7 @@ export async function reconcileEntities(args: {
   // family modes and the backing entities — the pair that is only correct
   // together. With nothing delegated this is byte-identical to the previous
   // two lines.
-  const { settings, syncConfig: metadataSyncConfig } =
-    applyEffectivePostingState(
-      args.integrationMetadata,
-      args.topology,
-      args.providerId
-    );
-  const syncConfig = resolveEffectiveSyncConfig({
-    providerId: args.providerId,
-    provider: args.provider,
-    metadataSyncConfig,
-    settings,
-    topology: args.topology
-  });
+  const { settings, syncConfig } = reconcileSyncConfig(args);
   // Always-on: automated postings sync whenever an accounting integration is
   // connected — the old settings.enabled master gate is gone. The entity flag
   // now defaults true and provider configs force it on.
@@ -510,9 +515,10 @@ export async function reconcileEntities(args: {
           // document live with nothing failing. Memos are the opposite case: only
           // Rillet can void one, and `MEMO_NATIVE_VOID_PROVIDERS` is where that
           // hole is declared rather than hidden in a comparison here.
-          providerSupportsNativeVoid:
-            NATIVE_VOID_PROVIDERS_BY_ENTITY[entityType]?.has(args.providerId) ??
-            DEFAULT_NATIVE_VOID_PROVIDERS.has(args.providerId),
+          providerSupportsNativeVoid: providerSupportsNativeVoid(
+            entityType,
+            args.providerId
+          ),
           journalEntryPushEnabled,
           entityPushEnabled,
           providerSupportsPaymentPush: PAYMENT_PUSH_PROVIDERS.has(
@@ -584,15 +590,41 @@ export async function reconcileEntities(args: {
     });
     if (transitioned.error) {
       summary.errors++;
-      console.warn(
-        `[RECONCILE] ${args.companyId}/${args.providerId}: failed to re-drive op ${operationId}: ${transitioned.error}`
-      );
+      logger.warning("Failed to re-drive a sync operation", {
+        companyId: args.companyId,
+        providerId: args.providerId,
+        operationId,
+        error: transitioned.error
+      });
     } else {
       summary.redriven++;
     }
   }
 
   return summary;
+}
+
+/** The posting settings and sync config a reconcile occasion decides against. */
+export function reconcileSyncConfig(args: {
+  integrationMetadata: unknown;
+  topology: IntegrationTopology;
+  providerId: string;
+  provider?: Pick<SyncProvider, "getSyncConfig">;
+}) {
+  const { settings, syncConfig: metadataSyncConfig } =
+    applyEffectivePostingState(
+      args.integrationMetadata,
+      args.topology,
+      args.providerId
+    );
+  const syncConfig = resolveEffectiveSyncConfig({
+    providerId: args.providerId,
+    provider: args.provider,
+    metadataSyncConfig,
+    settings,
+    topology: args.topology
+  });
+  return { settings, syncConfig };
 }
 
 const SPEND_PROVIDER_IDS: ReadonlySet<string> = new Set(

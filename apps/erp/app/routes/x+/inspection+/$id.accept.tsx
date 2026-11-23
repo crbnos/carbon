@@ -8,7 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
-import { dispositionInspection } from "~/modules/quality/quality.server";
+import { dispositionInspection } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -20,14 +21,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   invariant(id, "id is required");
 
-  const result = await dispositionInspection({
+  const result = await dispositionInspection(getDatabaseClient(), {
     id,
     decision: "Accept",
     companyId,
     dispositionedBy: userId,
-    // ERP verdict carries no production posting — Receipt lots only. Job Operation
+    // ERP verdict carries no production posting — Receipt and Manual lots only. Job Operation
     // lots are dispositioned (with their physical outcome) by the MES route.
-    requireSource: "Receipt"
+    requireSource: ["Receipt", "Manual"]
   });
 
   if (result.error) {

@@ -184,3 +184,30 @@ export function EnvVar({
     </div>
   );
 }
+
+export function JournalStep({
+  number,
+  title,
+  document,
+  children,
+}: {
+  number: number;
+  title: string;
+  document: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="journal-step my-0 border-b border-ed-hairline py-6">
+      <div className="flex items-start gap-3.5">
+        <span className="not-prose flex size-8 shrink-0 items-center justify-center rounded-full border border-ed-hairline bg-ed-warm-150 font-mono text-sm font-semibold text-ed-ink/65">{number}</span>
+        <div className="min-w-0 flex-1">
+          <h4 className="!m-0 text-lg font-semibold leading-snug text-ed-ink">{title}</h4>
+          <p className="!mb-4 !mt-2 text-sm text-ed-ink/60">Document: <span className="text-ed-ink/80">{document}</span></p>
+          <div className="text-sm leading-relaxed [&_th:not(:first-child)]:text-right [&_td:not(:first-child)]:whitespace-nowrap [&_td:not(:first-child)]:text-right [&_td:not(:first-child)]:font-mono">
+            {children}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -6,7 +6,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { feedbackValidator, setFeedback } from "~/modules/agent";
+import { feedbackValidator } from "~/modules/agent/agent.models";
+import { setFeedback } from "~/modules/agent/agent.service";
 
 const logger = getLogger("erp", "agent-feedback");
 

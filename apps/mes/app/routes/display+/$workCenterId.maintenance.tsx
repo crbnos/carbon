@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   countTone,
@@ -25,6 +25,10 @@ import {
   getMaintenanceDisplayState,
   getMaintenanceScoreboard
 } from "~/utils/display";
+import { recordMeta } from "~/utils/meta";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.workCenter?.name, "Maintenance Display");
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});

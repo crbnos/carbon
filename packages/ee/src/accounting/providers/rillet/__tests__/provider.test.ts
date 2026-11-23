@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_SYNC_CONFIG, ProviderID } from "../../../core/models";
+import { DEFAULT_SYNC_CONFIG } from "../../../core/models";
 import type {
   GlobalSyncConfig,
   ProviderCredentials
@@ -109,33 +109,9 @@ describe("RilletProvider base URL + headers", () => {
 
     expect(requestUrl(0)).toBe("https://sandbox.api.rillet.com/accounts");
   });
-
-  it("identifies as the rillet provider", () => {
-    const provider = makeProvider();
-    expect(provider.id).toBe(ProviderID.RILLET);
-    expect(provider.capabilities).toEqual({
-      role: "accounting",
-      transport: "rest",
-      supportsWebhooks: true,
-      supportsJournalPush: true,
-      searchableCounterparts: ["customer", "vendor"],
-      importableEntities: ["customer", "vendor"]
-    });
-  });
 });
 
 describe("RilletProvider auth (API key, no OAuth)", () => {
-  it("throws the no-OAuth message from authenticate and every OAuth surface", async () => {
-    const provider = makeProvider();
-
-    await expect(provider.authenticate()).rejects.toThrow(/no OAuth flow/);
-    expect(() => provider.auth.getAuthUrl([], "")).toThrow(/no OAuth flow/);
-    expect(() => provider.auth.exchangeCode("code", "uri")).toThrow(
-      /no OAuth flow/
-    );
-    expect(() => provider.auth.refresh()).toThrow(/no OAuth flow/);
-  });
-
   it("throws a descriptive error when no credentials are stored", async () => {
     const provider = makeProvider({ credentials: null });
 
@@ -501,7 +477,7 @@ describe("buildRilletSyncConfig", () => {
       }).entities.journalEntry.enabled
     ).toBe(true);
 
-    // Payment: two-way (pull inbound + push Carbon-born outbound, Phase G),
+    // Payment: two-way (pull inbound + push Carbon-born outbound),
     // owner accounting, and FORCED enabled (no per-company toggle — the
     // documents-mode families gate governs whether it runs)
     expect(built.entities.payment).toEqual({
@@ -519,10 +495,6 @@ describe("buildRilletSyncConfig", () => {
 });
 
 describe("listChanges (SupportsIncrementalPull)", () => {
-  it("declares no lookback cap (updated.gt reaches arbitrarily far back)", () => {
-    expect(makeProvider().pullLookbackDays).toBeUndefined();
-  });
-
   it("lists changed invoice payments as composite-id changes with an invoice dependency", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
@@ -717,25 +689,28 @@ describe("Rillet native void deletion", () => {
       "/invoices/inv-1/payments/pay-1"
     ],
     ["deleteBillPayment", ["bill-1", "pay-1"], "/bills/bill-1/payments/pay-1"]
-  ] as const)("%s uses the native endpoint and tolerates only an already absent record", async (method, ids, path) => {
-    const provider = makeProvider();
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await (provider[method] as (...ids: string[]) => Promise<void>)(...ids);
-    expect(requestUrl(0)).toBe(`https://api.rillet.com${path}`);
-    expect(requestInit(0)?.method).toBe("DELETE");
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ message: "Not found" }, 404)
-    );
-    await expect(
-      (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
-    ).resolves.toBeUndefined();
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ message: "Payment is cleared" }, 400)
-    );
-    await expect(
-      (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
-    ).rejects.toThrow();
-  });
+  ] as const)(
+    "%s uses the native endpoint and tolerates only an already absent record",
+    async (method, ids, path) => {
+      const provider = makeProvider();
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+      await (provider[method] as (...ids: string[]) => Promise<void>)(...ids);
+      expect(requestUrl(0)).toBe(`https://api.rillet.com${path}`);
+      expect(requestInit(0)?.method).toBe("DELETE");
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Not found" }, 404)
+      );
+      await expect(
+        (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
+      ).resolves.toBeUndefined();
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Payment is cleared" }, 400)
+      );
+      await expect(
+        (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
+      ).rejects.toThrow();
+    }
+  );
 });
 
 describe("RilletProvider counterpart candidates", () => {

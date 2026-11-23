@@ -17,6 +17,9 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -51,6 +54,13 @@ import { path } from "~/utils/path";
 
 export type ForecastRange = "day" | "week" | "shift";
 
+/**
+ * How the board lays out work: "compact" is one row per work center with its
+ * operations side by side; "detailed" is the tree with a row per operation and
+ * the people who staffed it.
+ */
+export type ForecastView = "compact" | "detailed";
+
 /** Which date control the in-flight navigation belongs to, so only it spins. */
 type PendingNav = "prev" | "next" | "today" | "date";
 
@@ -62,6 +72,8 @@ type ForecastHeaderProps = {
   shiftId: string | null;
   departments: { value: string; label: string }[];
   shifts: { id: string; name: string }[];
+  view: ForecastView;
+  onViewChange: (view: ForecastView) => void;
 };
 
 /**
@@ -76,7 +88,9 @@ export function ForecastHeader({
   departmentId,
   shiftId,
   departments,
-  shifts
+  shifts,
+  view,
+  onViewChange
 }: ForecastHeaderProps) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -123,8 +137,17 @@ export function ForecastHeader({
   // cannot queue up navigations the user then has to step back through.
   const isNavigating = pendingParams !== null;
 
+  // The view switch only replaces the URL (no reload), so the router's search
+  // params can be behind on it — carry the current view into every navigation.
+  const currentParams = () => {
+    const params = new URLSearchParams(searchParams);
+    if (view === "detailed") params.set("view", view);
+    else params.delete("view");
+    return params;
+  };
+
   const setParam = (mutate: (params: URLSearchParams) => void) => {
-    const newParams = new URLSearchParams(searchParams);
+    const newParams = currentParams();
     mutate(newParams);
     navigate(`?${newParams.toString()}`);
   };
@@ -213,23 +236,25 @@ export function ForecastHeader({
   }, [weekStart, locale]);
 
   return (
-    <HStack className="pl-2 pr-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border">
+    <HStack className="pl-2 pr-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border max-md:pl-4">
       <HStack className="flex-wrap gap-y-2">
         <HStack spacing={2} className="flex-wrap gap-y-2">
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}
             options={locations}
             onChange={(selected) => {
               if (!selected) return;
-              const newParams = new URLSearchParams(searchParams);
+              const newParams = currentParams();
               newParams.set("location", selected);
               window.location.href = `${path.to.scheduleForecast}?${newParams.toString()}`;
             }}
           />
           {departments.length > 0 && (
             <Combobox
+              aria-label={t`Department`}
               asButton
               size="sm"
               value={departmentId ?? "all"}
@@ -242,6 +267,7 @@ export function ForecastHeader({
           )}
           {range === "shift" && shifts.length > 0 && (
             <Combobox
+              aria-label={t`Shift`}
               asButton
               size="sm"
               value={shiftId ?? shifts[0]?.id}
@@ -282,6 +308,21 @@ export function ForecastHeader({
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Tabs
+          value={view}
+          onValueChange={(value) =>
+            onViewChange(value === "detailed" ? "detailed" : "compact")
+          }
+        >
+          <TabsList>
+            <TabsTrigger value="compact">
+              <Trans>Compact</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="detailed">
+              <Trans>Detailed</Trans>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </HStack>
 
       <HStack className="flex-wrap gap-y-2">
@@ -359,7 +400,7 @@ export function ForecastHeader({
                     >
                       <span className="tabular-nums">{week.label}</span>
                       {week.isCurrent && (
-                        <span className="text-[11px] font-medium text-primary">
+                        <span className="text-[0.6875rem] font-medium text-primary">
                           <Trans>This week</Trans>
                         </span>
                       )}

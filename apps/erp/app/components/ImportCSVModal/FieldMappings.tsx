@@ -41,13 +41,16 @@ import {
   useUser
 } from "~/hooks";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
-import { ShippingMethodForm } from "~/modules/inventory";
+import ShippingMethodForm from "~/modules/inventory/ui/ShippingMethods/ShippingMethodForm";
 import type {
   CreatableForm,
   CreatableLookup,
   importSchemas
-} from "~/modules/shared";
-import { creatableFormPermissions, fieldMappings } from "~/modules/shared";
+} from "~/modules/shared/imports.models";
+import {
+  creatableFormPermissions,
+  fieldMappings
+} from "~/modules/shared/imports.models";
 import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -58,6 +61,7 @@ import {
   matchCsvValue,
   toMatchableOption
 } from "./enumMatch";
+import { isEnumStepAsked } from "./enumSteps";
 import { useCreateLookup } from "./useCreateLookup";
 import { useCsvContext } from "./useCsvContext";
 
@@ -67,6 +71,7 @@ type EnumData =
       description: string;
       creatableLookup?: CreatableLookup;
       creatableForm?: CreatableForm;
+      askWhenMapped?: string;
       options: readonly string[];
     }
   | {
@@ -74,6 +79,7 @@ type EnumData =
       description: string;
       creatableLookup?: CreatableLookup;
       creatableForm?: CreatableForm;
+      askWhenMapped?: string;
       fetcher: (
         client: SupabaseClient<Database>,
         companyId: string
@@ -180,8 +186,13 @@ export function FieldMapping({
       label: string;
       enumData: EnumData;
     }
-  ][] = Object.entries(mappableFields).filter(
-    ([_, { type }]) => type === "enum"
+  ][] = Object.entries(mappableFields).filter(([_, field]) =>
+    isEnumStepAsked(field, columnMappings)
+  );
+  // A step the wizard skips sends no mapping, so a Default chosen before
+  // its column was unmapped does not reach the import.
+  const askedEnumMappings = Object.fromEntries(
+    enumFields.map(([name]) => [name, enumMappings[name]])
   );
 
   const steps = enumFields.length > 0 ? enumFields.length + 1 : 1;
@@ -268,7 +279,7 @@ export function FieldMapping({
               <input
                 type="hidden"
                 name="enumMappings"
-                value={JSON.stringify(enumMappings)}
+                value={JSON.stringify(askedEnumMappings)}
               />
             </>
           )}
@@ -648,8 +659,10 @@ function EnumMappingStep({
           );
         })}
       </div>
-      {formModal.isOpen && creatableForm === "paymentTerm" && (
+      {formModal.openCount > 0 && creatableForm === "paymentTerm" && (
         <PaymentTermForm
+          key={`paymentTerm-${formModal.openCount}`}
+          open={formModal.isOpen}
           type="modal"
           onClose={() => {
             formModal.onClose();
@@ -664,8 +677,10 @@ function EnumMappingStep({
           }}
         />
       )}
-      {formModal.isOpen && creatableForm === "shippingMethod" && (
+      {formModal.openCount > 0 && creatableForm === "shippingMethod" && (
         <ShippingMethodForm
+          key={`shippingMethod-${formModal.openCount}`}
+          open={formModal.isOpen}
           type="modal"
           onClose={() => {
             formModal.onClose();

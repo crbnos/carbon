@@ -21,9 +21,7 @@ import type { ConformanceCheck, Violation } from "../check";
  *
  * Scope is the KEYS of the literal row object(s) in the write's FIRST argument.
  * A payload object spread into the row (`insert([row])`) can carry the same bad
- * key, but only the caller knows what is in it; for the MCP/API layer that
- * decision is derived from this same generated schema by
- * `withoutAbsentAuditColumns` in `scripts/lib/service-metadata.ts`.
+ * key, but only the caller knows what is in it.
  *
  * Both halves of the match are structural rather than textual, because the loose
  * version of each produced false findings and this check gates commits through
@@ -252,8 +250,7 @@ export function noMissingAuditColumn(
     provenance: {
       deprecates:
         "stamping createdBy/updatedBy on a table without audit columns (the customerPartToItem upsert in sales-rfq.$rfqId.map-lines.ts, which failed every call)",
-      replacedBy:
-        "writing only the columns the table has; the MCP/API layer derives the same answer from the generated types in scripts/lib/service-metadata.ts",
+      replacedBy: "writing only the columns the table has",
       since: "PGRST204 on items_upsertItemCustomerPart"
     },
     scan(file, contents) {

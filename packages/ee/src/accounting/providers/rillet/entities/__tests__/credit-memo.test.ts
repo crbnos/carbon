@@ -3,6 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  accountMappingRows,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type {
   Rillet,
@@ -23,45 +27,6 @@ import {
   mapMemoToRilletVendorCredit,
   RilletVendorCreditSyncer
 } from "../vendor-credit";
-
-// The syncers' DB loaders are stubbed; everything else in ./shared (the base
-// class above all) stays real, so the push workflow under test is the
-// production one.
-vi.mock("../shared", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../shared")>();
-  return {
-    ...original,
-    loadRilletAccountCodesById: vi.fn(
-      async () => new Map([["acct_returns", "4200"]])
-    ),
-    loadCompanyBaseCurrency: vi.fn(async () => "USD"),
-    loadCurrencyDecimalPlaces: vi.fn(async () => 2),
-    loadRilletMemoReasonAccount: vi.fn(async () => ({
-      accountId: "acct_returns",
-      name: "Sales Returns & Allowances",
-      number: "4200"
-    }))
-  };
-});
-
-const { linked } = vi.hoisted(() => ({ linked: [] as unknown[] }));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const b = {
-      values: (row: unknown) => {
-        linked.push(row);
-        return b;
-      },
-      onConflict: () => b,
-      execute: async () => []
-    };
-    return cb({ insertInto: () => b });
-  }
-}));
 
 const customerMemo = (
   overrides: Partial<RilletMemoSource> = {}
@@ -261,21 +226,26 @@ describe("application sets", () => {
   });
 });
 
-/** In-memory ExternalIntegrationMappingService stand-in. */
-function fakeMappingService(store = new Map<string, string>()) {
-  return {
-    store,
-    getByEntity: vi.fn(async () => null),
-    getExternalId: vi.fn(
-      async (entityType: string, entityId: string) =>
-        store.get(`${entityType}:${entityId}`) ?? null
-    ),
-    link: vi.fn(
-      async (entityType: string, entityId: string, _i: string, id: string) => {
-        store.set(`${entityType}:${entityId}`, id);
+/** The company, its currency and the reason account the memo syncers read. */
+function memoDatabase() {
+  return fakeDatabase({
+    company: [
+      { id: "company-1", baseCurrencyCode: "USD", companyGroupId: "group-1" }
+    ],
+    currency: [{ code: "USD", companyGroupId: "group-1", decimalPlaces: 2 }],
+    account: [
+      {
+        id: "acct_returns",
+        companyGroupId: "group-1",
+        name: "Sales Returns & Allowances",
+        number: "4200"
       }
+    ],
+    externalIntegrationMapping: accountMappingRows(
+      { acct_returns: "4200" },
+      "rillet"
     )
-  };
+  });
 }
 
 /** `POST /products` stub, typed so `mock.calls` keeps its argument tuple. */
@@ -287,10 +257,10 @@ function makeCreateProduct() {
 
 function setupCreditMemoSyncer(args: {
   memo: CreditMemoSource;
-  mappingStore?: Map<string, string>;
+  /** Shared between syncers to carry the reason product's mapping across. */
+  db?: ReturnType<typeof memoDatabase>;
   createProduct?: ReturnType<typeof makeCreateProduct>;
 }) {
-  linked.length = 0;
   const applyCreditMemo = vi.fn(
     async (_id: string, _applications: Rillet.CreditMemoApplication[]) =>
       undefined
@@ -301,7 +271,7 @@ function setupCreditMemoSyncer(args: {
   const createProduct = args.createProduct ?? makeCreateProduct();
 
   const syncer = new RilletCreditMemoSyncer({
-    database: {} as never,
+    database: (args.db ?? memoDatabase()).database,
     companyId: "company-1",
     entityType: "creditMemo",
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
@@ -315,7 +285,6 @@ function setupCreditMemoSyncer(args: {
   });
 
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
-  (syncer as any).mappingService = fakeMappingService(args.mappingStore);
   (syncer as any).ensureDependencySynced = vi.fn(
     async (_type: string, localId: string) => `rillet-invoice-${localId}`
   );
@@ -376,19 +345,19 @@ describe("RilletCreditMemoSyncer", () => {
   });
 
   it("creates the reason product once and reuses it for a second memo", async () => {
-    const mappingStore = new Map<string, string>();
+    const db = memoDatabase();
     const createProduct = makeCreateProduct();
 
     const first = setupCreditMemoSyncer({
       memo: customerMemo(),
-      mappingStore,
+      db,
       createProduct
     });
     await first.syncer.pushToAccounting("memo_1");
 
     const second = setupCreditMemoSyncer({
       memo: customerMemo({ id: "memo_9", memoId: "CM-2026-0009" }),
-      mappingStore,
+      db,
       createProduct
     });
     await second.syncer.pushToAccounting("memo_9");
@@ -423,7 +392,7 @@ function setupVendorCreditSyncer(memo: RilletMemoSource) {
       undefined
   );
   const syncer = new RilletVendorCreditSyncer({
-    database: {} as never,
+    database: memoDatabase().database,
     companyId: "company-1",
     entityType: "supplierCredit",
     config: {
@@ -440,7 +409,6 @@ function setupVendorCreditSyncer(memo: RilletMemoSource) {
     } as never
   });
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(memo);
-  (syncer as any).mappingService = fakeMappingService();
   (syncer as any).ensureDependencySynced = vi.fn(
     async (_type: string, localId: string) => `rillet-bill-${localId}`
   );

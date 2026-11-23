@@ -21,7 +21,8 @@ const FixedAssetStatus = ({ status }: FixedAssetStatusProps) => {
     Draft: t`Draft`,
     Active: t`Active`,
     "Fully Depreciated": t`Fully Depreciated`,
-    Disposed: t`Disposed`
+    Disposed: t`Disposed`,
+    "Under Construction": t`Under Construction`
   };
 
   return <Status color={color}>{labels[status]}</Status>;

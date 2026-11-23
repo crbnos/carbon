@@ -4,20 +4,19 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  matchOnshapeBackfillPage,
-  syncOnshapeBackfillWorkItem
+  backfillElementInput,
+  matchOnshapeBackfillPage
 } from "./onshape-backfill";
 import {
   type OnshapeRevisionSyncInput,
-  runOnshapeRevisionSync
+  resolveOnshapeRevision
 } from "./onshape-revision-sync";
 
 const mocks = vi.hoisted(() => ({
   getRevisions: vi.fn(),
-  getCompanyRevisions: vi.fn(),
-  sync: vi.fn(),
-  drawing: vi.fn()
+  getCompanyRevisions: vi.fn()
 }));
+// The Onshape API is the network boundary; @carbon/auth connects at import time.
 vi.mock("@carbon/ee/onshape", () => ({
   getOnshapeClient: vi.fn(async () => ({ client: mocks })),
   OnshapeAssetTooLargeError: class extends Error {},
@@ -25,13 +24,6 @@ vi.mock("@carbon/ee/onshape", () => ({
 }));
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
-}));
-vi.mock("../../client", () => ({
-  inngest: { createFunction: (...args: unknown[]) => args }
-}));
-vi.mock("./onshape-sync-element", () => ({
-  syncOnshapeElementAssetsToItem: mocks.sync,
-  syncOnshapeDrawingAssetsToItem: mocks.drawing
 }));
 
 const input: OnshapeRevisionSyncInput = {
@@ -75,13 +67,14 @@ function database(
       return query;
     }),
     in: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(async () => ({ error: null, data: items[0] ?? null })),
     then: (resolve: (value: unknown) => unknown) =>
       resolve({ error: null, data: items })
   };
   return {
     client: { from: vi.fn(() => query) } as unknown as Parameters<
-      typeof runOnshapeRevisionSync
+      typeof resolveOnshapeRevision
     >[0],
     filters
   };
@@ -91,30 +84,22 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getRevisions.mockResolvedValue({ items: [released] });
   mocks.getCompanyRevisions.mockResolvedValue({ items: [released] });
-  mocks.sync.mockResolvedValue({
-    modelUploadId: "selected-model",
-    thumbnailAttached: false
-  });
 });
 
 describe("release identity", () => {
   it("passes the exact released part/configuration to the existing item", async () => {
     const db = database();
-    expect(await runOnshapeRevisionSync(db.client, input)).toMatchObject({
-      synced: true,
-      itemId: "existing-item"
-    });
-    expect(mocks.sync).toHaveBeenCalledWith(
-      db.client,
-      expect.objectContaining({
+    expect(await resolveOnshapeRevision(db.client, input)).toMatchObject({
+      itemId: "existing-item",
+      element: {
         itemId: "existing-item",
         documentId: "document",
         versionId: "version",
         modelElementId: "studio",
         partId: "saddle-part",
         configuration: "Size=Large"
-      })
-    );
+      }
+    });
     expect(db.filters).toContainEqual(["companyId", "carbon-company"]);
     expect(db.filters).toContainEqual(["readableIdWithRevision", "SADDLE.A"]);
     expect(db.filters).toContainEqual(["type", "Part"]);
@@ -127,25 +112,27 @@ describe("release identity", () => {
     { partNumber: "wrong-number" },
     { elementType: 1 },
     { isObsolete: true }
-  ])("refuses a version-only fallback when identity differs: %j", async (mismatch) => {
-    mocks.getRevisions.mockResolvedValue({
-      items: [{ ...released, ...mismatch }]
-    });
-    expect(
-      await runOnshapeRevisionSync(database().client, input)
-    ).toMatchObject({
-      synced: false,
-      skippedReason: "revision-not-found"
-    });
-    expect(mocks.sync).not.toHaveBeenCalled();
-  });
+  ])(
+    "refuses a version-only fallback when identity differs: %j",
+    async (mismatch) => {
+      mocks.getRevisions.mockResolvedValue({
+        items: [{ ...released, ...mismatch }]
+      });
+      expect(
+        await resolveOnshapeRevision(database().client, input)
+      ).toMatchObject({
+        synced: false,
+        skippedReason: "revision-not-found"
+      });
+    }
+  );
 
   it("refuses ambiguous revisions when the event has no revisionId", async () => {
     mocks.getRevisions.mockResolvedValue({
       items: [released, { ...released, id: "other", partId: "other-part" }]
     });
     expect(
-      await runOnshapeRevisionSync(database().client, {
+      await resolveOnshapeRevision(database().client, {
         ...input,
         revisionId: undefined
       })
@@ -153,19 +140,43 @@ describe("release identity", () => {
       synced: false,
       skippedReason: "ambiguous-revision"
     });
-    expect(mocks.sync).not.toHaveBeenCalled();
   });
 
   it("does not silently match an imported blank-revision item to revision A", async () => {
     const db = database([]);
-    const result = await runOnshapeRevisionSync(db.client, input);
+    const result = await resolveOnshapeRevision(db.client, input);
     expect(result).toMatchObject({
       synced: false,
       skippedReason: "no-matching-item",
       releaseKey: "SADDLE.A"
     });
     expect(db.filters).toContainEqual(["readableIdWithRevision", "SADDLE.A"]);
-    expect(mocks.sync).not.toHaveBeenCalled();
+  });
+});
+
+describe("released drawings", () => {
+  it("resolves a drawing to the model item sharing its number", async () => {
+    mocks.getRevisions.mockResolvedValue({
+      items: [{ ...released, partNumber: "DRW-SADDLE", elementType: 2 }]
+    });
+    const result = await resolveOnshapeRevision(
+      database([
+        {
+          id: "model-item",
+          readableIdWithRevision: "PRT-SADDLE.A",
+          modelUploadId: null
+        }
+      ]).client,
+      { ...input, partNumber: "DRW-SADDLE", elementType: 2 }
+    );
+    expect(result).toMatchObject({
+      itemId: "model-item",
+      drawing: {
+        itemId: "model-item",
+        drawingElementId: "studio",
+        assetBaseName: "PRT-SADDLE.A"
+      }
+    });
   });
 });
 
@@ -210,14 +221,10 @@ describe("backfill identity", () => {
       partId: "saddle-part",
       configuration: "Size=Large"
     });
-    await syncOnshapeBackfillWorkItem(db.client, input, page.workItems[0]!);
-    expect(mocks.sync).toHaveBeenCalledWith(
-      db.client,
-      expect.objectContaining({
-        partId: "saddle-part",
-        configuration: "Size=Large"
-      })
-    );
+    expect(backfillElementInput(input, page.workItems[0]!)).toMatchObject({
+      partId: "saddle-part",
+      configuration: "Size=Large"
+    });
   });
 
   it("does not use a full backfill to replace existing models", async () => {

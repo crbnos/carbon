@@ -1,0 +1,122 @@
+---
+title: Connect Slack
+plan: Business
+description: Add the Carbon Assistant to your Slack workspace in three steps.
+---
+
+Connect Slack to use the Carbon Assistant in your Slack workspace.
+
+**You need:** permission to change Settings in Carbon, and permission to add apps
+to your Slack workspace. Slack isn't available on controlled (ITAR) Carbon
+deployments.
+
+<Diagram name="connect" />
+
+## Connect Slack
+
+<Steps>
+  <Step>
+  ### Press Install in Carbon
+
+  Go to **Settings → Integrations** and press **Install** on the **Slack** card. A
+  Slack window opens.
+
+    <Screenshot src="/screens/setup-slack-install-card.png" label="Carbon Settings → Integrations, the Slack card with its Install button" />
+  </Step>
+  <Step>
+  ### Allow Carbon in Slack
+
+  Pick your workspace and the channel Carbon should post in, then press **Allow**.
+
+  {/* Replace with /screens/setup-slack-consent.png */}
+  <Screenshot label="Slack's consent screen for the Carbon app, with the Allow button" ratio="tall" />
+  </Step>
+  <Step>
+  ### You're connected
+
+  The Slack window turns into Carbon's Integrations page, where the Slack card says
+  **Installed**. Close that window and refresh your first Carbon tab.
+
+  Carbon also tries to post a welcome message in the channel you picked.
+  </Step>
+</Steps>
+
+## What Carbon can do in Slack
+
+When you press Allow, Slack lets Carbon:
+
+- send messages as @Carbon Assistant
+- send messages to channels it isn't a member of
+- post messages to specific channels in Slack
+- add shortcuts and slash commands that people can use
+- act as an app agent
+- view files shared in channels and conversations it has been added to
+- view messages and other content in direct messages it has been added to
+- view the name, email domain and icon of your workspace
+- view people in your workspace, and their email addresses
+
+<Screenshot src="/screens/setup-slack-permissions.png" label="Slack's permissions page for the Carbon Assistant app, listing what it can do and what it can view" caption="Slack shows this list for the Carbon Assistant. It can include a few more than Carbon asks for when you install." />
+
+<details>
+<summary>The exact Slack permissions, for your Slack admin</summary>
+
+```
+assistant:write
+chat:write
+chat:write.public
+commands
+files:read
+im:history
+incoming-webhook
+team:read
+users:read
+users:read.email
+```
+
+</details>
+
+## Something went wrong?
+
+| What you see | What to do |
+| --- | --- |
+| *Invalid company* or *Invalid user* | You switched Carbon company or account partway through. Start again from the company you want to connect. |
+| *Slack OAuth error* | Start again from Carbon. If it keeps happening, contact Carbon support. |
+| An error after more than 10 minutes in the Slack window | The sign-in expired. Start again from Carbon. |
+| Slack opened in the same tab, not a window | Your browser blocked the popup. That's fine: finish in Slack and you'll come back to Carbon. |
+
+## Running Carbon on your own servers?
+
+Skip this on Carbon Cloud. The Slack app is already set up.
+
+On your own servers, you create the Slack app once:
+
+1. Create an app at [api.slack.com/apps](https://api.slack.com/apps), in the workspace
+   you'll connect. An app made in another workspace needs Slack's distribution turned
+   on before it can be installed elsewhere.
+2. Add every permission from the list above as a **bot** permission.
+3. Add this redirect URL: `https://<your Carbon address>/api/integrations/slack/oauth`.
+4. Turn on interactivity, with this request URL:
+   `https://<your Carbon address>/api/integrations/slack/interactive`.
+   Add a global shortcut with the callback ID `create_ncr_modal`. It opens Carbon's
+   **Create Issue** form. Anyone in the Slack workspace can use it, and Carbon
+   creates the issue without checking that person's Carbon permissions.
+5. Set these in Carbon's environment, then restart Carbon:
+
+| Variable | Value |
+| --- | --- |
+| `SLACK_CLIENT_ID` | The app's client ID |
+| `SLACK_CLIENT_SECRET` | The app's client secret |
+| `SLACK_OAUTH_REDIRECT_URL` | The redirect URL from step 3, exactly |
+| `SLACK_SIGNING_SECRET` | The app's signing secret. Required: without it the install ends on an error, and Carbon rejects every shortcut. |
+| `SLACK_STATE_SECRET` | Any long random string. Required: without it the install can't start. |
+
+## Related
+
+<Cards>
+  <Card title="Assistant" href="/docs/integrations/assistant">
+    What the Carbon Assistant does in Slack.
+  </Card>
+  <Card title="Setup guides" href="/docs/integrations/setup">
+    Connect your other apps.
+  </Card>
+</Cards>

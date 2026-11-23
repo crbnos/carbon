@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.get_customer_ids_with_customer_permission(permission text)
  RETURNS text[]
  LANGUAGE plpgsql
- SECURITY DEFINER
+ STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 DECLARE

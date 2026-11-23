@@ -106,7 +106,7 @@ pnpm --filter @carbon/ee test
   completes. `companyIntegration.active` goes `true` as soon as the Stripe
   account is created (see `getOrCreateConnectAccount`), before onboarding
   finishes, so it does NOT gate this neutral state — `getStripeConnectAccountId`
-  (`apps/erp/app/modules/invoicing/stripe-customer.server.ts`) additionally
+  (`packages/stripe/src/send-sales-invoice.server.ts`) additionally
   checks `metadata.chargesEnabled` for exactly this reason.
 - **`stripeConnectOnInstall` / `stripeConnectOnUninstall`** (`hooks.server.ts`) — 
   currently no-ops; registered because the `IntegrationServerHooks` contract

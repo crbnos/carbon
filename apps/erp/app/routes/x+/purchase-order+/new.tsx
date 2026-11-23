@@ -10,21 +10,23 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import type { PurchaseOrderStatus } from "~/modules/purchasing";
-import {
-  insertPurchaseOrder,
-  purchaseOrderValidator
-} from "~/modules/purchasing";
+import { purchaseOrderValidator } from "~/modules/purchasing/purchasing.models";
+import { insertPurchaseOrder } from "~/modules/purchasing/purchasing.service";
+import type { PurchaseOrderStatus } from "~/modules/purchasing/types";
 import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const newPurchaseOrderValidator = purchaseOrderValidator.extend({
   locationId: z.string().min(1, { message: "Location is required" })
 });
+
+export const meta = newRecordMeta("Purchase Order");
 
 export const handle: Handle = {
   breadcrumb: msg`Orders`,
@@ -107,8 +109,8 @@ export default function PurchaseOrderNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <PurchaseOrderForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

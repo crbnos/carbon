@@ -3,17 +3,29 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toBaseAmount, toDocumentAmount } from "./accounting-currency.ts";
+import { TAX_RECEIVED_POSTING_DESCRIPTION } from "./accounting-posting.ts";
 import { credit, debit } from "./ledger.ts";
 import { assertBalanced, EPSILON, round, SCALE } from "./precision.ts";
+import {
+  lineTaxBase,
+  splitLineTax,
+  type TaxComponentInput
+} from "./tax-components.ts";
 
 export type SalesPostingAmountsInput = {
   quantity: number;
   unitPrice?: number | null;
+  /** Line discount, a fraction 0..1. Discounts merchandise only
+   *  (`quantity × unitPrice`); add-ons and shipping are never discounted. */
+  discountPercent?: number | null;
   shippingCost?: number | null;
   addOnCost?: number | null;
   nonTaxableAddOnCost?: number | null;
   taxPercent?: number | null;
   allocatedHeaderShipping?: number;
+  /** The line's tax code taxes delivery charges: its share of header
+   *  shipping joins its tax base (`taxCode.taxesShipping`). */
+  taxesShipping?: boolean;
 };
 
 export type SalesPostingAmounts = {
@@ -38,14 +50,26 @@ export type SalesPostingMetadata = {
   locationId: string | null;
   costCenterId: string | null;
   fixedAssetClassId: string | null;
+  /** The line's project. `buildSalesPostingLines` keeps it on the revenue-side
+   *  legs only (Sales, Deferred Revenue, the Rental revenue legs); AR, tax,
+   *  shipping and disposal legs carry no project. */
+  projectId?: string | null;
 };
+
+/** A rental revenue leg references the agreement it earns under, a contract
+ *  line's revenue legs the contract; every other line (AR, tax, shipping,
+ *  disposal) references the invoice. */
+export type SalesPostingDocumentType =
+  | "Invoice"
+  | "Rental Agreement"
+  | "Contract";
 
 export type SalesPostingJournalLine = {
   accountId: string;
   description: string;
   amount: number;
   quantity: number;
-  documentType: "Invoice";
+  documentType: SalesPostingDocumentType;
   documentId: string;
   externalDocumentId?: string | null;
   documentLineReference?: string | null;
@@ -75,6 +99,20 @@ export type SalesPostingDisposal = DisposalAccounts &
       }
   );
 
+/** One slice of the sales revenue component, credited to `account`. A leg with
+ *  a negative amount (a credit line) lands as the mirrored debit. */
+export type SalesRevenueLeg = {
+  account: SalesPostingAccount | null | undefined;
+  accountClass: "Revenue" | "Liability" | "Asset";
+  description: string;
+  /** Base amount, signed like the line. Required on every leg but the last;
+   *  the last leg takes whatever the others leave of `salesRevenueBase`, so the
+   *  legs always sum to it exactly. */
+  amount?: number;
+  documentType?: SalesPostingDocumentType;
+  documentId?: string;
+};
+
 export type BuildSalesPostingLinesInput = {
   line: SalesPostingAmountsInput & { invoiceLineType: string };
   context: {
@@ -91,9 +129,25 @@ export type BuildSalesPostingLinesInput = {
     sales?: SalesPostingAccount | null;
     shipping?: SalesPostingAccount | null;
     tax?: SalesPostingAccount | null;
+    /** A component's own Tax Received account, by component id; a component
+     *  missing here posts to `tax`. */
+    componentTax?: ReadonlyMap<string, SalesPostingAccount>;
   };
+  /** The line's tax code components in force on the posting date. With
+   *  components the tax posts one leg per component; without, one leg. */
+  taxComponents?: TaxComponentInput[];
   metadata: SalesPostingMetadata;
   disposal?: SalesPostingDisposal;
+  /** Revenue recognition: when set, the sales revenue leg is credited to this
+   *  Liability account as "Deferred Revenue" instead of `accounts.sales`; a
+   *  recognition run later moves it to Sales. Shipping, tax and AR legs are
+   *  unchanged. `amounts.salesRevenueBase` is the deferred leg's base amount. */
+  deferredRevenueAccount?: SalesPostingAccount | null;
+  /** Replaces the Sales Account leg with these legs (Rental lines, which never
+   *  post to Sales: deferred revenue, contract asset or rental income by kind).
+   *  Required for `Rental`; not allowed with `deferredRevenueAccount` or on a
+   *  Fixed Asset line. */
+  revenueLegs?: SalesRevenueLeg[];
 };
 
 function finite(amount: number, label: string): number {
@@ -101,13 +155,41 @@ function finite(amount: number, label: string): number {
   return amount;
 }
 
+/** `quantity × unitPrice × (1 − discountPercent)`: the discounted merchandise
+ *  every revenue, tax, shipping-weight and intercompany amount is built on. */
+function netMerchandise(line: SalesPostingAmountsInput): number {
+  const discountPercent = finite(line.discountPercent ?? 0, "Discount");
+  return finite(
+    finite(line.quantity, "Quantity") *
+      finite(line.unitPrice ?? 0, "Unit price") *
+      (1 - discountPercent),
+    "Merchandise"
+  );
+}
+
+/** The line's tax base: discounted merchandise, line shipping and taxable
+ *  add-ons, plus its share of header shipping when its code taxes shipping. */
+export function salesTaxableBase(input: SalesPostingAmountsInput): number {
+  return finite(
+    lineTaxBase({
+      merchandise: netMerchandise(input),
+      addOnCost: finite(input.addOnCost ?? 0, "Taxable add-on"),
+      shippingCost: finite(input.shippingCost ?? 0, "Line shipping"),
+      allocatedHeaderShipping: finite(
+        input.allocatedHeaderShipping ?? 0,
+        "Header shipping"
+      ),
+      taxesShipping: input.taxesShipping ?? false
+    }),
+    "Tax base"
+  );
+}
+
 /** Raw arithmetic shared by ledger and provider boundaries; prices are already base. */
 export function calculateSalesPostingAmounts(
   input: SalesPostingAmountsInput
 ): SalesPostingAmounts {
-  const merchandise =
-    finite(input.quantity, "Quantity") *
-    finite(input.unitPrice ?? 0, "Unit price");
+  const merchandise = netMerchandise(input);
   const shipping = finite(input.shippingCost ?? 0, "Line shipping");
   const addOn = finite(input.addOnCost ?? 0, "Taxable add-on");
   const nonTaxableAddOn = finite(
@@ -124,7 +206,7 @@ export function calculateSalesPostingAmounts(
     "Shipping revenue"
   );
   const salesTaxBase = finite(
-    (merchandise + shipping + addOn) * taxPercent,
+    salesTaxableBase(input) * taxPercent,
     "Sales tax"
   );
   return {
@@ -153,8 +235,7 @@ export function allocateSalesHeaderShipping(
   }
   const weights = eligible.map((line) =>
     finite(
-      finite(line.quantity, "Quantity") *
-        finite(line.unitPrice ?? 0, "Unit price") +
+      netMerchandise(line) +
         finite(line.shippingCost ?? 0, "Line shipping") +
         finite(line.addOnCost ?? 0, "Taxable add-on"),
       "Header shipping weight"
@@ -188,13 +269,14 @@ export function calculateSalesIntercompanyAmount(
   exchangeRate: number
 ): number {
   // Preserve the buyer-compatible matching basis: exclude add-ons, tax and header shipping.
+  // Merchandise is net of the line discount: the buyer keys the price it is
+  // charged (post-purchase-invoice matches on quantity × supplierUnitPrice).
   const base = lines.reduce(
     (sum, line) =>
       line.invoiceLineType === "Comment"
         ? sum
         : sum +
-          finite(line.quantity, "Quantity") *
-            finite(line.unitPrice ?? 0, "Unit price") +
+          netMerchandise(line) +
           finite(line.shippingCost ?? 0, "Line shipping"),
     0
   );
@@ -208,50 +290,13 @@ export function calculateSalesIntercompanyAmount(
   return toDocumentAmount(base, exchangeRate, SCALE);
 }
 
-export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
-  lines: SalesPostingJournalLine[];
-  metadata: SalesPostingMetadata[];
-  amounts: SalesPostingAmounts;
-  saleProceeds: number;
-  netBookValue: number | null;
-  gainLoss: number | null;
-  signedDebitTotal: number;
-} {
-  const { line, context, accounts, disposal } = input;
-  const empty = {
-    salesRevenueBase: 0,
-    shippingRevenueBase: 0,
-    salesTaxBase: 0,
-    grossReceivableBase: 0
-  };
-  if (line.invoiceLineType === "Comment") {
-    return {
-      lines: [],
-      metadata: [],
-      amounts: empty,
-      saleProceeds: 0,
-      netBookValue: null,
-      gainLoss: null,
-      signedDebitTotal: 0
-    };
-  }
-  if (
-    ![
-      "Part",
-      "Service",
-      "Consumable",
-      "Fixture",
-      "Material",
-      "Tool",
-      "Fixed Asset"
-    ].includes(line.invoiceLineType)
-  ) {
-    throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);
-  }
-  const isAsset = line.invoiceLineType === "Fixed Asset";
-  if (isAsset && !disposal) {
-    throw new Error("Fixed asset posting requires disposal facts");
-  }
+/** The posted base amounts of one line: each component rounded at internal
+ *  scale, with the rounding residual against the rounded total reconciled
+ *  onto the largest component. These are exactly the amounts
+ *  `buildSalesPostingLines` posts. */
+export function roundSalesPostingAmounts(
+  line: SalesPostingAmountsInput
+): SalesPostingAmounts {
   const raw = calculateSalesPostingAmounts(line);
   const componentKeys = [
     "salesRevenueBase",
@@ -281,6 +326,76 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     )[0]!;
     amounts[recipient] = round(amounts[recipient] + residual);
   }
+  return amounts;
+}
+
+export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
+  lines: SalesPostingJournalLine[];
+  metadata: SalesPostingMetadata[];
+  amounts: SalesPostingAmounts;
+  saleProceeds: number;
+  netBookValue: number | null;
+  gainLoss: number | null;
+  signedDebitTotal: number;
+  /** Base amount of each revenue leg as posted, in the order given (the Sales
+   *  Account leg alone when no `revenueLegs` were passed; empty for assets). */
+  revenueLegAmounts: number[];
+} {
+  const {
+    line,
+    context,
+    accounts,
+    disposal,
+    deferredRevenueAccount,
+    revenueLegs
+  } = input;
+  const empty = {
+    salesRevenueBase: 0,
+    shippingRevenueBase: 0,
+    salesTaxBase: 0,
+    grossReceivableBase: 0
+  };
+  if (line.invoiceLineType === "Comment") {
+    return {
+      lines: [],
+      metadata: [],
+      amounts: empty,
+      saleProceeds: 0,
+      netBookValue: null,
+      gainLoss: null,
+      signedDebitTotal: 0,
+      revenueLegAmounts: []
+    };
+  }
+  if (
+    ![
+      "Part",
+      "Service",
+      "Consumable",
+      "Fixture",
+      "Material",
+      "Tool",
+      "Fixed Asset",
+      "Rental",
+      // A service job's item-less line before 2026-11-01; posts as Service.
+      "Labor"
+    ].includes(line.invoiceLineType)
+  ) {
+    throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);
+  }
+  const isAsset = line.invoiceLineType === "Fixed Asset";
+  if (isAsset && !disposal) {
+    throw new Error("Fixed asset posting requires disposal facts");
+  }
+  if (line.invoiceLineType === "Rental" && !revenueLegs?.length) {
+    throw new Error("Rental posting requires its revenue legs");
+  }
+  if (revenueLegs?.length && (isAsset || deferredRevenueAccount)) {
+    throw new Error(
+      "Revenue legs cannot be combined with a disposal or a deferred revenue account"
+    );
+  }
+  const amounts = roundSalesPostingAmounts(line);
   if (
     amounts.shippingRevenueBase !== 0 &&
     accounts.shipping?.id === accounts.sales?.id &&
@@ -299,7 +414,9 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     amount: number,
     description: string,
     isControl = false,
-    quantity = line.quantity
+    quantity = line.quantity,
+    document?: { documentType: SalesPostingDocumentType; documentId: string },
+    isRevenueSide = false
   ) => {
     const baseAmount = toBaseAmount(amount, 1);
     if (baseAmount === 0) return;
@@ -327,8 +444,8 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
           ? debit(naturalClass, baseAmount)
           : credit(naturalClass, baseAmount),
       quantity: round(quantity),
-      documentType: "Invoice",
-      documentId: context.documentId,
+      documentType: document?.documentType ?? "Invoice",
+      documentId: document?.documentId ?? context.documentId,
       externalDocumentId: context.externalDocumentId,
       documentLineReference: context.documentLineReference,
       journalLineReference: context.journalLineReference,
@@ -337,17 +454,83 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         : {}),
       companyId: context.companyId
     });
-    metadata.push({ ...input.metadata });
+    // The project dimensions the revenue side only, never AR, tax or shipping.
+    metadata.push(
+      isRevenueSide || !input.metadata.projectId
+        ? { ...input.metadata }
+        : { ...input.metadata, projectId: null }
+    );
     signedDebitTotal += side === "debit" ? baseAmount : -baseAmount;
   };
-  if (!isAsset) {
-    push(
-      accounts.sales,
-      "Revenue",
-      "credit",
-      amounts.salesRevenueBase,
-      "Sales Account"
-    );
+  const revenueLegAmounts: number[] = [];
+  if (revenueLegs?.length) {
+    const base = amounts.salesRevenueBase;
+    let explicit = 0;
+    const legAmounts = revenueLegs.map((leg, index) => {
+      const isLast = index === revenueLegs.length - 1;
+      if (isLast !== (leg.amount === undefined)) {
+        throw new Error(
+          "Every revenue leg but the last carries an amount; the last takes the remainder"
+        );
+      }
+      if (isLast) return round(base - explicit);
+      const amount = toBaseAmount(finite(leg.amount!, leg.description), 1);
+      // A leg is a slice of the line, so it shares the line's sign.
+      if (amount * base < 0) {
+        throw new Error(`${leg.description} must carry the line's sign`);
+      }
+      explicit = round(explicit + amount);
+      return amount;
+    });
+    if (Math.abs(explicit) > Math.abs(base) + EPSILON) {
+      throw new Error("Revenue legs exceed the line's revenue");
+    }
+    revenueLegs.forEach((leg, index) => {
+      push(
+        leg.account,
+        leg.accountClass,
+        "credit",
+        legAmounts[index]!,
+        leg.description,
+        false,
+        line.quantity,
+        leg.documentType
+          ? {
+              documentType: leg.documentType,
+              documentId: leg.documentId ?? context.documentId
+            }
+          : undefined,
+        true
+      );
+      revenueLegAmounts.push(legAmounts[index]!);
+    });
+  } else if (!isAsset) {
+    revenueLegAmounts.push(amounts.salesRevenueBase);
+    if (deferredRevenueAccount) {
+      push(
+        deferredRevenueAccount,
+        "Liability",
+        "credit",
+        amounts.salesRevenueBase,
+        "Deferred Revenue",
+        false,
+        line.quantity,
+        undefined,
+        true
+      );
+    } else {
+      push(
+        accounts.sales,
+        "Revenue",
+        "credit",
+        amounts.salesRevenueBase,
+        "Sales Account",
+        false,
+        line.quantity,
+        undefined,
+        true
+      );
+    }
   }
   push(
     accounts.shipping,
@@ -356,13 +539,40 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     amounts.shippingRevenueBase,
     "Shipping Revenue"
   );
-  push(
-    accounts.tax,
-    "Liability",
-    "credit",
-    amounts.salesTaxBase,
-    "Sales Tax Payable"
-  );
+  const taxParts =
+    input.taxComponents && input.taxComponents.length > 0
+      ? splitLineTax({
+          base: salesTaxableBase(line),
+          lineTax: amounts.salesTaxBase,
+          components: input.taxComponents,
+          scale: SCALE
+        })
+      : [];
+  // A tax leg is signed by its account's class, as on purchases: a company
+  // may keep one VAT control account, classed Asset, for both directions.
+  const taxClass = (account: SalesPostingAccount | null | undefined) =>
+    account?.class === "Asset" ? "Asset" : "Liability";
+  if (taxParts.length > 0) {
+    for (const part of taxParts) {
+      const account =
+        accounts.componentTax?.get(part.component.id) ?? accounts.tax;
+      push(
+        account,
+        taxClass(account),
+        "credit",
+        part.taxAmount,
+        TAX_RECEIVED_POSTING_DESCRIPTION
+      );
+    }
+  } else {
+    push(
+      accounts.tax,
+      taxClass(accounts.tax),
+      "credit",
+      amounts.salesTaxBase,
+      TAX_RECEIVED_POSTING_DESCRIPTION
+    );
+  }
   push(
     accounts.receivables,
     "Asset",
@@ -440,6 +650,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     saleProceeds: amounts.salesRevenueBase,
     netBookValue,
     gainLoss,
-    signedDebitTotal
+    signedDebitTotal,
+    revenueLegAmounts
   };
 }

@@ -2,17 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Document Templates" }];
-};
+export const meta = moduleMeta("Document Templates");
 
 export const handle: Handle = {
   breadcrumb: msg`Templates`,
@@ -23,7 +22,7 @@ export const handle: Handle = {
 export default function TemplatesRoute() {
   return (
     <div className="h-full w-full bg-card">
-      <Outlet />
+      <RecordOutlet />
     </div>
   );
 }

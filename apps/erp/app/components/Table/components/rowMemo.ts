@@ -21,6 +21,7 @@ export type RowMemoInputs = {
   editedCells?: string[];
   className?: string;
   pinnedStyleKey?: string;
+  "aria-rowindex"?: number;
 };
 
 /**
@@ -57,6 +58,8 @@ export function areRowPropsEqual(
     prev.isFrozenColumn === next.isFrozenColumn &&
     prev.editedCells === next.editedCells &&
     prev.className === next.className &&
-    prev.pinnedStyleKey === next.pinnedStyleKey
+    prev.pinnedStyleKey === next.pinnedStyleKey &&
+    // A sort keeps the row objects and moves them.
+    prev["aria-rowindex"] === next["aria-rowindex"]
   );
 }

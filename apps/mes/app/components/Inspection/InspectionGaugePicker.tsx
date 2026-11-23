@@ -197,6 +197,7 @@ const InspectionGaugePicker = ({
       >
         <Command>
           <CommandInput
+            aria-label={t`Search gauges`}
             placeholder={
               gaugeTypeName
                 ? t`Search ${gaugeTypeName}...`

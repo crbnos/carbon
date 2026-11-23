@@ -54,7 +54,8 @@ import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { DateTime, SupplierAvatar } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks";
-import type { ItemCostHistory } from "~/modules/items";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
+import type { ItemCostHistory } from "~/modules/items/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -66,6 +67,11 @@ export function ItemCostHistoryChart({
   itemCostHistory: ItemCostHistory;
 }) {
   const { t } = useLingui();
+  const [tab, setTab] = usePersistentPageTab(
+    "cost-history",
+    ["chart", "table"],
+    "chart"
+  );
 
   const chartConfig = {
     cost: {
@@ -164,7 +170,7 @@ export function ItemCostHistoryChart({
 
   return (
     <Card>
-      <Tabs defaultValue="chart">
+      <Tabs value={tab} onValueChange={setTab}>
         <HStack className="w-full justify-between">
           <CardHeader>
             <CardTitle>
@@ -193,12 +199,12 @@ export function ItemCostHistoryChart({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <TabsList>
-              <TabsTrigger value="chart" className="p-2">
-                <LuChartLine />
+            <TabsList aria-label={t`Cost history view`}>
+              <TabsTrigger value="chart" className="p-2" aria-label={t`Chart`}>
+                <LuChartLine aria-hidden />
               </TabsTrigger>
-              <TabsTrigger value="table" className="p-2">
-                <LuTable />
+              <TabsTrigger value="table" className="p-2" aria-label={t`Table`}>
+                <LuTable aria-hidden />
               </TabsTrigger>
             </TabsList>
           </CardAction>
@@ -207,6 +213,7 @@ export function ItemCostHistoryChart({
           <TabsContent value="chart">
             <ChartContainer
               config={chartConfig}
+              aria-label={t`Unit cost over the last year`}
               className="min-h-[40vh] h-[calc(100dvh-570px)] w-full"
             >
               <LineChart accessibilityLayer data={chartData}>
@@ -333,7 +340,10 @@ export function ItemCostHistoryChart({
                                           h.documentId
                                         )}
                                       >
-                                        <LuExternalLink />
+                                        <LuExternalLink aria-hidden />
+                                        <span className="sr-only">
+                                          <Trans>View Purchase Invoice</Trans>
+                                        </span>
                                       </Link>
                                     </Button>
                                   </TooltipTrigger>

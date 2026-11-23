@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteSalesOrder } from "~/modules/sales";
+import { deleteSalesOrder } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.salesOrders,
       await flash(
         request,
-        error(salesOrderDelete.error, salesOrderDelete.error.message)
+        error(salesOrderDelete.error, "Failed to delete the sales order")
       )
     );
   }

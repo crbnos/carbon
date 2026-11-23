@@ -5,13 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteMaterialForm, getMaterialForm } from "~/modules/items";
+import {
+  deleteMaterialForm,
+  getMaterialForm
+} from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!formId) {
     throw redirect(
       path.to.materialForms,
-      await flash(request, error(params, "Failed to get an material form id"))
+      await flash(request, error(null, "Failed to get an material form id"))
     );
   }
 
@@ -70,19 +73,18 @@ export default function DeleteMaterialFormRoute() {
   if (!formId) throw new Error("formId not found");
 
   const { materialForm } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
 
   if (!materialForm) return null;
-
-  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete
       action={path.to.deleteMaterialForm(formId)}
       name={materialForm.name}
       text={t`Are you sure you want to delete the material form: ${materialForm.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

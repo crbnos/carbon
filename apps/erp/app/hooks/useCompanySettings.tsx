@@ -26,10 +26,19 @@ type CompanySettings = Partial<
     | "allowLowercaseItemIds"
     | "digitalQuoteEnabled"
     | "digitalQuoteIncludesPurchaseOrders"
+    | "includeSupplierPartFiles"
+    | "mrpRunTime"
+    | "requireBackflushStorageUnit"
+    | "requireCustomerContactEmail"
+    | "requirePromisedDateToFinalizePurchaseOrder"
+    | "requireSupplierContactEmail"
+    | "sequenceWeekNumbering"
+    | "serialNumberTiming"
     | "showBomExplorerReadableId"
     | "showCurrencyTrailingZeros"
     | "showCustomerReadableId"
     | "showSupplierReadableId"
+    | "useCalendarWeeks"
   >
 >;
 

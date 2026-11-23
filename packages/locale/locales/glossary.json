@@ -2995,6 +2995,25 @@
       }
     },
     {
+      "term": "Non-nettable",
+      "category": "planning",
+      "context": "A storage unit whose stock MRP and picking ignore (a quarantine or hold area). Not the accounting sense of netting.",
+      "translations": {
+        "fr": "Exclu du calcul des besoins",
+        "de": "Nicht disponierbar",
+        "es": "No neteable",
+        "it": "Non nettabile",
+        "ja": "MRP対象外",
+        "pl": "Nieuwzględniany w MRP",
+        "pt": "Não disponível para MRP",
+        "ru": "Не учитывается в MRP",
+        "zh": "不计入MRP",
+        "hi": "MRP से बाहर",
+        "tr": "MRP dışı",
+        "ko": "MRP 제외"
+      }
+    },
+    {
       "term": "Tracked Entity",
       "category": "inventory",
       "context": "A lot or serial instance that Carbon follows through the shop.",

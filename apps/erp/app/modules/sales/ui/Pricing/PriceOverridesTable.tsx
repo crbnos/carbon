@@ -24,9 +24,10 @@ import {
   TooltipTrigger,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -46,17 +47,28 @@ import { useNavigate, useSearchParams } from "react-router";
 import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
-import type { PriceListRow } from "~/modules/sales";
+import type { InfiniteOptions } from "~/components/Table";
+import {
+  useCurrencyFormatter,
+  useDrawerItem,
+  usePermissions,
+  useUser
+} from "~/hooks";
+import type { PriceListRow } from "~/modules/sales/types";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
 import { PriceListScopeEmpty } from "./PriceListScopeEmpty";
 import { PriceTraceModal } from "./PriceTraceModal";
-import { type ScopeOption, ScopePicker } from "./ScopePicker";
+import {
+  ALL_CUSTOMERS_SCOPE,
+  type ScopeOption,
+  ScopePicker
+} from "./ScopePicker";
 
 type PriceListTableProps = {
   data: PriceListRow[];
   count: number;
+  infinite: InfiniteOptions;
   scopeOptions: ScopeOption[];
   hasScope: boolean;
 };
@@ -73,7 +85,7 @@ const sourceVariant: Record<
 };
 
 const PriceListTable = memo(
-  ({ data, count, scopeOptions, hasScope }: PriceListTableProps) => {
+  ({ data, count, infinite, scopeOptions, hasScope }: PriceListTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
@@ -83,9 +95,8 @@ const PriceListTable = memo(
     const [searchParams, setSearchParams] = useSearchParams();
     const previewQuantity = searchParams.get("quantity") ?? "1";
     const itemPostingGroups = useItemPostingGroups();
-    const [duplicateState, setDuplicateState] = useState<{
-      overrideIds?: string[];
-    } | null>(null);
+    const duplicate = useDrawerItem<{ overrideIds?: string[] }>();
+    const { open: openDuplicate } = duplicate;
 
     const canCreate = permissions.can("create", "sales");
     const canDelete = permissions.can("delete", "sales");
@@ -94,7 +105,11 @@ const PriceListTable = memo(
     const currentCustomerTypeId =
       searchParams.get("customerTypeId") ?? undefined;
 
-    const scopeId = currentCustomerId ?? currentCustomerTypeId ?? "";
+    const isAllCustomers = searchParams.get("scope") === ALL_CUSTOMERS_SCOPE;
+    const scopeId =
+      currentCustomerId ??
+      currentCustomerTypeId ??
+      (isAllCustomers ? ALL_CUSTOMERS_SCOPE : "");
 
     const sourceScope = {
       customerId: currentCustomerId,
@@ -117,7 +132,10 @@ const PriceListTable = memo(
         const next = new URLSearchParams(searchParams);
         next.delete("customerId");
         next.delete("customerTypeId");
-        if (selectedId) {
+        next.delete("scope");
+        if (selectedId === ALL_CUSTOMERS_SCOPE) {
+          next.set("scope", ALL_CUSTOMERS_SCOPE);
+        } else if (selectedId) {
           const picked = scopeOptions.find((o) => o.value === selectedId);
           if (picked) {
             next.set(
@@ -136,6 +154,8 @@ const PriceListTable = memo(
         {
           accessorKey: "partId",
           header: t`Item`,
+          // The price list computes these values per item; the database cannot sort by them.
+          enableSorting: false,
           cell: ({ row }) => (
             <HStack className="min-w-[240px] items-center" spacing={2}>
               <ItemThumbnail
@@ -153,17 +173,23 @@ const PriceListTable = memo(
                     {row.original.partId}
                   </span>
                 )}
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.itemName}
-                </div>
+                {distinctItemText(
+                  row.original.partId,
+                  row.original.itemName
+                ) && (
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.itemName}
+                  </div>
+                )}
               </VStack>
             </HStack>
           ),
-          meta: { icon: <LuBookMarked /> }
+          meta: { icon: <LuBookMarked />, mobile: "P1" }
         },
         {
           accessorKey: "itemPostingGroupId",
           header: t`Item Group`,
+          enableSorting: false,
           cell: ({ row }) => {
             const id = row.original.itemPostingGroupId;
             if (!id) return null;
@@ -178,18 +204,23 @@ const PriceListTable = memo(
                 label: <Enumerable value={group.label} />
               }))
             },
-            icon: <LuGroup />
+            icon: <LuGroup />,
+            mobile: "P3"
           }
         },
         {
           accessorKey: "basePrice",
           header: t`Base Price`,
+          enableSorting: false,
           cell: ({ row }) => (
             <span className="text-muted-foreground">
               {currencyFormatter.format(row.original.basePrice)}
             </span>
           ),
-          meta: { icon: <LuCircleDollarSign /> }
+          meta: {
+            icon: <LuCircleDollarSign />,
+            mobile: hasScope ? undefined : "P2"
+          }
         }
       ];
 
@@ -198,6 +229,7 @@ const PriceListTable = memo(
           {
             accessorKey: "resolvedPrice",
             header: t`Resolved Price`,
+            enableSorting: false,
             cell: ({ row }) => (
               <HStack spacing={2} className="items-center">
                 <span>
@@ -217,11 +249,12 @@ const PriceListTable = memo(
                 />
               </HStack>
             ),
-            meta: { icon: <LuCircleDollarSign /> }
+            meta: { icon: <LuCircleDollarSign />, mobile: "P2" }
           },
           {
             accessorKey: "source",
             header: t`Source`,
+            enableSorting: false,
             cell: ({ row }) => (
               <Badge variant={sourceVariant[row.original.source] ?? "outline"}>
                 {row.original.source}
@@ -308,7 +341,7 @@ const PriceListTable = memo(
                 shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                 disabled={!canCreate}
                 onClick={() => {
-                  setDuplicateState({ overrideIds: [row.overrideId!] });
+                  openDuplicate({ overrideIds: [row.overrideId!] });
                 }}
               >
                 <MenuIcon icon={<LuCopy />} />
@@ -340,6 +373,7 @@ const PriceListTable = memo(
         canDelete,
         hasScope,
         navigate,
+        openDuplicate,
         searchParams,
         t,
         permissions.can
@@ -362,6 +396,7 @@ const PriceListTable = memo(
           data={data}
           columns={columns}
           count={count}
+          infinite={infinite}
           primaryAction={
             <div className="flex items-center gap-2">
               <ScopePicker
@@ -409,7 +444,7 @@ const PriceListTable = memo(
                 <Button
                   variant="secondary"
                   leftIcon={<LuCopy />}
-                  onClick={() => setDuplicateState({})}
+                  onClick={() => openDuplicate({})}
                 >
                   <Trans>Duplicate</Trans>
                 </Button>
@@ -425,11 +460,12 @@ const PriceListTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Price List`}
         />
-        {duplicateState !== null && (
+        {duplicate.item && (
           <DuplicatePriceListModal
+            open={duplicate.isOpen}
             sourceScope={sourceScope}
-            overrideIds={duplicateState.overrideIds}
-            onClose={() => setDuplicateState(null)}
+            overrideIds={duplicate.item.overrideIds}
+            onClose={duplicate.close}
           />
         )}
       </>

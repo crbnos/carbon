@@ -34,7 +34,7 @@ export function StatusReadout({
 
   return (
     <div className="w-full max-w-md border border-border bg-card/40 p-4 font-mono text-xs text-muted-foreground backdrop-blur-sm">
-      <div className="mb-3 flex items-center justify-between border-b border-border pb-2 text-[10px] uppercase tracking-[0.25em] text-foreground/70">
+      <div className="mb-3 flex items-center justify-between border-b border-border pb-2 text-[0.625rem] uppercase tracking-[0.25em] text-foreground/70">
         <span>{title}</span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block size-1.5 animate-flicker bg-foreground motion-reduce:animate-none" />

@@ -3,19 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
-  ARAPWorkbench,
+  getAgingParams,
+  getAgingUnappliedPayments,
   getApAging,
   getApOpenBySupplier,
+  getApPendingPayments,
   getApTieOut
-} from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/invoicing/invoicing.service";
+import { ARAPWorkbench } from "~/modules/invoicing/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -24,44 +27,31 @@ export const handle: Handle = {
   to: path.to.apAging
 };
 
-function parseBuckets(raw: string | null): [number, number, number] {
-  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
-  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
-    return [parts[0], parts[1], parts[2]];
-  }
-  return [30, 60, 90];
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const { asOfDate, agingMethod, bucketDays } = await getAgingParams(
+    client,
+    companyId,
+    request
+  );
 
-  const url = new URL(request.url);
-  const asOfDate =
-    url.searchParams.get("asOfDate") ??
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-  const agingMethod: "dueDate" | "documentDate" =
-    url.searchParams.get("agingMethod") === "documentDate"
-      ? "documentDate"
-      : "dueDate";
-  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
-
-  // GL tie-outs only mean something when journals are being posted — skip
-  // them entirely when accounting is disabled (result: null hides the
+  // GL tie-outs only mean something once journals count — skip them
+  // entirely before the accounting cutover (result: null hides the
   // tie-out panel and the adjusting-entry form in ARAPWorkbench).
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(companySettings.data);
 
-  const [tieOut, aging, open] = await Promise.all([
-    accountingEnabled
+  const [tieOut, aging, open, payments, pending] = await Promise.all([
+    accountingSetUp
       ? getApTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
-    getApOpenBySupplier(client, companyId, asOfDate)
+    getApOpenBySupplier(client, companyId, asOfDate),
+    getAgingUnappliedPayments(client, companyId, asOfDate, "ap"),
+    getApPendingPayments(getDatabaseClient(), companyId)
   ]);
 
   return {
@@ -70,17 +60,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bucketDays,
     result: tieOut.data ?? null,
     aging: aging.data ?? [],
+    pending: Object.fromEntries(pending),
     open: (open.data ?? []).map((r) => ({
       ...r,
       invoiceId: r.documentId,
       invoiceNumber: r.documentNumber
+    })),
+    payments: (payments.data ?? []).map((r) => ({
+      ...r,
+      paymentId: r.documentId,
+      paymentNumber: r.documentNumber,
+      paymentType: r.documentType,
+      supplierId: r.partyId
     }))
   };
 }
 
 export default function ApAgingRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open } =
-    useLoaderData<typeof loader>();
+  const {
+    asOfDate,
+    agingMethod,
+    bucketDays,
+    result,
+    aging,
+    open,
+    payments,
+    pending
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   return (
     <ARAPWorkbench
@@ -88,6 +94,9 @@ export default function ApAgingRoute() {
       result={result}
       aging={aging}
       open={open}
+      pending={pending}
+      payments={payments}
+      reportDetails
       asOfDate={asOfDate}
       agingMethod={agingMethod}
       bucketDays={bucketDays}

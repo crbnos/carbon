@@ -16,7 +16,8 @@ import {
   dateKeyInTimeZone,
   extendWindowsByOvertime,
   subtractAbsences,
-  subtractDates
+  subtractDates,
+  withHolidays
 } from "./people-utils.ts";
 import { assertEquals, assertStrictEquals } from "./test-helpers.ts";
 
@@ -397,4 +398,20 @@ it("buildAssignmentsByEmployee marks who is on the board (spoken for)", () => {
   const assignments = buildAssignmentsByEmployee(peopleByWorkCenter);
   assertEquals(assignments.has("brad"), true); // manned somewhere => not a floater
   assertEquals(assignments.has("carol"), false); // never on the board => floater
+});
+
+it("a company holiday is a day off for every person, on top of their own absences", () => {
+  const result = withHolidays(
+    new Map([["ann", new Set(["2026-10-30"])]]),
+    ["ann", "bob"],
+    new Set(["2026-10-26"])
+  );
+
+  assertEquals(
+    [...result.entries()].map(([id, dates]) => [id, [...dates].sort()]),
+    [
+      ["ann", ["2026-10-26", "2026-10-30"]],
+      ["bob", ["2026-10-26"]]
+    ]
+  );
 });

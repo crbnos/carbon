@@ -36,7 +36,7 @@ import {
   useRouteData,
   useSupplierApprovalRequired
 } from "~/hooks";
-import { purchaseInvoiceValidator } from "~/modules/invoicing";
+import { purchaseInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
 import { usePurchaseInvoiceAutoFill } from "./usePurchaseInvoiceAutoFill";
@@ -83,7 +83,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? "Purchase Invoice" : "New Purchase Invoice"}
           </CardTitle>
           {!isEditing && (
@@ -229,7 +229,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
             onExtractionComplete={handleExtractionComplete}
           />
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

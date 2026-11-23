@@ -290,6 +290,61 @@ export async function updateRows<T extends TableName>(
   return { error: null };
 }
 
+/** `count` new ids from the database's `id(prefix)` (the same as the table's
+ *  default), so a batched insert knows its rows' ids before the INSERT. */
+export async function newIds(
+  db: Kysely<KyselyDatabase>,
+  prefix: string | null,
+  count: number
+): Promise<string[]> {
+  if (count === 0) return [];
+  const { rows } = await sql<{ id: string }>`
+    SELECT id(${prefix}::text) AS id FROM generate_series(1, ${count})
+  `.execute(db);
+  return rows.map((row) => row.id);
+}
+
+/** Rows of one company updated by id, as one UPDATE per set of columns and 500
+ *  rows. Updates to the same id merge in order, so the result is what writing
+ *  them one by one would leave. The rows travel as JSON: pass a jsonb value as
+ *  the value itself, not `toJson`'s string, or the column stores a string. */
+export async function updateRowsById<T extends TableName>(
+  db: Kysely<KyselyDatabase>,
+  table: T,
+  companyId: string,
+  updates: { id: string; data: Database["public"]["Tables"][T]["Update"] }[]
+): Promise<Written> {
+  const merged = new Map<string, Record<string, unknown>>();
+  for (const { id, data } of updates) {
+    const row = merged.get(id) ?? {};
+    for (const key of definedKeys(data as Record<string, unknown>)) {
+      if (key !== "id") row[key] = (data as Record<string, unknown>)[key];
+    }
+    merged.set(id, row);
+  }
+  const groups = new Map<string, Record<string, unknown>[]>();
+  for (const [id, row] of merged) {
+    const columns = Object.keys(row).sort();
+    if (columns.length === 0) continue;
+    const key = columns.join(",");
+    const group = groups.get(key) ?? [];
+    group.push({ ...row, id });
+    groups.set(key, group);
+  }
+  for (const [key, rows] of groups) {
+    const columns = key.split(",");
+    for (let i = 0; i < rows.length; i += 500) {
+      await sql`
+        UPDATE ${sql.table(table)} AS t0
+        SET ${sql.join(columns.map((column) => sql`${sql.ref(column)} = r.${sql.ref(column)}`))}
+        FROM jsonb_populate_recordset(null::${sql.table(table)}, ${JSON.stringify(rows.slice(i, i + 500))}::jsonb) AS r
+        WHERE t0."id" = r."id" AND t0."companyId" = ${companyId}
+      `.execute(db);
+    }
+  }
+  return { error: null };
+}
+
 export async function deleteRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,

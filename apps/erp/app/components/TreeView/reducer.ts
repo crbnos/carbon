@@ -573,7 +573,8 @@ export function reducer(state: TreeState, action: Action): TreeState {
         selectedId,
         collapsedIds
       });
-      return newState;
+      // The active filter applies to the new tree too.
+      return applyFilterToState(newState);
     }
     case "UPDATE_FILTER": {
       const newState = applyFilterToState({

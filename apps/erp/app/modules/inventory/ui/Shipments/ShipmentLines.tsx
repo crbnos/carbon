@@ -42,7 +42,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -55,43 +55,45 @@ import {
   LuSplit,
   LuTrash
 } from "react-icons/lu";
-import {
-  Outlet,
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSubmit
-} from "react-router";
+import { Outlet, useFetchers, useParams } from "react-router";
 import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   getBatchNumbersForItem,
-  getSerialNumbersForItem,
+  getSerialNumbersForItem
+} from "~/modules/inventory/inventory.service";
+import { isShippableEntityStatus } from "~/modules/inventory/inventory.utils";
+import type {
   ItemTracking,
+  RentalShipmentLine,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
+} from "~/modules/inventory/types";
+import type { action as shipmentLinesSplitAction } from "~/routes/x+/shipment+/lines.split";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { RentalUnitRow } from "./RentalUnitRow";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
-  const fetcher = useFetcher<typeof shipmentLinesUpdateAction>();
+  const fetcher = useAction<typeof shipmentLinesUpdateAction>();
   const [items] = useItems();
 
   const routeData = useRouteData<{
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    /** A contract delivery: each line's typed serial. */
+    serialNumberByLineId?: Record<string, string | null>;
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -102,6 +104,7 @@ const ShipmentLines = () => {
       shipped: boolean;
       serialNumber: string | null;
     }[];
+    rentalLines: RentalShipmentLine[];
   }>(path.to.shipment(shipmentId));
 
   const shipmentsById = new Map<string, ShipmentLine>(
@@ -212,7 +215,7 @@ const ShipmentLines = () => {
         }
       | {
           lineId: string;
-          field: "storageUnitId";
+          field: "storageUnitId" | "serialNumber";
           value: string;
         }) => {
       const formData = new FormData();
@@ -232,71 +235,79 @@ const ShipmentLines = () => {
   const isPosted = routeData?.shipment?.status === "Posted";
   const isVoided = routeData?.shipment?.status === "Voided";
   const isReadOnly = isPosted || isVoided;
+  const isRental = routeData?.shipment?.sourceDocument === "Rental Agreement";
 
   return (
     <>
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>
-              <Trans>Shipment Lines</Trans>
-            </CardTitle>
-          </CardHeader>
-        </HStack>
+      {!isRental && (
+        <Card>
+          <HStack className="justify-between items-start">
+            <CardHeader>
+              <CardTitle>
+                <Trans>Shipment Lines</Trans>
+              </CardTitle>
+            </CardHeader>
+          </HStack>
 
-        <CardContent>
-          <div className="border rounded-lg">
-            {shipmentLines.length === 0 ? (
-              <Empty className="py-6" />
-            ) : (
-              shipmentLines
-                .map((line) => ({
-                  ...line,
-                  itemReadableId: getItemReadableId(items, line.itemId) ?? ""
-                }))
-                .sort((a, b) =>
-                  a.itemReadableId.localeCompare(b.itemReadableId)
-                )
-                .map((line, index) => {
-                  const tracking = routeData?.shipmentLineTracking?.find(
-                    (t) => {
-                      const attributes =
-                        t.attributes as TrackedEntityAttributes;
-                      return attributes["Shipment Line"] === line.id;
-                    }
-                  );
-                  return (
-                    <ShipmentLineItem
-                      key={line.id}
-                      line={line}
-                      shipment={routeData?.shipment}
-                      hasTrackingLabel={
-                        routeData?.shipmentLineTracking?.some((t) => {
-                          const attributes =
-                            t.attributes as TrackedEntityAttributes;
-                          return attributes["Shipment Line"] === line.id;
-                        }) ?? false
+          <CardContent>
+            <div className="border rounded-lg">
+              {shipmentLines.length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                shipmentLines
+                  .map((line) => ({
+                    ...line,
+                    itemReadableId: getItemReadableId(items, line.itemId) ?? ""
+                  }))
+                  .sort((a, b) =>
+                    a.itemReadableId.localeCompare(b.itemReadableId)
+                  )
+                  .map((line, index) => {
+                    const tracking = routeData?.shipmentLineTracking?.find(
+                      (t) => {
+                        const attributes =
+                          t.attributes as TrackedEntityAttributes;
+                        return attributes["Shipment Line"] === line.id;
                       }
-                      isReadOnly={isReadOnly}
-                      onUpdate={onUpdateShipmentLine}
-                      className={
-                        index === shipmentLines.length - 1 ? "border-none" : ""
-                      }
-                      serialNumbers={serialNumbersByLineId[line.id!] || []}
-                      onSerialNumbersChange={(newSerialNumbers) => {
-                        setSerialNumbersByLineId((prev) => ({
-                          ...prev,
-                          [line.id!]: newSerialNumbers
-                        }));
-                      }}
-                      tracking={tracking}
-                    />
-                  );
-                })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                    );
+                    return (
+                      <ShipmentLineItem
+                        key={line.id}
+                        line={line}
+                        shipment={routeData?.shipment}
+                        serialNumber={
+                          routeData?.serialNumberByLineId?.[line.id!] ?? null
+                        }
+                        hasTrackingLabel={
+                          routeData?.shipmentLineTracking?.some((t) => {
+                            const attributes =
+                              t.attributes as TrackedEntityAttributes;
+                            return attributes["Shipment Line"] === line.id;
+                          }) ?? false
+                        }
+                        isReadOnly={isReadOnly}
+                        onUpdate={onUpdateShipmentLine}
+                        className={
+                          index === shipmentLines.length - 1
+                            ? "border-none"
+                            : ""
+                        }
+                        serialNumbers={serialNumbersByLineId[line.id!] || []}
+                        onSerialNumbersChange={(newSerialNumbers) => {
+                          setSerialNumbersByLineId((prev) => ({
+                            ...prev,
+                            [line.id!]: newSerialNumbers
+                          }));
+                        }}
+                        tracking={tracking}
+                      />
+                    );
+                  })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {routeData?.fixedAssetLines && routeData.fixedAssetLines.length > 0 && (
         <Card>
           <CardHeader>
@@ -318,6 +329,35 @@ const ShipmentLines = () => {
                   }
                 />
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Rental Units</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg">
+              {(routeData?.rentalLines ?? []).length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                routeData!.rentalLines.map((line, index) => (
+                  <ShipmentRentalLineItem
+                    key={line.id}
+                    line={line}
+                    isReadOnly={isReadOnly}
+                    className={
+                      index < routeData!.rentalLines.length - 1
+                        ? "border-b"
+                        : ""
+                    }
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -345,8 +385,11 @@ function ShipmentFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
-  const fetcher = useFetcher();
+  const { t } = useLingui();
+  const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -360,8 +403,14 @@ function ShipmentFixedAssetLineItem({
   };
 
   return (
-    <div className={cn("flex items-center gap-4 p-6", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-4 p-6 max-md:flex-wrap max-md:p-4",
+        className
+      )}
+    >
       <Checkbox
+        aria-label={t`Shipped: ${assetName}`}
         isChecked={line.shipped}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -380,9 +429,10 @@ function ShipmentFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
-        className="w-48"
+        className="w-48 max-md:w-full"
         onChange={(e) => setSerialNumber(e.target.value)}
         onBlur={() => {
           if (serialNumber !== (line.serialNumber ?? "")) {
@@ -394,9 +444,47 @@ function ShipmentFixedAssetLineItem({
   );
 }
 
+function ShipmentRentalLineItem({
+  line,
+  isReadOnly,
+  className
+}: {
+  line: RentalShipmentLine;
+  isReadOnly: boolean;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const fetcher = useAction();
+
+  const updateField = (field: string, value: string) => {
+    const formData = new FormData();
+    formData.append("id", line.id);
+    formData.append("field", field);
+    formData.append("value", value);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.shipmentFixedAssetLineUpdate
+    });
+  };
+
+  return (
+    <div className={cn("@container p-6", className)}>
+      <RentalUnitRow
+        line={line}
+        checked={line.shipped}
+        checkedLabel={t`Shipped`}
+        isReadOnly={isReadOnly}
+        onCheckedChange={(checked) => updateField("shipped", String(checked))}
+        onMeterChange={(meter) => updateField("meter", meter)}
+      />
+    </div>
+  );
+}
+
 function ShipmentLineItem({
   line,
   shipment,
+  serialNumber,
   className,
   hasTrackingLabel,
   isReadOnly,
@@ -407,6 +495,8 @@ function ShipmentLineItem({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  /** A contract delivery line's typed serial. */
+  serialNumber?: string | null;
   className?: string;
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
@@ -427,37 +517,40 @@ function ShipmentLineItem({
       }
     | {
         lineId: string;
-        field: "storageUnitId";
+        field: "storageUnitId" | "serialNumber";
         value: string;
       }) => Promise<void>;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
+  // A contract delivery moves no stock: no storage unit, and the serial is
+  // typed (the job consumed the part to the project, so no tracked entity).
+  const isContractDelivery = shipment?.sourceDocument === "Customer Contract";
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
   // Check if shipped quantity exceeds job quantity for job fulfillments
+  const isJobFulfillment = line.fulfillment?.type === "Job";
   const isJobOverShipped =
-    line.fulfillment?.type === "Job" &&
+    isJobFulfillment &&
     (line.shippedQuantity || 0) > (line.fulfillment?.job?.quantity || 0);
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
-      <div className="absolute top-3 right-6">
-        {line.fulfillment?.type === "Job" ? (
-          <div className="flex flex-col items-end gap-0">
-            <span>Job</span>
-            <span className="text-xs text-muted-foreground">
-              {line.fulfillment?.job?.jobId}
-            </span>
-          </div>
-        ) : (
+    <div
+      className={cn(
+        "@container flex flex-col border-b p-6 gap-6 relative max-md:p-4 max-md:gap-4",
+        className
+      )}
+    >
+      {!isJobFulfillment && (
+        <div className="absolute top-3 right-6 max-md:right-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
-                aria-label={t`Line options`}
+                aria-label={t`Line options for ${itemName}`}
                 variant="secondary"
                 icon={<LuEllipsisVertical />}
                 size="sm"
@@ -482,25 +575,36 @@ function ShipmentLineItem({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
+      )}
+      {/* Sized by the line's own width, not the viewport: the content pane
+          it sits in is resizable. The item takes what the quantities leave,
+          and they stay on one line once the row is wide enough. pr-10 clears
+          the line menu; a Job line has no menu, its job sits in the row. */}
+      <div
+        className={cn(
+          "flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full",
+          !isJobFulfillment && "pr-10"
         )}
-      </div>
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4}>
+      >
+        <HStack spacing={4} className="w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+          <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
 
-            <VStack spacing={0} className="max-w-[380px] w-full">
+            <VStack spacing={0} className="flex-1 min-w-0">
               <div className="w-full overflow-hidden">
                 <span className="text-sm font-medium truncate block w-full">
                   {item?.readableIdWithRevision}
                 </span>
-                <span className="text-xs text-muted-foreground truncate block w-full">
-                  {item?.name}
-                </span>
+                {distinctItemText(item?.readableIdWithRevision, item?.name) && (
+                  <span className="text-xs text-muted-foreground truncate block w-full">
+                    {item?.name}
+                  </span>
+                )}
               </div>
               <div className="mt-2">
                 <Enumerable
@@ -513,23 +617,26 @@ function ShipmentLineItem({
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4 w-1/2">
+        <div className="flex flex-wrap @3xl:flex-nowrap items-center gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
           <HStack spacing={4}>
             <VStack spacing={1}>
               <div className="flex items-center justify-between gap-1 w-full">
-                <label className="text-xs text-muted-foreground">Shipped</label>
+                <label className="text-xs text-muted-foreground">
+                  <Trans>Shipped</Trans>
+                </label>
                 {isJobOverShipped && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Shipped quantity exceeds job quantity
+                      <Trans>Shipped quantity exceeds job quantity</Trans>
                     </TooltipContent>
                   </Tooltip>
                 )}
               </div>
               <NumberField
+                aria-label={t`Shipped quantity for ${itemName}`}
                 value={line.shippedQuantity || 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -558,13 +665,12 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className={cn(
-                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px]",
+                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px] max-md:w-full",
                     isJobOverShipped && "border-red-500 border-2"
                   )}
                   isDisabled={
                     isReadOnly ||
-                    (line.fulfillment?.type === "Job" &&
-                      (line.requiresSerialTracking ?? false))
+                    (isJobFulfillment && (line.requiresSerialTracking ?? false))
                   }
                   size="sm"
                   min={0}
@@ -572,13 +678,15 @@ function ShipmentLineItem({
               </NumberField>
             </VStack>
             <VStack spacing={1} className="text-center items-center">
-              <label className="text-xs text-muted-foreground">Ordered</label>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Ordered</Trans>
+              </label>
               <span className="text-sm py-1.5">{line.orderQuantity || 0}</span>
             </VStack>
 
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">
-                Outstanding
+                <Trans>Outstanding</Trans>
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
@@ -593,14 +701,47 @@ function ShipmentLineItem({
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      There are more shipped than ordered
+                      <Trans>There are more shipped than ordered</Trans>
                     </TooltipContent>
                   </Tooltip>
                 )}
               </HStack>
             </VStack>
           </HStack>
-          {line.fulfillment?.type !== "Job" &&
+          {isJobFulfillment && (
+            <VStack spacing={1} className="items-end">
+              <label className="text-xs text-muted-foreground">
+                <Trans>Job</Trans>
+              </label>
+              <span className="text-sm py-1.5">
+                {line.fulfillment?.job?.jobId}
+              </span>
+            </VStack>
+          )}
+          {isContractDelivery && (
+            <VStack spacing={1}>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Serial Number</Trans>
+              </label>
+              <Input
+                size="sm"
+                className="min-w-[160px]"
+                defaultValue={serialNumber ?? ""}
+                isReadOnly={isReadOnly}
+                onBlur={(event) => {
+                  const value = event.target.value.trim();
+                  if (value === (serialNumber ?? "")) return;
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "serialNumber",
+                    value
+                  });
+                }}
+              />
+            </VStack>
+          )}
+          {!isJobFulfillment &&
+            !isContractDelivery &&
             shipment?.sourceDocument !== "Purchase Order" && (
               <StorageUnit
                 locationId={line.locationId}
@@ -638,29 +779,31 @@ function ShipmentLineItem({
           onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
-      {splitDisclosure.isOpen && (
-        <SplitShipmentLineModal line={line} onClose={splitDisclosure.onClose} />
-      )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          name="Shipment Line"
-          text="Are you sure you want to delete this shipment line?"
-          action={path.to.shipmentLineDelete(line.id!)}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <SplitShipmentLineModal
+        open={splitDisclosure.isOpen}
+        line={line}
+        onClose={splitDisclosure.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteDisclosure.isOpen}
+        name="Shipment Line"
+        text="Are you sure you want to delete this shipment line?"
+        action={path.to.shipmentLineDelete(line.id!)}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </div>
   );
 }
 
-// Sales-return shipments (source "Sales Return Order") ship returned stock,
-// which is deliberately On Hold until it leaves — mirror the status
-// lines.tracking accepts when validating entities for this source.
-function expectedEntityStatus(shipment?: Shipment) {
-  return shipment?.sourceDocument === "Sales Return Order"
-    ? "On Hold"
-    : "Available";
+// The statuses lines.tracking accepts for this shipment's source: On Hold
+// returned stock or an Available serviced unit on a sales return, Available
+// or Rejected units on a supplier return, Available stock otherwise.
+export function isShippable(
+  shipment: Pick<Shipment, "sourceDocument"> | undefined,
+  status: unknown
+) {
+  return isShippableEntityStatus(shipment?.sourceDocument, status as string);
 }
 
 function BatchForm({
@@ -687,7 +830,10 @@ function BatchForm({
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
-  const submit = useSubmit();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
+  // A refused assignment (wrong item, not available) is toasted.
+  const assign = useAction();
   const [values, setValues] = useState<{
     number: string;
     properties: any;
@@ -727,7 +873,7 @@ function BatchForm({
     : null;
   const isBatchNumberValid =
     // @ts-expect-error TS2339 - TODO: fix type
-    resolvedBatch?.status === expectedEntityStatus(shipment);
+    isShippable(shipment, resolvedBatch?.status);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -745,7 +891,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === expectedEntityStatus(shipment) &&
+        isShippable(shipment, batchNumber.status) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -820,7 +966,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
+    if (batchNumber && !isShippable(shipment, batchNumber.status)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -877,10 +1023,9 @@ function BatchForm({
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", (line.shippedQuantity || 0).toString());
 
-    submit(formData, {
+    assign.submit(formData, {
       method: "post",
-      action: path.to.shipmentLinesTracking(shipment.id),
-      navigate: false
+      action: path.to.shipmentLinesTracking(shipment.id)
     });
   };
 
@@ -888,14 +1033,16 @@ function BatchForm({
   // scanners, and the QR affordance opens the list of batches this line accepts.
   // Quantity is shown alongside each one because a batch smaller than the
   // shipped quantity is split on posting, which is worth seeing before picking.
-  const selectableBatches = (batchNumbers?.data ?? []).filter(
-    (entity) => entity.status === expectedEntityStatus(shipment)
+  const selectableBatches = (batchNumbers?.data ?? []).filter((entity) =>
+    isShippable(shipment, entity.status)
   );
 
   return (
-    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Number</Heading>
+        <Heading size="h4">
+          <Trans>Batch Number</Trans>
+        </Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -917,7 +1064,7 @@ function BatchForm({
           />
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2 w-full">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuGroup /> Batch Number
@@ -927,6 +1074,7 @@ function BatchForm({
             <InputGroup isDisabled={isReadOnly}>
               <Input
                 placeholder={t`Batch number`}
+                aria-label={t`Batch number for ${itemReadableId}`}
                 value={values.number}
                 onChange={(e) => {
                   setValues({
@@ -1030,6 +1178,8 @@ function SerialForm({
   ) => void;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
@@ -1075,7 +1225,7 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== expectedEntityStatus(shipment)) {
+      if (!isShippable(shipment, serialNumber.status)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
@@ -1129,7 +1279,12 @@ function SerialForm({
           }
         );
 
-        if (response.ok) {
+        // The operation's result, `{ data, error }`; a refused form is a 422.
+        const result: { error: { message: string } | null } | null = response.ok
+          ? await response.json()
+          : null;
+
+        if (result && !result.error) {
           // Clear error if submission was successful
           setErrors((prev) => {
             const newErrors = { ...prev };
@@ -1137,9 +1292,8 @@ function SerialForm({
             return newErrors;
           });
         } else {
-          const responseData = await response.json();
           const errorMessage =
-            responseData.message || "Failed to track serial number";
+            result?.error?.message || "Failed to track serial number";
 
           setErrors((prev) => ({
             ...prev,
@@ -1193,7 +1347,7 @@ function SerialForm({
   // this off the same data `validateSerialNumber` checks keeps them in step.
   const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
     (entity) =>
-      entity.status === expectedEntityStatus(shipment) &&
+      isShippable(shipment, entity.status) &&
       !serialNumbers.some((assigned) => {
         if (!assigned.id) return false;
         const resolved = resolveTrackedEntity(
@@ -1205,9 +1359,11 @@ function SerialForm({
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Numbers</Heading>
+        <Heading size="h4">
+          <Trans>Serial Numbers</Trans>
+        </Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -1230,7 +1386,7 @@ function SerialForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => {
           // Check if the serial number is valid and in the list
           const resolvedSerial = serialNumber.id
@@ -1241,7 +1397,7 @@ function SerialForm({
             : null;
           const isSerialNumberValid =
             // @ts-expect-error TS2339 - TODO: fix type
-            resolvedSerial?.status === expectedEntityStatus(shipment);
+            isShippable(shipment, resolvedSerial?.status);
 
           return (
             <div
@@ -1250,7 +1406,8 @@ function SerialForm({
             >
               <InputGroup isDisabled={isReadOnly}>
                 <Input
-                  placeholder={`Tracking Number ${index + 1}`}
+                  placeholder={t`Serial Number ${index + 1}`}
+                  aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
                   value={serialNumber.id}
                   onChange={(e) => {
                     const newValue = e.target.value;
@@ -1353,56 +1510,61 @@ function SerialForm({
   );
 }
 
-function SplitShipmentLineModal({
-  line,
-  onClose
-}: {
+type SplitShipmentLineModalProps = {
   line: ShipmentLine;
+  open: boolean;
   onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
-      }
-    }
-  });
-  return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.shipmentLineSplit}
-          validator={splitValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>Split Shipment Line</ModalTitle>
-            <ModalDescription>
-              Select the quantity that you'd like to split into a new line.
-            </ModalDescription>
-          </ModalHeader>
+};
 
-          <ModalBody>
-            <input type="hidden" name="documentId" value={line.shipmentId!} />
-            <input type="hidden" name="documentLineId" value={line.id!} />
-            <input
-              type="hidden"
-              name="locationId"
-              value={line.locationId ?? ""}
-            />
-            <Number name="quantity" label={t`Quantity`} minValue={0.0001} />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit>Split Line</Submit>
-          </ModalFooter>
-        </ValidatedForm>
+function SplitShipmentLineModal({
+  open,
+  onClose,
+  ...props
+}: SplitShipmentLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <SplitShipmentLineBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
+  );
+}
+
+function SplitShipmentLineBody({
+  line,
+  onClose
+}: Omit<SplitShipmentLineModalProps, "open">) {
+  const { t } = useLingui();
+  const fetcher = useAction<typeof shipmentLinesSplitAction>({
+    onSuccess: onClose
+  });
+  return (
+    <ValidatedForm
+      method="post"
+      action={path.to.shipmentLineSplit}
+      validator={splitValidator}
+      fetcher={fetcher}
+    >
+      <ModalHeader>
+        <ModalTitle>Split Shipment Line</ModalTitle>
+        <ModalDescription>
+          Select the quantity that you'd like to split into a new line.
+        </ModalDescription>
+      </ModalHeader>
+
+      <ModalBody>
+        <input type="hidden" name="documentId" value={line.shipmentId!} />
+        <input type="hidden" name="documentLineId" value={line.id!} />
+        <input type="hidden" name="locationId" value={line.locationId ?? ""} />
+        <Number name="quantity" label={t`Quantity`} minValue={0.0001} />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit>Split Line</Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -1423,6 +1585,7 @@ function StorageUnit({
     locationId ?? undefined,
     itemId ?? undefined
   );
+  const { t } = useLingui();
 
   if (!locationId) return null;
 
@@ -1433,6 +1596,7 @@ function StorageUnit({
       </label>
       <div className="py-1">
         <Combobox
+          aria-label={t`Storage unit`}
           value={storageUnitId ?? undefined}
           onChange={(newValue) => {
             onChange(newValue);

@@ -41,7 +41,7 @@ export function Section({
 }) {
   const { t } = useLingui();
   return (
-    <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+    <div className="flex items-center gap-1 text-[0.6875rem] font-semibold text-muted-foreground">
       <span>{children}</span>
       {hint && (
         <>

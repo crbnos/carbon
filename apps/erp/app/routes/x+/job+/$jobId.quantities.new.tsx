@@ -2,23 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import {
-  getJob,
-  getJobOperations,
-  isJobLocked,
-  productionQuantityValidator,
-  upsertProductionQuantity
-} from "~/modules/production";
+import { useLoaderData } from "react-router";
+import { productionQuantityValidator } from "~/modules/production/production.models";
+import { getJobOperations } from "~/modules/production/production.service";
 import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -40,90 +32,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { operationOptions };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(productionQuantityValidator).request(args, {
+    params: ["jobId"]
   });
-
-  const { jobId } = params;
-  if (!jobId) {
-    throw notFound("jobId not found");
-  }
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "production"
-  });
-  const job = await getJob(viewClient, jobId);
-  await requireUnlocked({
-    request,
-    isLocked: isJobLocked(job.data?.status),
-    redirectTo: path.to.job(jobId),
-    message: "Cannot modify a locked job. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(productionQuantityValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  // If the type is not Scrap, clear the scrapReasonId
-  if (d.type !== "Scrap") {
-    d.scrapReasonId = undefined;
-  }
-
-  const insert = await upsertProductionQuantity(client, {
-    ...d,
-    companyId
-  });
-
-  if (!insert.error && insert.data?.id) {
-    // Back-office entry, not the shop floor. The source property is what makes
-    // the MES-vs-ERP ratio readable — a clerk typing yesterday's paper
-    // traveller in here is a different fact from an operator on a station.
-    const common = {
-      companyId,
-      userId,
-      productionQuantityId: insert.data.id,
-      jobOperationId: d.jobOperationId,
-      quantity: d.quantity,
-      source: "erp" as const
-    };
-    if (d.type === "Scrap") {
-      trackWorkEvent("scrap_reported", {
-        ...common,
-        scrapReasonId: d.scrapReasonId ?? null
-      });
-    } else if (d.type === "Production") {
-      trackWorkEvent("production_quantity_reported", common);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.production.createProductionQuantity(input.data);
+  return respond(args.request, result).redirect(
+    `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+    {
+      message: "Production quantity created",
+      onError: `${new URL(args.request.url).pathname}?${getParams(args.request)}`
     }
-  }
-
-  if (insert.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insert.error, "Failed to insert production quantity")
-      )
-    );
-  }
-
-  return modal
-    ? data(insert, { status: 201 })
-    : redirect(
-        `${path.to.jobProductionQuantities(jobId)}?${getParams(request)}`,
-        await flash(request, success("Production quantity created"))
-      );
+  );
 }
 
 export default function NewProductionQuantityRoute() {

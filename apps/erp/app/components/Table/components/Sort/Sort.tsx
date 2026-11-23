@@ -85,6 +85,7 @@ const Sort = ({ sortKeyToLabel }: SortProps) => {
           >
             {sorts.map((sort) => {
               const [column, direction] = sort.split(":");
+              const columnLabel = sortKeyToLabel[column] ?? column;
               return (
                 <Reorder.Item key={sort} value={sort} className="rounded-lg">
                   <HStack>
@@ -97,6 +98,7 @@ const Sort = ({ sortKeyToLabel }: SortProps) => {
                       <>{sortKeyToLabel[column] ?? ""}</>
                     </span>
                     <Switch
+                      aria-label={t`Sort ${columnLabel} ascending`}
                       checked={direction === "asc"}
                       onCheckedChange={() => toggleSortByDirection(column)}
                     />

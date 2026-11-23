@@ -6,17 +6,23 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ScrollArea, useCloseRoute } from "@carbon/react";
+import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
 import { redirect } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
+import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
 import {
   getRequiredActionsList,
   upsertIssueWorkflow
 } from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Issue Workflow");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -70,6 +76,24 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewIssueWorkflowRoute() {
   const { requiredActions } = useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
+  const { isPhone } = useViewport();
+  const { t } = useLingui();
+
+  // Phones show this create screen as a pushed screen: Back returns to the
+  // workflow list (the route has no breadcrumb of its own).
+  const appBarOverride = useMemo(
+    () =>
+      isPhone
+        ? {
+            kind: "pushed" as const,
+            title: t`Issue Workflows`,
+            backTo: path.to.issueWorkflows
+          }
+        : null,
+    [isPhone, t]
+  );
+  useSetAppBarOverride(appBarOverride);
+
   const initialValues = {
     name: "",
     content: "{}",

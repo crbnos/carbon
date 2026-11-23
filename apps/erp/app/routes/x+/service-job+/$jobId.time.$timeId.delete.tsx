@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+import { path } from "~/utils/path";
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["jobId", "timeId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { jobId, timeId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.service.deleteServiceJobTime({
+    serviceJobId: jobId,
+    id: timeId
+  });
+  // The entry is gone either way; a failed reversal is the flash.
+  if (result.data?.warning) {
+    return respond(args.request, {
+      error: { message: result.data.warning }
+    }).redirect(path.to.serviceJob(jobId));
+  }
+  return respond(args.request, result).redirect(path.to.serviceJob(jobId), {
+    message: "Time entry removed"
+  });
+}

@@ -2,24 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+import { InventorySections } from "~/modules/inventory/ui";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Traceability" }];
-};
+export const meta = moduleMeta("Traceability");
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
   to: path.to.inventory,
-  module: "inventory"
+  module: "inventory",
+  boardSidebar: InventorySections
 };
 
 export default function TraceabilityLayout() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

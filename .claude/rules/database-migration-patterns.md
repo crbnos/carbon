@@ -114,6 +114,16 @@ add a trigger only when there's real derived state to maintain. For async/event-
 effects use the event system (see `event-system.md`), not ad-hoc triggers.
 <!-- UNVERIFIED: no GRANT statements appear in recent migrations; per-table grants are not a current convention -->
 
+## Redefining a function: start from the newest definition
+
+A `CREATE OR REPLACE FUNCTION` replaces the whole body, so copy it from the NEWEST
+migration that defines the function, never from the one you remember or the one a
+comment names. `20261014171619_receive-consumed-serial-units` forked
+`complete_job_to_inventory` from `20261006221601` and undid the two migrations between
+them (always-post job costing, the production-event lock); `20261015161847_job-receipt-takes-issued-serial-units`
+restored them. The `function-redefinition-keeps-changes` check (`@carbon/checks`) fails a new
+redefinition that drops lines its predecessor added.
+
 ## Restricting a function: guard inside, never `REVOKE EXECUTE`
 
 Every function in `public` is a PostgREST RPC. On supabase/postgres 15.14.1.112, calling a function

@@ -19,6 +19,7 @@ import {
   verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -66,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT, "5 m"),
     analytics: true
   });
   const { success } = await ratelimit.limit(ip);
@@ -86,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, botToken } = validation.data;
+  const { email, botToken, redirectTo } = validation.data;
 
   const botError = await verifyBotProtection({
     token: botToken,
@@ -103,7 +104,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    // Back to this app, not VERCEL_URL: outside `crbn up` that is the ERP's
+    // URL, so the link signed the user in to the ERP instead.
+    const magicLink = await sendMagicLink(
+      email,
+      new URL(request.url).origin,
+      redirectTo
+    );
 
     if (magicLink.error) {
       const message = getMagicLinkErrorMessage(magicLink.error);
@@ -115,11 +122,15 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     return data(
       error(user, "User record not found"),
-      await flash(request, error(user.error, "User record not found"))
+      await flash(request, error(null, "User record not found"))
     );
   }
 
-  return { success: true };
+  // This browser asked: the email's link completes only here.
+  return data(
+    { success: true as const },
+    { headers: { "Set-Cookie": await markSignInBrowser() } }
+  );
 }
 
 export default function LoginRoute() {
@@ -285,6 +296,7 @@ export default function LoginRoute() {
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       height="16"
       strokeLinejoin="round"
       viewBox="0 0 16 16"
@@ -314,6 +326,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       height="24"
       width="24"

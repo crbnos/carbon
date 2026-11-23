@@ -17,7 +17,6 @@ vi.mock("../config/env", () => env);
 
 const checkBotId = vi.hoisted(() => vi.fn());
 vi.mock("botid/server", () => ({ checkBotId }));
-vi.mock("./auth-events.server", () => ({ logAuthEvent: vi.fn() }));
 
 async function load(overrides: Partial<typeof env>) {
   Object.assign(env, {
@@ -63,6 +62,14 @@ describe("botProtection", () => {
   it("defaults to no check with only a site key", async () => {
     const auth = await load({ CLOUDFLARE_TURNSTILE_SITE_KEY: "site" });
     expect(auth.botProtection).toBeNull();
+  });
+
+  it("turns the check off with none, though Turnstile keys are set", async () => {
+    const auth = await load({ BOT_PROTECTION: "none", ...turnstileKeys });
+    expect(auth.botProtection).toBeNull();
+    await expect(
+      auth.verifyBotProtection({ ip: "127.0.0.1", actor: "test@carbon.ms" })
+    ).resolves.toBeNull();
   });
 
   it("uses BotID when chosen, though Turnstile keys are set for GoTrue", async () => {

@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import { getAccountMappings } from "../../../core/account-mapping";
 import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError, roundCurrency } from "../../../core/posting";
@@ -25,6 +26,8 @@ import {
   QBO_FAULT_CODES,
   type QboProvider
 } from "../provider";
+
+const logger = getLogger("ee", "accounting", "quickbooks");
 
 /**
  * Shared plumbing for the QuickBooks Online entity syncers:
@@ -259,6 +262,32 @@ export function buildQboExpenseLines(args: {
       AccountBasedExpenseLineDetail: { AccountRef: accountRef }
     };
   });
+}
+
+/** Put a tax code on an expense-style line, whichever detail it carries. */
+export function withQboExpenseTaxCode(
+  line: Omit<Qbo.ExpenseLine, "Id">,
+  taxCodeRef: Qbo.Ref
+): Omit<Qbo.ExpenseLine, "Id"> {
+  if (line.ItemBasedExpenseLineDetail) {
+    return {
+      ...line,
+      ItemBasedExpenseLineDetail: {
+        ...line.ItemBasedExpenseLineDetail,
+        TaxCodeRef: taxCodeRef
+      }
+    };
+  }
+  if (line.AccountBasedExpenseLineDetail) {
+    return {
+      ...line,
+      AccountBasedExpenseLineDetail: {
+        ...line.AccountBasedExpenseLineDetail,
+        TaxCodeRef: taxCodeRef
+      }
+    };
+  }
+  return line;
 }
 
 /**
@@ -498,7 +527,7 @@ export abstract class QboEntitySyncer<
         await this.linkEntities(tx, entityId, remoteId);
       });
 
-      console.log("[SyncLog]", {
+      logger.info("Sync push succeeded", {
         direction: "PUSH",
         entity: this.entityType,
         localId: entityId,
@@ -514,7 +543,8 @@ export abstract class QboEntitySyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] structured push failure`, {
+        logger.error("Structured push failure", {
+          syncer: this.constructor.name,
           entityId,
           ...err.failure
         });
@@ -526,9 +556,10 @@ export abstract class QboEntitySyncer<
         };
       }
 
-      console.error(`[${this.constructor.name}] push failed`, {
+      logger.error("Push failed", {
+        syncer: this.constructor.name,
         entityId,
-        err
+        error: err
       });
       return {
         status: "error",

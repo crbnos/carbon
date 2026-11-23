@@ -27,9 +27,9 @@ import { MODULE_NAME, MODULES } from "../types";
 import { toCalendarDate } from "./date";
 import {
   useContacts,
+  useExclusions,
   useFieldMap,
   useHubActions,
-  useStoredExclusions,
   useTier
 } from "./state";
 
@@ -64,7 +64,7 @@ export function SetupControls() {
   const tier = useTier();
   // Stored exclusions, not the effective (forced-merged) ones — this page edits
   // and writes the whole object, so a forced module must never round-trip in.
-  const exclusions = useStoredExclusions();
+  const exclusions = useExclusions();
   const contacts = useContacts();
   const fields = useFieldMap();
   const { setTier, setExclusions, setContacts, setField } = useHubActions();

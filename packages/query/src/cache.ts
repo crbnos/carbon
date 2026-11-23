@@ -42,6 +42,7 @@ export const setClientCompanyId = (
     cache?.clear();
   } else if (clientCompanyId && companyId !== clientCompanyId) {
     cache?.removeQueries({ queryKey: [LOADER_QUERY_KEY, clientCompanyId] });
+    cache?.removeQueries({ queryKey: [SELF_REFRESHED, clientCompanyId] });
   }
   clientCompanyId = companyId;
   clientUserId = userId;
@@ -60,6 +61,13 @@ export const getClientCache = (): QueryClient | undefined => {
 
 /** First segment of every cached loader entry; the root middleware invalidates by it. */
 export const LOADER = LOADER_QUERY_KEY;
+
+/**
+ * First segment of a read made with `invalidate: false`: data no save or
+ * realtime change touches (the deployment's status), so nothing marks it stale
+ * and it refreshes on its own `refetchInterval`.
+ */
+export const SELF_REFRESHED = "self-refreshed";
 
 // URL keys make one entry per distinct search string, so they cannot live forever.
 const LOADER_GC_TIME = 1000 * 60 * 30;
@@ -106,6 +114,7 @@ async function fetchLoader<T>(
     queryFn: () => Promise<T>;
     staleTime: number;
     gcTime: number;
+    retry?: (failures: number, error: unknown) => boolean;
   }
 ): Promise<T> {
   const before = loaderInvalidations();
@@ -122,6 +131,10 @@ async function fetchLoader<T>(
 
 /** A read the server answered and refused: asking again changes nothing. */
 export class LoaderRequestError extends Error {}
+
+/** Up to 3 tries, except for a refusal (a 403, an expired session). */
+export const loaderRetry = (failures: number, error: unknown) =>
+  !(error instanceof LoaderRequestError) && failures < 3;
 
 const fetchJson = async <T>(url: string): Promise<T> => {
   const res = await fetch(url);
@@ -147,12 +160,18 @@ const fetchJson = async <T>(url: string): Promise<T> => {
  */
 export const loaderQuery = <T>(
   url: string,
-  options?: { staleTime?: number }
+  options?: { staleTime?: number; invalidate?: boolean }
 ) => ({
-  queryKey: loaderQueryKey(url),
+  queryKey:
+    options?.invalidate === false
+      ? [SELF_REFRESHED, ...loaderQueryKey(url).slice(1)]
+      : loaderQueryKey(url),
   queryFn: () => fetchJson<T>(url),
   staleTime: options?.staleTime ?? RefreshRate.Low,
-  gcTime: LOADER_GC_TIME
+  // No collection timer on the server: each render's QueryClient goes with its
+  // request, and a 30-minute timer would keep it, and the render, alive.
+  gcTime:
+    typeof window === "undefined" ? Number.POSITIVE_INFINITY : LOADER_GC_TIME
 });
 
 /**
@@ -168,4 +187,17 @@ export async function cachedApiQuery<T>(
   const cache = getClientCache();
   if (!cache) return fetchJson<T>(url);
   return fetchLoader(cache, loaderQuery<T>(url, options));
+}
+
+/**
+ * Starts the read a `useLoaderQuery` of `url` is about to make (a press before
+ * its click), with the same retries: the component joins this read when it
+ * mounts, so it must not fail faster than the component's own would.
+ */
+export function prefetchLoaderQuery(url: string): void {
+  const cache = getClientCache();
+  if (!cache) return;
+  fetchLoader(cache, { ...loaderQuery(url), retry: loaderRetry }).catch(() => {
+    // The component reads again and shows the error.
+  });
 }

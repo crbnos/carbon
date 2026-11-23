@@ -10,10 +10,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getSuggestion,
-  SuggestionDetails,
   updateSuggestionEmoji
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/resources/resources.service";
+import { SuggestionDetails } from "~/modules/resources/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

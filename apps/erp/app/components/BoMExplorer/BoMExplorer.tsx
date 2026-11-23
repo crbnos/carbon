@@ -6,6 +6,10 @@ import { PreviewCard } from "@base-ui-components/react/preview-card";
 import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   Badge,
+  Button,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuTrigger,
   Copy,
   cn,
   DropdownMenu,
@@ -19,6 +23,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -117,6 +122,8 @@ type BoMExplorerProviderProps<T extends BoMExplorerNodeData> = {
   ) => string | number | null | undefined;
   /** Controlled filter text (e.g. from an external search input). */
   filterText?: string;
+  /** Nodes collapsed on the first render (default: every node expanded). */
+  collapsedIds?: string[];
   children: ReactNode;
 };
 
@@ -125,6 +132,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
   getNodePath: getNodePathProp,
   getRootVersion: getRootVersionProp,
   filterText: filterTextProp,
+  collapsedIds,
   children
 }: BoMExplorerProviderProps<T>) {
   const tree = treeProp as FlatTree<BoMExplorerNodeData>;
@@ -141,6 +149,8 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
 
   const [filterTextInternal, setFilterTextInternal] = useState("");
   const filterText = filterTextProp ?? filterTextInternal;
+  // Phones: touch-sized rows (BoMExplorerRow draws them at this height).
+  const { isPhone } = useViewport();
 
   const {
     nodes,
@@ -154,9 +164,10 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
     virtualizer
   } = useTree({
     tree,
+    collapsedIds,
     // biome-ignore lint/suspicious/noEmptyBlockStatements: selection is URL-driven
     onSelectedIdChanged: () => {},
-    estimatedRowHeight: () => 32,
+    estimatedRowHeight: () => (isPhone ? 48 : 32),
     parentRef,
     filter: {
       value: { text: filterText },
@@ -240,6 +251,7 @@ export function BoMExplorerSearch() {
         <LuSearch className="h-4 w-4" />
       </InputLeftElement>
       <Input
+        aria-label={t`Search bill of materials`}
         placeholder={t`Search...`}
         value={filterText}
         onChange={(e) => setFilterText(e.target.value)}
@@ -426,6 +438,125 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
   const [isBadgeHovered, setIsBadgeHovered] = useState(false);
 
   const bomId = bomIdMap.get(node.id);
+  const { isPhone } = useViewport();
+  const rowHeight = isPhone ? "h-12" : "h-8";
+
+  const content = (
+    <>
+      <div className={cn("flex items-center", rowHeight)}>
+        {Array.from({ length: node.level }).map((_, index) => (
+          <LevelLine
+            key={index}
+            isSelected={state.selected}
+            className={rowHeight}
+          />
+        ))}
+        <button
+          type="button"
+          tabIndex={-1}
+          // Pointer-only: the treeitem exposes aria-expanded and expands with
+          // ArrowRight/ArrowLeft, so a name here would be read into the row's.
+          aria-hidden
+          className={cn(
+            "flex items-center",
+            rowHeight,
+            isPhone ? "w-8 justify-center" : "w-4",
+            node.hasChildren && "hover:bg-accent"
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.altKey) {
+              if (state.expanded) {
+                collapseAllBelowDepth(node.level);
+              } else {
+                expandAllBelowDepth(node.level);
+              }
+            } else {
+              toggleExpandNode(node.id);
+            }
+          }}
+        >
+          {node.hasChildren ? (
+            state.expanded ? (
+              <LuChevronDown
+                className={cn(
+                  "h-4 w-4 text-gray-400 flex-shrink-0",
+                  !isPhone && "ml-1"
+                )}
+              />
+            ) : (
+              <LuChevronRight
+                className={cn(
+                  "h-4 w-4 text-gray-400 flex-shrink-0",
+                  !isPhone && "ml-1"
+                )}
+              />
+            )
+          ) : (
+            <span className={cn(rowHeight, "w-4")} />
+          )}
+        </button>
+      </div>
+
+      <div className="flex w-full min-w-0 items-center justify-between gap-2">
+        <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
+          {bomId && (
+            <Badge variant="outline" className="flex-shrink-0 font-mono">
+              {bomId}
+            </Badge>
+          )}
+          <BoMNodeText node={node} />
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {node.data.isRoot ? (
+            <Badge variant="outline" className="whitespace-nowrap font-mono">
+              V{getRootVersion(node)}
+            </Badge>
+          ) : (
+            <BoMNodeData node={node} />
+          )}
+          {children && (
+            <div
+              className="flex items-center gap-1"
+              onPointerEnter={() => setIsBadgeHovered(true)}
+              onPointerLeave={() => setIsBadgeHovered(false)}
+            >
+              {children}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  const rowClassName = cn(
+    "flex cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
+    rowHeight,
+    state.selected
+      ? "bg-muted hover:bg-accent"
+      : "bg-transparent hover:bg-accent",
+    node.data.isPickDescendant && "opacity-60"
+  );
+
+  if (isPhone) {
+    // Phones have no hover: holding a row shows the preview desktop shows
+    // on hover.
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container */}
+          <div className={rowClassName} onClick={() => onNodeClick(node)}>
+            {content}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <div className="px-3 pb-2">
+            <BoMNodePreview node={node} />
+          </div>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
 
   return (
     // Uncontrolled: Base UI owns hover open/close per row.
@@ -434,81 +565,15 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         delay={200}
         closeDelay={100}
         render={
+          // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container
           <div
             key={node.id}
-            className={cn(
-              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
-              state.selected
-                ? "bg-muted hover:bg-accent"
-                : "bg-transparent hover:bg-accent",
-              node.data.isPickDescendant && "opacity-60"
-            )}
+            className={rowClassName}
             onClick={() => onNodeClick(node)}
           />
         }
       >
-        <div className="flex h-8 items-center">
-          {Array.from({ length: node.level }).map((_, index) => (
-            <LevelLine key={index} isSelected={state.selected} />
-          ))}
-          <div
-            className={cn(
-              "flex h-8 w-4 items-center",
-              node.hasChildren && "hover:bg-accent"
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (e.altKey) {
-                if (state.expanded) {
-                  collapseAllBelowDepth(node.level);
-                } else {
-                  expandAllBelowDepth(node.level);
-                }
-              } else {
-                toggleExpandNode(node.id);
-              }
-            }}
-          >
-            {node.hasChildren ? (
-              state.expanded ? (
-                <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-              ) : (
-                <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-              )
-            ) : (
-              <div className="h-8 w-4" />
-            )}
-          </div>
-        </div>
-
-        <div className="flex w-full min-w-0 items-center justify-between gap-2">
-          <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
-            {bomId && (
-              <Badge variant="outline" className="flex-shrink-0">
-                {bomId}
-              </Badge>
-            )}
-            <BoMNodeText node={node} />
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-1">
-            {node.data.isRoot ? (
-              <Badge variant="outline" className="whitespace-nowrap">
-                V{getRootVersion(node)}
-              </Badge>
-            ) : (
-              <BoMNodeData node={node} />
-            )}
-            {children && (
-              <div
-                className="flex items-center gap-1"
-                onPointerEnter={() => setIsBadgeHovered(true)}
-                onPointerLeave={() => setIsBadgeHovered(false)}
-              >
-                {children}
-              </div>
-            )}
-          </div>
-        </div>
+        {content}
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner side="right" sideOffset={4} className="z-[100]">
@@ -563,7 +628,7 @@ function BoMNodeData({ node }: { node: BoMNode }) {
 
   return (
     <HStack spacing={1}>
-      <Badge className="text-xs tabular-nums" variant="outline">
+      <Badge className="text-xs font-mono tabular-nums" variant="outline">
         <MethodIcon
           type={node.data.methodType}
           isKit={node.data.kit ?? undefined}
@@ -594,20 +659,19 @@ function BoMNodePreview({ node }: { node: BoMNode }) {
           <span>{node.data.itemReadableId}</span>
           <HStack spacing={1}>
             <Copy text={node.data.itemReadableId} tooltipClassName="z-[110]" />
-            <Link
-              to={getLinkToItemDetails(
-                node.data.itemType as "Part",
-                node.data.itemId
-              )}
-              target="_blank"
-            >
-              <IconButton
+            {/* One control: the link styled as the icon button. */}
+            <Button asChild isIcon size="sm" variant="secondary">
+              <Link
+                to={getLinkToItemDetails(
+                  node.data.itemType as "Part",
+                  node.data.itemId
+                )}
+                target="_blank"
                 aria-label={t`View Item Master`}
-                size="sm"
-                variant="secondary"
-                icon={<LuExternalLink />}
-              />
-            </Link>
+              >
+                <LuExternalLink aria-hidden className="size-3.5" />
+              </Link>
+            </Button>
           </HStack>
         </HStack>
       </VStack>

@@ -5,7 +5,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanySettings } from "~/modules/settings";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -14,11 +15,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
 
-  throw redirect(accountingEnabled ? path.to.reports : path.to.chartOfAccounts);
+  throw redirect(
+    hasAccountingCutover(companySettings.data)
+      ? path.to.reports
+      : path.to.accountingActivation
+  );
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];

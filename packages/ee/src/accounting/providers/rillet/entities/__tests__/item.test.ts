@@ -2,7 +2,11 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import {
+  accountMappingRows,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import type { Rillet, RilletProductWrite } from "../../models";
 import { buildRilletIdempotencyKey } from "../../provider";
 import { RilletItemSyncer } from "../item";
@@ -14,47 +18,17 @@ describe("Rillet monetary decimal strings", () => {
     [1.005, 2, "1.01"],
     [-2.5, 3, "-2.500"],
     [0, 0, "0"]
-  ] as const)("serializes %s at %s decimals without exponent notation or grouping", (amount, decimals, expected) => {
-    expect(toRilletMoney(amount, "USD", decimals)).toEqual({
-      amount: expected,
-      currency: "USD"
-    });
-  });
+  ] as const)(
+    "serializes %s at %s decimals without exponent notation or grouping",
+    (amount, decimals, expected) => {
+      expect(toRilletMoney(amount, "USD", decimals)).toEqual({
+        amount: expected,
+        currency: "USD"
+      });
+    }
+  );
 });
 
-const { links, control } = vi.hoisted(() => ({
-  links: [] as Array<Record<string, unknown>>,
-  control: { failOnce: false }
-}));
-vi.mock("../../../../core/utils", async (original) => ({
-  ...(await original<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    callback: (tx: unknown) => Promise<unknown>
-  ) => {
-    const builder: any = {
-      values(value: Record<string, unknown>) {
-        links.push(value);
-        return builder;
-      },
-      onConflict() {
-        return builder;
-      },
-      async execute() {
-        if (control.failOnce) {
-          control.failOnce = false;
-          throw new Error("link failed");
-        }
-        return [];
-      }
-    };
-    return callback({ insertInto: () => builder });
-  }
-}));
-beforeEach(() => {
-  links.length = 0;
-  control.failOnce = false;
-});
 const product = (overrides: Partial<Rillet.Product> = {}): Rillet.Product => ({
   id: "shipping-product",
   name: "Carbon Shipping acct-shipping USD",
@@ -66,13 +40,35 @@ const product = (overrides: Partial<Rillet.Product> = {}): Rillet.Product => ({
   revenue_pattern: "EVEN_PERIOD",
   ...overrides
 });
+const mapping = (entityType: string, entityId: string, externalId: string) => ({
+  entityType,
+  entityId,
+  integration: "rillet",
+  companyId: "company-1",
+  externalId
+});
+
 function setup(
   args: {
+    /** The product the shipping helper is already mapped to. */
     mappedId?: string;
     current?: Rillet.Product;
-    codes?: Map<string, string>;
+    codes?: Record<string, string>;
+    mappings?: Array<Record<string, unknown>>;
   } = {}
 ) {
+  const db = fakeDatabase({
+    externalIntegrationMapping: [
+      ...accountMappingRows(
+        args.codes ?? { "acct-shipping": "4010" },
+        "rillet"
+      ),
+      ...(args.mappedId
+        ? [mapping("shippingItem", "acct-shipping:USD", args.mappedId)]
+        : []),
+      ...(args.mappings ?? [])
+    ]
+  });
   const getProduct = vi.fn(async (_id: string) => args.current ?? product());
   const createProduct = vi.fn(
     async (_payload: RilletProductWrite, _key?: string) => product()
@@ -84,7 +80,7 @@ function setup(
     })
   );
   const syncer = new RilletItemSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: {
       id: "rillet",
@@ -95,12 +91,17 @@ function setup(
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "item"
   });
-  (syncer as any).mappingService = {
-    getExternalId: vi.fn(async () => args.mappedId ?? null)
+  return {
+    syncer,
+    db,
+    getProduct,
+    createProduct,
+    updateProduct,
+    helperLinks: () =>
+      db
+        .rows("externalIntegrationMapping")
+        .filter((row) => row.entityType === "shippingItem")
   };
-  (syncer as any).getAccountCodesById = async () =>
-    args.codes ?? new Map([["acct-shipping", "4010"]]);
-  return { syncer, getProduct, createProduct, updateProduct };
 }
 const shipping = {
   shippingAccountId: "acct-shipping",
@@ -133,14 +134,16 @@ describe("Rillet shipping product helper", () => {
         localId: "acct-shipping:USD"
       })
     );
-    expect(links[0]).toMatchObject({
-      entityType: "shippingItem",
-      entityId: "acct-shipping:USD",
-      integration: "rillet",
-      companyId: "company-1",
-      externalId: "shipping-product",
-      metadata: { accountId: "acct-shipping", kind: "shipping" }
-    });
+    expect(test.helperLinks()).toMatchObject([
+      {
+        entityType: "shippingItem",
+        entityId: "acct-shipping:USD",
+        integration: "rillet",
+        companyId: "company-1",
+        externalId: "shipping-product",
+        metadata: { accountId: "acct-shipping", kind: "shipping" }
+      }
+    ]);
   });
   it("reuses an owned compatible mapping without another create", async () => {
     const test = setup({ mappedId: "shipping-product" });
@@ -151,7 +154,10 @@ describe("Rillet shipping product helper", () => {
   });
   it("retries a lost local link using the same entity-scoped idempotency key", async () => {
     const test = setup();
-    control.failOnce = true;
+    test.db.failNextWrite(
+      "externalIntegrationMapping",
+      new Error("link failed")
+    );
     await expect(test.syncer.ensureShippingProduct(shipping)).rejects.toThrow(
       "link failed"
     );
@@ -207,10 +213,10 @@ describe("Rillet shipping product helper", () => {
       amount: "0.000",
       currency: "BHD"
     });
-    expect(links[0]?.entityId).toBe("acct-shipping:BHD");
+    expect(test.helperLinks()[0]?.entityId).toBe("acct-shipping:BHD");
   });
   it("refuses an unmapped shipping account before any provider write", async () => {
-    const test = setup({ codes: new Map() });
+    const test = setup({ codes: {} });
     await expect(
       test.syncer.ensureShippingProduct(shipping)
     ).rejects.toMatchObject({
@@ -221,9 +227,9 @@ describe("Rillet shipping product helper", () => {
   });
   it("preserves unrelated full-product fields on the existing merchandise update path too", async () => {
     const test = setup({
-      current: { ...product(), unrelated: "keep" } as Rillet.Product
+      current: { ...product(), unrelated: "keep" } as Rillet.Product,
+      mappings: [mapping("item", "local-item", "shipping-product")]
     });
-    (test.syncer as any).getRemoteId = async () => "shipping-product";
     const changed = { ...product(), description: "Updated description" };
     await (
       test.syncer as unknown as {
@@ -245,42 +251,28 @@ describe("Rillet shipping product helper", () => {
  * 2-decimal serialization gives a JPY price cents it cannot have and truncates
  * a 3-decimal BHD price.
  */
-function makeItemDb(baseCurrencyCode: string, decimalPlaces: number) {
-  const chain = (row: unknown) => {
-    const b: Record<string, unknown> = {};
-    b.select = () => b;
-    b.leftJoin = () => b;
-    b.where = () => b;
-    b.execute = async () => [row];
-    b.executeTakeFirst = async () => row;
-    return b;
-  };
-  return {
-    selectFrom: (table: string) => {
-      if (table === "company")
-        return chain({ baseCurrencyCode, companyGroupId: "group-1" });
-      if (table === "currency") return chain({ decimalPlaces });
-      if (table === "accountDefault")
-        return chain({ salesAccount: "acct-sales" });
-      return chain(undefined);
-    }
-  } as never;
-}
-
 function makeMerchandiseSyncer(
   baseCurrencyCode: string,
   decimalPlaces: number
 ) {
-  const syncer = new RilletItemSyncer({
-    database: makeItemDb(baseCurrencyCode, decimalPlaces),
+  const db = fakeDatabase({
+    company: [{ id: "company-1", baseCurrencyCode, companyGroupId: "group-1" }],
+    currency: [
+      { code: baseCurrencyCode, companyGroupId: "group-1", decimalPlaces }
+    ],
+    accountDefault: [{ companyId: "company-1", salesAccount: "acct-sales" }],
+    externalIntegrationMapping: accountMappingRows(
+      { "acct-sales": "4000" },
+      "rillet"
+    )
+  });
+  return new RilletItemSyncer({
+    database: db.database,
     companyId: "company-1",
     provider: { id: "rillet" } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "item"
   });
-  (syncer as any).getAccountCodesById = async () =>
-    new Map([["acct-sales", "4000"]]);
-  return syncer;
 }
 
 const merchandiseItem = {

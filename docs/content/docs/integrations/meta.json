@@ -5,8 +5,11 @@
     "accounting",
     "project-management",
     "cad",
+    "oee",
     "estimating",
     "email",
-    "assistant"
+    "workflow-apps",
+    "assistant",
+    "setup"
   ]
 }

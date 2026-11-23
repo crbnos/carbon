@@ -7,6 +7,7 @@ import { Confirm } from "~/components/Modals";
 import { path } from "~/utils/path";
 
 type ConfirmUnpublishWorkflowProps = {
+  open?: boolean;
   workflowId: string;
   name: string;
   onClose: () => void;
@@ -18,6 +19,7 @@ type ConfirmUnpublishWorkflowProps = {
  * what the dialog says.
  */
 export function ConfirmUnpublishWorkflow({
+  open = true,
   workflowId,
   name,
   onClose
@@ -27,7 +29,7 @@ export function ConfirmUnpublishWorkflow({
   return (
     <Confirm
       action={path.to.workflowUnpublish(workflowId)}
-      isOpen
+      isOpen={open}
       title={t`Unpublish ${name}?`}
       text={t`It will stop running until you publish a version again. Nothing is deleted.`}
       confirmText={t`Unpublish`}

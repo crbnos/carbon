@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-  toast
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -391,7 +391,7 @@ function ConfiguratorFormContent({
       if (result.success) {
         onSubmit(result.data);
       } else {
-        toast.error(t`Please fill out all required fields`);
+        toastError(t`Please fill out all required fields`, result.error);
       }
     } else {
       nextStep();
@@ -504,6 +504,35 @@ function ConfiguratorModal({
   initialValues,
   destructive
 }: ConfiguratorModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent size="large">
+        <ConfiguratorBody
+          groups={groups}
+          parameters={parameters}
+          onSubmit={onSubmit}
+          initialValues={initialValues}
+          destructive={destructive}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function ConfiguratorBody({
+  groups,
+  parameters,
+  onSubmit,
+  initialValues,
+  destructive
+}: Omit<ConfiguratorModalProps, "open" | "onClose">) {
   const { t } = useLingui();
   const validGroups = useMemo(
     () =>
@@ -518,30 +547,21 @@ function ConfiguratorModal({
   >(validGroups[0]);
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <ModalContent size="large">
-        <ModalHeader>
-          <ModalTitle>{currentGroup?.name ?? t`Configurator`}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <ConfiguratorForm
-            groups={groups}
-            parameters={parameters}
-            onSubmit={onSubmit}
-            onGroupChange={setCurrentGroup}
-            initialValues={initialValues}
-            destructive={destructive}
-          />
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+    <>
+      <ModalHeader>
+        <ModalTitle>{currentGroup?.name ?? t`Configurator`}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <ConfiguratorForm
+          groups={groups}
+          parameters={parameters}
+          onSubmit={onSubmit}
+          onGroupChange={setCurrentGroup}
+          initialValues={initialValues}
+          destructive={destructive}
+        />
+      </ModalBody>
+    </>
   );
 }
 

@@ -18,6 +18,8 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuHash,
+  LuLayoutList,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -35,29 +37,32 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseInvoiceListItem } from "~/modules/invoicing";
-import {
-  PurchaseInvoicingStatus,
-  purchaseInvoiceStatusType
-} from "~/modules/invoicing";
+import { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
+import type { PurchaseInvoiceListItem } from "~/modules/invoicing/types";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicesTableProps = {
   data: PurchaseInvoiceListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const PurchaseInvoicesTable = memo(
-  ({ data, count }: PurchaseInvoicesTableProps) => {
-    useRealtime(
-      "purchaseInvoice",
-      `id=in.(${data.map((d) => d.id).join(",")})`
-    );
+// The Purchase Order column shows the invoice's order; with one, its lines
+// need not repeat it.
+const purchaseOrderShownOnRow = (row: PurchaseInvoiceListItem) =>
+  row.purchaseOrderReadableIds?.length === 1
+    ? (row.purchaseOrderReadableIds[0] ?? null)
+    : null;
 
+const PurchaseInvoicesTable = memo(
+  ({ data, count, infinite }: PurchaseInvoicesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -69,8 +74,16 @@ const PurchaseInvoicesTable = memo(
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
+    const supplierNames = useMemo(
+      () => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])),
+      [suppliers]
+    );
     const customColumns =
       useCustomColumns<PurchaseInvoiceListItem>("purchaseInvoice");
+
+    const hasMultiplePurchaseOrders = data.some(
+      (row) => (row.purchaseOrderIds?.length ?? 0) > 1
+    );
 
     const columns = useMemo<ColumnDef<PurchaseInvoiceListItem>[]>(() => {
       const defaultColumns: ColumnDef<PurchaseInvoiceListItem>[] = [
@@ -91,6 +104,7 @@ const PurchaseInvoicesTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -101,6 +115,9 @@ const PurchaseInvoicesTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
+            exportValue: (row) =>
+              supplierNames.get(row.supplierId ?? "") ?? row.supplierId,
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -118,6 +135,9 @@ const PurchaseInvoicesTable = memo(
             <SupplierAvatar supplierId={row.original.invoiceSupplierId} />
           ),
           meta: {
+            exportValue: (row) =>
+              supplierNames.get(row.invoiceSupplierId ?? "") ??
+              row.invoiceSupplierId,
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -129,11 +149,46 @@ const PurchaseInvoicesTable = memo(
           }
         },
         {
+          id: "glCodes",
+          header: t`GL Codes`,
+          cell: ({ row }) => row.original.glCodes,
+          enableSorting: false,
+          meta: {
+            exportValue: (row) => row.glCodes,
+            icon: <LuHash />
+          }
+        },
+        {
           accessorKey: "supplierReference",
           header: t`Supplier Ref.`,
           cell: (item) => item.getValue(),
           meta: {
             icon: <LuQrCode />
+          }
+        },
+        {
+          accessorKey: "purchaseOrderReadableIds",
+          header: hasMultiplePurchaseOrders
+            ? t`Purchase Orders`
+            : t`Purchase Order`,
+          cell: ({ row }) => {
+            const ids = row.original.purchaseOrderIds ?? [];
+            const readableIds = row.original.purchaseOrderReadableIds ?? [];
+            return (
+              <HStack spacing={0} className="gap-2">
+                {ids.map((id, index) => (
+                  <Hyperlink key={id} to={path.to.purchaseOrder(id)}>
+                    {readableIds[index]}
+                  </Hyperlink>
+                ))}
+              </HStack>
+            );
+          },
+          enableSorting: false,
+          meta: {
+            exportValue: (row) =>
+              (row.purchaseOrderReadableIds ?? []).join(", "),
+            icon: <LuLayoutList />
           }
         },
         {
@@ -145,6 +200,7 @@ const PurchaseInvoicesTable = memo(
             return <PurchaseInvoicingStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: purchaseInvoiceStatusType.map((status) => ({
@@ -158,9 +214,10 @@ const PurchaseInvoicesTable = memo(
         },
         {
           accessorKey: "orderTotal",
-          header: t`Order Total`,
+          header: t`Invoice Total`,
           cell: (item) => currencyFormatter.format(item.getValue<number>()),
           meta: {
+            mobile: "P2",
             icon: <LuDollarSign />,
             formatter: currencyFormatter.format,
             renderTotal: true
@@ -310,7 +367,15 @@ const PurchaseInvoicesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [currencyFormatter, customColumns, people, suppliers, t]);
+    }, [
+      currencyFormatter,
+      customColumns,
+      hasMultiplePurchaseOrders,
+      people,
+      supplierNames,
+      suppliers,
+      t
+    ]);
 
     const renderContextMenu = useMemo(() => {
       return (row: PurchaseInvoiceListItem) => (
@@ -341,12 +406,25 @@ const PurchaseInvoicesTable = memo(
       );
     }, [closePurchaseInvoiceModal, navigate, permissions]);
 
+    const lineItemRows = useLineItemRows<PurchaseInvoiceListItem>(
+      "purchase-invoices",
+      purchaseOrderShownOnRow
+    );
+
     return (
       <>
         <Table<PurchaseInvoiceListItem>
+          getRowLabel={(row) => row.invoiceId ?? undefined}
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
+          infinite={infinite}
+          serverExport={{
+            csv: `${path.to.invoicingPurchasing}.csv`,
+            xlsx: `${path.to.invoicingPurchasing}.xlsx`
+          }}
+          withCsvExport={false}
           defaultColumnPinning={{
             left: ["invoiceId"]
           }}
@@ -383,11 +461,9 @@ const PurchaseInvoicesTable = memo(
             text={t`Are you sure you want to permanently delete ${selectedPurchaseInvoice.invoiceId!}?`}
             onCancel={() => {
               closePurchaseInvoiceModal.onClose();
-              setSelectedPurchaseInvoice(null);
             }}
             onSubmit={() => {
               closePurchaseInvoiceModal.onClose();
-              setSelectedPurchaseInvoice(null);
             }}
           />
         )}

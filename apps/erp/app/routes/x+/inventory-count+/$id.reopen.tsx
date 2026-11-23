@@ -2,53 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  getInventoryCount,
-  updateInventoryCountStatus
-} from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 // Reopen (Pending -> Draft): returns the count to entry so lines can be edited
 // again before posting.
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
-  });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const header = await getInventoryCount(client, id, companyId);
-  if (header.data?.status !== "Pending") {
-    throw redirect(
-      path.to.inventoryCount(id),
-      await flash(request, error(null, "Only a pending count can be reopened"))
-    );
-  }
-
-  const update = await updateInventoryCountStatus(client, {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateInventoryCountStatus({
     id,
-    companyId,
-    status: "Draft",
-    expectedStatus: "Pending",
-    updatedBy: userId
+    status: "Draft"
   });
-
-  if (update.error) {
-    throw redirect(
-      path.to.inventoryCount(id),
-      await flash(request, error(update.error, "Failed to reopen count"))
-    );
-  }
-
-  throw redirect(
-    path.to.inventoryCount(id),
-    await flash(request, success("Count reopened"))
-  );
+  return respond(args.request, result).redirect(path.to.inventoryCount(id), {
+    message: "Count reopened"
+  });
 }

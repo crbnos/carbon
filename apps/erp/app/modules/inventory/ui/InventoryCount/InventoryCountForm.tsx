@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -17,7 +18,6 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
   Boolean,
@@ -31,21 +31,24 @@ import { usePermissions } from "~/hooks";
 import {
   inventoryCountValidator,
   inventoryItemTypes
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type InventoryCountFormProps = {
   initialValues: z.infer<typeof inventoryCountValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
 const InventoryCountForm = ({
   initialValues,
+  open = true,
   onClose
 }: InventoryCountFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<{}>();
+  // A refused create is toasted; success opens the new count.
+  const fetcher = useAction();
 
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
 
@@ -57,7 +60,7 @@ const InventoryCountForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

@@ -8,7 +8,7 @@
  * These are wall-mounted screens read from across the shop floor. Each one is a
  * work center name in a full-width header band that is either green ("nothing
  * needs you") or red ("something does"), over a scoreboard body. The rules that
- * decide the colour and fill the scoreboard live here as pure functions: the
+ * decide the color and fill the scoreboard live here as pure functions: the
  * routes stay thin and the thresholds are unit-testable without a database.
  */
 

@@ -10,7 +10,7 @@ import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
   setMethodMaterialStepLink
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 
 // Toggle a part↔step link from the step editor's "Parts" picker (method/item tier).
 export async function action({ request }: ActionFunctionArgs) {

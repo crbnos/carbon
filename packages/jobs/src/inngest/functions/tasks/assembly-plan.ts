@@ -4,23 +4,26 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { toJson } from "@carbon/database/json";
 import { storage } from "@carbon/files";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  resolveModelSourceBucket,
+  requireModelSourceBucket,
   runAssemblerJob,
-  signSourceUrl
+  signSourceUrl,
+  signUploadUrls
 } from "./assembler-client";
+import { getModelUpload, insertPlanJob, updatePlanJobs } from "./model-rows";
 import { loadPlanUnits } from "./plan-units";
 import { updateAssemblyStepMotionsFromPlan } from "./update-step-motions";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
-// Total wall-clock budget before giving up, bounded by time (not a fixed poll
-// count) so it holds whether the service long-polls or returns immediately.
+// How long a plan may run once the service starts it.
 const MAX_PLAN_WAIT_MS = 40 * 60 * 1000;
 
 /**
@@ -41,21 +44,14 @@ export const assemblyPlanFunction = inngest.createFunction(
     retries: 2,
     concurrency: ASSEMBLER_CONCURRENCY,
     onFailure: async ({ event }) => {
-      const { modelUploadId } = event.data.event.data;
-      const client = getCarbonServiceRole();
-
+      const { modelUploadId, companyId } = event.data.event.data;
       // Queued included: a pre-created row (planJobId) stays Queued when the
       // function fails before its "queue" step promotes it to Processing.
-      await client
-        .from("assemblyPlanJob")
-        .update({
-          status: "Failed",
-          error: event.data.error.message,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("modelUploadId", modelUploadId)
-        .eq("kind", "plan")
-        .in("status", ["Queued", "Processing"]);
+      await updatePlanJobs(
+        companyId,
+        { modelUploadId, kind: "plan", statuses: ["Queued", "Processing"] },
+        { status: "Failed", error: event.data.error.message }
+      );
     }
   },
   { event: "carbon/assembly-plan" },
@@ -73,18 +69,13 @@ export const assemblyPlanFunction = inngest.createFunction(
     // pre-created Queued row is failed with a clear reason instead of hanging.
     if (!assemblerEnabled()) {
       if (planJobId) {
-        await step.run("mark-unconfigured", async () => {
-          const client = getCarbonServiceRole();
-          await client
-            .from("assemblyPlanJob")
-            .update({
-              status: "Failed",
-              error: "Assembler service is not configured",
-              updatedAt: new Date().toISOString()
-            })
-            .eq("id", planJobId)
-            .eq("companyId", companyId);
-        });
+        await step.run("mark-unconfigured", () =>
+          updatePlanJobs(
+            companyId,
+            { id: planJobId },
+            { status: "Failed", error: "Assembler service is not configured" }
+          )
+        );
       }
       logger.info("assembly plan skipped — assembler is not configured", {
         modelUploadId
@@ -93,65 +84,36 @@ export const assemblyPlanFunction = inngest.createFunction(
     }
 
     const job = await step.run("queue", async () => {
-      const client = getCarbonServiceRole();
-
-      const modelUpload = await client
-        .from("modelUpload")
-        .select("id, modelPath, graphPath, processingStatus")
-        .eq("id", modelUploadId)
-        .eq("companyId", companyId)
-        .single();
-
-      if (modelUpload.error || !modelUpload.data?.modelPath) {
-        throw new Error(
+      const modelUpload = await getModelUpload(companyId, modelUploadId);
+      if (!modelUpload?.modelPath) {
+        throw new NonRetriableError(
           `Model upload ${modelUploadId} not found or has no file`
         );
       }
+      const found = {
+        modelPath: modelUpload.modelPath,
+        graphPath: modelUpload.graphPath
+      };
 
       // Adopt the trigger's pre-created row when given (created Queued so the
       // UI shows "planning" from the moment of the click); fall back to
       // inserting a row when adoption fails.
       if (planJobId) {
-        const adopted = await client
-          .from("assemblyPlanJob")
-          .update({ status: "Processing", updatedAt: new Date().toISOString() })
-          .eq("id", planJobId)
-          .eq("companyId", companyId)
-          .select("id")
-          .maybeSingle();
-
-        if (adopted.data?.id) {
-          return {
-            id: adopted.data.id,
-            modelPath: modelUpload.data.modelPath,
-            graphPath: modelUpload.data.graphPath
-          };
-        }
-      }
-
-      const planJob = await client
-        .from("assemblyPlanJob")
-        .insert({
-          modelUploadId,
-          kind: "plan",
-          status: "Processing",
+        const adopted = await updatePlanJobs(
           companyId,
-          createdBy: userId
-        })
-        .select("id")
-        .single();
-
-      if (planJob.error) {
-        throw new Error(
-          `Failed to create assembly plan job: ${planJob.error.message}`
+          { id: planJobId },
+          { status: "Processing" }
         );
+        if (adopted > 0) return { id: planJobId, ...found };
       }
 
-      return {
-        id: planJob.data.id,
-        modelPath: modelUpload.data.modelPath,
-        graphPath: modelUpload.data.graphPath
-      };
+      const id = await insertPlanJob({
+        companyId,
+        modelUploadId,
+        kind: "plan",
+        createdBy: userId
+      });
+      return { id, ...found };
     });
 
     // Where plan.json lands. The service PUTs it here itself (offload) via the
@@ -201,10 +163,8 @@ export const assemblyPlanFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        // Legacy (pre-assembler) raws live in `private`, current ones in
-        // `temp-staging`.
-        const sourceBucket = await resolveModelSourceBucket(
-          client,
+        const sourceBucket = await requireModelSourceBucket(
+          companyId,
           job.modelPath
         );
         const signedUrl = await signSourceUrl(
@@ -235,76 +195,43 @@ export const assemblyPlanFunction = inngest.createFunction(
               : {})
         };
       },
-      mintUploadUrls: async () => {
-        const client = getCarbonServiceRole();
-        const upload = await storage(client)
-          .company(companyId)
-          .createSignedUploadUrl(planPath, { upsert: true });
-        const urls: Record<string, string> = {};
-        if (upload.data)
-          urls.plan = internalizeStorageUrl(upload.data.signedUrl);
-        return urls;
-      }
+      mintUploadUrls: () =>
+        signUploadUrls({
+          plan: {
+            bucket: storage(getCarbonServiceRole()).company(companyId),
+            path: planPath
+          }
+        })
     });
 
-    const planResult = (plan.result ?? {}) as {
-      planPath?: string;
-      plan?: AssemblyPlan | null;
-    };
-    const donePlanPath = planResult.planPath ?? planPath;
-    const inlinePlan = planResult.plan ?? null;
+    const donePlanPath =
+      (plan.result as { planPath?: string } | null)?.planPath ?? planPath;
     const stats: Json = plan.stats;
 
-    // Persist: flip the row to the pointer the service reported. A legacy
-    // response returned the plan inline instead of offloading — upload it here in
-    // that case. Guarded by status=Processing so a cancel/racing-retry no-ops.
+    // Persist: flip the row to the pointer the service reported. Guarded by
+    // status=Processing so a cancel/racing-retry no-ops.
     await step.run("persist-plan", async () => {
-      const client = getCarbonServiceRole();
-      if (inlinePlan) {
-        const upload = await storage(client)
-          .company(companyId)
-          .upload(donePlanPath, JSON.stringify(inlinePlan), {
-            contentType: "application/json",
-            upsert: true
-          });
-        if (upload.error) {
-          throw new Error(
-            `Failed to upload plan.json: ${upload.error.message}`
-          );
-        }
-      }
-      await client
-        .from("assemblyPlanJob")
-        .update({
-          status: "Success",
-          planPath: donePlanPath,
-          stats,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", job.id)
-        .eq("companyId", companyId)
-        .eq("status", "Processing");
+      await updatePlanJobs(
+        companyId,
+        { id: job.id, statuses: ["Processing"] },
+        { status: "Success", planPath: donePlanPath, stats: toJson(stats) }
+      );
     });
 
     // Re-motion: preserve step order, refresh each step's motion from the new
-    // plan (Done steps kept, titles/typed fields untouched). The plan lives in
-    // storage now (offloaded), so download it unless the legacy inline path
-    // already has it in memory.
+    // plan (Done steps kept, titles/typed fields untouched).
     if (reMotionFor) {
       await step.run("update-step-motions", async () => {
         const client = getCarbonServiceRole();
-        let plan = inlinePlan;
-        if (!plan) {
-          const download = await storage(client)
-            .company(companyId)
-            .download(donePlanPath);
-          if (!download.data) {
-            throw new Error(
-              `Failed to download plan.json for re-motion: ${download.error.message}`
-            );
-          }
-          plan = JSON.parse(await download.data.text()) as AssemblyPlan;
+        const download = await storage(client)
+          .company(companyId)
+          .download(donePlanPath);
+        if (!download.data) {
+          throw new Error(
+            `Failed to download plan.json for re-motion: ${download.error.message}`
+          );
         }
+        const plan = JSON.parse(await download.data.text()) as AssemblyPlan;
         await updateAssemblyStepMotionsFromPlan(client, {
           assemblyInstructionId: reMotionFor,
           plan,

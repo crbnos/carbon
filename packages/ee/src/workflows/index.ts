@@ -10,18 +10,35 @@ export type {
   CatalogEntity,
   CatalogEvent,
   CatalogInput,
+  CatalogIntegration,
   CatalogOperation,
   EventMatch,
   FixtureCatalogOptions,
+  LinkFormat,
+  LinksDeclaration,
+  OptionsSource,
   PermissionAction,
   RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
 export {
   createFixtureCatalog,
+  INTEGRATION_CONNECTION_INPUT,
+  integrationAppLabelKey,
   isMultiSelect,
   walkPath
 } from "./definition/catalog";
+export {
+  type CardRefusal,
+  cardsOf,
+  DATA_OPERATIONS,
+  type DataOperation,
+  type DataOperationSpec,
+  foldOperationTypes,
+  operationOf,
+  operationsFor,
+  truncateStarvedCards
+} from "./definition/data-operations";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export { REFERENCE_ISSUE_CODES } from "./definition/issues";
 export {
@@ -56,6 +73,8 @@ export {
   parseWorkflowDefinition,
   readWorkflowVersion
 } from "./definition/normalize";
+export type { WorkflowNotice, WorkflowNoticeCode } from "./definition/notices";
+export { fieldNotices } from "./definition/notices";
 export { topologicalNodeOrder } from "./definition/order";
 export type { PathPosition } from "./definition/paths";
 export { pathLabel } from "./definition/paths";
@@ -70,7 +89,9 @@ export type {
   ConditionNode,
   ConditionPath,
   FilterNode,
+  IntegrationNode,
   LookupNode,
+  OperationCard,
   Origin,
   TriggerNode,
   WorkflowDefinition,
@@ -177,6 +198,7 @@ export {
   filterExecutor,
   filterSummary,
   fromColumn,
+  fromJson,
   fromLiteral,
   isNull,
   itemKeyFor,
@@ -193,6 +215,7 @@ export {
   resolveRef,
   resolveValue
 } from "./runtime";
+export type { RenderOptions } from "./runtime/resolve";
 export type {
   CompanyLock,
   DesiredSubscription,

@@ -4,7 +4,7 @@
 
 import type { TermId } from "@carbon/content/glossary";
 import { cn, LabelWithHelp, RadioGroup, RadioGroupItem } from "@carbon/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 
 /**
  * A single option in a {@link ChoiceCardGroup}.
@@ -64,20 +64,28 @@ export function ChoiceCardGroup<V extends string = string>({
   options,
   className
 }: ChoiceCardGroupProps<V>) {
+  const groupId = useId();
+  // The group is named by the label's words only; the glossary definition
+  // describes it ("Scope", not "Scope What is Scope? The set of …").
+  const definitionId = `${groupId}-definition`;
   return (
     <div className={cn("space-y-2 w-full", className)}>
       {label && (
         <span className="text-xs font-medium text-muted-foreground">
-          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+          <LabelWithHelp termId={termId} definitionId={definitionId}>
+            <span id={`${groupId}-label`}>{label}</span>
+          </LabelWithHelp>
         </span>
       )}
       <RadioGroup
+        aria-labelledby={label ? `${groupId}-label` : undefined}
+        aria-describedby={label && termId ? definitionId : undefined}
         value={value}
         onValueChange={(v) => onChange(v as V)}
         className="flex flex-col gap-2"
       >
         {options.map((opt) => {
-          const inputId = `choice-${opt.value}`;
+          const inputId = `${groupId}-${opt.value}`;
           return (
             <label
               key={opt.value}

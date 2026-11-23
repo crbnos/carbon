@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCallback, useMemo, useState } from "react";
-import type { CompanyPermission } from "~/modules/users";
+import type { CompanyPermission } from "~/modules/users/types";
 
 // ---------------------------------------------------------------------------
 // Types

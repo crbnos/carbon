@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
-import { serverFns } from "@carbon/server-functions";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -15,13 +15,13 @@ export const recalculateFunction = inngest.createFunction(
     const payload = event.data;
 
     const result = await step.run("recalculate", async () => {
-      logger.info(`Type: ${payload.type}, id: ${payload.id}`);
+      logger.info("Recalculating", { type: payload.type, id: payload.id });
 
       const serviceRole = getCarbonServiceRole();
 
       switch (payload.type) {
         case "jobRequirements": {
-          logger.info(`Recalculating job requirements for ${payload.id}`);
+          logger.info("Recalculating job requirements", { id: payload.id });
           const calculateQuantities = await recalculateJobRequirements({
             id: payload.id,
             companyId: payload.companyId,
@@ -34,9 +34,9 @@ export const recalculateFunction = inngest.createFunction(
           };
         }
         case "jobMakeMethodRequirements": {
-          logger.info(
-            `Recalculating job make method requirements for ${payload.id}`
-          );
+          logger.info("Recalculating job make method requirements", {
+            id: payload.id
+          });
           const { error: rescheduleError } =
             await recalculateJobMakeMethodRequirements(serviceRole, {
               id: payload.id,
@@ -59,12 +59,12 @@ export const recalculateFunction = inngest.createFunction(
     });
 
     if (result.success) {
-      logger.info(`Success ${payload.id}`);
+      logger.info("Recalculation succeeded", { id: payload.id });
     } else {
       logger.error("Recalculation {payloadType} failed for {payloadId}", {
         payloadType: payload.type,
         payloadId: payload.id,
-        message: result.message
+        reason: result.message
       });
     }
 
@@ -77,13 +77,15 @@ async function recalculateJobRequirements(params: {
   companyId: string;
   userId: string;
 }) {
-  return serverFns
-    .system({
+  return posting(
+    "recalculate",
+    {
       db: getJobDatabaseClient(),
       companyId: params.companyId,
       userId: params.userId
-    })
-    .invoke("recalculate", { type: "jobRequirements", id: params.id });
+    },
+    { type: "jobRequirements", id: params.id }
+  );
 }
 
 async function recalculateJobMakeMethodRequirements(

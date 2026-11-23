@@ -5,6 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
@@ -21,15 +22,16 @@ import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getUserClaims } from "~/modules/users/users.server";
+import {
+  workflowTestRunInputSchema,
+  workflowTestRunValidator
+} from "~/modules/workflows/workflows.models";
 import {
   getWorkflow,
   getWorkflowRunSteps,
-  getWorkflowVersionOwnership,
-  MAX_RUN_STEPS,
-  workflowTestRunValidator
-} from "~/modules/workflows";
-import { workflowTestRunInputSchema } from "~/modules/workflows/workflows.models";
+  getWorkflowVersionOwnership
+} from "~/modules/workflows/workflows.service";
+import { MAX_RUN_STEPS } from "~/modules/workflows/workflows.utils";
 import { path } from "~/utils/path";
 
 // The picker filters this page locally, so it has to be big enough to be useful.

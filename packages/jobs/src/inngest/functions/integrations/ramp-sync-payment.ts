@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
@@ -9,7 +10,6 @@ import {
   upsertLocalPaymentDraft
 } from "@carbon/ee/accounting";
 import type { RampBill, RampBillPayment } from "@carbon/ee/ramp.server";
-import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 
@@ -26,10 +26,15 @@ type NormalizedAmount =
   | { ok: true; value: number }
   | { ok: false; error: string };
 
+/** The account a card-paid bill is paid from, or why there is none. */
+export type RampCardPaymentAccount = { accountId: string } | { error: string };
+
 export type RampBillPaymentDependencies = {
   companyId: string;
   baseCurrency: string;
-  statementBankAccountId: string;
+  /** Pays a bank-rail bill; null when the integration names none. */
+  statementBankAccountId: string | null;
+  card: RampCardPaymentAccount;
   db: Kysely<KyselyDatabase>;
   client: SupabaseClient<Database>;
   getMappedInvoiceId: (billRemoteId: string) => Promise<string | null>;
@@ -61,6 +66,19 @@ const BANK_PAYMENT_METHODS = new Set([
   "SWIFT"
 ]);
 
+/**
+ * How a Ramp bill payment is handled: a card payment posts from the card
+ * liability account, a verified bank rail from the statement bank account, and
+ * anything else fails rather than guessing an offset account.
+ */
+export function rampBillPaymentRoute(
+  method: string | null | undefined
+): "card" | "bank" | "unsupported" {
+  if (CARD_PAYMENT_METHODS.has(method ?? "")) return "card";
+  if (BANK_PAYMENT_METHODS.has(method ?? "")) return "bank";
+  return "unsupported";
+}
+
 export async function ensureRampPaymentPosted(deps: {
   stage: () => Promise<StageResult>;
   post: (paymentRowId: string) => Promise<{ error: boolean; message?: string }>;
@@ -88,6 +106,9 @@ export type RampPaymentDraft = {
   actorId: string;
   bankAccount: string;
   paymentMappingId: string;
+  /** A card-paid bill's Ramp transactions, claimed for this payment so the
+   *  card charge sync books none of them a second time. */
+  cardTransactionIds?: string[];
   /** Exact memo used by the pre-Task-9 non-atomic writer, for safe migration. */
   legacyMemo?: string;
   normalized: NormalizedPayment;
@@ -178,11 +199,107 @@ export async function stageRampPaymentDraft(
     if (result.postAction === "void") {
       throw new Error("Ramp settlement unexpectedly requested a void");
     }
+    if (args.cardTransactionIds?.length) {
+      await claimCardTransactions(tx, {
+        companyId: args.companyId,
+        actorId: args.actorId,
+        paymentRowId: result.paymentRowId,
+        transactionIds: args.cardTransactionIds
+      });
+    }
     return {
       paymentRowId: result.paymentRowId,
       postAction: result.postAction
     };
   });
+}
+
+/**
+ * The claim mapping: a Ramp card transaction that paid a bill, to its payment.
+ * A mapping's entity is unique per type, and one payment can claim several
+ * transactions, so the entity id is `<payment id>:<transaction id>`.
+ */
+export const CARD_BILL_PAYMENT_ENTITY = "cardBillPayment";
+
+/** The payment a card-bill-payment claim's entity id names. */
+export function claimedPaymentId(entityId: string): string {
+  return entityId.split(":")[0]!;
+}
+
+/**
+ * Claims a card-paid bill's Ramp transactions for its payment, in the staging
+ * transaction. A transaction already booked as a live charge is refused: the
+ * card would be credited twice. Voiding or deleting the charge is the
+ * person's call, so the error names it; the next sync then proceeds.
+ */
+export async function claimCardTransactions(
+  tx: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    actorId: string;
+    paymentRowId: string;
+    transactionIds: string[];
+  }
+): Promise<void> {
+  const { companyId, paymentRowId, transactionIds } = args;
+  const charges = await tx
+    .selectFrom("externalIntegrationMapping as mapping")
+    .innerJoin("charge", (join) =>
+      join
+        .onRef("charge.id", "=", "mapping.entityId")
+        .onRef("charge.companyId", "=", "mapping.companyId")
+    )
+    .select(["mapping.externalId", "charge.chargeId", "charge.status"])
+    .where("mapping.companyId", "=", companyId)
+    .where("mapping.integration", "=", "ramp")
+    .where("mapping.entityType", "=", "charge")
+    .where("mapping.externalId", "in", transactionIds)
+    .where("charge.status", "!=", "Voided")
+    .execute();
+  const charge = charges[0];
+  if (charge) {
+    throw new Error(
+      `Ramp transaction ${charge.externalId} is already booked as ${charge.status} charge ${charge.chargeId}. ${
+        charge.status === "Draft" ? "Delete" : "Void"
+      } that charge, then sync again: the bill payment books the card instead.`
+    );
+  }
+
+  await tx
+    .insertInto("externalIntegrationMapping")
+    .values(
+      transactionIds.map((externalId) => ({
+        entityType: CARD_BILL_PAYMENT_ENTITY,
+        entityId: `${paymentRowId}:${externalId}`,
+        integration: "ramp",
+        externalId,
+        companyId,
+        createdBy: args.actorId
+      }))
+    )
+    .onConflict((oc) =>
+      oc
+        .columns(["integration", "externalId", "entityType", "companyId"])
+        .where("allowDuplicateExternalId", "=", false)
+        .doNothing()
+    )
+    .execute();
+  const claims = await tx
+    .selectFrom("externalIntegrationMapping")
+    .select(["externalId", "entityId"])
+    .where("companyId", "=", companyId)
+    .where("integration", "=", "ramp")
+    .where("entityType", "=", CARD_BILL_PAYMENT_ENTITY)
+    .where("externalId", "in", transactionIds)
+    .execute();
+  const other = claims.find(
+    (claim) => claimedPaymentId(claim.entityId) !== paymentRowId
+  );
+  if (other) {
+    throw new Error(
+      `Ramp transaction ${other.externalId} already paid another bill payment`
+    );
+  }
 }
 
 /** Stage/resume, invoke posting, then observe the tenant-scoped final state. */
@@ -194,12 +311,14 @@ export async function createOrResumeRampPayment(
   return ensureRampPaymentPosted({
     stage: () => stageRampPaymentDraft(db, args),
     post: async (paymentRowId) => {
-      const response = await serverFns
-        .as({ client, db, companyId: args.companyId, userId: args.actorId })
-        .invoke("post-payment", {
+      const response = await posting(
+        "post-payment",
+        { client, db, companyId: args.companyId, userId: args.actorId },
+        {
           type: "post",
           paymentId: paymentRowId
-        });
+        }
+      );
       return {
         error: Boolean(response.error),
         message: response.error?.message
@@ -218,7 +337,23 @@ export async function createOrResumeRampPayment(
   });
 }
 
-/** Sync one non-card Ramp bill payment through the resumable payment stager. */
+/**
+ * The date a Ramp bill payment posts on. A payment cannot predate the invoice
+ * it settles, and a Ramp bill posts in Carbon on the day it syncs, which can
+ * be after Ramp paid it. So it is the later of the two, and a retry sends the
+ * same date.
+ */
+export function rampPaymentDate(
+  paidDate: string | null | undefined,
+  invoicePostingDate: string | null
+): string | null {
+  if (!paidDate) return null;
+  return invoicePostingDate && invoicePostingDate > paidDate
+    ? invoicePostingDate
+    : paidDate;
+}
+
+/** Sync one Ramp bill payment through the resumable payment stager. */
 export async function syncRampBillPayment(
   deps: RampBillPaymentDependencies,
   bill: RampBill,
@@ -230,16 +365,43 @@ export async function syncRampBillPayment(
   }
 
   const method = payment.payment_method ?? "";
-  if (CARD_PAYMENT_METHODS.has(method)) {
-    return { skip: { id: paymentRampId, referenceId: paymentRampId } };
-  }
-  if (!BANK_PAYMENT_METHODS.has(method)) {
+  const route = rampBillPaymentRoute(method);
+  if (route === "unsupported") {
     return {
       fail: {
         id: paymentRampId,
         message: `Unsupported Ramp bill payment method: ${method || "missing"}`
       }
     };
+  }
+  const cardTransactionIds =
+    route === "card"
+      ? [...new Set(payment.details?.transaction_ids ?? [])]
+      : [];
+  let bankAccount: string;
+  if (route === "card") {
+    if ("error" in deps.card) {
+      return { fail: { id: paymentRampId, message: deps.card.error } };
+    }
+    if (cardTransactionIds.length === 0) {
+      return {
+        fail: {
+          id: paymentRampId,
+          message: "Ramp has matched no card transaction to this bill payment"
+        }
+      };
+    }
+    bankAccount = deps.card.accountId;
+  } else {
+    if (!deps.statementBankAccountId) {
+      return {
+        fail: {
+          id: paymentRampId,
+          message: "Set the Ramp statement bank account to sync bank-paid bills"
+        }
+      };
+    }
+    bankAccount = deps.statementBankAccountId;
   }
 
   const invoiceId = await deps.getMappedInvoiceId(bill.id);
@@ -254,7 +416,7 @@ export async function syncRampBillPayment(
 
   const invoice = await deps.client
     .from("purchaseInvoice")
-    .select("id, currencyCode, exchangeRate")
+    .select("id, currencyCode, exchangeRate, postingDate")
     .eq("id", invoiceId)
     .eq("companyId", deps.companyId)
     .maybeSingle();
@@ -280,9 +442,13 @@ export async function syncRampBillPayment(
   if (!normalizedAmount.ok) {
     return { fail: { id: paymentRampId, message: normalizedAmount.error } };
   }
-  const paymentDate = (payment.effective_date ?? payment.payment_date)?.slice(
+  const paidDate = (payment.effective_date ?? payment.payment_date)?.slice(
     0,
     10
+  );
+  const paymentDate = rampPaymentDate(
+    paidDate,
+    invoice.data.postingDate?.slice(0, 10) ?? null
   );
   if (!paymentDate) {
     return {
@@ -303,8 +469,9 @@ export async function syncRampBillPayment(
     const outcome = await createOrResumeRampPayment(deps.db, deps.client, {
       companyId: deps.companyId,
       actorId: "system",
-      bankAccount: deps.statementBankAccountId,
+      bankAccount,
       paymentMappingId: paymentRampId,
+      cardTransactionIds,
       legacyMemo: `Ramp bill payment ${paymentRampId}`,
       normalized: {
         family: "ap",

@@ -7,18 +7,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   priceOverrideBreaksValidator,
-  priceOverrideValidator,
-  upsertCustomerItemPriceOverride
-} from "~/modules/sales";
+  priceOverrideValidator
+} from "~/modules/sales/sales.models";
+import { upsertCustomerItemPriceOverride } from "~/modules/sales/sales.service";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getCompanyTimeZone,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
@@ -30,11 +32,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId") ?? undefined;
   const customerTypeId = url.searchParams.get("customerTypeId") ?? undefined;
-  const initialScope: "customer" | "customerType" | undefined = customerId
-    ? "customer"
-    : customerTypeId
-      ? "customerType"
-      : undefined;
+  const initialScope: "customer" | "customerType" | "all" | undefined =
+    customerId
+      ? "customer"
+      : customerTypeId
+        ? "customerType"
+        : url.searchParams.get("scope") === "all"
+          ? "all"
+          : undefined;
   return {
     initial: {
       customerId,
@@ -83,6 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const {
     customerId,
     customerTypeId,
+    allCustomers,
     itemId,
     active,
     applyRulesOnTop,
@@ -115,6 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
     {
       customerId: customerId || undefined,
       customerTypeId: customerTypeId || undefined,
+      allCustomers,
       itemId,
       breaks,
       active,
@@ -143,7 +150,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewPriceOverrideRoute() {
   const { initial, initialScope } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <PriceOverrideForm
@@ -151,13 +158,15 @@ export default function NewPriceOverrideRoute() {
         itemId: initial.itemId,
         customerId: initial.customerId,
         customerTypeId: initial.customerTypeId,
+        allCustomers: initialScope === "all",
         active: true,
         applyRulesOnTop: true,
         validFrom: initial.validFrom
       }}
       initialBreaks={[{ quantity: 1, overridePrice: 0, active: true }]}
       initialScope={initialScope}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

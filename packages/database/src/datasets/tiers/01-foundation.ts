@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { resolveDate } from "../dates.ts";
+import {
+  monthBack,
+  resolveDate,
+  resolveTimestamp,
+  SEEDED_PERIOD_MONTHS
+} from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import {
   insertId,
@@ -13,7 +18,7 @@ import {
   one,
   RICH
 } from "../sql.ts";
-import type { Ctx } from "../types.ts";
+import type { Ctx, FoundationData, PartyAddressSpec } from "../types.ts";
 
 // Bootstrap seeds the full ISO currency set, so a miss is a typo'd code, not a gap.
 async function assertCurrencyExists(ctx: Ctx, code: string): Promise<void> {
@@ -32,6 +37,33 @@ async function assertCurrencyExists(ctx: Ctx, code: string): Promise<void> {
 export async function runTier1(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.foundation;
   const { client, companyId, locationId } = ctx;
+
+  // ── Accounting cutover ───────────────────────────────────────────────────
+  // A demo company keeps its ledger in Carbon from its first seeded period
+  // (SEEDED_PERIOD_MONTHS back), so every seeded journal is on or after the
+  // cutover and every posting the user makes is Posted. seed-company leaves a
+  // new company without a cutover (it stays Provisional until activation), so
+  // this is usually the first one. Written even when the company already has
+  // one (an app-created company applied through Settings → Demo Data): a later
+  // cutover would leave the seeded journals before it. It is one-way otherwise;
+  // `check_accounting_config_locked` lets this write through only because
+  // `applyDatasetTiers` sets app.dataset_apply in the apply's transaction.
+  ctx.log("accounting cutover");
+  const cutover = monthBack(ctx.anchor, SEEDED_PERIOD_MONTHS - 1).start;
+  await insertRow(
+    ctx,
+    "companySettings",
+    {
+      id: companyId,
+      accountingCutoverDate: cutover.toString(),
+      accountingActivatedAt: resolveTimestamp(ctx.anchor, 0, "00:00:00"),
+      accountingActivatedBy: ctx.userId
+    },
+    {
+      onConflict:
+        '("id") DO UPDATE SET "accountingCutoverDate" = EXCLUDED."accountingCutoverDate", "accountingActivatedAt" = EXCLUDED."accountingActivatedAt", "accountingActivatedBy" = EXCLUDED."accountingActivatedBy"'
+    }
+  );
 
   // ── Departments ──────────────────────────────────────────────────────────
   ctx.log("departments");
@@ -165,7 +197,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.log("storage types + units");
   const storageTypeIdByName = new Map<string, string>();
   for (const name of data.storageTypes) {
-    const storageTypeId = await insertId(ctx, "storageType", { name });
+    const storageTypeId = await insertId(ctx, "storageType", {
+      name,
+      nettable: !data.nonNettableStorageTypes.includes(name)
+    });
     storageTypeIdByName.set(name, storageTypeId);
     ctx.refs.misc[`storagetype:${name}`] = storageTypeId;
   }
@@ -198,6 +233,31 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       active: true
     });
   }
+  // Goods-in receipts of inspected items land in the inspection shelf; a
+  // rejected lot moves to the rejected shelf.
+  await ctx.client.query(
+    `UPDATE "location" SET "inspectionStorageUnitId" = $1, "rejectedStorageUnitId" = $2 WHERE id = $3 AND "companyId" = $4`,
+    [
+      need(ctx.refs.shelves, data.inspectionShelf, "shelf"),
+      need(ctx.refs.shelves, data.rejectedShelf, "shelf"),
+      plantId,
+      ctx.companyId
+    ]
+  );
+
+  // Written on every apply, so applying a dataset without lineFlow turns the
+  // line-flow settings off again.
+  const flow = data.lineFlow;
+  ctx.log("line flow settings");
+  await ctx.client.query(
+    `UPDATE "companySettings" SET "travelerLabels" = $1, "requireTrackedMaterialsIssued" = $2, "autoPickingListOnRelease" = $3 WHERE id = $4`,
+    [
+      flow?.travelerLabels ?? false,
+      flow?.requireTrackedMaterialsIssued ?? false,
+      flow?.autoPickingListOnRelease ?? false,
+      ctx.companyId
+    ]
+  );
 
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
@@ -306,6 +366,42 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   }
   for (const code of currencyCodes) await assertCurrencyExists(ctx, code);
 
+  // ── Tax ───────────────────────────────────────────────────────────────────
+  ctx.log("tax codes");
+  const taxAuthorityIds: Record<string, string> = {};
+  for (const authority of data.taxAuthorities) {
+    taxAuthorityIds[authority.name] = await insertId(ctx, "taxAuthority", {
+      name: authority.name
+    });
+  }
+  const taxCodeIds: Record<string, string> = {};
+  for (const code of data.taxCodes) {
+    const taxCodeId = await insertId(ctx, "taxCode", {
+      name: code.name,
+      description: code.description ?? null,
+      calculationType: code.calculationType ?? "Normal",
+      reportingCategory: code.reportingCategory ?? "Standard",
+      invoiceMessage: code.invoiceMessage ?? null,
+      countryCode: code.countryCode,
+      state: code.state ?? null
+    });
+    taxCodeIds[code.name] = taxCodeId;
+    for (const [index, component] of code.components.entries()) {
+      await insertId(ctx, "taxCodeComponent", {
+        taxCodeId,
+        name: component.name,
+        taxAuthorityId: need(
+          taxAuthorityIds,
+          component.authority,
+          "tax authority"
+        ),
+        taxPercent: component.taxPercent / 100,
+        recoverablePercent: (component.recoverablePercent ?? 0) / 100,
+        sequence: index + 1
+      });
+    }
+  }
+
   // ── Customers ─────────────────────────────────────────────────────────────
   ctx.log("customers");
   for (const c of data.customers) {
@@ -330,6 +426,12 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       `UPDATE "customerShipping" SET "shippingMethodId" = $1 WHERE "customerId" = $2`,
       [need(ctx.refs.shippingMethods, data.defaultShippingMethod), custId]
     );
+    if (c.taxCode) {
+      await client.query(
+        `UPDATE "customerTax" SET "taxCodeId" = $1 WHERE "customerId" = $2`,
+        [need(taxCodeIds, c.taxCode, "tax code"), custId]
+      );
+    }
   }
 
   // Customer contacts
@@ -344,34 +446,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${cc.customer}:${cc.lastName}`] = contactId;
 
-    const addrId = await insertId(ctx, "address", {
-      addressLine1: "See parent",
-      city: data.partyAddressCity,
-      stateProvince: data.partyAddressStateProvince,
-      postalCode: data.partyAddressPostalCode,
-      countryCode: data.partyAddressCountryCode
-    });
-    const locId = await insertId(ctx, "customerLocation", {
-      customerId,
-      addressId: addrId,
-      name: "Billing"
-    });
-    ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    let locId: string;
+    if (cc.sharesLocation) {
+      locId = need(ctx.refs.misc, `cloc:${cc.customer}`, "customer location");
+    } else {
+      const addrId = await insertId(
+        ctx,
+        "address",
+        partyAddress(
+          data,
+          data.customers.find((c) => c.name === cc.customer)?.address,
+          "See parent"
+        )
+      );
+      locId = await insertId(ctx, "customerLocation", {
+        customerId,
+        addressId: addrId,
+        name: "Billing"
+      });
+      ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    }
 
-    await insertId(ctx, "customerContact", {
-      customerId,
-      contactId,
-      customerLocationId: locId
-    });
+    ctx.refs.contacts[`cc:${cc.customer}:${cc.lastName}`] = await insertId(
+      ctx,
+      "customerContact",
+      { customerId, contactId, customerLocationId: locId }
+    );
   }
 
   // ── Suppliers ─────────────────────────────────────────────────────────────
   ctx.log("suppliers");
   for (const s of data.suppliers) {
     const typeId = need(ctx.refs.misc, `stype:${s.type}`, "supplier type");
+    const stageId = s.stage
+      ? await bootstrapIdByName(ctx, "supplierStage", s.stage)
+      : null;
     const supId = await insertId(ctx, "supplier", {
       name: s.name,
       supplierTypeId: typeId,
+      supplierStageId: stageId,
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
@@ -401,13 +514,15 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${sc.supplier}:${sc.lastName}`] = contactId;
 
-    const addrId = await insertId(ctx, "address", {
-      addressLine1: "See supplier record",
-      city: data.partyAddressCity,
-      stateProvince: data.partyAddressStateProvince,
-      postalCode: data.partyAddressPostalCode,
-      countryCode: data.partyAddressCountryCode
-    });
+    const addrId = await insertId(
+      ctx,
+      "address",
+      partyAddress(
+        data,
+        data.suppliers.find((s) => s.name === sc.supplier)?.address,
+        "See supplier record"
+      )
+    );
     const supLocId = await insertId(ctx, "supplierLocation", {
       supplierId,
       addressId: addrId,
@@ -487,13 +602,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Printer routes ─────────────────────────────────────────────────────────
   if (data.printerRoute) {
     ctx.log("printer routes");
-    await insertRow(ctx, "printerRoute", {
+    const printerRouteId = await insertId(ctx, "printerRoute", {
       name: data.printerRoute.name,
       locationId: plantId,
       format: data.printerRoute.format,
       printerUrl: data.printerRoute.printerUrl,
       companyId
     });
+    if (data.printerRoute.plantDefault) {
+      // The shape of emptyLocationAssignment (@carbon/printing) with the
+      // default set; the contexts and work centers inherit it.
+      const inherit = { printerRouteId: null, autoPrint: true };
+      const plantAssignment = {
+        defaultPrinterRouteId: printerRouteId,
+        defaultAutoPrint: true,
+        shipping: inherit,
+        receiving: inherit,
+        inventory: inherit,
+        // A kanban card needs media of at least 3" x 2", and this route has
+        // no media size, so the print worker would render the card on
+        // label2x1 and the kanban renderer refuses that. A context with no
+        // route of its own always falls back to the location default
+        // (resolveContextAssignment), so kanban cannot opt out of the route;
+        // it opts out of auto-print instead, and creating a kanban queues no
+        // job that is sure to fail.
+        kanban: { printerRouteId: null, autoPrint: false },
+        workCenters: {}
+      };
+      // Set only this plant's entry: the assignments of other locations stay.
+      await ctx.client.query(
+        `UPDATE "companySettings"
+         SET printing = COALESCE(printing, '{}'::jsonb) || jsonb_build_object(
+           'assignments',
+           COALESCE(printing -> 'assignments', '{}'::jsonb)
+             || jsonb_build_object($2::text, $1::jsonb)
+         )
+         WHERE id = $3`,
+        [JSON.stringify(plantAssignment), plantId, companyId]
+      );
+    }
   }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────
@@ -645,4 +792,23 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     employeeId: ctx.userId,
     shiftId: need(ctx.refs.shifts, data.employeeJob.shift, "shift")
   });
+}
+
+/**
+ * A customer or supplier location's address: the party's own override when it
+ * has one (a foreign buyer an export rule must see), else the dataset-wide one.
+ */
+function partyAddress(
+  data: FoundationData,
+  override: PartyAddressSpec | undefined,
+  placeholderLine: string
+) {
+  if (override) return override;
+  return {
+    addressLine1: placeholderLine,
+    city: data.partyAddressCity,
+    stateProvince: data.partyAddressStateProvince,
+    postalCode: data.partyAddressPostalCode,
+    countryCode: data.partyAddressCountryCode
+  };
 }

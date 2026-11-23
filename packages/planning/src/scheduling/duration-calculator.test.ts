@@ -6,7 +6,8 @@ import { it } from "vitest";
 import {
   calculateAttendedHours,
   calculateDurationHours,
-  remainingFractions
+  remainingFractions,
+  remainingWorkHours
 } from "./duration-calculator.ts";
 import { assertEquals } from "./test-helpers.ts";
 import type { BaseOperation } from "./types.ts";
@@ -122,4 +123,39 @@ it("remainingFractions: null quantities default to full work", () => {
     remainingFractions({ operationQuantity: null, quantityComplete: 1 }, true),
     { setup: 0, work: 0 }
   );
+});
+
+// 1h setup + 4h labor + 6h machine on 10 pieces, half of them made.
+const halfDone = op({
+  operationQuantity: 10,
+  quantityComplete: 5,
+  setupTime: 1,
+  setupUnit: "Total Hours",
+  laborTime: 0.4,
+  laborUnit: "Hours/Piece",
+  machineTime: 0.6,
+  machineUnit: "Hours/Piece"
+});
+
+it("remainingWorkHours: labor and machine overlap, so the duration is setup + the longer of the two", () => {
+  assertEquals(
+    remainingWorkHours({ ...halfDone, quantityComplete: 0 }, false),
+    {
+      setupHours: 1,
+      laborHours: 4,
+      machineHours: 6,
+      durationHours: 7,
+      attendedHours: 5
+    }
+  );
+});
+
+it("remainingWorkHours: a started operation keeps only the work left and no setup", () => {
+  assertEquals(remainingWorkHours(halfDone, true), {
+    setupHours: 0,
+    laborHours: 2,
+    machineHours: 3,
+    durationHours: 3,
+    attendedHours: 2
+  });
 });

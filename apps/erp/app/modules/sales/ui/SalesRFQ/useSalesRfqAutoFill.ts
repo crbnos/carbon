@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { flushSync } from "react-dom";
@@ -12,12 +12,12 @@ import type {
   ExtractedDocumentData,
   SalesRfqExtraction,
   SalesRfqLineItem
-} from "~/modules/documents";
+} from "~/modules/documents/documents.models";
 import {
   findMatchingContactId,
   findMatchingLocationId,
   getExtractionMatchCandidates
-} from "~/modules/documents";
+} from "~/modules/documents/documents.models";
 import type { salesRfqValidator } from "../../sales.models";
 
 type SalesRFQFormValues = z.infer<typeof salesRfqValidator>;
@@ -188,7 +188,7 @@ export function useSalesRfqAutoFill(initialValues: SalesRFQFormValues) {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(t`Error fetching customer data`);
+        toastError(t`Error fetching customer data`, error);
       } else {
         setCustomer((prev) => ({
           ...prev,

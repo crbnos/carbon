@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { AccountNotificationsData } from "@carbon/account";
+import { assertIsPost, error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { flash } from "@carbon/auth/session.server";
+import {
+  connectionUsable,
+  readConnections
+} from "@carbon/ee/integrations/connections";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { getVapidDetails } from "@carbon/env/push.server";
+import { validationError, validator } from "@carbon/form";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
+import { notificationPreferenceValidator } from "~/modules/users/users.models";
+import {
+  getNotificationPreferences,
+  upsertNotificationPreference
+} from "~/modules/users/users.service";
+
+// Data and writes for the Notifications pane of the account settings modal.
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, userId, companyId } = await requirePermissions(request, {});
+
+  const [preferences, slackActive, emailPlanEnabled] = await Promise.all([
+    getNotificationPreferences(client, userId, companyId),
+    // Service role: integrationConnection SELECT requires settings_view, which
+    // regular employees don't have. Slack is "on" when the company has a usable
+    // Slack connection — the same rows the Assistant and workflows read.
+    // A failed read reads as Slack off: it must not fail the whole pane.
+    readConnections(getCarbonServiceRole(), companyId, "slack").then(
+      (rows) => rows.some(connectionUsable),
+      () => false
+    ),
+    companyHasFeature(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
+  ]);
+
+  const pushKeys = getVapidDetails();
+
+  return {
+    preferences: preferences.data ?? [],
+    slackActive,
+    emailPlanEnabled,
+    // Null hides every push control: the deployment has no push keys (no
+    // SESSION_SECRET).
+    push: pushKeys ? { publicKey: pushKeys.publicKey } : null
+  } satisfies AccountNotificationsData;
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, userId, companyId } = await requirePermissions(request, {});
+
+  const validation = await validator(notificationPreferenceValidator).validate(
+    await request.formData()
+  );
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const { topic, channel, enabled } = validation.data;
+  const upsert = await upsertNotificationPreference(client, {
+    userId,
+    companyId,
+    topic,
+    channel,
+    enabled: enabled === "true"
+  });
+
+  if (upsert.error) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(upsert.error, "Failed to update notification preferences")
+      )
+    );
+  }
+
+  return {};
+}

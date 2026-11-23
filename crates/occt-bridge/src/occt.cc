@@ -1,4 +1,5 @@
 #include "occt-bridge/src/occt.h"
+#include "occt-bridge/src/occt_doc.h"
 
 #include <map>
 #include <string>
@@ -6,10 +7,20 @@
 
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
+#include <algorithm>
+#include <functional>
+#include <optional>
 #include <chrono>
+#include <cmath>
 #include <mutex>
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
+#include <IMeshData_Face.hxx>
+#include <IMeshData_Status.hxx>
+#include <IMeshTools_MeshAlgo.hxx>
+#include <Message_ProgressIndicator.hxx>
+#include <gp_Torus.hxx>
 #include <BinXCAFDrivers.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepMesh_Context.hxx>
@@ -69,7 +80,7 @@ static const std::vector<double> IDENTITY_4X4 = {
 
 // UTF-8, not TCollection_AsciiString: the ASCII conversion replaces every
 // non-Latin character with '?', which mangles e.g. CJK part names.
-static std::string to_utf8(const TCollection_ExtendedString &ext) {
+std::string to_utf8(const TCollection_ExtendedString &ext) {
   const int len = ext.LengthOfCString();
   if (len <= 0) return "";
   std::string out(static_cast<size_t>(len) + 1, '\0');
@@ -79,7 +90,7 @@ static std::string to_utf8(const TCollection_ExtendedString &ext) {
   return out;
 }
 
-static std::string label_name(const TDF_Label &label) {
+std::string label_name(const TDF_Label &label) {
   Handle(TDataStd_Name) attr;
   if (label.FindAttribute(TDataStd_Name::GetID(), attr)) {
     return to_utf8(attr->Get());
@@ -139,85 +150,174 @@ static bool mesh_parallel() {
   return v;
 }
 
+// Negative for an empty shape.
+static double bbox_diagonal(const TopoDS_Shape &shape) {
+  Bnd_Box box;
+  BRepBndLib::Add(shape, box);
+  if (box.IsVoid()) return -1.0;
+  Standard_Real x0, y0, z0, x1, y1, z1;
+  box.Get(x0, y0, z0, x1, y1, z1);
+  const double dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
+  return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 // The caller's linear deflection is an ABSOLUTE sag in mm, sized for typical
 // parts — on a small part the same 0.1 mm sag leaves a curved face with only a
 // handful of facets. Scale it to the shape: 0.05% of the bbox diagonal, never
 // coarser than requested, floored at 5% of the request so a tiny part can't
 // demand micron-level meshes.
-static double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
-  Bnd_Box box;
-  BRepBndLib::Add(shape, box);
-  if (box.IsVoid()) return lin;
-  Standard_Real x0, y0, z0, x1, y1, z1;
-  box.Get(x0, y0, z0, x1, y1, z1);
-  const double dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
-  const double diag = std::sqrt(dx * dx + dy * dy + dz * dz);
+static double deflection_for(double diag, double lin) {
+  if (diag < 0.0) return lin;
   return std::min(lin, std::max(diag * 5e-4, lin * 0.05));
+}
+
+double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
+  return deflection_for(bbox_diagonal(shape), lin);
 }
 
 // A flat face with many holes is where BRepMesh's memory goes: its default
 // algorithm for a plane runs an interior-node pass whose bookkeeping grows with
 // the square of the hole count (1,200 holes on one face: 5.6 GB), although a
-// plane has no interior nodes to add. Past this many wires on one face the part
-// is meshed with that pass off for planes only. The vertices are the same, so
-// nodeIds and geometry hashes do not move; the triangle wiring can differ where
-// a face's points are co-circular (a disc, a regular hole pattern), which is why
-// smaller parts keep the default path and stay byte-identical.
+// plane has no interior nodes to add. A plane with more than this many wires is
+// meshed with that pass off. The vertices are the same, so nodeIds and geometry
+// hashes do not move; the triangle wiring can differ where a face's points are
+// co-circular (a disc, a regular hole pattern), which is why other planes keep
+// the default path and stay byte-identical.
 static const int LEAN_PLANE_MIN_WIRES = 64;
 
-// ASSEMBLER_LEAN_PLANES=0 turns it off (every part takes the default path).
+// ASSEMBLER_LEAN_PLANES=0 turns it off (every plane takes the default path).
 // Read per call, not cached, so a test can flip it.
 static bool lean_planes_enabled() {
   const char *e = std::getenv("ASSEMBLER_LEAN_PLANES");
   return !(e && e[0] == '0');
 }
 
-static bool has_perforated_face(const TopoDS_Shape &shape) {
-  for (TopExp_Explorer face(shape, TopAbs_FACE); face.More(); face.Next()) {
-    int wires = 0;
-    for (TopExp_Explorer wire(face.Current(), TopAbs_WIRE); wire.More();
-         wire.Next()) {
-      if (++wires > LEAN_PLANE_MIN_WIRES) return true;
-    }
-  }
-  return false;
+// A torus far larger than its part is a sliver of it: an exporter's near-flat
+// face (seen: radius 58 m, a 0.1 mm strip of a 150 mm part). BRepMesh's torus
+// algorithm sizes interior nodes from the whole surface and never finishes such
+// a face, so that face alone is meshed from its boundary, as a plane is.
+static const double SLIVER_TORUS_RATIO = 10.0;
+
+// ASSEMBLER_FLAT_TORI=0 turns it off. Read per call, so a test can flip it.
+static bool flat_tori_enabled() {
+  const char *e = std::getenv("ASSEMBLER_FLAT_TORI");
+  return !(e && e[0] == '0');
 }
 
-// OCCT's default factory, except a plane gets the algorithm without the
-// interior-node pass. Every other surface keeps the caller's parameters.
-class LeanPlaneAlgoFactory : public IMeshTools_MeshAlgoFactory {
+using FaceTest = std::function<bool(const IMeshData::IFaceHandle &)>;
+
+// OCCT's algorithm for the face's surface, or, when `boundary_only` holds for
+// the face, the plane algorithm without interior nodes. The factory sees only
+// the surface type, so the face itself is checked here.
+class BoundaryOnlyWhen : public IMeshTools_MeshAlgo {
 public:
-  Handle(IMeshTools_MeshAlgo)
-  GetAlgo(const GeomAbs_SurfaceType type,
-          const IMeshTools_Parameters &params) const override {
-    if (type != GeomAbs_Plane) return base->GetAlgo(type, params);
-    IMeshTools_Parameters lean = params;
-    lean.InternalVerticesMode = false;
-    return base->GetAlgo(type, lean);
+  BoundaryOnlyWhen(const Handle(BRepMesh_MeshAlgoFactory) &base, GeomAbs_SurfaceType type,
+                   FaceTest boundary_only)
+      : base_(base), type_(type), boundary_only_(std::move(boundary_only)) {}
+
+  void Perform(const IMeshData::IFaceHandle &face, const IMeshTools_Parameters &params,
+               const Message_ProgressRange &range) override {
+    IMeshTools_Parameters choice = params;
+    GeomAbs_SurfaceType type = type_;
+    if (boundary_only_(face)) {
+      choice.InternalVerticesMode = false;
+      type = GeomAbs_Plane;
+    }
+    base_->GetAlgo(type, choice)->Perform(face, params, range);
   }
 
 private:
+  Handle(BRepMesh_MeshAlgoFactory) base_;
+  GeomAbs_SurfaceType type_;
+  FaceTest boundary_only_;
+};
+
+// OCCT's default factory, except that a perforated plane and a sliver torus
+// are meshed from their boundary.
+class CarbonAlgoFactory : public IMeshTools_MeshAlgoFactory {
+public:
+  // No `sliver_radius`: every torus keeps OCCT's algorithm.
+  CarbonAlgoFactory(bool lean_planes, std::optional<double> sliver_radius)
+      : lean_planes_(lean_planes), sliver_radius_(sliver_radius) {}
+
+  Handle(IMeshTools_MeshAlgo)
+  GetAlgo(const GeomAbs_SurfaceType type,
+          const IMeshTools_Parameters &params) const override {
+    if (lean_planes_ && type == GeomAbs_Plane) {
+      return new BoundaryOnlyWhen(base, type, [](const IMeshData::IFaceHandle &face) {
+        return face->WiresNb() > LEAN_PLANE_MIN_WIRES;
+      });
+    }
+    if (sliver_radius_ && type == GeomAbs_Torus) {
+      return new BoundaryOnlyWhen(
+          base, type, [radius = *sliver_radius_](const IMeshData::IFaceHandle &face) {
+            const gp_Torus torus = face->GetSurface()->Torus();
+            return std::max(torus.MajorRadius(), torus.MinorRadius()) > radius;
+          });
+    }
+    return base->GetAlgo(type, params);
+  }
+
+private:
+  bool lean_planes_;
+  std::optional<double> sliver_radius_;
   Handle(BRepMesh_MeshAlgoFactory) base = new BRepMesh_MeshAlgoFactory;
 };
 
+// Past this the mesher is stopped and the part becomes its bounding box
+// (`mesh_for`), so one face OCCT cannot mesh never holds up the model.
+// ASSEMBLER_PART_MESH_SECONDS overrides it, for tests.
+static double part_mesh_seconds() {
+  const char *e = std::getenv("ASSEMBLER_PART_MESH_SECONDS");
+  const double v = e ? std::atof(e) : 0.0;
+  return v > 0.0 ? v : 120.0;
+}
+
+// BRepMesh checks it between faces and before every node its Delaunay pass inserts.
+class MeshDeadline : public Message_ProgressIndicator {
+public:
+  explicit MeshDeadline(double seconds)
+      : deadline_(std::chrono::steady_clock::now() +
+                  std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                      std::chrono::duration<double>(seconds))) {}
+  bool UserBreak() override { return std::chrono::steady_clock::now() > deadline_; }
+  void Show(const Message_ProgressScope &, const bool) override {}
+
+private:
+  std::chrono::steady_clock::time_point deadline_;
+};
+
+struct MeshTimeout : std::runtime_error {
+  MeshTimeout() : std::runtime_error("part meshing timed out") {}
+};
+
 static void mesh(const TopoDS_Shape &shape, double lin, double ang) {
-  const double deflection = adaptive_deflection(shape, lin);
-  if (!lean_planes_enabled() || !has_perforated_face(shape)) {
-    BRepMesh_IncrementalMesh(shape, deflection, Standard_False, ang,
-                             mesh_parallel() ? Standard_True : Standard_False);
-    return;
-  }
-  // The same four parameters the constructor above sets.
+  // The same four parameters BRepMesh_IncrementalMesh's convenience
+  // constructor sets, so a part on the default path meshes as it always did.
   BRepMesh_IncrementalMesh mesher;
   mesher.SetShape(shape);
   IMeshTools_Parameters &params = mesher.ChangeParameters();
-  params.Deflection = deflection;
+  const double diag = bbox_diagonal(shape);
+  params.Deflection = deflection_for(diag, lin);
   params.Relative = false;
   params.Angle = ang;
   params.InParallel = mesh_parallel();
+
+  // BRepMesh_Context's default is this same base factory (while CSF_MeshAlgo
+  // is unset), so every other face meshes exactly as OCCT would mesh it.
+  std::optional<double> sliver_radius;
+  if (flat_tori_enabled() && diag > 0.0) sliver_radius = diag * SLIVER_TORUS_RATIO;
   Handle(BRepMesh_Context) context = new BRepMesh_Context(params.MeshAlgo);
-  context->SetFaceDiscret(new BRepMesh_FaceDiscret(new LeanPlaneAlgoFactory));
-  mesher.Perform(context);
+  context->SetFaceDiscret(new BRepMesh_FaceDiscret(
+      new CarbonAlgoFactory(lean_planes_enabled(), sliver_radius)));
+  Handle(MeshDeadline) deadline = new MeshDeadline(part_mesh_seconds());
+  mesher.Perform(context, deadline->Start());
+  if (mesher.GetStatusFlags() & IMeshData_UserBreak) {
+    // Drop the faces it did finish: a later instance of this shape must not
+    // pick up a half-meshed part.
+    BRepTools::Clean(shape);
+    throw MeshTimeout();
+  }
 }
 
 static void tessellate(const TopoDS_Shape &shape, double lin, double ang,
@@ -452,6 +552,11 @@ class Builder {
     m.is_proxy = false;
     try {
       tessellate(shape, lin_, ang_, m.vertices, m.indices);
+    } catch (const MeshTimeout &) {
+      fprintf(stderr, "part %s did not mesh within %.0fs: shown as its bounding box\n",
+              key.c_str(), part_mesh_seconds());
+      m.vertices.clear();
+      m.indices.clear();
     } catch (...) {
       m.vertices.clear();
       m.indices.clear();
@@ -478,7 +583,7 @@ class Builder {
 // no concurrent STEPControl_Controller::Init(). So warm both ONCE here,
 // single-threaded; concurrent reads then only touch their own local reader
 // instance and read (never write) the shared config.
-static void ensure_step_init() {
+void ensure_step_init() {
   static std::once_flag occt_init;
   std::call_once(occt_init, [] {
     STEPControl_Controller::Init();
@@ -489,7 +594,7 @@ static void ensure_step_init() {
 // One process-wide XCAF application with the BinXCAF (`.xbf`) storage/retrieval
 // drivers registered — required to SaveAs/Open XCAF documents. TDocStd_Application
 // is internally guarded, so a single shared instance is fine across threads.
-static const Handle(TDocStd_Application) & xcaf_app() {
+const Handle(TDocStd_Application) & xcaf_app() {
   static Handle(TDocStd_Application) app = [] {
     Handle(TDocStd_Application) a = new TDocStd_Application();
     BinXCAFDrivers::DefineFormat(a);
@@ -500,8 +605,8 @@ static const Handle(TDocStd_Application) & xcaf_app() {
 
 // Read + transfer a STEP file into a fresh XCAF document. Returns null and sets
 // `error` on failure (unreadable STEP, transfer failure).
-static Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
-                                                 std::string &error) {
+Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
+                                          std::string &error) {
   ensure_step_init();
   STEPCAFControl_Reader reader;
   reader.SetColorMode(true);

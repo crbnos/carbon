@@ -5,7 +5,7 @@
 import type { SelectProps } from "@carbon/form";
 import { SelectControlled } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
-import { standardFactorType } from "~/modules/shared";
+import { standardFactorType } from "~/modules/shared/shared.models";
 
 export type StandardFactorSelectProps = Omit<SelectProps, "options"> & {
   hint?: string;

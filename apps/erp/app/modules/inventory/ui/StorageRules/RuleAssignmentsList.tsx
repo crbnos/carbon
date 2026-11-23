@@ -162,6 +162,7 @@ export default function RuleAssignmentsList({
       <div className="flex shrink-0 items-center gap-2">
         {availableOptions.length > 0 && (
           <Combobox
+            aria-label={t`Add rule from library`}
             size="md"
             value=""
             options={availableOptions}
@@ -277,23 +278,24 @@ export default function RuleAssignmentsList({
           const isLocked = isBroadcast;
           return (
             <Tr key={a.ruleId}>
-              <Td className="whitespace-nowrap">
-                <HStack className="gap-2 items-center flex-wrap">
+              <Td className="whitespace-nowrap py-3">
+                <div className="flex flex-col items-start gap-1">
                   <Hyperlink to={path.to.storageRule(a.ruleId)}>
-                    <HStack className="gap-2 items-center">
-                      <LuShieldCheck className="text-muted-foreground shrink-0" />
+                    <span className="flex items-center gap-2">
+                      <LuShieldCheck className="size-4 shrink-0 text-muted-foreground" />
                       <span>{a.rule.name}</span>
-                    </HStack>
+                    </span>
                   </Hyperlink>
+                  {/* Indented past the icon so it sits under the name. */}
                   {isBroadcast && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] uppercase tracking-wide"
+                      className="ml-6 text-[0.625rem] uppercase tracking-wide"
                     >
                       <Trans>Applies to all</Trans>
                     </Badge>
                   )}
-                </HStack>
+                </div>
               </Td>
               <Td>
                 {a.rule.severity === "error" ? (
@@ -426,6 +428,7 @@ function EmptyState({
           {availableOptions.length > 0 ? (
             <>
               <Combobox
+                aria-label={t`Add rule from library`}
                 value=""
                 options={availableOptions}
                 onChange={onAssign}

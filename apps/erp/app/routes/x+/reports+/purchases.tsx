@@ -15,20 +15,23 @@ import {
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
-import type { PivotState, PurchaseLinePivotLine } from "~/modules/accounting";
+import type { PivotState } from "~/modules/accounting/accounting.models";
 import {
   applyPivotDisplayParams,
-  getFiscalYearSettings,
-  getPurchaseLinePivot,
   pivotStateValidator,
   purchaseGroupingFields
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
+import {
+  getFiscalYearSettings,
+  getPurchaseLinePivot
+} from "~/modules/accounting/accounting.service";
+import type { PurchaseLinePivotLine } from "~/modules/accounting/types";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
   getPeriodColumnLabel,
@@ -41,8 +44,8 @@ import {
   pivotToCsvRows,
   UNASSIGNED_COLUMN_KEY
 } from "~/modules/accounting/ui/Reports/pivotData";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringPivotDisplay } from "~/utils/revalidate";
@@ -317,6 +320,9 @@ export default function PurchasesReportRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Purchases</Trans>
+      </h1>
       <PurchasesControlBar state={state} onDownload={onDownload} />
       <PivotTree
         pivot={pivot}

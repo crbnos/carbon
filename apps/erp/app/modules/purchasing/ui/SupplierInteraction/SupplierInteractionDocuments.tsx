@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -12,6 +17,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,7 +32,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -37,7 +44,6 @@ import { Outlet, useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -86,7 +92,7 @@ const SupplierInteractionDocuments = ({
               <Trans>Files</Trans>
             </CardTitle>
           </CardHeader>
-          <CardAction>
+          <CardAction className="max-md:hidden">
             {!isReadOnly && (
               <SupplierInteractionDocumentForm
                 interactionId={interactionId}
@@ -98,7 +104,7 @@ const SupplierInteractionDocuments = ({
         </HStack>
         <CardContent>
           <Table>
-            <Thead>
+            <Thead className={cn(attachments.length === 0 && "max-md:hidden")}>
               <Tr>
                 <Th>Name</Th>
                 <Th>Size</Th>
@@ -114,6 +120,16 @@ const SupplierInteractionDocuments = ({
                       <HStack>
                         <DocumentIcon type={getDocumentType(attachment.name)} />
                         <span
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLSpanElement>
+                          ) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
                           className="font-medium"
                           onClick={() => download(attachment)}
                         >
@@ -243,7 +259,7 @@ export const useSupplierInteractionDocuments = ({
         .remove([getPath(attachment)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -259,7 +275,7 @@ export const useSupplierInteractionDocuments = ({
       try {
         await downloadUrl(url, attachment.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

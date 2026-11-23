@@ -7,12 +7,14 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  NonNettableBadge,
   PrefetchLink,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuArrowRightLeft,
   LuBlocks,
@@ -38,9 +40,11 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
-import type { MethodItemType } from "~/modules/shared";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
+import type { MethodItemType } from "~/modules/shared/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -53,14 +57,15 @@ import StockMovementCorrectionModal from "./StockMovementCorrectionModal";
 type StockMovementsTableProps = {
   data: StockMovement[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const StockMovementsTable = memo(
-  ({ data, count }: StockMovementsTableProps) => {
+  ({ data, count, infinite }: StockMovementsTableProps) => {
     const { t } = useLingui();
+    const nonNettable = useNonNettableStorageUnits();
     const permissions = usePermissions();
-    const [correctionTarget, setCorrectionTarget] =
-      useState<StockMovement | null>(null);
+    const correction = useDrawerItem<StockMovement>();
     const [people] = usePeople();
     const locations = useLocations();
     const locationsById = useMemo(
@@ -88,7 +93,10 @@ const StockMovementsTable = memo(
               <Hyperlink to={getInventoryItemActivityPath(row.original)}>
                 <VStack spacing={0}>
                   <span>{row.original.itemReadableId}</span>
-                  {row.original.itemDescription && (
+                  {distinctItemText(
+                    row.original.itemReadableId,
+                    row.original.itemDescription
+                  ) && (
                     <span className="text-muted-foreground text-xs">
                       {row.original.itemDescription}
                     </span>
@@ -98,6 +106,7 @@ const StockMovementsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBlocks />
           }
         },
@@ -111,6 +120,7 @@ const StockMovementsTable = memo(
           header: t`Entry Type`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: itemLedgerTypes.map((type) => ({
@@ -126,6 +136,7 @@ const StockMovementsTable = memo(
           header: t`Document Type`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: itemLedgerDocumentTypes.map((type) => ({
@@ -165,6 +176,7 @@ const StockMovementsTable = memo(
           header: t`Quantity`,
           cell: ({ row }) => <QuantityDelta value={row.original.quantity} />,
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -194,7 +206,15 @@ const StockMovementsTable = memo(
         {
           accessorKey: "storageUnitName",
           header: t`Storage Unit`,
-          cell: ({ row }) => row.original.storageUnitName ?? "",
+          cell: ({ row }) => (
+            <HStack spacing={2}>
+              <span>{row.original.storageUnitName ?? ""}</span>
+              {row.original.storageUnitId &&
+                nonNettable.has(row.original.storageUnitId) && (
+                  <NonNettableBadge />
+                )}
+            </HStack>
+          ),
           meta: {
             icon: <LuWarehouse />
           }
@@ -239,6 +259,7 @@ const StockMovementsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "dateRange"
             },
@@ -273,25 +294,26 @@ const StockMovementsTable = memo(
           }
         }
       ];
-    }, [people, locations, locationsById, t]);
+    }, [people, locations, locationsById, nonNettable, t]);
 
     const renderContextMenu = useCallback(
       (row: StockMovement) => (
         <MenuItem
           disabled={!permissions.can("update", "inventory")}
-          onClick={() => setCorrectionTarget(row)}
+          onClick={() => correction.open(row)}
         >
           <MenuIcon icon={<LuWrench />} />
           {t`Correct Quantity`}
         </MenuItem>
       ),
-      [permissions, t]
+      [correction.open, permissions, t]
     );
 
     return (
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnPinning={{
@@ -302,10 +324,11 @@ const StockMovementsTable = memo(
           table="itemLedger"
           withSavedView
         />
-        {correctionTarget && (
+        {correction.item && (
           <StockMovementCorrectionModal
-            movement={correctionTarget}
-            onClose={() => setCorrectionTarget(null)}
+            open={correction.isOpen}
+            movement={correction.item}
+            onClose={correction.close}
           />
         )}
       </>

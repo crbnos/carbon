@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { z } from "zod";
-import { jobOperationStatus } from "~/modules/production";
-import { operationTypes } from "~/modules/shared";
+import { jobOperationStatus } from "~/modules/production/production.models";
+import { operationTypes } from "~/modules/shared/shared.models";
 
 export const jobOperationValidator = z
   .object({

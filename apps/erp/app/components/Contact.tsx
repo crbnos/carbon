@@ -45,15 +45,18 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
 
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
-      <Avatar size="sm" name={`${name}`} />
+      <Avatar size="sm" name={`${name}`} decorative />
       <VStack spacing={0}>
         <HStack>
           {url ? (
-            <Link to={url}>
-              <p className="text-sm font-bold">{name}</p>
+            <Link
+              to={url}
+              className="max-md:relative max-md:after:absolute max-md:after:-inset-y-3 max-md:after:inset-x-0"
+            >
+              <p className="text-sm font-bold max-md:font-semibold">{name}</p>
             </Link>
           ) : (
-            <p className="text-sm font-bold">{name}</p>
+            <p className="text-sm font-bold max-md:font-semibold">{name}</p>
           )}
 
           {userStatus === UserStatus.Active && (
@@ -75,7 +78,7 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
         </p>
       </VStack>
       {actions.length > 0 && (
-        <ActionMenu>
+        <ActionMenu label={t`Actions for ${name}`}>
           {actions.map((action) => (
             <DropdownMenuItem key={action.label} onClick={action.onClick}>
               {action.icon && <DropdownMenuIcon icon={action.icon} />}

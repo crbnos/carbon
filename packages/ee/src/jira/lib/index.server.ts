@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+export { resolveInboundAssignee } from "../../issue-sync/assignee";
 export * from "./client";
 export * from "./richtext";
 export * from "./service";

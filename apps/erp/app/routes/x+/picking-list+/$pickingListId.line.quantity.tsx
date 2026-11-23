@@ -2,58 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { pickPickingListLine } from "~/modules/inventory";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { pickQuantityValidator } from "~/modules/inventory/inventory.models";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(pickQuantityValidator).request(args, {
+    params: ["pickingListId"]
   });
-  const { pickingListId } = params;
-  if (!pickingListId) {
-    return { success: false, message: "Missing pickingListId" };
-  }
-  const serviceRole = getCarbonServiceRole();
+  if ("invalid" in input) return input.invalid;
 
-  const formData = await request.formData();
-  const pickingListLineId = formData.get("pickingListLineId") as string;
-  const quantity = Number(formData.get("quantity") ?? 0);
-  const markShort = formData.get("markShort") === "true";
-
-  if (!pickingListLineId) {
-    return { success: false, message: "Missing pickingListLineId" };
-  }
-
-  // The pick runs through the service role: the line must belong to this
-  // company and to the picking list in the URL.
-  await requireCompanyRecord(serviceRole, "pickingListLine", companyId, {
-    id: pickingListLineId,
-    pickingListId
+  const api = await carbon(args.request);
+  return api.inventory.pickPickingListLineChecked({
+    pickingListId: input.params.pickingListId,
+    pickingListLineId: input.data.pickingListLineId,
+    quantity: input.data.quantity,
+    markShort: input.data.markShort === "true"
   });
-
-  const result = await pickPickingListLine(serviceRole, getDatabaseClient(), {
-    pickingListLineId,
-    quantity,
-    markShort,
-    userId,
-    companyId
-  });
-
-  if (result.error) {
-    return {
-      success: false,
-      message:
-        typeof result.error === "string"
-          ? result.error
-          : (result.error.message ?? "Failed to pick line")
-    };
-  }
-
-  return { success: true, data: result.data };
 }

@@ -10,11 +10,16 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { toolValidator, upsertTool } from "~/modules/items";
+import { NewRecordPage } from "~/components/NewRecordPage";
+import { toolValidator } from "~/modules/items/items.models";
+import { upsertTool } from "~/modules/items/items.service";
 import { ToolForm } from "~/modules/items/ui/Tools";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Tool");
 
 export const handle: Handle = {
   breadcrumb: msg`Tools`,
@@ -80,8 +85,8 @@ export default function ToolsNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <ToolForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

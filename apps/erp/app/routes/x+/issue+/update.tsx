@@ -2,125 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
-import { async, unchecked } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { isIssueLocked } from "~/modules/quality";
-import { getDatabaseClient } from "~/services/database.server";
-import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+import { updateIssueField } from "~/modules/quality/quality.server";
 
-const logger = getLogger("erp", "update");
-
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
-  });
-
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const field = formData.get("field");
-  const value = formData.get("value");
-
-  if (
-    typeof field !== "string" ||
-    (typeof value !== "string" && value !== null)
-  ) {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  // Per-ID locked check
-  const issues = await client
-    .from("nonConformance")
-    .select("id, status")
-    .in("id", ids as string[])
-    .eq("companyId", companyId);
-
-  const lockedError = requireUnlockedBulk({
-    statuses: (issues.data ?? []).map((i) => i.status),
-    checkFn: isIssueLocked,
-    message: "Cannot modify a closed issue. Reopen it first."
-  });
-  if (lockedError) return lockedError;
-
-  switch (field) {
-    case "requiredActionIds":
-    case "approvalRequirements":
-      const arrayValue = value ? value.split(",") : [];
-      const update = await client
-        .from("nonConformance")
-        .update(
-          unchecked({
-            [field]: arrayValue,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-        )
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
-
-      if (update.error) {
-        logger.error(update.error);
-        return {
-          error: { message: "Failed to update issue" },
-          data: null
-        };
-      }
-      // A silent reconcile failure leaves the column and the task list disagreeing.
-      // Only the issues the scoped read above found are this company's.
-      // Bounded: each call takes a pooled connection, and a bulk edit can name
-      // hundreds of issues.
-      const reconciled = await async.map(
-        issues.data ?? [],
-        ({ id }) =>
-          serverFns
-            .system({
-              db: getDatabaseClient(),
-              companyId,
-              userId
-            })
-            .invoke("create", { type: "nonConformanceTasks", id }),
-        { concurrency: 4 }
-      );
-
-      const reconcileError = reconciled.find((r) => r.error)?.error;
-      if (reconcileError) {
-        logger.error(reconcileError);
-        return {
-          error: { message: "Failed to update issue tasks" },
-          data: null
-        };
-      }
-
-      return { data: update.data };
-    case "source":
-    case "priority":
-    case "name":
-    case "description":
-    case "locationId":
-    case "nonConformanceTypeId":
-    case "openDate":
-    case "dueDate":
-    case "closeDate":
-    case "quantity":
-    case "itemId":
-    case "supplierId":
-      return await client
-        .from("nonConformance")
-        .update(
-          unchecked({
-            [field]: value ? value : null,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-        )
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
-    default:
-      return {
-        error: { message: `Invalid field: ${field}` },
-        data: null
-      };
-  }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(updateIssueField.input).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.quality.updateIssueField(input.data);
 }

@@ -21,8 +21,7 @@ import {
   businessDay,
   msToInstantIso,
   toInstantIso,
-  toInstantMs,
-  toIsoDate
+  toInstantMs
 } from "./date-utils.ts";
 import {
   buildOperationDependencies,
@@ -44,12 +43,13 @@ import { calendarAdapters, computeNeedByDates } from "./need-by-calculator.ts";
 import {
   applyPriorities,
   calculatePrioritiesByWorkCenter,
+  committedDueDate,
   toOperationWithJobInfo
 } from "./priority-calculator.ts";
 import {
   dependencyEdgesEqual,
   type JobWrites,
-  type PlacementWrite
+  placementWrites
 } from "./run-overlay.ts";
 import type {
   AssemblyNode,
@@ -526,7 +526,7 @@ export class SchedulingEngine {
     this.needByByOperation = computeNeedByDates({
       operations,
       graph,
-      jobDueDate: this.job?.dueDate ?? null,
+      jobDueDate: this.job ? committedDueDate(this.job) : null,
       calendarHoursPerDay,
       workingDayTest
     });
@@ -576,7 +576,7 @@ export class SchedulingEngine {
     const operations = Array.from(this.scheduledOperations.values());
     const selections =
       await this.workCenterSelector.selectWorkCentersForOperations(operations, {
-        jobDueDate: this.job?.dueDate ?? null,
+        jobDueDate: this.job ? committedDueDate(this.job) : null,
         batchPlacements: this.batchPlacements
       });
 
@@ -804,7 +804,7 @@ export class SchedulingEngine {
     // business day now exceeds the due date. Edge-triggered by construction, so
     // a second identical regen produces no entry. Jobs with no due date are
     // never late. Computed on the FACTORY calendar (location tz).
-    const dueDate = this.job?.dueDate ?? null;
+    const dueDate = this.job ? committedDueDate(this.job) : null;
     const tz = this.job?.timezone ?? "UTC";
     if (dueDate && this.projectedCompletionAt) {
       const priorProjected = this.job?.projectedCompletionAt ?? null;
@@ -819,37 +819,11 @@ export class SchedulingEngine {
       this.newlyLate = false;
     }
 
-    const placements: JobWrites["placements"] = [];
-    for (const op of this.scheduledOperations.values()) {
-      const originalOp = this.operations.find((o) => o.id === op.id);
-      const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
-      // Never clobber a work center the user (or method) already set.
-      // Auto-selection may only fill null/empty work centers.
-      const originalWorkCenterId = originalOp?.workCenterId;
-      const workCenterId =
-        originalWorkCenterId != null && originalWorkCenterId !== ""
-          ? originalWorkCenterId
-          : op.workCenterId;
-
-      // dueDate is the backward need-by target and is DIFF-written: only
-      // when the computed value differs from the stored one (a quiet regen
-      // touches zero dueDate values), and never for a pinned op —
-      // manuallyScheduled means a human owns that target.
-      const needBy = this.needByByOperation.get(op.id) ?? null;
-      const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
-      const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
-
-      const placement: PlacementWrite = {
-        startDate: op.startDate,
-        projectedCompletionAt: op.projectedCompletionAt ?? null,
-        ...(writeDueDate ? { dueDate: needBy } : {}),
-        ...(op.priority != null ? { priority: op.priority } : {}),
-        workCenterId,
-        hasConflict: op.hasConflict,
-        conflictReason: op.conflictReason
-      };
-      placements.push({ id: op.id, placement });
-    }
+    const placements = placementWrites({
+      scheduled: this.scheduledOperations.values(),
+      originals: this.operations,
+      needByByOperation: this.needByByOperation
+    });
 
     this.writes = {
       jobId: this.jobId,
@@ -914,7 +888,7 @@ export class SchedulingEngine {
    * per-op conflicts (targets are outputs, not constraints).
    */
   private composeBehindTargetSentence(): string | null {
-    const dueDate = this.job?.dueDate ?? null;
+    const dueDate = this.job ? committedDueDate(this.job) : null;
     if (!dueDate || !this.projectedCompletionAt) return null;
     const tz = this.job?.timezone ?? "UTC";
     if (businessDay(this.projectedCompletionAt, tz) <= dueDate) return null;

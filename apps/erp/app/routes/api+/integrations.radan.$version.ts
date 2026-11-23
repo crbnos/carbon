@@ -8,7 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { getJobDocuments } from "~/modules/production/production.service";
-import { getCompanyIntegration } from "~/modules/settings/settings.server";
+import { getCompanyIntegration } from "~/modules/settings/settings.service";
 
 const integrationMetadataParser = z.object({
   processes: z.array(z.string())

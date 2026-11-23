@@ -2,17 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import {
   invoiceSettlementBase,
-  invoiceSettlementValidator,
-  replaceInvoiceSettlements
-} from "~/modules/invoicing";
+  invoiceSettlementValidator
+} from "~/modules/invoicing/invoicing.models";
+import { replaceInvoiceSettlements } from "~/modules/invoicing/invoicing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -99,11 +100,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (e) {
     throw redirect(
       path.to.payment(paymentId),
-      await flash(
-        request,
-        error(e, e instanceof Error ? e.message : "Failed to save applications")
-      )
+      await flash(request, {
+        ...error(e, "Failed to save applications"),
+        message: getErrorMessage(e, "Failed to save applications")
+      })
     );
+  }
+
+  // Save and Post: a failed post keeps the saved applications, and its
+  // reason stays on the payment.
+  if (formData.get("intent") === "post") {
+    const api = await carbon(request);
+    const posted = await api.invoicing.postPayment({ paymentId });
+    return respond(request, posted).redirect(path.to.payment(paymentId), {
+      message: "Applications saved and payment posted",
+      onError: path.to.payment(paymentId)
+    });
   }
 
   throw redirect(

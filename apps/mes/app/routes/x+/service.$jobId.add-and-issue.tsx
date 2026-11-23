@@ -1,0 +1,119 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
+import type { ActionFunctionArgs } from "react-router";
+import { data } from "react-router";
+import { z } from "zod";
+import { erpPosting } from "~/services/erp";
+
+const log = getLogger("mes", "service-job-issue");
+
+const addAndIssueValidator = z.object({
+  itemId: z.string().min(1),
+  unitOfMeasureCode: z.string().min(1),
+  // For inventory items
+  quantity: z.number().optional(),
+  // For tracked items (serial/batch)
+  children: z
+    .array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number()
+      })
+    )
+    .optional()
+});
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { userId, companyId } = await requirePermissions(request, {});
+  const { jobId } = params;
+
+  if (!jobId) {
+    return data(
+      { success: false, message: "Service job is required" },
+      { status: 400 }
+    );
+  }
+
+  const json = await request.json();
+  const validation = addAndIssueValidator.safeParse(json);
+
+  if (!validation.success) {
+    return data(
+      { success: false, message: "Failed to validate payload" },
+      { status: 400 }
+    );
+  }
+
+  const { itemId, unitOfMeasureCode, quantity, children } = validation.data;
+
+  // Calculate total quantity from children if provided, otherwise use quantity
+  const totalQuantity = children
+    ? children.reduce((sum, c) => sum + c.quantity, 0)
+    : (quantity ?? 0);
+
+  if (totalQuantity <= 0) {
+    return data(
+      { success: false, message: "Quantity must be greater than 0" },
+      { status: 400 }
+    );
+  }
+
+  if (children && children.length > 0) {
+    // Tracked entities (serial/batch)
+    const issued = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
+        type: "serviceJobTrackedEntities",
+        serviceJobId: jobId,
+        itemId,
+        unitOfMeasureCode,
+        children
+      }
+    );
+
+    if (issued.error) {
+      log.error("Failed to issue for service job", {
+        error: issued.error
+      });
+      return data(
+        { success: false, message: issued.error.message },
+        { status: 400 }
+      );
+    }
+  } else {
+    // Inventory item
+    const issued = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
+        type: "serviceJobInventory",
+        serviceJobId: jobId,
+        itemId,
+        unitOfMeasureCode,
+        quantity: totalQuantity
+      }
+    );
+
+    if (issued.error) {
+      log.error("Failed to issue for service job", {
+        error: issued.error
+      });
+      return data(
+        { success: false, message: issued.error.message },
+        { status: 400 }
+      );
+    }
+  }
+
+  return {
+    success: true,
+    message: "Part added and issued successfully"
+  };
+}

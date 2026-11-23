@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
+  Badge,
   Combobox,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -16,10 +16,10 @@ import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
-  LuCirclePlus,
   LuClock,
   LuMapPin,
   LuPencil,
+  LuScanQrCode,
   LuTrash,
   LuUser
 } from "react-icons/lu";
@@ -28,25 +28,25 @@ import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import New from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { clearStockTransferWizard, usePeople } from "~/stores";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { stockTransferStatusType } from "../../inventory.models";
 import type { StockTransfer } from "../../types";
 import StockTransferStatus from "./StockTransferStatus";
-import { StockTransferWizard } from "./StockTransferWizard";
 
 type StockTransfersTableProps = {
   data: StockTransfer[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
 };
 
 const StockTransfersTable = memo(
-  ({ data, count, locationId }: StockTransfersTableProps) => {
-    const wizardDisclosure = useDisclosure();
-
+  ({ data, count, nextCursor, locationId }: StockTransfersTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -69,6 +69,7 @@ const StockTransfersTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -103,6 +104,7 @@ const StockTransfersTable = memo(
             return <StockTransferStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: stockTransferStatusType.map((type) => ({
@@ -115,12 +117,40 @@ const StockTransfersTable = memo(
           }
         },
         {
+          id: "source",
+          header: t`Source`,
+          cell: ({ row }) =>
+            row.original.kanbanId ? (
+              <Badge variant="blue">
+                <Trans>Kanban</Trans>
+              </Badge>
+            ) : (
+              <Badge variant="gray">
+                <Trans>Manual</Trans>
+              </Badge>
+            ),
+          meta: {
+            icon: <LuScanQrCode />,
+            filterHeader: t`Source`,
+            filter: {
+              type: "static",
+              options: [
+                { value: "Kanban", label: t`Kanban` },
+                { value: "Manual", label: t`Manual` }
+              ]
+            },
+            exportValue: (row: StockTransfer) =>
+              row.kanbanId ? "Kanban" : "Manual"
+          }
+        },
+        {
           accessorKey: "assignee",
           header: t`Assignee`,
           cell: ({ row }) => (
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -252,6 +282,8 @@ const StockTransfersTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "stockTransfers", nextCursor }}
           columns={columns}
           count={count}
           defaultColumnPinning={{
@@ -264,6 +296,7 @@ const StockTransfersTable = memo(
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={locationId}
@@ -274,15 +307,10 @@ const StockTransfersTable = memo(
                 }}
               />
               {permissions.can("create", "inventory") && (
-                <Button
-                  onClick={() => {
-                    clearStockTransferWizard();
-                    wizardDisclosure.onOpen();
-                  }}
-                  leftIcon={<LuCirclePlus />}
-                >
-                  {t`Add Stock Transfer`}
-                </Button>
+                <New
+                  label={t`Stock Transfer`}
+                  to={`${path.to.newStockTransfer}?location=${locationId}`}
+                />
               )}
             </div>
           }
@@ -299,18 +327,10 @@ const StockTransfersTable = memo(
             text={`Are you sure you want to delete ${selectedStockTransfer.stockTransferId!}? This cannot be undone.`}
             onCancel={() => {
               deleteStockTransferModal.onClose();
-              setSelectedStockTransfer(null);
             }}
             onSubmit={() => {
               deleteStockTransferModal.onClose();
-              setSelectedStockTransfer(null);
             }}
-          />
-        )}
-        {wizardDisclosure.isOpen && (
-          <StockTransferWizard
-            locationId={locationId}
-            onClose={wizardDisclosure.onClose}
           />
         )}
       </>

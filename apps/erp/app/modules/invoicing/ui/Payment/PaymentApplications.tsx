@@ -20,15 +20,17 @@ import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { DateTime, Hyperlink } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
-import type { getInvoiceSettlements } from "~/modules/invoicing";
 import { path } from "~/utils/path";
-
-type PaymentApplication = NonNullable<
-  Awaited<ReturnType<typeof getInvoiceSettlements>>["data"]
->[number];
+import {
+  aggregateApplications,
+  type PaymentApplication,
+  unappliedPaymentCash
+} from "./payment-logic";
 
 type PaymentApplicationsProps = {
   isRefund?: boolean;
+  isDepositRefund?: boolean;
+  isDeposit?: boolean;
   // An employee payee: every target is a reimbursement.
   isReimbursement?: boolean;
   applications: PaymentApplication[];
@@ -53,6 +55,11 @@ function invoiceLabel(a: PaymentApplication) {
       | null;
     targetSalesInvoiceId?: string | null;
     targetPurchaseInvoiceId?: string | null;
+    targetPaymentId?: string | null;
+    targetPayment?:
+      | { paymentId?: string | null }
+      | { paymentId?: string | null }[]
+      | null;
     targetMemoId?: string | null;
     targetMemo?:
       | { memoId?: string | null }
@@ -75,6 +82,10 @@ function invoiceLabel(a: PaymentApplication) {
     (Array.isArray(rec.targetReimbursement)
       ? rec.targetReimbursement[0]?.reimbursementId
       : rec.targetReimbursement?.reimbursementId) ??
+    (Array.isArray(rec.targetPayment)
+      ? rec.targetPayment[0]?.paymentId
+      : rec.targetPayment?.paymentId) ??
+    rec.targetPaymentId ??
     rec.targetSalesInvoiceId ??
     rec.targetPurchaseInvoiceId ??
     rec.targetMemoId ??
@@ -84,6 +95,8 @@ function invoiceLabel(a: PaymentApplication) {
 
 const PaymentApplications = ({
   isRefund = false,
+  isDepositRefund = false,
+  isDeposit = false,
   isReimbursement = false,
   applications: splits,
   paymentCurrency,
@@ -92,57 +105,29 @@ const PaymentApplications = ({
 }: PaymentApplicationsProps) => {
   const currencyFormatter = useCurrencyFormatter({ currency: baseCurrency });
   const documentFormatter = useCurrencyFormatter({ currency: paymentCurrency });
-  const byInvoice = new Map<
-    string,
-    PaymentApplication & { sourceRates: number[] }
-  >();
-  for (const a of splits) {
-    const id =
-      a.targetSalesInvoiceId ??
-      a.targetPurchaseInvoiceId ??
-      a.targetMemoId ??
-      a.targetReimbursementId ??
-      a.id;
-    const existing = byInvoice.get(id);
-    if (!existing) {
-      byInvoice.set(id, { ...a, sourceRates: [Number(a.sourceExchangeRate)] });
-      continue;
-    }
-    existing.appliedAmount = round(
-      existing.appliedAmount + Number(a.appliedAmount)
-    );
-    existing.discountAmount = round(
-      existing.discountAmount + Number(a.discountAmount)
-    );
-    existing.writeOffAmount = round(
-      existing.writeOffAmount + Number(a.writeOffAmount)
-    );
-    existing.sourceAmount =
-      (existing.sourceAmount ?? 0) + Number(a.sourceAmount ?? 0);
-    existing.fxGainLossAmount = round(
-      Number(existing.fxGainLossAmount ?? 0) + Number(a.fxGainLossAmount ?? 0)
-    );
-    existing.sourceRates = [
-      ...new Set([...existing.sourceRates, Number(a.sourceExchangeRate)])
-    ];
-  }
-  const applications = [...byInvoice.values()];
+  const applications = aggregateApplications(splits);
   const rateFormatter = useNumberFormatter(SCALE_FORMAT);
 
-  const totalApplied = applications.reduce(
-    (sum, a) =>
-      sum +
-      Number(a.appliedAmount) +
-      Number(a.discountAmount) +
-      Number(a.writeOffAmount),
-    0
-  );
-  const unapplied =
-    paymentTotal -
-    splits.reduce(
-      (s, a) => s + (a.sourcePaymentId ? 0 : Number(a.sourceAmount ?? 0)),
-      0
-    );
+  const total = (
+    field: "appliedAmount" | "discountAmount" | "writeOffAmount"
+  ) => round(applications.reduce((sum, a) => sum + Number(a[field]), 0));
+  const unapplied = unappliedPaymentCash(paymentTotal, splits);
+
+  // Discount and write-off only exist on a trade invoice settlement.
+  const hasAdjustments = !isRefund && !isReimbursement;
+  // The rate and FX columns say nothing when every amount is in the base
+  // currency at rate 1 — the common case — so they appear only when one isn't.
+  const isForeign = paymentCurrency !== baseCurrency;
+  const hasFx =
+    !isDepositRefund &&
+    (isForeign ||
+      applications.some(
+        (a) =>
+          Number(a.targetExchangeRate) !== 1 ||
+          a.sourceRates.some((rate) => rate !== 1) ||
+          Number(a.fxGainLossAmount ?? 0) !== 0
+      ));
+  const columnCount = 3 + (hasAdjustments ? 2 : 0) + (hasFx ? 3 : 0);
 
   return (
     <Card className="w-full">
@@ -154,9 +139,11 @@ const PaymentApplications = ({
       <CardContent>
         <Table>
           <Thead>
-            <Tr>
+            <Tr className="[&>th]:whitespace-nowrap">
               <Th>
-                {isReimbursement ? (
+                {isDepositRefund ? (
+                  <Trans>Payment</Trans>
+                ) : isReimbursement ? (
                   <Trans>Reimbursement</Trans>
                 ) : isRefund ? (
                   <Trans>Memo</Trans>
@@ -164,39 +151,60 @@ const PaymentApplications = ({
                   <Trans>Invoice</Trans>
                 )}
               </Th>
+              <Th>
+                <Trans>Date</Trans>
+              </Th>
               <Th className="text-right">
                 <Trans>Applied</Trans>
               </Th>
-              <Th className="text-right">
-                <Trans>Discount</Trans>
-              </Th>
-              <Th className="text-right">
-                <Trans>Write-Off</Trans>
-              </Th>
-              <Th className="text-right">
-                <Trans>Inv Rate</Trans>
-              </Th>
-              <Th className="text-right">
-                <Trans>Pay Rate</Trans>
-              </Th>
-              <Th className="text-right">
-                <Trans>FX G/L</Trans>
-              </Th>
-              <Th>
-                <Trans>Applied Date</Trans>
-              </Th>
+              {hasAdjustments && (
+                <>
+                  <Th className="text-right">
+                    <Trans>Discount</Trans>
+                  </Th>
+                  <Th className="text-right">
+                    <Trans>Write-off</Trans>
+                  </Th>
+                </>
+              )}
+              {hasFx && (
+                <>
+                  <Th className="text-right">
+                    <Trans>Invoice Rate</Trans>
+                  </Th>
+                  <Th className="text-right">
+                    <Trans>Payment Rate</Trans>
+                  </Th>
+                  <Th className="text-right">
+                    <Trans>FX Gain/Loss</Trans>
+                  </Th>
+                </>
+              )}
             </Tr>
           </Thead>
           <Tbody>
             {applications.length === 0 ? (
               <Tr>
-                <Td colSpan={8} className="text-center text-muted-foreground">
-                  <Trans>No applications. Payment will be on-account.</Trans>
+                <Td
+                  colSpan={columnCount}
+                  className="text-center text-muted-foreground"
+                >
+                  {isDepositRefund ? (
+                    <Trans>
+                      Posting refunds the advances held for this document.
+                    </Trans>
+                  ) : isDeposit ? (
+                    <Trans>
+                      Unapplied cash is held as an advance for this document.
+                    </Trans>
+                  ) : (
+                    <Trans>No applications. Payment will be on-account.</Trans>
+                  )}
                 </Td>
               </Tr>
             ) : (
               applications.map((a) => (
-                <Tr key={a.id}>
+                <Tr key={a.id} className="[&>td]:whitespace-nowrap">
                   <Td>
                     {a.targetSalesInvoiceId ? (
                       <Hyperlink
@@ -214,6 +222,10 @@ const PaymentApplications = ({
                       <Hyperlink to={path.to.memo(a.targetMemoId)}>
                         {invoiceLabel(a)}
                       </Hyperlink>
+                    ) : a.targetPaymentId ? (
+                      <Hyperlink to={path.to.payment(a.targetPaymentId)}>
+                        {invoiceLabel(a)}
+                      </Hyperlink>
                     ) : a.targetReimbursementId ? (
                       <Hyperlink
                         to={path.to.reimbursement(a.targetReimbursementId)}
@@ -224,50 +236,79 @@ const PaymentApplications = ({
                       invoiceLabel(a)
                     )}
                   </Td>
-                  <Td className="text-right tabular-nums">
-                    {currencyFormatter.format(Number(a.appliedAmount))}
-                    <div className="text-xs text-muted-foreground">
-                      {documentFormatter.format(Number(a.sourceAmount ?? 0))}
-                    </div>
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    {currencyFormatter.format(Number(a.discountAmount))}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    {currencyFormatter.format(Number(a.writeOffAmount))}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    {rateFormatter.format(Number(a.targetExchangeRate))}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    {a.sourceRates
-                      .map((rate) => rateFormatter.format(rate))
-                      .join(" / ")}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    {currencyFormatter.format(Number(a.fxGainLossAmount ?? 0))}
-                  </Td>
                   <Td>
                     <DateTime value={a.appliedDate} variant="date" />
                   </Td>
+                  <Td className="text-right tabular-nums">
+                    {currencyFormatter.format(Number(a.appliedAmount))}
+                    {isForeign && (
+                      <div className="text-xs text-muted-foreground">
+                        {documentFormatter.format(Number(a.sourceAmount ?? 0))}
+                      </div>
+                    )}
+                  </Td>
+                  {hasAdjustments && (
+                    <>
+                      <Td className="text-right tabular-nums">
+                        {currencyFormatter.format(Number(a.discountAmount))}
+                      </Td>
+                      <Td className="text-right tabular-nums">
+                        {currencyFormatter.format(Number(a.writeOffAmount))}
+                      </Td>
+                    </>
+                  )}
+                  {hasFx && (
+                    <>
+                      <Td className="text-right tabular-nums">
+                        {rateFormatter.format(Number(a.targetExchangeRate))}
+                      </Td>
+                      <Td className="text-right tabular-nums">
+                        {a.sourceRates
+                          .map((rate) => rateFormatter.format(rate))
+                          .join(" / ")}
+                      </Td>
+                      <Td className="text-right tabular-nums">
+                        {currencyFormatter.format(
+                          Number(a.fxGainLossAmount ?? 0)
+                        )}
+                      </Td>
+                    </>
+                  )}
                 </Tr>
               ))
             )}
           </Tbody>
           {applications.length > 0 && (
             <Tfoot>
-              <Tr>
-                <Td className="text-right font-semibold">
-                  <Trans>Totals</Trans>
+              <Tr className="[&>td]:whitespace-nowrap">
+                <Td className="font-semibold">
+                  <Trans>Total</Trans>
                 </Td>
+                <Td />
                 <Td className="text-right tabular-nums font-semibold">
-                  {currencyFormatter.format(totalApplied)}
+                  {currencyFormatter.format(total("appliedAmount"))}
                 </Td>
-                <Td colSpan={5} />
+                {hasAdjustments && (
+                  <>
+                    <Td className="text-right tabular-nums font-semibold">
+                      {currencyFormatter.format(total("discountAmount"))}
+                    </Td>
+                    <Td className="text-right tabular-nums font-semibold">
+                      {currencyFormatter.format(total("writeOffAmount"))}
+                    </Td>
+                  </>
+                )}
+                {hasFx && <Td colSpan={3} />}
+              </Tr>
+              <Tr className="[&>td]:whitespace-nowrap">
+                <Td className="text-muted-foreground">
+                  <Trans>Unapplied</Trans>
+                </Td>
+                <Td />
                 <Td className="text-right tabular-nums">
-                  <Trans>Unapplied:</Trans>{" "}
                   {documentFormatter.format(unapplied)}
                 </Td>
+                {columnCount > 3 && <Td colSpan={columnCount - 3} />}
               </Tr>
             </Tfoot>
           )}

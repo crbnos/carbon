@@ -7,11 +7,11 @@ import { Button, useDisclosure, useMount } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useRef, useState } from "react";
 import { useUser } from "~/hooks";
-import {
-  type ConfigurationParameter,
-  type ConfigurationParameterGroup,
-  getConfigurationParameters
-} from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup
+} from "~/modules/items/types";
 import { ConfiguratorModal, type ConfiguratorValues } from "./ConfiguratorForm";
 
 type ItemConfigurationParameters = {
@@ -104,20 +104,18 @@ export function ItemConfigureButton({
       >
         {configuration ? <Trans>Reconfigure</Trans> : <Trans>Configure</Trans>}
       </Button>
-      {disclosure.isOpen && (
-        <ConfiguratorModal
-          open
-          initialValues={configuration ?? {}}
-          groups={parameters.groups}
-          parameters={parameters.parameters}
-          onClose={disclosure.onClose}
-          onSubmit={(values) => {
-            setConfiguration(values);
-            disclosure.onClose();
-            onConfigured(values);
-          }}
-        />
-      )}
+      <ConfiguratorModal
+        open={disclosure.isOpen}
+        initialValues={configuration ?? {}}
+        groups={parameters.groups}
+        parameters={parameters.parameters}
+        onClose={disclosure.onClose}
+        onSubmit={(values) => {
+          setConfiguration(values);
+          disclosure.onClose();
+          onConfigured(values);
+        }}
+      />
     </>
   );
 }

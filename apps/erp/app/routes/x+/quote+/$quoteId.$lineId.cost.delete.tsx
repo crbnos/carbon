@@ -6,10 +6,8 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  quoteLineAdditionalChargesValidator,
-  upsertQuoteLineAdditionalCharges
-} from "~/modules/sales";
+import { quoteLineAdditionalChargesValidator } from "~/modules/sales/sales.models";
+import { upsertQuoteLineAdditionalCharges } from "~/modules/sales/sales.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

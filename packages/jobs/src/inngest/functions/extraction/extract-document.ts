@@ -98,9 +98,11 @@ export const extractDocumentFunction = inngest.createFunction(
         ) => {
           into.push(...(rows ?? []).slice(0, CANDIDATE_LIMIT));
           if ((rows?.length ?? 0) > CANDIDATE_LIMIT) {
-            logger.warn(
-              `${label} candidate list truncated to ${CANDIDATE_LIMIT} for company ${companyId}`
-            );
+            logger.warn("Candidate list truncated", {
+              label,
+              limit: CANDIDATE_LIMIT,
+              companyId
+            });
           }
         };
 
@@ -244,7 +246,11 @@ export const extractDocumentFunction = inngest.createFunction(
           .eq("id", documentExtractionId)
           .eq("companyId", companyId);
       } catch (err) {
-        logger.error("Extraction failed", { err });
+        logger.error("Extraction failed", {
+          documentExtractionId,
+          companyId,
+          error: err
+        });
         await client
           .from("documentExtraction")
           .update({

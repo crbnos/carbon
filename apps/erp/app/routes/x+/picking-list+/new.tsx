@@ -2,66 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  generatePickingList,
-  generatePickingListValidator
-} from "~/modules/inventory";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { generatePickingListValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
-  });
+// The schedule posts one `jobOperationIds` field per selected operation.
+const generateForm = generatePickingListValidator.extend({
+  jobOperationIds: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, {
+      message: "Select at least one operation"
+    })
+  )
+});
 
-  const formData = await request.formData();
-
-  // Handle jobOperationIds as array from form data
-  const jobOperationIds = formData.getAll("jobOperationIds[]").map(String);
-  const locationId = formData.get("locationId") as string;
-  const assignee = formData.get("assignee") as string | null;
-  const dueDate = formData.get("dueDate") as string | null;
-
-  const validation = generatePickingListValidator.safeParse({
-    jobOperationIds,
-    locationId,
-    assignee: assignee || undefined,
-    dueDate: dueDate || undefined
-  });
-
-  if (!validation.success) {
-    throw redirect(
-      path.to.pickingLists,
-      await flash(
-        request,
-        error(null, validation.error.issues[0]?.message ?? "Invalid form data")
-      )
-    );
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(generateForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.generatePickingList(input.data);
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.pickingLists);
   }
-
-  const result = await generatePickingList(client, {
-    jobOperationIds: validation.data.jobOperationIds,
-    locationId: validation.data.locationId,
-    companyId,
-    createdBy: userId,
-    assignee: validation.data.assignee ?? null,
-    dueDate: validation.data.dueDate ?? null
-  });
-
-  if (result.error || !result.data) {
-    throw redirect(
-      path.to.pickingLists,
-      await flash(
-        request,
-        error(result.error, "Failed to generate picking list")
-      )
-    );
-  }
-
-  throw redirect(path.to.pickingListDetails(result.data.id));
+  throw redirect(path.to.pickingListDetails(result.data!.id));
 }

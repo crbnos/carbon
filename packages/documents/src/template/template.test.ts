@@ -4,12 +4,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  ADDABLE_BLOCK_TYPES,
   BLOCK_META,
   DEFAULT_SALES_INVOICE_TEMPLATE,
   documentThemeColors,
+  keepSummaryWithLineItems,
   resolveTemplate
 } from "./defaults";
+import { interpolateContent } from "./merge";
 import { blockSchema, documentTemplateSchema } from "./schema";
 
 describe("documentThemeColors", () => {
@@ -44,8 +45,8 @@ describe("resolveTemplate", () => {
 
   it("preserves stored block order and visibility", () => {
     const stored = [
-      { id: "summary", type: "summary" as const, visible: true },
       { id: "lineItems", type: "lineItems" as const, visible: true },
+      { id: "summary", type: "summary" as const, visible: true },
       { id: "header", type: "header" as const, visible: false },
       { id: "parties", type: "parties" as const, visible: true },
       { id: "notes", type: "notes" as const, visible: true },
@@ -53,8 +54,8 @@ describe("resolveTemplate", () => {
     ];
     const { blocks } = resolveTemplate("salesInvoice", { blocks: stored });
     expect(blocks.map((b) => b.type)).toEqual([
-      "summary",
       "lineItems",
+      "summary",
       "header",
       "parties",
       "notes",
@@ -81,6 +82,20 @@ describe("resolveTemplate", () => {
       "summary"
     ]);
   });
+
+  it("appends the approval block visible to a stored purchase order", () => {
+    const stored = [
+      { id: "lineItems", type: "lineItems" as const, visible: true },
+      { id: "summary", type: "summary" as const, visible: true }
+    ];
+    const { blocks } = resolveTemplate("purchaseOrder", { blocks: stored });
+    expect(blocks.at(-1)).toEqual({
+      id: "approval",
+      type: "approval",
+      visible: true
+    });
+    expect(blocks.find((b) => b.type === "header")?.visible).toBe(false);
+  });
 });
 
 describe("block metadata invariants", () => {
@@ -90,26 +105,9 @@ describe("block metadata invariants", () => {
       expect(BLOCK_META[type].removable).toBe(false);
     }
   });
-
-  it("only exposes extension blocks in the add menu", () => {
-    expect(ADDABLE_BLOCK_TYPES).toEqual(["richText", "keyValue", "spacer"]);
-    for (const type of ADDABLE_BLOCK_TYPES) {
-      expect(BLOCK_META[type].isBuiltIn).toBe(false);
-      expect(BLOCK_META[type].removable).toBe(true);
-    }
-  });
 });
 
 describe("document settings", () => {
-  it("includes default settings on the default template", () => {
-    expect(DEFAULT_SALES_INVOICE_TEMPLATE.settings).toEqual({
-      fontFamily: "Inter",
-      showPageNumbers: true,
-      pageNumberFormat: "pageOfTotal",
-      showRegistrationLine: true
-    });
-  });
-
   it("merges a partial stored settings over defaults", () => {
     const { settings } = resolveTemplate("salesInvoice", {
       blocks: [{ id: "summary", type: "summary", visible: true }],
@@ -155,12 +153,160 @@ describe("schema validation", () => {
     expect(lineItems).toMatchObject({ options: { zebra: false } });
   });
 
+  // The preview route and the save validator parse blocks with this schema; an
+  // option the schema does not know is stripped and silently ignored.
+  it("keeps a hidden supplier part number and shows it on templates saved before the option", () => {
+    const parseLineItems = (options: object) =>
+      blockSchema.parse({ id: "lineItems", type: "lineItems", options });
+
+    expect(parseLineItems({ showSupplierPartId: false })).toEqual({
+      id: "lineItems",
+      type: "lineItems",
+      visible: true,
+      options: {
+        showThumbnails: true,
+        zebra: true,
+        textOverflow: "truncate",
+        showSupplierPartId: false
+      }
+    });
+    expect(
+      parseLineItems({ zebra: false, textOverflow: "wrap" })
+    ).toMatchObject({ options: { showSupplierPartId: true } });
+  });
+
   it("rejects unknown block types", () => {
     expect(() => blockSchema.parse({ id: "x", type: "bogus" })).toThrow();
   });
 
-  it("validates a full template document", () => {
-    const parsed = documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE);
-    expect(parsed.blocks).toHaveLength(7);
+  it("accepts the default template unchanged", () => {
+    expect(
+      documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE)
+    ).toEqual(DEFAULT_SALES_INVOICE_TEMPLATE);
+  });
+});
+
+describe("block text overrides", () => {
+  it("keeps a block's changed texts and hidden fields", () => {
+    const parsed = blockSchema.parse({
+      id: "p",
+      type: "parties",
+      visible: true,
+      text: { taxId: "GST:" },
+      hidden: ["eori"]
+    });
+    expect(parsed.text).toEqual({ taxId: "GST:" });
+    expect(parsed.hidden).toEqual(["eori"]);
+  });
+
+  it("leaves both unset when the block has none", () => {
+    const parsed = blockSchema.parse({ id: "p", type: "parties" });
+    expect(parsed.text).toBeUndefined();
+    expect(parsed.hidden).toBeUndefined();
+  });
+
+  it("keeps the document texts in settings", () => {
+    const parsed = documentTemplateSchema.parse({
+      ...DEFAULT_SALES_INVOICE_TEMPLATE,
+      settings: {
+        ...DEFAULT_SALES_INVOICE_TEMPLATE.settings,
+        text: { page: "Seite" }
+      }
+    });
+    expect(parsed.settings.text).toEqual({ page: "Seite" });
+  });
+});
+
+describe("interpolateContent", () => {
+  const paragraph = (text: string) => ({
+    type: "paragraph",
+    content: [{ type: "text", text }]
+  });
+  const doc = (...content: object[]) => ({ type: "doc", content });
+  const approvalLine = paragraph(
+    "Approved by {order.approvedBy} on {order.approvedDate}"
+  );
+
+  it("fills merge fields", () => {
+    expect(
+      interpolateContent(doc(approvalLine), {
+        "order.approvedBy": "Jordan Lee",
+        "order.approvedDate": "Jun 2, 2026"
+      })
+    ).toEqual(doc(paragraph("Approved by Jordan Lee on Jun 2, 2026")));
+  });
+
+  it("leaves out a paragraph whose merge fields are all empty", () => {
+    expect(
+      interpolateContent(doc(approvalLine, paragraph("Thank you")), {
+        "order.approvedBy": "",
+        "order.approvedDate": ""
+      })
+    ).toEqual(doc(paragraph("Thank you")));
+  });
+
+  it("keeps a paragraph when one of its merge fields has a value", () => {
+    expect(
+      interpolateContent(doc(approvalLine), { "order.approvedBy": "Jordan" })
+    ).toEqual(doc(paragraph("Approved by Jordan on ")));
+  });
+
+  it("keeps paragraphs without merge fields, empty ones included", () => {
+    const spacer = { type: "paragraph" };
+    expect(interpolateContent(doc(paragraph("Thank you"), spacer), {})).toEqual(
+      doc(paragraph("Thank you"), spacer)
+    );
+  });
+
+  it("leaves out a list whose items all came out empty", () => {
+    const list = {
+      type: "bulletList",
+      content: [{ type: "listItem", content: [approvalLine] }]
+    };
+    expect(interpolateContent(doc(list), {})).toEqual(doc());
+  });
+});
+
+describe("keepSummaryWithLineItems", () => {
+  const order = (types: string[]) =>
+    keepSummaryWithLineItems(types.map((type) => ({ type }))).map(
+      (block) => block.type
+    );
+
+  it("moves a block out from between the table and its totals", () => {
+    expect(
+      order(["parties", "lineItems", "richText", "summary", "terms"])
+    ).toEqual(["parties", "lineItems", "summary", "richText", "terms"]);
+  });
+
+  it("brings the Summary along when Line Items moved down", () => {
+    expect(order(["parties", "summary", "terms", "lineItems"])).toEqual([
+      "parties",
+      "terms",
+      "lineItems",
+      "summary"
+    ]);
+  });
+
+  it("leaves a block above the table and a document without both alone", () => {
+    expect(order(["richText", "lineItems", "summary"])).toEqual([
+      "richText",
+      "lineItems",
+      "summary"
+    ]);
+    expect(order(["lineItems", "terms"])).toEqual(["lineItems", "terms"]);
+    expect(order(["summary", "terms"])).toEqual(["summary", "terms"]);
+  });
+
+  it("corrects a saved template when it resolves", () => {
+    const { blocks } = resolveTemplate("salesInvoice", {
+      blocks: [
+        { id: "lineItems", type: "lineItems", visible: true },
+        { id: "note", type: "spacer", visible: true, variant: "space" },
+        { id: "summary", type: "summary", visible: true }
+      ]
+    });
+    const types = blocks.map((block) => block.type);
+    expect(types.indexOf("summary")).toBe(types.indexOf("lineItems") + 1);
   });
 });

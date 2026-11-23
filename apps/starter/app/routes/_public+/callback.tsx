@@ -19,6 +19,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -40,6 +41,8 @@ import {
 } from "react-router";
 import { path } from "~/utils/path";
 
+// A public page: errors are logged here and the toast stays generic.
+const logger = getLogger("starter", "callback");
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
 
@@ -101,9 +104,10 @@ export async function action({ request }: ActionFunctionArgs) {
       ]
     });
   } else {
+    if (user.error) logger.error("User not found", { error: user.error });
     return redirect(
       path.to.root,
-      await flash(request, error(user.error, "User not found"))
+      await flash(request, error(null, "User not found"))
     );
   }
 }
@@ -155,7 +159,7 @@ export default function AuthCallback() {
   }, [fetcher, redirectTo]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-card">
       {error ? (
         <>
           <div className="flex justify-center mb-8">

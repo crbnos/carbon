@@ -5,13 +5,16 @@
 import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
-import { toast } from "@carbon/react";
+import { toast, toastError } from "@carbon/react";
 import { nanoid } from "nanoid";
 import { useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
 import { useUser } from "~/hooks";
-import type { SlideAnnotation, SlideSize } from "~/modules/shared";
+import type {
+  SlideAnnotation,
+  SlideSize
+} from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import type { AssemblyStepSlide } from "../../types";
 
@@ -69,7 +72,7 @@ export default function AssemblyStepSlides({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error("Failed to upload image");
+        toastError("Failed to upload image", result.error);
         return;
       }
       const fd = new FormData();

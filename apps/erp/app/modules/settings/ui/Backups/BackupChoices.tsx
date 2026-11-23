@@ -4,15 +4,18 @@
 
 import { useControlField } from "@carbon/form";
 import { ChoiceSelect } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { LuDatabaseBackup, LuFiles } from "react-icons/lu";
 
 // What to bundle in a backup. Compact trigger; the trade-off shows on open.
 export function IncludeStorageChoice() {
+  const { t } = useLingui();
   const [value, setValue] = useControlField<"none" | "all">("includeStorage");
   const current = value ?? "none";
   return (
     <>
       <ChoiceSelect<"none" | "all">
+        aria-label={t`Include in backup`}
         value={current}
         onChange={setValue}
         options={[
@@ -41,11 +44,13 @@ export function IncludeStorageChoice() {
 // present if the backup bundled them). A revert always restores files from the
 // snapshot regardless, so the company never ends up missing its own files.
 export function RestoreIncludeChoice() {
+  const { t } = useLingui();
   const [value, setValue] = useControlField<"none" | "all">("includeStorage");
   const current = value ?? "all";
   return (
     <>
       <ChoiceSelect<"none" | "all">
+        aria-label={t`Include in restore`}
         value={current}
         onChange={setValue}
         options={[

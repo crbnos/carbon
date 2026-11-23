@@ -22,7 +22,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter
 } from "~/hooks";
-import { reimbursementPaymentValidator } from "~/modules/invoicing";
+import { reimbursementPaymentValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 
 type PayExpenseModalProps = {

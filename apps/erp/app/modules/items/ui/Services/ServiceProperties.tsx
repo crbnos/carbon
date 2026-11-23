@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { InputControlled, Select, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -14,7 +14,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -31,14 +30,17 @@ import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { serviceReplenishmentSystems } from "../../items.models";
+import {
+  SERVICE_NAME_MAX_LENGTH,
+  serviceReplenishmentSystems
+} from "../../items.models";
 import type { ItemFile, MakeMethod, Service, SupplierPart } from "../../types";
-import { FileBadge, ItemDescription } from "../Item";
+import { FileBadge, ItemDescription, TaxableProperty } from "../Item";
 
 type ServicePropertiesProps = {
   data?: {
@@ -60,6 +62,7 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
   // When `data` is injected, this hook won't match a route and returns
   // undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     serviceSummary: Service;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -100,22 +103,20 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
-        | "name"
+        | "serviceName"
         | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemPostingGroupId"
-        | "serviceId"
-        | "active",
+        | "active"
+        | "taxable",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -239,30 +240,6 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
         <VStack spacing={1} className="pt-2">
           <ValidatedForm
             defaultValues={{
-              serviceId:
-                routeData?.serviceSummary?.readableIdWithRevision ?? undefined
-            }}
-            validator={z.object({
-              serviceId: z.string()
-            })}
-            className="w-full -mt-2"
-          >
-            <span className="text-sm">
-              <InputControlled
-                label=""
-                name="serviceId"
-                inline
-                size="sm"
-                value={routeData?.serviceSummary?.readableId ?? ""}
-                onBlur={(e) => {
-                  onUpdate("serviceId", e.target.value ?? null);
-                }}
-                className="text-muted-foreground"
-              />
-            </span>
-          </ValidatedForm>
-          <ValidatedForm
-            defaultValues={{
               name: routeData?.serviceSummary?.name ?? undefined
             }}
             validator={z.object({
@@ -270,18 +247,20 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
             })}
             className="w-full -mt-2"
           >
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm">
               <InputControlled
                 label=""
                 name="name"
                 inline
                 size="sm"
-                characterLimit={40}
+                characterLimit={SERVICE_NAME_MAX_LENGTH}
                 value={routeData?.serviceSummary?.name ?? ""}
                 onBlur={(e) => {
-                  onUpdate("name", e.target.value ?? null);
+                  const name = e.target.value?.trim();
+                  if (name && name !== routeData?.serviceSummary?.name) {
+                    onUpdate("serviceName", name);
+                  }
                 }}
-                className="text-muted-foreground"
               />
             </span>
           </ValidatedForm>
@@ -397,17 +376,6 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
         />
       </ValidatedForm>
 
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">
-          <Trans>Unit of Measure</Trans>
-        </h3>
-        {routeData?.serviceSummary?.unitOfMeasure && (
-          <Badge variant="secondary">
-            {routeData.serviceSummary.unitOfMeasure}
-          </Badge>
-        )}
-      </VStack>
-
       <ItemDescription
         value={routeData?.serviceSummary?.description ?? ""}
         onChange={(value) => onUpdate("description", value)}
@@ -469,6 +437,11 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           }}
         />
       </ValidatedForm>
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">

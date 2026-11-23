@@ -2,9 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { useEffect } from "react";
-import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router";
+import { useNavigate, useRouteError } from "react-router";
 import { Button } from "../Button";
+import { routeErrorCopy } from "./routeErrorCopy";
+import { useNetworkRetry } from "./useNetworkRetry";
+
+const logger = getLogger("react", "error-boundary");
 
 /**
  * The boundary for a route that renders inside the app shell:
@@ -18,15 +23,14 @@ import { Button } from "../Button";
 export function RouteErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
+  const { offline, retry } = useNetworkRetry(error);
 
   // React Router hands a route error to the boundary without logging it.
   useEffect(() => {
-    // biome-ignore lint/suspicious/noConsole: surfacing the swallowed error is the point
-    console.error("[RouteErrorBoundary]", error);
+    logger.error("Route error boundary caught an error", { error });
   }, [error]);
 
-  const notFound = isRouteErrorResponse(error) && error.status === 404;
-  const status = isRouteErrorResponse(error) ? error.status : undefined;
+  const { status, title, message, canRetry } = routeErrorCopy(error);
 
   return (
     <div
@@ -34,21 +38,22 @@ export function RouteErrorBoundary() {
       className="flex h-full w-full flex-col items-center justify-center gap-4 p-8 text-center"
     >
       <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-medium text-foreground">
-          {notFound
-            ? "This page could not be found"
-            : "This page failed to load"}
-        </h2>
+        {status && (
+          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+            {status}
+          </span>
+        )}
+        <h2 className="text-lg font-medium text-foreground">{title}</h2>
         <p className="max-w-md text-sm text-muted-foreground text-balance">
-          {notFound
-            ? "It may have been moved or deleted, or it belongs to another company."
-            : "Something went wrong on our side. Trying again usually fixes it."}
-          {status && !notFound ? ` (${status})` : null}
+          {message}
         </p>
       </div>
       <div className="flex gap-2">
-        {!notFound && (
-          <Button variant="primary" onClick={() => navigate(0)}>
+        {canRetry && (
+          <Button
+            variant="primary"
+            onClick={() => (offline ? retry() : navigate(0))}
+          >
             Try again
           </Button>
         )}

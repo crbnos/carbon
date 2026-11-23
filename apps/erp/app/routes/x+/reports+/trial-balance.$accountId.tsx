@@ -5,19 +5,17 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getAccount,
-  getAccountLedger,
-  getAccountLedgerSummary
-} from "~/modules/accounting";
-import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.server";
+  getAccountLedgerPage,
+  getTrialBalanceLedgerSummary
+} from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
-
-const LEDGER_PAGE_SIZE = 50;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -34,48 +32,48 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const companiesParam = searchParams.get("companies");
-  const startDate = searchParams.get("startDate") || null;
-  const endDate = searchParams.get("endDate") || null;
-  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
-
-  // Mirrors the parent page: a single selected company filters lines; "all"
-  // matches the RPC's null company filter (every company in the group)
-  // "All Companies" drills into the consolidated ledger — including the
-  // elimination entities, which the user's RLS session can't see. Reading them
-  // via service role (scoped to this group) makes the elimination journal
-  // entries appear and the drawer summary tie to the consolidated report.
+  const endDateParam = searchParams.get("endDate") || null;
+  // The report's own default range, so a row opened with no dates in the URL
+  // shows the same window.
+  const range = defaultReportRange(
+    endDateParam ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+  );
+  const startDate = searchParams.get("startDate") || range.startDate;
+  const endDate = endDateParam ?? range.endDate;
+  const after = searchParams.get("after");
   const isConsolidated = companiesParam === "all";
   const selectedCompanyId = isConsolidated
     ? null
     : (companiesParam ?? companyId);
 
-  const [account, drill] = await Promise.all([
+  const [account, ledger, rowSummary] = await Promise.all([
     getAccount(client, accountId),
-    isConsolidated
-      ? getConsolidatedAccountLedger(companyGroupId, {
-          accountId,
-          startDate,
-          endDate,
-          limit: LEDGER_PAGE_SIZE,
-          offset
-        })
-      : Promise.all([
-          getAccountLedger(client, {
-            accountId,
-            companyId: selectedCompanyId,
-            startDate,
-            endDate,
-            limit: LEDGER_PAGE_SIZE,
-            offset
-          }),
-          getAccountLedgerSummary(client, companyGroupId, selectedCompanyId, {
+    // A later page (`?after=`) is read for its lines only.
+    getAccountLedgerPage(client, {
+      accountId,
+      companyGroupId,
+      companyId: selectedCompanyId,
+      consolidated: isConsolidated,
+      startDate,
+      endDate,
+      after
+    }),
+    // One company's row is closed into Retained Earnings and debit-signed, and
+    // the summary must read as that row does.
+    selectedCompanyId && !after
+      ? getTrialBalanceLedgerSummary(
+          client,
+          companyGroupId,
+          selectedCompanyId,
+          {
             accountId,
             startDate,
             endDate
-          })
-        ]).then(([ledger, summary]) => ({ ledger, summary }))
+          }
+        )
+      : null
   ]);
-  const { ledger, summary } = drill;
 
   if (account.error || !account.data) {
     throw redirect(
@@ -84,19 +82,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (rowSummary?.error) {
+    throw redirect(
+      path.to.trialBalance,
+      await flash(request, error(rowSummary.error, "Failed to load account"))
+    );
+  }
+
   return {
     account: account.data,
-    lines: ledger.data ?? [],
-    count: ledger.count ?? 0,
-    summary: summary.data ?? { opening: 0, netChange: 0, closing: 0 },
+    ...ledger,
+    summary: rowSummary?.data ?? ledger.summary,
     startDate,
-    endDate,
-    offset
+    endDate
   };
 }
 
 export default function TrialBalanceLedgerRoute() {
-  const { account, lines, count, summary, startDate, endDate, offset } =
+  const { account, lines, count, nextCursor, summary, startDate, endDate } =
     useLoaderData<typeof loader>();
 
   return (
@@ -107,8 +110,7 @@ export default function TrialBalanceLedgerRoute() {
       summary={summary}
       startDate={startDate}
       endDate={endDate}
-      offset={offset}
-      limit={LEDGER_PAGE_SIZE}
+      nextCursor={nextCursor}
       backTo={path.to.trialBalance}
     />
   );

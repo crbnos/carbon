@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -14,25 +14,19 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import {
-  LuCopy,
-  LuInfo,
-  LuKeySquare,
-  LuLink,
-  LuRefreshCcw
-} from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
-  DateTime,
   EmployeeAvatar,
+  ExchangeRateUpdatedAt,
   useOptimisticAssignment
 } from "~/components";
 import {
@@ -44,6 +38,7 @@ import {
   Location
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { Confirm } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
@@ -63,13 +58,12 @@ const SalesOrderProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
+  const recalculateTaxesModal = useDisclosure();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -237,27 +231,48 @@ const SalesOrderProperties = () => {
         />
       </ValidatedForm>
 
-      <ValidatedForm
-        defaultValues={{
-          customerLocationId: routeData?.salesOrder?.customerLocationId ?? ""
-        }}
-        validator={z.object({
-          customerLocationId: zfd.text(z.string().optional())
-        })}
-        className="w-full"
-      >
-        <CustomerLocation
-          name="customerLocationId"
-          customer={routeData?.salesOrder?.customerId ?? ""}
-          inline
-          isReadOnly={isDisabled}
-          onChange={(customerLocation) => {
-            if (customerLocation?.id) {
-              onUpdate("customerLocationId", customerLocation.id);
-            }
+      <HStack className="w-full items-end" spacing={1}>
+        <ValidatedForm
+          defaultValues={{
+            customerLocationId: routeData?.salesOrder?.customerLocationId ?? ""
           }}
+          validator={z.object({
+            customerLocationId: zfd.text(z.string().optional())
+          })}
+          className="w-full"
+        >
+          <CustomerLocation
+            name="customerLocationId"
+            customer={routeData?.salesOrder?.customerId ?? ""}
+            inline
+            isReadOnly={isDisabled}
+            onChange={(customerLocation) => {
+              if (customerLocation?.id) {
+                onUpdate("customerLocationId", customerLocation.id);
+              }
+            }}
+          />
+        </ValidatedForm>
+        {/* A new ship-to can mean a new tax code: re-resolve every line. */}
+        <IconButton
+          size="sm"
+          variant="secondary"
+          aria-label={t`Recalculate taxes`}
+          title={t`Recalculate taxes`}
+          icon={<LuRefreshCcw />}
+          isDisabled={isDisabled}
+          onClick={recalculateTaxesModal.onOpen}
         />
-      </ValidatedForm>
+      </HStack>
+      <Confirm
+        isOpen={recalculateTaxesModal.isOpen}
+        action={path.to.salesOrderRecalculateTaxes(orderId)}
+        title={t`Recalculate taxes`}
+        text={t`Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line.`}
+        confirmText={t`Recalculate`}
+        onCancel={recalculateTaxesModal.onClose}
+        onSubmit={recalculateTaxesModal.onClose}
+      />
 
       <ValidatedForm
         defaultValues={{
@@ -384,7 +399,6 @@ const SalesOrderProperties = () => {
               onUpdate("locationId", value.value);
             }
           }}
-          termId="sales-order"
         />
       </ValidatedForm>
 
@@ -439,13 +453,9 @@ const SalesOrderProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.salesOrder?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.salesOrder?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">

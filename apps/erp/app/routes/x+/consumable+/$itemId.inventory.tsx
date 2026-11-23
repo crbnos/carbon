@@ -13,26 +13,26 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useRouteData } from "~/hooks";
-import {
-  getTrackedEntityExpirations,
-  InventoryDetails
-} from "~/modules/inventory";
+import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service";
+import { InventoryDetails } from "~/modules/inventory/ui";
 import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
-import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
+import {
+  pickMethodWithShelfLifeValidator,
+  type shelfLifeModes
+} from "~/modules/items/items.models";
 import {
   getBomHasShelfLifeManagedInput,
   getItemQuantities,
   getItemShelfLife,
-  getItemStorageUnitQuantities,
   getPickMethod,
-  pickMethodWithShelfLifeValidator,
-  type shelfLifeModes,
   upsertPickMethod,
   upsertPickMethodWithShelfLife
-} from "~/modules/items";
+} from "~/modules/items/items.service";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
+import type { Consumable, UnitOfMeasureListItem } from "~/modules/items/types";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores/items";
 import type { ListItem } from "~/types";
@@ -144,7 +144,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.items,
       await flash(
         request,
-        error(quantities, "Failed to load consumable quantities")
+        error(quantities.error, "Failed to load consumable quantities")
       )
     );
   }
@@ -154,7 +154,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.items,
       await flash(
         request,
-        error(itemStorageUnitQuantities, "Failed to load consumable quantities")
+        error(
+          itemStorageUnitQuantities.error,
+          "Failed to load consumable quantities"
+        )
       )
     );
   }

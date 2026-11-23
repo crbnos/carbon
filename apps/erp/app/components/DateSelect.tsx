@@ -17,7 +17,7 @@ import type { CalendarDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { DateRange } from "@react-types/datepicker";
 import { forwardRef, useMemo, useState } from "react";
-import { LuCalendar } from "react-icons/lu";
+import { LuCalendar, LuChevronDown } from "react-icons/lu";
 
 type DateSelectOption = {
   value: string;
@@ -80,8 +80,18 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
       >
         {/* Compact dropdown for small screens */}
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="md:hidden w-auto h-8 text-xs">
+          {/* Phones: a period chip with a ⌄ picker indicator,
+              32pt visual with a 44pt hit area like its neighbouring buttons. */}
+          <SelectTrigger
+            aria-label={t`Date range`}
+            hideIcon
+            className={cn(
+              "md:hidden w-auto h-8 text-xs",
+              "max-md:relative max-md:h-8 max-md:rounded-full max-md:space-x-1 max-md:text-sm max-md:after:absolute max-md:after:-inset-[max(0px,calc((44px-100%)/2))]"
+            )}
+          >
             <SelectValue />
+            <LuChevronDown className="size-4 shrink-0 opacity-50" />
           </SelectTrigger>
           <SelectContent>
             {allOptions.map((option) => (
@@ -110,7 +120,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
                 "bg-transparent text-muted-foreground",
                 "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
                 "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
-                "transition-all duration-200"
+                "transition-[color,background-color,box-shadow] duration-150"
               )}
             >
               {option.label}
@@ -119,12 +129,13 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           {showCustom && (
             <ToggleGroupItem
               value="custom"
+              aria-label={t`Custom date range`}
               className={cn(
                 "h-7 w-7 rounded-full p-0",
                 "bg-transparent text-muted-foreground",
                 "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
                 "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
-                "transition-all duration-200"
+                "transition-[color,background-color,box-shadow] duration-150"
               )}
             >
               <LuCalendar className="size-3.5" />
@@ -148,5 +159,5 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
 
 DateSelect.displayName = "DateSelect";
 
+export type { DateSelectOption, DateSelectProps };
 export { DateSelect };
-export type { DateSelectProps, DateSelectOption };

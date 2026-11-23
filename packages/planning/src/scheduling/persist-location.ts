@@ -72,16 +72,32 @@ async function updatePlacements(
 }
 
 /**
+ * The jobs whose stored reservations a location write replaces: every job it
+ * writes, and every job that threw while computing. The batch pre-pass placed
+ * around all of the run's jobs as bookings about to be replaced, so a failed
+ * job's stored ones must go too, or a batch can sit on top of one. The failed
+ * job stays stamped stale, so the next wave plans it again.
+ */
+export function jobsClearingReservations(
+  writes: Pick<JobWrites, "jobId">[],
+  failedJobIds: string[]
+): string[] {
+  return [...new Set([...writes.map((w) => w.jobId), ...failedJobIds])];
+}
+
+/**
  * Write a whole location run in ONE transaction: a partial write (one job's
  * reservations deleted but not re-inserted, or half the jobs on the new plan)
  * would free or double-book capacity for the next run.
+ * `failedJobIds`: see `jobsClearingReservations`.
  */
 export async function persistLocationWrites(
   db: Kysely<DB>,
   writes: JobWrites[],
-  scope: { companyId: string; userId: string }
+  scope: { companyId: string; userId: string },
+  failedJobIds: string[] = []
 ): Promise<void> {
-  if (writes.length === 0) return;
+  if (writes.length === 0 && failedJobIds.length === 0) return;
   const { companyId, userId } = scope;
 
   await db.transaction().execute(async (trx) => {
@@ -168,7 +184,9 @@ export async function persistLocationWrites(
     // Rebuild the jobs' live capacity reservations from this run's placements.
     // Batch-tagged rows are spared: a member job's regen must never destroy
     // the batch's coalesced reservation.
-    for (const jobIds of chunks(writes.map((w) => w.jobId))) {
+    for (const jobIds of chunks(
+      jobsClearingReservations(writes, failedJobIds)
+    )) {
       await trx
         .deleteFrom("capacityReservation")
         .where("jobId", "in", jobIds)

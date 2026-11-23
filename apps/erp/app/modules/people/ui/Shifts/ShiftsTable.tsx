@@ -25,6 +25,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { ShiftLocation } from "~/modules/resources/types";
@@ -34,10 +35,12 @@ import type { Shift } from "../../types";
 type ShiftsTableProps = {
   data: Shift[];
   count: number;
+  infinite: InfiniteOptions;
   locations: Partial<ShiftLocation>[];
 };
 
-const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
+const ShiftsTable = memo((props: ShiftsTableProps) => {
+  const { data, count, infinite, locations } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -110,6 +113,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCalendarRange />
         }
       },
@@ -119,6 +123,21 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         cell: ({ row }) =>
           renderShiftTime(row.original.startTime, row.original.locationId),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 shows the whole span, start – end.
+          mobileCell: ({ row }) =>
+            row.original.endTime ? (
+              <>
+                {renderShiftTime(
+                  row.original.startTime,
+                  row.original.locationId
+                )}
+                {" – "}
+                {renderShiftTime(row.original.endTime, row.original.locationId)}
+              </>
+            ) : (
+              renderShiftTime(row.original.startTime, row.original.locationId)
+            ),
           icon: <LuClock />
         }
       },
@@ -208,6 +227,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
   return (
     <Table<Shift>
       data={data}
+      infinite={infinite}
       count={count}
       columns={columns}
       primaryAction={

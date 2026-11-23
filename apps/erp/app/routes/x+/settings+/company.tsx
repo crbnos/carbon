@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { asWeekNumbering } from "@carbon/database/sequence-tokens";
+import { validator } from "@carbon/form";
 import {
   Button,
   Card,
@@ -16,25 +15,25 @@ import {
   Copy,
   Heading,
   HStack,
-  ScrollArea,
-  VStack
+  ScrollArea
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare, LuRocket } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
-import { data, Link } from "react-router";
-import { useRouteData } from "~/hooks";
+import { Link } from "react-router";
+import { z } from "zod";
+import { AppBarActions } from "~/components/Layout/Mobile";
+import { SettingsPage } from "~/components/SettingsPage";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import type { Company as CompanyType } from "~/modules/settings";
 import {
-  CompanyForm,
   companyValidator,
-  updateCompany,
-  updateCompanyWithBaseCurrencyChange
-} from "~/modules/settings";
-import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
+  sequenceWeekNumberingValidator
+} from "~/modules/settings/settings.models";
+import type { Company as CompanyType } from "~/modules/settings/types";
+import { CompanyForm } from "~/modules/settings/ui";
+import { WeekNumberingCard } from "~/modules/settings/ui/Company/WeekNumberingCard";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -43,67 +42,25 @@ export const handle: Handle = {
   to: path.to.company
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
-  const formData = await request.formData();
+const companySettingsForm = z.discriminatedUnion("intent", [
+  companyValidator.extend({ intent: z.literal("about") }),
+  sequenceWeekNumberingValidator.extend({ intent: z.literal("weekNumbering") })
+]);
 
-  const validation = await validator(companyValidator).validate(formData);
-  console.log(validation.error);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const existing = await client
-    .from("company")
-    .select("baseCurrencyCode")
-    .eq("id", companyId)
-    .single();
-
-  const baseCurrencyChanged =
-    !!existing.data?.baseCurrencyCode &&
-    existing.data.baseCurrencyCode !== validation.data.baseCurrencyCode;
-
-  if (baseCurrencyChanged) {
-    // Overrides are denominated in the company's base currency — after a base
-    // change they'd silently resolve against the wrong anchor. Clear them in
-    // the SAME transaction as the base flip; market rates take over until the
-    // user re-pins.
-    try {
-      await updateCompanyWithBaseCurrencyChange(
-        getDatabaseClient(),
-        companyId,
-        {
-          ...validation.data,
-          updatedBy: userId
-        }
-      );
-    } catch (err) {
-      console.error(err);
-      return data(
-        {},
-        await flash(request, error(err, "Failed to update company"))
-      );
-    }
-  } else {
-    const update = await updateCompany(client, companyId, {
-      ...validation.data,
-      updatedBy: userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(companySettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  if (input.data.intent === "weekNumbering") {
+    return api.settings.updateSequenceSettings({
+      sequenceWeekNumbering: input.data.sequenceWeekNumbering
     });
-    console.log(update.error);
-    if (update.error)
-      return data(
-        {},
-        await flash(request, error(update.error, "Failed to update company"))
-      );
   }
-
-  // company.timezone may have changed — drop the cached resolution.
-  await invalidateCompanyTimeZone(companyId);
-
-  return data({}, await flash(request, success("Updated company")));
+  const { intent: _intent, ...company } = input.data;
+  const result = await api.settings.updateCompanyDetails(company);
+  return respond(args.request, result).redirect(path.to.company, {
+    message: "Updated company"
+  });
 }
 
 export default function Company() {
@@ -113,6 +70,9 @@ export default function Company() {
   );
 
   const company = routeData?.company;
+  const weekNumbering = asWeekNumbering(
+    useCompanySettings()?.sequenceWeekNumbering
+  );
   if (!company) throw new Error("Company not found");
 
   // Buried reopen entry for a finished implementation hub — only present once the
@@ -140,12 +100,9 @@ export default function Company() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <HStack spacing={1} className="items-center">
-          <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <HStack spacing={1} className="items-center max-md:hidden">
+          <Heading as="h1" size="h3">
             <Trans>Company</Trans>
           </Heading>
           <Copy
@@ -156,6 +113,15 @@ export default function Company() {
             className="w-auto"
           />
         </HStack>
+        <AppBarActions>
+          <Copy
+            text={company.id ?? ""}
+            label={t`Copy company unique identifier`}
+            icon={<LuKeySquare />}
+            variant="ghost"
+            size="lg"
+          />
+        </AppBarActions>
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
@@ -189,7 +155,8 @@ export default function Company() {
             <CompanyForm company={initialValues} />
           </CardContent>
         </Card>
-      </VStack>
+        <WeekNumberingCard weekNumbering={weekNumbering} />
+      </SettingsPage>
     </ScrollArea>
   );
 }

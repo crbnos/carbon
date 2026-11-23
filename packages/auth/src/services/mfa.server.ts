@@ -5,9 +5,9 @@
 import { CONTROLLED_ENVIRONMENT } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRead } from "@carbon/logger/middleware.server";
+import { oncePerRead } from "@carbon/logger/context.server";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
-import { getCarbon } from "../lib/supabase";
+import { getCarbon } from "../lib/supabase/client";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 
 const log = getLogger("auth");

@@ -6,7 +6,7 @@ import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import { createMappingService } from "../../../core/external-mapping";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
-import { throwXeroApiError } from "../../../core/utils";
+import { contactsWithEmailFirst, throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 
@@ -185,6 +185,7 @@ export class ContactSyncer extends BaseEntitySyncer<
       ])
       .where("customer.id", "in", ids)
       .where("customer.companyId", "=", this.companyId)
+      .orderBy(contactsWithEmailFirst)
       .execute();
 
     return this.groupAndTransformRows(rows as EntityRow[], true);
@@ -231,6 +232,7 @@ export class ContactSyncer extends BaseEntitySyncer<
       ])
       .where("supplier.id", "in", ids)
       .where("supplier.companyId", "=", this.companyId)
+      .orderBy(contactsWithEmailFirst)
       .execute();
 
     return this.groupAndTransformRows(rows as EntityRow[], false);

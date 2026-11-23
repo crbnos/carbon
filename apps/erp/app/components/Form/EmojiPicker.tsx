@@ -13,7 +13,6 @@ import {
   PopoverTrigger,
   useMode
 } from "@carbon/react";
-import data from "@emoji-mart/data";
 import { lazy, Suspense, useState } from "react";
 import { LuSmilePlus, LuTrash } from "react-icons/lu";
 
@@ -21,6 +20,10 @@ import { LuSmilePlus, LuTrash } from "react-icons/lu";
 // default import is `{ default: Picker }` and dev React warns "type is
 // invalid" the moment the element is created, even in a closed popover.
 const Picker = lazy(() => import("@emoji-mart/react"));
+// The emoji set (~3 MB of JSON) loads when the picker first opens, not with
+// the page: the picker calls this itself.
+const loadEmojiData = () =>
+  import("@emoji-mart/data").then((module) => module.default);
 
 type EmojiPickerProps = {
   name: string;
@@ -77,7 +80,7 @@ const EmojiPicker = ({ name }: EmojiPickerProps) => {
         >
           <Suspense>
             <Picker
-              data={data}
+              data={loadEmojiData}
               onEmojiSelect={onEmojiSelect}
               theme={pickerTheme}
               previewPosition="none"

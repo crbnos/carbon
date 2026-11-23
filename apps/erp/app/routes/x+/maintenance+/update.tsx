@@ -2,150 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import {
-  isMaintenanceDispatchLocked,
-  updateMaintenanceDispatch
-} from "~/modules/resources";
-import { postMaintenanceLabor } from "~/modules/resources/resources.server";
-import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+import { updateMaintenanceDispatchField } from "~/modules/resources/resources.server";
 
-// Field changes that can move a work center's downtime window.
-const SCHEDULE_AFFECTING_FIELDS = new Set([
-  "status",
-  "workCenterId",
-  "plannedStartTime",
-  "plannedEndTime",
-  "actualStartTime",
-  "actualEndTime"
-]);
-
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources"
-  });
-
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const field = formData.get("field");
-  const value = formData.get("value");
-
-  if (
-    typeof field !== "string" ||
-    (typeof value !== "string" && value !== null)
-  ) {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  // Per-ID locked check (also carries the offline flag + work center so a
-  // downtime-affecting edit can stamp the schedule below).
-  const dispatches = await client
-    .from("maintenanceDispatch")
-    .select("id, status, takesWorkCenterOffline, workCenterId")
-    .in("id", ids as string[]);
-
-  const lockedError = requireUnlockedBulk({
-    statuses: (dispatches.data ?? []).map((d) => d.status),
-    checkFn: isMaintenanceDispatchLocked,
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-  if (lockedError) return lockedError;
-
-  const updateData: Record<string, unknown> = {
-    updatedBy: userId,
-    updatedAt: new Date().toISOString()
-  };
-
-  switch (field) {
-    case "priority":
-    case "severity":
-    case "source":
-    case "status":
-    case "oeeImpact":
-    case "suspectedFailureModeId":
-    case "actualFailureModeId":
-    case "procedureId":
-    case "workCenterId":
-      updateData[field] = value || null;
-      break;
-    case "plannedStartTime":
-    case "plannedEndTime":
-    case "actualStartTime":
-    case "actualEndTime":
-      updateData[field] = value ? new Date(value).toISOString() : null;
-      break;
-    default:
-      return {
-        error: { message: `Invalid field: ${field}` },
-        data: null
-      };
-  }
-
-  // Handle special status updates with timestamps
-  if (field === "status") {
-    if (value === "In Progress") {
-      updateData.actualStartTime = new Date().toISOString();
-    } else if (value === "Completed") {
-      updateData.actualEndTime = new Date().toISOString();
-    }
-  }
-
-  const results = await Promise.all(
-    ids.map(async (id) => {
-      return await updateMaintenanceDispatch(client, {
-        id: id as string,
-        ...updateData
-      } as Parameters<typeof updateMaintenanceDispatch>[1]);
-    })
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(updateMaintenanceDispatchField.input).request(
+    args
   );
-
-  // Check if any updates failed
-  const errors = results.filter((result) => result.error);
-  if (errors.length > 0) {
-    return {
-      error: { message: "Failed to update maintenance dispatch(es)" },
-      data: null
-    };
-  }
-
-  // A downtime-affecting change on an offline dispatch (status, work center, or
-  // timing) moves the work center's outage window — stamp it so the wave
-  // regenerates. Completing/cancelling restores the hours the same way.
-  if (SCHEDULE_AFFECTING_FIELDS.has(field)) {
-    const affectedWorkCenterIds = new Set<string>();
-    for (const d of dispatches.data ?? []) {
-      if (!d.takesWorkCenterOffline) continue;
-      if (d.workCenterId) affectedWorkCenterIds.add(d.workCenterId);
-    }
-    for (const workCenterId of affectedWorkCenterIds) {
-      await notifyScheduleInputsChanged(
-        companyId,
-        "work-center",
-        "Machine downtime changed",
-        workCenterId
-      );
-    }
-  }
-
-  // Completing closes every open timecard (end_maintenance_events_on_complete)
-  // — post their labor.
-  if (field === "status" && value === "Completed") {
-    const postingError = await postMaintenanceLabor({
-      maintenanceDispatchIds: ids as string[],
-      companyId,
-      userId
-    });
-    if (postingError) {
-      return {
-        error: {
-          message: `Updated, but labor cost did not post: ${postingError}`
-        },
-        data: results.map((result) => result.data)
-      };
-    }
-  }
-
-  return { data: results.map((result) => result.data) };
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.resources.updateMaintenanceDispatchField(input.data);
 }

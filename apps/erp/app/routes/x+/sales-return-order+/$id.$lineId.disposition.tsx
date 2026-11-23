@@ -8,10 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  salesReturnOrderDispositionValidator,
-  setSalesReturnOrderLineDisposition
-} from "~/modules/sales";
+import { salesReturnOrderDispositionValidator } from "~/modules/sales/sales.models";
+import { setSalesReturnOrderLineDisposition } from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

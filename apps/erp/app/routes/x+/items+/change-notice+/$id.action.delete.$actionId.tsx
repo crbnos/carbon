@@ -7,11 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteChangeNoticeAction } from "~/modules/items";
 import {
+  deleteChangeNoticeAction,
   requireChangeNoticeChildRoute,
   requireEditableChangeNoticeRoute
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

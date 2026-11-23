@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Database } from "@carbon/database";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import { useLoaderQuery } from "@carbon/query";
@@ -41,6 +42,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import { round } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -59,7 +61,8 @@ import {
   LuFile,
   LuInbox,
   LuLayoutList,
-  LuPackageSearch
+  LuPackageSearch,
+  LuShieldAlert
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
@@ -74,15 +77,14 @@ import {
 import { CSVLink } from "~/components/CSVLink";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import type { PurchaseInvoice } from "~/modules/invoicing";
-import { PurchaseInvoicingStatus } from "~/modules/invoicing";
-import type { PurchaseOrder, SupplierQuote } from "~/modules/purchasing";
-import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing";
+import type { PurchaseInvoice } from "~/modules/invoicing/types";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
+import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing/purchasing.service";
+import type { PurchaseOrder, SupplierQuote } from "~/modules/purchasing/types";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
-
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
@@ -144,12 +146,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .map((approval: ApprovalRequest) => approval.documentId!)
       .filter((id): id is string => !!id) ?? [];
 
+  // Purchase order force deletes waiting for this Admin (another Admin asked).
+  const approvalForceDeleteIds =
+    pendingApprovals.data
+      ?.filter(
+        (approval: ApprovalRequest) =>
+          approval.documentType === "purchaseOrderForceDelete" &&
+          approval.documentId
+      )
+      .map((approval: ApprovalRequest) => approval.documentId!)
+      .filter((id): id is string => !!id) ?? [];
+
+  // Invoice, receipt and payment force deletes waiting for this Admin.
+  const approvalDocumentForceDeleteIds =
+    pendingApprovals.data
+      ?.filter(
+        (approval: ApprovalRequest) =>
+          approval.documentType === "documentForceDelete" && approval.documentId
+      )
+      .map((approval: ApprovalRequest) => approval.documentId!)
+      .filter((id): id is string => !!id) ?? [];
+
   const [
     openPurchaseOrders,
     openPurchaseInvoices,
     openSupplierQuotes,
     purchaseOrdersNeedingApproval,
-    suppliersNeedingApproval
+    suppliersNeedingApproval,
+    forceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval
   ] = await Promise.all([
     client
       .from("purchaseOrder")
@@ -192,6 +217,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .eq("supplierStatus", "Pending")
           .eq("companyId", companyId)
           .in("id", approvalSupplierIds)
+      : { data: [], error: null },
+    // Service role: the request table is serviceOnly.
+    approvalForceDeleteIds.length > 0
+      ? serviceRole
+          .from("purchaseOrderForceDeleteRequest")
+          .select(
+            "id, purchaseOrderId, purchaseOrderReadableId, requestedBy, createdAt, purchaseOrder(supplierId)"
+          )
+          .in("status", ["Pending", "Approving"])
+          .eq("companyId", companyId)
+          .in("id", approvalForceDeleteIds)
+      : { data: [], error: null },
+    approvalDocumentForceDeleteIds.length > 0
+      ? serviceRole
+          .from("forceDeleteRequest")
+          .select("id, documentType, documentId, documentReadableId")
+          .in("status", ["Pending", "Approving"])
+          .eq("companyId", companyId)
+          .in("id", approvalDocumentForceDeleteIds)
       : { data: [], error: null }
   ]);
 
@@ -207,6 +251,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openPurchaseInvoices: openPurchaseInvoices,
     purchaseOrdersNeedingApproval: purchaseOrdersNeedingApproval,
     suppliersNeedingApproval: suppliersNeedingApproval,
+    forceDeletesNeedingApproval: forceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval: documentForceDeletesNeedingApproval,
     assignedToMe: assignedToMePromise
   };
 }
@@ -218,6 +264,8 @@ export default function PurchaseDashboard() {
     openPurchaseInvoices,
     purchaseOrdersNeedingApproval,
     suppliersNeedingApproval,
+    forceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval,
     assignedToMe
   } = useLoaderData<typeof loader>();
 
@@ -375,6 +423,14 @@ export default function PurchaseDashboard() {
     return numberFormatter.format(value);
   };
 
+  const formattedTotal = formatValue(total);
+  const kpiLabel = kpiLabels[selectedKpiData.key];
+  const chartLabel = ["week", "month"].includes(interval)
+    ? t`${kpiLabel} by day`
+    : t`${kpiLabel} by month`;
+  const chartChange = `${percentageChange >= 0 ? "+" : ""}${round(percentageChange, 0)}%`;
+  const chartSummary = t`Total ${formattedTotal}, ${chartChange} versus the previous period`;
+
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
     return [
@@ -394,7 +450,10 @@ export default function PurchaseDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
+      <h1 className="sr-only">
+        <Trans>Purchasing Dashboard</Trans>
+      </h1>
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuPackageSearch />}
           title={<Trans>Active Supplier Quotes</Trans>}
@@ -427,9 +486,9 @@ export default function PurchaseDashboard() {
       </div>
 
       <Card>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -456,15 +515,16 @@ export default function PurchaseDashboard() {
 
               <Combobox
                 asButton
+                aria-label={t`Supplier`}
                 value={supplierId}
                 onChange={setSupplierId}
                 options={supplierOptions}
                 size="sm"
-                className="font-medium text-sm min-w-[160px] gap-4"
+                className="font-medium text-sm min-w-[160px] gap-4 max-md:min-w-0"
               />
             </div>
           </CardHeader>
-          <CardAction className="flex-row items-center gap-2">
+          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
             <DateSelect
               value={interval}
               onValueChange={onIntervalChange}
@@ -516,11 +576,13 @@ export default function PurchaseDashboard() {
           </VStack>
           <Loading
             isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full"
+            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
           >
             <ChartContainer
               config={chartConfig}
-              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+              aria-label={chartLabel}
+              summary={chartSummary}
+              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
             >
               <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                 <CartesianGrid vertical={false} />
@@ -674,6 +736,29 @@ export default function PurchaseDashboard() {
                     suppliersNeedingApproval={
                       suppliersNeedingApproval.data ?? []
                     }
+                    forceDeletesNeedingApproval={[
+                      ...(forceDeletesNeedingApproval.data ?? []).map(
+                        (request) => ({
+                          id: request.id,
+                          readableId: request.purchaseOrderReadableId,
+                          to: request.purchaseOrderId
+                            ? path.to.purchaseOrder(request.purchaseOrderId)
+                            : null,
+                          supplierId: request.purchaseOrder?.supplierId ?? null
+                        })
+                      ),
+                      ...(documentForceDeletesNeedingApproval.data ?? []).map(
+                        (request) => ({
+                          id: request.id,
+                          readableId: request.documentReadableId,
+                          to: forceDeleteDocumentPath(
+                            request.documentType,
+                            request.documentId
+                          ),
+                          supplierId: null
+                        })
+                      )
+                    ]}
                   />
                 )}
               </Await>
@@ -687,14 +772,45 @@ export default function PurchaseDashboard() {
 
 type AssignedDocument = {
   id: string;
-  type: "purchaseOrder" | "supplierQuote" | "purchaseInvoice" | "supplier";
+  type:
+    | "purchaseOrder"
+    | "supplierQuote"
+    | "purchaseInvoice"
+    | "supplier"
+    | "purchaseOrderForceDelete";
   [key: string]: unknown;
 };
+
+type ForceDeleteApproval = {
+  id: string;
+  readableId: string;
+  /** The record's page; null once a purchase order is gone. */
+  to: string | null;
+  supplierId: string | null;
+};
+
+/** A force deleted document's page, by its type. */
+function forceDeleteDocumentPath(
+  documentType: Database["public"]["Enums"]["forceDeleteDocumentType"],
+  documentId: string
+): string {
+  switch (documentType) {
+    case "purchaseInvoice":
+      return path.to.purchaseInvoiceDetails(documentId);
+    case "salesInvoice":
+      return path.to.salesInvoiceDetails(documentId);
+    case "receipt":
+      return path.to.receiptDetails(documentId);
+    case "payment":
+      return path.to.payment(documentId);
+  }
+}
 
 function AssignedDocumentsTable({
   assignedDocs,
   purchaseOrdersNeedingApproval,
-  suppliersNeedingApproval
+  suppliersNeedingApproval,
+  forceDeletesNeedingApproval
 }: {
   assignedDocs: Array<{ id: string; type: string; [key: string]: unknown }>;
   purchaseOrdersNeedingApproval: Array<{
@@ -710,6 +826,7 @@ function AssignedDocumentsTable({
     name: string;
     supplierStatus: string | null;
   }>;
+  forceDeletesNeedingApproval: ForceDeleteApproval[];
 }) {
   // Merge assigned docs with purchase orders needing approval
   // Deduplicate: if a PO is both assigned and needs approval, prefer the assigned version
@@ -731,7 +848,13 @@ function AssignedDocumentsTable({
     type: "supplier" as const
   }));
 
+  const forceDeleteDocs = forceDeletesNeedingApproval.map((doc) => ({
+    ...doc,
+    type: "purchaseOrderForceDelete" as const
+  }));
+
   const allDocs = [
+    ...forceDeleteDocs,
     ...assignedDocs,
     ...approvalDocs,
     ...supplierDocs
@@ -789,16 +912,50 @@ function DocumentRow({ doc }: { doc: AssignedDocument }) {
           }
         />
       );
+    case "purchaseOrderForceDelete":
+      return (
+        <ForceDeleteApprovalRow doc={doc as unknown as ForceDeleteApproval} />
+      );
     default:
       return null;
   }
+}
+
+function ForceDeleteApprovalRow({ doc }: { doc: ForceDeleteApproval }) {
+  return (
+    <Tr>
+      <Td>
+        {doc.to ? (
+          <Hyperlink className="max-md:min-h-11" to={doc.to}>
+            <HStack spacing={1}>
+              <LuShieldAlert className="size-4" />
+              <span>{doc.readableId}</span>
+            </HStack>
+          </Hyperlink>
+        ) : (
+          <span>{doc.readableId}</span>
+        )}
+      </Td>
+      <Td>
+        <Badge variant="red">
+          <Trans>Force delete</Trans>
+        </Badge>
+      </Td>
+      <Td>
+        {doc.supplierId && <SupplierAvatar supplierId={doc.supplierId} />}
+      </Td>
+    </Tr>
+  );
 }
 
 function SupplierQuoteRow({ doc }: { doc: SupplierQuote }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.supplierQuote(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.supplierQuote(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuPackageSearch className="size-4" />
             <span>{doc.supplierQuoteId}</span>
@@ -819,7 +976,10 @@ function PurchaseOrderDocumentRow({ doc }: { doc: PurchaseOrder }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.purchaseOrder(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.purchaseOrder(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuLayoutList className="size-4" />
             <span>{doc.purchaseOrderId}</span>
@@ -840,7 +1000,10 @@ function PurchaseInvoiceRow({ doc }: { doc: PurchaseInvoice }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.salesRfq(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.purchaseInvoice(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuCreditCard className="size-4" />
             <span>{doc.invoiceId}</span>
@@ -866,7 +1029,7 @@ function SupplierApprovalRow({
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.supplier(doc.id)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.supplier(doc.id)}>
           <SupplierAvatar supplierId={doc.id} />
         </Hyperlink>
       </Td>

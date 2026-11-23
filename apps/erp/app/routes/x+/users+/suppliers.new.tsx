@@ -2,120 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  success
-} from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { InviteEmail } from "@carbon/documents/email";
-import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
-import { validationError, validator } from "@carbon/form";
-import { sendEmail } from "@carbon/lib/email.server";
-import { getLogger } from "@carbon/logger";
-import { getClientIp, redirect } from "@carbon/utils";
-import { render } from "@react-email/components";
-import { nanoid } from "nanoid";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  CreateSupplierModal,
-  createSupplierAccountValidator
-} from "~/modules/users";
-import { createSupplierAccount } from "~/modules/users/users.server";
+import { CreateSupplierModal } from "~/modules/users/ui";
+import { createSupplierAccountValidator } from "~/modules/users/users.models";
+import { originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "suppliers-new");
-
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "users"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(createSupplierAccountValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { ip, city } = originOf(args.request);
+  const api = await carbon(args.request);
+  const result = await api.users.inviteSupplierContact({
+    supplierContactId: input.data.id,
+    supplierId: input.data.supplier,
+    ip,
+    city
   });
-
-  const validation = await validator(createSupplierAccountValidator).validate(
-    await request.formData()
+  // Invited from a supplier's contacts: go back there.
+  const supplierRedirect = new URL(args.request.url).searchParams.get(
+    "supplier"
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const supplierRedirect = searchParams.get("supplier");
-
-  const { id, supplier } = validation.data;
-  const result = await createSupplierAccount(client, {
-    id,
-    supplierId: supplier,
-    companyId,
-    createdBy: userId
-  });
-
-  if (!result.success) {
-    logger.error(result);
-    throw redirect(
-      path.to.supplierAccounts,
-      await flash(
-        request,
-        error(result, result.message ?? "Failed to create supplier account")
-      )
-    );
-  }
-
-  const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
-  const ip = getClientIp(request) ?? "127.0.0.1";
-  const [company, user, invitee] = await Promise.all([
-    client.from("company").select("name").eq("id", companyId).single(),
-    client.from("user").select("email, fullName").eq("id", userId).single(),
-    client.from("user").select("fullName").eq("id", result.userId).single()
-  ]);
-
-  if (!company.data || !user.data) {
-    throw new Error("Failed to load company or user");
-  }
-
-  const inviteLink = await getSsoAwareInviteLink(
-    getCarbonServiceRole(),
-    result.email,
-    result.code,
-    companyId
-  );
-
-  await sendEmail({
-    to: result.email,
-    subject: `You have been invited to join ${company.data?.name} on Carbon`,
-    headers: {
-      "X-Entity-Ref-ID": nanoid()
-    },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: user.data.email,
-        invitedByName: user.data.fullName ?? "",
-        email: result.email,
-        name: invitee.data?.fullName ?? "",
-        companyName: company.data.name,
-        inviteLink,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
-  });
-
-  if (supplierRedirect) {
-    throw redirect(
-      path.to.supplierContacts(supplierRedirect),
-      await flash(request, success("Supplier invited"))
-    );
-  }
-
-  throw redirect(
-    path.to.supplierAccounts,
-    await flash(request, success("Supplier invited"))
+  return respond(args.request, result).redirect(
+    supplierRedirect && !result.error
+      ? path.to.supplierContacts(supplierRedirect)
+      : path.to.supplierAccounts,
+    { message: "Supplier invited" }
   );
 }
 

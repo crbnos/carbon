@@ -52,7 +52,11 @@ export type MountPublishSource = {
 };
 
 export type MountPublishSettings = {
+  /** The slug as entered in settings, to name it when Mount has no match. */
+  partDefinitionSlug?: string | null;
   partDefinitionId?: string | null;
+  /** Mount's definition slugs, read only when the setting matched none. */
+  availablePartDefinitionSlugs?: string[] | null;
   customerTypeId?: string | null;
   supplierTypeId?: string | null;
 };
@@ -62,7 +66,9 @@ export type MountPublishSummary = {
   created: number;
   updated: number;
   ambiguous: Array<{ entityId: string; identifier: string; matches: number }>;
-  failed: Array<{ entityId: string; reason: string }>;
+  failed: Array<{ entityId: string; identifier?: string; reason: string }>;
+  /** Settings that resolved to nothing in Mount but did not stop the run. */
+  warnings: string[];
   more: boolean;
   deferred: string[];
 };
@@ -85,6 +91,7 @@ export async function publishEntityType(
     updated: 0,
     ambiguous: [],
     failed: [],
+    warnings: [],
     more: false,
     deferred: deferIds
   };
@@ -95,8 +102,9 @@ export async function publishEntityType(
     // not a side effect of pressing Publish.
     summary.failed.push({
       entityId: "*",
-      reason:
-        "No Mount part object definition configured. Set one in the integration settings."
+      reason: settings.partDefinitionSlug
+        ? `Part definition slug "${settings.partDefinitionSlug}" isn't in Mount.${describeMountHas(settings.availablePartDefinitionSlugs)}`
+        : "Part definition slug isn't set. Set it in the integration settings."
     });
     return summary;
   }
@@ -138,6 +146,7 @@ export async function publishEntityType(
       // record that failed is still stale next time.
       summary.failed.push({
         entityId: record.id,
+        ...(record.readableId ? { identifier: record.readableId } : {}),
         reason:
           error instanceof MissingIdentifierError
             ? error.message
@@ -215,3 +224,30 @@ async function publishOne(
 }
 
 export { MOUNT_INTEGRATION_ID };
+
+/**
+ * What Mount offers instead of a setting it could not match, so the person
+ * can correct the setting without opening Mount. Empty when Mount could not
+ * be asked.
+ */
+export function describeMountHas(names: string[] | null | undefined) {
+  if (!names) return "";
+  if (names.length === 0) return " Mount has none.";
+  return ` Mount has: ${names.join(", ")}.`;
+}
+
+/**
+ * The company type a name refers to: by identifier first, then by title,
+ * ignoring case. Identifiers are what Mount keeps stable when a type's title
+ * is translated or reworded.
+ */
+export function matchCompanyType<
+  T extends { title: string; identifier?: string | null }
+>(types: T[], name: string): T | null {
+  const wanted = name.trim().toLowerCase();
+  return (
+    types.find((type) => type.identifier?.toLowerCase() === wanted) ??
+    types.find((type) => type.title.toLowerCase() === wanted) ??
+    null
+  );
+}

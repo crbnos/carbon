@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { customerPaymentValidator } from "~/modules/sales/sales.models";
 import {
-  customerPaymentValidator,
   getCustomerPayment,
   updateCustomerPayment
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { CustomerPaymentForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 

@@ -6,13 +6,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
-import {
-  attributeCategoryValidator,
-  insertAttributeCategory
-} from "~/modules/people";
+import { attributeCategoryValidator } from "~/modules/people/people.models";
+import { insertAttributeCategory } from "~/modules/people/people.service";
 import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
@@ -56,8 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewAttributeCategoryRoute() {
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.attributes);
+  const dialog = useRouteDialog(path.to.attributes);
 
   const initialValues = {
     name: "",
@@ -66,6 +63,10 @@ export default function NewAttributeCategoryRoute() {
   };
 
   return (
-    <AttributeCategoryForm onClose={onClose} initialValues={initialValues} />
+    <AttributeCategoryForm
+      open={dialog.open}
+      onClose={dialog.close}
+      initialValues={initialValues}
+    />
   );
 }

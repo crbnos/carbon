@@ -24,8 +24,9 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { SuggestionListItem } from "~/modules/resources";
+import type { SuggestionListItem } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -33,12 +34,13 @@ type SuggestionsTableProps = {
   data: SuggestionListItem[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {};
 
 const SuggestionsTable = memo(
-  ({ data, tags, count }: SuggestionsTableProps) => {
+  ({ data, tags, count, infinite }: SuggestionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -64,6 +66,7 @@ const SuggestionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuFileText />
           }
         },
@@ -81,6 +84,7 @@ const SuggestionsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             exportValue: (row) => row.employeeName,
             filter: {
@@ -105,6 +109,7 @@ const SuggestionsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: tags?.map((tag) => ({
@@ -123,6 +128,7 @@ const SuggestionsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendar />
           }
         }
@@ -165,6 +171,7 @@ const SuggestionsTable = memo(
     return (
       <Table<SuggestionListItem>
         data={data}
+        infinite={infinite}
         count={count}
         columns={columns}
         defaultColumnVisibility={defaultColumnVisibility}

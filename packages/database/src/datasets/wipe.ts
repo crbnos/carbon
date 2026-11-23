@@ -36,9 +36,14 @@ const PRESERVED_TABLES = new Set([
   "nonConformanceType",
   "paymentTerm",
   "periodCloseTaskDefinition",
+  // Company-wide project states and labels (Settings → Projects, seeded by
+  // seed-company): configuration, like the units of measure
+  "projectLabel",
+  "projectState",
   "returnReason",
   "scrapReason",
   "sequence",
+  "supplierStage",
   "unitOfMeasure",
   "userToCompany",
   // Accounting records with trigger-enforced immutability (Posted journals
@@ -73,15 +78,20 @@ const PRESERVED_TABLES = new Set([
 ]);
 
 /**
- * MRP planning output — regenerated wholesale on the next run, and deleted
- * before the FK-nulling pass because their discriminator CHECKs cannot survive
- * it. Mirrors TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts.
+ * MRP planning output — regenerated on the next run, and deleted before the
+ * FK-nulling pass because their CHECKs cannot survive it. The first four are
+ * also TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts; planningAction
+ * is NOT (a backup keeps it: Dismissed and assigneeOverridden are the planner's
+ * own state), it is only transient for a dataset apply.
  */
 const TRANSIENT_MRP_TABLES = [
   "demandForecastSource",
   "demandActual",
   "supplyForecast",
-  "supplyActual"
+  "supplyActual",
+  // planningAction_change_target_chk: a change action must keep its job or
+  // PO line, and the FK-nulling pass would clear jobId while jobs still exist.
+  "planningAction"
 ];
 
 // Their content CHECK (imagePath OR modelUploadId) cannot survive the FK-nulling
@@ -91,6 +101,26 @@ const MODEL_SLIDE_TABLES = [
   "methodOperationStepSlide",
   "jobOperationStepSlide",
   "quoteOperationStepSlide"
+];
+
+// Other tables whose CHECK needs one of several nullable FKs to stay set, so
+// the FK-nulling pass would empty all of them and trip the CHECK. A new table
+// with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
+const PARENT_CHECK_TABLES = [
+  // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
+  "customerContractInvoiceLine",
+  // projectStockTransfer_owner_check: fromProjectId IS DISTINCT FROM
+  // toProjectId, which nulling both project FKs breaks. Its lines cascade;
+  // projectBorrow references a line with no cascade, so it goes first.
+  "projectBorrow",
+  "projectStockTransfer",
+  // trainingAssignment_training_or_name: a training OR an external name
+  "trainingAssignment",
+  // projectCostRelief_source_check: a Cost Relief schedule row OR a project
+  // close journal (journal is preserved, the schedule row is not)
+  "projectCostRelief",
+  // shipmentFixedAssetLine_source_check: a sales order line OR a rental line
+  "shipmentFixedAssetLine"
 ];
 
 type ForeignKey = {
@@ -285,7 +315,8 @@ const DOCUMENT_JOURNAL_SOURCES = [
   "Purchase Receipt",
   "Sales Shipment",
   "Inventory Adjustment",
-  "Reimbursement"
+  "Reimbursement",
+  "Service Job"
 ];
 
 /**
@@ -316,6 +347,7 @@ async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
              UNION ALL SELECT id FROM receipt WHERE "companyId" = $1
              UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
              UNION ALL SELECT id FROM "reimbursement" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM "serviceJob" WHERE "companyId" = $1
              UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
          -- a zero-cash payment's journal has no lines to match on
          OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)
@@ -375,10 +407,14 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // so on for jobId / demandProjectionId) over columns that are all nullable,
   // so nullNullableReferences below — which nulls every nullable FK whose
   // parent is being deleted — would violate the CHECK and abort the wipe.
-  // Deleting outright is safe and loses nothing: MRP regenerates these wholesale
-  // on its next run, which is why the backup catalog also treats them as
-  // transient (see TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts).
-  for (const t of [...TRANSIENT_MRP_TABLES, ...MODEL_SLIDE_TABLES]) {
+  // Deleting outright is safe for a dataset apply: MRP regenerates these on
+  // its next run (the planner's dismissals and assignments on planningAction
+  // go with the rest of the company's data, as the apply intends).
+  for (const t of [
+    ...TRANSIENT_MRP_TABLES,
+    ...MODEL_SLIDE_TABLES,
+    ...PARENT_CHECK_TABLES
+  ]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
         companyId
@@ -408,14 +444,24 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // Settlements point at their target invoice/memo through ON DELETE RESTRICT
   // foreign keys, so they must go before the invoice headers below. Payments
   // and memos go with them: both carry a customer-XOR-supplier CHECK that the
-  // FK-nulling pass would violate when it nulls the party they point at.
-  for (const t of ["invoiceSettlement", "payment", "memo"]) {
+  // FK-nulling pass would violate when it nulls the party they point at. The
+  // tax subledger goes with its documents too: their journals were voided
+  // above, so a kept ledger would report tax the GL has reversed.
+  for (const t of ["taxLedger", "invoiceSettlement", "payment", "memo"]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
         companyId
       ]);
     }
   }
+
+  // Both order and line deletes update jobs; detach the line before either
+  // cascade can recheck its foreign key against an already-deleted line.
+  await client.query(
+    `UPDATE job SET "salesOrderLineId" = NULL
+     WHERE "companyId" = $1 AND "salesOrderLineId" IS NOT NULL`,
+    [companyId]
+  );
 
   // Delete lines with check constraints that would block nulling their item FKs.
   // salesOrderLine.itemId can't be set NULL (check requires it for Part/Material/Tool/etc).

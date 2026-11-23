@@ -22,10 +22,11 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { getLocalTimeZone, toZoned } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import { z } from "zod";
 import {
   Assignee,
@@ -34,6 +35,8 @@ import {
 } from "~/components";
 import { Location, Procedure, WorkCenter } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { action as eventsAction } from "~/routes/x+/maintenance+/$dispatchId.events";
+import type { action as updateAction } from "~/routes/x+/maintenance+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
@@ -79,28 +82,21 @@ const MaintenanceDispatchProperties = () => {
       ? optimisticAssignment
       : (routeData?.dispatch?.assignee?.id ?? null);
 
-  const fetcher = useAction<{ error?: { message: string } }>({
-    onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+  const fetcher = useAction<typeof updateAction>({
+    onSuccess: ({ data }) => {
+      if (data?.warning) toast.error(data.warning);
     }
   });
-  const eventFetcher = useFetcher<{ error?: { message: string } }>();
-
-  useEffect(() => {
-    if (
-      eventFetcher.state === "idle" &&
-      eventFetcher.data &&
-      !eventFetcher.data.error
-    ) {
+  const eventFetcher = useAction<typeof eventsAction>({
+    onSuccess: ({ data }) => {
+      toast.success(t`Event saved`);
+      if (data && "warning" in data && typeof data.warning === "string") {
+        toast.error(data.warning);
+      }
       eventModal.onClose();
       setSelectedEvent(null);
     }
-    if (eventFetcher.data?.error) {
-      toast.error(eventFetcher.data.error.message);
-    }
-  }, [eventFetcher.state, eventFetcher.data, eventModal]);
+  });
 
   const onUpdate = useCallback(
     (field: string, value: string | null) => {
@@ -430,7 +426,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("plannedStartTime", date?.toString() ?? null);
+            onUpdate(
+              "plannedStartTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>
@@ -450,7 +449,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("plannedEndTime", date?.toString() ?? null);
+            onUpdate(
+              "plannedEndTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>
@@ -470,7 +472,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("actualStartTime", date?.toString() ?? null);
+            onUpdate(
+              "actualStartTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>
@@ -490,7 +495,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("actualEndTime", date?.toString() ?? null);
+            onUpdate(
+              "actualEndTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>

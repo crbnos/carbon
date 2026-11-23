@@ -31,14 +31,19 @@ export function ScrapEntityModal({
   trackedEntityId,
   readableId,
   parentId,
+  operationId,
   isMakeToOrder,
+  open = true,
   onClose
 }: {
   materialId: string;
   trackedEntityId: string;
   readableId?: string | null;
   parentId?: string;
+  /** The operation the scrap is made at; checks the parent is its unit. */
+  operationId?: string;
   isMakeToOrder: boolean;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -47,20 +52,27 @@ export function ScrapEntityModal({
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
+      // Reset, or the next open would close itself: the modal stays mounted.
+      submitted.current = false;
       onClose();
     }
   }, [fetcher.state, onClose]);
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <ModalContent>
         <ValidatedForm
-          action={path.to.scrapEntity(materialId, trackedEntityId, parentId)}
+          action={path.to.scrapEntity(
+            materialId,
+            trackedEntityId,
+            parentId,
+            operationId
+          )}
           method="post"
           validator={scrapTrackedEntityValidator}
           defaultValues={{

@@ -56,7 +56,7 @@ const PurchasingRFQForm = ({ initialValues }: PurchasingRFQFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? "Purchasing RFQ" : "New Purchasing RFQ"}
           </CardTitle>
           {!isEditing && (
@@ -107,7 +107,7 @@ const PurchasingRFQForm = ({ initialValues }: PurchasingRFQFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isLocked ||

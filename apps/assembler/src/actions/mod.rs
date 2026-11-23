@@ -9,6 +9,7 @@
 
 pub mod compact;
 pub mod convert;
+pub mod fetch;
 pub mod optimize;
 pub mod plan;
 pub mod thumbnail;

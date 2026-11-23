@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { LineagePayload } from "~/modules/inventory/lineage.server";
+import type { LineagePayload } from "~/modules/inventory/inventory.service";
 import type { TrackedEntity } from "~/modules/inventory/types";
 
 /**

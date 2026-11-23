@@ -31,7 +31,7 @@ export function IssueList({ issues }: { issues: WorkflowIssue[] }) {
           <li key={`${issue.code}-${issue.nodeId ?? index}`}>
             <button
               type="button"
-              className="flex w-full items-start gap-2 border-b px-3 py-2 text-left text-[11px] hover:bg-accent"
+              className="flex w-full items-start gap-2 border-b px-3 py-2 text-left text-[0.6875rem] hover:bg-accent"
               onClick={() => {
                 if (!node) return;
                 setSelected(node.id);
@@ -46,7 +46,7 @@ export function IssueList({ issues }: { issues: WorkflowIssue[] }) {
                 {label && <span className="font-medium">{label.title}: </span>}
                 {issue.message}
                 {label?.subtitle && (
-                  <span className="block text-[10px] text-muted-foreground">
+                  <span className="block text-[0.625rem] text-muted-foreground">
                     {label.kind} · {label.subtitle}
                   </span>
                 )}

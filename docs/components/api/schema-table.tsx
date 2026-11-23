@@ -20,7 +20,8 @@
  * Cmd-F and by the search index.
  */
 
-import { useId, useState } from "react";
+import Link from "next/link";
+import { Fragment, useId, useState } from "react";
 
 export type JsonSchemaNode = {
   type?: string | string[];
@@ -155,16 +156,44 @@ function Chip({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * A field description with each lookup operation it names ("See
+ * quality_getIssueTypesList.") linked to that operation's page.
+ */
+function Description({ text, lookups }: { text: string; lookups?: string[] }) {
+  if (!lookups?.length) return <>{text}</>;
+  const pattern = new RegExp(`\\b(${lookups.join("|")})\\b`);
+  return (
+    <>
+      {text.split(pattern).map((part, i) =>
+        lookups.includes(part) ? (
+          <Link
+            key={i}
+            href={`/api/operations/${part}`}
+            className="font-mono text-ed-13 text-ed-brand-ink underline decoration-ed-blue-border underline-offset-2 hover:decoration-ed-brand-ink"
+          >
+            {part}
+          </Link>
+        ) : (
+          <Fragment key={i}>{part}</Fragment>
+        )
+      )}
+    </>
+  );
+}
+
 function SchemaRow({
   name,
   node,
   required,
   depth,
+  lookups,
 }: {
   name: string;
   node: JsonSchemaNode;
   required: boolean;
   depth: number;
+  lookups?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const panelId = `schema-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -219,7 +248,7 @@ function SchemaRow({
           style={{ paddingLeft: `${16 + depth * 18}px` }}
           className="m-0 -mt-1 pb-2.5 pr-4 text-ed-14 leading-normal text-ed-ink/74"
         >
-          {node.description}
+          <Description text={node.description} lookups={lookups} />
         </p>
       )}
 
@@ -283,7 +312,14 @@ function sortByRequired(
   });
 }
 
-export function SchemaTable({ schema }: { schema: unknown }) {
+export function SchemaTable({
+  schema,
+  lookups,
+}: {
+  schema: unknown;
+  /** Field → the operations that list its ids (top-level fields only). */
+  lookups?: Record<string, string[]>;
+}) {
   const root = (schema ?? {}) as JsonSchemaNode;
   const properties = root.properties ?? {};
   const required = new Set(root.required ?? []);
@@ -312,6 +348,7 @@ export function SchemaTable({ schema }: { schema: unknown }) {
             node={properties[name]}
             required={required.has(name)}
             depth={0}
+            lookups={lookups?.[name]}
           />
         ))}
       </div>

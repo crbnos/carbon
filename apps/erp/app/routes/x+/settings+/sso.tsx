@@ -19,7 +19,10 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
+import {
+  ssoConnectionValidator,
+  ssoDomainValidator
+} from "~/modules/settings/settings.models";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -60,11 +63,15 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const upsert = await upsertSsoConnection(getCarbonServiceRole(), {
-      ...validation.data,
-      companyId,
-      userId
-    });
+    const upsert = await upsertSsoConnection(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      {
+        ...validation.data,
+        companyId,
+        userId
+      }
+    );
 
     if (upsert.error) {
       return data(
@@ -209,10 +216,14 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "deactivate") {
-    const deactivate = await deactivateSsoConnection(getCarbonServiceRole(), {
-      companyId,
-      userId
-    });
+    const deactivate = await deactivateSsoConnection(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      {
+        companyId,
+        userId
+      }
+    );
 
     if (deactivate.error) {
       return data(

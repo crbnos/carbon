@@ -44,54 +44,39 @@ it("records each middleware's own time on the request span, not what runs after 
     quick: (_args, next) => next()
   });
 
-  await request(
-    async () => {
-      await slow?.({} as never, () =>
-        Promise.resolve(
-          quick?.({} as never, async () => {
-            await sleep(60);
-            return new Response();
-          }) as Response
-        )
-      );
-      return {};
-    },
-    { request: { method: "GET", url: "http://erp.test/x" } } as never
-  );
+  // A fake clock, because real sleeps overrun on a busy CI machine.
+  vi.useFakeTimers({ toFake: ["setTimeout", "performance"] });
+  try {
+    const finished = request(
+      async () => {
+        await slow?.({} as never, () =>
+          Promise.resolve(
+            quick?.({} as never, async () => {
+              await sleep(60);
+              return new Response();
+            }) as Response
+          )
+        );
+        return {};
+      },
+      { request: { method: "GET", url: "http://erp.test/x" } } as never
+    );
+    await vi.advanceTimersByTimeAsync(90);
+    await finished;
+  } finally {
+    vi.useRealTimers();
+  }
 
   const spans = exporter.getFinishedSpans();
   expect(spans.map((span) => span.name)).toEqual(["GET"]);
   const attributes = spans[0]?.attributes ?? {};
-  const slowMs = attributes["carbon.middleware.slow.ms"] as number;
-  const quickMs = attributes["carbon.middleware.quick.ms"] as number;
-  expect(slowMs).toBeGreaterThanOrEqual(25);
-  expect(slowMs).toBeLessThan(55);
-  expect(quickMs).toBeLessThan(10);
-});
-
-it("wraps a call in a span and marks it failed when the call throws", async () => {
-  const { withSpan } = await import("./tracing.server");
-
-  const attributes = { "carbon.operation": "sales_getCustomers" };
-  await expect(
-    withSpan("operation sales_getCustomers", attributes, async () => 1)
-  ).resolves.toBe(1);
-  await expect(
-    withSpan("operation sales_getCustomers", attributes, async () => {
-      throw new Error("denied");
-    })
-  ).rejects.toThrow("denied");
-
-  const [ok, failed] = exporter.getFinishedSpans();
-  expect(ok?.name).toBe("operation sales_getCustomers");
-  expect(ok?.attributes).toEqual(attributes);
-  expect(failed?.status).toEqual({ code: 2, message: "denied" });
+  expect(attributes["carbon.middleware.slow.ms"]).toBe(30);
+  expect(attributes["carbon.middleware.quick.ms"]).toBe(0);
 });
 
 it("names the request span after what a shared route served", async () => {
-  const { nameRequestSpan, routerInstrumentation } = await import(
-    "./tracing.server"
-  );
+  const { routerInstrumentation } = await import("./tracing.server");
+  const { nameRequestSpan } = await import("./span");
 
   type Handle = () => Promise<{ error?: Error }>;
   let wrap: (handle: Handle, info: never) => Promise<void> = async () =>

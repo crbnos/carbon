@@ -76,7 +76,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <Enumerable value={row.original.name} />
           </Hyperlink>
         ),
-        meta: { icon: <LuShieldCheck /> }
+        meta: { icon: <LuShieldCheck />, mobile: "P1" }
       },
       {
         accessorKey: "severity",
@@ -90,7 +90,8 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <Badge variant="yellow">
               <Trans>Warn</Trans>
             </Badge>
-          )
+          ),
+        meta: { mobile: "P3" }
       },
       {
         accessorKey: "surfaces",
@@ -123,7 +124,8 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <Status color="gray">
               <Trans>Inactive</Trans>
             </Status>
-          )
+          ),
+        meta: { mobile: "P2" }
       },
       {
         accessorKey: "assignmentCount",

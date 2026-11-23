@@ -45,7 +45,11 @@ export const CalendarCell = ({
   const isToday = isDateToday(date, getLocalTimeZone());
 
   return (
-    <Td {...cellProps} className="border-none text-center p-1 relative">
+    <Td
+      {...cellProps}
+      data-date={date.toString()}
+      className="border-none text-center p-1 relative"
+    >
       <Button
         {...buttonProps}
         ref={ref}

@@ -5,7 +5,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CREDIT_REASON_ITEM_ENTITY_TYPE } from "../../../../core/credit-reason-item";
 import type { ExternalIntegrationMappingService } from "../../../../core/external-mapping";
+import {
+  type FakeDatabase,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import { JournalEntrySyncError } from "../../../../core/posting";
+import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Qbo } from "../../models";
 import {
   buildQboCreditMemoApplicationPayload,
@@ -13,46 +18,20 @@ import {
   buildQboCreditReasonItemName,
   QBO_MEMO_INCREASER_SKIP_REASON,
   QboCreditMemoSyncer,
-  type QboMemoSettlementRow,
-  type QboMemoSource,
   qboCreditMemoSkipReason,
   qboMemoApplicationAmount,
+  resolveQboCreditMemoTax,
   resolveQboCreditReasonItemRef
 } from "../credit-memo";
+import type { QboInvoiceTaxCatalog } from "../invoice-tax";
+import type { QboMemoSettlementRow, QboMemoSource } from "../memo-source";
 import {
   buildQboVendorCreditApplicationPayload,
   buildQboVendorCreditPayload,
   QboVendorCreditSyncer,
-  qboVendorCreditSkipReason
+  qboVendorCreditSkipReason,
+  resolveQboVendorCreditTax
 } from "../vendor-credit";
-
-/**
- * `recordQboMemoApplication` writes its mapping row inside
- * `withTriggersDisabled`, a real Kysely transaction that opens with a `SET LOCAL`
- * statement. Stub it so the row lands in `mappingRows` instead — that map is the
- * durable store the resumability test reads back.
- */
-const { mappingRows } = vi.hoisted(() => ({
-  mappingRows: new Map<string, string>()
-}));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const builder: Record<string, any> = {};
-    builder.values = (value: any) => {
-      for (const row of Array.isArray(value) ? value : [value]) {
-        mappingRows.set(`${row.entityType}::${row.entityId}`, row.externalId);
-      }
-      return builder;
-    };
-    builder.onConflict = () => builder;
-    builder.execute = async () => [];
-    return cb({ insertInto: () => builder });
-  }
-}));
 
 const INTEGRATION = "quickbooks";
 const REASON_ACCOUNT_REF: Qbo.Ref = { value: "84", name: "Sales Returns" };
@@ -70,6 +49,9 @@ function memo(overrides: Partial<QboMemoSource> = {}): QboMemoSource {
     currencyCode: "USD",
     exchangeRate: 1,
     amount: 250,
+    taxAmount: 0,
+    taxCodeId: null,
+    decimalPlaces: 2,
     reasonAccount: "acc_returns",
     reference: null,
     notes: "Short shipment on SO-000019",
@@ -416,48 +398,69 @@ function settlement(
 }
 
 /**
- * Drives `upsertRemote` (and so `applySettlements`) with no QBO and no database.
- *
- * `mappingRows` is the DURABLE store: `recordQboMemoApplication` writes into it
- * through the mocked `withTriggersDisabled` above, and the same rows back
- * `mappingService.getExternalId` — so a second push really does see what the
- * first one recorded, which is the whole claim of the resumability test.
+ * The company and mappings the memo pushes read: the settled documents are
+ * already in QuickBooks, and the bank account is mapped. `db` is reset per test
+ * and outlives a syncer, so a second push sees the application rows the first
+ * one recorded — the whole claim of the resumability test.
  */
+let db: FakeDatabase;
+beforeEach(() => {
+  const mapping = (
+    entityType: string,
+    entityId: string,
+    externalId: string
+  ) => ({
+    entityType,
+    entityId,
+    integration: INTEGRATION,
+    companyId: "company-1",
+    externalId
+  });
+  db = fakeDatabase({
+    company: [{ id: "company-1", baseCurrencyCode: "USD" }],
+    accountDefault: [
+      {
+        companyId: "company-1",
+        payablesAccount: "acc_ap",
+        bankCashAccount: "acc_bank"
+      }
+    ],
+    externalIntegrationMapping: [
+      mapping("invoice", "si_1", "qbo-invoice-si_1"),
+      mapping("invoice", "si_2", "qbo-invoice-si_2"),
+      mapping("bill", "pi_1", "qbo-bill-pi_1"),
+      mapping("account", "acc_bank", "60")
+    ]
+  });
+});
+const applicationMapping = (entityId: string) =>
+  db
+    .rows("externalIntegrationMapping")
+    .find(
+      (row) =>
+        row.entityType === "qboMemoApplication" && row.entityId === entityId
+    )?.externalId;
+
+/** Drives `upsertRemote` (and so `applySettlements`) with no QBO. */
 function makeCreditMemoSyncer(args: {
   memo: QboMemoSource;
   applyCreditMemo?: ReturnType<typeof vi.fn>;
-  baseCurrencyCode?: string;
 }) {
   const applyCreditMemo =
     args.applyCreditMemo ?? vi.fn(async () => "qbo-payment-1");
   const createCreditMemo = vi.fn(async () => ({ Id: "qbo-cm-1" }));
 
   const syncer = new QboCreditMemoSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: { id: INTEGRATION, createCreditMemo, applyCreditMemo } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "creditMemo"
   });
-
-  const patched = syncer as unknown as Record<string, any>;
-  patched.mappingService = {
-    getByEntity: vi.fn(async () => null),
-    getExternalId: vi.fn(async (entityType: string, entityId: string) =>
-      entityType === "invoice"
-        ? `qbo-invoice-${entityId}`
-        : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
-    )
-  };
-  // The one company read `upsertRemote` needs — stubbed rather than faked,
-  // there is no database in this process.
-  patched.baseCurrencyCodePromise = Promise.resolve(
-    args.baseCurrencyCode ?? "USD"
-  );
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
 
   const push = () =>
-    patched.upsertRemote(
+    (syncer as unknown as Record<string, any>).upsertRemote(
       { CustomerRef: { value: "17" } } as never,
       args.memo.id
     ) as Promise<string>;
@@ -469,14 +472,13 @@ function makeCreditMemoSyncer(args: {
 function makeVendorCreditSyncer(args: {
   memo: QboMemoSource;
   applyVendorCredit?: ReturnType<typeof vi.fn>;
-  baseCurrencyCode?: string;
 }) {
   const applyVendorCredit =
     args.applyVendorCredit ?? vi.fn(async () => "qbo-billpayment-1");
   const createVendorCredit = vi.fn(async () => ({ Id: "qbo-vc-1" }));
 
   const syncer = new QboVendorCreditSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: {
       id: INTEGRATION,
@@ -486,30 +488,10 @@ function makeVendorCreditSyncer(args: {
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "supplierCredit"
   });
-
-  const patched = syncer as unknown as Record<string, any>;
-  patched.mappingService = {
-    getByEntity: vi.fn(async () => null),
-    getExternalId: vi.fn(async (entityType: string, entityId: string) =>
-      entityType === "bill"
-        ? `qbo-bill-${entityId}`
-        : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
-    )
-  };
-  patched.accountDefaultsPromise = Promise.resolve({
-    payablesAccount: "acc_ap",
-    bankCashAccount: "acc_bank"
-  });
-  patched.accountRefsByIdPromise = Promise.resolve(
-    new Map<string, Qbo.Ref>([["acc_bank", { value: "60" }]])
-  );
-  patched.baseCurrencyCodePromise = Promise.resolve(
-    args.baseCurrencyCode ?? "USD"
-  );
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
 
   const push = () =>
-    patched.upsertRemote(
+    (syncer as unknown as Record<string, any>).upsertRemote(
       { VendorRef: { value: "55" } } as never,
       args.memo.id
     ) as Promise<string>;
@@ -615,10 +597,6 @@ describe("the cross-currency application guard (parity with Xero)", () => {
 });
 
 describe("QboCreditMemoSyncer.applySettlements", () => {
-  beforeEach(() => {
-    mappingRows.clear();
-  });
-
   it("sends the DOCUMENT-currency principal for a foreign memo, not the base amount", async () => {
     // EUR 100.00 at 0.92 EUR per USD of base: appliedAmount is 108.70 base.
     const { push, applyCreditMemo } = makeCreditMemoSyncer({
@@ -722,9 +700,7 @@ describe("QboCreditMemoSyncer.applySettlements", () => {
     await expect(first.push()).rejects.toThrow("500");
     // The whole point: linkEntities never ran, so the memo's own mapping
     // metadata was never written — the per-application row is what survives.
-    expect(mappingRows.get("qboMemoApplication::memo_1:st_1")).toBe(
-      "qbo-payment-1"
-    );
+    expect(applicationMapping("memo_1:st_1")).toBe("qbo-payment-1");
 
     const second = makeCreditMemoSyncer({ memo: memoWithTwo });
     await second.push();
@@ -736,17 +712,11 @@ describe("QboCreditMemoSyncer.applySettlements", () => {
       Line: Array<{ LinkedTxn: Array<{ TxnId: string }> }>;
     };
     expect(retried.Line[0]?.LinkedTxn[0]?.TxnId).toBe("qbo-invoice-si_2");
-    expect(mappingRows.get("qboMemoApplication::memo_1:st_2")).toBe(
-      "qbo-payment-1"
-    );
+    expect(applicationMapping("memo_1:st_2")).toBe("qbo-payment-1");
   });
 });
 
 describe("QboVendorCreditSyncer.applySettlements", () => {
-  beforeEach(() => {
-    mappingRows.clear();
-  });
-
   it("sends CurrencyRef and the inverted ExchangeRate on a FOREIGN BillPayment", async () => {
     const { push, applyVendorCredit } = makeVendorCreditSyncer({
       memo: supplierMemo({
@@ -785,5 +755,152 @@ describe("QboVendorCreditSyncer.applySettlements", () => {
     const payload = applyVendorCredit.mock.calls[0]?.[0] as object;
     expect(payload).not.toHaveProperty("CurrencyRef");
     expect(payload).not.toHaveProperty("ExchangeRate");
+  });
+});
+
+describe("memo tax (mapped codes)", () => {
+  const code = (Id: string, Name: string, rateId?: string): Qbo.TaxCode => ({
+    Id,
+    Name,
+    Active: true,
+    ...(rateId
+      ? {
+          SalesTaxRateList: {
+            TaxRateDetail: [{ TaxRateRef: { value: rateId } }]
+          },
+          PurchaseTaxRateList: {
+            TaxRateDetail: [{ TaxRateRef: { value: rateId } }]
+          }
+        }
+      : {})
+  });
+  const catalog = (country: string): QboInvoiceTaxCatalog => ({
+    country,
+    taxCodes: [code("20S", "20.0% S", "r20"), code("NOVAT", "No VAT", "r0")],
+    taxRates: [
+      { Id: "r20", RateValue: 20 },
+      { Id: "r0", RateValue: 0 }
+    ]
+  });
+  const mappings = buildTaxCodeMappingLookup(
+    (["sales", "purchase"] as const).map((direction) => ({
+      taxCodeId: "tc_std",
+      direction,
+      externalId: "20S",
+      externalName: "20.0% S",
+      externalRate: 0.2
+    }))
+  );
+  const taxed = { amount: 1200, taxAmount: 200, taxCodeId: "tc_std" };
+
+  it("sends a GB credit memo's line at net with its mapped code and the tax detail", () => {
+    const source = memo({ ...taxed, currencyCode: "GBP" });
+    const payload = buildQboCreditMemoPayload({
+      memo: source,
+      customerRef: { value: "17" },
+      reasonItemRef: { value: "901" },
+      baseCurrencyCode: "GBP",
+      tax: resolveQboCreditMemoTax({
+        memo: source,
+        catalog: catalog("GB"),
+        mappings
+      })
+    });
+    expect(payload.GlobalTaxCalculation).toBe("TaxExcluded");
+    expect(payload.Line[0]).toMatchObject({
+      Amount: 1000,
+      SalesItemLineDetail: {
+        ItemRef: { value: "901" },
+        Qty: 1,
+        UnitPrice: 1000,
+        TaxCodeRef: { value: "20S" }
+      }
+    });
+    expect(payload.TxnTaxDetail).toEqual({
+      TotalTax: 200,
+      TaxLine: [
+        {
+          Amount: 200,
+          DetailType: "TaxLineDetail",
+          TaxLineDetail: {
+            TaxRateRef: { value: "r20" },
+            NetAmountTaxable: 1000,
+            PercentBased: true,
+            TaxPercent: 20
+          }
+        }
+      ]
+    });
+  });
+
+  it("sends a US credit memo with the TAX marker and the mapped transaction code", () => {
+    const tax = resolveQboCreditMemoTax({
+      memo: memo(taxed),
+      catalog: catalog("US"),
+      mappings
+    });
+    expect(tax.lineTaxCodeRef).toEqual({ value: "TAX" });
+    expect(tax.txnTaxDetail?.TxnTaxCodeRef).toEqual({ value: "20S" });
+    expect(tax.globalTaxCalculation).toBeUndefined();
+  });
+
+  it("splits a partly recoverable vendor credit like a bill line", () => {
+    const source = supplierMemo({ ...taxed, currencyCode: "GBP" });
+    const payload = buildQboVendorCreditPayload({
+      memo: source,
+      vendorRef: { value: "55" },
+      reasonAccountRef: { value: "84" },
+      baseCurrencyCode: "GBP",
+      tax: resolveQboVendorCreditTax({
+        memo: source,
+        recoverableShare: 0.5,
+        catalog: catalog("GB"),
+        mappings
+      })
+    });
+    expect(
+      payload.Line.map((line) => [
+        line.Amount,
+        line.AccountBasedExpenseLineDetail?.AccountRef.value,
+        line.AccountBasedExpenseLineDetail?.TaxCodeRef?.value
+      ])
+    ).toEqual([
+      [500, "84", "20S"],
+      [600, "84", "NOVAT"]
+    ]);
+    expect(payload.TxnTaxDetail?.TotalTax).toBe(100);
+    expect(
+      payload.Line.reduce((sum, line) => sum + line.Amount, 0) +
+        payload.TxnTaxDetail!.TotalTax
+    ).toBe(1200);
+  });
+
+  it("refuses a memo whose code has no mapping", () => {
+    expect(() =>
+      resolveQboCreditMemoTax({
+        memo: memo(taxed),
+        catalog: catalog("GB"),
+        mappings: new Map()
+      })
+    ).toThrow(/UNMAPPED_TAX_CODES/);
+  });
+
+  it("sends a memo without tax exactly as before", () => {
+    const payload = buildQboVendorCreditPayload({
+      memo: supplierMemo(),
+      vendorRef: { value: "55" },
+      reasonAccountRef: { value: "84" },
+      baseCurrencyCode: "USD"
+    });
+    expect(payload.Line).toEqual([
+      {
+        Amount: 250,
+        Description: "Short shipment on SO-000019",
+        DetailType: "AccountBasedExpenseLineDetail",
+        AccountBasedExpenseLineDetail: { AccountRef: { value: "84" } }
+      }
+    ]);
+    expect(payload).not.toHaveProperty("TxnTaxDetail");
+    expect(payload).not.toHaveProperty("GlobalTaxCalculation");
   });
 });

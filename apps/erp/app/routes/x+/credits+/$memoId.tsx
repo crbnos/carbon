@@ -6,25 +6,31 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
-  ShouldRevalidateFunction
+  MetaFunction
 } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
   getMemoApplications,
-  MemoApplicationsPanel,
-  MemoForm,
-  memoValidator,
+  getSettlementRelatedItems,
   upsertMemo
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.service";
+import {
+  MemoApplicationsPanel,
+  MemoDocuments,
+  MemoForm,
+  MemoHeader
+} from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // The memo detail page is one shared URL (so every inbound path.to.memo(id)
@@ -47,14 +53,11 @@ export const handle: Handle = {
   module: "invoicing"
 };
 
-// A memo is just the credit/debit document — create it, then post it. Applying
-// it to invoices happens on the payment/receipt screen (alongside cash), so the
-// settlement UI lives in one place. The invoice's "Applied" panel shows where a
-// posted credit ended up.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["memoId"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    data?.memo?.memoId,
+    data?.memo?.supplierId ? "Supplier Credit" : "Credit Memo"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -63,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
-  const memo = await getMemo(client, memoId);
+  const memo = await getMemo(client, memoId, companyId);
   if (memo.error || !memo.data) {
     throw redirect(
       path.to.invoicing,
@@ -73,14 +76,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const applications = await getMemoApplications(client, companyId, memoId);
 
-  return { memo: memo.data, applications: applications.data ?? [] };
+  return {
+    memo: memo.data,
+    applications: applications.data ?? [],
+    relatedItems: getSettlementRelatedItems(client, companyId, {
+      journalId: memo.data.journalId,
+      targets: (applications.data ?? []).map(({ target }) => ({
+        targetSalesInvoiceId: target.type === "salesInvoice" ? target.id : null,
+        targetPurchaseInvoiceId:
+          target.type === "purchaseInvoice" ? target.id : null,
+        targetMemoId: target.type === "memo" ? target.id : null,
+        targetReimbursementId:
+          target.type === "reimbursement" ? target.id : null
+      })),
+      salesReturnOrderId: memo.data.salesReturnOrderId,
+      purchaseReturnOrderId: memo.data.purchaseReturnOrderId,
+      rentalAgreementId: memo.data.rentalAgreementId
+    })
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "invoicing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "invoicing"
+    });
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
@@ -91,7 +112,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Only Draft memos are editable; Posted/Voided are immutable.
-  const existing = await getMemo(client, memoId);
+  const existing = await getMemo(client, memoId, companyId);
   if (existing.error || !existing.data) {
     throw redirect(
       path.to.invoicing,
@@ -109,6 +130,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await upsertMemo(client, {
     ...memoData,
     id: memoId,
+    companyId,
+    companyGroupId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -137,21 +160,49 @@ export default function MemoDetailRoute() {
     memoDate: memo.memoDate,
     currencyCode: memo.currencyCode ?? "",
     exchangeRate: Number(memo.exchangeRate ?? 1),
-    amount: Number(memo.amount ?? 0),
+    // `amount` is the gross; the form edits the net and recomputes the tax.
+    netAmount: round(Number(memo.amount ?? 0) - Number(memo.taxAmount ?? 0)),
+    taxCodeId: memo.taxCodeId ?? "",
+    taxAmount: Number(memo.taxAmount ?? 0),
     reference: memo.reference ?? "",
     notes: memo.notes ?? "",
     status: memo.status ?? undefined
   };
 
+  // The saved tax: while the code is unchanged the form, like `upsertMemo`,
+  // keeps the rate it implies (a memo made from lines with a bare percent has
+  // tax and no code).
+  const storedTax = {
+    amount: Number(memo.amount ?? 0),
+    taxAmount: Number(memo.taxAmount ?? 0),
+    taxCodeId: memo.taxCodeId ?? null
+  };
+
   const type = memo.supplierId ? "supplierCredit" : "creditMemo";
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <MemoForm initialValues={initialValues} type={type} />
+    <DocumentPage
+      header={<MemoHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<MemoDocuments />}
+          activity={{
+            entityType: "memo",
+            entityId: memo.id,
+            refreshKey: `${memo.updatedAt ?? ""}:${memo.status}`
+          }}
+        />
+      }
+    >
+      <MemoForm
+        initialValues={initialValues}
+        storedTax={storedTax}
+        type={type}
+      />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}
       />
-    </VStack>
+    </DocumentPage>
   );
 }

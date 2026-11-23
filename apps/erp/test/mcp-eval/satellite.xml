@@ -1,0 +1,65 @@
+<!--
+  Agent evaluation for the Carbon MCP server (mcp-builder skill format).
+
+  Ten read-only questions an agent answers using only search_tools /
+  describe_tool / call_tool. Each needs several hops: a BOM walked through its
+  sub-assemblies, a supersession to its successor's replenishment, an NCR to
+  the disposition on one of its items.
+
+  Answers come from the satellite demo dataset
+  (packages/database/src/datasets/data/satellite), so they hold for any company
+  seeded with the satellite dataset (`pnpm db:seed:dev`). They avoid dates and
+  sequence ids, which change on every apply. Verified against the live database
+  and the MCP server on 2026-10-17.
+
+  Traps on purpose:
+  - Q1: HARNESS-001 also exists as revision A under an open change notice,
+    whose BOM has no M4 fasteners. Reading it gives 72, not 84.
+  - Q2: SAW-001 has an Active v1 and a Draft v2. Both hold 64 cells, so either
+    one gives 128.
+
+  Run with the mcp-builder skill's scripts/evaluation.py against
+  https://<erp>/api/mcp, with a `crbn_` API key that holds the view scopes.
+-->
+<evaluation>
+  <qa_pair>
+    <question>Counting every level of the bill of materials, and ignoring revisions that are still under an open change notice, how many M4 titanium fasteners does one complete ESPA-class smallsat bus consume? Answer with a whole number.</question>
+    <answer>84</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>How many photovoltaic cells go into one complete smallsat bus, counting every sub-assembly? Answer with a whole number.</question>
+    <answer>128</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Among the purchased components of the propulsion module, which one takes the longest to replenish? Answer with the item's name exactly as Carbon shows it.</question>
+    <answer>Hydrazine Thruster 1N</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>One valve in the propulsion module is being phased out in favour of a successor part. What is the successor's replenishment lead time in days? Answer with a whole number.</question>
+    <answer>30</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>At the prices quoted by their supplier, what do the reaction wheels and star trackers needed for one attitude determination and control system cost in total, in USD? Answer with a whole number and no currency symbol or separators.</question>
+    <answer>114000</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Our defense customer orders the complete smallsat bus under their own part number. What is that part number, without the revision? Answer with the part number only.</question>
+    <answer>ORB-BUS-4400</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>A customer-reported quality problem has already been closed. What disposition was recorded for the item involved? Answer with the disposition exactly as Carbon shows it.</question>
+    <answer>Rework</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For the most severe non-conformance that is still open, what disposition was recorded for the purchased part involved? Answer with the disposition exactly as Carbon shows it.</question>
+    <answer>Return to Supplier</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>One engineering change to a sub-assembly of the smallsat bus is currently being implemented. Which item does it affect? Answer with the item's name exactly as Carbon shows it.</question>
+    <answer>Spacecraft Wiring Harness</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Which work center has a monthly preventive maintenance schedule and also a maintenance dispatch that needs the equipment maker's help at the highest priority? Answer with the work center's name.</question>
+    <answer>TVAC Chamber 1</answer>
+  </qa_pair>
+</evaluation>

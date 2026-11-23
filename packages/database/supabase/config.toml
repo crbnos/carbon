@@ -29,7 +29,7 @@ port = 54322
 shadow_port = 54320
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 15
+major_version = 17
 
 [db.pooler]
 enabled = false
@@ -112,7 +112,7 @@ subject = "You have been invited to Carbon"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Your Carbon Magic Link"
+subject = "Your Carbon sign-in code"
 content_path = "./supabase/templates/magic-link.html"
 
 

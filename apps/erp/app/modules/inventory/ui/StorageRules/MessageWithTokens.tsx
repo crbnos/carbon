@@ -337,7 +337,7 @@ export default function MessageWithTokens({
   // Identical typography between the overlay and the textarea — any drift
   // here desyncs the highlighted rectangles from the rendered glyphs.
   const sharedTypography =
-    "px-3 py-2 text-sm leading-[1.25rem] font-sans whitespace-pre-wrap break-words";
+    "px-3 py-2 text-sm leading-[1.25rem] font-sans whitespace-pre-wrap break-words max-md:text-base max-md:leading-6";
 
   const inputProps = getInputProps<TextareaHTMLAttributes<HTMLTextAreaElement>>(
     {
@@ -400,7 +400,7 @@ export default function MessageWithTokens({
             {groups.map((group, gi) => (
               <DropdownMenuGroup key={`${group.heading}-${gi}`}>
                 {gi > 0 && <DropdownMenuSeparator />}
-                <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider">
+                <DropdownMenuLabel className="text-[0.625rem] font-semibold uppercase tracking-wider">
                   {group.heading}
                 </DropdownMenuLabel>
                 {group.tokens.map((tok) => (

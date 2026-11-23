@@ -37,7 +37,7 @@ import {
   migrateUserToSso
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
-import { AccountLockout, redis } from "@carbon/kv";
+import { AccountLockout, redis, SIGN_IN_CODE_LOCKOUT_PREFIX } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -52,7 +52,11 @@ import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLocation, useSearchParams } from "react-router";
-import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
+import {
+  getCompanies,
+  getEmployeeCompanies
+} from "~/modules/settings/settings.service";
+import { acceptInvite } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -85,11 +89,22 @@ export async function action({ request }: ActionFunctionArgs) {
   // Pre-session: no user-authed client yet, so query memberships with the
   // service role. Prefer an employee company as the active one; fall back to
   // any membership so auth/RLS can deny a pure portal user later.
-  const employeeCompanies =
-    (await getEmployeeCompanies(serviceRole, userId)).data ?? [];
+  const employeeLookup = await getEmployeeCompanies(serviceRole, userId);
+  const employeeCompanies = employeeLookup.data ?? [];
+  const companyLookup = employeeCompanies.length
+    ? null
+    : await getCompanies(serviceRole, userId);
   const pickable = employeeCompanies.length
     ? employeeCompanies
-    : ((await getCompanies(serviceRole, userId)).data ?? []);
+    : (companyLookup?.data ?? []);
+  // A failed read is not "no company": nothing is accepted on its say-so.
+  const membershipKnown = !employeeLookup.error && !companyLookup?.error;
+  if (!membershipKnown) {
+    logger.error("Failed to read memberships on sign-in", {
+      error: employeeLookup.error ?? companyLookup?.error,
+      userId
+    });
+  }
 
   const cookieCompanyId = getCompanyId(request);
   const match =
@@ -106,7 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!authSession) {
     return redirect(
       path.to.root,
-      await flash(request, error(authSession, "Invalid refresh token"))
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -146,12 +161,18 @@ export async function action({ request }: ActionFunctionArgs) {
       ssoProviderId
     );
     if (!connection.data) {
+      if (connection.error) {
+        logger.error("Failed to read the SAML SSO connection on sign-in", {
+          error: connection.error,
+          userId
+        });
+      }
       return redirect(
         path.to.root,
         await flash(
           request,
           error(
-            connection.error,
+            null,
             "SAML SSO connection is not active. Contact your administrator."
           )
         )
@@ -173,7 +194,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // trigger-created profile rows — so a retry (or a later invite for
       // this email) starts clean.
       if (memberships.length === 0) {
-        await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
+        await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+          userId,
+          accessToken: authSession.accessToken
+        });
       }
       return redirect(
         path.to.root,
@@ -211,12 +235,16 @@ export async function action({ request }: ActionFunctionArgs) {
         toUserId: existingUser.id
       });
       if (linked.error) {
+        logger.error("Failed to link the SAML SSO identity on sign-in", {
+          error: linked.error,
+          userId
+        });
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              linked.error,
+              null,
               "SAML SSO sign-in failed while linking your account. Contact your administrator."
             )
           )
@@ -247,12 +275,18 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!linkedSession) {
         // The identity IS linked — the next SSO attempt resolves directly
         // to the existing account, so this is self-healing.
+        if (link.error ?? verified?.error) {
+          logger.error("Failed to mint a session for the linked SSO account", {
+            error: link.error ?? verified?.error,
+            userId
+          });
+        }
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              link.error ?? verified?.error,
+              null,
               "Your single sign-on identity was linked. Sign in with your work email again to continue."
             )
           )
@@ -294,14 +328,23 @@ export async function action({ request }: ActionFunctionArgs) {
         // The whole throwaway goes: auth user plus its trigger-created
         // profile rows, or the leftover profile makes the email un-invitable.
         if (memberships.length === 0 && authSession.userId === userId) {
-          await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
+          await deleteJitSsoUser(serviceRole, getDatabaseClient(), {
+            userId,
+            accessToken: authSession.accessToken
+          });
+        }
+        if (invite.error) {
+          logger.error("Failed to look up the SAML SSO invite on sign-in", {
+            error: invite.error,
+            userId
+          });
         }
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              invite.error,
+              null,
               `SAML SSO sign-in succeeded but no invite exists for ${authSession.email}. Contact your administrator.`
             )
           )
@@ -320,12 +363,16 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (migration.error) {
+        logger.error("Failed to activate the SAML SSO account on sign-in", {
+          error: migration.error,
+          userId
+        });
         return redirect(
           path.to.root,
           await flash(
             request,
             error(
-              migration.error,
+              null,
               "SAML SSO sign-in failed while activating your account. Contact your administrator."
             )
           )
@@ -346,6 +393,10 @@ export async function action({ request }: ActionFunctionArgs) {
     authSession.ssoProviderId = ssoProviderId;
 
     await new AccountLockout({ redis }).reset(authSession.email);
+    await new AccountLockout({
+      redis,
+      prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
+    }).reset(authSession.email);
 
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
@@ -444,6 +495,64 @@ export async function action({ request }: ActionFunctionArgs) {
     // accumulated per-account lockout state (NIST 3.1.8 reset-on-success). Runs
     // before the TOTP gate so an MFA-enrolled user's counter clears too.
     await new AccountLockout({ redis }).reset(authSession.email);
+    await new AccountLockout({
+      redis,
+      prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
+    }).reset(authSession.email);
+
+    // An invitee who signs in from the sign-in page, not the invite's Accept
+    // button, arrives with no company and the invite still open, and the
+    // shell sends a company-less user to onboarding. Signing in proved the
+    // invited address, so accept the invite here, as the SSO path does.
+    if (pickable.length === 0 && membershipKnown) {
+      const pendingInvite = await serviceRole
+        .from("invite")
+        .select("code")
+        .ilike(
+          "email",
+          authSession.email.replace(/[\\%_]/g, (match) => `\\${match}`)
+        )
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (pendingInvite.error) {
+        logger.error("Failed to look up a pending invite on sign-in", {
+          error: pendingInvite.error,
+          userId: authSession.userId
+        });
+      }
+
+      if (pendingInvite.data) {
+        const accept = await acceptInvite(
+          serviceRole,
+          getDatabaseClient(),
+          pendingInvite.data.code,
+          authSession.email,
+          request
+        ).catch((err: unknown) => ({
+          data: null,
+          error: { message: String(err) }
+        }));
+
+        if (accept.data) {
+          const company = await serviceRole
+            .from("company")
+            .select("companyGroupId")
+            .eq("id", accept.data.companyId)
+            .maybeSingle();
+          authSession.companyId = accept.data.companyId;
+          authSession.companyGroupId = company.data?.companyGroupId ?? "";
+        } else {
+          logger.error("Failed to accept a pending invite on sign-in", {
+            error: accept.error,
+            userId: authSession.userId
+          });
+        }
+      }
+    }
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.
@@ -475,9 +584,15 @@ export async function action({ request }: ActionFunctionArgs) {
       headers
     });
   } else {
+    if (user.error) {
+      logger.error("Failed to look up the user on sign-in", {
+        error: user.error,
+        userId
+      });
+    }
     return redirect(
       path.to.root,
-      await flash(request, error(user.error, "User not found"))
+      await flash(request, error(null, "User not found"))
     );
   }
 }

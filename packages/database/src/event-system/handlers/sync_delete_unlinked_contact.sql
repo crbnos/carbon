@@ -1,0 +1,34 @@
+CREATE OR REPLACE FUNCTION public.sync_delete_unlinked_contact(p_table text, p_operation text, p_new jsonb, p_old jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_contact_id TEXT := p_old->>'contactId';
+BEGIN
+  -- A dataset wipe or a backup restore manages contact rows itself.
+  IF current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+
+  IF p_operation = 'INSERT' THEN
+    RETURN;
+  END IF;
+
+  IF p_operation = 'UPDATE'
+    AND v_contact_id IS NOT DISTINCT FROM p_new->>'contactId' THEN
+    RETURN;
+  END IF;
+
+  -- Lock the contact first: an insert linking it holds a key-share lock until
+  -- it commits, so the checks below, each with a new snapshot, see its link.
+  PERFORM 1 FROM "contact" WHERE "id" = v_contact_id FOR UPDATE;
+
+  IF EXISTS (SELECT 1 FROM "customerContact" WHERE "contactId" = v_contact_id)
+    OR EXISTS (SELECT 1 FROM "supplierContact" WHERE "contactId" = v_contact_id) THEN
+    RETURN;
+  END IF;
+
+  DELETE FROM "contact" WHERE "id" = v_contact_id;
+END;
+$function$;

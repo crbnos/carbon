@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -26,7 +27,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { employeeAbilityCellValidator } from "~/modules/resources";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
 
 type EmployeeAbilityFormProps = {
   action: string;
@@ -39,6 +40,7 @@ type EmployeeAbilityFormProps = {
    */
   mode: "new-employee" | "new-ability" | "edit";
   initialValues: z.infer<typeof employeeAbilityCellValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -47,17 +49,20 @@ const EmployeeAbilityForm = ({
   title,
   mode,
   initialValues,
+  open = true,
   onClose
 }: EmployeeAbilityFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
 
   const isDisabled = !permissions.can("update", "resources");
+  // A refusal is toasted here; a save redirects back to the list.
+  const fetcher = useAction();
 
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(isOpen) => {
           if (!isOpen) onClose();
         }}
@@ -67,6 +72,7 @@ const EmployeeAbilityForm = ({
             validator={employeeAbilityCellValidator}
             method="post"
             action={action}
+            fetcher={fetcher}
             defaultValues={initialValues}
             className="flex flex-col h-full"
           >

@@ -4,16 +4,17 @@
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { useLingui } from "@lingui/react/macro";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeNotice,
@@ -22,7 +23,6 @@ import {
   getChangeNoticeDiff,
   getChangeNoticeRequiredActionsList,
   getChangeNoticeTypesList,
-  getConfigurationParameters,
   getConfigurationRules,
   getItemFiles,
   getItemManufacturing,
@@ -33,20 +33,22 @@ import {
   getPart,
   getPartUsedIn,
   getPickMethods,
+  getRevisionLock,
   getSupplierParts
-} from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeExplorer,
   ChangeNoticeHeader,
   ChangeNoticeProperties
 } from "~/modules/items/ui/ChangeNotice";
-import { getIssue, getIssues } from "~/modules/quality";
-import { getLocationsList } from "~/modules/resources";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
+import { getIssue, getIssues } from "~/modules/quality/quality.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "change-notice");
@@ -64,13 +66,11 @@ export const handle: Handle = {
   hideModuleSidebar: true
 };
 
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args, { params: ["id"] })
-    ? false
-    : args.defaultShouldRevalidate;
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.changeNotice?.changeOrderId, "Change Notice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "parts"
   });
 
@@ -298,7 +298,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : []
   );
 
-  const linkedNonConformance = await linkedNonConformancePromise;
+  // Approval only gates Engineering Complete → Implementation.
+  const [linkedNonConformance, approval] = await Promise.all([
+    linkedNonConformancePromise,
+    changeNotice.data?.status === "Engineering Complete"
+      ? getDocumentApprovalState(getCarbonServiceRole(), {
+          documentType: "changeOrder",
+          documentId: id,
+          companyId,
+          userId
+        })
+      : null
+  ]);
 
   return {
     changeNotice: changeNotice.data,
@@ -309,6 +320,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions,
     impactUsedIn,
     nonConformanceOptions,
+    approval,
     linkedNonConformance: linkedNonConformance
       ? {
           id: linkedNonConformance.id,
@@ -320,6 +332,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChangeNoticeIdRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   // Surfaced to child routes + header/explorer/properties via useRouteData.
@@ -337,10 +350,11 @@ export default function ChangeNoticeIdRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Affected Items`}
               explorer={<ChangeNoticeExplorer />}
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={<ChangeNoticeProperties key={id} />}

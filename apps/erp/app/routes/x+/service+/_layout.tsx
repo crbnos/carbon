@@ -3,32 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  ShouldRevalidateFunction
-} from "react-router";
-import { Outlet } from "react-router";
-import { getUnitOfMeasuresList } from "~/modules/items";
+import type { LoaderFunctionArgs } from "react-router";
+import { getUnitOfMeasuresList } from "~/modules/items/items.service";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Services" }];
-};
+export const meta = moduleMeta("Services");
 
 export const handle: Handle = {
   breadcrumb: msg`Items`,
   to: path.to.items,
   module: "items"
 };
-
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -43,5 +34,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ServiceRoute() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

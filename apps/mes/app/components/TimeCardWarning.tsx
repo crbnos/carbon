@@ -116,6 +116,13 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
         minute: "2-digit"
       }
     );
+    // A shift's length after clock in, never later than now: a time typed
+    // with only the hours changed then stays after the clock in.
+    const shiftEnd = clockedInAt.add({ hours: 8 });
+    const nowInZone = now(timeZone);
+    const defaultClockOut = (
+      shiftEnd.compare(nowInZone) < 0 ? shiftEnd : nowInZone
+    ).toAbsoluteString();
     const clockedInDaysAgo = formatRelativeCalendarDays(
       toCalendarDate(clockedInAt).toString(),
       today(timeZone).toString(),
@@ -143,6 +150,7 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
             validator={setClockOutValidator}
             method="post"
             action={path.to.timecard}
+            defaultValues={{ clockOut: defaultClockOut }}
             fetcher={fetcher}
           >
             <ModalBody>
@@ -163,6 +171,7 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
                   </Trans>
                 </p>
                 <Hidden name="intent" value="clockOut" />
+                <Hidden name="clockIn" value={openClockEntry.clockIn} />
                 <DateTimePicker
                   name="clockOut"
                   label={t`Clock out`}

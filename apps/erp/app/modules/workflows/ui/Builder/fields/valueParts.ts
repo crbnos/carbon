@@ -50,21 +50,40 @@ export type SerializeOptions = {
 };
 
 /**
- * Drops the space the picker leaves after a token — only meaningful on blur, since until
- * then it is the gap before the next word. While it survives, a lone variable stays a
- * template and the clause loses the variable's own type. Returns the same array when
- * there is nothing to trim, so callers can skip the write.
+ * Drops the space the picker leaves after a token, and the one a removed token leaves
+ * before the next — only meaningful on blur, since until then it is the gap before the
+ * next word. While it survives, a lone variable stays a template and the clause loses
+ * the variable's own type. Returns the same array when there is nothing to trim, so
+ * callers can skip the write.
  */
-export function withoutTrailingSpace(
+export function withoutEdgeSpace(
   parts: VariableTextPart[]
 ): VariableTextPart[] {
-  // Trailing space in a field with no variable in it may well be deliberate.
+  // Space at either end of a field with no variable in it may well be deliberate.
   if (!parts.some((part) => part.kind === "token")) return parts;
-  const last = parts[parts.length - 1];
-  if (last?.kind !== "text") return parts;
-  const text = last.text.replace(/\s+$/, "");
-  if (text === last.text) return parts;
-  return text ? [...parts.slice(0, -1), { ...last, text }] : parts.slice(0, -1);
+  let trimmed = parts;
+
+  const last = trimmed[trimmed.length - 1];
+  if (last?.kind === "text") {
+    const text = last.text.replace(/\s+$/, "");
+    if (text !== last.text) {
+      trimmed = text
+        ? [...trimmed.slice(0, -1), { ...last, text }]
+        : trimmed.slice(0, -1);
+    }
+  }
+
+  const first = trimmed[0];
+  if (first?.kind === "text") {
+    const text = first.text.replace(/^\s+/, "");
+    if (text !== first.text) {
+      trimmed = text
+        ? [{ ...first, text }, ...trimmed.slice(1)]
+        : trimmed.slice(1);
+    }
+  }
+
+  return trimmed;
 }
 
 /** Plain text stays a literal; mixed content is a template. */

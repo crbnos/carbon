@@ -3,10 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Checkbox,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  Status,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -18,10 +20,12 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuHash,
   LuPencil,
   LuQrCode,
   LuStar,
   LuTrash,
+  LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -35,11 +39,13 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SalesInvoiceListItem } from "~/modules/invoicing";
-import { salesInvoiceStatusType } from "~/modules/invoicing";
+import { salesInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoiceListItem } from "~/modules/invoicing/types";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import SalesInvoiceStatus from "./SalesInvoiceStatus";
@@ -47,10 +53,11 @@ import SalesInvoiceStatus from "./SalesInvoiceStatus";
 type SalesInvoicesTableProps = {
   data: SalesInvoiceListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
-  useRealtime("salesInvoice", `id=in.(${data.map((d) => d.id).join(",")})`);
+const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
+  const { data, count, infinite } = props;
 
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -84,6 +91,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -94,6 +102,8 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <CustomerAvatar customerId={row.original.customerId} />
         ),
         meta: {
+          mobile: "P3",
+          exportValue: (row) => row.customerName,
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -111,6 +121,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <CustomerAvatar customerId={row.original.invoiceCustomerId} />
         ),
         meta: {
+          exportValue: (row) => row.invoiceCustomerName,
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -119,6 +130,16 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
             }))
           },
           icon: <LuContainer />
+        }
+      },
+      {
+        id: "glCodes",
+        header: t`GL Codes`,
+        cell: ({ row }) => row.original.glCodes,
+        enableSorting: false,
+        meta: {
+          exportValue: (row) => row.glCodes,
+          icon: <LuHash />
         }
       },
       {
@@ -132,12 +153,27 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "status",
         header: t`Status`,
-        cell: (item) => {
-          const status =
-            item.getValue<(typeof salesInvoiceStatusType)[number]>();
-          return <SalesInvoiceStatus status={status} />;
+        cell: ({ row }) => {
+          const invoice = row.original;
+          // A held draft, or a posted invoice whose email failed: the reason
+          // is the badge's tooltip. Filter on it with "Needs Review".
+          const reviewReason =
+            invoice.status === "Draft"
+              ? invoice.automationHoldReason
+              : invoice.sendError;
+          return (
+            <span className="flex items-center gap-1">
+              <SalesInvoiceStatus status={invoice.status} />
+              {invoice.needsReview && (
+                <Status color="orange" tooltip={reviewReason ?? undefined}>
+                  <Trans>Needs Review</Trans>
+                </Status>
+              )}
+            </span>
+          );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesInvoiceStatusType.map((status) => ({
@@ -150,10 +186,34 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
         }
       },
       {
+        accessorKey: "needsReview",
+        header: t`Needs Review`,
+        cell: (item) => {
+          const invoiceId = item.row.original.invoiceId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Needs review: ${invoiceId}`}
+            />
+          );
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: t`Yes` },
+              { value: "false", label: t`No` }
+            ]
+          },
+          icon: <LuTriangleAlert />
+        }
+      },
+      {
         accessorKey: "invoiceTotal",
         header: t`Invoice Total`,
         cell: (item) => currencyFormatter.format(item.getValue<number>()),
         meta: {
+          mobile: "P2",
           icon: <LuDollarSign />,
           formatter: currencyFormatter.format,
           renderTotal: true
@@ -334,17 +394,28 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
     );
   }, [closeSalesInvoiceModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesInvoiceListItem>("sales-invoices");
+
   return (
     <>
       <Table<SalesInvoiceListItem>
+        getRowLabel={(row) => row.invoiceId ?? undefined}
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
+        infinite={infinite}
+        serverExport={{
+          csv: `${path.to.invoicingSales}.csv`,
+          xlsx: `${path.to.invoicingSales}.xlsx`
+        }}
+        withCsvExport={false}
         defaultColumnPinning={{
           left: ["invoiceId"]
         }}
         defaultColumnVisibility={{
           invoiceCustomerId: false,
+          needsReview: false,
           paymentTermName: false,
           dateIssued: false,
           datePaid: false,
@@ -373,11 +444,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           text={t`Are you sure you want to permanently delete ${selectedSalesInvoice.invoiceId!}?`}
           onCancel={() => {
             closeSalesInvoiceModal.onClose();
-            setSelectedSalesInvoice(null);
           }}
           onSubmit={() => {
             closeSalesInvoiceModal.onClose();
-            setSelectedSalesInvoice(null);
           }}
         />
       )}

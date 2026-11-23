@@ -9,16 +9,18 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import {
-  insertSalesReturnOrder,
-  salesReturnOrderValidator
-} from "~/modules/sales";
+import { salesReturnOrderValidator } from "~/modules/sales/sales.models";
+import { insertSalesReturnOrder } from "~/modules/sales/sales.service";
 import { SalesReturnOrderForm } from "~/modules/sales/ui/SalesReturnOrders";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("RMA");
 
 export const handle: Handle = {
   breadcrumb: msg`RMAs`,
@@ -114,8 +116,8 @@ export default function SalesReturnOrderNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <SalesReturnOrderForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

@@ -16,7 +16,16 @@ import {
   purgeCompany
 } from "./purge-company";
 
-const runDatabaseTests = process.env.RUN_PURGE_DB_TESTS === "true";
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const hasLocalDatabase = (() => {
+  try {
+    return LOCAL_HOSTS.includes(
+      new URL(process.env.SUPABASE_DB_URL ?? "").hostname
+    );
+  } catch {
+    return false;
+  }
+})();
 
 class Rollback extends Error {}
 
@@ -59,7 +68,7 @@ async function danglingForeignKeys(
   return counts;
 }
 
-describe.skipIf(!runDatabaseTests)("purgeCompany (Postgres)", () => {
+describe.skipIf(!hasLocalDatabase)("purgeCompany (Postgres)", () => {
   it("deletes a company, posted journals included, leaving no dangling rows", async () => {
     const db = getJobDatabaseClient();
     const replica = await canSetReplicationRole(db);

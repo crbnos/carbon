@@ -18,7 +18,7 @@ import {
   LuCircleCheck,
   LuCircleGauge,
   LuCircleX,
-  LuContainer,
+  LuFactory,
   LuFileText,
   LuHash,
   LuMap,
@@ -30,21 +30,14 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import {
-  DateTime,
-  EmployeeAvatar,
-  Hyperlink,
-  New,
-  SupplierAvatar,
-  Table
-} from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
-import { useSuppliers } from "~/stores/suppliers";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
@@ -59,6 +52,7 @@ type GaugesTableProps = {
   data: Gauge[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -67,7 +61,8 @@ const defaultColumnVisibility = {
   updatedBy: false
 };
 
-const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
+const GaugesTable = memo((props: GaugesTableProps) => {
+  const { data, types, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -81,7 +76,6 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
   const [people] = usePeople();
 
   const customColumns = useCustomColumns<Gauge>("gauge");
-  const [suppliers] = useSuppliers();
   const locations = useLocations();
 
   const columns = useMemo<ColumnDef<Gauge>[]>(() => {
@@ -102,24 +96,17 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
       {
-        id: "supplierId",
+        accessorKey: "manufacturer",
         header: t`Manufacturer`,
-        cell: ({ row }) => {
-          return <SupplierAvatar supplierId={row.original.supplierId} />;
-        },
+        cell: ({ row }) => row.original.manufacturer,
         meta: {
-          filter: {
-            type: "static",
-            options: suppliers?.map((supplier) => ({
-              value: supplier.id,
-              label: supplier.name
-            }))
-          },
-          icon: <LuContainer />
+          mobile: "P3",
+          icon: <LuFactory />
         }
       },
 
@@ -135,6 +122,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -154,6 +142,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -218,6 +207,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <DateTime value={row.original.nextCalibrationDate} variant="date" />
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "dateRange"
           },
@@ -316,7 +306,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, locations, people, suppliers, types, t]);
+  }, [customColumns, locations, people, types, t]);
 
   const renderContextMenu = useCallback(
     (row: Gauge) => {
@@ -391,6 +381,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
     <>
       <Table<Gauge>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}
@@ -407,67 +398,33 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         table="gauge"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedGauge && (
+      {selectedGauge && (
         <ConfirmDelete
           action={path.to.deleteGauge(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
           name={selectedGauge.gaugeId ?? "gauge"}
           text={t`Are you sure you want to delete this gauge?`}
         />
       )}
-      {deleteDisclosure.isOpen && selectedGauge && (
-        <ConfirmDelete
-          action={path.to.deleteGauge(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
-          name={selectedGauge.gaugeId ?? "gauge"}
-          text={t`Are you sure you want to delete this gauge?`}
-        />
-      )}
-      {activateDisclosure.isOpen && selectedGauge && (
+      {selectedGauge && (
         <Confirm
           action={path.to.activateGauge(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            activateDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            activateDisclosure.onClose();
-          }}
+          isOpen={activateDisclosure.isOpen}
+          onCancel={activateDisclosure.onClose}
+          onSubmit={activateDisclosure.onClose}
           text={t`Are you sure you want to activate this gauge?.`}
           title={`Activate ${selectedGauge.gaugeId}`}
           confirmText={t`Activate`}
         />
       )}
-      {deactivateDisclosure.isOpen && selectedGauge && (
+      {selectedGauge && (
         <Confirm
           action={path.to.gaugeDeactivate(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            deactivateDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            deactivateDisclosure.onClose();
-          }}
+          isOpen={deactivateDisclosure.isOpen}
+          onCancel={deactivateDisclosure.onClose}
+          onSubmit={deactivateDisclosure.onClose}
           text={t`Are you sure you want to deactivate this gauge?.`}
           title={`Deactivate ${selectedGauge.gaugeId}`}
           confirmText={t`Deactivate`}

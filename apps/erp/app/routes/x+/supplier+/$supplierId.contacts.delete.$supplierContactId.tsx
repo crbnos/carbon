@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteSupplierContact } from "~/modules/purchasing";
+import { deleteSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!supplierId || !supplierContactId) {
     throw redirect(
       path.to.suppliers,
-      await flash(request, error(params, "Failed to get a supplier contact id"))
+      await flash(request, error(null, "Failed to get a supplier contact id"))
     );
   }
 

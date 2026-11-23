@@ -10,7 +10,7 @@ import {
   InputControlled,
   ValidatedForm
 } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -26,7 +26,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -92,9 +92,7 @@ const PurchaseReturnOrderProperties = () => {
 
   const fetcher = useAction<{ error: { message: string } | null }>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const { carbon } = useCarbon();
@@ -138,7 +136,7 @@ const PurchaseReturnOrderProperties = () => {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {
-          toast.error(t`Failed to load purchase orders`);
+          toastError(t`Failed to load purchase orders`, error);
           setPurchaseOrderOptions([]);
           return;
         }
@@ -531,48 +529,46 @@ const PurchaseReturnOrderProperties = () => {
         />
       </VStack>
 
-      {unlinkDisclosure.isOpen && (
-        <Modal
-          open={unlinkDisclosure.isOpen}
-          onOpenChange={(open) => {
-            if (!open) unlinkDisclosure.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Unlink return from purchase order?</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  This will remove the link between{" "}
-                  {routeData?.purchaseReturnOrder?.purchaseReturnOrderId} and
-                  its purchase order. The return will no longer appear under the
-                  purchase order.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                variant="destructive"
-                leftIcon={<LuUnlink2 className="w-3 h-3" />}
-                onClick={() => {
-                  onUpdate("purchaseOrderId", null);
-                  unlinkDisclosure.onClose();
-                }}
-              >
-                <Trans>Unlink</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={unlinkDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) unlinkDisclosure.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Unlink return from purchase order?</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This will remove the link between{" "}
+                {routeData?.purchaseReturnOrder?.purchaseReturnOrderId} and its
+                purchase order. The return will no longer appear under the
+                purchase order.
+              </Trans>
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              leftIcon={<LuUnlink2 className="w-3 h-3" />}
+              onClick={() => {
+                onUpdate("purchaseOrderId", null);
+                unlinkDisclosure.onClose();
+              }}
+            >
+              <Trans>Unlink</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <CustomFormInlineFields
         customFields={

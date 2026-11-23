@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { round } from "./precision.ts";
 import { consumableInWholeAssemblies } from "./supersession-pick.ts";
 
 export type LinesideClaim = {
@@ -36,6 +37,11 @@ export function linesideCredit(args: {
 
 export type PickedBudget = {
   itemId: string;
+  /**
+   * The stock stripe the budget holds (Projects Phase 2a): a project id, or
+   * null for common stock. Consumption out of the budget books this stripe.
+   */
+  projectId: string | null;
   factor: number;
   storageUnitId: string | null;
   sharedStorageUnitId: string | null;
@@ -55,8 +61,12 @@ export type Take = {
 
 export type SharedTakes = Map<string, number>;
 
-export function sharedTakeKey(itemId: string, storageUnitId: string | null) {
-  return `${itemId}\u0000${storageUnitId ?? ""}`;
+export function sharedTakeKey(
+  itemId: string,
+  storageUnitId: string | null,
+  projectId: string | null = null
+) {
+  return `${itemId}\u0000${storageUnitId ?? ""}\u0000${projectId ?? ""}`;
 }
 
 export function recordSharedTakes(takenShared: SharedTakes, takes: Take[]) {
@@ -64,7 +74,8 @@ export function recordSharedTakes(takenShared: SharedTakes, takes: Take[]) {
     if (take.fromShared <= 0) continue;
     const key = sharedTakeKey(
       take.budget.itemId,
-      take.budget.sharedStorageUnitId
+      take.budget.sharedStorageUnitId,
+      take.budget.projectId
     );
     takenShared.set(key, (takenShared.get(key) ?? 0) + take.fromShared);
   }
@@ -93,14 +104,160 @@ export function splitTakeByBin(
   ];
 }
 
+/** An item's untracked on-hand in one bin (`null`: no storage unit) and
+ *  stripe (`projectId` null or absent: common stock). */
+export type BinStock = {
+  storageUnitId: string | null;
+  projectId?: string | null;
+  nettable: boolean;
+  quantity: number;
+};
+
+export type StripedBinDraw = {
+  storageUnitId: string | null;
+  projectId: string | null;
+  quantity: number;
+};
+
+// Each candidate bin's on-hand: nettable bins and no storage unit, and the
+// preferred bin even when it is non-nettable, since someone named it.
+function candidateOnHand(
+  bins: readonly BinStock[],
+  preferred: string | null
+): Map<string | null, number> {
+  const onHand = new Map<string | null, number>();
+  for (const bin of bins) {
+    if (bin.storageUnitId !== null && !bin.nettable) {
+      if (bin.storageUnitId !== preferred) continue;
+    }
+    onHand.set(
+      bin.storageUnitId,
+      (onHand.get(bin.storageUnitId) ?? 0) + bin.quantity
+    );
+  }
+  return onHand;
+}
+
+// The bins holding stock, fullest first (no storage unit sorts as "").
+function fullestFirst(
+  onHand: Map<string | null, number>
+): [string | null, number][] {
+  return [...onHand.entries()]
+    .filter(([, qty]) => round(qty) > 0)
+    .sort(([a, qa], [b, qb]) => qb - qa || (a ?? "").localeCompare(b ?? ""));
+}
+
+// With no bin chosen, no storage unit is a candidate like any other.
+function drawOrder(
+  bins: readonly BinStock[],
+  preferred: string | null
+): [string | null, number][] {
+  const onHand = candidateOnHand(bins, preferred);
+  if (preferred === null) return fullestFirst(onHand);
+  const preferredOnHand = onHand.get(preferred) ?? 0;
+  onHand.delete(preferred);
+  return [[preferred, preferredOnHand], ...fullestFirst(onHand)];
+}
+
+/**
+ * Where an untracked draw comes from when no bin rule (strict backflush)
+ * decides it: the demand's project stock in every bin, then common stock.
+ * Within a stripe the preferred bin (used even when non-nettable, since someone
+ * named it) gives what it holds, then the nettable bins and no storage unit,
+ * fullest first. A shortfall goes to the last stripe, on the preferred bin,
+ * else the first bin drawn, else no storage unit.
+ */
+export function planStripedUntrackedDraw(args: {
+  bins: readonly BinStock[];
+  stripes: readonly (string | null)[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): StripedBinDraw[] {
+  const { preferredStorageUnitId: preferred } = args;
+  const stripes = args.stripes.length > 0 ? args.stripes : [null];
+  let left = round(args.quantity);
+  if (left <= 0) return [];
+
+  const draws: StripedBinDraw[] = [];
+  for (const stripe of stripes) {
+    if (left <= 0) break;
+    const stripeBins = args.bins.filter(
+      (bin) => (bin.projectId ?? null) === stripe
+    );
+    for (const [storageUnitId, available] of drawOrder(stripeBins, preferred)) {
+      if (left <= 0) break;
+      const take = round(Math.min(left, Math.max(0, available)));
+      if (take <= 0) continue;
+      draws.push({ storageUnitId, projectId: stripe, quantity: take });
+      left = round(left - take);
+    }
+  }
+
+  if (left > 0) {
+    const shortStripe = stripes[stripes.length - 1] ?? null;
+    const shortBin = preferred ?? draws[0]?.storageUnitId ?? null;
+    const existing = draws.find(
+      (d) => d.storageUnitId === shortBin && d.projectId === shortStripe
+    );
+    if (existing) existing.quantity = round(existing.quantity + left);
+    else
+      draws.push({
+        storageUnitId: shortBin,
+        projectId: shortStripe,
+        quantity: left
+      });
+  }
+  return draws;
+}
+
+/** The advisory lock key of untracked draws of one item at one location
+ *  (`lockUntrackedDraws`); SQL `backflush_job_materials` builds the same key. */
+export function untrackedDrawLockKey(
+  companyId: string,
+  locationId: string,
+  itemId: string
+): string {
+  return `untracked-draw:${companyId}:${locationId}:${itemId}`;
+}
+
+/**
+ * The one bin a document line that ships untracked stock should name, such as
+ * a shipment line. The preferred bin when it holds `quantity`, else the
+ * fullest bin that holds it, else the fullest bin with any stock, else the
+ * preferred bin. The candidates are the ones `planStripedUntrackedDraw`
+ * guesses from. Returns null for no storage unit.
+ */
+export function chooseSourceBin(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): string | null {
+  const { preferredStorageUnitId: preferred } = args;
+  const onHand = candidateOnHand(args.bins, preferred);
+  const need = round(args.quantity);
+  if (round(onHand.get(preferred) ?? 0) >= need) return preferred;
+  const stocked = fullestFirst(onHand);
+  const covering = stocked.find(([, qty]) => round(qty) >= need);
+  // A chosen bin may be no storage unit (`null`): only no candidate at all
+  // falls back to the preferred bin.
+  const chosen = covering ?? stocked[0];
+  return chosen ? chosen[0] : preferred;
+}
+
 export function orderOldFirst(
   budgets: PickedBudget[],
   lineItemId: string
 ): PickedBudget[] {
   const rank = (b: PickedBudget) =>
     b.isPredecessor ? 0 : b.itemId === lineItemId ? 1 : 2;
+  // Within one item, project stock before common stock: the same order a
+  // project demand draws its stripes in.
+  const stripeRank = (b: PickedBudget) => (b.projectId === null ? 1 : 0);
   return [...budgets].sort(
-    (a, b) => rank(a) - rank(b) || a.itemId.localeCompare(b.itemId)
+    (a, b) =>
+      rank(a) - rank(b) ||
+      a.itemId.localeCompare(b.itemId) ||
+      stripeRank(a) - stripeRank(b)
   );
 }
 
@@ -182,6 +339,31 @@ export async function getOperationLinesideBin(
   return bin?.id ?? null;
 }
 
+/** A stock stripe: a project id, or null for common stock. */
+type Stripe = string | null;
+
+const stripeOf = (projectId: string | null | undefined): string =>
+  projectId ?? "";
+
+/** A key per (item, stripe), '' for common stock. */
+const itemStripeKey = (itemId: string, projectId: string | null | undefined) =>
+  `${itemId}\u0000${stripeOf(projectId)}`;
+
+/** A Kysely filter: the row's projectId is one of `stripes`. */
+function inStripes(eb: Trx, column: string, stripes: readonly Stripe[]) {
+  const projectIds = stripes.filter((s): s is string => s !== null);
+  const filters: unknown[] = [];
+  if (stripes.includes(null)) filters.push(eb(column, "is", null));
+  if (projectIds.length > 0) filters.push(eb(column, "in", projectIds));
+  if (filters.length === 0) return eb.val(false);
+  return eb.or(filters);
+}
+
+/**
+ * Lineside credit per (item, stripe) for every stripe in `stripes`: each
+ * stripe's own on-hand, claims and consumption, as `linesideCredit` defines
+ * them. A job draws the lineside stock of its own stripes only.
+ */
 async function getLinesideCredits(
   trx: Trx,
   args: {
@@ -191,19 +373,29 @@ async function getLinesideCredits(
     companyId: string;
     jobId: string;
     jobMaterialId: string;
+    stripes: readonly Stripe[];
   }
 ): Promise<Map<string, { own: number; unclaimed: number }>> {
-  const { itemIds, storageUnitId, locationId, companyId } = args;
+  const { itemIds, storageUnitId, locationId, companyId, stripes } = args;
   const [onHand, lines, consumed] = await Promise.all([
     trx
       .selectFrom("itemLedger")
-      .select(["itemId", (eb: Trx) => eb.fn.sum("quantity").as("quantity")])
+      .select([
+        "itemId",
+        "projectId",
+        (eb: Trx) => eb.fn.sum("quantity").as("quantity")
+      ])
       .where("companyId", "=", companyId)
       .where("storageUnitId", "=", storageUnitId)
       .where("itemId", "in", itemIds)
-      .groupBy("itemId")
+      .where((eb: Trx) => inStripes(eb, "projectId", stripes))
+      .groupBy(["itemId", "projectId"])
       .execute() as Promise<
-      { itemId: string; quantity: number | string | null }[]
+      {
+        itemId: string;
+        projectId: string | null;
+        quantity: number | string | null;
+      }[]
     >,
     trx
       .selectFrom("pickingListLine as pll")
@@ -213,6 +405,7 @@ async function getLinesideCredits(
         "pll.jobId",
         "pll.jobMaterialId",
         "pll.itemId",
+        "pll.projectId",
         "pll.quantityPicked",
         "pll.quantityReturned"
       ])
@@ -222,11 +415,13 @@ async function getLinesideCredits(
       .where("pll.status", "<>", "Cancelled")
       .where("pl.status", "<>", "Cancelled")
       .where("j.status", "in", ["Planned", "Ready", "In Progress", "Paused"])
+      .where((eb: Trx) => inStripes(eb, "pll.projectId", stripes))
       .execute() as Promise<
       {
         jobId: string;
         jobMaterialId: string;
         itemId: string;
+        projectId: string | null;
         quantityPicked: number | string | null;
         quantityReturned: number | string | null;
       }[]
@@ -236,6 +431,7 @@ async function getLinesideCredits(
       .select([
         "itemId",
         "documentId",
+        "projectId",
         (eb: Trx) => eb.fn.sum("quantity").as("quantity")
       ])
       .where("companyId", "=", companyId)
@@ -243,49 +439,70 @@ async function getLinesideCredits(
       .where("storageUnitId", "=", storageUnitId)
       .where("documentType", "=", "Job Consumption")
       .where("itemId", "in", itemIds)
-      .groupBy(["itemId", "documentId"])
+      .where((eb: Trx) => inStripes(eb, "projectId", stripes))
+      .groupBy(["itemId", "documentId", "projectId"])
       .execute() as Promise<
       {
         itemId: string;
         documentId: string | null;
+        projectId: string | null;
         quantity: number | string | null;
       }[]
     >
   ]);
-  const onHandByItem = new Map(
-    onHand.map((r) => [r.itemId, Number(r.quantity ?? 0)])
+  const onHandByKey = new Map(
+    onHand.map((r) => [
+      itemStripeKey(r.itemId, r.projectId),
+      Number(r.quantity ?? 0)
+    ])
   );
   const credits = new Map<string, { own: number; unclaimed: number }>();
   for (const itemId of itemIds) {
-    const consumedByJob = new Map<string, number>();
-    for (const row of consumed) {
-      if (row.itemId !== itemId || !row.documentId) continue;
-      consumedByJob.set(
-        row.documentId,
-        Math.max(0, -Number(row.quantity ?? 0))
+    for (const stripe of stripes) {
+      const key = itemStripeKey(itemId, stripe);
+      const consumedByJob = new Map<string, number>();
+      for (const row of consumed) {
+        if (row.itemId !== itemId || !row.documentId) continue;
+        if (stripeOf(row.projectId) !== stripeOf(stripe)) continue;
+        consumedByJob.set(
+          row.documentId,
+          Math.max(0, -Number(row.quantity ?? 0))
+        );
+      }
+      credits.set(
+        key,
+        linesideCredit({
+          onHand: onHandByKey.get(key) ?? 0,
+          claims: lines
+            .filter(
+              (l) =>
+                l.itemId === itemId &&
+                stripeOf(l.projectId) === stripeOf(stripe)
+            )
+            .map((l) => ({
+              jobId: l.jobId,
+              jobMaterialId: l.jobMaterialId,
+              staged:
+                Number(l.quantityPicked ?? 0) - Number(l.quantityReturned ?? 0)
+            })),
+          consumedByJob,
+          jobId: args.jobId,
+          jobMaterialId: args.jobMaterialId
+        })
       );
     }
-    credits.set(
-      itemId,
-      linesideCredit({
-        onHand: onHandByItem.get(itemId) ?? 0,
-        claims: lines
-          .filter((l) => l.itemId === itemId)
-          .map((l) => ({
-            jobId: l.jobId,
-            jobMaterialId: l.jobMaterialId,
-            staged:
-              Number(l.quantityPicked ?? 0) - Number(l.quantityReturned ?? 0)
-          })),
-        consumedByJob,
-        jobId: args.jobId,
-        jobMaterialId: args.jobMaterialId
-      })
-    );
   }
   return credits;
 }
 
+/**
+ * The budgets a material may consume, one per (item, stripe). `own` is the
+ * material's own live picks of that stripe; `unclaimed` is what sits at the
+ * operation's lineside bin in that stripe that no live job's pick claims.
+ * `stripes` is the job's stripe set (project stock first, then common); it
+ * bounds the shared pool only, since a material's own pick drew from its
+ * job's stripes already. Common stock only when omitted.
+ */
 export async function getPickedBudgets(
   trx: Trx,
   args: {
@@ -300,13 +517,17 @@ export async function getPickedBudgets(
     companyId: string;
     opStorageUnitId?: string | null;
     takenShared?: SharedTakes;
+    stripes?: readonly Stripe[];
   }
 ): Promise<PickedBudget[]> {
   const { material, locationId, companyId, opStorageUnitId, takenShared } =
     args;
+  const stripes: readonly Stripe[] =
+    args.stripes && args.stripes.length > 0 ? args.stripes : [null];
 
   const lines: {
     itemId: string;
+    projectId: string | null;
     quantityPicked: number | string | null;
     quantityReturned: number | string | null;
     toStorageUnitId: string | null;
@@ -319,31 +540,35 @@ export async function getPickedBudgets(
     .where("pl.status", "<>", "Cancelled")
     .select([
       "pll.itemId",
+      "pll.projectId",
       "pll.quantityPicked",
       "pll.quantityReturned",
       "pll.toStorageUnitId"
     ])
     .execute();
 
-  const stagedByItem = new Map<string, number>();
-  const binByItem = new Map<string, Map<string, number>>();
+  // Staged per (item, stripe): a pick line moved the stripe it drew.
+  const stagedByKey = new Map<string, number>();
+  const binByKey = new Map<string, Map<string, number>>();
+  const stagedItemIds = new Set<string>();
+  const ownStripes = new Map<string, Stripe>();
   for (const line of lines) {
     const staged = Math.max(
       0,
       Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
     );
     if (staged <= 0) continue;
-    stagedByItem.set(
-      line.itemId,
-      (stagedByItem.get(line.itemId) ?? 0) + staged
-    );
+    const key = itemStripeKey(line.itemId, line.projectId);
+    stagedItemIds.add(line.itemId);
+    ownStripes.set(key, line.projectId ?? null);
+    stagedByKey.set(key, (stagedByKey.get(key) ?? 0) + staged);
     if (line.toStorageUnitId) {
-      const bins = binByItem.get(line.itemId) ?? new Map<string, number>();
+      const bins = binByKey.get(key) ?? new Map<string, number>();
       bins.set(
         line.toStorageUnitId,
         (bins.get(line.toStorageUnitId) ?? 0) + staged
       );
-      binByItem.set(line.itemId, bins);
+      binByKey.set(key, bins);
     }
   }
   const seed = [
@@ -351,7 +576,7 @@ export async function getPickedBudgets(
       [
         material.itemId,
         material.substitutedFromItemId ?? null,
-        ...stagedByItem.keys()
+        ...stagedItemIds
       ].filter((id): id is string => !!id)
     )
   ];
@@ -382,30 +607,56 @@ export async function getPickedBudgets(
         locationId,
         companyId,
         jobId: material.jobId,
-        jobMaterialId: material.id
+        jobMaterialId: material.id,
+        stripes
       })
     : new Map<string, { own: number; unclaimed: number }>();
 
-  const budgetItemIds = relatedIds.filter(
-    (id) =>
-      (stagedByItem.get(id) ?? 0) > 0 || (credits.get(id)?.unclaimed ?? 0) > 0
-  );
-  if (budgetItemIds.length === 0) return [];
-  const pickedItemIds = budgetItemIds;
+  // One budget per (item, stripe) that holds a live pick or unclaimed stock.
+  const candidates: { itemId: string; projectId: Stripe }[] = [];
+  const seen = new Set<string>();
+  const addCandidate = (itemId: string, projectId: Stripe) => {
+    const key = itemStripeKey(itemId, projectId);
+    if (seen.has(key)) return;
+    seen.add(key);
+    candidates.push({ itemId, projectId });
+  };
+  for (const itemId of relatedIds) {
+    for (const [key, projectId] of ownStripes) {
+      if (key === itemStripeKey(itemId, projectId)) {
+        addCandidate(itemId, projectId);
+      }
+    }
+    for (const stripe of stripes) {
+      if ((credits.get(itemStripeKey(itemId, stripe))?.unclaimed ?? 0) > 0) {
+        addCandidate(itemId, stripe);
+      }
+    }
+  }
+  if (candidates.length === 0) return [];
+  const pickedItemIds = [...new Set(candidates.map((c) => c.itemId))];
   const involved = relatedIds;
 
   const [consumed, items] = await Promise.all([
     trx
       .selectFrom("itemLedger")
-      .select(["itemId", (eb: Trx) => eb.fn.sum("quantity").as("quantity")])
+      .select([
+        "itemId",
+        "projectId",
+        (eb: Trx) => eb.fn.sum("quantity").as("quantity")
+      ])
       .where("documentType", "=", "Job Consumption")
       .where("documentId", "=", material.jobId)
       .where("locationId", "=", locationId)
       .where("companyId", "=", companyId)
       .where("itemId", "in", pickedItemIds)
-      .groupBy("itemId")
+      .groupBy(["itemId", "projectId"])
       .execute() as Promise<
-      { itemId: string; quantity: number | string | null }[]
+      {
+        itemId: string;
+        projectId: string | null;
+        quantity: number | string | null;
+      }[]
     >,
     trx
       .selectFrom("item")
@@ -414,8 +665,11 @@ export async function getPickedBudgets(
       .execute() as Promise<{ id: string; itemTrackingType: string | null }[]>
   ]);
 
-  const consumedByItem = new Map(
-    consumed.map((c) => [c.itemId, Math.max(0, -Number(c.quantity ?? 0))])
+  const consumedByKey = new Map(
+    consumed.map((c) => [
+      itemStripeKey(c.itemId, c.projectId),
+      Math.max(0, -Number(c.quantity ?? 0))
+    ])
   );
   const ruleByItem = new Map<string, Rule>(
     rules.map((r) => [
@@ -430,8 +684,9 @@ export async function getPickedBudgets(
   const trackingByItem = new Map(items.map((i) => [i.id, i.itemTrackingType]));
   const involvedSet = new Set(involved);
 
-  return pickedItemIds.map((itemId) => {
-    const bins = binByItem.get(itemId);
+  return candidates.map(({ itemId, projectId }) => {
+    const key = itemStripeKey(itemId, projectId);
+    const bins = binByKey.get(key);
     const storageUnitId =
       (bins
         ? [...bins.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
@@ -441,16 +696,19 @@ export async function getPickedBudgets(
     const successor = ruleByItem.get(itemId)?.successorItemId;
     const own = Math.max(
       0,
-      (stagedByItem.get(itemId) ?? 0) - (consumedByItem.get(itemId) ?? 0)
+      (stagedByKey.get(key) ?? 0) - (consumedByKey.get(key) ?? 0)
     );
     const sharedStorageUnitId = opStorageUnitId ?? null;
     const unclaimed = Math.max(
       0,
-      (credits.get(itemId)?.unclaimed ?? 0) -
-        (takenShared?.get(sharedTakeKey(itemId, sharedStorageUnitId)) ?? 0)
+      (credits.get(key)?.unclaimed ?? 0) -
+        (takenShared?.get(
+          sharedTakeKey(itemId, sharedStorageUnitId, projectId)
+        ) ?? 0)
     );
     return {
       itemId,
+      projectId,
       factor: pickFactor(material, itemId, ruleByItem),
       storageUnitId,
       sharedStorageUnitId,

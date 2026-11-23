@@ -54,6 +54,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -62,6 +63,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
         header: t`Code`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuEuro />
         }
       },
@@ -74,6 +76,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
             ? formatExchangeRate(row.original.rate, locale)
             : null,
         meta: {
+          mobile: "P2",
           icon: <LuPercent />
         }
       },

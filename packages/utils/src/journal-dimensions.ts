@@ -23,6 +23,8 @@ export type JournalDimensionMeta = {
   processId?: string | null;
   fixedAssetClassId?: string | null;
   costCenterId?: string | null;
+  projectId?: string | null;
+  projectElementId?: string | null;
 };
 
 // entityType (in the `dimension` table) -> the meta field holding its value.
@@ -36,7 +38,9 @@ const DIMENSION_FIELDS: [string, keyof JournalDimensionMeta][] = [
   ["CustomerType", "customerTypeId"],
   ["Process", "processId"],
   ["FixedAssetClass", "fixedAssetClassId"],
-  ["CostCenter", "costCenterId"]
+  ["CostCenter", "costCenterId"],
+  ["Project", "projectId"],
+  ["ProjectElement", "projectElementId"]
 ];
 
 export type JournalLineDimensionInsert = {

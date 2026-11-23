@@ -5,21 +5,22 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCompletionJobs } from "~/modules/production";
+import { getCompletionJobs } from "~/modules/production/production.service";
 import type { OutboundRow } from "~/modules/production/ui/Schedule/OutboundTable";
 import {
   isOutboundHorizon,
   OutboundTable
 } from "~/modules/production/ui/Schedule/OutboundTable";
 import { jobOperationValidator } from "~/modules/sales/ui/CustomerPortal";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -28,8 +29,6 @@ export const handle: Handle = {
   to: path.to.scheduleOutbound,
   module: "production"
 };
-
-const logger = getLogger("erp", "scheduling", "outbound");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -65,14 +64,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (jobs.error) {
-    logger.error("Failed to load outbound jobs", {
-      companyId,
-      locationId,
-      error: jobs.error
-    });
     throw redirect(
       path.to.production,
-      await flash(request, error(jobs.error, "Failed to load outbound jobs"))
+      await flash(
+        request,
+        error(jobs.error, "Failed to load outbound jobs", { locationId })
+      )
     );
   }
 

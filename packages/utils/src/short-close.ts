@@ -42,3 +42,27 @@ export function getRemainingQuantityToInvoice(
 ): number {
   return Math.max(getBillableQuantity(line) - (line.quantityInvoiced ?? 0), 0);
 }
+
+/**
+ * The line's completion flags once its ordered quantity becomes
+ * `purchaseQuantity`. Receipt and invoice posting only ever set the flags,
+ * so a quantity edit (a reopened order, a planning Increase) must restate
+ * them: a line invoiced for 10 and raised to 20 still has 10 to invoice. A
+ * line still short-closed (received below the ordered quantity) stays closed
+ * — Stop Receiving is the buyer's decision, not a quantity fact. Once the
+ * ordered quantity is set to what was received nothing is short any more, so
+ * a later increase is a new request and reopens receiving.
+ */
+export function getCompletionAfterQuantityChange(
+  line: ShortCloseInvoicingLine,
+  purchaseQuantity: number
+): { receivedComplete: boolean; invoicedComplete: boolean } {
+  const received = line.quantityReceived ?? 0;
+  const isShortClosed =
+    !!line.receivedComplete && received < (line.purchaseQuantity ?? 0);
+  const receivedComplete = isShortClosed || received >= purchaseQuantity;
+  const invoicedComplete =
+    (line.quantityInvoiced ?? 0) >=
+    getBillableQuantity({ ...line, purchaseQuantity, receivedComplete });
+  return { receivedComplete, invoicedComplete };
+}

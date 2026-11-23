@@ -12,7 +12,7 @@ import {
   deleteSalesReturnOrder,
   getSalesReturnOrder,
   getSalesReturnOrderLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -81,7 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           salesReturnOrderDelete.error,
-          salesReturnOrderDelete.error.message
+          "Failed to delete the sales return order"
         )
       )
     );

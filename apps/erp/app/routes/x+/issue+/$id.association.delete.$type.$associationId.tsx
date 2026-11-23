@@ -8,11 +8,13 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  deleteIssueAssociation,
-  getIssue,
   isIssueLocked,
   nonConformanceAssociationType
-} from "~/modules/quality";
+} from "~/modules/quality/quality.models";
+import {
+  deleteIssueAssociation,
+  getIssue
+} from "~/modules/quality/quality.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 

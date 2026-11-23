@@ -88,7 +88,7 @@ function CompaniesFlow({
     >
       <Controls
         showInteractive={false}
-        className="!bg-card !border-border !shadow-sm [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-accent"
+        className="!bg-card !border-border !shadow-sm max-md:!left-auto max-md:!right-0 max-md:[&>button]:!size-11 [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-accent"
       />
       <Background
         variant={BackgroundVariant.Dots}
@@ -149,7 +149,7 @@ export function CompaniesTreeView({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   return (
-    <div className="h-[calc(100dvh-(var(--header-height))-61px)] w-full overflow-hidden">
+    <div className="h-[calc(100dvh-(var(--header-height))-61px)] w-full overflow-hidden max-md:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px)-61px)]">
       <ReactFlowProvider>
         <CompaniesFlow
           nodes={nodes}

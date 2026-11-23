@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import {
   type CardChargeSource,
   chargeLineDescription,
@@ -34,6 +35,8 @@ import {
   toRilletMoney,
   writeDroppingUnregisteredReferences
 } from "./shared";
+
+const logger = getLogger("ee", "accounting", "rillet");
 
 /**
  * RilletChargeSyncer — Carbon charges (Ramp card spend) → Rillet
@@ -360,10 +363,12 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
         // the per-company copy ran still reaches Rillet.
         const downloaded = await bucket.download(document.path);
         if (!downloaded.data) {
-          console.warn(
-            `[rillet] charge ${localId}: could not download receipt ${document.path}`,
-            downloaded.error
-          );
+          logger.warning("Could not download charge receipt for Rillet", {
+            companyId: this.companyId,
+            chargeId: localId,
+            path: document.path,
+            error: downloaded.error
+          });
           continue;
         }
         await this.rilletProvider.uploadChargeDocument(remoteId, {
@@ -373,10 +378,11 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
         });
       }
     } catch (err) {
-      console.warn(
-        `[rillet] charge ${localId}: receipt attach skipped`,
-        err instanceof Error ? err.message : err
-      );
+      logger.warning("Rillet charge receipt attach skipped", {
+        companyId: this.companyId,
+        chargeId: localId,
+        error: err
+      });
     }
   }
 }

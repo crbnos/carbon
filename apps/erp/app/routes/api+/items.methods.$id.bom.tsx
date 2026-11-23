@@ -8,8 +8,8 @@ import { pluckUnique } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import type { Method } from "~/modules/items";
-import { getMethodTree } from "~/modules/items";
+import { getMethodTree } from "~/modules/items/items.service";
+import type { Method } from "~/modules/items/types";
 import type { BomOperation, WorkCenterRate } from "~/utils/bom";
 import {
   calculateMadePartCosts,
@@ -52,7 +52,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
         )
         .in("makeMethodId", makeMethodIds)
-        .eq("companyId", companyId),
+        .eq("companyId", companyId)
+        .is("methodCorrectionId", null),
       client
         .from("workCenters")
         .select("id, active, laborRate, machineRate, overheadRate, processes")

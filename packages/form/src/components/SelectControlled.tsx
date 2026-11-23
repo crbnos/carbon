@@ -14,6 +14,7 @@ import { useEffect } from "react";
 
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 import type { SelectBaseProps } from "./Select";
 import { SelectBase } from "./Select";
 
@@ -50,6 +51,12 @@ const SelectControlled = ({
   const [controlValue, setControlValue] = useControlField<string | undefined>(
     name
   );
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label,
+    isEmpty: !controlValue,
+    isReadOnly: isReadOnly || isDisabled
+  });
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
@@ -66,7 +73,7 @@ const SelectControlled = ({
 
   return (
     <FormControl isInvalid={!!error}>
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel
           htmlFor={name}
           isConfigured={isConfigured}
@@ -96,6 +103,7 @@ const SelectControlled = ({
         isClearable={resolvedIsOptional && !isReadOnly}
         isDisabled={isDisabled}
         isReadOnly={isReadOnly}
+        inlinePlaceholder={inlineField.placeholder}
         className="w-full"
       />
 

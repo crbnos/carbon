@@ -4,7 +4,7 @@
 
 // This package ships raw source compiled by the consuming app's Vite build.
 // Type the Vite-injected globals the source references without depending on
-// vite (typecheck runs standalone via tsgo).
+// vite (typecheck runs standalone via tsc).
 declare module "*.wasm?url" {
   const url: string;
   export default url;

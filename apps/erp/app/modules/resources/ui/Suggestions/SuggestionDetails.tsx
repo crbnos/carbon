@@ -14,11 +14,10 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  useCloseRoute,
   useMode,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
-import data from "@emoji-mart/data";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { lazy, Suspense, useCallback, useState } from "react";
 import { useFetcher } from "react-router";
@@ -26,13 +25,17 @@ import z from "zod";
 import { DateTime } from "~/components";
 import { Tags } from "~/components/Form";
 import { useTags } from "~/hooks/useTags";
-import type { Suggestion } from "~/modules/resources";
+import type { Suggestion } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 // Lazy, not a static import: @emoji-mart/react is CommonJS, so under SSR its
 // default import is `{ default: Picker }` and dev React warns "type is
 // invalid" the moment the element is created, even in a closed popover.
 const Picker = lazy(() => import("@emoji-mart/react"));
+// The emoji set (~3 MB of JSON) loads when the picker first opens, not with
+// the page: the picker calls this itself.
+const loadEmojiData = () =>
+  import("@emoji-mart/data").then((module) => module.default);
 
 type SuggestionDetailsProps = {
   suggestion: Suggestion;
@@ -50,8 +53,8 @@ export default function SuggestionDetails({
   tags
 }: SuggestionDetailsProps) {
   const { t } = useLingui();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
   const fetcher = useFetcher();
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const mode = useMode();
@@ -84,7 +87,7 @@ export default function SuggestionDetails({
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -117,7 +120,7 @@ export default function SuggestionDetails({
                 >
                   <Suspense>
                     <Picker
-                      data={data}
+                      data={loadEmojiData}
                       onEmojiSelect={onUpdateEmoji}
                       theme={pickerTheme}
                       previewPosition="none"

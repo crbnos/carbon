@@ -92,3 +92,37 @@ it("coverage exceeding matched quantity is capped at matched", () => {
   expect(result.inventoryShare).toEqual(10);
   expect(result.ppvShare).toEqual(0);
 });
+
+it("striped layers: the consumed share follows the layer's project", () => {
+  // A grouped PO line of 60 received into 3 member stripes; P-101's 20 are
+  // already issued. A +60.00 variance revalues the on-hand stripes and
+  // attributes 20.00 to P-101's consumed units.
+  const result = allocateVarianceAcrossLayers(
+    [
+      { id: "L101", quantity: 20, remainingQuantity: 0, projectId: "P-101" },
+      { id: "L102", quantity: 30, remainingQuantity: 30, projectId: "P-102" },
+      { id: "L103", quantity: 10, remainingQuantity: 10, projectId: "P-103" }
+    ],
+    60,
+    60
+  );
+  expect(result.perLayer).toEqual([
+    {
+      costLedgerId: "L102",
+      appliedQuantity: 30,
+      adjustmentCost: 30,
+      projectId: "P-102"
+    },
+    {
+      costLedgerId: "L103",
+      appliedQuantity: 10,
+      adjustmentCost: 10,
+      projectId: "P-103"
+    }
+  ]);
+  expect(result.inventoryShare).toEqual(40);
+  expect(result.ppvShare).toEqual(20);
+  expect(result.consumed).toEqual([
+    { costLedgerId: "L101", projectId: "P-101", quantity: 20, cost: 20 }
+  ]);
+});

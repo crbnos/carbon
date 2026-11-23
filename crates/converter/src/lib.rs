@@ -9,3 +9,4 @@ pub mod convert;
 pub mod glb;
 pub mod graph;
 pub mod nodeid;
+pub mod pmi;

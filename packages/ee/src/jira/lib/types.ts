@@ -234,4 +234,5 @@ export interface UpdateJiraIssueInput {
   description?: any; // ADF format
   assigneeId?: string | null;
   priority?: string;
+  duedate?: string | null;
 }

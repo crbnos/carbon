@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteQuote } from "~/modules/sales";
+import { deleteQuote } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -25,7 +25,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (quoteDelete.error) {
     return data(
       path.to.quotes,
-      await flash(request, error(quoteDelete.error, quoteDelete.error.message))
+      await flash(
+        request,
+        error(quoteDelete.error, "Failed to delete the quote")
+      )
     );
   }
 
