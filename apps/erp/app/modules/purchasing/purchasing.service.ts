@@ -3129,7 +3129,7 @@ export async function reopenPurchaseOrderAsRevision(
 }
 
 export async function updateSupplierContact(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   supplierContact: {
     contactId: string;
     companyId: string;
@@ -3138,86 +3138,100 @@ export async function updateSupplierContact(
     customFields?: Json;
   }
 ) {
-  if (!supplierContact.contact.email?.trim()) {
-    const [owner, settings] = await Promise.all([
-      client
-        .from("supplierContact")
-        .select("contact(firstName, lastName, email)")
-        .eq("contactId", supplierContact.contactId)
-        .eq("companyId", supplierContact.companyId)
-        .maybeSingle(),
-      client
-        .from("companySettings")
-        .select("requireSupplierContactEmail")
-        .eq("id", supplierContact.companyId)
-        .maybeSingle()
-    ]);
-    if (owner.error) return { data: null, error: owner.error };
-    if (settings.error) return { data: null, error: settings.error };
-    // A field left out of the update keeps the stored value; a blank one
-    // clears it.
-    const stored = owner.data?.contact;
-    const { contact } = supplierContact;
-    const merged = {
-      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
-      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
-      email: "email" in contact ? contact.email : stored?.email
-    };
-    const email = merged.email;
-    if (
-      !hasContactNameOrEmail({
-        firstName: merged.firstName ?? undefined,
-        lastName: merged.lastName ?? undefined,
-        email: email ?? undefined
-      })
-    ) {
-      return {
-        data: null,
-        error: ruleError(contactNameOrEmailMessage.message)
-      };
-    }
-    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
-      return {
-        data: null,
-        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
-      };
-    }
-  }
-
+  const { contactId, companyId } = supplierContact;
+  // The link's id, the contact id (the row key) and the location (set on
+  // supplierContact) are not contact columns.
+  const {
+    id: _linkId,
+    contactId: _contactId,
+    supplierLocationId: _supplierLocationId,
+    ...contact
+  } = supplierContact.contact;
   // The location is written whenever it is sent, custom fields or not. Left
   // out, or blank in the form, it is kept: the app cannot clear it either.
-  const contactRow = {
+  const linkRow = {
     ...(supplierContact.customFields
-      ? { customFields: supplierContact.customFields }
+      ? { customFields: toJson(supplierContact.customFields) }
       : {}),
     ...(supplierContact.supplierLocationId !== undefined
       ? { supplierLocationId: supplierContact.supplierLocationId }
       : {})
   };
-  if (Object.keys(contactRow).length > 0) {
-    const contactRowUpdate = await client
-      .from("supplierContact")
-      .update(contactRow)
-      .eq("contactId", supplierContact.contactId)
-      .eq("companyId", supplierContact.companyId);
+  try {
+    // One transaction: a failed contact write must not leave a new location
+    // saved on the link.
+    const result = await withTransaction(db, async (trx) => {
+      if (!contact.email?.trim()) {
+        const stored = await trx
+          .selectFrom("supplierContact")
+          .innerJoin("contact", "contact.id", "supplierContact.contactId")
+          .select(["contact.firstName", "contact.lastName", "contact.email"])
+          .where("supplierContact.contactId", "=", contactId)
+          .where("supplierContact.companyId", "=", companyId)
+          .executeTakeFirst();
+        // A field left out of the update keeps the stored value; a blank one
+        // clears it.
+        const merged = {
+          firstName:
+            "firstName" in contact ? contact.firstName : stored?.firstName,
+          lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+          email: "email" in contact ? contact.email : stored?.email
+        };
+        if (
+          !hasContactNameOrEmail({
+            firstName: merged.firstName ?? undefined,
+            lastName: merged.lastName ?? undefined,
+            email: merged.email ?? undefined
+          })
+        ) {
+          return contactNameOrEmailMessage.message;
+        }
+        if (
+          !merged.email?.trim() &&
+          (await isContactEmailRequired(trx, companyId, "supplier"))
+        ) {
+          return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+        }
+      }
 
-    if (contactRowUpdate.error) {
-      return contactRowUpdate;
-    }
+      const updated =
+        Object.keys(contact).length > 0
+          ? await trx
+              .updateTable("contact")
+              .set(sanitize(contact))
+              .where("id", "=", contactId)
+              .where("companyId", "=", companyId)
+              .returning("id")
+              .executeTakeFirst()
+          : await trx
+              .selectFrom("contact")
+              .select("id")
+              .where("id", "=", contactId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+      if (!updated) return "Contact not found";
+
+      if (Object.keys(linkRow).length > 0) {
+        await trx
+          .updateTable("supplierContact")
+          .set(linkRow)
+          .where("contactId", "=", contactId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      return { id: updated.id };
+    });
+    return typeof result === "string"
+      ? { data: null, error: ruleError(result) }
+      : { data: result, error: null };
+  } catch (error) {
+    logger.error("Failed to update supplier contact", {
+      companyId,
+      contactId,
+      error
+    });
+    return { data: null, error: error as Error };
   }
-  // The contact id is the row key and the location is set on supplierContact
-  // above; neither is a contact column.
-  const {
-    contactId: _contactId,
-    supplierLocationId: _supplierLocationId,
-    ...contact
-  } = supplierContact.contact;
-  return client
-    .from("contact")
-    .update(sanitize(contact))
-    .eq("id", supplierContact.contactId)
-    .select("id")
-    .single();
 }
 
 export async function updateSupplierLocation(

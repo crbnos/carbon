@@ -6351,7 +6351,7 @@ export const updateSupplierContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateSupplierContact(ctx.asCaller.supabase, {
+      await service.updateSupplierContact(ctx.asSystem.pg, {
         ...payload(ctx, input).forUpdate(),
         companyId: ctx.company.id
       } as never)
