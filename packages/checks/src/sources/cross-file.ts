@@ -7,6 +7,7 @@ import { join } from "node:path";
 import type { SourceFile } from "../check";
 import {
   ACCOUNT_REFERENCE_POLICY_FILE,
+  type AccountReferencePolicy,
   parseReferencePolicy
 } from "../conformance/account-fk-restrict";
 import {
@@ -34,7 +35,9 @@ const readIfPresent = (root: string, files: string[]): SourceFile[] =>
     .filter((file) => existsSync(join(root, file)))
     .map((f) => read(root, f));
 
-export function loadAccountReferencePolicy(root: string): Set<string> {
+export function loadAccountReferencePolicy(
+  root: string
+): AccountReferencePolicy {
   return parseReferencePolicy(
     read(root, ACCOUNT_REFERENCE_POLICY_FILE).contents
   );

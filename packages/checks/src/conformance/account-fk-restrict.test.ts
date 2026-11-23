@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { loadAccountReferencePolicy } from "../sources/cross-file";
+import { repoRoot } from "../sources/migrations";
 import {
   accountFkClassified,
   accountFkRestrict,
@@ -124,7 +126,10 @@ describe("accountFkRestrict", () => {
 
 describe("accountFkClassified", () => {
   const classified = (sql: string) =>
-    accountFkClassified(new Set(["listed.accountId"]))
+    accountFkClassified({
+      classified: new Set(["listed.accountId"]),
+      unclassified: ["accountDefault", "account.parentId"]
+    })
       .scan(FILE, sql)
       .map((v) => v.message.split(" ")[0]);
 
@@ -152,14 +157,24 @@ describe("accountFkClassified", () => {
     ]);
   });
 
-  it("passes a listed column, the default accounts and account.parentId", () => {
+  it("passes a listed column, an unclassified table and an unclassified column", () => {
     const sql = [
       'ALTER TABLE "listed" ADD COLUMN "accountId" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;',
       'ALTER TABLE "accountDefault" ADD COLUMN "x" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;',
-      'ALTER TABLE "fixedAssetClass" ADD COLUMN "y" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;',
       'ALTER TABLE "account" ADD COLUMN "parentId" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;'
     ].join("\n");
     expect(classified(sql)).toEqual([]);
+  });
+
+  it("does not stretch an unclassified column to its table, or a table to a longer name", () => {
+    const sql = [
+      'ALTER TABLE "account" ADD COLUMN "otherId" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;',
+      'ALTER TABLE "accountDefaultHistory" ADD COLUMN "x" TEXT REFERENCES "account"("id") ON DELETE RESTRICT;'
+    ].join("\n");
+    expect(classified(sql)).toEqual([
+      "account.otherId",
+      "accountDefaultHistory.x"
+    ]);
   });
 });
 
@@ -175,17 +190,32 @@ describe("parseReferencePolicy", () => {
       '    policy: "repoint-if-parent-status"',
       "  }",
       "];",
-      'const LATER = [{ table: "later", column: "y" }];'
+      'const LATER = [{ table: "later", column: "y" }];',
+      "export const UNCLASSIFIED_ACCOUNT_REFERENCES: readonly string[] = [",
+      '  "accountDefault",',
+      '  "account.parentId"',
+      "];"
     ].join("\n");
-    expect([...parseReferencePolicy(source)]).toEqual([
+    const { classified, unclassified } = parseReferencePolicy(source);
+    expect([...classified]).toEqual([
       "charge.cardAccountId",
       "journalLine.accountId"
     ]);
+    expect(unclassified).toEqual(["accountDefault", "account.parentId"]);
   });
 
-  it("throws when REFERENCE_POLICY is gone, rather than flag every column", () => {
+  it("throws when either list is gone, rather than flag every column", () => {
     expect(() => parseReferencePolicy("export const X = [];")).toThrow(
       /REFERENCE_POLICY not found/
     );
+    expect(() =>
+      parseReferencePolicy("export const REFERENCE_POLICY = [\n];")
+    ).toThrow(/UNCLASSIFIED_ACCOUNT_REFERENCES not found/);
+  });
+
+  it("reads both lists from account-import.ts", () => {
+    const { classified, unclassified } = loadAccountReferencePolicy(repoRoot());
+    expect(classified.size).toBeGreaterThan(0);
+    expect(unclassified).toContain("account.parentId");
   });
 });

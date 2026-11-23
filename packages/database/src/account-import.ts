@@ -151,14 +151,13 @@ export type AccountReference = { table: string; column: string } & (
 );
 
 /**
- * Every foreign key to `account` other than `accountDefault` and
- * `fixedAssetClass` (both set from the default accounts file) and
- * `account.parentId` (leaves have no children). The apply-account-import
- * live-database test compares this list with the catalog, so a new account
- * column fails that test until it is classified here. The references with no
- * foreign key are read and moved by hand: `intercompanyEliminationLine`,
- * `externalIntegrationMapping` and `companyIntegration.metadata`
- * (account-import-reads.ts, apply-account-import).
+ * Every foreign key to `account` other than UNCLASSIFIED_ACCOUNT_REFERENCES.
+ * The apply-account-import live-database test compares this list with the
+ * catalog, so a new account column fails that test until it is classified
+ * here. The references with no foreign key are read and moved by hand:
+ * `intercompanyEliminationLine`, `externalIntegrationMapping` and
+ * `companyIntegration.metadata` (account-import-reads.ts,
+ * apply-account-import).
  *
  * `indirectPoolAccount.accountId` repoints after the apply removes the rows a
  * merge would make duplicates (same pool, account, dimension value and role),
@@ -215,6 +214,18 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
   { table: "indirectPoolAccount", column: "accountId", policy: "repoint" },
   // A period's statement is a snapshot.
   { table: "indirectExpenseStatement", column: "accountId", policy: "history" }
+];
+
+/**
+ * Foreign keys to `account` REFERENCE_POLICY leaves out, each a table or a
+ * `table.column`: `accountDefault` and `fixedAssetClass` are set from the
+ * default accounts file, and `account.parentId` is never merged (leaves have
+ * no children).
+ */
+export const UNCLASSIFIED_ACCOUNT_REFERENCES: readonly string[] = [
+  "accountDefault",
+  "fixedAssetClass",
+  "account.parentId"
 ];
 
 /** The `fixedAssetClass` columns that name an account. All NOT NULL. */

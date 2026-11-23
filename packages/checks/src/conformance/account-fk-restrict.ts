@@ -10,14 +10,6 @@ const SINCE = "20261013005642";
 export const ACCOUNT_REFERENCE_POLICY_FILE =
   "packages/database/src/account-import.ts";
 
-/**
- * Columns the import sets from the default accounts file or never merges, so
- * REFERENCE_POLICY leaves them out. The same exemptions as the
- * apply-account-import live test.
- */
-const UNCLASSIFIED_TABLES = new Set(["accountDefault", "fixedAssetClass"]);
-const UNCLASSIFIED_COLUMNS = new Set(["account.parentId"]);
-
 const IDENT = String.raw`(?:"[^"]+"|\w+)`;
 
 /**
@@ -83,25 +75,42 @@ function referencingColumn(sql: string, at: number): string | undefined {
   return `${unquote(header[1])}.${unquote(column)}`;
 }
 
-/**
- * The `table.column` pairs REFERENCE_POLICY lists, read from the source of
- * `account-import.ts` so this package does not depend on `@carbon/database`.
- */
-export function parseReferencePolicy(source: string): Set<string> {
-  const start = source.indexOf("export const REFERENCE_POLICY");
+export type AccountReferencePolicy = {
+  /** `table.column` pairs REFERENCE_POLICY lists. */
+  classified: ReadonlySet<string>;
+  /** UNCLASSIFIED_ACCOUNT_REFERENCES: each a table or a `table.column`. */
+  unclassified: readonly string[];
+};
+
+function exportedArray(source: string, name: string): string {
+  const start = source.indexOf(`export const ${name}`);
   const end = source.indexOf("\n];", start);
   if (start === -1 || end === -1) {
     throw new Error(
-      `REFERENCE_POLICY not found in ${ACCOUNT_REFERENCE_POLICY_FILE}; update account-fk-classified to read where it moved.`
+      `${name} not found in ${ACCOUNT_REFERENCE_POLICY_FILE}; update account-fk-classified to read where it moved.`
     );
   }
-  return new Set(
+  return source.slice(start, end);
+}
+
+/**
+ * Read from the source of `account-import.ts` so this package does not depend
+ * on `@carbon/database`.
+ */
+export function parseReferencePolicy(source: string): AccountReferencePolicy {
+  const classified = new Set(
     [
-      ...source
-        .slice(start, end)
-        .matchAll(/\btable:\s*"([^"]+)",\s*column:\s*"([^"]+)"/g)
+      ...exportedArray(source, "REFERENCE_POLICY").matchAll(
+        /\btable:\s*"([^"]+)",\s*column:\s*"([^"]+)"/g
+      )
     ].map(([, table, column]) => `${table}.${column}`)
   );
+  const unclassified = [
+    ...exportedArray(source, "UNCLASSIFIED_ACCOUNT_REFERENCES").matchAll(
+      /"([^"]+)"/g
+    )
+  ].map(([, ref]) => ref as string);
+  return { classified, unclassified };
 }
 
 type AccountReference = {
@@ -159,9 +168,10 @@ export const accountFkRestrict: ConformanceCheck = {
  * The apply-account-import live test checks the catalog; this catches a
  * missing class without a database.
  */
-export function accountFkClassified(
-  classified: ReadonlySet<string>
-): ConformanceCheck {
+export function accountFkClassified({
+  classified,
+  unclassified
+}: AccountReferencePolicy): ConformanceCheck {
   return {
     id: "account-fk-classified",
     description:
@@ -173,8 +183,7 @@ export function accountFkClassified(
         if (
           !ref ||
           classified.has(ref) ||
-          UNCLASSIFIED_TABLES.has(ref.split(".")[0] ?? "") ||
-          UNCLASSIFIED_COLUMNS.has(ref)
+          unclassified.some((u) => ref === u || ref.startsWith(`${u}.`))
         ) {
           continue;
         }
