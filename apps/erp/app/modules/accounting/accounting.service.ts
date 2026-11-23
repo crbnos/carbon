@@ -3499,18 +3499,13 @@ export async function lockAccountingPeriod(
       error: { message: "Only open periods can be locked" }
     };
   }
-  return (client.from("accountingPeriod") as any)
-    .update({
-      closeStatus: "Locked",
-      lockedAt: new Date().toISOString(),
-      lockedBy: args.userId,
-      updatedBy: args.userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", args.periodId)
-    .eq("companyId", args.companyId)
-    .select("id")
-    .single();
+  return setPeriodCloseStatus(
+    client,
+    args,
+    { from: "Open", to: "Locked" },
+    { lockedAt: datetime.timestamp(), lockedBy: args.userId },
+    "Only open periods can be locked"
+  );
 }
 
 /** Not published: `accounting_unlockPeriod` runs it. */
@@ -3535,18 +3530,41 @@ export async function unlockAccountingPeriod(
       error: { message: "Only locked periods can be unlocked" }
     };
   }
-  return (client.from("accountingPeriod") as any)
+  return setPeriodCloseStatus(
+    client,
+    args,
+    { from: "Locked", to: "Open" },
+    { lockedAt: null, lockedBy: null },
+    "Only locked periods can be unlocked"
+  );
+}
+
+/** Moves the period only while it is still in `from`: a close or reopen that
+ *  committed after the caller's read leaves it untouched and refused.
+ *  packages/models/src/accounting-period.ts checks the lifecycle. */
+async function setPeriodCloseStatus(
+  client: SupabaseClient<Database>,
+  args: { periodId: string; companyId: string; userId: string },
+  move: { from: "Open" | "Locked"; to: "Open" | "Locked" },
+  columns: { lockedAt: string | null; lockedBy: string | null },
+  refusal: string
+) {
+  const result = await client
+    .from("accountingPeriod")
     .update({
-      closeStatus: "Open",
-      lockedAt: null,
-      lockedBy: null,
+      closeStatus: move.to,
+      ...columns,
       updatedBy: args.userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", args.periodId)
     .eq("companyId", args.companyId)
+    .eq("closeStatus", move.from)
     .select("id")
-    .single();
+    .maybeSingle();
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data) return { data: null, error: { message: refusal } };
+  return { data: result.data, error: null };
 }
 
 /** Serializes the close and the reopen of a company's periods. Each checks
