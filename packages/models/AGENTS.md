@@ -10,6 +10,19 @@ and a past bug did: a read-then-write, a status change, a lock order. A pure
 calculation gets a unit test next to its code instead
 (`.claude/rules/testing.md`).
 
+## Checking a change
+
+`.claude/skills/formal-verification/SKILL.md` is the procedure: whether a change
+touches verified code, how to run it, and how to tell a real bug from a
+modelling error. `coverage.json` records each model's functions, its database
+tests, a hash of each function as last confirmed, and `confirmedAt`.
+
+```bash
+pnpm --filter @carbon/models touched   # exit 2: covered code changed since its last confirm (CI runs this)
+SUPABASE_DB_URL=… pnpm --filter @carbon/models verify   # models + their database tests; refuses to skip
+SUPABASE_DB_URL=… pnpm --filter @carbon/models confirm <model>   # verify, then record the code as confirmed
+```
+
 ## Models
 
 | Model | Protocol | Code |

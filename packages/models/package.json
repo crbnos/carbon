@@ -8,9 +8,12 @@
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
+    "confirm": "node scripts/confirm.mjs",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "touched": "node scripts/touched.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",

@@ -110,6 +110,25 @@ jobs:
       - *install
       - run: pnpm test
 
+  # A change to a function a formal model covers (packages/models/coverage.json)
+  # must re-confirm the model: .claude/skills/formal-verification/SKILL.md.
+  # Needs only Node, not the workspace.
+  models-confirmed:
+    name: Models confirmed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: |
+          if ! node packages/models/scripts/touched.mjs; then
+            echo "::error::Code a protocol model covers changed since it was confirmed. Follow .claude/skills/formal-verification/SKILL.md: run the model and its database tests, then run pnpm --filter @carbon/models confirm <model>." >&2
+            exit 1
+          fi
+
   edge-functions:
     name: Edge Functions
     runs-on: ubuntu-latest
@@ -141,7 +160,7 @@ jobs:
   # forks: their token cannot edit the PR.
   label:
     name: Label
-    needs: [lint, typecheck, test, edge-functions]
+    needs: [lint, typecheck, test, edge-functions, models-confirmed]
     if: >-
       !cancelled() &&
       github.event.pull_request.head.repo.full_name == github.repository
