@@ -1,6 +1,6 @@
 # Rental agreement: Next Invoice preview
 
-> Status: in-progress
+> Status: Approved
 > Author: aashu
 > Date: 2026-11-20
 
