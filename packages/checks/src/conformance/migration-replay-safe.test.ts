@@ -33,7 +33,6 @@ ORDER BY "userId", "channel", "updatedAt" DESC, "id" DESC;
 DELETE FROM "notificationPreference"
 WHERE "topic" = 'changelog' AND "companyId" IS NOT NULL;`;
 
-// The same statements after f47e4a25bf.
 const F47_AFTER = `ALTER TABLE "notificationPreference" ALTER COLUMN "companyId" DROP NOT NULL;
 
 DO $$
@@ -99,7 +98,6 @@ FOR SELECT USING (
 ALTER TABLE "itemPlanning"
   ADD COLUMN "minimumReserveQuantity" NUMERIC NOT NULL DEFAULT 0;`;
 
-// The same statements after cb75027fc2.
 const CB75_AFTER = `DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'supersessionMode') THEN
@@ -191,10 +189,8 @@ describe("migrationReplaySafe", () => {
     expect(scan(CB75_AFTER)).toEqual([]);
   });
 
-  // 751aea1a2b's INSERT failed on its FIRST run: a hand-made "Credit Cards"
-  // group held the unique name its NOT EXISTS guard (on accountType) did not
-  // look at. That is the data's shape, not a re-run; requiring ON CONFLICT
-  // on every guarded INSERT instead fails 22 replay-safe ones.
+  // 751aea1a2b failed on its first run (a guard on the wrong key), not on a
+  // re-run: out of scope.
   it("passes the NOT EXISTS-guarded INSERT of 751aea1a2b, and its ON CONFLICT fix", () => {
     expect(scan(CARD_GROUP_INSERT)).toEqual([]);
     expect(
@@ -311,7 +307,6 @@ END $$;`;
     expect(
       scan(`DROP POLICY IF EXISTS "SELECT" ON "a";\n${create}`)
     ).toHaveLength(1);
-    // The DROP must come first.
     expect(
       scan(`${create}\nDROP POLICY IF EXISTS "SELECT" ON "b";`)
     ).toHaveLength(1);

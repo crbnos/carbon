@@ -5,29 +5,21 @@
 import type { ConformanceCheck, Violation } from "../check";
 import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 
-// The deploy runner (`ci/src/migrations.ts`, `supabase db push --include-all`)
-// re-runs a migration that failed, over whatever the failed run already
-// committed (a migration may `COMMIT` part way, e.g. after `ALTER TYPE … ADD
-// VALUE`): the objects exist but the migration is not recorded. A statement
-// that errors when its object already exists, or is already gone, then fails
-// every later deploy until someone edits the applied file
-// (`cb75027fc2`, `25243520b4`, `11a7a60999`, `f47e4a25bf`).
+// The deploy runner re-runs a failed migration over what it already committed
+// (a migration may `COMMIT` part way), so a statement that errors on an object
+// already there, or already gone, fails every later deploy (`cb75027fc2`).
 
-/**
- * The newest migration when the rule was written down. Older ones are applied
- * history: after the 2026-06 idempotency pass (`c64c3be9a5`) 113 of 712
- * migrations still broke the rule, and none of them can be edited.
- */
+/** Migrations up to here are applied history and cannot be edited. */
 const LAST_UNCHECKED = "20261119125737";
 
-/**
- * A name, quoted or not, schema-qualified or not. `"public".x` and `x` are the
- * same object; unquoted parts fold to lower case as Postgres folds them.
- */
 const PART = String.raw`(?:"[^"]+"|[A-Za-z_][\w$]*)`;
 const NAME = String.raw`${PART}(?:\s*\.\s*${PART})?`;
 const NAME_LIST = String.raw`${NAME}(?:\s*,\s*${NAME})*`;
 
+/**
+ * `"public".x` and `x` are one object; unquoted parts fold to lower case, as in
+ * Postgres.
+ */
 function normalizeName(raw: string): string {
   const parts = [...raw.matchAll(new RegExp(PART, "g"))].map(([p]) =>
     p.startsWith('"') ? p.slice(1, -1) : p.toLowerCase()
@@ -50,16 +42,9 @@ type Masked = {
 };
 
 /**
- * Blanks comments, string contents and function bodies, keeping every
- * newline so line numbers stay right. A function body runs when the function
- * is called, not when the migration runs, so its statements are not
- * migration statements.
- *
- * A DO body does run at migration time. When it branches (`IF`) or catches
- * (`EXCEPTION`) it is how a statement with no `IF [NOT] EXISTS` form (`CREATE
- * TYPE`, `ADD CONSTRAINT`) is made safe to repeat, so a guarded body is
- * trusted whole and blanked from `top`. An unguarded body is scanned like any
- * other statement.
+ * A function body runs when called, not at migration time, so it is blanked.
+ * A DO body guarded by IF/EXCEPTION is trusted whole and blanked from `top`;
+ * an unguarded one is scanned.
  */
 function maskSql(sql: string): Masked {
   let top = "";
@@ -233,8 +218,7 @@ const RULES: Rule[] = [
       `ALTER TYPE ${name} ADD VALUE has no IF NOT EXISTS: on a re-run after a failed deploy the value is already there and the migration fails again.`
   },
   {
-    // Without OR REPLACE; a view or function whose shape changes is dropped
-    // first, which makes the plain CREATE safe.
+    // OR REPLACE never matches: OR sits between CREATE and the kind.
     pattern: new RegExp(
       String.raw`\bCREATE\s+(?:(?:RECURSIVE\s+)?VIEW|MATERIALIZED\s+VIEW|FUNCTION|PROCEDURE)\s+(?!IF\s+NOT\s+EXISTS\b)(?<name>${NAME})`,
       "dgi"
@@ -290,7 +274,6 @@ const RULES: Rule[] = [
   }
 ];
 
-/** The statement holding `index`: the text between two semicolons. */
 function statementAt(text: string, index: number): string {
   const start = text.lastIndexOf(";", index - 1) + 1;
   const end = text.indexOf(";", index);
@@ -303,9 +286,8 @@ const ALTER_TABLE = new RegExp(
 );
 
 /**
- * Whether `before` drops `name` of `kind`, with or without IF EXISTS — on
- * `table` too when the DROP names one (triggers and policies are named per
- * table).
+ * Triggers and policies are named per table: a DROP that names a table must
+ * name this one.
  */
 function dropsEarlier(
   before: string,
@@ -358,7 +340,6 @@ function groupText(
   return span ? text.slice(span[0] + offset, span[1] + offset) : undefined;
 }
 
-/** Every statement in one migration that fails, or doubles its rows, when the migration runs twice. */
 export function scanReplaySafety(file: string, contents: string): Violation[] {
   if (contents.startsWith(GENERATED_AUTHZ_MIGRATION)) return [];
   const { top, full } = maskSql(contents);
