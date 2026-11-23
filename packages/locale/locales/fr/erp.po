@@ -421,6 +421,10 @@ msgstr "{0} supprimé avec succès"
 msgid "{0} distribution"
 msgstr "Répartition de {0}"
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} écritures de journal brouillon"
@@ -1051,6 +1055,9 @@ msgstr "{documentTypeLabel} règle d'approbation"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} sur {total} phases terminées"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# ligne doit être corrigée} other {# lignes doivent être corrigées}}"
@@ -11356,6 +11363,9 @@ msgstr "Édition du chemin terminée"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Terminé quand les opérations quotidiennes fonctionnent sans nous."
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Double-cliquez pour ouvrir ce sous-ensemble"
 
@@ -11395,6 +11405,9 @@ msgstr "Télécharger le décompte en tant que fichier à remplir"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Téléchargez le modèle. Chaque ligne est un compte par défaut que Carbon comptabilise. Dans le champ Numéro de compte, entrez le numéro du compte de votre plan comptable qui le remplace. Carbon met à jour le compte par défaut pour correspondre."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Brouillon"
@@ -15072,6 +15085,9 @@ msgstr "Masquer le plan"
 
 msgid "Hide lines"
 msgstr "Masquer les lignes"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Masquer les revenus mensuels"
@@ -25388,7 +25404,7 @@ msgid "Rejected"
 msgstr "Rejeté"
 
 msgid "Rejected at inspection"
-msgstr "Rejeté au contrôle"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "Rejeté au contrôle"
@@ -28890,6 +28906,9 @@ msgstr "Afficher les raccourcis clavier"
 msgid "Show lines"
 msgstr "Afficher les lignes"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "Afficher les revenus mensuels"
 
@@ -28934,6 +28953,12 @@ msgstr "Affichage de {0} sur {1}. Rechercher pour affiner."
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Affichage de {0} sur {totalFiltered} — affinez votre recherche"
+
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "Affichage en {parentCurrency}"

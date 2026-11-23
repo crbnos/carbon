@@ -253,6 +253,9 @@ msgstr "{quantity} usati in questa operazione"
 msgid "{recorded}/{0} jobs"
 msgstr "Registrato/{0} ordini di produzione"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} in giacenza, senza contenitore"
 
@@ -1328,6 +1331,9 @@ msgstr "Correggi le quantità evidenziate prima di completare."
 msgid "Flag issue"
 msgstr "Segnala problema"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato il timbra fine?"
 
@@ -1717,6 +1723,9 @@ msgstr "Registra Completati"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "Registra completati per {0}"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "Registra Rilavorazione"
@@ -2135,6 +2144,9 @@ msgstr "Nessuna registrazione oraria per questa settimana"
 msgid "No unit"
 msgstr "Nessuna unità"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
 
@@ -2293,6 +2305,9 @@ msgstr "Ordini Aperti"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Apri sottoassieme {0}: {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr "Operazione"
 
@@ -2449,6 +2464,12 @@ msgstr "Prelievo di {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "Scegli uno stile, un colore e un volto."
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Seleziona l'ordine di produzione. Verrà visualizzato senza orari fino a quando non ne aggiungi alcuni."
@@ -2888,9 +2909,6 @@ msgstr "Scansiona o cerca numero di serie..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna campione, quindi registra il suo risultato nella griglia."
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "Scansiona o seleziona l'unità, poi scansiona di nuovo la scheda kanban"
-
 msgid "Scan received"
 msgstr "Scansione ricevuta"
 
@@ -3040,6 +3058,12 @@ msgstr "Seleziona una quantità di scarto e il motivo"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Seleziona un numero di serie per continuare con questa operazione"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "Seleziona un tipo di problema"
@@ -3520,6 +3544,9 @@ msgstr "Questo ordine di produzione non usa quel componente"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Questo ordine di produzione non ha una tariffa di fatturazione. Chiedi all'ufficio di impostarla prima che il tempo sia fatturato."
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "Questa etichetta non appartiene a un'unità di questa azienda"
 
@@ -3546,6 +3573,12 @@ msgstr "Questo ferma il tuo orologio e registra il tempo dell'ordine di produzio
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "Questa unità ha già usato questa correzione per il numero massimo di volte. Scartala oppure segnala un problema di qualità."
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Questa unità sarà permanentemente scartata e verrà creata un'unità sostitutiva."
@@ -3744,6 +3777,9 @@ msgstr "Modifiche non salvate"
 
 msgid "Until <0/>"
 msgstr "Fino a <0/>"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "Prossimo"

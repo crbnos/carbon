@@ -12,10 +12,8 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { datetime } from "@carbon/utils";
-import {
-  isFirstOperationOfMakeMethod,
-  isLastOperationOfMakeMethod
-} from "~/services/operations.service";
+import { isLastOperationOfMakeMethod } from "~/services/operations.service";
+import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
@@ -68,11 +66,10 @@ export async function autoPrintOperationLabel({
     if (!workCenterId || !jobMakeMethodId) return;
     // Most completions are neither first nor last: they read the routing only.
     const [isFirstOperation, isLastOperation] = await Promise.all([
-      isFirstOperationOfMakeMethod(
-        serviceRole,
-        jobOperationId,
-        jobMakeMethodId
-      ),
+      isFirstOperationOfMakeMethod(serviceRole, {
+        companyId,
+        operationId: jobOperationId
+      }),
       isLastOperationOfMakeMethod(
         serviceRole,
         companyId,

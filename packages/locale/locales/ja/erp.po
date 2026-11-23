@@ -421,6 +421,10 @@ msgstr "{0}が正常に削除されました"
 msgid "{0} distribution"
 msgstr "{0}の分布"
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
@@ -1051,6 +1055,9 @@ msgstr "{documentTypeLabel}承認ルール"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {修正が必要な行 # 件} other {修正が必要な行 # 件}}"
@@ -11356,6 +11363,9 @@ msgstr "パス編集完了"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "日常業務が私たちなしで円滑に進むようになったら完了"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "ダブルクリックするとこのサブアセンブリが開きます"
 
@@ -11395,6 +11405,9 @@ msgstr "カウントをファイルとしてダウンロード記入用に"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "テンプレートをダウンロードしてください。各行は Carbon が転記するデフォルト勘定です。勘定番号に、自社の勘定科目表でそれを取得する勘定の番号を入力してください。Carbon はデフォルト勘定を更新して一致させます。"
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "下書き"
@@ -15072,6 +15085,9 @@ msgstr "図面を非表示"
 
 msgid "Hide lines"
 msgstr "明細を非表示"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "計算を非表示"
@@ -25388,7 +25404,7 @@ msgid "Rejected"
 msgstr "却下"
 
 msgid "Rejected at inspection"
-msgstr "検査で却下済"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "検査で不合格"
@@ -28890,6 +28906,9 @@ msgstr "キーボードショートカットを表示"
 msgid "Show lines"
 msgstr "明細を表示"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "月別売上高を表示"
 
@@ -28934,6 +28953,12 @@ msgstr "{1}件中{0}件を表示中。検索して絞り込んでください。
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{totalFiltered}中{0}を表示中 — 検索を絞り込む"
+
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"

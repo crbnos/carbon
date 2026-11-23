@@ -213,6 +213,7 @@ import {
   buildOffsetLines,
   calculateCOGS,
   chunked,
+  clearShipmentTags,
   createAdjustmentJournal,
   documentJournalLines,
   type ExpiredEntityPolicy,
@@ -319,6 +320,9 @@ import {
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
   inventoryCountGroupId,
+  liveShipmentTags,
+  serialLineShortfalls,
+  serialShortfallMessage,
   spreadBatchCount,
   writeOffRestoreQuantity
 } from "./inventory.utils";
@@ -5599,12 +5603,6 @@ export async function setPickingListLineTrackedEntity(
   if (!isSerial && !isBatch) {
     return { data: null, error: "This line is not a tracked item" };
   }
-  if (!args.unpick && !line.toStorageUnitId) {
-    return {
-      data: null,
-      error: "No lineside destination is set for this line"
-    };
-  }
 
   const type = args.unpick
     ? isSerial
@@ -6940,14 +6938,7 @@ export async function pickPickingListLine(
   if (delta !== 0) {
     // A null source is allowed: the kitter can pick material the system shows no
     // stock for (counts are often wrong) — on-hand simply goes negative at the
-    // source until it's reconciled. Only the lineside destination is required.
-    if (delta > 0 && !line.toStorageUnitId) {
-      return {
-        data: null,
-        error: "No lineside destination is set for this line"
-      };
-    }
-
+    // source until it's reconciled. post-picking resolves the destination.
     const body =
       delta > 0
         ? {
@@ -19793,7 +19784,7 @@ export async function postShipment(
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [shipment, shipmentLines, shipmentLineTracking] = await inOrder([
+    const [shipment, shipmentLines, taggedUnits] = await inOrder([
       // The client is service-role: authorization proved the caller may
       // act in companyId, not that shipmentId belongs to it.
       () => maybeSingle(db, "shipment", { id: shipmentId, companyId }),
@@ -19825,6 +19816,30 @@ export async function postShipment(
     const shipmentHeader = shipment.data;
     if (shipmentLines.error) throw new Error("Failed to fetch shipment lines");
 
+    // A post ships only units tagged to a line the shipment still has, and
+    // clears the tags of deleted lines, so a later void cannot touch them. A
+    // void reads every tag: a posted shipment's lines cannot be deleted.
+    const shipmentLineTracking =
+      type === "post"
+        ? {
+            ...taggedUnits,
+            data: liveShipmentTags(
+              taggedUnits.data ?? [],
+              shipmentLines.data.map((line) => line.id)
+            )
+          }
+        : taggedUnits;
+    if (
+      type === "post" &&
+      (taggedUnits.data?.length ?? 0) > shipmentLineTracking.data.length
+    ) {
+      await clearShipmentTags(db, {
+        companyId,
+        shipmentId,
+        orphansOnly: true
+      });
+    }
+
     const itemIds = shipmentLines.data.reduce<string[]>((acc, shipmentLine) => {
       if (shipmentLine.itemId && !acc.includes(shipmentLine.itemId)) {
         acc.push(shipmentLine.itemId);
@@ -19848,7 +19863,14 @@ export async function postShipment(
           db,
           "item",
           { id: itemIds, companyId },
-          { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          {
+            columns: [
+              "id",
+              "itemTrackingType",
+              "replenishmentSystem",
+              "readableIdWithRevision"
+            ]
+          }
         ),
       () =>
         many(
@@ -19881,6 +19903,26 @@ export async function postShipment(
     }
     if (jobs.error) {
       throw new Error("Failed to fetch jobs");
+    }
+
+    // The postShipment operation refuses this before any write; checked again
+    // here for every other caller of the posting.
+    if (type === "post") {
+      const [shortfall] = serialLineShortfalls(
+        shipmentHeader.sourceDocument,
+        shipmentLines.data,
+        shipmentLineTracking.data ?? []
+      );
+      if (shortfall) {
+        throw new ServerFnError(
+          serialShortfallMessage(
+            shortfall,
+            items.data.find((row) => row.id === shortfall.itemId)
+              ?.readableIdWithRevision
+          ),
+          422
+        );
+      }
     }
 
     const splitEntityIds: string[] = [];
@@ -21634,14 +21676,6 @@ export async function postShipment(
                 shipmentLine.lineId &&
                 serviceLineIds.has(shipmentLine.lineId)
               ) {
-                if (
-                  itemTrackingType === "Serial" &&
-                  lineEntities.length !== shippedQuantity
-                ) {
-                  throw new InvalidInputError(
-                    `Shipment line ${shipmentLine.id}: assign the serviced unit's serial before posting`
-                  );
-                }
                 serviceUnits.push({
                   salesReturnOrderLineId: shipmentLine.lineId,
                   trackedEntityId:
@@ -25826,6 +25860,56 @@ async function assertPickSourceNettable(
   }
 }
 
+/** A release picking list runs before the scheduler gives an operation its work
+ *  center, so a line can have no lineside: take it from the work center now. */
+async function resolvePickDestination<
+  T extends {
+    id: string;
+    jobOperationId: string | null;
+    toStorageUnitId: string | null;
+  }
+>(
+  trx: Transaction<KyselyDatabase>,
+  line: T,
+  companyId: string,
+  userId: string
+): Promise<T & { toStorageUnitId: string }> {
+  if (line.toStorageUnitId) {
+    return { ...line, toStorageUnitId: line.toStorageUnitId };
+  }
+  const operation = line.jobOperationId
+    ? await trx
+        .selectFrom("jobOperation")
+        .where("id", "=", line.jobOperationId)
+        .where("companyId", "=", companyId)
+        .select("workCenterId")
+        .executeTakeFirst()
+    : undefined;
+  const lineside = operation?.workCenterId
+    ? ((
+        await sql<{ id: string | null }>`
+          SELECT get_or_create_work_center_lineside(${operation.workCenterId}, ${companyId}, ${userId}) AS id
+        `.execute(trx)
+      ).rows[0]?.id ?? null)
+    : null;
+  if (!lineside) {
+    throw new InvalidInputError(
+      "No lineside destination is set for this line. Set a work center on its operation, then pick again."
+    );
+  }
+  await trx
+    .updateTable("pickingListLine")
+    .set({
+      toStorageUnitId: lineside,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", line.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  return { ...line, toStorageUnitId: lineside };
+}
+
 export async function postPicking(
   ctx: ServiceContext,
   raw: z.input<typeof postPickingInput>
@@ -25907,13 +25991,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         const nextQuantity = resolvePick({
           lineQuantity: line.quantityToPick ?? 0,
           pickedQuantity: line.quantityPicked ?? 0,
@@ -26159,13 +26248,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // A pick line draws one stripe at the list's location: the serial
@@ -26313,13 +26407,18 @@ export async function postPicking(
         // returned counter, so two concurrent scans of the same line would
         // both add to the same stale total and the ledger would double. Same
         // lock post-stock-transfer takes.
-        const line = await trx
-          .selectFrom("pickingListLine")
-          .where("id", "=", pickingListLineId)
-          .where("companyId", "=", companyId)
-          .selectAll()
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const line = await resolvePickDestination(
+          trx,
+          await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow(),
+          companyId,
+          userId
+        );
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
         // Lock the source lot too: the split below draws against this

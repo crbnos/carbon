@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-20T13:47:37.978Z",
+  "exportedAt": "2026-11-23T10:22:24.565Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1864,7 +1864,8 @@
         "createdAt",
         "updatedAt",
         "updatedBy",
-        "completedAt"
+        "completedAt",
+        "dpi"
       ]
     },
     {
@@ -4355,7 +4356,8 @@
         "printerUrl",
         "createdAt",
         "updatedAt",
-        "hasApiKey"
+        "hasApiKey",
+        "dpi"
       ]
     },
     {

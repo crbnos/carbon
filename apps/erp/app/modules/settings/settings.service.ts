@@ -89,6 +89,7 @@ import {
   TAX_CODE_SUMMARY_SELECT,
   withRevisionSuffix
 } from "@carbon/documents/utils";
+import { generateTestLabelZPL } from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -255,7 +256,8 @@ import {
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
-  searchFilter
+  searchFilter,
+  withLabelDpi
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -3820,27 +3822,14 @@ export async function createHeadquarters(
 /** A one-label ZPL test page for the route's media size; null for a PDF route or no size. */
 export function generateTestLabel(
   format: string,
-  mediaSizeId: string | null
+  mediaSizeId: string | null,
+  dpi: number,
+  printedAt: string
 ): string | null {
   if (format !== "zpl" || !mediaSizeId) return null;
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
-  const { width, height } = labelSize.zpl;
-  const dpi = labelSize.zpl.dpi || 203;
-  const widthDots = Math.round(width * dpi);
-  const heightDots = Math.round(height * dpi);
-  const now = new Date();
-  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-  return [
-    "^XA",
-    `^PW${widthDots}`,
-    `^LL${heightDots}`,
-    "^MNW",
-    "^FO20,20^A0N,30,30^FDTest Print^FS",
-    `^FO20,60^A0N,20,20^FD${mediaSizeId} — ${width}x${height}"^FS`,
-    `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
-    "^XZ"
-  ].join("\n");
+  return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
 }
 
 /** An API key action on a company without the plan. */

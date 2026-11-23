@@ -360,29 +360,62 @@ export function pickTravelerClaims<
 }
 
 /**
- * Whether a scan may issue a free unit into its best claim without asking.
- * On an operation page the claim stays inside that operation, so it may. On
- * any other page only a serial unit (one part, one label) goes in unasked: a
- * batch lot would issue stock, so it asks. An operator with a station takes
- * the best claim only at that station; one with none takes it only when it is
- * the one place at the location that needs the part.
+ * Which claims a scanned free unit may go into, and whether the best one is
+ * taken without asking.
+ *
+ * A claim at a later operation of a serial part (`laterSerial`) goes only
+ * into the unit the operator holds (`heldUnitId`, the unit on screen): the
+ * server never picks that unit. On an operation page with none held the
+ * operator picks one first (`pickUnit`); on any other page such a claim is
+ * never taken unasked.
+ *
+ * Any other claim is taken on an operation page, which keeps it inside that
+ * operation. On any other page only a serial unit (one part, one label) goes
+ * in unasked: a batch lot would issue stock, so it asks. An operator with a
+ * station takes the best claim only at that station; one with none takes it
+ * only when it is the one place at the location that needs the part.
  */
-export function isTravelerClaimAuto({
+export function decideTravelerClaim<
+  T extends {
+    parentTrackedEntityId: string;
+    laterSerial: boolean;
+    operation: { workCenterId: string | null };
+  }
+>({
   onOperationPage,
+  heldUnitId,
   isSerial,
   workCenterId,
-  optionWorkCenterIds
+  options
 }: {
   onOperationPage: boolean;
+  /** The unit on screen the operator scanned or picked. */
+  heldUnitId: string | null;
   isSerial: boolean;
   /** The operator's station today. */
   workCenterId: string | null;
-  /** The work center of each claim, best first. */
-  optionWorkCenterIds: (string | null)[];
-}): boolean {
-  if (onOperationPage) return true;
-  if (!isSerial || optionWorkCenterIds.length === 0) return false;
-  return workCenterId === null
-    ? optionWorkCenterIds.length === 1
-    : optionWorkCenterIds[0] === workCenterId;
+  /** The claims, best first. */
+  options: T[];
+}): { kind: "pickUnit" } | { kind: "claim"; options: T[]; auto: boolean } {
+  if (onOperationPage) {
+    if (!heldUnitId && options.some((o) => o.laterSerial)) {
+      return { kind: "pickUnit" };
+    }
+    return {
+      kind: "claim",
+      options: options.filter(
+        (o) => !o.laterSerial || o.parentTrackedEntityId === heldUnitId
+      ),
+      auto: true
+    };
+  }
+  const best = options[0];
+  if (!best || best.laterSerial || !isSerial) {
+    return { kind: "claim", options, auto: false };
+  }
+  const auto =
+    workCenterId === null
+      ? options.length === 1
+      : best.operation.workCenterId === workCenterId;
+  return { kind: "claim", options, auto };
 }

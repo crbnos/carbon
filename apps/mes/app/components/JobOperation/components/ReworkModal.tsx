@@ -234,6 +234,7 @@ export function ReworkModal({
                     : t`Go back to operation`
                 }
                 size="lg"
+                autoSelectSingleOption
                 options={[
                   ...targets.map((op) => ({
                     value: op.id,
@@ -321,13 +322,19 @@ export function ReworkModal({
                     name="_batchSelect"
                     label={t`Batch`}
                     size="lg"
+                    autoSelectSingleOption
                     options={trackedEntities.map((entity) => ({
                       value: entity.id,
                       label: `${entity.readableId || entity.id} (qty: ${entity.quantity})`
                     }))}
                     onChange={(option) => {
-                      setSelectedBatchId(option?.value ?? "");
-                      setQuantity(1);
+                      const lot = trackedEntities.find(
+                        (e) => e.id === option?.value
+                      );
+                      setSelectedBatchId(lot?.id ?? "");
+                      if (lot) {
+                        setQuantity((q) => Math.min(q, Number(lot.quantity)));
+                      }
                     }}
                   />
                   <NumberControlled

@@ -253,6 +253,9 @@ msgstr "{quantity} consumidos en esta operación"
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} órdenes de trabajo"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} en existencias, en ningún contenedor"
 
@@ -1328,6 +1331,9 @@ msgstr "Corrija las cantidades resaltadas antes de completar."
 msgid "Flag issue"
 msgstr "Marcar incidencia"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "¿Olvidó fichar salida?"
 
@@ -1717,6 +1723,9 @@ msgstr "Registrar completados"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "Registrar completados para {0}"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "Registrar retrabajo"
@@ -2135,6 +2144,9 @@ msgstr "No hay registros de tiempo para esta semana"
 msgid "No unit"
 msgstr "Sin unidad"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 
@@ -2293,6 +2305,9 @@ msgstr "Órdenes de trabajo abiertas"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Abrir subconjunto {0}: {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr "Operación"
 
@@ -2449,6 +2464,12 @@ msgstr "Hacer picking de {itemName}"
 
 msgid "Pick a style, a color and a face."
 msgstr "Seleccione un estilo, un color y un rostro."
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Seleccione la orden de trabajo. Se muestra sin horas hasta que agregue algunas."
@@ -2888,9 +2909,6 @@ msgstr "Escanear o buscar número de serie..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Escanee o seleccione una entidad rastreada de este lote para agregarla como columna de muestra, luego registre su resultado en la cuadrícula."
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "Escanea o selecciona la unidad y luego vuelve a escanear la tarjeta kanban"
-
 msgid "Scan received"
 msgstr "Escaneo recibido"
 
@@ -3040,6 +3058,12 @@ msgstr "Seleccione una cantidad de desperdicio y un motivo"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Seleccione un número de serie para continuar con esta operación"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "Seleccione un tipo de problema"
@@ -3520,6 +3544,9 @@ msgstr "Esta orden de trabajo no usa esa pieza"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Esta orden de trabajo no tiene una tarifa de facturación. Pida a la oficina que la establezca antes de que se facture el tiempo."
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "Esta etiqueta no pertenece a una unidad de esta empresa"
 
@@ -3546,6 +3573,12 @@ msgstr "Esto detiene tu reloj y contabiliza el tiempo de la orden de trabajo. La
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "Esta unidad ya ha usado esta corrección el número máximo de veces. Desperdíciala o abre una incidencia de calidad en su lugar."
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Esta unidad será descartada permanentemente y se creará una unidad de reemplazo."
@@ -3744,6 +3777,9 @@ msgstr "Cambios no guardados"
 
 msgid "Until <0/>"
 msgstr "Hasta <0/>"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "Próximo"

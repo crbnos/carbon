@@ -91,7 +91,9 @@ import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
 import {
+  canResendToPrinter,
   datetime,
+  formatDateTimeInZone,
   isUniqueViolation,
   requireAffected,
   unchecked
@@ -103,6 +105,7 @@ import { plmReleaseControl } from "~/modules/items/items.models";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import {
+  getCompanyTimeZone,
   invalidateCompanyTimeZone,
   invokePosting,
   isActiveCompanyEmployee
@@ -1463,6 +1466,7 @@ export const savePrinterRoute = defineServiceFn({
       name: route.name,
       format: route.format,
       mediaSizeId: route.mediaSizeId || null,
+      dpi: route.dpi,
       printerUrl: route.printerUrl,
       locationId: route.locationId || null
     });
@@ -1529,15 +1533,24 @@ export const testPrinterRoute = defineServiceFn({
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
-      .select("printerUrl, format, mediaSizeId, hasApiKey")
+      .select("printerUrl, format, mediaSizeId, dpi, hasApiKey")
       .eq("id", routeId)
       .eq("companyId", ctx.company.id)
       .single();
     if (!route) return ctx.error("notFound", "Printer route not found");
 
+    const timeZone = await getCompanyTimeZone(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
     const testLabel = service.generateTestLabel(
       route.format,
-      route.mediaSizeId
+      route.mediaSizeId,
+      route.dpi,
+      formatDateTimeInZone(datetime.timestamp(), timeZone, undefined, {
+        dateStyle: "short",
+        timeStyle: "short"
+      })
     );
     if (!testLabel) {
       return ctx.error(
@@ -1801,8 +1814,11 @@ export const assignPrinter = defineServiceFn({
  * @remarks
  * Queues a new print job with the company's original job's content, to its
  * printer or to `printerUrl` when given, and starts its delivery. A job still
- * generating has no content and cannot be reprinted. Not published: the
- * server POSTs to `printerUrl`, so an API caller could aim it at any address.
+ * generating has no content and cannot be reprinted, and a ZPL label is
+ * refused for another printer at another dpi, which would print it the wrong
+ * size. The printer it was printed on always takes it again.
+ * Not published: the server POSTs to `printerUrl`, so an API caller could aim
+ * it at any address.
  */
 export const reprintPrintJob = defineServiceFn({
   input: reprintValidator,
@@ -1829,11 +1845,39 @@ export const reprintPrintJob = defineServiceFn({
       return ctx.error("rule", "Cannot reprint a job that is still generating");
     }
 
+    // The job keeps only its finished content, not what it was drawn from, so
+    // a label for another dpi cannot be redrawn here.
+    const targetUrl = printerUrl || originalMeta.data.printerUrl;
+    const { data: target } = await client
+      .from("printerRoute")
+      .select("dpi")
+      .eq("printerUrl", targetUrl)
+      .eq("companyId", ctx.company.id)
+      // The route delivery reads, when several share the URL.
+      .order("hasApiKey", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    // The printer it went to prints the same content the same way again.
+    if (
+      targetUrl !== originalMeta.data.printerUrl &&
+      !canResendToPrinter(
+        original.data.contentType,
+        original.data.dpi,
+        target?.dpi
+      )
+    ) {
+      return ctx.error(
+        "rule",
+        `This label was printed for a ${original.data.dpi} dpi printer. Print it again from the record to send it to a ${target?.dpi} dpi printer.`
+      );
+    }
+
     const job = await createPrintJob(client, {
       companyId: ctx.company.id,
       contentType: original.data.contentType as "zpl" | "pdf",
       content: original.data.content,
-      printerUrl: printerUrl || originalMeta.data.printerUrl,
+      dpi: original.data.dpi,
+      printerUrl: targetUrl,
       sourceDocument: originalMeta.data.sourceDocument,
       sourceDocumentId: originalMeta.data.sourceDocumentId,
       sourceDocumentReadableId:
@@ -1887,7 +1931,7 @@ export const deletePrintJob = defineServiceFn({
   }
 });
 
-/** What a print job printed: its ZPL or PDF content. */
+/** What a print job printed: its ZPL or PDF content, and the dpi it was drawn for. */
 export const viewPrintJobContent = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
@@ -1903,7 +1947,8 @@ export const viewPrintJobContent = defineServiceFn({
     return {
       printJobId: content.data.id,
       content: content.data.content,
-      contentType: content.data.contentType
+      contentType: content.data.contentType,
+      dpi: content.data.dpi
     };
   }
 });

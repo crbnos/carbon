@@ -175,7 +175,9 @@ function UnitInfo({
 /**
  * Where a free kit or sub-assembly goes. The first option is the one a scan
  * at the operator's station takes on its own; the operator can pick another.
- * Starting posts the same scan, scoped to that operation and unit.
+ * Starting posts the same scan, scoped to that operation and unit. A later
+ * operation of a serial part names no unit here: it opens, the operator
+ * picks the unit, then scans the part again.
  */
 function ClaimChooser({
   unit,
@@ -195,6 +197,10 @@ function ClaimChooser({
 
   const start = async () => {
     if (!selected) return;
+    if (selected.laterSerial) {
+      navigate(path.to.operation(selected.operationId));
+      return;
+    }
     setPending(true);
     const result = await postTravelerScan({
       code: unit.id,
@@ -243,12 +249,16 @@ function ClaimChooser({
                 <Trans>Operation</Trans>
               </dt>
               <dd className="truncate">{selected.operation.description}</dd>
-              <dt className="text-muted-foreground">
-                <Trans>Unit</Trans>
-              </dt>
-              <dd className="truncate font-medium">
-                {selected.parentReadableId}
-              </dd>
+              {!selected.laterSerial && (
+                <>
+                  <dt className="text-muted-foreground">
+                    <Trans>Unit</Trans>
+                  </dt>
+                  <dd className="truncate font-medium">
+                    {selected.parentReadableId}
+                  </dd>
+                </>
+              )}
             </dl>
             <Button
               size="lg"
@@ -257,7 +267,11 @@ function ClaimChooser({
               isDisabled={pending}
               onClick={start}
             >
-              <Trans>Start {selected.parentReadableId}</Trans>
+              {selected.laterSerial ? (
+                <Trans>Open the operation to pick the unit</Trans>
+              ) : (
+                <Trans>Start {selected.parentReadableId}</Trans>
+              )}
             </Button>
           </CardContent>
         </Card>

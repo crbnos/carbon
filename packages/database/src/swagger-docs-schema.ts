@@ -84568,6 +84568,9 @@ export default {
             $ref: "#/parameters/rowFilter.printJob.completedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.printJob.dpi"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -84681,6 +84684,9 @@ export default {
             $ref: "#/parameters/rowFilter.printJob.completedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.printJob.dpi"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -84746,6 +84752,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.printJob.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.printJob.dpi"
           },
           {
             $ref: "#/parameters/body.printJob"
@@ -104413,6 +104422,9 @@ export default {
             $ref: "#/parameters/rowFilter.printerRoute.hasApiKey"
           },
           {
+            $ref: "#/parameters/rowFilter.printerRoute.dpi"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -104502,6 +104514,9 @@ export default {
             $ref: "#/parameters/rowFilter.printerRoute.hasApiKey"
           },
           {
+            $ref: "#/parameters/rowFilter.printerRoute.dpi"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -104543,6 +104558,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.printerRoute.hasApiKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.printerRoute.dpi"
           },
           {
             $ref: "#/parameters/body.printerRoute"
@@ -182085,7 +182103,8 @@ export default {
         "origin",
         "attempts",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "dpi"
       ],
       properties: {
         id: {
@@ -182169,6 +182188,11 @@ export default {
         completedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        dpi: {
+          default: 203,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -191725,7 +191749,8 @@ export default {
         "format",
         "printerUrl",
         "createdAt",
-        "hasApiKey"
+        "hasApiKey",
+        "dpi"
       ],
       properties: {
         id: {
@@ -191775,6 +191800,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        dpi: {
+          default: 203,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -245604,6 +245634,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.printJob.dpi": {
+      name: "dpi",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.journalLines": {
       name: "journalLines",
       description: "journalLines",
@@ -256295,6 +256331,12 @@ export default {
     },
     "rowFilter.printerRoute.hasApiKey": {
       name: "hasApiKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.printerRoute.dpi": {
+      name: "dpi",
       required: false,
       in: "query",
       type: "string"

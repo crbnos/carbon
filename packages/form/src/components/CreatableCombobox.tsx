@@ -17,6 +17,7 @@ import { forwardRef, useEffect } from "react";
 
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
@@ -85,15 +86,13 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         setValue(props.value);
     }, [props.value, setValue]);
 
-    useEffect(() => {
-      if (
-        autoSelectSingleOption &&
-        props.options.length === 1 &&
-        !value // Only auto-select if no value is already set
-      ) {
-        setValue(props.options[0]!.value);
-      }
-    }, [autoSelectSingleOption, props.options, setValue, value]);
+    // No onChange: the job routing editor reloads rates on change, which would overwrite a saved operation's.
+    useAutoSelectSingleOption({
+      enabled: autoSelectSingleOption,
+      options: props.options,
+      value,
+      setValue
+    });
 
     const onChange = (value: string) => {
       if (value) {

@@ -19,6 +19,7 @@ import {
   updatePrintJobStatus
 } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { DEFAULT_LABEL_DPI } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../../client";
@@ -101,7 +102,7 @@ export const printJobFunction = inngest.createFunction(
         if (explicitPrinterRouteId) {
           const { data: route } = await client
             .from("printerRoute")
-            .select("id, name, format, mediaSizeId, printerUrl")
+            .select("id, name, format, mediaSizeId, dpi, printerUrl")
             .eq("id", explicitPrinterRouteId)
             .eq("companyId", companyId)
             .single();
@@ -111,6 +112,7 @@ export const printJobFunction = inngest.createFunction(
               printerUrl: route.printerUrl,
               format: route.format as "zpl" | "pdf",
               mediaSizeId: route.mediaSizeId,
+              dpi: route.dpi,
               autoPrint: true
             };
           }
@@ -152,6 +154,8 @@ export const printJobFunction = inngest.createFunction(
             printerUrl: printerConfig?.printerUrl ?? "",
             format: printerConfig?.format ?? docType.defaultFormat,
             mediaSizeId: printerConfig?.mediaSizeId ?? DEFAULT_MEDIA_SIZE_ID,
+            // Configs cached before printers had a dpi carry none.
+            dpi: printerConfig?.dpi ?? DEFAULT_LABEL_DPI,
             templates,
             origin
           });
@@ -294,6 +298,7 @@ async function processDocumentType(
     printerUrl: string;
     format: "zpl" | "pdf";
     mediaSizeId: string;
+    dpi: number;
     templates: Map<LabelTemplateType, string>;
     origin: PrintJobOrigin;
   }
@@ -308,6 +313,7 @@ async function processDocumentType(
     printerUrl,
     format,
     mediaSizeId,
+    dpi,
     templates,
     origin
   } = ctx;
@@ -384,6 +390,8 @@ async function processDocumentType(
 
     try {
       let content: GeneratedContent;
+      // Custom templates are drawn at 203 dpi whatever the printer runs at.
+      let renderedDpi: number = DEFAULT_LABEL_DPI;
 
       if (templateId && BINDERY_PRESS_API_KEY) {
         content = await renderItemWithTemplate(
@@ -398,8 +406,10 @@ async function processDocumentType(
           companyId,
           doc,
           format,
-          mediaSizeId
+          mediaSizeId,
+          dpi
         );
+        renderedDpi = dpi;
       } else {
         await updatePrintJobStatus(client, jobId, companyId, "failed", {
           error: `No built-in renderer for "${documentTypeId}". Add a "${labelType}" label template for media size "${mediaSizeId}".`
@@ -412,7 +422,8 @@ async function processDocumentType(
         jobId,
         companyId,
         content.content,
-        content.contentType
+        content.contentType,
+        renderedDpi
       );
 
       if (printerUrl) {

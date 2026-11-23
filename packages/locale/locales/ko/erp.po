@@ -421,6 +421,10 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} distribution"
 msgstr "{0} 분포"
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 전표"
@@ -1051,6 +1055,9 @@ msgstr "{documentTypeLabel} 승인 규칙"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# 행이 수정 필요} other {# 행이 수정 필요}}"
@@ -11356,6 +11363,9 @@ msgstr "경로 편집 완료"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "저희가 없어도 일상 업무가 원활하게 돌아가면 완료입니다"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "이 하위 조립품을 열려면 이중 클릭하세요"
 
@@ -11395,6 +11405,9 @@ msgstr "계산을 파일로 다운로드하여 입력하세요"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "템플릿을 다운로드합니다. 각 행은 Carbon이 전기하는 기본 계정과목입니다. 계정 번호에 자신의 계정과목표에서 이를 담당할 계정의 번호를 입력합니다. Carbon은 기본 계정과목을 이에 맞게 업데이트합니다."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "초안"
@@ -15072,6 +15085,9 @@ msgstr "도면 숨기기"
 
 msgid "Hide lines"
 msgstr "라인 숨기기"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "월간 매출 숨기기"
@@ -25388,7 +25404,7 @@ msgid "Rejected"
 msgstr "반려됨"
 
 msgid "Rejected at inspection"
-msgstr "검사에서 거부됨"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "검사에서 불합격"
@@ -28890,6 +28906,9 @@ msgstr "키보드 단축키 표시"
 msgid "Show lines"
 msgstr "라인 표시"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "월간 매출 표시"
 
@@ -28934,6 +28953,12 @@ msgstr "{1}개 중 {0}개를 표시하고 있습니다. 검색하여 범위를 �
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{0}개 표시 (총 {totalFiltered}개) — 검색을 세밀하게 조정하세요"
+
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}로 표시"

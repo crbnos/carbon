@@ -421,6 +421,10 @@ msgstr "{0} 已成功删除"
 msgid "{0} distribution"
 msgstr "{0} 分布"
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
@@ -1051,6 +1055,9 @@ msgstr "{documentTypeLabel}审批规则"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# 行需要修复} other {# 行需要修复}}"
@@ -11356,6 +11363,9 @@ msgstr "完成编辑路径"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "完成时日常运营无需我们在场"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "双击以打开此子装配"
 
@@ -11395,6 +11405,9 @@ msgstr "下载计数以填入文件"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "下载模板。每一行是一个 Carbon 过账的默认账户。在账户编号中，输入您的科目表中对应账户的编号。Carbon 会更新默认账户以匹配。"
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "草稿"
@@ -15072,6 +15085,9 @@ msgstr "隐藏图纸"
 
 msgid "Hide lines"
 msgstr "隐藏行"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "隐藏月度收入"
@@ -25388,7 +25404,7 @@ msgid "Rejected"
 msgstr "已拒绝"
 
 msgid "Rejected at inspection"
-msgstr "检验时已拒绝"
+msgstr ""
 
 msgid "Rejected at Inspection"
 msgstr "检验时拒收"
@@ -28890,6 +28906,9 @@ msgstr "显示键盘快捷键"
 msgid "Show lines"
 msgstr "显示行"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "显示每月收入"
 
@@ -28934,6 +28953,12 @@ msgstr "显示 {0}（共 {1}）。搜索以缩小范围。"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "显示 {0} / {totalFiltered} — 优化您的搜索"
+
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
